@@ -1,27 +1,6 @@
 package general;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static play.test.Helpers.route;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.apache.commons.io.FileUtils;
-import org.hibernate.Hibernate;
-import org.hibernate.proxy.HibernateProxy;
-
 import com.google.inject.Injector;
-
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -30,6 +9,9 @@ import exceptions.gui.NotFoundException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
+import org.apache.commons.io.FileUtils;
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
 import play.Logger;
 import play.api.mvc.RequestHeader;
 import play.db.jpa.JPAApi;
@@ -37,14 +19,24 @@ import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import play.mvc.Http.RequestBuilder;
-import services.gui.AuthenticationService;
-import services.gui.BatchService;
-import services.gui.StudyService;
-import services.gui.StudyUploadUnmarshaller;
-import services.gui.UploadUnmarshaller;
-import services.gui.UserService;
+import services.gui.*;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static play.test.Helpers.route;
 
 /**
  * @author Kristian Lange (2017)
@@ -52,229 +44,231 @@ import utils.common.ZipUtil;
 @Singleton
 public class TestHelper {
 
-	public static final String WWW_EXAMPLE_COM = "www.example.com";
+    public static final String WWW_EXAMPLE_COM = "www.example.com";
 
-	public static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
+    public static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
 
-	public static final String BLA_EMAIL = "bla@bla.org";
+    public static final String BLA_EMAIL = "bla@bla.org";
 
-	@Inject
-	private JPAApi jpaApi;
+    public static final String BLA_UPPER_CASE_EMAIL = "BLA@BLA.ORG";
 
-	@Inject
-	private UserDao userDao;
+    @Inject
+    private JPAApi jpaApi;
 
-	@Inject
-	private StudyDao studyDao;
+    @Inject
+    private UserDao userDao;
 
-	@Inject
-	private StudyService studyService;
+    @Inject
+    private StudyDao studyDao;
 
-	@Inject
-	private UserService userService;
+    @Inject
+    private StudyService studyService;
 
-	@Inject
-	private BatchService batchService;
-	
-	@Inject
-	private AuthenticationService authenticationService;
+    @Inject
+    private UserService userService;
 
-	@Inject
-	private IOUtils ioUtils;
+    @Inject
+    private BatchService batchService;
 
-	public void removeStudyAssetsRootDir() throws IOException {
-		File assetsRoot = new File(Common.getStudyAssetsRootPath());
-		if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
-			Logger.warn(TestHelper.class.getSimpleName()
-					+ ".removeStudyAssetsRootDir: Study assets root directory "
-					+ Common.getStudyAssetsRootPath()
-					+ " is not empty after finishing testing. This should not happen.");
-		}
-		FileUtils.deleteDirectory(assetsRoot);
-	}
+    @Inject
+    private AuthenticationService authenticationService;
 
-	public User getAdmin() {
-		return jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			return fetchTheLazyOnes(admin);
-		});
-	}
+    @Inject
+    private IOUtils ioUtils;
 
-	/**
-	 * Creates and persist user if an user with this email doesn't exist
-	 * already.
-	 */
-	public User createAndPersistUser(String email, String name,
-			String password) {
-		return jpaApi.withTransaction(entityManager -> {
-			User user = userDao.findByEmail(email);
-			if (user == null) {
-				user = new User(email, name);
-				userService.createAndPersistUser(user, password, false);
-			}
-			return user;
-		});
-	}
+    public void removeStudyAssetsRootDir() throws IOException {
+        File assetsRoot = new File(Common.getStudyAssetsRootPath());
+        if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
+            Logger.warn(TestHelper.class.getSimpleName()
+                    + ".removeStudyAssetsRootDir: Study assets root directory "
+                    + Common.getStudyAssetsRootPath()
+                    + " is not empty after finishing testing. This should not happen.");
+        }
+        FileUtils.deleteDirectory(assetsRoot);
+    }
 
-	public void removeUser(String userEmail) {
-		jpaApi.withTransaction(() -> {
-			try {
-				userService.removeUser(userEmail);
-			} catch (ForbiddenException | IOException e) {
-				throw new RuntimeException(e);
-			} catch (NotFoundException e) {
-				// We don't care
-			}
-		});
-	}
+    public User getAdmin() {
+        return jpaApi.withTransaction(() -> {
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            return fetchTheLazyOnes(admin);
+        });
+    }
 
-	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
-		return createAndPersistExampleStudy(injector, UserService.ADMIN_EMAIL);
-	}
+    /**
+     * Creates and persist user if an user with this email doesn't exist
+     * already.
+     */
+    public User createAndPersistUser(String email, String name,
+            String password) {
+        return jpaApi.withTransaction(entityManager -> {
+            User user = userDao.findByEmail(email);
+            if (user == null) {
+                user = new User(email, name);
+                userService.createAndPersistUser(user, password, false);
+            }
+            return user;
+        });
+    }
 
-	public Study createAndPersistExampleStudy(Injector injector,
-			String userEmail) {
-		return jpaApi.withTransaction(() -> {
-			User user = userDao.findByEmail(userEmail);
-			try {
-				Study exampleStudy = importExampleStudy(injector);
-				studyService.createAndPersistStudy(user, exampleStudy);
-				return exampleStudy;
-			} catch (IOException e) {
-				throw new UncheckedIOException(e);
-			}
-		});
-	}
+    public void removeUser(String userEmail) {
+        jpaApi.withTransaction(() -> {
+            try {
+                userService.removeUser(userEmail);
+            } catch (ForbiddenException | IOException e) {
+                throw new RuntimeException(e);
+            } catch (NotFoundException e) {
+                // We don't care
+            }
+        });
+    }
 
-	public Study importExampleStudy(Injector injector) throws IOException {
-		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
-		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
-		File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
-				IOUtils.STUDY_FILE_SUFFIX);
-		File studyFile = studyFileList[0];
-		UploadUnmarshaller<Study> uploadUnmarshaller = injector
-				.getInstance(StudyUploadUnmarshaller.class);
-		Study importedStudy = uploadUnmarshaller.unmarshalling(studyFile);
-		studyFile.delete();
+    public Study createAndPersistExampleStudyForAdmin(Injector injector) {
+        return createAndPersistExampleStudy(injector, UserService.ADMIN_EMAIL);
+    }
 
-		File[] dirArray = ioUtils.findDirectories(tempUnzippedStudyDir);
-		ioUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
+    public Study createAndPersistExampleStudy(Injector injector,
+            String userEmail) {
+        return jpaApi.withTransaction(() -> {
+            User user = userDao.findByEmail(userEmail);
+            try {
+                Study exampleStudy = importExampleStudy(injector);
+                studyService.createAndPersistStudy(user, exampleStudy);
+                return exampleStudy;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
 
-		tempUnzippedStudyDir.delete();
+    public Study importExampleStudy(Injector injector) throws IOException {
+        File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
+        File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
+        File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
+                IOUtils.STUDY_FILE_SUFFIX);
+        File studyFile = studyFileList[0];
+        UploadUnmarshaller<Study> uploadUnmarshaller = injector
+                .getInstance(StudyUploadUnmarshaller.class);
+        Study importedStudy = uploadUnmarshaller.unmarshalling(studyFile);
+        studyFile.delete();
 
-		// Every study has a default batch
-		importedStudy.addBatch(batchService.createDefaultBatch(importedStudy));
-		return importedStudy;
-	}
+        File[] dirArray = ioUtils.findDirectories(tempUnzippedStudyDir);
+        ioUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
 
-	public void removeStudy(Long studyId) {
-		jpaApi.withTransaction(() -> {
-			try {
-				Study study = studyDao.findById(studyId);
-				if (study != null) {
-					studyService.removeStudyInclAssets(study);
-				}
-			} catch (IOException e) {
-				throw new UncheckedIOException(e);
-			}
-		});
-	}
+        tempUnzippedStudyDir.delete();
 
-	public void removeAllStudies() {
-		jpaApi.withTransaction(() -> studyDao.findAll().forEach(study -> {
+        // Every study has a default batch
+        importedStudy.addBatch(batchService.createDefaultBatch(importedStudy));
+        return importedStudy;
+    }
+
+    public void removeStudy(Long studyId) {
+        jpaApi.withTransaction(() -> {
+            try {
+                Study study = studyDao.findById(studyId);
+                if (study != null) {
+                    studyService.removeStudyInclAssets(study);
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    public void removeAllStudies() {
+        jpaApi.withTransaction(() -> studyDao.findAll().forEach(study -> {
             try {
                 studyService.removeStudyInclAssets(study);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         }));
-	}
+    }
 
-	/**
-	 * Our custom ErrorHandler isn't used in test cases:
-	 * https://github.com/playframework/playframework/issues/2484
-	 * 
-	 * So this method can be used to catch the RuntimeException and check
-	 * manually that the correct JatosGuiException was thrown.
-	 */
-	public void assertJatosGuiException(RequestBuilder request,
-			int httpStatus, String errorMsg) {
-		try {
-			route(request);
-		} catch (RuntimeException e) {
-			assertThat(e.getCause()).isInstanceOf(JatosGuiException.class);
-			JatosGuiException jatosGuiException = (JatosGuiException) e
-					.getCause();
-			assertThat(jatosGuiException.getSimpleResult().status())
-					.isEqualTo(httpStatus);
-			assertThat(jatosGuiException.getMessage()).contains(errorMsg);
-		}
-	}
+    /**
+     * Our custom ErrorHandler isn't used in test cases:
+     * https://github.com/playframework/playframework/issues/2484
+     * <p>
+     * So this method can be used to catch the RuntimeException and check
+     * manually that the correct JatosGuiException was thrown.
+     */
+    public void assertJatosGuiException(RequestBuilder request,
+            int httpStatus, String errorMsg) {
+        try {
+            route(request);
+        } catch (RuntimeException e) {
+            assertThat(e.getCause()).isInstanceOf(JatosGuiException.class);
+            JatosGuiException jatosGuiException = (JatosGuiException) e
+                    .getCause();
+            assertThat(jatosGuiException.getSimpleResult().status())
+                    .isEqualTo(httpStatus);
+            assertThat(jatosGuiException.getMessage()).contains(errorMsg);
+        }
+    }
 
-	@SuppressWarnings("unchecked")
-	public <T> T fetchTheLazyOnes(T obj) {
-		Hibernate.initialize(obj);
-		if (obj instanceof HibernateProxy) {
-			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
-					.getImplementation();
-		}
-		return obj;
-	}
+    @SuppressWarnings("unchecked")
+    public <T> T fetchTheLazyOnes(T obj) {
+        Hibernate.initialize(obj);
+        if (obj instanceof HibernateProxy) {
+            obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
+                    .getImplementation();
+        }
+        return obj;
+    }
 
-	/**
-	 * Mocks Play's Http.Context without cookies
-	 */
-	public void mockContext() {
-		Cookies cookies = mock(Cookies.class);
-		mockContext(cookies, null);
-	}
+    /**
+     * Mocks Play's Http.Context without cookies
+     */
+    public void mockContext() {
+        Cookies cookies = mock(Cookies.class);
+        mockContext(cookies, null);
+    }
 
-	/**
-	 * Mocks Play's Http.Context with one cookie that can be retrieved by
-	 * cookies.get(name)
-	 */
-	public void mockContext(Cookie cookie) {
-		Cookies cookies = mock(Cookies.class);
-		when(cookies.get(cookie.name())).thenReturn(cookie);
-		mockContext(cookies, null);
-	}
+    /**
+     * Mocks Play's Http.Context with one cookie that can be retrieved by
+     * cookies.get(name)
+     */
+    public void mockContext(Cookie cookie) {
+        Cookies cookies = mock(Cookies.class);
+        when(cookies.get(cookie.name())).thenReturn(cookie);
+        mockContext(cookies, null);
+    }
 
-	/**
-	 * Mocks Play's Http.Context with cookies. The cookies can be retrieved by
-	 * cookieList.iterator()
-	 */
-	public void mockContext(List<Cookie> cookieList) {
-		Cookies cookies = mock(Cookies.class);
-		when(cookies.iterator()).thenReturn(cookieList.iterator());
-		mockContext(cookies, null);
-	}
+    /**
+     * Mocks Play's Http.Context with cookies. The cookies can be retrieved by
+     * cookieList.iterator()
+     */
+    public void mockContext(List<Cookie> cookieList) {
+        Cookies cookies = mock(Cookies.class);
+        when(cookies.iterator()).thenReturn(cookieList.iterator());
+        mockContext(cookies, null);
+    }
 
-	/**
-	 * Mocks Play's Http.Context with URL query string parameters
-	 */
-	public void mockContext(Map<String, String[]> queryString) {
-		Cookies cookies = mock(Cookies.class);
-		mockContext(cookies, queryString);
-	}
+    /**
+     * Mocks Play's Http.Context with URL query string parameters
+     */
+    public void mockContext(Map<String, String[]> queryString) {
+        Cookies cookies = mock(Cookies.class);
+        mockContext(cookies, queryString);
+    }
 
-	private void mockContext(Cookies cookies, Map<String, String[]> queryString) {
-		Map<String, String> flashData = Collections.emptyMap();
-		Map<String, Object> argData = Collections.emptyMap();
-		Long id = 2L;
-		RequestHeader header = mock(RequestHeader.class);
-		Http.Request request = mock(Http.Request.class);
-		when(request.cookies()).thenReturn(cookies);
-		when(request.queryString()).thenReturn(queryString);
-		Http.Context context = new Http.Context(id, header, request, flashData,
-				flashData, argData);
-		Http.Context.current.set(context);
-	}
-	
-	public Http.Session mockSessionCookieandCache(User user) {
-		Http.Session session = new Http.Session(new HashMap<>());
-		authenticationService.writeSessionCookieAndSessionCache(session,
-				user.getEmail(), WWW_EXAMPLE_COM);
-		return session;
-	}
+    private void mockContext(Cookies cookies, Map<String, String[]> queryString) {
+        Map<String, String> flashData = Collections.emptyMap();
+        Map<String, Object> argData = Collections.emptyMap();
+        Long id = 2L;
+        RequestHeader header = mock(RequestHeader.class);
+        Http.Request request = mock(Http.Request.class);
+        when(request.cookies()).thenReturn(cookies);
+        when(request.queryString()).thenReturn(queryString);
+        Http.Context context = new Http.Context(id, header, request, flashData,
+                flashData, argData);
+        Http.Context.current.set(context);
+    }
+
+    public Http.Session mockSessionCookieandCache(User user) {
+        Http.Session session = new Http.Session(new HashMap<>());
+        authenticationService.writeSessionCookieAndSessionCache(session,
+                user.getEmail(), WWW_EXAMPLE_COM);
+        return session;
+    }
 
 }

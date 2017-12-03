@@ -89,9 +89,11 @@ public class AuthenticationServiceTest {
         jpaApi.withTransaction(() -> {
             assertThat(authenticationService
                     .authenticate("oliver.zumba@gmail.com", "bla")).isTrue();
+            // Emails are case-insensitive
             assertThat(authenticationService
-                    .authenticate("oliver.zumba@gmail.com", "wrongPassword"))
-                    .isFalse();
+                    .authenticate("OlIvEr.ZuMbA@gMaIl.CoM", "bla")).isTrue();
+            assertThat(authenticationService
+                    .authenticate("oliver.zumba@gmail.com", "wrongPassword")).isFalse();
         });
 
         testHelper.removeUser("oliver.zumba@gmail.com");
@@ -111,11 +113,12 @@ public class AuthenticationServiceTest {
         assertThat(authenticationService
                 .isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
                 .isFalse();
+        // Emails are case-insensitive
         assertThat(authenticationService
-                .isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
+                .isRepeatedLoginAttempt(TestHelper.BLA_UPPER_CASE_EMAIL))
                 .isFalse();
         assertThat(authenticationService
-                .isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
+                .isRepeatedLoginAttempt(TestHelper.BLA_UPPER_CASE_EMAIL))
                 .isTrue();
 
         // Try a different email - should still return true
@@ -203,8 +206,9 @@ public class AuthenticationServiceTest {
         Map<String, String> data = new HashMap<>();
         Http.Session session = new Http.Session(data);
 
-        jpaApi.withTransaction(() -> authenticationService.writeSessionCookieAndSessionCache(session,
-                userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
+        jpaApi.withTransaction(
+                () -> authenticationService.writeSessionCookieAndSessionCache(session,
+                        userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
 
         // Check session cookie
         assertThat(session.get(AuthenticationService.SESSION_ID)).isNotEmpty();
@@ -220,6 +224,12 @@ public class AuthenticationServiceTest {
         // in the session cookie
         String cachedUserSessionId = userSessionCacheAccessor
                 .getUserSessionId(userBla.getEmail(),
+                        TestHelper.WWW_EXAMPLE_COM);
+        assertThat(cachedUserSessionId)
+                .isEqualTo(session.get(AuthenticationService.SESSION_ID));
+        // Emails are case-insensitive
+        cachedUserSessionId = userSessionCacheAccessor
+                .getUserSessionId(TestHelper.BLA_UPPER_CASE_EMAIL,
                         TestHelper.WWW_EXAMPLE_COM);
         assertThat(cachedUserSessionId)
                 .isEqualTo(session.get(AuthenticationService.SESSION_ID));
@@ -281,8 +291,9 @@ public class AuthenticationServiceTest {
         data.put(AuthenticationService.SESSION_LOGIN_TIME, "blafasel");
         data.put(AuthenticationService.SESSION_USER_EMAIL, "blafasel");
         Http.Session session = new Http.Session(data);
-        jpaApi.withTransaction(() -> authenticationService.clearSessionCookieAndSessionCache(session,
-                userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
+        jpaApi.withTransaction(
+                () -> authenticationService.clearSessionCookieAndSessionCache(session,
+                        userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
 
         // Check that session is cleared
         assertThat(
@@ -324,7 +335,7 @@ public class AuthenticationServiceTest {
      * session IDs aren't the same
      */
     @Test
-    public void checkIsValidSessionIdIsNotValid() {
+    public void checkIsValidSessionIdReturnsFalse() {
         userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
                 TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
 
@@ -335,6 +346,9 @@ public class AuthenticationServiceTest {
 
         assertThat(authenticationService.isValidSessionId(session,
                 TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
+        // Emails are case-insensitive
+        assertThat(authenticationService.isValidSessionId(session,
+                TestHelper.BLA_UPPER_CASE_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
     }
 
     /**
