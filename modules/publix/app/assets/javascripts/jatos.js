@@ -861,7 +861,7 @@ var jatos = {};
 			data: resultData,
 			processData: false,
 			method: httpMethod,
-			dataType: "text",
+			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			success: function () {
 				callFunctionIfExist(onSuccess);
@@ -910,7 +910,7 @@ var jatos = {};
 			data: studySessionDataStr,
 			processData: false,
 			method: "POST",
-			dataType: "text",
+			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			success: function () {
 				callFunctionIfExist(onSuccess);
@@ -1890,7 +1890,7 @@ var jatos = {};
 			data: logMsg,
 			processData: false,
 			type: "POST",
-			dataType: "text",
+			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			error: function (err) {
 				callingOnError(null, getAjaxErrorMsg(err));
