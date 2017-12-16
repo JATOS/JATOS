@@ -1,183 +1,203 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-	study: common.Study, workerSet: Set[common.workers.Worker],
-	studyResultsCount: Integer)
+study: common.Study, workerSet: Set[common.workers.Worker],
+studyResultsCount: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
+@if(study.getDescription() != null && !study.getDescription().isEmpty()) {
+<div class="panel panel-default">
+    <div id="studyDescription" class="panel-body fixed-panel">
+        @study.getDescription()
+    </div>
+</div>
+}
+
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
-	<div class="btn-group">
-		<button id="runStudy" type="button" class="btn btn-study"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Runs the study as a JATOS worker">
-			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
-		</button>
-		<button id="studyResults" type="button" class="btn btn-study"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Shows study results">
-			Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
-			title="Number of study results of this study">@studyResultsCount</span>
-		</button>
-		<button id="workers" type="button" class="btn btn-study"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Shows workers who participated">
-			Workers <span class="badge" data-toggle="tooltip" data-placement="bottom"
-			title="Number of workers who did this study so far">@workerSet.size()</span>
-		</button>
-		<button id="studyPropertiesButton" type="button" class="btn btn-study"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Edit this study's properties">
-			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
-		</button>
-		<div class="btn-group">
-			<button type="button" class="btn btn-study dropdown-toggle"
-				data-toggle="dropdown">
-				More <span class="caret"></span>
-			</button>
-			<ul class="dropdown-menu" role="menu">
-				<li data-toggle="tooltip" data-placement="bottom" title="Export this study to your local file system (including its components and study assets but without its results)">
-					<a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
-						<span class="glyphicon glyphicon-export" aria-hidden="true"></span>
-						Export
-					</a>
-				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Clone this study without its results">
-					<a id="cloneStudy" href="#">
-						<span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
-						Clone
-					</a>
-				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Change who is member of this study">
-					<a id="changeMemberUsersLink" href="#">
-						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
-						Change&nbsp;Users
-					</a>
-				</li>
-				<li class="divider"></li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Delete this study including its components, assets and results">
-					<a id="removeStudy" href="#">
-						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-						Delete
-					</a>
-				</li>
-			</ul>
-		</div>
-	</div>
-	<button id="batchManagerButton" type="button" class="btn btn-batch"
-		data-toggle="tooltip" data-placement="bottom"
-		title="Open Batch Manager to manage your batches or create workers">
-		Batch Manager
-	</button>
-	<!-- Content and tooltip of lock button is set later in JS -->
-	<div class="btn-group">
-		<button id="lockStudy" type="button" class="btn btn-study"
-			data-toggle="tooltip" data-placement="bottom"
-			title="">
-			@if(study.isLocked()) {Locked} else {Unlocked}
-		</button>
-	</div>
-	<div class="btn-group">
-		<button type="button" class="btn btn-component dropdown-toggle"
-			data-toggle="dropdown">
-			Components <span class="caret"></span>
-		</button>
-		<ul class="dropdown-menu" role="menu">
-			<li data-toggle="tooltip" data-placement="bottom" title="Create a new component">
-				<a id="createComponentLink" href="#">
-					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-					New
-				</a>
-			</li>
-			<input id="importComponentBrowser" type="file"
-				name="@models.gui.ComponentProperties.COMPONENT" style="display: none;">
-			<li data-toggle="tooltip" data-placement="bottom" title="Create a new component from imported properties">
-				<a id="importComponentButton" href="#">
-					<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
-					Import Properties
-				</a>
-			</li>
-		</ul>
-	</div>
+    <div class="btn-group">
+        <button id="runStudy" type="button" class="btn btn-study"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Runs the study as a JATOS worker">
+            Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+        </button>
+        <button id="studyResults" type="button" class="btn btn-study"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Shows study results">
+            Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                          title="Number of study results of this study">@studyResultsCount</span>
+        </button>
+        <button id="workers" type="button" class="btn btn-study"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Shows workers who participated">
+            Workers <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                          title="Number of workers who did this study so far">@workerSet.size()</span>
+        </button>
+        <button id="studyPropertiesButton" type="button" class="btn btn-study"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Edit this study's properties">
+            Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-study dropdown-toggle"
+                    data-toggle="dropdown">
+                More <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Export this study to your local file system (including its components and study assets but without its results)">
+                    <a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
+                        <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                        Export
+                    </a>
+                </li>
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Clone this study without its results">
+                    <a id="cloneStudy" href="#">
+                        <span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
+                        Clone
+                    </a>
+                </li>
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Change who is member of this study">
+                    <a id="changeMemberUsersLink" href="#">
+                        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                        Change&nbsp;Users
+                    </a>
+                </li>
+                <li class="divider"></li>
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Delete this study including its components, assets and results">
+                    <a id="removeStudy" href="#">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        Delete
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <button id="batchManagerButton" type="button" class="btn btn-batch"
+            data-toggle="tooltip" data-placement="bottom"
+            title="Open Batch Manager to manage your batches or create workers">
+        Batch Manager
+    </button>
+    <!-- Content and tooltip of lock button is set later in JS -->
+    <div class="btn-group">
+        <button id="lockStudy" type="button" class="btn btn-study"
+                data-toggle="tooltip" data-placement="bottom"
+                title="">
+            @if(study.isLocked()) {Locked} else {Unlocked}
+        </button>
+    </div>
+    <div class="btn-group">
+        <button type="button" class="btn btn-component dropdown-toggle"
+                data-toggle="dropdown">
+            Components <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+            <li data-toggle="tooltip" data-placement="bottom" title="Create a new component">
+                <a id="createComponentLink" href="#">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    New
+                </a>
+            </li>
+            <input id="importComponentBrowser" type="file"
+                   name="@models.gui.ComponentProperties.COMPONENT" style="display: none;">
+            <li data-toggle="tooltip" data-placement="bottom"
+                title="Create a new component from imported properties">
+                <a id="importComponentButton" href="#">
+                    <span class="glyphicon glyphicon-import" aria-hidden="true"></span>
+                    Import Properties
+                </a>
+            </li>
+        </ul>
+    </div>
 </div>
 
 <!-- Components Table -->
 <table id="componentsTable" class="table table-hover table-row-border"
-	cellpadding="0" cellspacing="0" border="0" width="100%">
-	<thead>
-		<tr>
-			<th data-toggle="tooltip" data-placement="bottom" title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position"><span class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>
-			<th data-toggle="tooltip" data-placement="bottom" title="Inactive components won't show up in the next run">Active</th>
-			<th data-toggle="tooltip" data-placement="bottom" title="ID of this component">ID</th>
-			<th data-toggle="tooltip" data-placement="bottom" title="Title of this component">Title</th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody class="sortable"> 
-	</tbody>
+       cellpadding="0" cellspacing="0" border="0" width="100%">
+    <thead>
+    <tr>
+        <th data-toggle="tooltip" data-placement="bottom"
+            title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position">
+            <span class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>
+        <th data-toggle="tooltip" data-placement="bottom"
+            title="Inactive components won't show up in the next run">Active
+        </th>
+        <th data-toggle="tooltip" data-placement="bottom" title="ID of this component">ID</th>
+        <th data-toggle="tooltip" data-placement="bottom" title="Title of this component">Title</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody class="sortable">
+    </tbody>
 </table>
 
 <!-- Template for active button in Component's row -->
 <div id="componentActiveButtonDiv" style="display: none">
-	<button type="button" class="btn btn-sm btn-default activeButton"
-		data-toggle="tooltip" data-placement="bottom" title="">
-		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-	</button>
+    <button type="button" class="btn btn-sm btn-default activeButton"
+            data-toggle="tooltip" data-placement="bottom" title="">
+        <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+    </button>
 </div>
 
 <!-- Template for drag button in Component's row -->
 <div id="componentDragButtonDiv" style="display: none">
-	<button type="button" class="btn btn-sm btn-component dragButton"
-		data-toggle="tooltip" data-placement="bottom" title="">
-	</button>
+    <button type="button" class="btn btn-sm btn-component dragButton"
+            data-toggle="tooltip" data-placement="bottom" title="">
+    </button>
 </div>
 
 <!-- Template for button toolbar in Component's row -->
 <div id="componentToolbarDiv" style="display: none">
-	<div class="componentBtnGroup btn-group" aria-hidden="true">
-		<button type="button" class="runComponent btn btn-component"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Runs only this component as a JATOS worker">
-			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
-		</button>
-		<button type="button" class="componentResults btn btn-component"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Shows only the results of this component">
-			Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-					title="Number of component results only of this component"></span>
-		</button>
-		<button type="button" class="componentPropertiesButton btn btn-component"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Edit this component's properties">
-			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
-		</button>
-		<div class="btn-group">
-			<button type="button" class="btn btn-component dropdown-toggle"
-				data-toggle="dropdown">
-				More <span class="caret"></span>
-			</button>
-			<ul class="dropdown-menu dropdown-menu-right" role="menu">
-				<li  data-toggle="tooltip" data-placement="bottom" title="Export this component's properties to the local file system (without its assets or results)">
-					<a class="exportComponent" href="#">
-						<span class="glyphicon glyphicon-export" aria-hidden="true"></span>
-						Export Properties
-					</a>
-				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Clone this component without its results and assets">
-					<a class="cloneComponent" href="#">
-						<span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
-						Clone
-					</a>
-				</li>
-				<li class="divider"></li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Deletes this component without its results and assets">
-					<a class="removeComponent" href="#">
-						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-						Delete
-					</a>
-				</li>
-			</ul>
-		</div>
-	</div>
+    <div class="componentBtnGroup btn-group" aria-hidden="true">
+        <button type="button" class="runComponent btn btn-component"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Runs only this component as a JATOS worker">
+            Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="componentResults btn btn-component"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Shows only the results of this component">
+            Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                          title="Number of component results only of this component"></span>
+        </button>
+        <button type="button" class="componentPropertiesButton btn btn-component"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Edit this component's properties">
+            Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-component dropdown-toggle"
+                    data-toggle="dropdown">
+                More <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Export this component's properties to the local file system (without its assets or results)">
+                    <a class="exportComponent" href="#">
+                        <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                        Export Properties
+                    </a>
+                </li>
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Clone this component without its results and assets">
+                    <a class="cloneComponent" href="#">
+                        <span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
+                        Clone
+                    </a>
+                </li>
+                <li class="divider"></li>
+                <li data-toggle="tooltip" data-placement="bottom"
+                    title="Deletes this component without its results and assets">
+                    <a class="removeComponent" href="#">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        Delete
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 @views.html.gui.study.changeMemberUsersModal(loggedInUser)
@@ -572,6 +592,7 @@ function postComponentImportConfirm() {
 		}
 	});
 }
+
 
 </script>
 
