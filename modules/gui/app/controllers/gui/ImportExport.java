@@ -120,7 +120,7 @@ public class ImportExport extends Controller {
 		try {
 			File file = (File) filePart.getFile();
 			responseJson = importExportService.importStudy(loggedInUser, file);
-		} catch (ForbiddenException | IOException e) {
+		} catch (Exception e) {
 			importExportService.cleanupAfterStudyImport();
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
