@@ -7,6 +7,7 @@ import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
+import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.User;
 import models.common.workers.JatosWorker;
@@ -40,10 +41,10 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
             JatosErrorMessages errorMessages, UserDao userDao,
             StudyDao studyDao, StudyResultDao studyResultDao,
             ComponentDao componentDao, ComponentResultDao componentResultDao,
-            WorkerDao workerDao, BatchDao batchDao) {
+            WorkerDao workerDao, BatchDao batchDao, StudyLogger studyLogger) {
         super(resultCreator, idCookieService, groupAdministration,
                 errorMessages, studyDao, studyResultDao, componentDao,
-                componentResultDao, workerDao, batchDao);
+                componentResultDao, workerDao, batchDao, studyLogger);
         this.errorMessages = errorMessages;
         this.userDao = userDao;
     }

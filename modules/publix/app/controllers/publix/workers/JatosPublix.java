@@ -9,6 +9,7 @@ import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
+import general.common.StudyLogger;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import play.Logger;
@@ -83,6 +84,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     private final JatosPublixUtils publixUtils;
     private final JatosStudyAuthorisation studyAuthorisation;
     private final ResultCreator resultCreator;
+    private final StudyLogger studyLogger;
 
     @Inject
     JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
@@ -91,18 +93,18 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             IdCookieService idCookieService, JatosErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao) {
+            StudyResultDao studyResultDao, StudyLogger studyLogger) {
         super(jpa, publixUtils, studyAuthorisation, groupChannel,
                 idCookieService, errorMessages, studyAssets, jsonUtils,
-                componentResultDao, studyResultDao);
+                componentResultDao, studyResultDao, studyLogger);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
+        this.studyLogger = studyLogger;
     }
 
     @Override
-    public Result startStudy(Long studyId, Long batchId)
-            throws PublixException {
+    public Result startStudy(Long studyId, Long batchId) throws PublixException {
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId + ", " + "logged-in user's email "
                 + session(SESSION_USER_EMAIL));
@@ -119,8 +121,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         Publix.session().remove(SESSION_JATOS_RUN);
         switch (jatosRun) {
             case RUN_STUDY:
-                componentId = publixUtils.retrieveFirstActiveComponent(study)
-                        .getId();
+                componentId = publixUtils.retrieveFirstActiveComponent(study).getId();
                 break;
             case RUN_COMPONENT_START:
                 componentId = Long.valueOf(session(SESSION_RUN_COMPONENT_ID));
@@ -134,6 +135,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
+        studyLogger.log(study, "Started study run with " + JatosWorker.UI_WORKER_TYPE
+                + " worker with ID " + worker.getId() + " in batch with ID " + batch.getId());
         return redirect(controllers.publix.routes.PublixInterceptor
                 .startComponent(studyId, componentId, studyResult.getId()));
     }
@@ -263,6 +266,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
+        studyLogger.log(study, "Aborted study run by worker with ID " + worker.getId());
+
         if (HttpUtils.isAjax()) {
             return ok();
         } else {
@@ -296,6 +301,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
+        studyLogger.log(study, "Finished study run by worker with ID " + worker.getId());
+
         if (HttpUtils.isAjax()) {
             return ok();
         } else {

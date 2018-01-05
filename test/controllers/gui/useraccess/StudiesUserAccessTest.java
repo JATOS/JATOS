@@ -170,8 +170,7 @@ public class StudiesUserAccessTest {
 	public void callChangeComponentOrder() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Call call = controllers.gui.routes.Studies.changeComponentOrder(
-				study.getId(), study.getComponentList().get(0).getId(),
-				StudyService.COMPONENT_POSITION_DOWN);
+				study.getId(), study.getComponentList().get(0).getId(), "1");
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);

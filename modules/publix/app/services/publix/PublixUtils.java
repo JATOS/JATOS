@@ -3,6 +3,7 @@ package services.publix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.*;
+import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -34,6 +35,7 @@ public abstract class PublixUtils<T extends Worker> {
     private final ComponentResultDao componentResultDao;
     private final WorkerDao workerDao;
     private final BatchDao batchDao;
+    private final StudyLogger studyLogger;
 
     public PublixUtils(ResultCreator resultCreator,
             IdCookieService idCookieService,
@@ -41,7 +43,7 @@ public abstract class PublixUtils<T extends Worker> {
             PublixErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
-            BatchDao batchDao) {
+            BatchDao batchDao, StudyLogger studyLogger) {
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.groupAdministration = groupAdministration;
@@ -52,6 +54,7 @@ public abstract class PublixUtils<T extends Worker> {
         this.componentResultDao = componentResultDao;
         this.workerDao = workerDao;
         this.batchDao = batchDao;
+        this.studyLogger = studyLogger;
     }
 
     /**
@@ -207,18 +210,16 @@ public abstract class PublixUtils<T extends Worker> {
             return;
         }
 
-        Long abandonedStudyResultId = idCookieService
-                .getStudyResultIdFromOldestIdCookie();
+        Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
         if (abandonedStudyResultId != null) {
-            StudyResult abandonedStudyResult = studyResultDao
-                    .findById(abandonedStudyResultId);
+            StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
             // If the abandoned study result isn't done, finish it.
-            if (abandonedStudyResult != null
-                    && !PublixHelpers.studyDone(abandonedStudyResult)) {
+            if (abandonedStudyResult != null && !PublixHelpers.studyDone(abandonedStudyResult)) {
                 finishMemberInGroup(abandonedStudyResult);
-                finishStudyResult(false,
-                        PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
+                finishStudyResult(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
                         abandonedStudyResult);
+                studyLogger.log(abandonedStudyResult,
+                        "Finish abandoned study run by " + abandonedStudyResult.getWorkerId());
             }
             idCookieService.discardIdCookie(abandonedStudyResultId);
         }

@@ -4,6 +4,7 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
+import general.common.StudyLogger;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -49,6 +50,7 @@ public abstract class Publix<T extends Worker> extends Controller
     protected final JsonUtils jsonUtils;
     protected final ComponentResultDao componentResultDao;
     protected final StudyResultDao studyResultDao;
+    protected final StudyLogger studyLogger;
 
     public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
             StudyAuthorisation<T> studyAuthorisation,
@@ -56,7 +58,7 @@ public abstract class Publix<T extends Worker> extends Controller
             IdCookieService idCookieService, PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao) {
+            StudyResultDao studyResultDao, StudyLogger studyLogger) {
         this.jpa = jpa;
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
@@ -67,6 +69,7 @@ public abstract class Publix<T extends Worker> extends Controller
         this.jsonUtils = jsonUtils;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
+        this.studyLogger = studyLogger;
     }
 
     @Override
@@ -254,6 +257,7 @@ public abstract class Publix<T extends Worker> extends Controller
         componentResult.setData(resultData);
         componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
         componentResultDao.update(componentResult);
+        studyLogger.logResultDataStoring(componentResult);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -315,6 +319,8 @@ public abstract class Publix<T extends Worker> extends Controller
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
+        studyLogger.log(study, "Aborted study run by worker with ID " + worker.getId());
+
         if (HttpUtils.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
@@ -342,6 +348,8 @@ public abstract class Publix<T extends Worker> extends Controller
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
+        studyLogger.log(study, "Finished study run by worker with ID " + worker.getId());
+
         if (HttpUtils.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {

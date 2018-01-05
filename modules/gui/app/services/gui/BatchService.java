@@ -6,6 +6,7 @@ import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
+import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.JatosWorker;
@@ -33,17 +34,19 @@ public class BatchService {
     private final WorkerDao workerDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
+    private final StudyLogger studyLogger;
 
     @Inject
-    BatchService(ResultRemover resultRemover, BatchDao batchDao,
-            StudyDao studyDao, WorkerDao workerDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+    BatchService(ResultRemover resultRemover, BatchDao batchDao, StudyDao studyDao,
+            WorkerDao workerDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao,
+            StudyLogger studyLogger) {
         this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
+        this.studyLogger = studyLogger;
     }
 
     /**
@@ -99,6 +102,7 @@ public class BatchService {
         }
         batchDao.create(batch);
         studyDao.update(study);
+        studyLogger.log(study, "Created batch with ID " + batch.getId());
     }
 
     /**
@@ -184,8 +188,8 @@ public class BatchService {
 
     public boolean updateBatchSession(long batchId, BatchSession batchSession) {
         Batch currentBatch = batchDao.findById(batchId);
-        if (currentBatch == null || !batchSession.getVersion().equals(currentBatch
-                .getBatchSessionVersion())) {
+        if (currentBatch == null ||
+                !batchSession.getVersion().equals(currentBatch.getBatchSessionVersion())) {
             return false;
         }
 
@@ -212,8 +216,7 @@ public class BatchService {
         studyDao.update(study);
 
         // Delete all StudyResults and all ComponentResults
-        studyResultDao.findAllByBatch(batch)
-                .forEach(resultRemover::removeStudyResult);
+        studyResultDao.findAllByBatch(batch).forEach(resultRemover::removeStudyResult);
 
         // Delete all GroupResults
         groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
@@ -225,6 +228,7 @@ public class BatchService {
         }
 
         batchDao.remove(batch);
+        studyLogger.log(study, "Removed batch with ID " + batch.getId());
     }
 
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {

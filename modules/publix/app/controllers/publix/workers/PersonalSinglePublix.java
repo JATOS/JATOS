@@ -7,6 +7,7 @@ import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
+import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -44,6 +45,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
     private final PersonalSinglePublixUtils publixUtils;
     private final PersonalSingleStudyAuthorisation studyAuthorisation;
     private final ResultCreator resultCreator;
+    private final StudyLogger studyLogger;
 
     @Inject
     PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
@@ -52,13 +54,14 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
             IdCookieService idCookieService,
             PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao) {
+            StudyResultDao studyResultDao, StudyLogger studyLogger) {
         super(jpa, publixUtils, studyAuthorisation, groupChannel,
                 idCookieService, errorMessages, studyAssets, jsonUtils,
-                componentResultDao, studyResultDao);
+                componentResultDao, studyResultDao, studyLogger);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
+        this.studyLogger = studyLogger;
     }
 
     /**
@@ -76,18 +79,15 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
      * different then the first.
      */
     @Override
-    public Result startStudy(Long studyId, Long batchId)
-            throws PublixException {
-        String workerIdStr = HttpUtils
-                .getQueryString(PERSONAL_SINGLE_WORKER_ID);
+    public Result startStudy(Long studyId, Long batchId) throws PublixException {
+        String workerIdStr = HttpUtils.getQueryString(PERSONAL_SINGLE_WORKER_ID);
         boolean pre = HttpUtils.getQueryString("pre") != null;
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId + ", " + PERSONAL_SINGLE_WORKER_ID + " " + workerIdStr
                 + ", " + "pre " + pre);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
-        PersonalSingleWorker worker = publixUtils
-                .retrieveTypedWorker(workerIdStr);
+        PersonalSingleWorker worker = publixUtils.retrieveTypedWorker(workerIdStr);
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
         StudyResult studyResult;
@@ -102,9 +102,10 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         publixUtils.setUrlQueryParameter(studyResult);
 
         Component component = publixUtils.retrieveFirstActiveComponent(study);
-        return redirect(
-                controllers.publix.routes.PublixInterceptor.startComponent(
-                        studyId, component.getId(), studyResult.getId()));
+        studyLogger.log(study, "Started study run with " + PersonalSingleWorker.UI_WORKER_TYPE
+                + " worker with ID " + worker.getId() + " in batch with ID " + batch.getId());
+        return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
+                studyId, component.getId(), studyResult.getId()));
     }
 
 }

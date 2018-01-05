@@ -9,6 +9,7 @@ import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
+import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -38,9 +39,6 @@ public class StudyService {
 
     private static final ALogger LOGGER = Logger.of(StudyService.class);
 
-    public static final String COMPONENT_POSITION_DOWN = "down";
-    public static final String COMPONENT_POSITION_UP = "up";
-
     private final BatchService batchService;
     private final ComponentService componentService;
     private final StudyDao studyDao;
@@ -49,11 +47,12 @@ public class StudyService {
     private final UserDao userDao;
     private final WorkerDao workerDao;
     private final IOUtils ioUtils;
+    private final StudyLogger studyLogger;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService,
             StudyDao studyDao, ComponentDao componentDao, BatchDao batchDao,
-            UserDao userDao, WorkerDao workerDao, IOUtils ioUtils) {
+            UserDao userDao, WorkerDao workerDao, IOUtils ioUtils, StudyLogger studyLogger) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -62,6 +61,7 @@ public class StudyService {
         this.userDao = userDao;
         this.workerDao = workerDao;
         this.ioUtils = ioUtils;
+        this.studyLogger = studyLogger;
     }
 
     /**
@@ -214,6 +214,8 @@ public class StudyService {
         addUserToStudy(study, loggedInUser);
 
         studyDao.update(study);
+        studyLogger.createLog(study);
+        studyLogger.log(study, "Created study with UUID " + study.getUuid());
         return study;
     }
 
@@ -352,6 +354,8 @@ public class StudyService {
     public void removeStudyInclAssets(Study study) throws IOException {
         remove(study);
         ioUtils.removeStudyAssetsDir(study.getDirName());
+        studyLogger.log(study, "Removed study with UUID " + study.getUuid());
+        studyLogger.retireLog(study);
     }
 
 }

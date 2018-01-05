@@ -1,0 +1,50 @@
+@(study: common.Study)
+
+<!-- Study Log Modal -->
+<div class="modal fade" id="studyLogModal" data-backdrop="static" data-keyboard="false"
+     tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Source Code for Mechanical Turk</h4>
+            </div>
+            <div class="modal-body">
+                <pre><code id="studyLog">
+                </code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+$('#studyToolbar').on('click', '#showStudyLog', function() {
+    $.ajax({
+        type: 'GET',
+        url: "/jatos/@study.getId()/log?limit=-1",
+        success: function (studyLog) {
+            var logLineArray = studyLog.split("\n");
+            var prettyLogLineArray = [];
+            logLineArray.forEach(function(line) {
+                if (line) {
+                    prettyLogLineArray.push(JSON.stringify(JSON.parse(line), null, 2));
+                }
+            });
+            $('#studyLog').text(prettyLogLineArray.join("\n"));
+            $('#studyLogModal').modal('show');
+        },
+        error: function(response) {
+            showError("Couldn't load study log.");
+        }
+    });
+});
+
+</script>
+

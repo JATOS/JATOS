@@ -9,6 +9,7 @@ import daos.common.StudyResultDao;
 import daos.common.worker.MTWorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
+import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -64,6 +65,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
     private final WorkerCreator workerCreator;
     private final MTErrorMessages errorMessages;
     private final MTWorkerDao mtWorkerDao;
+    private final StudyLogger studyLogger;
 
     @Inject
     MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
@@ -72,22 +74,22 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             MTGroupChannel groupChannel, IdCookieService idCookieService,
             MTErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
+            StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao, StudyLogger studyLogger) {
         super(jpa, publixUtils, studyAuthorisation,
                 groupChannel, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao,
-                studyResultDao);
+                studyResultDao, studyLogger);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
         this.workerCreator = workerCreator;
         this.errorMessages = errorMessages;
         this.mtWorkerDao = mtWorkerDao;
+        this.studyLogger = studyLogger;
     }
 
     @Override
-    public Result startStudy(Long studyId, Long batchId)
-            throws PublixException {
+    public Result startStudy(Long studyId, Long batchId) throws PublixException {
         // Get MTurk query parameters
         String mtWorkerId = HttpUtils.getQueryString(MT_WORKER_ID);
         String mtAssignmentId = HttpUtils.getQueryString(ASSIGNMENT_ID);
@@ -101,8 +103,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         if (mtAssignmentId != null
                 && mtAssignmentId.equals("ASSIGNMENT_ID_NOT_AVAILABLE")) {
             // It's a preview coming from Mechanical Turk -> no previews
-            throw new BadRequestPublixException(
-                    errorMessages.noPreviewAvailable(studyId));
+            throw new BadRequestPublixException(errorMessages.noPreviewAvailable(studyId));
         }
 
         // Check worker and create if doesn't exists
@@ -128,11 +129,11 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult);
 
-        Component firstComponent = publixUtils
-                .retrieveFirstActiveComponent(study);
-        return redirect(
-                controllers.publix.routes.PublixInterceptor.startComponent(
-                        studyId, firstComponent.getId(), studyResult.getId()));
+        Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
+        studyLogger.log(study, "Started study run with " + MTWorker.UI_WORKER_TYPE
+                + " worker with ID " + mtWorkerId + " in batch with ID " + batch.getId());
+        return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
+                studyId, firstComponent.getId(), studyResult.getId()));
     }
 
     @Override
@@ -160,6 +161,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             confirmationCode = studyResult.getConfirmationCode();
         }
         idCookieService.discardIdCookie(studyResult.getId());
+        studyLogger.log(study, "Finished study run by worker with ID " + worker.getId());
+
         if (HttpUtils.isAjax()) {
             return ok(confirmationCode);
         } else {

@@ -4,6 +4,7 @@ import controllers.publix.workers.PersonalSinglePublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
+import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
@@ -34,10 +35,10 @@ public class PersonalSinglePublixUtils
             PersonalSingleErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
-            BatchDao batchDao) {
+            BatchDao batchDao, StudyLogger studyLogger) {
         super(resultCreator, idCookieService, groupAdministration,
                 errorMessages, studyDao, studyResultDao, componentDao,
-                componentResultDao, workerDao, batchDao);
+                componentResultDao, workerDao, batchDao, studyLogger);
     }
 
     @Override

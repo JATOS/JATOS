@@ -60,10 +60,4 @@ public class ResultCreator {
 		return componentResult;
 	}
 
-	public GroupResult createGroupResult(Batch batch) {
-		GroupResult groupResult = new GroupResult(batch);
-		groupResultDao.create(groupResult);
-		return groupResult;
-	}
-
 }

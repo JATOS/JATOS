@@ -24,7 +24,7 @@ public class HashUtilsTest {
 	public void checkGetHashMDFive() {
 		String hash = null;
 		try {
-			hash = HashUtils.getHashMDFive("bla");
+			hash = HashUtils.getHashMD5("bla");
 		} catch (RuntimeException e) {
 			Fail.fail();
 		}

@@ -96,7 +96,7 @@ public class Home extends Controller {
     @Authenticated(Role.ADMIN)
     public Result log(Integer lineLimit) {
         LOGGER.debug(".log: " + "lineLimit " + lineLimit);
-        return ok().chunked(logFileReader.read(lineLimit))
+        return ok().chunked(logFileReader.read("application.log", lineLimit))
                 .as("text/plain; charset=utf-8");
     }
 }

@@ -50,7 +50,7 @@ public class ResultDataStringGeneratorTests {
 	private JPAApi jpaApi;
 
 	@Inject
-	private ResultDataStringGenerator resultDataStringGenerator;
+	private ResultDataExportService resultDataStringGenerator;
 
 	@Inject
 	private JatosPublixUtils jatosPublixUtils;

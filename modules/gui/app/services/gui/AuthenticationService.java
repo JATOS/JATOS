@@ -81,7 +81,7 @@ public class AuthenticationService {
      */
     public boolean authenticate(String email, String password) {
         email = email.toLowerCase();
-        String passwordHash = HashUtils.getHashMDFive(password);
+        String passwordHash = HashUtils.getHashMD5(password);
         return userDao.authenticate(email, passwordHash);
     }
 

@@ -103,7 +103,7 @@ public class UserService {
      * an JatosWorker for the user.
      */
     public void createAndPersistUser(User user, String password, boolean adminRole) {
-        String passwordHash = HashUtils.getHashMDFive(password);
+        String passwordHash = HashUtils.getHashMD5(password);
         user.setPasswordHash(passwordHash);
         JatosWorker worker = new JatosWorker(user);
         user.setWorker(worker);
@@ -122,7 +122,7 @@ public class UserService {
     public void updatePassword(String emailOfUserToChange, String newPassword)
             throws NotFoundException {
         User user = retrieveUser(emailOfUserToChange);
-        String newPasswordHash = HashUtils.getHashMDFive(newPassword);
+        String newPasswordHash = HashUtils.getHashMD5(newPassword);
         user.setPasswordHash(newPasswordHash);
         userDao.update(user);
     }

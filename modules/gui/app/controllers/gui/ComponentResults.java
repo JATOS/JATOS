@@ -122,10 +122,8 @@ public class ComponentResults extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             // Permission check is done in service for each result individually
-            resultRemover.removeComponentResults(componentResultIds,
-                    loggedInUser);
-        } catch (ForbiddenException | BadRequestException
-                | NotFoundException e) {
+            resultRemover.removeComponentResults(componentResultIds, loggedInUser);
+        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok();
@@ -138,8 +136,7 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result removeAllOfComponent(Long studyId, Long componentId)
-            throws JatosGuiException {
+    public Result removeAllOfComponent(Long studyId, Long componentId) throws JatosGuiException {
         LOGGER.debug(".removeAllOfComponent: studyId " + studyId + ", "
                 + "componentId " + componentId);
         Study study = studyDao.findById(studyId);
@@ -167,8 +164,7 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByComponent(Long studyId, Long componentId)
-            throws JatosGuiException {
+    public Result tableDataByComponent(Long studyId, Long componentId) throws JatosGuiException {
         LOGGER.debug(".tableDataByComponent: studyId " + studyId + ", "
                 + "componentId " + componentId);
         Study study = studyDao.findById(studyId);
