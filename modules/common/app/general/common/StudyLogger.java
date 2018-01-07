@@ -1,10 +1,17 @@
 package general.common;
 
+import akka.NotUsed;
+import akka.actor.ActorRef;
+import akka.actor.Status;
+import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import play.Logger;
 import play.libs.Json;
 import utils.common.HashUtils;
@@ -44,20 +51,16 @@ import java.util.stream.Collectors;
  * properties field names that changed: no: ok
  * remove study -> keep log file (mention in GUI) -> rename old log file (+ timestamp): ok
  * export result data with hash as file name: ok
+ * GUI: download button for whole study log as raw JSON: ok
+ * GUI: add show study log: ok
  * remove results in bulk is not efficient (ResultRemover)
  * tests?
  * detect log file changes?
  * retire filename wrong
- * GUI: add show study log
+ * What if log file deleted: right now GUI nothing happens
  * GUI: study log validator
- * <p>
- * {
- * timestamp: 1500000000,
- * msg: "Stored component result data",
- * dataHashes: ["84aa6e8e0a766cf26465534c8c4a634ea4e4a53a53654d442871078f0c92e934"],
- * fileHash: [f558687edfeacfb2ad5dc48f03e0f66112614ffaaeb6ec39095396f152b3d4ab],
- * hash: "2e0f0f129e5f88eda641731791e01e7c668d3feff570e5ab2164c716245a96bd"
- * }
+ * GUI: show last 1000 lines, reversed, as raw and pretty JSON
+ * comments in studylogger, studies and beautify
  */
 @Singleton
 public class StudyLogger {
@@ -68,8 +71,12 @@ public class StudyLogger {
             Common.getBasepath() + File.separator + "logs" + File.separator;
     public static final int HASH_SIZE = 64;
 
+    public String getFilename(Study study) {
+        return study.getUuid() + ".log";
+    }
+
     public String getPath(Study study) {
-        return LOGS_PATH + study.getUuid() + ".log";
+        return LOGS_PATH + getFilename(study);
     }
 
     public void log(StudyResult studyResult, String msg) {
@@ -247,6 +254,39 @@ public class StudyLogger {
         channel.read(buffer, channel.size() - HASH_SIZE + 2);
         String str = new String(buffer.array());
         return str.substring(0, str.length() - 2);
+    }
+
+    public Source<ByteString, ?> read(Study study, int lineLimit) {
+        // Prepare a chunked text stream (I have no idea what I'm doing here -
+        // https://www.playframework.com/documentation/2.5.x/JavaStream)
+        return Source
+                .<ByteString>actorRef(256, OverflowStrategy.dropNew())
+                .mapMaterializedValue(
+                        sourceActor -> fillSource(sourceActor, getPath(study), lineLimit));
+    }
+
+    private Object fillSource(ActorRef sourceActor, String filePath, int lineLimit) {
+        File logFile = new File(filePath);
+        sourceActor.tell(ByteString.fromString("["), null);
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile)) {
+            String oneLine = reader.readLine();
+            int lineNumber = 1;
+            while (oneLine != null && (lineLimit == -1 || lineNumber <= lineLimit)) {
+                String msg = oneLine;
+                oneLine = reader.readLine();
+                if (oneLine != null) {
+                    msg += ",";
+                }
+                sourceActor.tell(ByteString.fromString(msg), null);
+                lineNumber++;
+            }
+        } catch (IOException e) {
+            sourceActor.tell(ByteString.fromString("]"), null);
+            sourceActor.tell(new Status.Failure(e), null);
+        }
+        sourceActor.tell(ByteString.fromString("]"), null);
+        sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
+        return null;
     }
 
 }

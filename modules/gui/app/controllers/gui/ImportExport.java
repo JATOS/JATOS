@@ -34,8 +34,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Controller that cares for import/export of components, studies and their result data.
@@ -50,9 +48,6 @@ public class ImportExport extends Controller {
 
     public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
     public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
-    public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";
-    public static final SimpleDateFormat DATE_FORMATER_FILE = new SimpleDateFormat(
-            DATE_FORMAT_FILE);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
@@ -286,7 +281,7 @@ public class ImportExport extends Controller {
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForExport(resultDataAsStr);
+        prepareResponseForResultDataExport(resultDataAsStr);
         return ok(resultDataAsStr);
     }
 
@@ -317,7 +312,7 @@ public class ImportExport extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForExport(resultDataAsStr);
+        prepareResponseForResultDataExport(resultDataAsStr);
         return ok(resultDataAsStr);
     }
 
@@ -379,7 +374,7 @@ public class ImportExport extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForExport(resultDataAsStr);
+        prepareResponseForResultDataExport(resultDataAsStr);
         return ok(resultDataAsStr).as("application/x-download");
     }
 
@@ -410,7 +405,7 @@ public class ImportExport extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForExport(resultDataAsStr);
+        prepareResponseForResultDataExport(resultDataAsStr);
         return ok(resultDataAsStr).as("application/x-download");
     }
 
@@ -420,7 +415,7 @@ public class ImportExport extends Controller {
      * download. If the response isn't OK and it doesn't have this cookie then
      * the plugin regards it as a fail.
      */
-    private void prepareResponseForExport(String resultDataAsStr) {
+    private void prepareResponseForResultDataExport(String resultDataAsStr) {
         String hash = HashUtils.getHashSha256(resultDataAsStr);
         String filename = "results_" + hash + "." + IOUtils.TXT_FILE_SUFFIX;
         response().setHeader("Content-disposition", "attachment; filename=" + filename);

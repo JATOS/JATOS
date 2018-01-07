@@ -218,6 +218,7 @@ $(document).ready(setLockButton(studyLocked));
 
 var componentsTable;
 $(document).ready(function() {
+	// Don't remove pageLength - default is only 10 and it would display only 10 components
 	componentsTable = $('#componentsTable').DataTable({
 		"ajax": {
 			"type": "GET",
@@ -226,7 +227,7 @@ $(document).ready(function() {
 					showError("Couldn't read components data.")
 			}
 		},
-		"pageLength": 100, // Don't remove, default is only 10
+		"pageLength": 100,
 		"dom": 't',
 		"columnDefs": [ {
 			"searchable": false,

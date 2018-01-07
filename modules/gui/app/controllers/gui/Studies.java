@@ -1,22 +1,9 @@
 package controllers.gui;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import daos.common.ComponentDao;
-import daos.common.ComponentResultDao;
-import daos.common.StudyDao;
-import daos.common.StudyResultDao;
-import daos.common.UserDao;
+import daos.common.*;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -41,6 +28,13 @@ import services.gui.*;
 import utils.common.HttpUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -438,14 +432,22 @@ public class Studies extends Controller {
     @Transactional
     @Authenticated
     public Result studyLog(Long studyId, int lineLimit) throws JatosGuiException {
-        LOGGER.debug(".studyLog: studyId " + studyId);
+        LOGGER.debug(".studyLog: studyId " + studyId + ", linelimit " + lineLimit);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
 
-        // TODO return 503 if not readable
-        String filename = study.getUuid() + ".log";
-        return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=utf-8");
+        if (lineLimit == -1) {
+            response().setHeader("Content-disposition",
+                    "attachment; filename=" + studyLogger.getFilename(study));
+            // Set transient cookie with no domain or path constraints
+            Http.Cookie cookie =
+                    new Http.Cookie("fileDownload", "true", null, "/", null, false, false);
+            response().setCookie(cookie);
+            return ok().chunked(studyLogger.read(study, -1)).as("application/x-download");
+        } else {
+            return ok().chunked(studyLogger.read(study, lineLimit)).as("text/plain; charset=utf-8");
+        }
     }
 
     private void checkStandardForStudy(Long studyId, Study study,
