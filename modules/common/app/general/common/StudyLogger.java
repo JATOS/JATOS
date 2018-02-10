@@ -11,23 +11,24 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import play.Logger;
 import play.libs.Json;
 import utils.common.HashUtils;
 
 import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Arrays;
@@ -53,12 +54,15 @@ import java.util.stream.Collectors;
  * export result data with hash as file name: ok
  * GUI: download button for whole study log as raw JSON: ok
  * GUI: add show study log: ok
+ * <p>
+ * remove hashes: ok
+ * when export log add digital signature (SHA1withRSA) in the end
+ * always generate key-pair and store it
  * remove results in bulk is not efficient (ResultRemover)
  * tests?
  * detect log file changes?
  * retire filename wrong
  * What if log file deleted: right now GUI nothing happens
- * GUI: study log validator
  * GUI: show last 1000 lines, reversed, as raw and pretty JSON
  * comments in studylogger, studies and beautify
  */
@@ -68,8 +72,7 @@ public class StudyLogger {
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
 
     private static final String LOGS_PATH =
-            Common.getBasepath() + File.separator + "logs" + File.separator;
-    public static final int HASH_SIZE = 64;
+            Common.getBasepath() + File.separator + "studylogs" + File.separator;
 
     public String getFilename(Study study) {
         return study.getUuid() + ".log";
@@ -90,12 +93,19 @@ public class StudyLogger {
     public void log(Study study, String msg, String[] resultDataHashes, String fileHash) {
         Path studyLog = Paths.get(getPath(study));
 
+/*        try {
+            String signature = sign("bla foo bla", study);
+            verifySignature("bla foo bla", signature, study);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
         try {
             if (!Files.exists(studyLog)) {
                 createLog(study);
             }
 
-            String logLine = "\n" + nextLogLine(studyLog, msg, resultDataHashes, fileHash);
+            String logLine = "\n" + nextLogLine(msg, resultDataHashes, fileHash);
             Files.write(studyLog, logLine.getBytes(StandardCharsets.ISO_8859_1),
                     StandardOpenOption.APPEND);
 
@@ -112,9 +122,10 @@ public class StudyLogger {
                 String initialMsg = "Started study log, " +
                         "JATOS version " + Common.getJatosVersion() + ", " +
                         "MAC address " + getMAC();
-                String logLine = nextLogLine(studyLog, initialMsg, null, null);
+                String logLine = nextLogLine(initialMsg, null, null);
                 Files.write(studyLog, logLine.getBytes(StandardCharsets.ISO_8859_1),
                         StandardOpenOption.CREATE_NEW);
+                generateKeyPair(study);
             }
         } catch (IOException e) {
             LOGGER.error("Study log " + studyLog.getFileName() + " couldn't be written");
@@ -206,13 +217,11 @@ public class StudyLogger {
     /**
      * Generates a log entry
      */
-    private String nextLogLine(Path studyLog, String msg, String[] resultDataHashes,
+    private String nextLogLine(String msg, String[] resultDataHashes,
             String fileHash) throws IOException {
         ObjectNode jsonObj = Json.mapper().createObjectNode();
         jsonObj.put("timestamp", Instant.now().toEpochMilli());
         jsonObj.put("msg", msg);
-        String lastHash = Files.exists(studyLog) ? getLastHash(studyLog) : "";
-        jsonObj.put("hash", lastHash);
         if (resultDataHashes != null && resultDataHashes.length > 0) {
             ArrayNode dataHashes = jsonObj.putArray("dataHashes");
             Arrays.stream(resultDataHashes).forEach(dataHashes::add);
@@ -220,9 +229,6 @@ public class StudyLogger {
         if (fileHash != null) {
             jsonObj.put("fileHash", fileHash);
         }
-        String newHash = HashUtils.getHashSha256(
-                Json.mapper().writer().writeValueAsString(jsonObj));
-        jsonObj.put("hash", newHash);
         return Json.mapper().writer().writeValueAsString(jsonObj);
     }
 
@@ -246,14 +252,6 @@ public class StudyLogger {
             LOGGER.info("Couldn't get network MAC address");
         }
         return macStr;
-    }
-
-    private String getLastHash(Path studyLog) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(HASH_SIZE + 2);
-        FileChannel channel = FileChannel.open(studyLog, StandardOpenOption.READ);
-        channel.read(buffer, channel.size() - HASH_SIZE + 2);
-        String str = new String(buffer.array());
-        return str.substring(0, str.length() - 2);
     }
 
     public Source<ByteString, ?> read(Study study, int lineLimit) {
@@ -287,6 +285,71 @@ public class StudyLogger {
         sourceActor.tell(ByteString.fromString("]"), null);
         sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
         return null;
+    }
+
+    //The method that signs the data using the private key that is stored in keyFile path
+    private String sign(String data, Study study) throws Exception {
+        Signature dsa = Signature.getInstance("SHA1withRSA");
+        dsa.initSign(getPrivate(study));
+        dsa.update(data.getBytes());
+        byte[] sig = dsa.sign();
+        return new String(Base64.encodeBase64(sig));
+    }
+
+    //Method to retrieve the Public Key from a file
+    private PublicKey getPublic(Study study) throws Exception {
+        byte[] keyBytes = Files.readAllBytes(getPublicKeyPath(study));
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePublic(spec);
+    }
+
+    // Method to retrieve the Private Key from a file
+    // From https://www.mkyong.com/java/java-digital-signatures-example/
+    public PrivateKey getPrivate(Study study) throws Exception {
+        byte[] keyBytes = Files.readAllBytes(getPrivateKeyPath(study));
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePrivate(spec);
+    }
+
+    //Method for signature verification that initializes with the Public Key,
+    //updates the data to be verified and then verifies them using the signature
+    private boolean verifySignature(String data, String signature, Study study)
+            throws Exception {
+        byte[] signatureByte = Base64.decodeBase64(signature);
+        Signature sig = Signature.getInstance("SHA1withRSA");
+        sig.initVerify(getPublic(study));
+        sig.update(data.getBytes());
+        return sig.verify(signatureByte);
+    }
+
+    private KeyPair generateKeyPair(Study study) {
+        KeyPair keyPair = null;
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(1024);
+            keyPair = keyGen.generateKeyPair();
+            Files.createDirectories(getPublicKeyPath(study));
+            Files.write(getPublicKeyPath(study),
+                    Base64.encodeBase64(keyPair.getPublic().getEncoded()));
+            Files.createDirectories(getPrivateKeyPath(study));
+            Files.write(getPrivateKeyPath(study),
+                    Base64.encodeBase64(keyPair.getPrivate().getEncoded()));
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.error("Can't generate key pair for study logging.", e);
+        } catch (IOException e) {
+            LOGGER.error("Can't write key pair for study logging to disk.", e);
+        }
+        return keyPair;
+    }
+
+    private Path getPublicKeyPath(Study study) {
+        return Paths.get(LOGS_PATH + "/keys/" + study.getUuid() + ".public");
+    }
+
+    private Path getPrivateKeyPath(Study study) {
+        return Paths.get(LOGS_PATH + "/keys/" + study.getUuid() + ".private");
     }
 
 }
