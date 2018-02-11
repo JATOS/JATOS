@@ -26,8 +26,7 @@ public class Common {
     /**
      * JATOS version
      */
-    public static final String JATOS_VERSION = Common.class.getPackage()
-            .getImplementationVersion();
+    public static final String JATOS_VERSION = Common.class.getPackage().getImplementationVersion();
 
     /**
      * Property name in application config for the path in the file system to
@@ -35,6 +34,7 @@ public class Common {
      * located
      */
     private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";
+    public static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogsPath";
 
     /**
      * JATOS' absolute base path without trailing '/.'
@@ -47,6 +47,11 @@ public class Common {
      * path. If property isn't defined, try in default study path instead.
      */
     private static String studyAssetsRootPath;
+
+    /**
+     * Path in the file system where JATOS stores its logs for each study
+     */
+    private static String studyLogsPath;
 
     /**
      * Is true if an in-memory database is used.
@@ -89,8 +94,8 @@ public class Common {
     Common(Application application, Configuration configuration) {
         basepath = fillBasePath(application);
         studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
-        inMemoryDb = configuration.getString("db.default.url")
-                .contains("jdbc:h2:mem:");
+        studyLogsPath = fillStudyLogsPath(configuration);
+        inMemoryDb = configuration.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = configuration.getInt("jatos.userSession.timeout");
         userSessionInactivity = configuration.getInt("jatos.userSession.inactivity");
         userSessionValidation = configuration.getBoolean("jatos.userSession.validation");
@@ -115,33 +120,48 @@ public class Common {
     }
 
     private String fillStudyAssetsRootPath(Configuration configuration) {
-        String tempStudyAssetsRootPath = configuration
-                .getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
-        if (tempStudyAssetsRootPath == null
-                || tempStudyAssetsRootPath.trim().isEmpty()) {
-            LOGGER.error(
-                    "Missing configuration of path to study assets directory: "
+        String tempStudyAssetsRootPath = configuration.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
+        if (tempStudyAssetsRootPath == null || tempStudyAssetsRootPath.trim().isEmpty()) {
+            LOGGER.error("Missing configuration of path to study assets directory: "
                             + "It must be set in application.conf under "
                             + PROPERTY_STUDY_ASSETS_ROOT_PATH + ".");
             System.exit(1);
         }
 
         // Replace ~ with actual home directory
-        tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("~",
-                System.getProperty("user.home"));
+        tempStudyAssetsRootPath =
+                tempStudyAssetsRootPath.replace("~", System.getProperty("user.home"));
         // Replace Unix-like file separator with actual system's one
-        tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("/",
-                File.separator);
-
+        tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("/", File.separator);
         // If relative path add JATOS' base path as prefix
-
         if (!(new File(tempStudyAssetsRootPath).isAbsolute())) {
             tempStudyAssetsRootPath = basepath + File.separator
                     + tempStudyAssetsRootPath;
         }
-        LOGGER.info(
-                "Path to study assets directory is " + tempStudyAssetsRootPath);
+        LOGGER.info("Path to study assets directory is " + tempStudyAssetsRootPath);
         return tempStudyAssetsRootPath;
+    }
+
+    private String fillStudyLogsPath(Configuration configuration) {
+        String tmpStudyLogPath = configuration.getString(PROPERTY_JATOS_STUDY_LOGS_PATH);
+        if (tmpStudyLogPath == null || tmpStudyLogPath.trim().isEmpty()) {
+            LOGGER.error("Missing configuration of path to study logs directory: "
+                    + "It must be set in application.conf under "
+                    + PROPERTY_JATOS_STUDY_LOGS_PATH + ".");
+            System.exit(1);
+        }
+
+        // Replace ~ with actual home directory
+        tmpStudyLogPath = tmpStudyLogPath.replace("~", System.getProperty("user.home"));
+        // Replace Unix-like file separator with actual system's one
+        tmpStudyLogPath = tmpStudyLogPath.replace("/", File.separator);
+        // If relative path add JATOS' base path as prefix
+        if (!(new File(tmpStudyLogPath).isAbsolute())) {
+            tmpStudyLogPath = basepath + File.separator
+                    + tmpStudyLogPath;
+        }
+        LOGGER.info("Path to study logs directory is " + tmpStudyLogPath);
+        return tmpStudyLogPath;
     }
 
     public static String getJatosVersion() {
@@ -154,6 +174,10 @@ public class Common {
 
     public static String getStudyAssetsRootPath() {
         return studyAssetsRootPath;
+    }
+
+    public static String getStudyLogsPath() {
+        return studyLogsPath;
     }
 
     public static boolean isInMemoryDb() {
