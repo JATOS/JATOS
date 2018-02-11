@@ -147,6 +147,8 @@ public class ResultRemover {
      * GroupResult and then remove StudyResult itself.
      */
     public void removeStudyResult(StudyResult studyResult) {
+        studyLogger.logResultDataRemoving(studyResult);
+
         // Remove all component results of this study result
         studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
@@ -164,7 +166,6 @@ public class ResultRemover {
 
         // Remove studyResult
         studyResultDao.remove(studyResult);
-        studyLogger.logResultDataRemoving(studyResult);
     }
 
 }

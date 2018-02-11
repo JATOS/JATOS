@@ -437,17 +437,17 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
 
-        if (lineLimit == -1) {
+        if (request().hasHeader("Accept")
+                && request().getHeader("Accept").equals("application/x-download")) {
             response().setHeader("Content-disposition",
-                    "attachment; filename=" + studyLogger.getFilename(study));
+                    "attachment; filename=" + studyLogger.getStudyLogFilename(study));
             // Set transient cookie with no domain or path constraints
             Http.Cookie cookie =
                     new Http.Cookie("fileDownload", "true", null, "/", null, false, false);
             response().setCookie(cookie);
             return ok().chunked(studyLogger.read(study, -1)).as("application/x-download");
-        } else {
-            return ok().chunked(studyLogger.read(study, lineLimit)).as("text/plain; charset=utf-8");
         }
+        return ok().chunked(studyLogger.read(study, lineLimit)).as("text/plain; charset=utf-8");
     }
 
     private void checkStandardForStudy(Long studyId, Study study,
