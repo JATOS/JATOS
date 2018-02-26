@@ -65,7 +65,9 @@ public class ResultRemover {
         List<ComponentResult> componentResultList =
                 resultService.getComponentResults(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, true);
-        componentResultList.forEach(this::removeComponentResult);
+        componentResultList.forEach(this::removeComponentResultFromStudyResult);
+        componentResultDao.removeAll(componentResultList);
+        studyLogger.logResultDataRemoving(componentResultList);
     }
 
     /**
@@ -83,6 +85,7 @@ public class ResultRemover {
         List<StudyResult> studyResultList = resultService.getStudyResults(studyResultIdList);
         checker.checkStudyResults(studyResultList, user, true);
         studyResultList.forEach(this::removeStudyResult);
+        studyLogger.logStudyResultDataRemoving(studyResultList);
     }
 
     /**
@@ -95,7 +98,33 @@ public class ResultRemover {
         List<ComponentResult> componentResultList =
                 componentResultDao.findAllByComponent(component);
         checker.checkComponentResults(componentResultList, user, true);
-        componentResultList.forEach(this::removeComponentResult);
+        componentResultList.forEach(this::removeComponentResultFromStudyResult);
+        componentResultDao.removeAll(componentResultList);
+        studyLogger.logResultDataRemoving(componentResultList);
+    }
+
+    /**
+     * Removes all ComponentResults that belong to the given component. Remove them from their
+     * StudyResults.
+     */
+    public void removeAllComponentResults(Component component) {
+        List<ComponentResult> componentResultList =
+                componentResultDao.findAllByComponent(component);
+        componentResultList.forEach(this::removeComponentResultFromStudyResult);
+        studyLogger.logResultDataRemoving(componentResultList);
+        componentResultDao.removeAll(componentResultList);
+    }
+
+    private void removeComponentResultFromStudyResult(ComponentResult componentResult) {
+        StudyResult studyResult = componentResult.getStudyResult();
+        if (studyResult != null) {
+            studyResult.removeComponentResult(componentResult);
+            studyResultDao.update(studyResult);
+        } else {
+            LOGGER.error(".removeComponentResult: StudyResult is null - "
+                    + "but a ComponentResult always belongs to a StudyResult "
+                    + "(ComponentResult's ID is " + componentResult.getId() + ")");
+        }
     }
 
     /**
@@ -107,6 +136,7 @@ public class ResultRemover {
             throws ForbiddenException, BadRequestException {
         List<StudyResult> studyResultList = studyResultDao.findAllByStudy(study);
         checker.checkStudyResults(studyResultList, user, true);
+        studyLogger.logStudyResultDataRemoving(studyResultList);
         studyResultList.forEach(this::removeStudyResult);
     }
 
@@ -120,25 +150,17 @@ public class ResultRemover {
         List<StudyResult> allowedStudyResultList =
                 resultService.getAllowedStudyResultList(user, worker);
         checker.checkStudyResults(allowedStudyResultList, user, true);
+        studyLogger.logStudyResultDataRemoving(allowedStudyResultList);
         allowedStudyResultList.forEach(this::removeStudyResult);
     }
 
     /**
-     * Remove ComponentResult from its StudyResult and then remove itself.
+     * Removes all StudyResults that belong to the given batch.
      */
-    public void removeComponentResult(ComponentResult componentResult) {
-        StudyResult studyResult = componentResult.getStudyResult();
-        if (studyResult != null) {
-            studyResult.removeComponentResult(componentResult);
-            studyResultDao.update(studyResult);
-        } else {
-            LOGGER.error(".removeComponentResult: StudyResult is null - "
-                    + "but a ComponentResult always belongs to a StudyResult "
-                    + "(ComponentResult's ID is " + componentResult.getId()
-                    + ")");
-        }
-        componentResultDao.remove(componentResult);
-        studyLogger.logResultDataRemoving(componentResult);
+    public void removeAllStudyResults(Batch batch) {
+        List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
+        studyLogger.logStudyResultDataRemoving(studyResultList);
+        studyResultList.forEach(this::removeStudyResult);
     }
 
     /**
@@ -146,11 +168,9 @@ public class ResultRemover {
      * StudyResult from the given worker, removes this StudyResult from the
      * GroupResult and then remove StudyResult itself.
      */
-    public void removeStudyResult(StudyResult studyResult) {
-        studyLogger.logResultDataRemoving(studyResult);
-
+    private void removeStudyResult(StudyResult studyResult) {
         // Remove all component results of this study result
-        studyResult.getComponentResultList().forEach(componentResultDao::remove);
+        componentResultDao.removeAll(studyResult.getComponentResultList());
 
         // Remove study result from worker
         Worker worker = studyResult.getWorker();

@@ -58,10 +58,11 @@ public class UsersUserAccessTest {
 
         Helpers.stop(fakeApplication);
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test
-    public void callUserManager() throws Exception {
+    public void callUserManager() {
         Call call = controllers.gui.routes.Users.userManager();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
@@ -71,7 +72,7 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callAllUserData() throws Exception {
+    public void callAllUserData() {
         Call call = controllers.gui.routes.Users.allUserData();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
@@ -81,7 +82,7 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callToggleAdmin() throws Exception {
+    public void callToggleAdmin() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
         Call call =
                 controllers.gui.routes.Users.toggleAdmin(TestHelper.BLA_EMAIL,
@@ -95,7 +96,7 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callProfile() throws Exception {
+    public void callProfile() {
         User someUser =
                 testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
                         "bla");
@@ -107,7 +108,7 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callSubmitCreated() throws Exception {
+    public void callSubmitCreated() {
         Call call = controllers.gui.routes.Users.submitCreated();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
@@ -115,7 +116,7 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callSingleUserData() throws Exception {
+    public void callSingleUserData() {
         User someUser =
                 testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
                         "bla");
@@ -126,21 +127,21 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callSubmitEditedProfile() throws Exception {
+    public void callSubmitEditedProfile() {
         Call call = controllers.gui.routes.Users
                 .submitEditedProfile(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callSubmitChangedPassword() throws Exception {
+    public void callSubmitChangedPassword() {
         Call call = controllers.gui.routes.Users
                 .submitChangedPassword(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callRemove() throws Exception {
+    public void callRemove() {
         Call call = controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,

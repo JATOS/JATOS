@@ -156,10 +156,11 @@ public class StudyResult {
     public StudyResult() {
     }
 
-    public StudyResult(Study study, Batch batch) {
+    public StudyResult(Study study, Batch batch, Worker worker) {
         this.startDate = new Timestamp(new Date().getTime());
         this.study = study;
         this.batch = batch;
+        this.worker = worker;
         this.studyState = StudyState.STARTED;
     }
 

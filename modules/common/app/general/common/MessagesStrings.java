@@ -80,7 +80,8 @@ public class MessagesStrings {
             "This email address is already registered.";
     public static final String ONLY_ADMIN_CAN_SEE_LOGS =
             "Only an admin can see the logs";
-    public static final String COULDNT_OPEN_LOG = "Error: Couldn't open log file";
+    public static final String COULDNT_OPEN_LOG = "Error: Could not open log file";
+    public static final String LOG_CUT = "--- Log is cut here. Download it to get the whole file. ---";
     public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE =
             "Sorry, it's not possible to remove your own admin rights. Although you can ask another admin to remove them for you.";
     public static final String NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS =

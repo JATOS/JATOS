@@ -165,7 +165,7 @@ public class StudyService {
     /**
      * Binds study properties from a edit/create study request onto a Study.
      */
-    public Study bindToStudy(StudyProperties studyProperties) {
+    private Study bindToStudy(StudyProperties studyProperties) {
         Study study = new Study();
         bindToStudyWithoutDirName(study, studyProperties);
         study.setDirName(studyProperties.getDirName());
@@ -214,8 +214,8 @@ public class StudyService {
         addUserToStudy(study, loggedInUser);
 
         studyDao.update(study);
-        studyLogger.createLog(study);
-        studyLogger.log(study, "Created study with UUID " + study.getUuid());
+        studyLogger.create(study);
+        studyLogger.log(study, "Created study");
         return study;
     }
 
@@ -327,9 +327,9 @@ public class StudyService {
     /**
      * Removes the given study, its components, component results, study
      * results, group results and batches and persists the changes to the
-     * database.
+     * database. It also deletes the study's assets from the disk.
      */
-    private void remove(Study study) {
+    public void removeStudyInclAssets(Study study) throws IOException {
         // Remove all study's components and their ComponentResults
         Lists.newArrayList(study.getComponentList())
                 .forEach(componentService::remove);
@@ -344,18 +344,10 @@ public class StudyService {
         }
 
         studyDao.remove(study);
-    }
 
-    /**
-     * Removes the given study, its components, component results, study
-     * results, group results and batches and persists the changes to the
-     * database. It also deletes the study's assets from the disk.
-     */
-    public void removeStudyInclAssets(Study study) throws IOException {
-        remove(study);
         ioUtils.removeStudyAssetsDir(study.getDirName());
-        studyLogger.log(study, "Removed study with UUID " + study.getUuid());
-        studyLogger.retireLog(study);
+        studyLogger.log(study, "Removed study");
+        studyLogger.retire(study);
     }
 
 }

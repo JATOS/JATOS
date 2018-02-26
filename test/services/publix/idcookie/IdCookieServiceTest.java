@@ -227,7 +227,7 @@ public class IdCookieServiceTest {
 
     /**
      * IdCookieService.writeIdCookie(): If none of the existing IdCookies has
-     * the ID of the new one and the max cookie number is not yet reached write
+     * the ID of the new one and the max cookie number is not yet reached log
      * a new IdCookie.
      */
     @Test

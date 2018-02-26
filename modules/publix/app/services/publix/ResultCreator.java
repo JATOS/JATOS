@@ -17,47 +17,44 @@ import models.common.workers.Worker;
 
 /**
  * Service class that creates ComponentResults and StudyResults and GroupResults
- * 
+ *
  * @author Kristian Lange (2016)
  */
 @Singleton
 public class ResultCreator {
 
-	private final ComponentResultDao componentResultDao;
-	private final StudyResultDao studyResultDao;
-	private final GroupResultDao groupResultDao;
-	private final WorkerDao workerDao;
+    private final ComponentResultDao componentResultDao;
+    private final StudyResultDao studyResultDao;
+    private final GroupResultDao groupResultDao;
+    private final WorkerDao workerDao;
 
-	@Inject
-	ResultCreator(ComponentResultDao componentResultDao,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			WorkerDao workerDao) {
-		this.componentResultDao = componentResultDao;
-		this.studyResultDao = studyResultDao;
-		this.groupResultDao = groupResultDao;
-		this.workerDao = workerDao;
-	}
+    @Inject
+    ResultCreator(ComponentResultDao componentResultDao, StudyResultDao studyResultDao,
+            GroupResultDao groupResultDao, WorkerDao workerDao) {
+        this.componentResultDao = componentResultDao;
+        this.studyResultDao = studyResultDao;
+        this.groupResultDao = groupResultDao;
+        this.workerDao = workerDao;
+    }
 
-	/**
-	 * Creates StudyResult and adds it to the given Worker.
-	 */
-	public StudyResult createStudyResult(Study study, Batch batch,
-			Worker worker) {
-		StudyResult studyResult = new StudyResult(study, batch);
-		worker.addStudyResult(studyResult);
-		studyResultDao.create(studyResult);
-		workerDao.update(worker);
-		return studyResult;
-	}
+    /**
+     * Creates StudyResult and adds it to the given Worker.
+     */
+    public StudyResult createStudyResult(Study study, Batch batch, Worker worker) {
+        StudyResult studyResult = new StudyResult(study, batch, worker);
+        worker.addStudyResult(studyResult);
+        studyResultDao.create(studyResult);
+        workerDao.update(worker);
+        return studyResult;
+    }
 
-	public ComponentResult createComponentResult(StudyResult studyResult,
-			Component component) {
-		ComponentResult componentResult = new ComponentResult(component);
-		componentResult.setStudyResult(studyResult);
-		studyResult.addComponentResult(componentResult);
-		componentResultDao.create(componentResult);
-		studyResultDao.update(studyResult);
-		return componentResult;
-	}
+    public ComponentResult createComponentResult(StudyResult studyResult, Component component) {
+        ComponentResult componentResult = new ComponentResult(component);
+        componentResult.setStudyResult(studyResult);
+        studyResult.addComponentResult(componentResult);
+        componentResultDao.create(componentResult);
+        studyResultDao.update(studyResult);
+        return componentResult;
+    }
 
 }

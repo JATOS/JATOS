@@ -17,9 +17,9 @@ public class HashUtils {
         }
     }
 
-    public static String getHashSha256(String str) {
+    public static String getHash(String str, String hashFunction) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(hashFunction);
             byte[] hashByte = digest.digest(str.getBytes(StandardCharsets.ISO_8859_1));
             return bytesToHex(hashByte);
         } catch (NoSuchAlgorithmException e) {

@@ -57,6 +57,7 @@ public class AuthenticationUserAccessTest {
 
         Helpers.stop(fakeApplication);
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

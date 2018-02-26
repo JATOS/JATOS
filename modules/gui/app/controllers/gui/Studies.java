@@ -1,5 +1,8 @@
 package controllers.gui;
 
+import akka.stream.javadsl.FileIO;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
@@ -17,13 +20,16 @@ import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
+import play.api.mvc.ResponseHeader;
 import play.data.Form;
 import play.data.FormFactory;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
+import play.http.HttpEntity;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import scala.Option;
 import services.gui.*;
 import utils.common.HttpUtils;
 import utils.common.IOUtils;
@@ -32,9 +38,10 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -215,9 +222,9 @@ public class Studies extends Controller {
         study.setLocked(!study.isLocked());
         studyDao.update(study);
         if (study.isLocked()) {
-            studyLogger.log(study, "Locked study with UUID " + study.getUuid());
+            studyLogger.log(study, "Locked study");
         } else {
-            studyLogger.log(study, "Unlocked study with UUID " + study.getUuid());
+            studyLogger.log(study, "Unlocked study");
         }
         return ok(String.valueOf(study.isLocked()));
     }
@@ -423,31 +430,46 @@ public class Studies extends Controller {
 
     /**
      * Ajax request
-     * <p>
-     * Returns the content of the study log file in reverse order and as
-     * 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If
-     * the log file can't be read it still returns with OK but instead of the
-     * file content with an error message.
+     *
+     * @param studyId    study's ID
+     * @param entryLimit It cuts the log after the number of lines given in entryLimit
+     * @param download   If true it prepares the Response for johnculviner's jQuery.fileDownload
+     * @return Returns the content of the study log file in reverse order and as 'Transfer-Encoding:chunked'.
+     * @throws JatosGuiException
      */
     @Transactional
     @Authenticated
-    public Result studyLog(Long studyId, int lineLimit) throws JatosGuiException {
-        LOGGER.debug(".studyLog: studyId " + studyId + ", linelimit " + lineLimit);
+    public Result studyLog(Long studyId, int entryLimit, boolean download)
+            throws JatosGuiException {
+        LOGGER.debug(".studyLog: studyId " + studyId + ", entryLimit " + entryLimit
+                + ", download " + download);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
 
-        if (request().hasHeader("Accept")
-                && request().getHeader("Accept").equals("application/x-download")) {
-            response().setHeader("Content-disposition",
-                    "attachment; filename=" + studyLogger.getStudyLogFilename(study));
+        if (download) {
+            // Prepares the response for a download with the johnculviner's
+            // jQuery.fileDownload plugin. This plugin is merely used to detect a failed
+            // download. If the response isn't OK and it doesn't have this cookie then
+            // the plugin regards it as a fail.
+            Path studyLogPath = Paths.get(studyLogger.getPath(study));
+            if (Files.notExists(studyLogPath)) {
+                return notFound();
+            }
+            String filename = "jatos_studylog_" + study.getUuid() + ".log";
+            response().setHeader("Content-disposition", "attachment; filename=" + filename);
             // Set transient cookie with no domain or path constraints
             Http.Cookie cookie =
                     new Http.Cookie("fileDownload", "true", null, "/", null, false, false);
             response().setCookie(cookie);
-            return ok().chunked(studyLogger.read(study, -1)).as("application/x-download");
+            Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
+            return new Result(
+                    new ResponseHeader(200, Collections.emptyMap(), Option.apply("")),
+                    new HttpEntity.Streamed(source, Optional.empty(), Optional.of("text/plain"))
+            );
+        } else {
+            return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }
-        return ok().chunked(studyLogger.read(study, lineLimit)).as("text/plain; charset=utf-8");
     }
 
     private void checkStandardForStudy(Long studyId, Study study,

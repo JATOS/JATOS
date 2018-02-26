@@ -57,6 +57,7 @@ public class HomeUserAccessTest {
 
         Helpers.stop(fakeApplication);
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

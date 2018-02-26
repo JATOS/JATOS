@@ -8,14 +8,9 @@ import exceptions.gui.NotFoundException;
 import general.common.StudyLogger;
 import models.common.*;
 import models.common.workers.Worker;
-import play.mvc.Controller;
-import play.mvc.Http;
-import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,12 +21,6 @@ import java.util.List;
  */
 @Singleton
 public class ResultDataExportService {
-
-    public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
-    public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
-    public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";
-    public static final SimpleDateFormat DATE_FORMATER_FILE = new SimpleDateFormat(
-            DATE_FORMAT_FILE);
 
     private final Checker checker;
     private final ResultService resultService;
@@ -118,23 +107,6 @@ public class ResultDataExportService {
         String resultDataAsStr = resultService.componentResultDataToString(componentResultList);
         studyLogger.logComponentResultDataExporting(componentResultList, resultDataAsStr);
         return resultDataAsStr;
-    }
-
-    /**
-     * Prepares the response for a download with the johnculviner's
-     * jQuery.fileDownload plugin. This plugin is merely used to detect a failed
-     * download. If the response isn't OK and it doesn't have this cookie then
-     * the plugin regards it as a fail.
-     */
-    private void prepareResponseForExport() {
-        String dateForFile = DATE_FORMATER_FILE.format(new Date());
-        String filename = "results_" + dateForFile + "."
-                + IOUtils.TXT_FILE_SUFFIX;
-        Controller.response().setHeader("Content-disposition", "attachment; filename=" + filename);
-        // Set transient cookie with no domain or path constraints
-        Http.Cookie cookie = new Http.Cookie(JQDOWNLOAD_COOKIE_NAME,
-                JQDOWNLOAD_COOKIE_CONTENT, null, "/", null, false, false);
-        Controller.response().setCookie(cookie);
     }
 
 }

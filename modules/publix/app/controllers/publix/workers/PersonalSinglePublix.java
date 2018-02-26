@@ -103,7 +103,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
 
         Component component = publixUtils.retrieveFirstActiveComponent(study);
         studyLogger.log(study, "Started study run with " + PersonalSingleWorker.UI_WORKER_TYPE
-                + " worker with ID " + worker.getId() + " in batch with ID " + batch.getId());
+                + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyId, component.getId(), studyResult.getId()));
     }

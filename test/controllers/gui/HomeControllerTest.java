@@ -33,75 +33,76 @@ import services.gui.BreadcrumbsService;
  */
 public class HomeControllerTest {
 
-	@Inject
-	private static Application fakeApplication;
+    @Inject
+    private static Application fakeApplication;
 
-	@Inject
-	private TestHelper testHelper;
+    @Inject
+    private TestHelper testHelper;
 
-	@Before
-	public void startApp() throws Exception {
-		fakeApplication = Helpers.fakeApplication();
+    @Before
+    public void startApp() throws Exception {
+        fakeApplication = Helpers.fakeApplication();
 
-		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-				.builder(new ApplicationLoader.Context(Environment.simple()));
-		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        Guice.createInjector(builder.applicationModule()).injectMembers(this);
 
-		Helpers.start(fakeApplication);
-	}
+        Helpers.start(fakeApplication);
+    }
 
-	@After
-	public void stopApp() throws Exception {
-		// Clean up
-		testHelper.removeAllStudies();
+    @After
+    public void stopApp() throws Exception {
+        // Clean up
+        testHelper.removeAllStudies();
 
-		Helpers.stop(fakeApplication);
-		testHelper.removeStudyAssetsRootDir();
-	}
+        Helpers.stop(fakeApplication);
+        testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
+    }
 
-	@Test
-	public void callHome() throws Exception {
-		Http.Session session = testHelper
-				.mockSessionCookieandCache(testHelper.getAdmin());
-		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-				.uri(controllers.gui.routes.Home.home().url());
-		Result result = route(request);
+    @Test
+    public void callHome() throws Exception {
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Home.home().url());
+        Result result = route(request);
 
-		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset().get()).isEqualTo("utf-8");
-		assertThat(result.contentType().get()).isEqualTo("text/html");
-		assertThat(contentAsString(result)).contains(BreadcrumbsService.HOME);
-	}
+        assertThat(result.status()).isEqualTo(OK);
+        assertThat(result.charset().get()).isEqualTo("utf-8");
+        assertThat(result.contentType().get()).isEqualTo("text/html");
+        assertThat(contentAsString(result)).contains(BreadcrumbsService.HOME);
+    }
 
-	@Test
-	public void callLog() throws Exception {
-		Http.Session session = testHelper
-				.mockSessionCookieandCache(testHelper.getAdmin());
-		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-				.uri(controllers.gui.routes.Home.log(1000).url());
-		Result result = route(request);
+    @Test
+    public void callLog() throws Exception {
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Home.log(1000).url());
+        Result result = route(request);
 
-		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset().get()).isEqualTo("utf-8");
-		assertThat(result.contentType().get()).isEqualTo("text/plain");
-		assertThat(result.body()).isNotNull();
-	}
+        assertThat(result.status()).isEqualTo(OK);
+        assertThat(result.charset().get()).isEqualTo("utf-8");
+        assertThat(result.contentType().get()).isEqualTo("text/plain");
+        assertThat(result.body()).isNotNull();
+    }
 
-	@Test
-	public void callLogNotAsAdmin() throws Exception {
-		User notAdminUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-				"Bla", "bla");
+    @Test
+    public void callLogNotAsAdmin() throws Exception {
+        User notAdminUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
+                "Bla", "bla");
 
-		Http.Session session = testHelper
-				.mockSessionCookieandCache(notAdminUser);
-		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-				.uri(controllers.gui.routes.Home.log(1000).url());
-		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(notAdminUser);
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Home.log(1000).url());
+        testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
 
-		testHelper.removeUser(TestHelper.BLA_EMAIL);
-	}
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
 
 }

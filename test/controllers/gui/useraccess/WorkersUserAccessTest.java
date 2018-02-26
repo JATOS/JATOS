@@ -25,82 +25,83 @@ import play.test.Helpers;
  * control: only the right user should be allowed to do the action. For most
  * actions only the denial of access is tested here - the actual function of the
  * action (that includes positive access) is tested in the specific test class.
- * 
+ * <p>
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
- * 
+ *
  * @author Kristian Lange (2015 - 2017)
  */
 public class WorkersUserAccessTest {
 
-	private Injector injector;
+    private Injector injector;
 
-	@Inject
-	private static Application fakeApplication;
+    @Inject
+    private static Application fakeApplication;
 
-	@Inject
-	private TestHelper testHelper;
+    @Inject
+    private TestHelper testHelper;
 
-	@Inject
-	private UserAccessTestHelpers userAccessTestHelpers;
+    @Inject
+    private UserAccessTestHelpers userAccessTestHelpers;
 
-	@Before
-	public void startApp() throws Exception {
-		fakeApplication = Helpers.fakeApplication();
+    @Before
+    public void startApp() throws Exception {
+        fakeApplication = Helpers.fakeApplication();
 
-		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-				.builder(new ApplicationLoader.Context(Environment.simple()));
-		injector = Guice.createInjector(builder.applicationModule());
-		injector.injectMembers(this);
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        injector = Guice.createInjector(builder.applicationModule());
+        injector.injectMembers(this);
 
-		Helpers.start(fakeApplication);
-	}
+        Helpers.start(fakeApplication);
+    }
 
-	@After
-	public void stopApp() throws Exception {
-		// Clean up
-		testHelper.removeAllStudies();
+    @After
+    public void stopApp() throws Exception {
+        // Clean up
+        testHelper.removeAllStudies();
 
-		Helpers.stop(fakeApplication);
-		testHelper.removeStudyAssetsRootDir();
-	}
+        Helpers.stop(fakeApplication);
+        testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
+    }
 
-	@Test
-	public void callTableDataByStudy() throws Exception {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Call call = controllers.gui.routes.Workers
-				.tableDataByStudy(study.getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-				Helpers.GET);
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-				testHelper.getAdmin());
-	}
+    @Test
+    public void callTableDataByStudy() throws Exception {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.Workers
+                .tableDataByStudy(study.getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
+                Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+                testHelper.getAdmin());
+    }
 
-	@Test
-	public void callWorkerSetup() throws Exception {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Batch batch = study.getDefaultBatch();
-		Call call = controllers.gui.routes.Workers.workerSetup(study.getId(),
-				batch.getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-				Helpers.GET);
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-				testHelper.getAdmin());
-	}
+    @Test
+    public void callWorkerSetup() throws Exception {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Batch batch = study.getDefaultBatch();
+        Call call = controllers.gui.routes.Workers.workerSetup(study.getId(),
+                batch.getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
+                Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+                testHelper.getAdmin());
+    }
 
-	@Test
-	public void callWorkerData() throws Exception {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Batch batch = study.getDefaultBatch();
-		Call call = controllers.gui.routes.Workers.workerData(study.getId(),
-				batch.getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-				Helpers.GET);
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-				testHelper.getAdmin());
-	}
+    @Test
+    public void callWorkerData() throws Exception {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Batch batch = study.getDefaultBatch();
+        Call call = controllers.gui.routes.Workers.workerData(study.getId(),
+                batch.getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
+                Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+                testHelper.getAdmin());
+    }
 
 }

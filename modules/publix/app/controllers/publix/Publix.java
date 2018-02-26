@@ -319,7 +319,7 @@ public abstract class Publix<T extends Worker> extends Controller
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Aborted study run by worker with ID " + worker.getId());
+        studyLogger.log(study, "Aborted study run", worker);
 
         if (HttpUtils.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -348,7 +348,7 @@ public abstract class Publix<T extends Worker> extends Controller
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Finished study run by worker with ID " + worker.getId());
+        studyLogger.log(study, "Finished study run", worker);
 
         if (HttpUtils.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses

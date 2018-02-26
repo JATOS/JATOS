@@ -108,13 +108,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
             studyResult = resultCreator.createStudyResult(study, batch, worker);
             idCookieService.writeIdCookie(worker, batch, studyResult);
             generalSingleCookieService.set(study, worker);
+            studyLogger.log(study, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
+                    + " worker", batch, worker);
         }
         publixUtils.setPreStudyStateByPre(pre, studyResult);
         publixUtils.setUrlQueryParameter(studyResult);
 
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
-        studyLogger.log(study, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
-                + " worker with ID " + workerId + " in batch with ID " + batch.getId());
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyId, firstComponent.getId(), studyResult.getId()));
     }

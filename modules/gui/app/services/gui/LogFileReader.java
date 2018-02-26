@@ -33,7 +33,7 @@ public class LogFileReader {
 		// Prepare a chunked text stream (I have no idea what I'm doing here -
 		// https://www.playframework.com/documentation/2.5.x/JavaStream)
 		Source<ByteString, ?> source = Source
-				.<ByteString>actorRef(256, OverflowStrategy.dropNew())
+				.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
 				.mapMaterializedValue(
 						sourceActor -> fillSource(sourceActor, filename, lineLimit));
 		return source;

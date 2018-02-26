@@ -67,7 +67,7 @@ public class ComponentService {
     /**
      * Generates an title for the cloned study that doesn't exist so far
      */
-    public String cloneTitle(String origTitle) {
+    private String cloneTitle(String origTitle) {
         String cloneTitle = origTitle + " (clone)";
         int i = 2;
         while (!componentDao.findByTitle(cloneTitle).isEmpty()) {
@@ -183,7 +183,7 @@ public class ComponentService {
      * Binds component data from a edit/create component request onto a
      * Component. Play's default form binder doesn't work here.
      */
-    public Component bindToComponent(ComponentProperties props) {
+    private Component bindToComponent(ComponentProperties props) {
         Component component = new Component();
         component.setTitle(props.getTitle());
         component.setHtmlFilePath(props.getHtmlFilePath());
@@ -251,8 +251,7 @@ public class ComponentService {
         study.removeComponent(component);
         studyDao.update(study);
         // Remove component's ComponentResults
-        componentResultDao.findAllByComponent(component)
-                .forEach(resultRemover::removeComponentResult);
+        resultRemover.removeAllComponentResults(component);
         componentDao.remove(component);
     }
 

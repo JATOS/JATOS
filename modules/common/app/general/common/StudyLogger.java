@@ -8,10 +8,13 @@ import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import models.common.Batch;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
+import models.common.workers.Worker;
 import org.apache.commons.io.input.ReversedLinesFileReader;
+import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.libs.Json;
 import utils.common.HashUtils;
@@ -26,9 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
  * log batch: ok
  * server data MAC, time: ok
  * study created by user: ok
- * ImportExport.exportDataOfComponentResults why not call prepareResponseForExport()
+ * ImportExport.exportDataOfComponentResults why not call prepareResponseForExport(): ok
  * overwriteing existing study: no: ok
  * batch created: ok
  * locked/unlocked: ok
@@ -55,94 +56,98 @@ import java.util.stream.Collectors;
  * detect log file deletion: ok
  * add IP to first log line: no: ok
  * <p>
- * remove results in bulk is not efficient (ResultRemover)
  * make log path configurable via prod.conf: ok
  * retire filename wrong: ok
  * In log after delete of study: no hashes and no UUIDs: ok
+ * GUI: show warn if log file not found: ok
+ * GUI: What if log file deleted and recreated: show warn message: no: ok
+ * application/x-download needed?: no: ok
  * maybe use logfilereader?
- * GUI: show warn if log file not found
- * GUI: What if log file deleted and recreated: show warn message
- * GUI: show only 10000? lines, if more show warn
- * GUI: show last 1000 lines, reversed, as raw and pretty JSON
- * GUI: show pretty and readable (date)
- * GUI: download via button
- * comments in studylogger, studies and beautify
+ * GUI: show only 10000? lines, if more show warn: ok
+ * GUI: show last 1000 lines, reversed, as raw and pretty JSON: ok
+ * GUI: show pretty and readable (date): ok
+ * GUI: download via button: ok
+ * log export file hashes?: ok
+ * result file name: ok
+ * GUI: in reverse order: ok
+ * show Eli: ok
+ * comments in studylogger, studies and beautify: ok
+ * go through all msges
+ * remove results in bulk is not efficient (ResultRemover): ok
+ * download file not reversed and not chunked: ok
+ * check componentService and studyServerice: ok
+ * check LogFileReader: ok
+ * check result removing: ok
+ * name files: jatos-studylog-bla and jatos-results-bla: ok
+ * what if log is corrupted: JATOS should still work: ok
+ * resultcreator.createStudyResult: why not put worker into study?: ok
+ * write tests
+ * run old tests and fix them for service classes: ok
+ */
+
+/**
+ * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created
+ * together with the study creation. From then on all events are written into it, e.g. study
+ * creation/deletion, batch creation/deletion, study run start/stops/aborts, result data storing,
+ * result data export. Whenever the log entry handles result data a SHA-256 hash of the data is
+ * included in the log.
  */
 @Singleton
 public class StudyLogger {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
 
-    public String getStudyLogFilename(Study study) {
+    private static final String HASH_FUNCTION = "SHA-256";
+    private static final String NO_DATA = "no data";
+
+    public String getFilename(Study study) {
         return study.getUuid() + ".log";
     }
 
-    private String getStudyLogPath(Study study) {
-        return Common.getStudyLogsPath() + File.separator + getStudyLogFilename(study);
+    public String getPath(Study study) {
+        return Common.getStudyLogsPath() + File.separator + getFilename(study);
     }
 
-    public void log(StudyResult studyResult, String msg) {
-        log(studyResult.getStudy(), msg, null, null);
+    public void create(Study study) {
+        String initialMsg = "Initial entry";
+        create(study, initialMsg);
     }
 
-    public void log(Study study, String msg) {
-        log(study, msg, null, null);
+    private void recreate(Study study) {
+        String initialMsg = "Could not find a study log although the study already exists. " +
+                "Create a new one.";
+        create(study, initialMsg);
     }
 
-    public void log(Study study, String msg, String[] resultDataHashes, String fileHash) {
-        Path studyLogPath = Paths.get(getStudyLogPath(study));
-        if (!Files.exists(studyLogPath)) {
-            LOGGER.warn("Couldn't find log for study with UUID " + study.getUuid()
-                    + " in " + studyLogPath + ". Maybe it was deleted? Create new log file.");
-            recreateLog(study);
-        }
-
-        try {
-            String logLine = "\n" + nextLogLine(msg, resultDataHashes, fileHash);
-            Files.write(studyLogPath, logLine.getBytes(StandardCharsets.ISO_8859_1),
-                    StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
-        }
-    }
-
-    public void recreateLog(Study study) {
-        String initialMsg = "The old log of study with UUID " + study.getUuid()
-                + " seems to have been deleted and a new log was created"
-                + " (JATOS version " + Common.getJatosVersion() + ", "
-                + "JATOS server's MAC address " + getMAC() + ")";
-        createLog(study, initialMsg);
-    }
-
-    public void createLog(Study study) {
-        String initialMsg = "First line in log of study with UUID " + study.getUuid()
-                + " (JATOS version " + Common.getJatosVersion() + ", "
-                + "JATOS server's MAC address " + getMAC() + ")";
-        createLog(study, initialMsg);
-    }
-
-    private void createLog(Study study, String initialMsg) {
-        Path studyLogPath = Paths.get(getStudyLogPath(study));
+    private void create(Study study, String msg) {
+        Path studyLogPath = Paths.get(getPath(study));
         try {
             Path studyLogDirPath = Paths.get(Common.getStudyLogsPath());
             if (!Files.isDirectory(studyLogDirPath)) {
                 Files.createDirectories(studyLogDirPath);
             }
-
-            if (!Files.exists(studyLogPath)) {
-                String logLine = nextLogLine(initialMsg, null, null);
-                Files.write(studyLogPath, logLine.getBytes(StandardCharsets.ISO_8859_1),
-                        StandardOpenOption.CREATE_NEW);
+            if (Files.exists(studyLogPath)) {
+                LOGGER.error("A study log with " + studyLogPath + " exists already.");
             }
+
+            ObjectNode jsonObj = Json.newObject();
+            jsonObj.put("timestamp", Instant.now().toEpochMilli());
+            jsonObj.put("msg", msg);
+            jsonObj.put("studyUuid", study.getUuid());
+            jsonObj.put("jatosVersion", Common.getJatosVersion());
+            jsonObj.put("serversMac", getMAC());
+            jsonObj.put("hashFunction", HASH_FUNCTION);
+            String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
+            byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
+            Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
-            LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
+            LOGGER.error("Study log couldn't be created: " + studyLogPath, e);
         }
     }
 
-    public void retireLog(Study study) {
-        log(study, "This is the last line of the study log of the study with the UUID " +
-                study.getUuid());
-        Path studyLogPath = Paths.get(getStudyLogPath(study));
+    public void retire(Study study) {
+        log(study, "Last entry of the study log", Pair.of("studyUuid", study.getUuid()));
+        Path studyLogPath = Paths.get(getPath(study));
         String retiredFilename = study.getUuid() + "_" + Instant.now().toEpochMilli() + ".retired";
         Path retiredStudyLogPath =
                 Paths.get(Common.getStudyLogsPath() + File.separator + retiredFilename);
@@ -155,17 +160,59 @@ public class StudyLogger {
         }
     }
 
+    public void log(Study study, String msg) {
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", msg);
+        log(study, jsonObj);
+    }
+
+    public void log(Study study, String msg, Pair<String, Object> additionalInfo) {
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", msg);
+        jsonObj.put(additionalInfo.getKey(), additionalInfo.getValue().toString());
+        log(study, jsonObj);
+    }
+
+    public void log(Study study, String msg, Worker worker) {
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", msg);
+        jsonObj.put("workerId", worker.getId());
+        log(study, jsonObj);
+    }
+
+    public void log(Study study, String msg, Batch batch) {
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", msg);
+        jsonObj.put("batchId", batch.getId());
+        log(study, jsonObj);
+    }
+
+    public void log(Study study, String msg, Batch batch, Worker worker) {
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", msg);
+        jsonObj.put("batchId", batch.getId());
+        jsonObj.put("workerId", worker.getId());
+        log(study, jsonObj);
+    }
+
+    /**
+     * Adds an entry to the study log: exporting of several StudyResults. Adds the hashes of
+     * all result data, the file hash ( hash of the whole string that is to be exported), and
+     * all worker IDs.
+     */
     public void logStudyResultDataExporting(List<StudyResult> studyResultList,
             String exportedResultDataStr) {
-        if (studyResultList.isEmpty()) {
-            return;
-        }
         List<ComponentResult> componentResultList = studyResultList.stream()
                 .map(StudyResult::getComponentResultList).flatMap(List::stream)
                 .collect(Collectors.toList());
         logComponentResultDataExporting(componentResultList, exportedResultDataStr);
     }
 
+    /**
+     * Adds an entry to the study log: exporting of several ComponentResults. Adds the hashes of
+     * all result data, the file hash ( hash of the whole string that is to be exported), and
+     * all worker IDs.
+     */
     public void logComponentResultDataExporting(List<ComponentResult> componentResultList,
             String exportedResultDataStr) {
         if (componentResultList.isEmpty()) {
@@ -173,86 +220,102 @@ public class StudyLogger {
         }
 
         StudyResult studyResult = componentResultList.get(0).getStudyResult();
-        String[] resultDataHashes = componentResultList.stream()
-                .filter(cr -> cr.getData() != null)
-                .map(cr -> HashUtils.getHashSha256(cr.getData()))
-                .toArray(String[]::new);
-        String fileHash = HashUtils.getHashSha256(exportedResultDataStr);
-        String msg = "Exported component result data to a file";
-        log(studyResult.getStudy(), msg, resultDataHashes, fileHash);
+        ArrayNode dataHashesArray = Json.newArray();
+        ArrayNode componentUuidArray = Json.newArray();
+        ArrayNode workerIdArray = Json.newArray();
+        for (ComponentResult cr : componentResultList) {
+            String resultDataHash = (cr.getData() != null) ?
+                    HashUtils.getHash(cr.getData(), HASH_FUNCTION) : NO_DATA;
+            dataHashesArray.add(resultDataHash);
+            componentUuidArray.add(cr.getComponent().getUuid());
+            workerIdArray.add(cr.getWorkerId());
+        }
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", "Exported result data to a file. Hashes of each result data and the " +
+                "hash of the whole file content are logged here.");
+        jsonObj.put("fileHash", HashUtils.getHash(exportedResultDataStr, HASH_FUNCTION));
+        jsonObj.set("dataHashes", dataHashesArray);
+        jsonObj.set("workerIds", workerIdArray);
+        jsonObj.set("dataHashes", dataHashesArray);
+        log(studyResult.getStudy(), jsonObj);
     }
 
     /**
-     * Adds a line to the study log belonging to the given ComponentResult: logs the hash of the
-     * component result data and that it is going to be stored
+     * Adds an entry to the study log: adds the hash of the result data, component UUID, and the
+     * worker ID
      */
     public void logResultDataStoring(ComponentResult componentResult) {
         String resultDataHash = (componentResult.getData() != null) ?
-                HashUtils.getHashSha256(componentResult.getData()) : "none";
-        String[] resultDataHashes = {resultDataHash};
+                HashUtils.getHash(componentResult.getData(), HASH_FUNCTION) : NO_DATA;
         Study study = componentResult.getStudyResult().getStudy();
         String componentUuid = componentResult.getComponent().getUuid();
         Long workerId = componentResult.getWorkerId();
-        String msg = MessageFormat.format("Stored component result data " +
-                "for component with UUID {0} and worker with ID {1}", componentUuid, workerId);
-        log(study, msg, resultDataHashes, null);
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", "Stored component result data");
+        jsonObj.put("componentUuid", componentUuid);
+        jsonObj.put("workerId", workerId);
+        jsonObj.put("dataHash", resultDataHash);
+        log(study, jsonObj);
     }
 
     /**
-     * Adds a line to the study log belonging to the given ComponentResult: logs the hash of the
-     * component result data and that it is going to be removed
+     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs,
+     * and all worker IDs of the worker who run this component. All component results must come
+     * from the same study but not necessarily from the same study result.
+     *
+     * @param componentResultList array of ComponentResults to be removed
      */
-    public void logResultDataRemoving(ComponentResult componentResult) {
-        String resultDataHash = (componentResult.getData() != null) ?
-                HashUtils.getHashSha256(componentResult.getData()) : "none";
-        String[] resultDataHashes = {resultDataHash};
-        Study study = componentResult.getStudyResult().getStudy();
-        String componentUuid = componentResult.getComponent().getUuid();
-        Long workerId = componentResult.getWorkerId();
-        String msg = MessageFormat.format("Removed component result data " +
-                "for component with UUID {0} and worker with ID {1}", componentUuid, workerId);
-        log(study, msg, resultDataHashes, null);
-    }
-
-    /**
-     * Adds a line to the study log belonging to the given StudyResult: logs the hashes of all
-     * component result data of this StudyResult and that they are going to be removed
-     */
-    public void logResultDataRemoving(StudyResult studyResult) {
-        if (studyResult.getComponentResultList().isEmpty()) {
+    public void logResultDataRemoving(List<ComponentResult> componentResultList) {
+        if (componentResultList.size() == 0) {
             return;
         }
-        String[] resultDataHashes = studyResult.getComponentResultList().stream()
-                .map(cr -> (cr.getData() != null)
-                        ? HashUtils.getHashSha256(cr.getData())
-                        : "none")
-                .toArray(String[]::new);
-        String uuids = studyResult.getComponentResultList().stream()
-                .map(cr -> cr.getComponent().getUuid())
-                .collect(Collectors.joining(", "));
-        Study study = studyResult.getStudy();
-        Long workerId = studyResult.getWorkerId();
-        String msg = MessageFormat.format("Removed component result data " +
-                "for components with UUID(s) {0} and worker with ID {1}", uuids, workerId);
-        log(study, msg, resultDataHashes, null);
+
+        Study study = componentResultList.get(0).getStudyResult().getStudy();
+        ArrayNode dataHashesArray = Json.newArray();
+        ArrayNode componentUuidArray = Json.newArray();
+        ArrayNode workerIdArray = Json.newArray();
+        for (ComponentResult cr : componentResultList) {
+            dataHashesArray.add((cr.getData() != null) ?
+                    HashUtils.getHash(cr.getData(), HASH_FUNCTION) : NO_DATA);
+            componentUuidArray.add(cr.getComponent().getUuid());
+            workerIdArray.add(cr.getWorkerId());
+        }
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put("msg", "Removed component result data");
+        jsonObj.set("componentUuids", componentUuidArray);
+        jsonObj.set("workerIds", workerIdArray);
+        jsonObj.set("dataHashes", dataHashesArray);
+        log(study, jsonObj);
     }
 
     /**
-     * Generates a log entry
+     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs,
+     * and all worker IDs of the worker who run this study.
+     *
+     * @param studyResultList List of StudyResults which component results should be removed
      */
-    private String nextLogLine(String msg, String[] resultDataHashes,
-            String fileHash) throws IOException {
-        ObjectNode jsonObj = Json.mapper().createObjectNode();
-        jsonObj.put("timestamp", Instant.now().toEpochMilli());
-        jsonObj.put("msg", msg);
-        if (resultDataHashes != null && resultDataHashes.length > 0) {
-            ArrayNode dataHashes = jsonObj.putArray("dataHashes");
-            Arrays.stream(resultDataHashes).forEach(dataHashes::add);
+    public void logStudyResultDataRemoving(List<StudyResult> studyResultList) {
+        List<ComponentResult> componentResultList = studyResultList.stream()
+                .map(StudyResult::getComponentResultList).flatMap(List::stream)
+                .collect(Collectors.toList());
+        logResultDataRemoving(componentResultList);
+    }
+
+    public void log(Study study, ObjectNode jsonObj) {
+        Path studyLogPath = Paths.get(getPath(study));
+        if (Files.notExists(studyLogPath)) {
+            LOGGER.error("Couldn't find log for study with UUID " + study.getUuid() + " in " +
+                    studyLogPath + ". Maybe it was deleted? Create new log file.");
+            recreate(study);
         }
-        if (fileHash != null) {
-            jsonObj.put("fileHash", fileHash);
+        try {
+            jsonObj.put("timestamp", Instant.now().toEpochMilli());
+            String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
+            byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
+            Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
         }
-        return Json.mapper().writer().writeValueAsString(jsonObj);
     }
 
     private String getMAC() {
@@ -272,45 +335,56 @@ public class StudyLogger {
                 }
             }
         } catch (SocketException e) {
-            LOGGER.info("Couldn't get network MAC address");
+            LOGGER.info("Couldn't get network MAC address for study log");
         }
         return macStr;
     }
 
-    public Source<ByteString, ?> read(Study study, int lineLimit) {
+    public Source<ByteString, ?> readLogFile(Study study, int entryLimit) {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
-        return Source
-                .<ByteString>actorRef(256, OverflowStrategy.dropNew())
-                .mapMaterializedValue(
-                        sourceActor -> fillSource(sourceActor, getStudyLogPath(study), lineLimit));
+        int bufferSize = entryLimit > 256 ? entryLimit : 256; // ensure min buffer size
+        return Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor ->
+                        fillSourceWithLogFile(sourceActor, getPath(study), entryLimit));
     }
 
-    private Object fillSource(ActorRef sourceActor, String filePath, int lineLimit) {
+    private Object fillSourceWithLogFile(ActorRef sourceActor, String filePath, int lineLimit) {
         File logFile = new File(filePath);
         sourceActor.tell(ByteString.fromString("["), null);
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile)) {
-            String oneLine = reader.readLine();
+            String nextLine = reader.readLine();
             int lineNumber = 1;
-            while (oneLine != null && (lineLimit == -1 || lineNumber <= lineLimit)) {
-                String msg = oneLine;
-                oneLine = reader.readLine();
-                if (oneLine != null) {
-                    msg += ",";
-                }
-                sourceActor.tell(ByteString.fromString(msg), null);
+            while (hasNextLine(nextLine, lineLimit, lineNumber)) {
                 lineNumber++;
+                String currentLine = nextLine;
+                nextLine = reader.readLine();
+                if (currentLine.trim().isEmpty()) {
+                    // Apparently chunked responses can't handle empty lines
+                    continue;
+                }
+                if (hasNextLine(nextLine, lineLimit, lineNumber)) {
+                    currentLine += ",";
+                }
+                sourceActor.tell(ByteString.fromString(currentLine), null);
             }
-        } catch (IOException e) {
-            sourceActor.tell(ByteString.fromString("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\""),
-                    null);
+            if (nextLine != null) {
+                sourceActor.tell(
+                        ByteString.fromString(",\"" + MessagesStrings.LOG_CUT + "\""), null);
+            }
+        } catch (Exception e) {
+            sourceActor.tell(
+                    ByteString.fromString("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\""), null);
             LOGGER.error("Couldn't open study log " + filePath);
         } finally {
             sourceActor.tell(ByteString.fromString("]"), null);
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
         }
-        return null;
+        return NotUsed.getInstance();
     }
 
+    private boolean hasNextLine(String nextLine, int lineLimit, int lineNumber) {
+        return nextLine != null && (lineLimit == -1 || lineNumber <= lineLimit);
+    }
 
 }

@@ -26,7 +26,6 @@ import play.mvc.Http.Cookie;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.HashUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -34,6 +33,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Controller that cares for import/export of components, studies and their result data.
@@ -48,6 +49,9 @@ public class ImportExport extends Controller {
 
     public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
     public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
+    public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";
+    public static final SimpleDateFormat DATE_FORMATER_FILE = new SimpleDateFormat(
+            DATE_FORMAT_FILE);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
@@ -416,8 +420,9 @@ public class ImportExport extends Controller {
      * the plugin regards it as a fail.
      */
     private void prepareResponseForResultDataExport(String resultDataAsStr) {
-        String hash = HashUtils.getHashSha256(resultDataAsStr);
-        String filename = "results_" + hash + "." + IOUtils.TXT_FILE_SUFFIX;
+        String dateForFile = DATE_FORMATER_FILE.format(new Date());
+        String filename = "jatos_results_" + dateForFile + "."
+                + IOUtils.TXT_FILE_SUFFIX;
         response().setHeader("Content-disposition", "attachment; filename=" + filename);
         // Set transient cookie with no domain or path constraints
         Cookie cookie = new Cookie(JQDOWNLOAD_COOKIE_NAME,

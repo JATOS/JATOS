@@ -218,8 +218,8 @@ public abstract class PublixUtils<T extends Worker> {
                 finishMemberInGroup(abandonedStudyResult);
                 finishStudyResult(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
                         abandonedStudyResult);
-                studyLogger.log(abandonedStudyResult,
-                        "Finish abandoned study run by " + abandonedStudyResult.getWorkerId());
+                studyLogger.log(abandonedStudyResult.getStudy(), "Finish abandoned study",
+                        abandonedStudyResult.getWorker());
             }
             idCookieService.discardIdCookie(abandonedStudyResultId);
         }

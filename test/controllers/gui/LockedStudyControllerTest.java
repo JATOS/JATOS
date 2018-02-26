@@ -97,6 +97,7 @@ public class LockedStudyControllerTest {
 
         Helpers.stop(fakeApplication);
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     /**

@@ -60,6 +60,7 @@ public class BatchesControllerTest {
 
         Helpers.stop(fakeApplication);
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

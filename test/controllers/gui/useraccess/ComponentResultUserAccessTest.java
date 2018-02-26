@@ -34,136 +34,137 @@ import services.publix.workers.JatosPublixUtils;
  * most actions only the denial of access is tested here - the actual function
  * of the action (that includes positive access) is tested in the specific test
  * class.
- * 
+ * <p>
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
- * 
+ *
  * @author Kristian Lange (2015 - 2017)
  */
 public class ComponentResultUserAccessTest {
 
-	private Injector injector;
+    private Injector injector;
 
-	@Inject
-	private static Application fakeApplication;
+    @Inject
+    private static Application fakeApplication;
 
-	@Inject
-	private TestHelper testHelper;
+    @Inject
+    private TestHelper testHelper;
 
-	@Inject
-	private JPAApi jpaApi;
+    @Inject
+    private JPAApi jpaApi;
 
-	@Inject
-	private UserDao userDao;
+    @Inject
+    private UserDao userDao;
 
-	@Inject
-	private ResultCreator resultCreator;
+    @Inject
+    private ResultCreator resultCreator;
 
-	@Inject
-	private JatosPublixUtils jatosPublixUtils;
+    @Inject
+    private JatosPublixUtils jatosPublixUtils;
 
-	@Inject
-	private UserAccessTestHelpers userAccessTestHelpers;
+    @Inject
+    private UserAccessTestHelpers userAccessTestHelpers;
 
-	@Before
-	public void startApp() throws Exception {
-		fakeApplication = Helpers.fakeApplication();
+    @Before
+    public void startApp() throws Exception {
+        fakeApplication = Helpers.fakeApplication();
 
-		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-				.builder(new ApplicationLoader.Context(Environment.simple()));
-		injector = Guice.createInjector(builder.applicationModule());
-		injector.injectMembers(this);
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        injector = Guice.createInjector(builder.applicationModule());
+        injector.injectMembers(this);
 
-		Helpers.start(fakeApplication);
-	}
+        Helpers.start(fakeApplication);
+    }
 
-	@After
-	public void stopApp() throws Exception {
-		// Clean up
-		testHelper.removeAllStudies();
+    @After
+    public void stopApp() throws Exception {
+        // Clean up
+        testHelper.removeAllStudies();
 
-		Helpers.stop(fakeApplication);
-		testHelper.removeStudyAssetsRootDir();
-	}
+        Helpers.stop(fakeApplication);
+        testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
+    }
 
-	@Test
-	public void callComponentResults() {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Call call = controllers.gui.routes.ComponentResults
-				.componentResults(study.getId(), study.getComponent(1).getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-				Helpers.GET);
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-				testHelper.getAdmin());
-	}
+    @Test
+    public void callComponentResults() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.ComponentResults
+                .componentResults(study.getId(), study.getComponent(1).getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
+                Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+                testHelper.getAdmin());
+    }
 
-	@Test
-	public void callComponentResultsRemove() {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		StudyResult studyResult = createTwoComponentResults(study);
-		ComponentResult componentResult = studyResult.getComponentResultList()
-				.get(0);
-		Call call = controllers.gui.routes.ComponentResults
-				.remove(componentResult.getId().toString());
+    @Test
+    public void callComponentResultsRemove() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        StudyResult studyResult = createTwoComponentResults(study);
+        ComponentResult componentResult = studyResult.getComponentResultList()
+                .get(0);
+        Call call = controllers.gui.routes.ComponentResults
+                .remove(componentResult.getId().toString());
 
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 
-		// Logged-in user must be an user of the study to which the
-		// ComponentResult belongs that is to be deleted - if not an HTTP 403 is
-		// expected
-		User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
-				"bla");
-		userAccessTestHelpers.checkThatCallIsForbidden(call, Helpers.DELETE,
-				someUser, "isn't user of study");
+        // Logged-in user must be an user of the study to which the
+        // ComponentResult belongs that is to be deleted - if not an HTTP 403 is
+        // expected
+        User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
+                "bla");
+        userAccessTestHelpers.checkThatCallIsForbidden(call, Helpers.DELETE,
+                someUser, "isn't user of study");
 
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
-				testHelper.getAdmin());
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
+                testHelper.getAdmin());
 
-		testHelper.removeUser(TestHelper.BLA_EMAIL);
-	}
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
 
-	private StudyResult createTwoComponentResults(Study study) {
-		return jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			StudyResult studyResult = resultCreator.createStudyResult(study,
-					study.getDefaultBatch(), admin.getWorker());
-			try {
-				jatosPublixUtils.startComponent(study.getFirstComponent(),
-						studyResult);
-				jatosPublixUtils.startComponent(study.getFirstComponent(),
-						studyResult);
-			} catch (ForbiddenReloadException e) {
-				e.printStackTrace();
-			}
-			return studyResult;
-		});
-	}
+    private StudyResult createTwoComponentResults(Study study) {
+        return jpaApi.withTransaction(() -> {
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            StudyResult studyResult = resultCreator.createStudyResult(study,
+                    study.getDefaultBatch(), admin.getWorker());
+            try {
+                jatosPublixUtils.startComponent(study.getFirstComponent(),
+                        studyResult);
+                jatosPublixUtils.startComponent(study.getFirstComponent(),
+                        studyResult);
+            } catch (ForbiddenReloadException e) {
+                e.printStackTrace();
+            }
+            return studyResult;
+        });
+    }
 
-	@Test
-	public void callComponentResultsRemoveAllOfComponent() {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Call call = controllers.gui.routes.ComponentResults
-				.removeAllOfComponent(study.getId(),
-						study.getComponent(1).getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-				Helpers.DELETE);
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
-				testHelper.getAdmin());
-	}
+    @Test
+    public void callComponentResultsRemoveAllOfComponent() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.ComponentResults
+                .removeAllOfComponent(study.getId(),
+                        study.getComponent(1).getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
+                Helpers.DELETE);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
+                testHelper.getAdmin());
+    }
 
-	@Test
-	public void callComponentResultsTableDataByComponent() {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Call call = controllers.gui.routes.ComponentResults
-				.tableDataByComponent(study.getId(),
-						study.getComponent(1).getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-				Helpers.GET);
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-				testHelper.getAdmin());
-	}
+    @Test
+    public void callComponentResultsTableDataByComponent() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.ComponentResults
+                .tableDataByComponent(study.getId(),
+                        study.getComponent(1).getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
+                Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+                testHelper.getAdmin());
+    }
 
 }

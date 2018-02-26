@@ -12,7 +12,6 @@ import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import play.Logger;
 import play.Logger.ALogger;
@@ -84,7 +83,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> imple
 
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
         studyLogger.log(study, "Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE
-                + " worker with ID " + worker.getId() + " in batch with ID " + batch.getId());
+                + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyId, firstComponent.getId(), studyResult.getId()));
     }

@@ -20,7 +20,7 @@ import services.publix.idcookie.exception.IdCookieMalformedException;
 import utils.common.HttpUtils;
 
 /**
- * This class offers a simple interface to extract, write and discard IdCookies.
+ * This class offers a simple interface to extract, log and discard IdCookies.
  * <p>
  * Internally this class accesses JATOS' ID cookies in the HTTP Request or
  * Response. It stores the extracted {@link IdCookieModel} in a

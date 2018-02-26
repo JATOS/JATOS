@@ -102,7 +102,7 @@ public class BatchService {
         }
         batchDao.create(batch);
         studyDao.update(study);
-        studyLogger.log(study, "Created batch with ID " + batch.getId());
+        studyLogger.log(study, "Created batch", batch);
     }
 
     /**
@@ -216,10 +216,10 @@ public class BatchService {
         studyDao.update(study);
 
         // Delete all StudyResults and all ComponentResults
-        studyResultDao.findAllByBatch(batch).forEach(resultRemover::removeStudyResult);
+        resultRemover.removeAllStudyResults(batch);
 
         // Delete all GroupResults
-        groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
+        groupResultDao.removeAll(groupResultDao.findAllByBatch(batch));
 
         // Remove or update Workers of this batch
         for (Worker worker : batch.getWorkerList()) {
@@ -228,7 +228,7 @@ public class BatchService {
         }
 
         batchDao.remove(batch);
-        studyLogger.log(study, "Removed batch with ID " + batch.getId());
+        studyLogger.log(study, "Removed batch", batch);
     }
 
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {

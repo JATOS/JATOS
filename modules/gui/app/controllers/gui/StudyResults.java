@@ -89,10 +89,8 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, study.getId());
         }
 
-        String breadcrumbs = breadcrumbsService.generateForStudy(study,
-                BreadcrumbsService.RESULTS);
-        String dataUrl = controllers.gui.routes.StudyResults
-                .tableDataByStudy(study.getId()).url();
+        String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
+        String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
         return ok(views.html.gui.result.studyResults.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
     }
@@ -102,8 +100,8 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result batchesStudyResults(Long studyId, Long batchId,
-            String workerType) throws JatosGuiException {
+    public Result batchesStudyResults(Long studyId, Long batchId, String workerType)
+            throws JatosGuiException {
         LOGGER.debug(".batchesStudyResults: studyId " + studyId + ", "
                 + "batchId " + batchId);
         Batch batch = batchDao.findById(batchId);
@@ -120,8 +118,7 @@ public class StudyResults extends Controller {
                 ? BreadcrumbsService.RESULTS
                 : BreadcrumbsService.RESULTS + " of "
                 + Worker.getUIWorkerType(workerType) + " workers";
-        String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
-                breadcrumbsTitle);
+        String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults
                 .tableDataByBatch(study.getId(), batch.getId(), workerType)
                 .url();
@@ -141,12 +138,11 @@ public class StudyResults extends Controller {
         try {
             checker.checkWorker(worker, workerId);
         } catch (BadRequestException e) {
-            jatosGuiExceptionThrower.throwRedirect(e,
-                    controllers.gui.routes.Home.home());
+            jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
         }
 
-        String breadcrumbs = breadcrumbsService.generateForWorker(worker,
-                BreadcrumbsService.RESULTS);
+        String breadcrumbs =
+                breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
         return ok(views.html.gui.result.workersStudyResults.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost(), worker));
     }
@@ -165,8 +161,7 @@ public class StudyResults extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             resultRemover.removeStudyResults(studyResultIds, loggedInUser);
-        } catch (ForbiddenException | BadRequestException
-                | NotFoundException e) {
+        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok();
@@ -212,8 +207,7 @@ public class StudyResults extends Controller {
         try {
             checker.checkWorker(worker, workerId);
         } catch (BadRequestException e) {
-            jatosGuiExceptionThrower.throwRedirect(e,
-                    controllers.gui.routes.Home.home());
+            jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
         }
 
         try {
@@ -236,8 +230,7 @@ public class StudyResults extends Controller {
         JsonNode dataAsJson = null;
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-            dataAsJson = jsonUtils
-                    .allStudyResultsForUI(studyResultDao.findAllByStudy(study));
+            dataAsJson = jsonUtils.allStudyResultsForUI(studyResultDao.findAllByStudy(study));
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
@@ -293,10 +286,9 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        List<StudyResult> allowedStudyResultList = resultService
-                .getAllowedStudyResultList(loggedInUser, worker);
-        JsonNode dataAsJson =
-                jsonUtils.allStudyResultsForUI(allowedStudyResultList);
+        List<StudyResult> allowedStudyResultList =
+                resultService.getAllowedStudyResultList(loggedInUser, worker);
+        JsonNode dataAsJson = jsonUtils.allStudyResultsForUI(allowedStudyResultList);
         return ok(dataAsJson);
     }
 

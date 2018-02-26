@@ -7,6 +7,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
+import general.common.StudyLogger;
 import models.common.Study;
 import models.common.User;
 import org.apache.commons.io.FileUtils;
@@ -85,6 +86,10 @@ public class TestHelper {
                     + " is not empty after finishing testing. This should not happen.");
         }
         FileUtils.deleteDirectory(assetsRoot);
+    }
+
+    public void removeAllStudyLogs() throws IOException {
+        FileUtils.deleteDirectory(new File(Common.getStudyLogsPath()));
     }
 
     public User getAdmin() {

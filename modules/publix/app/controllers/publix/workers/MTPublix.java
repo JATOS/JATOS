@@ -131,7 +131,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
         studyLogger.log(study, "Started study run with " + MTWorker.UI_WORKER_TYPE
-                + " worker with ID " + mtWorkerId + " in batch with ID " + batch.getId());
+                + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyId, firstComponent.getId(), studyResult.getId()));
     }
@@ -161,7 +161,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             confirmationCode = studyResult.getConfirmationCode();
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Finished study run by worker with ID " + worker.getId());
+        studyLogger.log(study, "Finished study run", worker);
 
         if (HttpUtils.isAjax()) {
             return ok(confirmationCode);

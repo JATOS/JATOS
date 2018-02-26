@@ -10,9 +10,7 @@
                     <span aria-hidden="true">&times;</span>
                     <span class="sr-only">Close</span>
                 </button>
-                <h4 class="modal-title">
-                    Study Log&nbsp;
-                </h4>
+                <h4 class="modal-title">Study Log</h4>
             </div>
             <div class="modal-body">
                 <div class="btn-group" data-toggle="buttons">
@@ -23,8 +21,9 @@
                         <input id="studyLogRaw" type="radio" name="options" autocomplete="off">Raw
                     </label>
                 </div>
-                <button id="studyLogDownload" type="button" class="btn btn-study">Download</button>
-                <p>&nbsp;</p>
+                <button id="studyLogDownload" type="button" class="btn btn-study" data-toggle="tooltip"
+                        data-placement="bottom" title="Download the whole study log in normal order">Download</button>
+                <p>In reverse order:</p>
                 <pre><code></code></pre>
             </div>
             <div class="modal-footer">
@@ -42,18 +41,57 @@ var studyLogPretty;
 $('#studyToolbar').on('click', '#showStudyLog', function() {
     $.ajax({
         type: 'GET',
-        url: "/jatos/@study.getId()/log?limit=1000",
-        success: function (response) {
-            studyLogRaw = response;
-            studyLogPretty = JSON.stringify(JSON.parse(studyLogRaw), null, 2);
-            showStudyLogPretty();
-            $('#studyLogModal').modal('show');
-        },
+        url: "/jatos/@study.getId()/log?limit=" + 100,
+        success: showStudyLogModal,
         error: function(response) {
-            showError("Couldn't load study log.");
+            showError("Couldn't get study log.");
         }
     });
 });
+
+function showStudyLogModal(response) {
+    studyLogRaw = response;
+    studyLogPretty = response;
+    removeAlerts('#studyLogModal');
+    var studyLog;
+    try {
+        studyLog = JSON.parse(studyLogRaw);
+    } catch(e) {
+        showError("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.", "#studyLogModal .modal-header");
+        showStudyLogRaw();
+        $('#studyLogModal').modal('show');
+        return;
+    }
+    if (studyLog[0] == "@general.common.MessagesStrings.COULDNT_OPEN_LOG") {
+        showError("Couldn't get study log.", "#studyLogModal .modal-header");
+    }
+    var entryLimit = studyLog.length - 1;
+    if (studyLog[entryLimit] == "@general.common.MessagesStrings.LOG_CUT") {
+        var txt = "This study log has more than " + entryLimit + " entries. Only the last " + entryLimit + " entries are shown. To get the whole study log download it and display it locally.";
+        showInfo(txt, "#studyLogModal .modal-header");
+    }
+    studyLog.forEach(function(entry) {
+        if (entry.timestamp) {
+            entry.timestamp = new Date(entry.timestamp).toUTCString();
+        }
+    });
+    studyLogPretty = prettifyStudyLogJson(studyLog);
+    showStudyLogPretty();
+    $('#studyLogModal').modal('show');
+}
+
+function prettifyStudyLogJson(studyLog) {
+    return JSON.stringify(studyLog, function(key, value) {
+        if(key === "workerIds" || key === "dataHashes" || key === "componentUuids") {
+            return JSON.stringify(value);
+        }
+        return value;
+    }, 2).replace(/\\/g, '')
+            .replace(/\"\[/g, '[')
+            .replace(/\]\"/g,']')
+            .replace(/\"\{/g, '{')
+            .replace(/\}\"/g,'}');
+}
 
 $('#studyLogPretty').on('change', showStudyLogPretty);
 $('#studyLogRaw').on('change', showStudyLogRaw);
@@ -67,10 +105,10 @@ function showStudyLogRaw() {
 }
 
 $('#studyLogDownload').on('click', function() {
-    var url = "/jatos/@study.getId()/log?limit=-1";
+    var url = "/jatos/@study.getId()/log?limit=-1&download=true";
     // Using johnculviner's jQuery.fileDownload plugin to detect a fail
     $.fileDownload(url).fail(function () {
-        showError("Download of study log failed");
+        showError("Download of study log failed", "#studyLogModal .modal-header");
     });
 });
 

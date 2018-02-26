@@ -136,7 +136,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
         studyLogger.log(study, "Started study run with " + JatosWorker.UI_WORKER_TYPE
-                + " worker with ID " + worker.getId() + " in batch with ID " + batch.getId());
+                + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor
                 .startComponent(studyId, componentId, studyResult.getId()));
     }
@@ -266,7 +266,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Aborted study run by worker with ID " + worker.getId());
+        studyLogger.log(study, "Aborted study run", worker);
 
         if (HttpUtils.isAjax()) {
             return ok();
@@ -301,7 +301,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Finished study run by worker with ID " + worker.getId());
+        studyLogger.log(study, "Finished study run", worker);
 
         if (HttpUtils.isAjax()) {
             return ok();
