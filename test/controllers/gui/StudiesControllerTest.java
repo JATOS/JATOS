@@ -182,7 +182,7 @@ public class StudiesControllerTest {
      * Test Studies.submitCreated()
      */
     @Test
-    public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
+    public void callSubmitCreatedStudyAssetsDirExists() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Map<String, String> formMap = new HashMap<>();
         formMap.put(StudyProperties.TITLE, "Title Test");
@@ -214,8 +214,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.properties(study.getId())
-                        .url());
+                .uri(controllers.gui.routes.Studies.properties(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -246,7 +245,7 @@ public class StudiesControllerTest {
      * Test Studies.submitEdited()
      */
     @Test
-    public void callSubmitEdited() throws Exception {
+    public void callSubmitEdited() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Map<String, String> formMap = new HashMap<>();
@@ -280,14 +279,13 @@ public class StudiesControllerTest {
      * Test Studies.toggleLock()
      */
     @Test
-    public void callToggleLock() throws Exception {
+    public void callToggleLock() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.toggleLock(study.getId())
-                        .url());
+                .uri(controllers.gui.routes.Studies.toggleLock(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -298,14 +296,13 @@ public class StudiesControllerTest {
      * Test Studies.remove()
      */
     @Test
-    public void callRemove() throws Exception {
+    public void callRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("DELETE")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.remove(study.getId())
-                        .url());
+                .uri(controllers.gui.routes.Studies.remove(study.getId()).url());
         Result result = route(request);
         assertThat(result.status()).isEqualTo(OK);
     }
@@ -314,14 +311,13 @@ public class StudiesControllerTest {
      * Test Studies.cloneStudy()
      */
     @Test
-    public void callCloneStudy() throws Exception {
+    public void callCloneStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.cloneStudy(study.getId())
-                        .url());
+                .uri(controllers.gui.routes.Studies.cloneStudy(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -331,14 +327,13 @@ public class StudiesControllerTest {
      * Test Studies.memberUsers()
      */
     @Test
-    public void callMemberUsers() throws Exception {
+    public void callMemberUsers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.memberUsers(study.getId())
-                        .url());
+                .uri(controllers.gui.routes.Studies.memberUsers(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -351,7 +346,7 @@ public class StudiesControllerTest {
      * from a study
      */
     @Test
-    public void callToggleMemberUser() throws Exception {
+    public void callToggleMemberUser() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
         User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
@@ -388,7 +383,7 @@ public class StudiesControllerTest {
      * user from a study - a study must always have at least one user.
      */
     @Test
-    public void callToggleMemberUserNotAllowedRemoveLast() throws Exception {
+    public void callToggleMemberUserNotAllowedRemoveLast() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
 
@@ -409,7 +404,7 @@ public class StudiesControllerTest {
      * Tests Studies.toggleMemberUser(): the new member must exist in the DB
      */
     @Test
-    public void callToggleMemberUserNotKnown() throws Exception {
+    public void callToggleMemberUserNotKnown() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Adding a user that doesn't exist in th DB leads to HTTP status
@@ -430,7 +425,7 @@ public class StudiesControllerTest {
      * Tests Studies.changeComponentOrder()
      */
     @Test
-    public void callChangeComponentOrder() throws Exception {
+    public void callChangeComponentOrder() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Move first component to second position
@@ -441,8 +436,7 @@ public class StudiesControllerTest {
                 .bodyForm(ImmutableMap.of(Study.USERS, "admin"))
                 .uri(controllers.gui.routes.Studies
                         .changeComponentOrder(study.getId(),
-                                study.getComponentList().get(0).getId(), "2")
-                        .url());
+                                study.getComponentList().get(0).getId(), "2").url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -451,10 +445,8 @@ public class StudiesControllerTest {
         request = new RequestBuilder().method("POST").session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-                .uri(controllers.gui.routes.Studies
-                        .changeComponentOrder(study.getId(),
-                                study.getComponentList().get(1).getId(), "1")
-                        .url());
+                .uri(controllers.gui.routes.Studies.changeComponentOrder(study.getId(),
+                        study.getComponentList().get(1).getId(), "1").url());
         result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -464,7 +456,7 @@ public class StudiesControllerTest {
      * Tests Studies.runStudy()
      */
     @Test
-    public void callRunStudy() throws Exception {
+    public void callRunStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Http.Session session = testHelper
@@ -472,8 +464,7 @@ public class StudiesControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-                .uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1L)
-                        .url());
+                .uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1L).url());
         Result result = route(request);
 
         assertEquals(SEE_OTHER, result.status());
@@ -483,7 +474,7 @@ public class StudiesControllerTest {
      * Tests Studies.tableDataByStudy()
      */
     @Test
-    public void callTableDataByStudy() throws Exception {
+    public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Http.Session session = testHelper
@@ -503,15 +494,14 @@ public class StudiesControllerTest {
      * Tests Studies.workers()
      */
     @Test
-    public void callWorkers() throws Exception {
+    public void callWorkers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.workers(study.getId())
-                        .url());
+                .uri(controllers.gui.routes.Studies.workers(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -519,4 +509,42 @@ public class StudiesControllerTest {
                 .contains(BreadcrumbsService.WORKERS);
     }
 
+    /**
+     * Tests Studies.studyLog()
+     */
+    @Test
+    public void callStudyLog() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(testHelper.getAdmin());
+
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Studies.studyLog(study.getId(), 100, false).url());
+        Result result = route(request);
+
+        assertThat(result.status()).isEqualTo(OK);
+        assertThat(result.body()).isNotNull();
+    }
+
+    /**
+     * Tests Studies.studyLog()
+     */
+    @Test
+    public void callStudyLogDownload() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(testHelper.getAdmin());
+
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Studies.studyLog(study.getId(), -1, true).url());
+        Result result = route(request);
+
+        assertThat(result.status()).isEqualTo(OK);
+        String filename = "jatos_studylog_" + study.getUuid() + ".log";
+        assertThat(result.header("Content-disposition").get()).isEqualTo("attachment; filename=" + filename);
+        assertThat(result.cookie("fileDownload")).isNotNull();
+        assertThat(result.body()).isNotNull();
+    }
 }

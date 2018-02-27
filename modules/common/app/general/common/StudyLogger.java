@@ -81,8 +81,11 @@ import java.util.stream.Collectors;
  * name files: jatos-studylog-bla and jatos-results-bla: ok
  * what if log is corrupted: JATOS should still work: ok
  * resultcreator.createStudyResult: why not put worker into study?: ok
- * write tests
  * run old tests and fix them for service classes: ok
+ * write tests: StudyLogger, Studies, HashUtils
+ * check Java docs again
+ * docs: result data export file name jatos_results_
+ *      studyLogger
  */
 
 /**
