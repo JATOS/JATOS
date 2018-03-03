@@ -52,6 +52,7 @@ public class AuthenticationValidationTest {
         // Clean up
         testHelper.removeAllStudies();
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

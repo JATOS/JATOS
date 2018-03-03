@@ -55,6 +55,7 @@ public class CheckerTest {
         // Clean up
         testHelper.removeAllStudies();
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

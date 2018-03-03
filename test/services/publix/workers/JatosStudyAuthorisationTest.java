@@ -34,104 +34,105 @@ import services.publix.PublixErrorMessages;
  */
 public class JatosStudyAuthorisationTest {
 
-	private Injector injector;
+    private Injector injector;
 
-	@Inject
-	private TestHelper testHelper;
+    @Inject
+    private TestHelper testHelper;
 
-	@Inject
-	private JatosStudyAuthorisation studyAuthorisation;
+    @Inject
+    private JatosStudyAuthorisation studyAuthorisation;
 
-	@Before
-	public void startApp() throws Exception {
-		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-				.builder(new ApplicationLoader.Context(Environment.simple()));
-		injector = Guice.createInjector(builder.applicationModule());
-		injector.injectMembers(this);
-	}
+    @Before
+    public void startApp() throws Exception {
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        injector = Guice.createInjector(builder.applicationModule());
+        injector.injectMembers(this);
+    }
 
-	@After
-	public void stopApp() throws Exception {
-		// Clean up
-		testHelper.removeAllStudies();
-		testHelper.removeStudyAssetsRootDir();
-	}
+    @After
+    public void stopApp() throws Exception {
+        // Clean up
+        testHelper.removeAllStudies();
+        testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
-			IOException, ForbiddenPublixException {
-		testHelper.mockContext();
-		User admin = testHelper.getAdmin();
-		Http.Context.current().session().put(JatosPublix.SESSION_USER_EMAIL,
-				admin.getEmail());
+    @Test
+    public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
+            IOException, ForbiddenPublixException {
+        testHelper.mockContext();
+        User admin = testHelper.getAdmin();
+        Http.Context.current().session().put(JatosPublix.SESSION_USER_EMAIL,
+                admin.getEmail());
 
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Batch batch = study.getDefaultBatch();
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Batch batch = study.getDefaultBatch();
 
-		studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study,
-				batch);
-	}
+        studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study,
+                batch);
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudyWrongWorkerType()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+    @Test
+    public void checkWorkerAllowedToDoStudyWrongWorkerType()
+            throws NoSuchAlgorithmException, IOException {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        User admin = testHelper.getAdmin();
 
-		// Remove Jatos worker from allowed worker types
-		Batch batch = study.getDefaultBatch();
-		batch.removeAllowedWorkerType(admin.getWorker().getWorkerType());
+        // Remove Jatos worker from allowed worker types
+        Batch batch = study.getDefaultBatch();
+        batch.removeAllowedWorkerType(admin.getWorker().getWorkerType());
 
-		// Study doesn't allow this worker type
-		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-					study, batch);
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-					.workerTypeNotAllowed(admin.getWorker().getUIWorkerType(),
-							study.getId(), batch.getId()));
-		}
-	}
+        // Study doesn't allow this worker type
+        try {
+            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+                    study, batch);
+            Fail.fail();
+        } catch (PublixException e) {
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+                    .workerTypeNotAllowed(admin.getWorker().getUIWorkerType(),
+                            study.getId(), batch.getId()));
+        }
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudyNotUser()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Batch batch = study.getDefaultBatch();
-		User admin = testHelper.getAdmin();
+    @Test
+    public void checkWorkerAllowedToDoStudyNotUser()
+            throws NoSuchAlgorithmException, IOException {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Batch batch = study.getDefaultBatch();
+        User admin = testHelper.getAdmin();
 
-		study.removeUser(admin);
+        study.removeUser(admin);
 
-		// User has to be a user of this study
-		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-					study, batch);
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-					.workerNotAllowedStudy(admin.getWorker(), study.getId()));
-		}
-	}
+        // User has to be a user of this study
+        try {
+            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+                    study, batch);
+            Fail.fail();
+        } catch (PublixException e) {
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+                    .workerNotAllowedStudy(admin.getWorker(), study.getId()));
+        }
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudyNotLoggedIn()
-			throws NoSuchAlgorithmException, IOException {
-		testHelper.mockContext();
+    @Test
+    public void checkWorkerAllowedToDoStudyNotLoggedIn()
+            throws NoSuchAlgorithmException, IOException {
+        testHelper.mockContext();
 
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Batch batch = study.getDefaultBatch();
-		User admin = testHelper.getAdmin();
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Batch batch = study.getDefaultBatch();
+        User admin = testHelper.getAdmin();
 
-		// User has to be logged in
-		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-					study, batch);
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-					.workerNotAllowedStudy(admin.getWorker(), study.getId()));
-		}
-	}
+        // User has to be logged in
+        try {
+            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+                    study, batch);
+            Fail.fail();
+        } catch (PublixException e) {
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+                    .workerNotAllowedStudy(admin.getWorker(), study.getId()));
+        }
+    }
 
 }

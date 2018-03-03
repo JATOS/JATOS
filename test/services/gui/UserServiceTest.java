@@ -71,6 +71,7 @@ public class UserServiceTest {
         // Clean up
         testHelper.removeAllStudies();
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
         testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
 

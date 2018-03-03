@@ -77,6 +77,7 @@ public class StudyServiceTest {
         // Clean up
         testHelper.removeAllStudies();
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

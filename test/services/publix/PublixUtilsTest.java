@@ -103,6 +103,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Clean up
         testHelper.removeAllStudies();
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test

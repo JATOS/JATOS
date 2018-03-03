@@ -85,7 +85,7 @@ import java.util.stream.Collectors;
  * write tests: StudyLogger, Studies, HashUtils
  * check Java docs again
  * docs: result data export file name jatos_results_
- *      studyLogger
+ * studyLogger
  */
 
 /**
@@ -100,8 +100,8 @@ public class StudyLogger {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
 
-    private static final String HASH_FUNCTION = "SHA-256";
-    private static final String NO_DATA = "no data";
+    public static final String HASH_FUNCTION = "SHA-256";
+    public static final String NO_DATA = "no data";
 
     public String getFilename(Study study) {
         return study.getUuid() + ".log";
@@ -109,6 +109,14 @@ public class StudyLogger {
 
     public String getPath(Study study) {
         return Common.getStudyLogsPath() + File.separator + getFilename(study);
+    }
+
+    public String getRetiredFilename(Study study) {
+        return study.getUuid() + "_" + Instant.now().toEpochMilli() + ".retired";
+    }
+
+    public String getRetiredPath(Study study) {
+        return Common.getStudyLogsPath() + File.separator + getRetiredFilename(study);
     }
 
     public void create(Study study) {
@@ -150,15 +158,14 @@ public class StudyLogger {
 
     public void retire(Study study) {
         log(study, "Last entry of the study log", Pair.of("studyUuid", study.getUuid()));
-        Path studyLogPath = Paths.get(getPath(study));
-        String retiredFilename = study.getUuid() + "_" + Instant.now().toEpochMilli() + ".retired";
-        Path retiredStudyLogPath =
-                Paths.get(Common.getStudyLogsPath() + File.separator + retiredFilename);
-        if (Files.exists(studyLogPath)) {
+        Path logPath = Paths.get(getPath(study));
+        Path retiredLogPath = Paths.get(getRetiredPath(study));
+        if (Files.exists(logPath)) {
             try {
-                Files.move(studyLogPath, retiredStudyLogPath);
+                Files.move(logPath, retiredLogPath);
             } catch (IOException e) {
-                LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
+                LOGGER.error("Study log couldn't be moved from " + logPath + " to " +
+                        retiredLogPath, e);
             }
         }
     }
@@ -307,8 +314,9 @@ public class StudyLogger {
     public void log(Study study, ObjectNode jsonObj) {
         Path studyLogPath = Paths.get(getPath(study));
         if (Files.notExists(studyLogPath)) {
-            LOGGER.error("Couldn't find log for study with UUID " + study.getUuid() + " in " +
-                    studyLogPath + ". Maybe it was deleted? Create new log file.");
+            // Later we should increase this to 'error'
+            LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " +
+                    studyLogPath + ". Create new log file.");
             recreate(study);
         }
         try {

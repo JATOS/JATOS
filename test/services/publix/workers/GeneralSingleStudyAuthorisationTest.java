@@ -37,104 +37,105 @@ import services.publix.ResultCreator;
  */
 public class GeneralSingleStudyAuthorisationTest {
 
-	private Injector injector;
+    private Injector injector;
 
-	@Inject
-	private TestHelper testHelper;
+    @Inject
+    private TestHelper testHelper;
 
-	@Inject
-	private JPAApi jpaApi;
+    @Inject
+    private JPAApi jpaApi;
 
-	@Inject
-	private WorkerDao workerDao;
+    @Inject
+    private WorkerDao workerDao;
 
-	@Inject
-	private ResultCreator resultCreator;
+    @Inject
+    private ResultCreator resultCreator;
 
-	@Inject
-	private GeneralSingleStudyAuthorisation studyAuthorisation;
+    @Inject
+    private GeneralSingleStudyAuthorisation studyAuthorisation;
 
-	@Before
-	public void startApp() throws Exception {
-		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-				.builder(new ApplicationLoader.Context(Environment.simple()));
-		injector = Guice.createInjector(builder.applicationModule());
-		injector.injectMembers(this);
-	}
+    @Before
+    public void startApp() throws Exception {
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        injector = Guice.createInjector(builder.applicationModule());
+        injector.injectMembers(this);
+    }
 
-	@After
-	public void stopApp() throws Exception {
-		// Clean up
-		testHelper.removeAllStudies();
-		testHelper.removeStudyAssetsRootDir();
-	}
+    @After
+    public void stopApp() throws Exception {
+        // Clean up
+        testHelper.removeAllStudies();
+        testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
-			IOException, ForbiddenPublixException {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Batch batch = study.getDefaultBatch();
-		batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+    @Test
+    public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
+            IOException, ForbiddenPublixException {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Batch batch = study.getDefaultBatch();
+        batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 
-		GeneralSingleWorker worker = new GeneralSingleWorker();
-		jpaApi.withTransaction(() -> workerDao.create(worker));
+        GeneralSingleWorker worker = new GeneralSingleWorker();
+        jpaApi.withTransaction(() -> workerDao.create(worker));
 
-		jpaApi.withTransaction(() -> {
-			StudyResult studyResult = resultCreator.createStudyResult(study,
-					batch, worker);
-			studyResult.setStudyState(StudyState.STARTED);
-		});
+        jpaApi.withTransaction(() -> {
+            StudyResult studyResult = resultCreator.createStudyResult(study,
+                    batch, worker);
+            studyResult.setStudyState(StudyState.STARTED);
+        });
 
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-	}
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudyWrongWorkerType()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+    @Test
+    public void checkWorkerAllowedToDoStudyWrongWorkerType()
+            throws NoSuchAlgorithmException, IOException {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		Batch batch = study.getDefaultBatch();
-		GeneralSingleWorker worker = new GeneralSingleWorker();
+        Batch batch = study.getDefaultBatch();
+        GeneralSingleWorker worker = new GeneralSingleWorker();
 
-		// Study doesn't allow this worker type
-		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
-					batch);
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-					.workerTypeNotAllowed(worker.getUIWorkerType(),
-							study.getId(), batch.getId()));
-		}
-	}
+        // Study doesn't allow this worker type
+        try {
+            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+                    batch);
+            Fail.fail();
+        } catch (PublixException e) {
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+                    .workerTypeNotAllowed(worker.getUIWorkerType(),
+                            study.getId(), batch.getId()));
+        }
+    }
 
-	@Test
-	public void checkWorkerAllowedToDoStudyFinishedStudy()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		
-		Batch batch = study.getDefaultBatch();
-		study.getDefaultBatch()
-				.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
-		
-		GeneralSingleWorker worker = new GeneralSingleWorker();
-		jpaApi.withTransaction(() -> workerDao.create(worker));
+    @Test
+    public void checkWorkerAllowedToDoStudyFinishedStudy()
+            throws NoSuchAlgorithmException, IOException {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		jpaApi.withTransaction(() -> {
-			StudyResult studyResult = resultCreator.createStudyResult(study,
-					batch, worker);
-			studyResult.setStudyState(StudyState.FINISHED);
-		});
+        Batch batch = study.getDefaultBatch();
+        study.getDefaultBatch()
+                .addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 
-		// General single workers can't repeat the same study
-		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
-					batch);
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
-		}
-	}
+        GeneralSingleWorker worker = new GeneralSingleWorker();
+        jpaApi.withTransaction(() -> workerDao.create(worker));
+
+        jpaApi.withTransaction(() -> {
+            StudyResult studyResult = resultCreator.createStudyResult(study,
+                    batch, worker);
+            studyResult.setStudyState(StudyState.FINISHED);
+        });
+
+        // General single workers can't repeat the same study
+        try {
+            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+                    batch);
+            Fail.fail();
+        } catch (PublixException e) {
+            assertThat(e.getMessage())
+                    .isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+        }
+    }
 
 }

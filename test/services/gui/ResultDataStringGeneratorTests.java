@@ -80,6 +80,7 @@ public class ResultDataStringGeneratorTests {
         // Clean up
         testHelper.removeAllStudies();
         testHelper.removeStudyAssetsRootDir();
+        testHelper.removeAllStudyLogs();
     }
 
     @Test
