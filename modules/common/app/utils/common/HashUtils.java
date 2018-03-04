@@ -6,6 +6,8 @@ import java.security.NoSuchAlgorithmException;
 
 public class HashUtils {
 
+    public static final String SHA_256 = "SHA-256";
+
     public static String getHashMD5(String str) {
         try {
             byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
@@ -17,6 +19,10 @@ public class HashUtils {
         }
     }
 
+    /**
+     * Calculates hash with the given hash function. Uses ISO_8859_1 charset. Converts the byte
+     * array into an String of hexadecimal characters.
+     */
     public static String getHash(String str, String hashFunction) {
         try {
             MessageDigest digest = MessageDigest.getInstance(hashFunction);

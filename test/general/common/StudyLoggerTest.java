@@ -173,7 +173,7 @@ public class StudyLoggerTest {
         // Check file hash
         assertThat(json.has("fileHash")).isTrue();
         assertThat(json.get("fileHash").asText()).isEqualTo(
-                HashUtils.getHash(exportedResultDataStr, StudyLogger.SHA_256));
+                HashUtils.getHash(exportedResultDataStr, HashUtils.SHA_256));
 
         check4ResultDataHashes(json);
 
@@ -203,7 +203,7 @@ public class StudyLoggerTest {
         // Check file hash
         assertThat(json.has("fileHash")).isTrue();
         assertThat(json.get("fileHash").asText()).isEqualTo(
-                HashUtils.getHash(exportedResultDataStr, StudyLogger.SHA_256));
+                HashUtils.getHash(exportedResultDataStr, HashUtils.SHA_256));
         check4ResultDataHashes(json);
 
         // Check worker IDs
@@ -238,7 +238,7 @@ public class StudyLoggerTest {
         assertThat(json.get("workerId").asLong()).isEqualTo(worker.getId());
         assertThat(json.has("dataHash")).isTrue();
         assertThat(json.get("dataHash").asText()).isEqualTo(
-                HashUtils.getHash("result data 1", StudyLogger.SHA_256));
+                HashUtils.getHash("result data 1", HashUtils.SHA_256));
     }
 
     @Test
@@ -311,7 +311,7 @@ public class StudyLoggerTest {
         assertThat(json.has("serversMac")).isTrue();
         assertThat(json.get("serversMac").asText()).isEqualTo(Common.getMac());
         assertThat(json.has("hashFunction")).isTrue();
-        assertThat(json.get("hashFunction").asText()).isEqualTo(StudyLogger.SHA_256);
+        assertThat(json.get("hashFunction").asText()).isEqualTo(HashUtils.SHA_256);
     }
 
     private List<StudyResult> get2StudyResults(Study study, Worker worker, Batch batch) {
@@ -365,9 +365,9 @@ public class StudyLoggerTest {
     }
 
     private void check4ResultDataHashes(JsonNode json) {
-        String hash1 = HashUtils.getHash("result data 1", StudyLogger.SHA_256);
-        String hash2 = HashUtils.getHash("result data 2", StudyLogger.SHA_256);
-        String hash3 = HashUtils.getHash("result data 3", StudyLogger.SHA_256);
+        String hash1 = HashUtils.getHash("result data 1", HashUtils.SHA_256);
+        String hash2 = HashUtils.getHash("result data 2", HashUtils.SHA_256);
+        String hash3 = HashUtils.getHash("result data 3", HashUtils.SHA_256);
         assertThat(json.has("dataHashes"));
         json.get("dataHashes").forEach(node -> assertThat(node.asText())
                 .isIn(hash1, hash2, hash3, "no data"));

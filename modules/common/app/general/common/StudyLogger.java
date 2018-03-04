@@ -32,79 +32,29 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author Kristian Lange
- * result data: ok
- * should worker get a UUID too?: no
- * log batch: ok
- * server data MAC, time: ok
- * study created by user: ok
- * ImportExport.exportDataOfComponentResults why not call prepareResponseForExport(): ok
- * overwriteing existing study: no: ok
- * batch created: ok
- * locked/unlocked: ok
- * study started with worker type ID in batch: ok
- * study finished (time): ok
- * properties field names that changed: no: ok
- * remove study -> keep log file (mention in GUI) -> rename old log file (+ timestamp): ok
- * export result data with hash as file name: ok
- * GUI: download button for whole study log as raw JSON: ok
- * GUI: add show study log: ok
- * remove hashes: ok
- * detect log file deletion: ok
- * add IP to first log line: no: ok
- * <p>
- * make log path configurable via prod.conf: ok
- * retire filename wrong: ok
- * In log after delete of study: no hashes and no UUIDs: ok
- * GUI: show warn if log file not found: ok
- * GUI: What if log file deleted and recreated: show warn message: no: ok
- * application/x-download needed?: no: ok
- * maybe use logfilereader?
- * GUI: show only 10000? lines, if more show warn: ok
- * GUI: show last 1000 lines, reversed, as raw and pretty JSON: ok
- * GUI: show pretty and readable (date): ok
- * GUI: download via button: ok
- * log export file hashes?: ok
- * result file name: ok
- * GUI: in reverse order: ok
- * show Eli: ok
- * comments in studylogger, studies and beautify: ok
- * go through all msges
- * remove results in bulk is not efficient (ResultRemover): ok
- * download file not reversed and not chunked: ok
- * check componentService and studyServerice: ok
- * check LogFileReader: ok
- * check result removing: ok
- * name files: jatos-studylog-bla and jatos-results-bla: ok
- * what if log is corrupted: JATOS should still work: ok
- * resultcreator.createStudyResult: why not put worker into study?: ok
- * run old tests and fix them for service classes: ok
- * write tests: StudyLogger, Studies, HashUtils: ok
- * check Java docs again
- * docs: result data export file name jatos_results_
- */
-
-/**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created
  * while the study is created.
- *
+ * <p>
  * Major events are written into this log:
- *   - study creation/deletion/recreation
- *   - batch creation/deletion
- *   - study run start/stops/aborts
- *   - result data storing/deletion
- *   - result data export
- *
+ * - study creation/deletion/recreation
+ * - batch creation/deletion
+ * - study run start/stops/aborts
+ * - result data storing/deletion
+ * - result data export
+ * <p>
  * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If
  * it exports files a SHA-256 hash of the content of the file is included in the log.
+ *
+ * @author Kristian Lange 2018
  */
 @Singleton
 public class StudyLogger {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
 
-    public static final String SHA_256 = "SHA-256";
-
+    /**
+     * JSON key names used in study log
+     */
     public static final String TIMESTAMP = "timestamp";
     public static final String MSG = "msg";
     public static final String STUDY_UUID = "studyUuid";
@@ -165,7 +115,7 @@ public class StudyLogger {
             jsonObj.put(STUDY_UUID, study.getUuid());
             jsonObj.put(JATOS_VERSION, Common.getJatosVersion());
             jsonObj.put(SERVERS_MAC, Common.getMac());
-            jsonObj.put(HASH_FUNCTION, SHA_256);
+            jsonObj.put(HASH_FUNCTION, HashUtils.SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
             byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
             Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.CREATE_NEW);
@@ -227,6 +177,8 @@ public class StudyLogger {
      * Adds an entry to the study log: exporting of several StudyResults. Adds the hashes of
      * all result data, the file hash ( hash of the whole string that is to be exported), and
      * all worker IDs.
+     *
+     * @param studyResultList list of StudyResults that will be exported
      */
     public void logStudyResultDataExporting(List<StudyResult> studyResultList,
             String exportedResultDataStr) {
@@ -238,8 +190,10 @@ public class StudyLogger {
 
     /**
      * Adds an entry to the study log: exporting of several ComponentResults. Adds the hashes of
-     * all result data, the file hash ( hash of the whole string that is to be exported), and
+     * all result data, the file hash (hash of the whole file text that is to be exported), and
      * all worker IDs.
+     *
+     * @param componentResultList list of ComponentResults that will be exported
      */
     public void logComponentResultDataExporting(List<ComponentResult> componentResultList,
             String exportedResultDataStr) {
@@ -253,7 +207,7 @@ public class StudyLogger {
         ArrayNode workerIdArray = Json.newArray();
         for (ComponentResult cr : componentResultList) {
             String resultDataHash = (cr.getData() != null) ?
-                    HashUtils.getHash(cr.getData(), SHA_256) : NO_DATA;
+                    HashUtils.getHash(cr.getData(), HashUtils.SHA_256) : NO_DATA;
             dataHashesArray.add(resultDataHash);
             componentUuidArray.add(cr.getComponent().getUuid());
             workerIdArray.add(cr.getWorkerId());
@@ -261,7 +215,7 @@ public class StudyLogger {
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, "Exported result data to a file. Hashes of each result data and the " +
                 "hash of the whole file content are logged here.");
-        jsonObj.put(FILE_HASH, HashUtils.getHash(exportedResultDataStr, SHA_256));
+        jsonObj.put(FILE_HASH, HashUtils.getHash(exportedResultDataStr, HashUtils.SHA_256));
         jsonObj.set(DATA_HASHES, dataHashesArray);
         jsonObj.set(WORKER_IDS, workerIdArray);
         log(studyResult.getStudy(), jsonObj);
@@ -270,10 +224,12 @@ public class StudyLogger {
     /**
      * Adds an entry to the study log: adds the hash of the result data, component UUID, and the
      * worker ID
+     *
+     * @param componentResult ComponentResults that will be stored
      */
     public void logResultDataStoring(ComponentResult componentResult) {
         String resultDataHash = (componentResult.getData() != null) ?
-                HashUtils.getHash(componentResult.getData(), SHA_256) : NO_DATA;
+                HashUtils.getHash(componentResult.getData(), HashUtils.SHA_256) : NO_DATA;
         Study study = componentResult.getStudyResult().getStudy();
         String componentUuid = componentResult.getComponent().getUuid();
         Long workerId = componentResult.getWorkerId();
@@ -290,7 +246,7 @@ public class StudyLogger {
      * and all worker IDs of the worker who run this component. All component results must come
      * from the same study but not necessarily from the same study result.
      *
-     * @param componentResultList array of ComponentResults to be removed
+     * @param componentResultList list of ComponentResults that will be removed
      */
     public void logResultDataRemoving(List<ComponentResult> componentResultList) {
         if (componentResultList.size() == 0) {
@@ -303,7 +259,7 @@ public class StudyLogger {
         ArrayNode workerIdArray = Json.newArray();
         for (ComponentResult cr : componentResultList) {
             dataHashesArray.add((cr.getData() != null) ?
-                    HashUtils.getHash(cr.getData(), SHA_256) : NO_DATA);
+                    HashUtils.getHash(cr.getData(), HashUtils.SHA_256) : NO_DATA);
             componentUuidArray.add(cr.getComponent().getUuid());
             workerIdArray.add(cr.getWorkerId());
         }
@@ -319,7 +275,7 @@ public class StudyLogger {
      * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs,
      * and all worker IDs of the worker who run this study.
      *
-     * @param studyResultList List of StudyResults which component results should be removed
+     * @param studyResultList List of StudyResults which will be removed
      */
     public void logStudyResultDataRemoving(List<StudyResult> studyResultList) {
         List<ComponentResult> componentResultList = studyResultList.stream()
@@ -328,6 +284,9 @@ public class StudyLogger {
         logResultDataRemoving(componentResultList);
     }
 
+    /**
+     * Adds the given jsonObj as an entry to the study
+     */
     public void log(Study study, ObjectNode jsonObj) {
         Path studyLogPath = Paths.get(getPath(study));
         if (Files.notExists(studyLogPath)) {
@@ -346,6 +305,10 @@ public class StudyLogger {
         }
     }
 
+    /**
+     * @param study      the study of which log will be read
+     * @param entryLimit number of max entries will be read from the log
+     */
     public Source<ByteString, ?> readLogFile(Study study, int entryLimit) {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
