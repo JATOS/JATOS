@@ -82,23 +82,44 @@ import java.util.stream.Collectors;
  * write tests: StudyLogger, Studies, HashUtils: ok
  * check Java docs again
  * docs: result data export file name jatos_results_
- * studyLogger
  */
 
 /**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created
- * together with the study creation. From then on all events are written into it, e.g. study
- * creation/deletion, batch creation/deletion, study run start/stops/aborts, result data storing,
- * result data export. Whenever the log entry handles result data a SHA-256 hash of the data is
- * included in the log.
+ * while the study is created.
+ *
+ * Major events are written into this log:
+ *   - study creation/deletion/recreation
+ *   - batch creation/deletion
+ *   - study run start/stops/aborts
+ *   - result data storing/deletion
+ *   - result data export
+ *
+ * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If
+ * it exports files a SHA-256 hash of the content of the file is included in the log.
  */
 @Singleton
 public class StudyLogger {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
 
-    public static final String HASH_FUNCTION = "SHA-256";
+    public static final String SHA_256 = "SHA-256";
+
+    public static final String TIMESTAMP = "timestamp";
+    public static final String MSG = "msg";
+    public static final String STUDY_UUID = "studyUuid";
+    public static final String JATOS_VERSION = "jatosVersion";
+    public static final String SERVERS_MAC = "serversMac";
+    public static final String HASH_FUNCTION = "hashFunction";
+    public static final String WORKER_ID = "workerId";
+    public static final String WORKER_IDS = "workerIds";
+    public static final String BATCH_ID = "batchId";
+    public static final String DATA_HASH = "dataHash";
+    public static final String DATA_HASHES = "dataHashes";
     public static final String NO_DATA = "no data";
+    public static final String FILE_HASH = "fileHash";
+    public static final String COMPONENT_UUID = "componentUuid";
+    public static final String COMPONENT_UUIDS = "componentUuids";
 
     public String getFilename(Study study) {
         return study.getUuid() + ".log";
@@ -139,12 +160,12 @@ public class StudyLogger {
             }
 
             ObjectNode jsonObj = Json.newObject();
-            jsonObj.put("timestamp", Instant.now().toEpochMilli());
-            jsonObj.put("msg", msg);
-            jsonObj.put("studyUuid", study.getUuid());
-            jsonObj.put("jatosVersion", Common.getJatosVersion());
-            jsonObj.put("serversMac", Common.getMac());
-            jsonObj.put("hashFunction", HASH_FUNCTION);
+            jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
+            jsonObj.put(MSG, msg);
+            jsonObj.put(STUDY_UUID, study.getUuid());
+            jsonObj.put(JATOS_VERSION, Common.getJatosVersion());
+            jsonObj.put(SERVERS_MAC, Common.getMac());
+            jsonObj.put(HASH_FUNCTION, SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
             byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
             Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.CREATE_NEW);
@@ -169,36 +190,36 @@ public class StudyLogger {
 
     public void log(Study study, String msg) {
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", msg);
+        jsonObj.put(MSG, msg);
         log(study, jsonObj);
     }
 
     public void log(Study study, String msg, Pair<String, Object> additionalInfo) {
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", msg);
+        jsonObj.put(MSG, msg);
         jsonObj.put(additionalInfo.getKey(), additionalInfo.getValue().toString());
         log(study, jsonObj);
     }
 
     public void log(Study study, String msg, Worker worker) {
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", msg);
-        jsonObj.put("workerId", worker.getId());
+        jsonObj.put(MSG, msg);
+        jsonObj.put(WORKER_ID, worker.getId());
         log(study, jsonObj);
     }
 
     public void log(Study study, String msg, Batch batch) {
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", msg);
-        jsonObj.put("batchId", batch.getId());
+        jsonObj.put(MSG, msg);
+        jsonObj.put(BATCH_ID, batch.getId());
         log(study, jsonObj);
     }
 
     public void log(Study study, String msg, Batch batch, Worker worker) {
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", msg);
-        jsonObj.put("batchId", batch.getId());
-        jsonObj.put("workerId", worker.getId());
+        jsonObj.put(MSG, msg);
+        jsonObj.put(BATCH_ID, batch.getId());
+        jsonObj.put(WORKER_ID, worker.getId());
         log(study, jsonObj);
     }
 
@@ -232,18 +253,17 @@ public class StudyLogger {
         ArrayNode workerIdArray = Json.newArray();
         for (ComponentResult cr : componentResultList) {
             String resultDataHash = (cr.getData() != null) ?
-                    HashUtils.getHash(cr.getData(), HASH_FUNCTION) : NO_DATA;
+                    HashUtils.getHash(cr.getData(), SHA_256) : NO_DATA;
             dataHashesArray.add(resultDataHash);
             componentUuidArray.add(cr.getComponent().getUuid());
             workerIdArray.add(cr.getWorkerId());
         }
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", "Exported result data to a file. Hashes of each result data and the " +
+        jsonObj.put(MSG, "Exported result data to a file. Hashes of each result data and the " +
                 "hash of the whole file content are logged here.");
-        jsonObj.put("fileHash", HashUtils.getHash(exportedResultDataStr, HASH_FUNCTION));
-        jsonObj.set("dataHashes", dataHashesArray);
-        jsonObj.set("workerIds", workerIdArray);
-        jsonObj.set("dataHashes", dataHashesArray);
+        jsonObj.put(FILE_HASH, HashUtils.getHash(exportedResultDataStr, SHA_256));
+        jsonObj.set(DATA_HASHES, dataHashesArray);
+        jsonObj.set(WORKER_IDS, workerIdArray);
         log(studyResult.getStudy(), jsonObj);
     }
 
@@ -253,15 +273,15 @@ public class StudyLogger {
      */
     public void logResultDataStoring(ComponentResult componentResult) {
         String resultDataHash = (componentResult.getData() != null) ?
-                HashUtils.getHash(componentResult.getData(), HASH_FUNCTION) : NO_DATA;
+                HashUtils.getHash(componentResult.getData(), SHA_256) : NO_DATA;
         Study study = componentResult.getStudyResult().getStudy();
         String componentUuid = componentResult.getComponent().getUuid();
         Long workerId = componentResult.getWorkerId();
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", "Stored component result data");
-        jsonObj.put("componentUuid", componentUuid);
-        jsonObj.put("workerId", workerId);
-        jsonObj.put("dataHash", resultDataHash);
+        jsonObj.put(MSG, "Stored component result data");
+        jsonObj.put(COMPONENT_UUID, componentUuid);
+        jsonObj.put(WORKER_ID, workerId);
+        jsonObj.put(DATA_HASH, resultDataHash);
         log(study, jsonObj);
     }
 
@@ -283,15 +303,15 @@ public class StudyLogger {
         ArrayNode workerIdArray = Json.newArray();
         for (ComponentResult cr : componentResultList) {
             dataHashesArray.add((cr.getData() != null) ?
-                    HashUtils.getHash(cr.getData(), HASH_FUNCTION) : NO_DATA);
+                    HashUtils.getHash(cr.getData(), SHA_256) : NO_DATA);
             componentUuidArray.add(cr.getComponent().getUuid());
             workerIdArray.add(cr.getWorkerId());
         }
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put("msg", "Removed component result data");
-        jsonObj.set("componentUuids", componentUuidArray);
-        jsonObj.set("workerIds", workerIdArray);
-        jsonObj.set("dataHashes", dataHashesArray);
+        jsonObj.put(MSG, "Removed component result data");
+        jsonObj.set(COMPONENT_UUIDS, componentUuidArray);
+        jsonObj.set(WORKER_IDS, workerIdArray);
+        jsonObj.set(DATA_HASHES, dataHashesArray);
         log(study, jsonObj);
     }
 
@@ -317,7 +337,7 @@ public class StudyLogger {
             recreate(study);
         }
         try {
-            jsonObj.put("timestamp", Instant.now().toEpochMilli());
+            jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
             byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
             Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.APPEND);
