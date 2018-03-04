@@ -22,15 +22,12 @@ import utils.common.HashUtils;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -82,7 +79,7 @@ import java.util.stream.Collectors;
  * what if log is corrupted: JATOS should still work: ok
  * resultcreator.createStudyResult: why not put worker into study?: ok
  * run old tests and fix them for service classes: ok
- * write tests: StudyLogger, Studies, HashUtils
+ * write tests: StudyLogger, Studies, HashUtils: ok
  * check Java docs again
  * docs: result data export file name jatos_results_
  * studyLogger
@@ -146,7 +143,7 @@ public class StudyLogger {
             jsonObj.put("msg", msg);
             jsonObj.put("studyUuid", study.getUuid());
             jsonObj.put("jatosVersion", Common.getJatosVersion());
-            jsonObj.put("serversMac", getMAC());
+            jsonObj.put("serversMac", Common.getMac());
             jsonObj.put("hashFunction", HASH_FUNCTION);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
             byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
@@ -327,28 +324,6 @@ public class StudyLogger {
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
         }
-    }
-
-    private String getMAC() {
-        String macStr = "unknown";
-        try {
-            Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
-            while (networks.hasMoreElements()) {
-                NetworkInterface network = networks.nextElement();
-                byte[] mac = network.getHardwareAddress();
-
-                if (mac != null) {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < mac.length; i++) {
-                        sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-                    }
-                    macStr = sb.toString();
-                }
-            }
-        } catch (SocketException e) {
-            LOGGER.info("Couldn't get network MAC address for study log");
-        }
-        return macStr;
     }
 
     public Source<ByteString, ?> readLogFile(Study study, int entryLimit) {

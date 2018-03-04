@@ -8,6 +8,9 @@ import play.api.Application;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
@@ -90,6 +93,11 @@ public class Common {
      */
     private static String jpaDefault;
 
+    /**
+     * MAC address of the network interface
+     */
+    private static String mac;
+
     @Inject
     Common(Application application, Configuration configuration) {
         basepath = fillBasePath(application);
@@ -106,6 +114,7 @@ public class Common {
         dbDefaultUrl = configuration.getString("db.default.url");
         dbDefaultDriver = configuration.getString("db.default.driver");
         jpaDefault = configuration.getString("jpa.default");
+        mac = fillMac();
     }
 
     private String fillBasePath(Application application) {
@@ -164,6 +173,28 @@ public class Common {
         return tmpStudyLogPath;
     }
 
+    private String fillMac() {
+        String macStr = "unknown";
+        try {
+            Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
+            while (networks.hasMoreElements()) {
+                NetworkInterface network = networks.nextElement();
+                byte[] mac = network.getHardwareAddress();
+
+                if (mac != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < mac.length; i++) {
+                        sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+                    }
+                    macStr = sb.toString();
+                }
+            }
+        } catch (SocketException e) {
+            LOGGER.info("Couldn't get network MAC address for study log");
+        }
+        return macStr;
+    }
+
     public static String getJatosVersion() {
         return JATOS_VERSION;
     }
@@ -206,6 +237,10 @@ public class Common {
 
     public static String getJpaDefault() {
         return jpaDefault;
+    }
+
+    public static String getMac() {
+        return mac;
     }
 
 }
