@@ -37,7 +37,7 @@ public class Common {
      * located
      */
     private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";
-    public static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogsPath";
+    public static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
 
     /**
      * JATOS' absolute base path without trailing '/.'
@@ -50,6 +50,11 @@ public class Common {
      * path. If property isn't defined, try in default study path instead.
      */
     private static String studyAssetsRootPath;
+
+    /**
+     * Is study logging enabled
+     */
+    private static boolean studyLogsEnabled;
 
     /**
      * Path in the file system where JATOS stores its logs for each study
@@ -102,6 +107,7 @@ public class Common {
     Common(Application application, Configuration configuration) {
         basepath = fillBasePath(application);
         studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
+        studyLogsEnabled = configuration.getBoolean("jatos.studyLogs.enabled");
         studyLogsPath = fillStudyLogsPath(configuration);
         inMemoryDb = configuration.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = configuration.getInt("jatos.userSession.timeout");
@@ -132,8 +138,8 @@ public class Common {
         String tempStudyAssetsRootPath = configuration.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
         if (tempStudyAssetsRootPath == null || tempStudyAssetsRootPath.trim().isEmpty()) {
             LOGGER.error("Missing configuration of path to study assets directory: "
-                            + "It must be set in application.conf under "
-                            + PROPERTY_STUDY_ASSETS_ROOT_PATH + ".");
+                    + "It must be set in application.conf under "
+                    + PROPERTY_STUDY_ASSETS_ROOT_PATH + ".");
             System.exit(1);
         }
 
@@ -205,6 +211,10 @@ public class Common {
 
     public static String getStudyAssetsRootPath() {
         return studyAssetsRootPath;
+    }
+
+    public static boolean isStudyLogsEnabled() {
+        return studyLogsEnabled;
     }
 
     public static String getStudyLogsPath() {

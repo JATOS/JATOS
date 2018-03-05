@@ -88,17 +88,20 @@ public class StudyLogger {
     }
 
     public void create(Study study) {
+        if (!Common.isStudyLogsEnabled()) return;
         String initialMsg = "Initial entry";
         create(study, initialMsg);
     }
 
     private void recreate(Study study) {
+        if (!Common.isStudyLogsEnabled()) return;
         String initialMsg = "Could not find a study log although the study already exists. " +
                 "Create a new one.";
         create(study, initialMsg);
     }
 
     private void create(Study study, String msg) {
+        if (!Common.isStudyLogsEnabled()) return;
         Path studyLogPath = Paths.get(getPath(study));
         try {
             Path studyLogDirPath = Paths.get(Common.getStudyLogsPath());
@@ -107,6 +110,7 @@ public class StudyLogger {
             }
             if (Files.exists(studyLogPath)) {
                 LOGGER.error("A study log with " + studyLogPath + " exists already.");
+                retire(study);
             }
 
             ObjectNode jsonObj = Json.newObject();
@@ -125,6 +129,7 @@ public class StudyLogger {
     }
 
     public void retire(Study study) {
+        if (!Common.isStudyLogsEnabled()) return;
         log(study, "Last entry of the study log", Pair.of("studyUuid", study.getUuid()));
         Path logPath = Paths.get(getPath(study));
         Path retiredLogPath = Paths.get(getRetiredPath(study));
@@ -139,12 +144,14 @@ public class StudyLogger {
     }
 
     public void log(Study study, String msg) {
+        if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         log(study, jsonObj);
     }
 
     public void log(Study study, String msg, Pair<String, Object> additionalInfo) {
+        if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(additionalInfo.getKey(), additionalInfo.getValue().toString());
@@ -152,6 +159,7 @@ public class StudyLogger {
     }
 
     public void log(Study study, String msg, Worker worker) {
+        if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(WORKER_ID, worker.getId());
@@ -159,6 +167,7 @@ public class StudyLogger {
     }
 
     public void log(Study study, String msg, Batch batch) {
+        if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(BATCH_ID, batch.getId());
@@ -166,6 +175,7 @@ public class StudyLogger {
     }
 
     public void log(Study study, String msg, Batch batch, Worker worker) {
+        if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(BATCH_ID, batch.getId());
@@ -182,6 +192,7 @@ public class StudyLogger {
      */
     public void logStudyResultDataExporting(List<StudyResult> studyResultList,
             String exportedResultDataStr) {
+        if (!Common.isStudyLogsEnabled()) return;
         List<ComponentResult> componentResultList = studyResultList.stream()
                 .map(StudyResult::getComponentResultList).flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -197,9 +208,8 @@ public class StudyLogger {
      */
     public void logComponentResultDataExporting(List<ComponentResult> componentResultList,
             String exportedResultDataStr) {
-        if (componentResultList.isEmpty()) {
-            return;
-        }
+        if (!Common.isStudyLogsEnabled()) return;
+        if (componentResultList.isEmpty()) return;
 
         StudyResult studyResult = componentResultList.get(0).getStudyResult();
         ArrayNode dataHashesArray = Json.newArray();
@@ -228,6 +238,7 @@ public class StudyLogger {
      * @param componentResult ComponentResults that will be stored
      */
     public void logResultDataStoring(ComponentResult componentResult) {
+        if (!Common.isStudyLogsEnabled()) return;
         String resultDataHash = (componentResult.getData() != null) ?
                 HashUtils.getHash(componentResult.getData(), HashUtils.SHA_256) : NO_DATA;
         Study study = componentResult.getStudyResult().getStudy();
@@ -249,9 +260,8 @@ public class StudyLogger {
      * @param componentResultList list of ComponentResults that will be removed
      */
     public void logResultDataRemoving(List<ComponentResult> componentResultList) {
-        if (componentResultList.size() == 0) {
-            return;
-        }
+        if (!Common.isStudyLogsEnabled()) return;
+        if (componentResultList.size() == 0) return;
 
         Study study = componentResultList.get(0).getStudyResult().getStudy();
         ArrayNode dataHashesArray = Json.newArray();
@@ -278,6 +288,7 @@ public class StudyLogger {
      * @param studyResultList List of StudyResults which will be removed
      */
     public void logStudyResultDataRemoving(List<StudyResult> studyResultList) {
+        if (!Common.isStudyLogsEnabled()) return;
         List<ComponentResult> componentResultList = studyResultList.stream()
                 .map(StudyResult::getComponentResultList).flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -288,9 +299,9 @@ public class StudyLogger {
      * Adds the given jsonObj as an entry to the study
      */
     public void log(Study study, ObjectNode jsonObj) {
+        if (!Common.isStudyLogsEnabled()) return;
         Path studyLogPath = Paths.get(getPath(study));
         if (Files.notExists(studyLogPath)) {
-            // Later we should increase this to 'error'
             LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " +
                     studyLogPath + ". Create new log file.");
             recreate(study);
