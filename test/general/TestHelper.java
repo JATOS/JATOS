@@ -7,6 +7,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
+import general.common.RequestScope;
 import general.common.StudyLogger;
 import models.common.Study;
 import models.common.User;
@@ -274,6 +275,11 @@ public class TestHelper {
         authenticationService.writeSessionCookieAndSessionCache(session,
                 user.getEmail(), WWW_EXAMPLE_COM);
         return session;
+    }
+
+    public void defineLoggedInUser(User user) {
+        mockContext();
+        RequestScope.put(AuthenticationService.LOGGED_IN_USER, user);
     }
 
 }

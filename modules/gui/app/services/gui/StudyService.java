@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,11 +49,13 @@ public class StudyService {
     private final WorkerDao workerDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
+    private final AuthenticationService authenticationService;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService,
             StudyDao studyDao, ComponentDao componentDao, BatchDao batchDao,
-            UserDao userDao, WorkerDao workerDao, IOUtils ioUtils, StudyLogger studyLogger) {
+            UserDao userDao, WorkerDao workerDao, IOUtils ioUtils, StudyLogger studyLogger,
+            AuthenticationService authenticationService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -62,6 +65,7 @@ public class StudyService {
         this.workerDao = workerDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
+        this.authenticationService = authenticationService;
     }
 
     /**
@@ -117,8 +121,8 @@ public class StudyService {
         return cloneTitle;
     }
 
-    public void changeUserMember(Study study, User userToChange,
-            boolean isMember) throws ForbiddenException {
+    public void changeUserMember(Study study, User userToChange, boolean isMember)
+            throws ForbiddenException {
         Set<User> userList = study.getUserList();
         if (isMember) {
             if (userList.contains(userToChange)) {
@@ -137,6 +141,29 @@ public class StudyService {
         }
         studyDao.update(study);
         userDao.update(userToChange);
+    }
+
+    /**
+     * Adds all users as members to the given study.
+     */
+    public List<User> addAllUserMembers(Study study) {
+        List<User> userList = userDao.findAll();
+        study.getUserList().addAll(userList);
+        studyDao.update(study);
+        userList.forEach(userDao::update);
+        return userList;
+    }
+
+    /**
+     * Removes all member users from the given study except the logged-in user.
+     */
+    public List<User> removeAllUserMembers(Study study) {
+        List<User> userList = userDao.findAll();
+        userList.remove(authenticationService.getLoggedInUser());
+        study.getUserList().removeAll(userList);
+        studyDao.update(study);
+        userList.forEach(userDao::update);
+        return userList;
     }
 
     /**

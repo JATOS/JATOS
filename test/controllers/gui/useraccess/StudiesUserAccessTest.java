@@ -141,6 +141,22 @@ public class StudiesUserAccessTest {
     }
 
     @Test
+    public void callAddAllMemberUsers() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.Studies.addAllMemberUsers(study.getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
+    }
+
+    @Test
+    public void callRemoveAllMemberUsers() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.Studies.removeAllMemberUsers(study.getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.DELETE);
+    }
+
+    @Test
     public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Studies

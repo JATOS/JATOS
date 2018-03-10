@@ -110,8 +110,7 @@ public class StudyServiceTest {
         Study clone = cloneAndPersistStudy(study);
 
         // Check properties equal in original study and clone
-        assertThat(clone.getComponentList().size())
-                .isEqualTo(study.getComponentList().size());
+        assertThat(clone.getComponentList().size()).isEqualTo(study.getComponentList().size());
         assertThat(clone.getFirstComponent().getTitle())
                 .isEqualTo(study.getFirstComponent().getTitle());
         assertThat(clone.getLastComponent().getTitle())
@@ -131,8 +130,7 @@ public class StudyServiceTest {
         assertThat(clone.getUuid()).isNotEqualTo(study.getUuid());
         assertThat(clone.getUuid()).isNotEmpty();
 
-        assertThat(ioUtils.checkStudyAssetsDirExists(clone.getDirName()))
-                .isTrue();
+        assertThat(ioUtils.checkStudyAssetsDirExists(clone.getDirName())).isTrue();
     }
 
     /**
@@ -143,8 +141,7 @@ public class StudyServiceTest {
     public void checkChangeUserMember() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
-                "bla");
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
         testHelper.createAndPersistUser("blu@blu.com", "Blu", "blu");
 
         // Add user Bla but not user Blu
@@ -161,7 +158,12 @@ public class StudyServiceTest {
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            assertThat(s.getUserList()).containsOnly(userBla, admin);
+            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
+            User uBlu = userDao.findByEmail("blu@blu.com");
+            assertThat(s.getUserList()).containsOnly(uBla, admin);
+            assertThat(admin.getStudyList()).contains(s);
+            assertThat(uBla.getStudyList()).contains(s);
+            assertThat(uBlu.getStudyList()).excludes(s);
         });
 
         // Remove user Bla again
@@ -178,11 +180,74 @@ public class StudyServiceTest {
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
+            User uBlu = userDao.findByEmail("blu@blu.com");
             assertThat(s.getUserList()).containsOnly(admin);
+            assertThat(admin.getStudyList()).contains(s);
+            assertThat(uBla.getStudyList()).excludes(s);
+            assertThat(uBlu.getStudyList()).excludes(s);
         });
 
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
         testHelper.removeUser("blu@blu.com");
+    }
+
+    /**
+     * StudyService.addAllUserMembers(): adding all users to the members of a study
+     * StudyService.removeAllUserMembers(): remove all users from the members of a study
+     */
+    @Test
+    public void checkAddAndRemoveAllUserMember() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+        testHelper.createAndPersistUser("foo@foo.com", "Foo", "foo");
+        testHelper.createAndPersistUser("bar@bar.com", "Bar", "bar");
+
+        // Add all users to members of study
+        jpaApi.withTransaction(() -> {
+            Study s = studyDao.findById(study.getId());
+            studyService.addAllUserMembers(s);
+        });
+
+        // Check that all users are members
+        jpaApi.withTransaction(() -> {
+            Study s = studyDao.findById(study.getId());
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
+            User uFoo = userDao.findByEmail("foo@foo.com");
+            User uBar = userDao.findByEmail("bar@bar.com");
+            assertThat(s.getUserList()).containsOnly(uBla, uFoo, uBar, admin);
+            assertThat(admin.getStudyList()).contains(s);
+            assertThat(uBla.getStudyList()).contains(s);
+            assertThat(uFoo.getStudyList()).contains(s);
+            assertThat(uBar.getStudyList()).contains(s);
+        });
+
+        // Remove all users from members of study except logged-in user
+        testHelper.defineLoggedInUser(testHelper.getAdmin());
+        jpaApi.withTransaction(() -> {
+            Study s = studyDao.findById(study.getId());
+            studyService.removeAllUserMembers(s);
+        });
+
+        // Check that only logged-in user (admin) is member
+        jpaApi.withTransaction(() -> {
+            Study s = studyDao.findById(study.getId());
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
+            User uFoo = userDao.findByEmail("foo@foo.com");
+            User uBar = userDao.findByEmail("bar@bar.com");
+            assertThat(s.getUserList()).containsOnly(admin);
+            assertThat(admin.getStudyList()).contains(s);
+            assertThat(uBla.getStudyList()).excludes(s);
+            assertThat(uFoo.getStudyList()).excludes(s);
+            assertThat(uBar.getStudyList()).excludes(s);
+        });
+
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("foo@foo.com");
+        testHelper.removeUser("bar@bar.com");
     }
 
     /**

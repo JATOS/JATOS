@@ -62,6 +62,8 @@ POST     /jatos/study                                                       @con
 GET      /jatos/:studyId/properties                                         @controllers.gui.Studies.properties(studyId: Long)
 POST     /jatos/:studyId/properties                                         @controllers.gui.Studies.submitEdited(studyId: Long)
 POST     /jatos/:studyId/memberUser                                         @controllers.gui.Studies.toggleMemberUser(studyId: Long, email: String, isMember: Boolean)
+POST     /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.addAllMemberUsers(studyId: Long)
+DELETE   /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.removeAllMemberUsers(studyId: Long)
 GET      /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.memberUsers(studyId: Long)
 DELETE   /jatos/:studyId                                                    @controllers.gui.Studies.remove(studyId: Long)
 POST     /jatos/:studyId/componentOrder                                     @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: String)

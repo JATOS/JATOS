@@ -35,7 +35,8 @@ import java.util.Map;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static play.mvc.Http.Status.*;
+import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
@@ -86,7 +87,7 @@ public class StudiesControllerTest {
      * Test Studies.study()
      */
     @Test
-    public void callStudy() throws Exception {
+    public void callStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Http.Session session = testHelper
@@ -105,7 +106,7 @@ public class StudiesControllerTest {
      * Test Studies.submitCreated()
      */
     @Test
-    public void callSubmitCreated() throws Exception {
+    public void callSubmitCreated() {
         Map<String, String> formMap = new HashMap<>();
         formMap.put(StudyProperties.TITLE, "Title Test");
         formMap.put(StudyProperties.DESCRIPTION, "Description test.");
@@ -342,19 +343,16 @@ public class StudiesControllerTest {
     }
 
     /**
-     * Tests Studies.toggleMemberUser(): test adding and removing a member user
-     * from a study
+     * Tests Studies.toggleMemberUser(): test adding and removing a member user from a study
      */
     @Test
     public void callToggleMemberUser() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
-        User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
-                "bla");
+        User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
 
         // Add someUser as member to study
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(controllers.gui.routes.Studies.toggleMemberUser(
@@ -379,6 +377,39 @@ public class StudiesControllerTest {
     }
 
     /**
+     * Tests Studies.addAllMemberUsers(): test adding all users as members of a study
+     * Tests Studies.removeAllMemberUsers(): test removing all member users from a study
+     */
+    @Test
+    public void callAddAllMemberUsers() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+        testHelper.createAndPersistUser("foo@foo.com", "Foo", "foo");
+        testHelper.createAndPersistUser("bar@bar.com", "Bar", "bar");
+
+        // Add all users as members to study
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder().method("POST")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Studies.addAllMemberUsers(study.getId()).url());
+        Result result = route(request);
+
+        assertThat(result.status()).isEqualTo(OK);
+
+        // Remove all member users from the study
+        request = new RequestBuilder().method("DELETE")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Studies.addAllMemberUsers(study.getId()).url());
+        result = route(request);
+
+        assertThat(result.status()).isEqualTo(OK);
+
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("foo@foo.com");
+        testHelper.removeUser("bar@bar.com");
+    }
+
+    /**
      * Tests Studies.toggleMemberUser(): it's not allowed to remove the last
      * user from a study - a study must always have at least one user.
      */
@@ -395,9 +426,8 @@ public class StudiesControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(controllers.gui.routes.Studies.toggleMemberUser(
                         study.getId(), admin.getEmail(), false).url());
-        Result result = route(request);
 
-        assertThat(result.status()).isEqualTo(FORBIDDEN);
+        testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
     }
 
     /**
@@ -416,9 +446,8 @@ public class StudiesControllerTest {
                 .bodyForm(ImmutableMap.of("bla", "blu"))
                 .uri(controllers.gui.routes.Studies.toggleMemberUser(
                         study.getId(), "non.existing@mail.com", true).url());
-        Result result = route(request);
 
-        assertThat(result.status()).isEqualTo(NOT_FOUND);
+        testHelper.assertJatosGuiException(request, Http.Status.NOT_FOUND, "");
     }
 
     /**
@@ -543,7 +572,8 @@ public class StudiesControllerTest {
 
         assertThat(result.status()).isEqualTo(OK);
         String filename = "jatos_studylog_" + study.getUuid() + ".log";
-        assertThat(result.header("Content-disposition").get()).isEqualTo("attachment; filename=" + filename);
+        assertThat(result.header("Content-disposition").get())
+                .isEqualTo("attachment; filename=" + filename);
         assertThat(result.cookie("fileDownload")).isNotNull();
         assertThat(result.body()).isNotNull();
     }

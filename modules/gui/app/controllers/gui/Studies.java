@@ -307,26 +307,61 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result toggleMemberUser(Long studyId, String email, boolean isMember) {
+    public Result toggleMemberUser(Long studyId, String email, boolean isMember)
+            throws JatosGuiException {
         LOGGER.debug(".toggleMemberUser: studyId " + studyId + ", email " + email
                 + ", isMember " + isMember);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        User userToChange;
+        User userToChange = null;
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             userToChange = userService.retrieveUser(email);
             studyService.changeUserMember(study, userToChange, isMember);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        } catch (BadRequestException e) {
-            return badRequest(e.getMessage());
+        } catch (ForbiddenException | NotFoundException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
         }
 
         return ok(jsonUtils.memberUserOfStudy(userToChange, study));
     }
+
+    /**
+     * Ajax POST request that adds all users as members to a study
+     */
+    @Transactional
+    @Authenticated
+    public Result addAllMemberUsers(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".addAllMemberUsers: studyId " + studyId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        studyService.addAllUserMembers(study);
+        return ok();
+    }
+
+    /**
+     * Ajax DELETE request that removes all member users from a study
+     */
+    @Transactional
+    @Authenticated
+    public Result removeAllMemberUsers(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".removeAllMemberUsers: studyId " + studyId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        studyService.removeAllUserMembers(study);
+        return ok();
+    }
+
 
     /**
      * Ajax POST request

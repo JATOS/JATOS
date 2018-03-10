@@ -297,7 +297,7 @@ public class UserServiceTest {
     @Test
     public void checkChangeAdminRole() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-        defineLoggedInUser(testHelper.getAdmin());
+        testHelper.defineLoggedInUser(testHelper.getAdmin());
 
         // Add ADMIN role to user
         jpaApi.withTransaction(() -> {
@@ -337,7 +337,7 @@ public class UserServiceTest {
     @Test
     public void checkChangeAdminRoleEmailCaseInsensitive() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-        defineLoggedInUser(testHelper.getAdmin());
+        testHelper.defineLoggedInUser(testHelper.getAdmin());
 
         // Add ADMIN role to user with mixed-case email
         jpaApi.withTransaction(() -> {
@@ -375,7 +375,7 @@ public class UserServiceTest {
      */
     @Test
     public void checkChangeAdminRoleUserNotFound() {
-        defineLoggedInUser(testHelper.getAdmin());
+        testHelper.defineLoggedInUser(testHelper.getAdmin());
 
         jpaApi.withTransaction(() -> {
             try {
@@ -397,7 +397,7 @@ public class UserServiceTest {
     public void checkChangeAdminRoleAdminAlwaysAdmin() {
         // Put a different user than 'admin' in RequestScope as logged-in
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-        defineLoggedInUser(userBla);
+        testHelper.defineLoggedInUser(userBla);
 
         jpaApi.withTransaction(() -> {
             try {
@@ -420,7 +420,7 @@ public class UserServiceTest {
     @Test
     public void checkChangeAdminRoleLoggedInCantLoose() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-        defineLoggedInUser(testHelper.getAdmin());
+        testHelper.defineLoggedInUser(testHelper.getAdmin());
 
         // First add ADMIN role to user
         jpaApi.withTransaction(() -> {
@@ -432,7 +432,7 @@ public class UserServiceTest {
         });
 
         // Now make userBla the logged-in user
-        defineLoggedInUser(userBla);
+        testHelper.defineLoggedInUser(userBla);
 
         // Try to remove ADMIN role from user
         jpaApi.withTransaction(() -> {
@@ -527,11 +527,6 @@ public class UserServiceTest {
                 // Must throw a ForbiddenException
             }
         });
-    }
-
-    private void defineLoggedInUser(User user) {
-        testHelper.mockContext();
-        RequestScope.put(AuthenticationService.LOGGED_IN_USER, user);
     }
 
 }
