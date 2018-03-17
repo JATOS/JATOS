@@ -80,7 +80,7 @@ public class UsersControllerTest {
      * Action Users.userManager()
      */
     @Test
-    public void callUserManager() throws Exception {
+    public void callUserManager() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
@@ -99,7 +99,7 @@ public class UsersControllerTest {
      * Action Users.allUserData()
      */
     @Test
-    public void callAllUserData() throws Exception {
+    public void callAllUserData() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
@@ -116,7 +116,7 @@ public class UsersControllerTest {
      * Action Users.toggleAdmin()
      */
     @Test
-    public void callToggleAdmin() throws Exception {
+    public void callToggleAdmin() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
@@ -138,7 +138,7 @@ public class UsersControllerTest {
      * Action Users.profile()
      */
     @Test
-    public void callProfile() throws Exception {
+    public void callProfile() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
@@ -157,7 +157,7 @@ public class UsersControllerTest {
      * Action Users.singleUserData()
      */
     @Test
-    public void callSingleUserData() throws Exception {
+    public void callSingleUserData() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
@@ -175,14 +175,14 @@ public class UsersControllerTest {
      * Action Users.submitCreated()
      */
     @Test
-    public void callSubmitCreated() throws Exception {
+    public void callSubmitCreated() {
         Map<String, String> formMap = new HashMap<>();
         formMap.put(NewUserModel.ADMIN_PASSWORD, UserService.ADMIN_PASSWORD);
         formMap.put(NewUserModel.ADMIN_ROLE, "true");
         formMap.put(NewUserModel.EMAIL, "foo@foo.org");
         formMap.put(NewUserModel.NAME, "Foo Fool");
-        formMap.put(NewUserModel.PASSWORD, "foo");
-        formMap.put(NewUserModel.PASSWORD_REPEAT, "foo");
+        formMap.put(NewUserModel.PASSWORD, "abcABC1!");
+        formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
 
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
@@ -199,7 +199,7 @@ public class UsersControllerTest {
      * Action Users.submitEditedProfile()
      */
     @Test
-    public void callSubmitEditedProfile() throws Exception {
+    public void callSubmitEditedProfile() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 
@@ -226,15 +226,15 @@ public class UsersControllerTest {
      * admin password can be left empty.
      */
     @Test
-    public void callSubmitChangedPasswordByUserSelf() throws Exception {
+    public void callSubmitChangedPasswordByUserSelf() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 
         Map<String, String> formMap = new HashMap<>();
         formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "");
-        formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
         formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT,
-                "Different Password");
+                "DifferentPw1!");
         formMap.put(ChangePasswordModel.OLD_PASSWORD, "bla");
 
         Http.Session session = testHelper.mockSessionCookieandCache(userBla);
@@ -257,15 +257,15 @@ public class UsersControllerTest {
      * password can be left empty.
      */
     @Test
-    public void callSubmitChangedPasswordByAdmin() throws Exception {
+    public void callSubmitChangedPasswordByAdmin() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         Map<String, String> formMap = new HashMap<>();
         formMap.put(ChangePasswordModel.ADMIN_PASSWORD,
                 UserService.ADMIN_PASSWORD);
-        formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
         formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT,
-                "Different Password");
+                "DifferentPw1!");
         formMap.put(ChangePasswordModel.OLD_PASSWORD, "");
 
         Http.Session session = testHelper
@@ -290,8 +290,7 @@ public class UsersControllerTest {
      * If the wrong admin password is given an 403 is returned.
      */
     @Test
-    public void callSubmitChangedPasswordByAdminWrongPassword()
-            throws Exception {
+    public void callSubmitChangedPasswordByAdminWrongPassword() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 
@@ -323,8 +322,7 @@ public class UsersControllerTest {
      * If the wrong user password is given an 403 is returned.
      */
     @Test
-    public void callSubmitChangedPasswordByUserSelfWrongPassword()
-            throws Exception {
+    public void callSubmitChangedPasswordByUserSelfWrongPassword() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 
@@ -355,7 +353,7 @@ public class UsersControllerTest {
      * password in the form has to be admin's password.
      */
     @Test
-    public void callRemoveByAdmin() throws Exception {
+    public void callRemoveByAdmin() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         Map<String, String> formMap = new HashMap<>();
@@ -382,7 +380,7 @@ public class UsersControllerTest {
      * password in the form has to be the user's own password.
      */
     @Test
-    public void callRemoveByUserSelf() throws Exception {
+    public void callRemoveByUserSelf() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 
@@ -411,7 +409,7 @@ public class UsersControllerTest {
      * is returned.
      */
     @Test
-    public void callRemoveButNoAdminRole() throws Exception {
+    public void callRemoveButNoAdminRole() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 
@@ -436,7 +434,7 @@ public class UsersControllerTest {
      * returned
      */
     @Test
-    public void callRemoveWrongPassword() throws Exception {
+    public void callRemoveWrongPassword() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla Bla", "bla");
 

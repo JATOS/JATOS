@@ -1,5 +1,6 @@
 package general.common;
 
+import org.apache.commons.lang3.tuple.Pair;
 import play.Configuration;
 import play.Logger;
 import play.Logger.ALogger;
@@ -10,7 +11,7 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Enumeration;
+import java.util.*;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
@@ -103,6 +104,29 @@ public class Common {
      */
     private static String mac;
 
+    /**
+     * Message that will be displayed during user creation that describes password requirements
+     */
+    private static int userPasswordLength;
+
+    /**
+     * Regex that will be used to check the password during user creation
+     */
+    private static int userPasswordStrength;
+
+    /**
+     * List of regular expressions and their description as Pairs that define password restrictions
+     * (the regexes are from https://stackoverflow.com/questions/19605150)
+     */
+    private static List<Pair<String, String>> userPasswordStrengthRegexList = Arrays.asList(
+            Pair.of("No restrictions on characters.", "^.*$"),
+            Pair.of("At least one Latin letter and one number.",
+                    "^(?=.*?[A-Za-z])(?=.*?[0-9]).{2,}$"),
+            Pair.of("At least one Latin letter, one number and one special character (#?!@$%^&*-).",
+                    "^(?=.*?[A-Za-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{3,}$"),
+            Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special character (#?!@$%^&*-).",
+                    "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
+
     @Inject
     Common(Application application, Configuration configuration) {
         basepath = fillBasePath(application);
@@ -121,6 +145,11 @@ public class Common {
         dbDefaultDriver = configuration.getString("db.default.driver");
         jpaDefault = configuration.getString("jpa.default");
         mac = fillMac();
+        userPasswordLength = configuration.getInt("jatos.user.password.length");
+        userPasswordStrength = configuration.getInt("jatos.user.password.strength");
+        if (userPasswordStrength > userPasswordStrengthRegexList.size()) {
+            userPasswordStrength = 0;
+        }
     }
 
     private String fillBasePath(Application application) {
@@ -251,6 +280,14 @@ public class Common {
 
     public static String getMac() {
         return mac;
+    }
+
+    public static int getUserPasswordMinLength() {
+        return userPasswordLength;
+    }
+
+    public static Pair<String, String> getUserPasswordStrengthRegex() {
+        return userPasswordStrengthRegexList.get(userPasswordStrength);
     }
 
 }

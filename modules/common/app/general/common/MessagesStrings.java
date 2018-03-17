@@ -259,6 +259,10 @@ public class MessagesStrings {
         return "An user with email " + email + " doesn't exist.";
     }
 
+    public static String userPasswordMinLength(int minLength) {
+        return "Passwords should be at least " + minLength + " characters long.";
+    }
+
     public static String userNotAllowedToGetData(String email) {
         return "You are not allowed to get data for user " + email + ".";
     }

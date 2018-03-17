@@ -8,7 +8,6 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.TestHelper;
 import general.common.MessagesStrings;
-import general.common.RequestScope;
 import models.common.Study;
 import models.common.User;
 import models.common.User.Role;

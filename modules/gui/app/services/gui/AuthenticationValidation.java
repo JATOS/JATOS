@@ -1,11 +1,15 @@
 package services.gui;
 
 import daos.common.UserDao;
+import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.NewUserModel;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
@@ -16,8 +20,8 @@ import java.util.List;
 /**
  * Service class that validates models that create, change or delete users.
  * Usually this validation is part of the model class, but since this is
- * concerns authentication and it used other service and DAO classes I put it in
- * an extra class.
+ * concerns important user authentication and it used other service and DAO
+ * classes I put it in an extra class.
  *
  * @author Kristian Lange (2017)
  */
@@ -42,9 +46,68 @@ public class AuthenticationValidation {
     public List<ValidationError> validateNewUser(NewUserModel newUserModel,
             String loggedInAdminEmail) {
         List<ValidationError> errorList = new ArrayList<>();
+        String email = newUserModel.getEmail();
+        String password = newUserModel.getPassword();
+        String passwordRepeat = newUserModel.getPasswordRepeat();
+        String name = newUserModel.getName();
+
+        if (email == null || email.trim().isEmpty()) {
+            errorList.add(
+                    new ValidationError(NewUserModel.EMAIL, MessagesStrings.MISSING_EMAIL));
+            return errorList;
+        }
+
+        if (email.length() > 255) {
+            errorList.add(
+                    new ValidationError(NewUserModel.EMAIL, MessagesStrings.EMAIL_TOO_LONG));
+        }
+
+        // Check with Jsoup for illegal HTML
+        if (!Jsoup.isValid(email, Whitelist.none())) {
+            errorList.add(new ValidationError(NewUserModel.EMAIL, MessagesStrings.NO_HTML_ALLOWED));
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            errorList.add(
+                    new ValidationError(NewUserModel.NAME, MessagesStrings.MISSING_NAME));
+            return errorList;
+        }
+
+        if (name.length() > 255) {
+            errorList.add(
+                    new ValidationError(NewUserModel.NAME, MessagesStrings.NAME_TOO_LONG));
+        }
+
+        // Check with Jsoup for illegal HTML
+        if (!Jsoup.isValid(name, Whitelist.none())) {
+            errorList.add(
+                    new ValidationError(NewUserModel.NAME, MessagesStrings.NO_HTML_ALLOWED));
+        }
+
+        if (password == null || password.trim().isEmpty()) {
+            errorList.add(new ValidationError(NewUserModel.PASSWORD,
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            return errorList;
+        }
+        if (passwordRepeat == null || passwordRepeat.trim().isEmpty()) {
+            errorList.add(new ValidationError(NewUserModel.PASSWORD_REPEAT,
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            return errorList;
+        }
+
+        // Check password length as specified in config
+        if (password.length() < Common.getUserPasswordMinLength()) {
+            errorList.add(new ValidationError(NewUserModel.PASSWORD,
+                    MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
+        }
+
+        // Check password strength as specified in config
+        Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
+        if (!password.matches(regex.getRight())) {
+            errorList.add(new ValidationError(NewUserModel.PASSWORD, regex.getLeft()));
+        }
 
         // Check if user with this email already exists
-        String email = newUserModel.getEmail();
         User existingUser = userDao.findByEmail(email);
         if (existingUser != null) {
             errorList.add(new ValidationError(NewUserModel.EMAIL,
@@ -52,8 +115,6 @@ public class AuthenticationValidation {
         }
 
         // Check both passwords equal
-        String password = newUserModel.getPassword();
-        String passwordRepeat = newUserModel.getPasswordRepeat();
         if (!password.equals(passwordRepeat)) {
             errorList.add(new ValidationError(NewUserModel.PASSWORD,
                     MessagesStrings.PASSWORDS_DONT_MATCH));
@@ -85,18 +146,44 @@ public class AuthenticationValidation {
         List<ValidationError> errorList = new ArrayList<>();
 
         // Only user 'admin' is allowed to change his password
-        if (emailOfUserToChange.equals(UserService.ADMIN_EMAIL)
-                && !loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
+        if (emailOfUserToChange.equals(UserService.ADMIN_EMAIL) &&
+                !loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
             errorList.add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
                     MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
+            return errorList;
         }
 
-        // Check both passwords equal
         String newPassword = changePasswordModel.getNewPassword();
         String newPasswordRepeat = changePasswordModel.getNewPasswordRepeat();
+
+        // Check both not empty
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD,
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            return errorList;
+        }
+        if (newPasswordRepeat == null || newPasswordRepeat.trim().isEmpty()) {
+            errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD_REPEAT,
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            return errorList;
+        }
+
+        // Check both match
         if (!newPassword.equals(newPasswordRepeat)) {
             errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD,
                     MessagesStrings.PASSWORDS_DONT_MATCH));
+        }
+
+        // Check length as specified in conf
+        if (newPassword != null && newPassword.length() < Common.getUserPasswordMinLength()) {
+            errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD,
+                    MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
+        }
+
+        // Check strength as specified in conf
+        Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
+        if (newPassword != null && !newPassword.matches(regex.getRight())) {
+            errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD, regex.getLeft()));
         }
 
         // Authenticate: Either admin changes a password for some other user
