@@ -1,7 +1,6 @@
 package daos.common;
 
 import models.common.Batch;
-import models.common.ComponentResult;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import play.db.jpa.JPAApi;
@@ -39,11 +38,11 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public void removeAll(List<GroupResult> groupResultList) {
+        if (groupResultList.isEmpty()) return;
         String queryStr = "DELETE FROM GroupResult gr WHERE gr in :grList";
         Query query = jpa.em().createQuery(queryStr);
         query.setParameter("grList", groupResultList).executeUpdate();
     }
-
 
     public void refresh(GroupResult groupResult) {
         super.refresh(groupResult);
@@ -86,14 +85,6 @@ public class GroupResultDao extends AbstractDao {
                 GroupResult.class);
         query.setParameter("batch", batch);
         query.setParameter("groupState", GroupState.STARTED);
-        return query.getResultList();
-    }
-
-    public List<GroupResult> findAllNotFinished() {
-        String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.groupState <> :groupState";
-        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr,
-                GroupResult.class);
-        query.setParameter("groupState", GroupState.FINISHED);
         return query.getResultList();
     }
 
