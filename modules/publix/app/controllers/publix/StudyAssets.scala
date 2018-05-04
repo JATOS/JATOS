@@ -1,16 +1,19 @@
 package controllers.publix
 
 import java.io.{File, IOException}
-import javax.inject.Inject
-import javax.inject.Singleton
 
+import daos.common.{ComponentDao, StudyDao}
 import exceptions.publix.{ForbiddenPublixException, NotFoundPublixException, PublixException}
 import general.common.{Common, MessagesStrings}
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.mvc.{Action, Controller, Result}
+import play.db.jpa.JPAApi
 import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
 import utils.common.{HttpUtils, IOUtils}
+
+import scala.compat.java8.FunctionConverters.asJavaSupplier
 
 /**
   * Manages web-access to files in the external study assets directories (outside of JATOS'
@@ -19,8 +22,8 @@ import utils.common.{HttpUtils, IOUtils}
   * @author Kristian Lange
   */
 @Singleton
-class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService) extends
-    Controller {
+class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, jpa: JPAApi,
+                            studyDao: StudyDao, componentDao: ComponentDao) extends Controller {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -30,6 +33,22 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService) 
     * Identifying part of any URL that indicates an access to the study assets directories.
     */
   val URL_STUDY_ASSETS = "study_assets"
+
+  /**
+    * Returns the study asset file that belongs to the study with the given study ID (component ID
+    * is ignored) and has the given relative path within the study assets folder. In difference to
+    * the versioned method it is not neccessary to add the prefix 'study_assets' or the study assets
+    * folder name (because it's retrieved from the DB).
+    */
+  def viaStudyId(studyId: Long, componentId: Long, urlPath: String) = {
+    jpa.withTransaction(asJavaSupplier(() => {
+      val study = studyDao.findById(studyId)
+      if (study == null) {
+        BadRequest(MessagesStrings.studyNotExist(studyId))
+      }
+      versioned(study.getDirName() + URL_PATH_SEPARATOR + urlPath)
+    }))
+  }
 
   /**
     * Action called while routing. Translates the given file path from the URL into a file path

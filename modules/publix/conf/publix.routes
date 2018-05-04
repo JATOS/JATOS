@@ -29,10 +29,10 @@ GET     /publix/:studyId/group/leave                     @controllers.publix.Cha
 
 
 ### Static resources ###
-GET     /public/*file                      controllers.publix.Assets.versioned(path = "/public", file)
 
-# For all other files: try to load them as study assets
-GET     /study_assets_root/*file           @controllers.publix.StudyAssets.versioned(file)
-GET     /study_assets/*file                @controllers.publix.StudyAssets.versioned(file)
-GET     /*file                             @controllers.publix.StudyAssets.versioned(file)
+GET     /public/*file                                    controllers.publix.Assets.versioned(path = "/public", file)
 
+# Study assets
+GET     /publix/:studyId/:componentId/*file              @controllers.publix.StudyAssets.viaStudyId(studyId: Long, componentId: Long, file: String)
+GET     /study_assets_root/*file                         @controllers.publix.StudyAssets.versioned(file)
+GET     /study_assets/*file                              @controllers.publix.StudyAssets.versioned(file)
