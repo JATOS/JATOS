@@ -3,64 +3,334 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
+
 <div class="btn-group">
-	<button id="createBatchButton" type="button" class="btn btn-batch">New Batch</button>
+  <button type="button" class="btn btn-batch">Choose Batch</button>
+  <button type="button" class="btn btn-batch dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <span class="caret"></span>
+    <span class="sr-only">Toggle Dropdown</span>
+  </button>
+  <ul class="dropdown-menu">
+    <li><a href="#">Default</a></li>
+    <li><a href="#">Foo</a></li>
+    <li><a href="#">Bar</a></li>
+    <li><a href="#">Blafasel</a></li>
+  </ul>
 </div>
-<table id="batchTable" class="table top-buffer">
-	<thead>
-		<tr>
-			<th data-toggle="tooltip" data-placement="bottom" title="In inactive batches studies cannot be run">Active</th>
-			<th data-toggle="tooltip" data-placement="bottom" title="ID of this batch">ID</th>
-			<th>Title</th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-		<!-- Template for batch's row -->
-		<tr id="batchRowTemplate" class="batchItem" style="display: none">
-			<td>
-				<button type="button" class="btn btn-sm btn-batch activeButton" data-toggle="tooltip" data-placement="bottom" title="">
-					<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-				</button>
-			</td>
-			<td class="batchId"></td>
-			<td class="batchTitle"></td>
-			<td>
-				<div class="batchBtnGroup btn-group pull-right" aria-hidden="true">
-					<button type="button" class="batchWorkerSetupButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-						title="Manage the workers of this batch">
-						Worker Setup <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
-					</button>
-					<button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-						title="Edit this batch's properties">
-						Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
-					<button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-						title="Edit this batch's session data">
-						Session Data <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span></button>	
-					<button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-						title="Shows the study results of this batch">
-						Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-						title="Number of study results that belong to this batch"></span>
-					</button>
-					<div class="btn-group">
-						<button type="button" class="btn btn-batch dropdown-toggle"
-							data-toggle="dropdown">
-							More <span class="caret"></span>
-						</button>
-						<ul class="dropdown-menu dropdown-menu-right" role="menu">
-							<li data-toggle="tooltip" data-placement="bottom"
-								title="Deletes this batch but doesn't delete any results">
-								<a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-									Delete
-								</a>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</td>
-		</tr>
-	</tbody>
-</table>
+
+<div class="btn-group">
+    <button id="createBatchButton" type="button" class="btn btn-batch">New Batch</button>
+</div>
+
+
+<div class="panel-group" id="batchPanelGroup" role="tablist">
+    <div class="panel panel-default batchPanel">
+        <div class="panel-heading">
+            <a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip">
+                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to expand/collapse this result">
+                </span>
+            </a>
+            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+            </button>
+            <span class="panel-title">Default Batch</span>
+
+            <div class="btn-group pull-right" aria-hidden="true">
+                <button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Edit this batch's properties">
+                    Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
+                <button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Edit this batch's session data">
+                    Session Data <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span></button>
+                <button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Shows the study results of this batch">
+                    Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch"></span>
+                </button>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-batch dropdown-toggle"
+                        data-toggle="dropdown">
+                        More <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li data-toggle="tooltip" data-placement="bottom"
+                            title="Deletes this batch but doesn't delete any results">
+                            <a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                Delete
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-body">
+            <div class="panel-group" id="workerPanelGroup" role="tablist">
+                <div class="panel panel-default" id="jatosWorkerPanel">
+                    <div class="panel-heading">
+                         <span class="panel-title">
+                            <a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip">
+                                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                                    data-placement="bottom" title="Click to expand/collapse this result">
+                                </span>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                            </button>
+                            <a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip"
+                                title="This worker belongs to a JATOS user. Jatos workers can run any study as many times as they want. Usually used during development.">
+                                <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>&nbsp;@common.workers.JatosWorker.UI_WORKER_TYPE Worker
+                                <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                    title="Number of workers of type @common.workers.JatosWorker.UI_WORKER_TYPE who are user of this study"></span>
+                            </a>
+                        </span>
+                        <span class="btn-group pull-right">
+                            <button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
+                                title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE workers">
+                                Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                title="Number of study results that belong to this batch that are done by @common.workers.JatosWorker.UI_WORKER_TYPE workers">23</span>
+                            </button>
+                        </span>
+                    </div>
+                    <div id="jatosWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
+                        <table class="table workerTable">
+                            <thead>
+                                <tr>
+                                    <th>Worker ID</th>
+                                    <th>User Email</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel panel-default" id="personalSingleWorkerPanel">
+                    <div class="panel-heading">
+                        <span class="panel-title">
+                            <a role="button" data-toggle="collapse" href="#personalSingleWorkerTableDiv">
+                                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                                    data-placement="bottom" title="Click to expand/collapse this result">
+                                </span>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                            </button>
+                            <a role="button" data-toggle="collapse" href="#personalSingleWorkerTableDiv"
+                                data-toggle="tooltip" title="This worker must be pre-created here (Add button) and it can run a study only once. Typically used to distribute amongst participants that you contact individually. Each link is personalized with the comments.">
+                                <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>&nbsp;@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker
+                                <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                    title="Number of workers of type @common.workers.PersonalSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                            </a>
+                        </span>
+                        <span class="btn-group pull-right">
+                            <button type="button" class="btn btn-batch addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Single Worker">Add</button>
+                            <button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
+                                title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
+                                Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                title="Number of study results that belong to this batch that are done by @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">24</span>
+                            </button>
+                        </span>
+                    </div>
+                    <div id="personalSingleWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
+                        <table class="table workerTable">
+                            <thead>
+                                <tr>
+                                    <th>Worker ID</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel panel-default" id="personalMultipleWorkerPanel">
+                    <div class="panel-heading">
+                        <span class="panel-title">
+                            <a role="button" data-toggle="collapse" href="#personalMultipleWorkerTableDiv">
+                                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                                    data-placement="bottom" title="Click to expand/collapse this result">
+                                </span>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                            </button>
+                            <a role="button" data-toggle="collapse" href="#personalMultipleWorkerTableDiv"
+                                data-toggle="tooltip" title="This worker must be pre-created here (Add button) and it can run a study multiple times. Typically used to distribute amongst your pilot workers. Each link can be personalized with the comments.">
+                                <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>&nbsp;@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker
+                                <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                    title="Number of workers of type @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                            </a>
+                        </span>
+                        <span class="btn-group pull-right">
+                            <button type="button" class="btn btn-batch addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Multiple Worker">Add</button>
+                            <button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
+                                title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
+                                Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                title="Number of study results that belong to this batch that are done by @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">25</span>
+                            </button>
+                        </span>
+                    </div>
+                    <div id="personalMultipleWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
+                        <table class="table workerTable">
+                            <thead>
+                                <tr>
+                                    <th>Worker ID</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel panel-default" id="mtWorkerPanel">
+                    <div class="panel-heading">
+                        <span class="panel-title">
+                            <a role="button" data-toggle="collapse" href="#mtWorkerTableDiv">
+                                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                                    data-placement="bottom" title="Click to expand/collapse this result">
+                                </span>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                            </button>
+                            <a role="button" data-toggle="collapse" href="#mtWorkerTableDiv"
+                                data-toggle="tooltip" title="MTurk workers are created on the fly when the study is started through Mechanical Turk. MTurk workers can run a study only once.">
+                                <span class="glyphicon glyphicon-mturk" aria-hidden="true"></span>&nbsp;@common.workers.MTWorker.UI_WORKER_TYPE Worker
+                                <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                    title="Number of workers of type @common.workers.MTWorker.UI_WORKER_TYPE who at least started this study"></span>
+                            </a>
+                        </span>
+                        <span class="btn-group pull-right">
+                            <button type="button" class="btn btn-batch mtWorkerSourceCode" data-toggle="tooltip" data-placement="bottom"
+                                title="Shows code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">
+                                Source Code
+                            </button>
+                            <button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
+                                title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE workers">
+                                Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                title="Number of study results that belong to this batch that are done by @common.workers.MTWorker.UI_WORKER_TYPE workers">36</span>
+                            </button>
+                        </span>
+                    </div>
+                    <div id="mtWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
+                        <table class="table workerTable">
+                            <thead>
+                                <tr>
+                                    <th>Worker ID</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="ID given by MTurk - not JATOS">MTurk Worker ID</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="MTurk or MTurk Sandbox">Type</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="State of study">Study State</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel panel-default" id="generalSingleWorkerPanel">
+                    <div class="panel-heading">
+                        <span class="panel-title">
+                            <a role="button" data-toggle="collapse" href="#generalSingleWorkerTableDiv">
+                                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                                    data-placement="bottom" title="Click to expand/collapse this result">
+                                </span>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                            </button>
+                            <a role="button" data-toggle="collapse" href="#generalSingleWorkerTableDiv"
+                                data-toggle="tooltip" title="This worker type is created on the fly when the study is started with the link. This worker can start a study only once. Typically used to distribute in a mailing list or posting it in a public website.">
+                                <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>&nbsp;@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker
+                                <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                    title="Number of workers of type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                            </a>
+                        </span>
+                        <span class="btn-group pull-right">
+                            <button type="button" class="btn btn-batch linkButton" data-toggle="tooltip" data-placement="bottom" title="Get the link with which one can start a run with a General Single Worker">Link</button>
+                            <button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
+                                title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
+                                Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                                title="Number of study results that belong to this batch that are done by @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">0</span>
+                            </button>
+                        </span>
+                    </div>
+                    <div id="generalSingleWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
+                        <table class="table workerTable">
+                            <thead>
+                                <tr>
+                                    <th>Worker ID</th>
+                                    <th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default batchPanel">
+        <div class="panel-heading">
+            <a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip">
+                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to expand/collapse this result">
+                </span>
+            </a>
+            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+            </button>
+            <span class="panel-title">Foo Batch</span>
+
+            <div class="btn-group pull-right" aria-hidden="true">
+                <button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Edit this batch's properties">
+                    Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
+                <button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Edit this batch's session data">
+                    Session Data <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span></button>
+                <button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Shows the study results of this batch">
+                    Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch"></span>
+                </button>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-batch dropdown-toggle"
+                        data-toggle="dropdown">
+                        More <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li data-toggle="tooltip" data-placement="bottom"
+                            title="Deletes this batch but doesn't delete any results">
+                            <a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                Delete
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 <!-- Create Batch Modal -->
 <div class="modal fade" id="createBatchModal" data-backdrop="static"
