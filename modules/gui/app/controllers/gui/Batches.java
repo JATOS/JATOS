@@ -86,12 +86,12 @@ public class Batches extends Controller {
     }
 
     /**
-     * GET request to get the runManager page
+     * GET request to get the Worker & Batch Manager page
      */
     @Transactional
     @Authenticated
-    public Result batchManager(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".batchManager: studyId " + studyId);
+    public Result workerAndBatchManager(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".workerAndBatchManager: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -101,8 +101,8 @@ public class Batches extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study,
-                BreadcrumbsService.BATCH_MANAGER);
-        return ok(views.html.gui.batch.batchManager.render(loggedInUser,
+                BreadcrumbsService.WORKER_AND_BATCH_MANAGER);
+        return ok(views.html.gui.batch.workerAndBatchManager.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost(), study));
     }
 

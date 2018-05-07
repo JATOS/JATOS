@@ -67,9 +67,9 @@ public class BatchesUserAccessTest {
     }
 
     @Test
-    public void callBatchesRunManager() throws Exception {
+    public void callBatchesWorkerAndBatchManager() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Batches.batchManager(study.getId());
+        Call call = controllers.gui.routes.Batches.workerAndBatchManager(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
                 Helpers.GET);

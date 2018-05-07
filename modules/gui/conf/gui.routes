@@ -76,8 +76,8 @@ GET      /jatos/:studyId/log                                                @con
 GET      /jatos/:studyId                                                    @controllers.gui.Studies.study(studyId: Long)
 GET      /jatos/:studyId/                                                   @controllers.gui.Studies.study(studyId: Long)
 
-# Batches controller
-GET      /jatos/:studyId/batchManager                                       @controllers.gui.Batches.batchManager(studyId: Long)
+# Batches and worker controller
+GET      /jatos/:studyId/workerAndBatchManager                              @controllers.gui.Batches.workerAndBatchManager(studyId: Long)
 POST     /jatos/:studyId/batch                                              @controllers.gui.Batches.submitCreated(studyId: Long)
 POST     /jatos/:studyId/batch/:batchId/properties/workerType/:workerType   @controllers.gui.Batches.toggleAllowedWorkerType(studyId: Long, batchId: Long, workerType: String, allow: Boolean)
 POST     /jatos/:studyId/batch/:batchId/properties/active                   @controllers.gui.Batches.toggleActive(studyId: Long, batchId: Long, active: Boolean)

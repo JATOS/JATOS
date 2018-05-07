@@ -27,7 +27,7 @@ public class BreadcrumbsService {
     public static final String MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE =
             "Mechanical Turk HIT Layout Source Code";
     public static final String RESULTS = "Results";
-    public static final String BATCH_MANAGER = "Batch Manager";
+    public static final String WORKER_AND_BATCH_MANAGER = "Worker & Batch Manager";
     public static final String USER_MANAGER = "User Manager";
 
     public String generateForHome() {
@@ -89,8 +89,8 @@ public class BreadcrumbsService {
                 controllers.gui.routes.Home.home().url());
         breadcrumbs.addBreadcrumb(study.getTitle(),
                 controllers.gui.routes.Studies.study(study.getId()).url());
-        breadcrumbs.addBreadcrumb(BATCH_MANAGER, controllers.gui.routes.Batches
-                .batchManager(study.getId()).url());
+        breadcrumbs.addBreadcrumb(WORKER_AND_BATCH_MANAGER, controllers.gui.routes.Batches
+                .workerAndBatchManager(study.getId()).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(), "");
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");

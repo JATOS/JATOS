@@ -82,10 +82,10 @@ studyResultsCount: Integer)
             </ul>
         </div>
     </div>
-    <button id="batchManagerButton" type="button" class="btn btn-batch"
+    <button id="workerAndBatchManagerButton" type="button" class="btn btn-batch"
             data-toggle="tooltip" data-placement="bottom"
-            title="Open Batch Manager to manage your batches or create workers">
-        Batch Manager
+            title="Open Worker & Batch Manager to manage your batches and create workers">
+        Worker & Batch Manager
     </button>
     <!-- Content and tooltip of lock button is set later in JS -->
     <div class="btn-group">
@@ -505,8 +505,8 @@ $('#studyToolbar').on('click', '#workers', function() {
 	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#batchManagerButton', function() {
-	window.location.href = "@controllers.gui.routes.Batches.batchManager(study.getId())";
+$('#studyToolbar').on('click', '#workerAndBatchManagerButton', function() {
+	window.location.href = "@controllers.gui.routes.Batches.workerAndBatchManager(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
