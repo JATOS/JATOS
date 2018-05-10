@@ -1,10 +1,9 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-	batchId: Long, allowedWorkerTypes: String, study: common.Study,
+	batchId: Long, study: common.Study, allowedWorkerTypes: String,
 	jatosUrl: java.net.URL, studyResultCountsPerWorker: java.util.Map[String, Integer])
 
-@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
-
-<div class="panel-group" id="workerPanelGroup" role="tablist">
+<!-- Template batch row and worker setup -->
+<div class="panel-group" id="workerPanelGroup" role="tablist" style="display: none">
 	<div class="panel panel-default" id="jatosWorkerPanel">
 		<div class="panel-heading">
 			 <span class="panel-title">
@@ -331,7 +330,7 @@ function initWorkerTable(tableElement) {
 function loadWorkers() {
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Workers.workerData(study.getId(), batchId)",
+		url: "@controllers.gui.routes.Batches.workerData(study.getId(), batchId)",
 		success: function(response) {
 			fillWorkerPanels(response);
 		},
@@ -743,5 +742,3 @@ $('#jatosWorkerPanel').on('click', '.runButton', function() {
 });
 
 </script>
-
-}
