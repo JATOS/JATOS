@@ -129,8 +129,7 @@ public class Batches extends Controller {
 
         List<Batch> batchList = study.getBatchList();
         List<Integer> resultCountList = new ArrayList<>();
-        batchList.forEach(batch -> resultCountList
-                .add(studyResultDao.countByBatch(batch)));
+        batchList.forEach(batch -> resultCountList.add(studyResultDao.countByBatch(batch)));
         return ok(jsonUtils.allBatchesByStudyForUI(study, resultCountList));
     }
 

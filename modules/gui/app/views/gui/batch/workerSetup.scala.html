@@ -2,7 +2,7 @@
 	batchId: Long, study: common.Study, allowedWorkerTypes: String,
 	jatosUrl: java.net.URL, studyResultCountsPerWorker: java.util.Map[String, Integer])
 
-<!-- Template batch row and worker setup -->
+<!-- Template worker setup -->
 <div class="panel-group" id="workerPanelGroup" role="tablist" style="display: none">
 	<div class="panel panel-default" id="jatosWorkerPanel">
 		<div class="panel-heading">
@@ -22,7 +22,7 @@
 						title="Number of workers of type @common.workers.JatosWorker.UI_WORKER_TYPE who are user of this study"></span>
 				</a>
 			</span>
-			<span class="btn-group pull-right"> 
+			<span class="btn-group pull-right">
 				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE workers">
 					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -45,7 +45,7 @@
 			</table>
 		</div>
 	</div>
-	
+
 	<div class="panel panel-default" id="personalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
@@ -64,7 +64,7 @@
 						title="Number of workers of type @common.workers.PersonalSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
 				</a>
 			</span>
-			<span class="btn-group pull-right"> 
+			<span class="btn-group pull-right">
 				<button type="button" class="btn btn-batch addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Single Worker">Add</button>
 				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
@@ -88,7 +88,7 @@
 			</table>
 		</div>
 	</div>
-	
+
 	<div class="panel panel-default" id="personalMultipleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
@@ -131,7 +131,7 @@
 			</table>
 		</div>
 	</div>
-	
+
 	<div class="panel panel-default" id="mtWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
@@ -177,7 +177,7 @@
 			</table>
 		</div>
 	</div>
-	
+
 	<div class="panel panel-default" id="generalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
@@ -374,7 +374,7 @@ function fillWorkerPanels(workerList) {
 
 function setAllowedWorkerTypes(allowedWorkerTypeList) {
 	// First clear all allowed worker types
-	$(".panel .activeButton").each(function(index) {
+	$(".workerPanelGroup .activeButton").each(function(index) {
 		toggleWorkerTypeButton($(this), false);
 	});
 	// Now set the allowed ones

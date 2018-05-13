@@ -3,71 +3,75 @@
  * Batch buttons use bootstrap success button
  */
 .btn-batch {
-	&:extend(.btn-success all);
+    &:extend(.btn-success all);
 }
 
 /*
  * Batch's worker panel
  */
 #workerPanelGroup .panel-default > .panel-heading .panel-heading {
-	overflow: hidden;
-	line-height:32px;
+    overflow: hidden;
+    line-height:32px;
 }
 #workerPanelGroup .panel-default > .panel-heading .btn-group {
-	position: relative;
+    position: relative;
 }
 
 #workerPanelGroup .panel-default > .panel-heading .activeButton {
-	margin-left: 10px;
-	margin-right: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
 }
 
 /*
  * Badges
  */
+#batchPanelGroup .panel-default > .panel-heading .resultsBadge {
+    color: @btn-success-bg;
+    background-color: @btn-success-color;
+}
 #workerPanelGroup .panel-default > .panel-heading .resultsBadge {
-	color: @btn-success-bg;
-	background-color: @btn-success-color;
+    color: @btn-success-bg;
+    background-color: @btn-success-color;
 }
 #workerPanelGroup .panel-default > .panel-heading .workersBadge {
-	color: @btn-success-color;
-	background-color: @btn-success-bg;
+    color: @btn-success-color;
+    background-color: @btn-success-bg;
 }
 
 /*
  * DataTables
  */
 #workerPanelGroup .pagination > li.active > a {
-	color: @btn-success-color;
-	background-color: @btn-success-bg;
-	border-color: darken(@btn-success-bg, 5%);
+    color: @btn-success-color;
+    background-color: @btn-success-bg;
+    border-color: darken(@btn-success-bg, 5%);
 }
 #workerPanelGroup .pagination > li.active > a:hover {
-	background-color: darken(@btn-success-bg, 10%);
+    background-color: darken(@btn-success-bg, 10%);
 }
 #workerPanelGroup .pagination > li > a {
-	color: @btn-default-color;
-	background-color: @btn-default-bg;
-	border-color: darken(@btn-default-bg, 20%);
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
 }
 #workerPanelGroup .pagination > li:not(.disabled):not(.active) > a:hover {
-	background-color: darken(@btn-default-bg, 10%);
+    background-color: darken(@btn-default-bg, 10%);
 }
 #workerPanelGroup .pagination > li.disabled > a {
-	color: lighten(@btn-default-color, 20%);
+    color: lighten(@btn-default-color, 20%);
 }
 #workerPanelGroup .pagination > li.next > a {
-	margin-right: 10px;
+    margin-right: 10px;
 }
-#workerPanelGroup table.dataTable thead .sorting:after, 
-		#workerPanelGroup table.dataTable thead .sorting_asc:after, 
-		#workerPanelGroup table.dataTable thead .sorting_desc:after {
-	display: none;
+#workerPanelGroup table.dataTable thead .sorting:after,
+        #workerPanelGroup table.dataTable thead .sorting_asc:after,
+        #workerPanelGroup table.dataTable thead .sorting_desc:after {
+    display: none;
 }
 
 /*
  * Modal for worker run links
  */
 #workerRunLinkModal .linkUrls > ul {
-	margin-bottom: 0px;
+    margin-bottom: 0px;
 }
