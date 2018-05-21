@@ -9,15 +9,15 @@
 /*
  * Batch's worker panel
  */
-#workerPanelGroup .panel-default > .panel-heading .panel-heading {
+.workerSetupItem .panel-default > .panel-heading .panel-heading {
     overflow: hidden;
     line-height:32px;
 }
-#workerPanelGroup .panel-default > .panel-heading .btn-group {
+.workerSetupItem .panel-default > .panel-heading .btn-group {
     position: relative;
 }
 
-#workerPanelGroup .panel-default > .panel-heading .activeButton {
+.workerSetupItem .panel-default > .panel-heading .activeButton {
     margin-left: 10px;
     margin-right: 10px;
 }
@@ -25,15 +25,15 @@
 /*
  * Badges
  */
-#batchPanelGroup .panel-default > .panel-heading .resultsBadge {
+.batchItem > .panel-heading .resultsBadge {
     color: @btn-success-bg;
     background-color: @btn-success-color;
 }
-#workerPanelGroup .panel-default > .panel-heading .resultsBadge {
+.workerSetupItem .panel-default > .panel-heading .resultsBadge {
     color: @btn-success-bg;
     background-color: @btn-success-color;
 }
-#workerPanelGroup .panel-default > .panel-heading .workersBadge {
+.workerSetupItem .panel-default > .panel-heading .workersBadge {
     color: @btn-success-color;
     background-color: @btn-success-bg;
 }
@@ -41,31 +41,31 @@
 /*
  * DataTables
  */
-#workerPanelGroup .pagination > li.active > a {
+.workerSetupItem .pagination > li.active > a {
     color: @btn-success-color;
     background-color: @btn-success-bg;
     border-color: darken(@btn-success-bg, 5%);
 }
-#workerPanelGroup .pagination > li.active > a:hover {
+.workerSetupItem .pagination > li.active > a:hover {
     background-color: darken(@btn-success-bg, 10%);
 }
-#workerPanelGroup .pagination > li > a {
+.workerSetupItem .pagination > li > a {
     color: @btn-default-color;
     background-color: @btn-default-bg;
     border-color: darken(@btn-default-bg, 20%);
 }
-#workerPanelGroup .pagination > li:not(.disabled):not(.active) > a:hover {
+.workerSetupItem .pagination > li:not(.disabled):not(.active) > a:hover {
     background-color: darken(@btn-default-bg, 10%);
 }
-#workerPanelGroup .pagination > li.disabled > a {
+.workerSetupItem .pagination > li.disabled > a {
     color: lighten(@btn-default-color, 20%);
 }
-#workerPanelGroup .pagination > li.next > a {
+.workerSetupItem .pagination > li.next > a {
     margin-right: 10px;
 }
-#workerPanelGroup table.dataTable thead .sorting:after,
-        #workerPanelGroup table.dataTable thead .sorting_asc:after,
-        #workerPanelGroup table.dataTable thead .sorting_desc:after {
+.workerSetupItem table.dataTable thead .sorting:after,
+        #workerSetupTemplate table.dataTable thead .sorting_asc:after,
+        #workerSetupTemplate table.dataTable thead .sorting_desc:after {
     display: none;
 }
 

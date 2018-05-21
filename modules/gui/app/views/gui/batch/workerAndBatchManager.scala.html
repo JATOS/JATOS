@@ -22,7 +22,7 @@
                     <h4 class="modal-title">Create Batch</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group row">
+                    <div class="form-group">
                         <label class="control-label col-xs-3"
                             for="@models.gui.BatchProperties.TITLE">Title</label>
                         <div class="col-xs-9">
@@ -45,19 +45,19 @@
 </div>
 
 
-<div id="batchPanelGroup" class="panel-group" role="tablist">
+<div id="batchList" class="panel-group" role="tablist">
 </div>
 
-<!-- Template batch row -->
-<div id="batchRowTemplate" class="panel panel-default batchItem" style="display: none">
+<!-- Template batch -->
+<div id="batchTemplate" class="panel panel-default batchItem" style="display: none">
     <div class="panel-heading">
         <span class="panel-title">
             <button class="collapseWorkerSetup">
                 <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to expand/collapse this batch">
+                    data-placement="bottom" title="Click to see all workers of this batch">
                 </span>
             </button>
-            <button type="button" class="btn btn-sm btn-default activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+            <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="">
                 <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
             </button>
             <a class="batchTitle" role="button" data-toggle="collapse" href="#">Batch Title</a>
@@ -98,7 +98,7 @@
 
 @views.html.gui.batch.batchPropertiesModal(study)
 @views.html.gui.batch.batchSessionModal(study)
-@views.html.gui.batch.workerSetup(loggedInUser, breadcrumbs, localhost, study.getDefaultBatch().getId(), study, allowedWorkerTypes, jatosUrl, studyResultCountsPerWorker)
+@views.html.gui.batch.workerSetup(loggedInUser, study, allowedWorkerTypes, jatosUrl, studyResultCountsPerWorker)
 
 <script>
 
@@ -154,33 +154,35 @@ function loadBatches() {
 }
 
 function fillBatches(batchList) {
-    $('#batchPanelGroup').empty();
+    $('#batchList').empty();
     $.each(batchList, function(index, batch) {
-        var row = $('#batchRowTemplate').clone().show();
-        $(row).removeAttr('id');
+        var batchItem = $('#batchTemplate').clone().show();
+        $(batchItem).removeAttr('id');
         // Write batch object into toolbar's data attribute so we can use it later on
-        $(row).data(batch);
-        setRowActive(row, batch.active);
-        $(row).find('.batchTitle').text(batch.title);
-        $(row).find('.resultsBadge').text(batch.resultCount);
+        $(batchItem).data(batch);
+        setBatchItemActive(batchItem, batch.active);
+        $(batchItem).find('.batchTitle').text(batch.title);
+        $(batchItem).find('.resultsBadge').text(batch.resultCount);
 
-        $("#batchPanelGroup").append(row);
+        $("#batchList").append(batchItem);
     });
-    setButtonWidthToMax("#batchPanelGroup .batchResultsButton");
+    setButtonWidthToMax("#batchList .batchResultsButton");
 }
 
-$('#batchPanelGroup').on('click', '.collapseWorkerSetup', function() {
-    var button = this;
-    var batch = getBatchData(this);
-    if (!batch) {return} // should never happen
-
-    var batchRow = $(button).closest('.batchItem');
-    var workerSetupDiv = $('#workerPanelGroup').clone().show();
-    $(batchRow).find(".panel-collapse").append(workerSetupDiv).collapse();
+$('#batchList').on('click', '.collapseWorkerSetup', function() {
+    var batchItem = $(this).closest('.batchItem');
+    var collapse = $(batchItem).find(".collapse")
+    if($(collapse).children().length == 0) {
+        var batch = getBatchData(this);
+        if (!batch) {return} // should never happen
+        var workerSetupDiv = generateWorkerSetupDiv(batch);
+        $(collapse).append(workerSetupDiv)
+    }
+    $(collapse).toggle();
 });
 
 
-$('#batchPanelGroup').on('click', '.activeButton', function() {
+$('#batchList').on('click', '.activeBatchButton', function() {
     var button = this;
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
@@ -190,8 +192,8 @@ $('#batchPanelGroup').on('click', '.activeButton', function() {
                 + "/properties/active?active=" + !active,
         type : "POST",
         success: function(active) {
-            var row = $(button).closest('.batchItem');
-            setRowActive(row, active);
+            var batchItem = $(button).closest('.batchItem');
+            setBatchItemActive(batchItem, active);
         },
         error : function(err) {
             showError(err.responseText);
@@ -199,16 +201,16 @@ $('#batchPanelGroup').on('click', '.activeButton', function() {
     });
 });
 
-$('#batchPanelGroup').on('click', '.batchResultsButton', function() {
+$('#batchList').on('click', '.batchResultsButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
     window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/results";
 });
 
-function setRowActive(row, active) {
-    var button = $(row).find('.activeButton');
+function setBatchItemActive(item, active) {
+    var button = $(item).find('.activeBatchButton');
     if (active) {
-        row.find('.btn, .batchTitle').removeClass("grayout");
+        item.removeClass("grayout");
         button.addClass('activeBatch');
         button.removeClass('btn-default');
         button.addClass('btn-batch');
@@ -217,7 +219,7 @@ function setRowActive(row, active) {
                 .removeClass('glyphicon-remove')
                 .addClass('glyphicon-ok').prop('outerHTML'));
     } else {
-        row.find('.btn, .batchTitle').addClass("grayout");
+        item.addClass("grayout");
         button.removeClass('activeBatch');
         button.removeClass('btn-batch');
         button.addClass('btn-default');
@@ -228,7 +230,7 @@ function setRowActive(row, active) {
     }
 }
 
-$('#batchPanelGroup').on('click', '.removeBatch', function() {
+$('#batchList').on('click', '.removeBatch', function() {
     var element = this;
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
@@ -252,8 +254,8 @@ $('#batchPanelGroup').on('click', '.removeBatch', function() {
 });
 
 function getBatchData(element) {
-    var row = $(element).closest('.batchItem');
-    var batch = row.data();
+    var batchItem = $(element).closest('.batchItem');
+    var batch = batchItem.data();
     return batch;
 }
 

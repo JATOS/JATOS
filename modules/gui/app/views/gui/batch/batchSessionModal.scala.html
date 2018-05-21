@@ -35,7 +35,7 @@
 
 <script>
 
-$('#batchPanelGroup').on('click', '.batchSessionButton', function() {
+$('#batchList').on('click', '.batchSessionButton', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
 	$.ajax({

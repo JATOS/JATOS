@@ -474,9 +474,8 @@ public class Batches extends Controller {
         String breadcrumbs =
                 breadcrumbsService.generateForBatch(study, batch, BreadcrumbsService.WORKER_SETUP);
         String allowedWorkerTypes = JsonUtils.asJson(batch.getAllowedWorkerTypes());
-        return ok(views.html.gui.batch.workerSetup
-                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), batch.getId(), study,
-                        allowedWorkerTypes, jatosURL, studyResultCountsPerWorker));
+        return ok(views.html.gui.batch.workerSetup.render(loggedInUser, study,
+                allowedWorkerTypes, jatosURL, studyResultCountsPerWorker));
     }
 
     /**
