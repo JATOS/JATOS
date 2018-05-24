@@ -4,9 +4,7 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<div class="btn-group">
-    <button id="createBatchButton" type="button" class="btn btn-batch">New Batch</button>
-</div>
+<button id="createBatchButton" class="btn btn-batch">New Batch</button>
 
 <!-- Create Batch Modal -->
 <div class="modal fade" id="createBatchModal" data-backdrop="static"
@@ -52,11 +50,9 @@
 <div id="batchTemplate" class="panel panel-default batchItem" style="display: none">
     <div class="panel-heading">
         <span class="panel-title">
-            <button class="collapseWorkerSetup">
-                <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all workers of this batch">
-                </span>
-            </button>
+            <span class="collapseWorkerSetup glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                data-placement="bottom" title="Click to see all workers of this batch">
+            </span>
             <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="">
                 <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
             </button>
@@ -179,8 +175,8 @@ $('#batchList').on('click', '.collapseWorkerSetup', function() {
         $(collapse).append(workerSetupDiv)
     }
     $(collapse).toggle();
+    $(this).toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });
-
 
 $('#batchList').on('click', '.activeBatchButton', function() {
     var button = this;

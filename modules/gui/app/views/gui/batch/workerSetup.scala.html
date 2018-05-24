@@ -7,11 +7,9 @@
     <div class="panel panel-default" id="jatosWorkerSetup">
         <div class="panel-heading">
              <span class="panel-title">
-                <a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip">
-                    <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                        data-placement="bottom" title="Click to see all @common.workers.JatosWorker.UI_WORKER_TYPE workers">
-                    </span>
-                </a>
+                <span class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to see all @common.workers.JatosWorker.UI_WORKER_TYPE workers">
+                </span>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
@@ -49,11 +47,9 @@
     <div class="panel panel-default" id="personalSingleWorkerSetup">
         <div class="panel-heading">
             <span class="panel-title">
-                <a role="button" data-toggle="collapse" href="#personalSingleWorkerTableDiv">
-                    <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                        data-placement="bottom" title="Click to see all @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
-                    </span>
-                </a>
+                <span class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to see all @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
+                </span>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
@@ -92,11 +88,9 @@
     <div class="panel panel-default" id="personalMultipleWorkerSetup">
         <div class="panel-heading">
             <span class="panel-title">
-                <a role="button" data-toggle="collapse" href="#personalMultipleWorkerTableDiv">
-                    <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                        data-placement="bottom" title="Click to see all @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
-                    </span>
-                </a>
+                <span class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to see all @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
+                </span>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
@@ -135,11 +129,9 @@
     <div class="panel panel-default" id="mtWorkerSetup">
         <div class="panel-heading">
             <span class="panel-title">
-                <a role="button" data-toggle="collapse" href="#mtWorkerTableDiv">
-                    <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                        data-placement="bottom" title="Click to see all @common.workers.MTWorker.UI_WORKER_TYPE workers">
-                    </span>
-                </a>
+                <span class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to see all @common.workers.MTWorker.UI_WORKER_TYPE workers">
+                </span>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
@@ -181,11 +173,9 @@
     <div class="panel panel-default" id="generalSingleWorkerSetup">
         <div class="panel-heading">
             <span class="panel-title">
-                <a role="button" data-toggle="collapse" href="#generalSingleWorkerTableDiv">
-                    <span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                        data-placement="bottom" title="Click to see all @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
-                    </span>
-                </a>
+                <span class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to see all @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
+                </span>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
@@ -287,17 +277,19 @@ var paginationLength = 10;
 
 var allowedWorkerTypeList = @Html(allowedWorkerTypes);
 
-var jatosWorkerTable = initWorkerTable('#jatosWorkerTableDiv .workerTable');
-var personalSingleWorkerTable = initWorkerTable('#personalSingleWorkerTableDiv .workerTable');
-var personalMultipleWorkerTable = initWorkerTable('#personalMultipleWorkerTableDiv .workerTable');
-var mtWorkerTable = initWorkerTable('#mtWorkerTableDiv .workerTable');
-var generalSingleWorkerTable = initWorkerTable('#generalSingleWorkerTableDiv .workerTable');
-
 function generateWorkerSetupDiv(batch) {
     var workerSetupDiv = $('#workerSetupTemplate').clone().show();
     $(workerSetupDiv).removeAttr('id');
-    // todo init worker tables
-    loadWorkers(batch.id);
+
+    var workerTables = {};
+    workerTables.jatos = initWorkerTable($(workerSetupDiv).find('#jatosWorkerTableDiv .workerTable'));
+    workerTables.personalSingle = initWorkerTable($(workerSetupDiv).find('#personalSingleWorkerTableDiv .workerTable'));
+    workerTables.personalMultiple = initWorkerTable($(workerSetupDiv).find('#personalMultipleWorkerTableDiv .workerTable'));
+    workerTables.mt = initWorkerTable($(workerSetupDiv).find('#mtWorkerTableDiv .workerTable'));
+    workerTables.generalSingle = initWorkerTable($(workerSetupDiv).find('#generalSingleWorkerTableDiv .workerTable'));
+
+    loadWorkers(batch.id, workerTables);
+
     return workerSetupDiv;
 }
 
@@ -333,12 +325,12 @@ function initWorkerTable(tableElement) {
     });
 }
 
-function loadWorkers(batchId) {
+function loadWorkers(batchId, workerTables) {
     $.ajax({
         type: 'GET',
         url: "/jatos/@study.getId()/batch/" + batchId + "/workerData",
         success: function(response) {
-            fillWorkerSetup(response);
+            fillWorkerSetup(response, workerTables);
         },
         error: function(response) {
             showError("Couldn't load workers.");
@@ -346,20 +338,20 @@ function loadWorkers(batchId) {
     });
 }
 
-function fillWorkerSetup(workerList) {
-    jatosWorkerTable.clear();
-    personalSingleWorkerTable.clear();
-    personalMultipleWorkerTable.clear();
-    mtWorkerTable.clear();
-    generalSingleWorkerTable.clear();
+function fillWorkerSetup(workerList, workerTables) {
+    workerTables.jatos.clear();
+    workerTables.personalSingle.clear();
+    workerTables.personalMultiple.clear();
+    workerTables.mt.clear();
+    workerTables.generalSingle.clear();
 
-    fillWorkerTable(workerList);
+    fillWorkerTable(workerList, workerTables);
 
-    jatosWorkerTable.order([0, 'asc']).draw();
-    personalSingleWorkerTable.order([0, 'asc']).draw();
-    personalMultipleWorkerTable.order([0, 'asc']).draw();
-    mtWorkerTable.order([0, 'asc']).draw();
-    generalSingleWorkerTable.order([0, 'asc']).draw();
+    workerTables.jatos.order([0, 'asc']).draw();
+    workerTables.personalSingle.order([0, 'asc']).draw();
+    workerTables.personalMultiple.order([0, 'asc']).draw();
+    workerTables.mt.order([0, 'asc']).draw();
+    workerTables.generalSingle.order([0, 'asc']).draw();
 
     toggleTablePagination("#jatosWorkerTableDiv");
     toggleTablePagination("#personalSingleWorkerTableDiv");
@@ -369,11 +361,11 @@ function fillWorkerSetup(workerList) {
 
     setAllowedWorkerTypes(allowedWorkerTypeList);
 
-    addWorkersBadge('#jatosWorkerSetup', jatosWorkerTable);
-    addWorkersBadge('#personalSingleWorkerSetup', personalSingleWorkerTable);
-    addWorkersBadge('#personalMultipleWorkerSetup', personalMultipleWorkerTable);
-    addWorkersBadge('#mtWorkerSetup', mtWorkerTable);
-    addWorkersBadge('#generalSingleWorkerSetup', generalSingleWorkerTable);
+    addWorkersBadge('#jatosWorkerSetup', workerTables.jatos);
+    addWorkersBadge('#personalSingleWorkerSetup', workerTables.personalSingle);
+    addWorkersBadge('#personalMultipleWorkerSetup', workerTables.personalMultiple);
+    addWorkersBadge('#mtWorkerSetup', workerTables.mt);
+    addWorkersBadge('#generalSingleWorkerSetup', workerTables.generalSingle);
 
     setButtonWidthToMax(".workerSetupItem .workerResultsButton");
 }
@@ -429,30 +421,30 @@ function toggleWorkerTypeButton(button, active) {
     }
 }
 
-function fillWorkerTable(workerList) {
+function fillWorkerTable(workerList, workerTables) {
     $.each(workerList, function(index, worker) {
         switch (worker.workerType) {
         case '@common.workers.JatosWorker.WORKER_TYPE':
-            fillJatosRow(worker);
+            fillJatosRow(worker, workerTables.jatos);
             break;
         case '@common.workers.PersonalSingleWorker.WORKER_TYPE':
-            fillPersonalSingleRow(worker);
+            fillPersonalSingleRow(worker, workerTables.personalSingle);
             break;
         case '@common.workers.PersonalMultipleWorker.WORKER_TYPE':
-            fillPersonalMultipleRow(worker);
+            fillPersonalMultipleRow(worker, workerTables.personalMultiple);
             break;
         case '@common.workers.MTWorker.WORKER_TYPE':
         case '@common.workers.MTSandboxWorker.WORKER_TYPE':
-            fillMtRow(worker);
+            fillMtRow(worker, workerTables.mturk);
             break;
         case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
-            fillGeneralSingleRow(worker);
+            fillGeneralSingleRow(worker.generalSingle);
             break;
         }
     });
 }
 
-function fillJatosRow(worker) {
+function fillJatosRow(worker, jatosWorkerTable) {
     var lastStudyState = worker.lastStudyResult != null
             ? worker.lastStudyResult.studyState : "none started yet";
     if ("@loggedInUser.getEmail()" == worker.userEmail) {
@@ -472,7 +464,7 @@ function fillJatosRow(worker) {
     }
 }
 
-function fillPersonalSingleRow(worker) {
+function fillPersonalSingleRow(worker, personalSingleWorkerTable) {
     var lastStudyState = worker.lastStudyResult != null
             ? worker.lastStudyResult.studyState : "not started yet";
     personalSingleWorkerTable.row.add([
@@ -483,7 +475,7 @@ function fillPersonalSingleRow(worker) {
     ]);
 }
 
-function fillPersonalMultipleRow(worker) {
+function fillPersonalMultipleRow(worker, personalMultipleWorkerTable) {
     var lastStudyState = worker.lastStudyResult != null
             ? worker.lastStudyResult.studyState : "none started yet";
     personalMultipleWorkerTable.row.add([
@@ -494,7 +486,7 @@ function fillPersonalMultipleRow(worker) {
     ]);
 }
 
-function fillMtRow(worker) {
+function fillMtRow(worker, mtWorkerTable) {
     var workerType = getUIWorkerTypeWithGlyphicon(worker.workerType);
     var lastStudyState = worker.lastStudyResult != null
             ? worker.lastStudyResult.studyState : "not started yet";
@@ -506,7 +498,7 @@ function fillMtRow(worker) {
     ]);
 }
 
-function fillGeneralSingleRow(worker) {
+function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
     var lastStudyState = worker.lastStudyResult != null
             ? worker.lastStudyResult.studyState : "not started yet";
     generalSingleWorkerTable.row.add([
@@ -521,13 +513,10 @@ function toggleTablePagination(tableElement) {
     $(tableElement + " .dataTables_paginate").toggle(!hidePaging);
 }
 
-// Display and toggle little chevron (arrow) in each worker panel
-$('.workerSetupItem').on('hide.bs.collapse', toggleChevron);
-$('.workerSetupItem').on('show.bs.collapse', toggleChevron);
-function toggleChevron(e) {
-    $(e.target).prev('.panel-heading').find('.glyphicon-chevron-down, .glyphicon-chevron-right')
-            .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
-}
+$('#batchList').on('click', '.collapseWorkerTable', function() {
+    var collapse = $(this).closest('.panel').find('.collapse').toggle();
+    $(this).toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+});
 
 function addWorkersBadge(panel, table) {
     var rowCount = table.data().length;
