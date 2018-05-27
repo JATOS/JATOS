@@ -6,6 +6,23 @@
     &:extend(.btn-success all);
 }
 
+/*
+ * Define worker button colors
+ */
+@btn-worker-color:   #ffffff;
+@btn-worker-bg:      #97cd47;
+@btn-worker-border:  #91c541;
+
+.btn-worker,
+.btn-worker:hover,
+.btn-worker:focus,
+.btn-worker:active,
+.btn-worker:visited {
+	color: @btn-worker-color;
+	background-color: @btn-worker-bg;
+	border-color: @btn-worker-border;
+}
+
 #createBatchButton {
     margin-bottom: 20px;
 }
@@ -51,24 +68,24 @@
     background-color: @btn-success-color;
 }
 .workerSetupItem .panel > .panel-heading .resultsBadge {
-    color: @btn-success-bg;
-    background-color: @btn-success-color;
+    color: @btn-worker-bg;
+    background-color: @btn-worker-color;
 }
 .workerSetupItem .panel > .panel-heading .workersBadge {
-    color: @btn-success-color;
-    background-color: @btn-success-bg;
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
 }
 
 /*
  * DataTables
  */
 .workerSetupItem .pagination > li.active > a {
-    color: @btn-success-color;
-    background-color: @btn-success-bg;
-    border-color: darken(@btn-success-bg, 5%);
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+    border-color: darken(@btn-worker-bg, 5%);
 }
 .workerSetupItem .pagination > li.active > a:hover {
-    background-color: darken(@btn-success-bg, 10%);
+    background-color: darken(@btn-worker-bg, 10%);
 }
 .workerSetupItem .pagination > li > a {
     color: @btn-default-color;

@@ -50,15 +50,18 @@
 <div id="batchTemplate" class="panel panel-default batchItem" style="display: none">
     <div class="panel-heading">
         <span class="panel-title">
-            <span class="collapseWorkerSetup glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                data-placement="bottom" title="Click to see all workers of this batch">
+            <span role="button" class="collapseWorkerSetup glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                data-placement="bottom" title="Open/close worker setup of this batch">
             </span>
-            <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="">
+            <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch">
                 <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
             </button>
-            <a class="batchTitle" role="button" data-toggle="collapse" href="#">Batch Title</a>
+            <span role="button" class="batchTitle">Batch Title</span>
             <span class="btn-group pull-right">
                 <div class="batchBtnGroup btn-group pull-right" aria-hidden="true">
+                    <button type="button" class="batchRefreshButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                        title="Refresh this batch">
+                        <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span></button>
                     <button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
                         title="Edit this batch's properties">
                         Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
@@ -165,7 +168,7 @@ function fillBatches(batchList) {
     setButtonWidthToMax("#batchList .batchResultsButton");
 }
 
-$('#batchList').on('click', '.collapseWorkerSetup', function() {
+$('#batchList').on('click', '.collapseWorkerSetup, .batchTitle', function() {
     var batchItem = $(this).closest('.batchItem');
     var collapse = $(batchItem).find(".collapse")
     if($(collapse).children().length == 0) {
@@ -175,7 +178,7 @@ $('#batchList').on('click', '.collapseWorkerSetup', function() {
         $(collapse).append(workerSetupDiv)
     }
     $(collapse).toggle();
-    $(this).toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+    $(this).parent().find('.collapseWorkerSetup').toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });
 
 $('#batchList').on('click', '.activeBatchButton', function() {
@@ -195,6 +198,15 @@ $('#batchList').on('click', '.activeBatchButton', function() {
             showError(err.responseText);
         }
     });
+});
+
+$('#batchList').on('click', '.batchRefreshButton', function() {
+    var batch = getBatchData(this);
+    if (!batch) {return} // should never happen
+    var workerSetupDiv = $(this).closest('.batchItem').find('.workerSetupItem');
+    if (workerSetupDiv.length == 0) {return} // might happen if worker setup was never opened
+    loadWorkers(batch.id, workerSetupDiv);
+    // todo refresh batch toolbar
 });
 
 $('#batchList').on('click', '.batchResultsButton', function() {
