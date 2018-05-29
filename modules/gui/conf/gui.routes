@@ -85,6 +85,7 @@ POST     /jatos/:studyId/batch/:batchId/personalMultipleRun                 @con
 GET      /jatos/:studyId/batch/:batchId/workerData                          @controllers.gui.Batches.workerData(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/workerSetup                         @controllers.gui.Batches.workerSetup(studyId: Long, batchId: Long)
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
+GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.Batches.batchesByStudy(studyId: Long)
 GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Batches.tableDataByStudy(studyId: Long)
 

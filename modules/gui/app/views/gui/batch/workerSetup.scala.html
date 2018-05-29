@@ -521,7 +521,7 @@ function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
 
 $('#batchList').on('click', '.collapseWorkerTable', function() {
     var collapse = $(this).closest('.panel').find('.collapse').toggle();
-    $(this).closest('glyphicon-chevron-right', 'glyphicon-chevron-down')
+    $(this).closest('.panel').find('.collapseWorkerTable.glyphicon')
         .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });
 
@@ -628,8 +628,10 @@ function postCreatePersonalWorkers(url, showModal, batchId, workerSetupDiv) {
 }
 
 $('#batchList').on('click', '.personalSingleWorkerSetup .linkButton', function() {
+    var workerSetupDiv = $(this).closest('.workerSetupItem');
+    var workerTables = $(workerSetupDiv).data('workerTables');
     var tr = $(this).closest('tr');
-    var rowData = personalSingleWorkerTable.row(tr).data();
+    var rowData = workerTables.personalSingle.row(tr).data();
     var workerId = rowData[0];
     var workerIds = [workerId];
     var batch = getBatchData(this);
@@ -655,8 +657,10 @@ function showPersonalSingleLinkModal(workerIds, batchId) {
 }
 
 $('#batchList').on('click', '.personalMultipleWorkerSetup .linkButton', function() {
+    var workerSetupDiv = $(this).closest('.workerSetupItem');
+    var workerTables = $(workerSetupDiv).data('workerTables');
     var tr = $(this).closest('tr');
-    var rowData = personalMultipleWorkerTable.row(tr).data()
+    var rowData = workerTables.personalMultiple.row(tr).data();
     var workerId = rowData[0];
     var workerIds = [workerId];
     var batch = getBatchData(this);
@@ -721,6 +725,14 @@ function generateHtmlUrlList(urls) {
     html += '</ul>';
     return html;
 }
+
+
+// Select and copy to clipboard by button
+$('#workerRunLinkModal').on('click', '.copyToClipboardButton', function(e) {
+    var mtSourceCode = $(this).closest('.modal-body').get()[0];
+    selectText(mtSourceCode);
+    document.execCommand('copy');
+});
 
 $('#workerRunLinkModal').on('click', '.runButton', function() {
     // The run button is only shown if there is only one link in the list

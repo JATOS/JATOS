@@ -144,7 +144,7 @@ function loadBatches() {
         type: 'GET',
         url: "@controllers.gui.routes.Batches.batchesByStudy(study.getId())",
         success: function(response) {
-            fillBatches(response);
+            fillAllBatches(response);
         },
         error: function(response) {
             showError("Couldn't load batches.");
@@ -152,20 +152,23 @@ function loadBatches() {
     });
 }
 
-function fillBatches(batchList) {
+function fillAllBatches(batchList) {
     $('#batchList').empty();
     $.each(batchList, function(index, batch) {
         var batchItem = $('#batchTemplate').clone().show();
         $(batchItem).removeAttr('id');
-        // Write batch object into toolbar's data attribute so we can use it later on
-        $(batchItem).data(batch);
-        setBatchItemActive(batchItem, batch.active);
-        $(batchItem).find('.batchTitle').text(batch.title);
-        $(batchItem).find('.resultsBadge').text(batch.resultCount);
-
+        fillBatch(batchItem, batch);
         $("#batchList").append(batchItem);
     });
     setButtonWidthToMax("#batchList .batchResultsButton");
+}
+
+function fillBatch(batchItem, batch) {
+    // Write batch object into toolbar's data attribute so we can use it later on
+    $(batchItem).data(batch);
+    setBatchItemActive(batchItem, batch.active);
+    $(batchItem).find('.batchTitle').text(batch.title);
+    $(batchItem).find('.batchResultsButton .resultsBadge').text(batch.resultCount);
 }
 
 $('#batchList').on('click', '.collapseWorkerSetup, .batchTitle', function() {
@@ -203,11 +206,26 @@ $('#batchList').on('click', '.activeBatchButton', function() {
 $('#batchList').on('click', '.batchRefreshButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
-    var workerSetupDiv = $(this).closest('.batchItem').find('.workerSetupItem');
+
+    var batchItem = $(this).closest('.batchItem');
+    var workerSetupDiv = $(batchItem).find('.workerSetupItem');
     if (workerSetupDiv.length == 0) {return} // might happen if worker setup was never opened
+    refreshBatch(batchItem, batch);
     loadWorkers(batch.id, workerSetupDiv);
-    // todo refresh batch toolbar
 });
+
+function refreshBatch(batchItem, batch) {
+    $.ajax({
+        type: 'GET',
+        url: "/jatos/" + @study.getId() +"/batch/" + batch.id,
+        success: function(batch) {
+            fillBatch(batchItem, batch);
+        },
+        error: function(response) {
+            showError("Couldn't load batches.");
+        }
+    });
+}
 
 $('#batchList').on('click', '.batchResultsButton', function() {
     var batch = getBatchData(this);

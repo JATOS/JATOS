@@ -430,22 +430,29 @@ public class JsonUtils {
      * includes the 'resultCount', the number of StudyResults of this batch so
      * far. Intended for use in JATOS' GUI.
      */
-    public JsonNode allBatchesByStudyForUI(Study study,
-            List<Integer> resultCountList) {
+    public JsonNode allBatchesByStudyForUI(Study study, List<Integer> resultCountList) {
         ArrayNode batchListNode = Json.mapper().createArrayNode();
         List<Batch> batchList = study.getBatchList();
         for (int i = 0; i < batchList.size(); i++) {
-            ObjectNode batchNode = Json.mapper().valueToTree(batchList.get(i));
-            // Add count of batch's results
-            batchNode.put("resultCount", resultCountList.get(i));
-            // Add count of batch's workers (without JatosWorker)
-            batchNode.put("workerCount",
-                    batchList.get(i).getWorkerList().size());
+            ObjectNode batchNode = getBatchByStudyForUI(batchList.get(i), resultCountList.get(i));
             int position = i + 1;
             batchNode.put("position", position);
             batchListNode.add(batchNode);
         }
         return batchListNode;
+    }
+
+    /**
+     * Returns a JSON string of one batch. This includes the 'resultCount', the number of
+     * StudyResults of this batch so far. Intended for use in JATOS' GUI.
+     */
+    public ObjectNode getBatchByStudyForUI(Batch batch, Integer resultCount) {
+        ObjectNode batchNode = Json.mapper().valueToTree(batch);
+        // Add count of batch's results
+        batchNode.put("resultCount", resultCount);
+        // Add count of batch's workers (without JatosWorker)
+        batchNode.put("workerCount", batch.getWorkerList().size());
+        return batchNode;
     }
 
     /**

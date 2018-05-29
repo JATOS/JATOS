@@ -112,6 +112,28 @@ public class Batches extends Controller {
     }
 
     /**
+     * Ajax GET request: Returns the Batch belonging to the given study as JSON. It
+     * includes the count of its StudyResults.
+     */
+    @Transactional
+    @Authenticated
+    public Result batchById(Long studyId, Long batchId) throws JatosGuiException {
+        LOGGER.debug(".batchById: studyId " + studyId + ", batchId " + batchId);
+        Study study = studyDao.findById(studyId);
+        Batch batch = batchDao.findById(batchId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForBatch(batch, study, batchId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        Integer resultCount = studyResultDao.countByBatch(batch);
+        return ok(jsonUtils.getBatchByStudyForUI(batch, resultCount));
+    }
+
+    /**
      * Ajax GET request: Returns all Batches of the given study as JSON. It
      * includes the count of their StudyResults.
      */
@@ -497,6 +519,8 @@ public class Batches extends Controller {
         }
 
         Set<Worker> workerList = batch.getWorkerList();
+        Map<String, Integer> studyResultCountsPerWorker =
+                workerService.retrieveStudyResultCountsPerWorker(batch);
         return ok(jsonUtils.allWorkersForWorkerSetup(workerList));
     }
 
