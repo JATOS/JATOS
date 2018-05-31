@@ -1,6 +1,4 @@
-@(loggedInUser: common.User,
-    study: common.Study, allowedWorkerTypes: String,
-    jatosUrl: java.net.URL, studyResultCountsPerWorker: java.util.Map[String, Integer])
+@(loggedInUser: common.User, study: common.Study, jatosUrl: java.net.URL)
 
 <!-- Template worker setup -->
 <div id="workerSetupTemplate" class="panel-group workerSetupItem" role="tablist" style="display: none">
@@ -24,7 +22,7 @@
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of study results that belong to this batch that are done by @common.workers.JatosWorker.UI_WORKER_TYPE workers">@studyResultCountsPerWorker.get(common.workers.JatosWorker.WORKER_TYPE)</span>
+                    title="Number of study results that belong to this batch that are done by @common.workers.JatosWorker.UI_WORKER_TYPE workers"></span>
                 </button>
             </span>
         </div>
@@ -65,7 +63,7 @@
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of study results that belong to this batch that are done by @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">@studyResultCountsPerWorker.get(common.workers.PersonalSingleWorker.WORKER_TYPE)</span>
+                    title="Number of study results that belong to this batch that are done by @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers"></span>
                 </button>
             </span>
         </div>
@@ -106,7 +104,7 @@
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of study results that belong to this batch that are done by @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">@studyResultCountsPerWorker.get(common.workers.PersonalMultipleWorker.WORKER_TYPE)</span>
+                    title="Number of study results that belong to this batch that are done by @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers"></span>
                 </button>
             </span>
         </div>
@@ -150,7 +148,7 @@
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of study results that belong to this batch that are done by @common.workers.MTWorker.UI_WORKER_TYPE workers">@(studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE) + studyResultCountsPerWorker.get(common.workers.MTSandboxWorker.WORKER_TYPE))</span>
+                    title="Number of study results that belong to this batch that are done by @common.workers.MTWorker.UI_WORKER_TYPE workers"></span>
                 </button>
             </span>
         </div>
@@ -191,7 +189,7 @@
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of study results that belong to this batch that are done by @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">@studyResultCountsPerWorker.get(common.workers.GeneralSingleWorker.WORKER_TYPE)</span>
+                    title="Number of study results that belong to this batch that are done by @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers"></span>
                 </button>
             </span>
         </div>
@@ -275,8 +273,6 @@
 // Max length of each worker table before pagination kicks in
 var paginationLength = 10;
 
-var allowedWorkerTypeList = @Html(allowedWorkerTypes);
-
 function generateWorkerSetupDiv(batch) {
     var workerSetupDiv = $('#workerSetupTemplate').clone().show();
     $(workerSetupDiv).removeAttr('id');
@@ -331,9 +327,9 @@ function initWorkerTable(workerSetupDiv, workerSetupClass) {
 function loadWorkers(batchId, workerSetupDiv) {
     $.ajax({
         type: 'GET',
-        url: "/jatos/@study.getId()/batch/" + batchId + "/workerData",
-        success: function(response) {
-            fillWorkerSetup(response, workerSetupDiv);
+        url: "/jatos/@study.getId()/batch/" + batchId + "/workerSetupData",
+        success: function(workerSetupData) {
+            fillWorkerSetup(workerSetupData, workerSetupDiv);
         },
         error: function(response) {
             showError("Couldn't load workers.");
@@ -341,22 +337,18 @@ function loadWorkers(batchId, workerSetupDiv) {
     });
 }
 
-function fillWorkerSetup(workerList, workerSetupDiv) {
+function fillWorkerSetup(workerSetupData, workerSetupDiv) {
     var workerTables = $(workerSetupDiv).data('workerTables');
 
-    workerTables.jatos.clear();
-    workerTables.personalSingle.clear();
-    workerTables.personalMultiple.clear();
-    workerTables.mt.clear();
-    workerTables.generalSingle.clear();
+    $.each(workerTables, function(index, table) {
+        table.clear();
+    });
 
-    fillWorkerTable(workerList, workerTables);
+    fillWorkerTables(workerSetupData.allWorkers, workerTables);
 
-    workerTables.jatos.order([0, 'asc']).draw();
-    workerTables.personalSingle.order([0, 'asc']).draw();
-    workerTables.personalMultiple.order([0, 'asc']).draw();
-    workerTables.mt.order([0, 'asc']).draw();
-    workerTables.generalSingle.order([0, 'asc']).draw();
+    $.each(workerTables, function(index, table) {
+        table.order([0, 'asc']).draw();
+    });
 
     toggleTablePagination(".jatosWorkerSetup");
     toggleTablePagination(".personalSingleWorkerSetup");
@@ -364,13 +356,11 @@ function fillWorkerSetup(workerList, workerSetupDiv) {
     toggleTablePagination(".mtWorkerSetup");
     toggleTablePagination(".generalSingleWorkerSetup");
 
-    setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypeList);
+    setAllowedWorkerTypes(workerSetupDiv, workerSetupData.allowedWorkerTypes);
 
-    addWorkersBadge(workerSetupDiv, '.jatosWorkerSetup', workerTables.jatos);
-    addWorkersBadge(workerSetupDiv, '.personalSingleWorkerSetup', workerTables.personalSingle);
-    addWorkersBadge(workerSetupDiv, '.personalMultipleWorkerSetup', workerTables.personalMultiple);
-    addWorkersBadge(workerSetupDiv, '.mtWorkerSetup', workerTables.mt);
-    addWorkersBadge(workerSetupDiv, '.generalSingleWorkerSetup', workerTables.generalSingle);
+    addWorkersBadges(workerSetupDiv, workerTables);
+
+    addWorkerResultsBadges(workerSetupDiv, workerSetupData.studyResultCountsPerWorker);
 
     setButtonWidthToMax(".workerSetupItem .workerResultsButton");
 }
@@ -381,13 +371,13 @@ function toggleTablePagination(tableElement) {
     $(tableElement + " .dataTables_paginate").toggle(!hidePaging);
 }
 
-function setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypeList) {
+function setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypes) {
     // First clear all allowed worker types
     $(workerSetupDiv).find(".activeWorkerButton").each(function(index) {
         toggleWorkerTypeButton($(this), false);
     });
     // Now set the allowed ones
-    $.each(allowedWorkerTypeList, function(index, workerType) {
+    $.each(allowedWorkerTypes, function(index, workerType) {
         var button;
         switch (workerType) {
         case '@common.workers.JatosWorker.WORKER_TYPE':
@@ -428,13 +418,35 @@ function toggleWorkerTypeButton(button, active) {
     }
 }
 
-function addWorkersBadge(workerSetupDiv, panel, table) {
-    var rowCount = table.data().length;
-    $(workerSetupDiv).find(panel + " .workersBadge").text(rowCount);
+function addWorkersBadges(workerSetupDiv, workerTables) {
+    var rowCount = workerTables.jatos.data().length;
+    $(workerSetupDiv).find('.jatosWorkerSetup .workersBadge').text(rowCount);
+    rowCount = workerTables.personalSingle.data().length;
+    $(workerSetupDiv).find('.personalSingleWorkerSetup .workersBadge').text(rowCount);
+    rowCount = workerTables.personalMultiple.data().length;
+    $(workerSetupDiv).find('.personalMultipleWorkerSetup .workersBadge').text(rowCount);
+    rowCount = workerTables.mt.data().length;
+    $(workerSetupDiv).find('.mtWorkerSetup .workersBadge').text(rowCount);
+    rowCount = workerTables.generalSingle.data().length;
+    $(workerSetupDiv).find('.generalSingleWorkerSetup .workersBadge').text(rowCount);
 }
 
-function fillWorkerTable(workerList, workerTables) {
-    $.each(workerList, function(index, worker) {
+
+function addWorkerResultsBadges(workerSetupDiv, studyResultCountsPerWorker) {
+    var resultCount = studyResultCountsPerWorker['@common.workers.JatosWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.jatosWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+    resultCount = studyResultCountsPerWorker['@common.workers.PersonalSingleWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.personalSingleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+    resultCount = studyResultCountsPerWorker['@common.workers.PersonalMultipleWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.personalMultipleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+    resultCount = studyResultCountsPerWorker['@common.workers.MTWorker.WORKER_TYPE'] + studyResultCountsPerWorker['@common.workers.MTSandboxWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.mtWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+    resultCount = studyResultCountsPerWorker['@common.workers.GeneralSingleWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.generalSingleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+}
+
+function fillWorkerTables(allWorkers, workerTables) {
+    $.each(allWorkers, function(index, worker) {
         switch (worker.workerType) {
         case '@common.workers.JatosWorker.WORKER_TYPE':
             fillJatosRow(worker, workerTables.jatos);
@@ -534,8 +546,8 @@ $('#batchList').on('click', '.activeWorkerButton', function() {
         url : "/jatos/@study.getId()/batch/" + batch.id
                 + "/properties/workerType/" + workerType + "?allow=" + !allow,
         type : "POST",
-        success: function(allowedWorkerTypeList) {
-            setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypeList);
+        success: function(allowedWorkerTypes) {
+            setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypes);
         },
         error : function(err) {
             showError("Couldn't change worker type activation.");

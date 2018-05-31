@@ -430,9 +430,8 @@ public class JsonUtils {
      * includes the 'resultCount', the number of StudyResults of this batch so
      * far. Intended for use in JATOS' GUI.
      */
-    public JsonNode allBatchesByStudyForUI(Study study, List<Integer> resultCountList) {
+    public JsonNode allBatchesByStudyForUI(List<Batch> batchList, List<Integer> resultCountList) {
         ArrayNode batchListNode = Json.mapper().createArrayNode();
-        List<Batch> batchList = study.getBatchList();
         for (int i = 0; i < batchList.size(); i++) {
             ObjectNode batchNode = getBatchByStudyForUI(batchList.get(i), resultCountList.get(i));
             int position = i + 1;
@@ -480,30 +479,47 @@ public class JsonUtils {
 
     /**
      * Returns a JSON string with the given set of workers wrapped in a data
-     * object. Intended for use in JATOS' GUI / s.
+     * object. Intended for use in JATOS' GUI.
      */
     public JsonNode allWorkersForTableDataByStudy(Set<Worker> workerSet) {
-        JsonNode arrayNode = allWorkersForWorkerSetup(workerSet);
+        JsonNode arrayNode = allWorkersForGUI(workerSet);
         ObjectNode workersNode = Json.mapper().createObjectNode();
         workersNode.set(DATA, arrayNode);
         return workersNode;
     }
 
     /**
-     * Returns a JSON string with the given set of workers. Additionally for
-     * JatosWorkers the user's email is added. Intended for use in JATOS' GUI /
-     * worker setup.
+     * Returns a JsonNode with all workers (additionally for
+     * JatosWorkers the user's email is added), the given studyResultCountsPerWorker
+     * and all allowed worker types of this batch.
+     * Intended for use in JATOS' GUI / worker setup.
      */
-    public JsonNode allWorkersForWorkerSetup(Set<Worker> workerSet) {
+    public JsonNode workerSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker) {
+        ObjectNode workerSetupData = Json.mapper().createObjectNode();
+
+        JsonNode workersListNode = allWorkersForGUI(batch.getWorkerList());
+        workerSetupData.set("allWorkers", workersListNode);
+
+        JsonNode studyResultCountsPerWorkerNode = asJsonNode(studyResultCountsPerWorker);
+        workerSetupData.set("studyResultCountsPerWorker", studyResultCountsPerWorkerNode);
+
+        workerSetupData.set("allowedWorkerTypes", asJsonNode(batch.getAllowedWorkerTypes()));
+
+        return workerSetupData;
+    }
+
+    /**
+     * Returns a JsonNode with the given set of workers. Additionally for
+     * JatosWorkers the user's email is added. Intended for use in JATOS' GUI.
+     */
+    private JsonNode allWorkersForGUI(Set<Worker> workerSet) {
         ArrayNode workerArrayNode = Json.mapper().createArrayNode();
         for (Worker worker : workerSet) {
-            ObjectNode workerNode = Json.mapper()
-                    .valueToTree(initializeAndUnproxy(worker));
+            ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(worker));
             if (worker instanceof JatosWorker) {
                 JatosWorker jatosWorker = (JatosWorker) worker;
                 if (jatosWorker.getUser() != null) {
-                    workerNode.put("userEmail",
-                            jatosWorker.getUser().getEmail());
+                    workerNode.put("userEmail", jatosWorker.getUser().getEmail());
                 } else {
                     workerNode.put("userEmail", "unknown");
                 }
@@ -563,12 +579,9 @@ public class JsonUtils {
      * Marshals the given component into JSON, adds the current component serial
      * version, and returns it as JsonNode. It uses the view JsonForIO.
      */
-    public JsonNode componentAsJsonForIO(Component component)
-            throws IOException {
-        ObjectNode componentNode = (ObjectNode) asObjectNodeWithIOView(
-                component);
-        return wrapNodeWithVersion(componentNode,
-                String.valueOf(Component.SERIAL_VERSION));
+    public JsonNode componentAsJsonForIO(Component component) throws IOException {
+        ObjectNode componentNode = (ObjectNode) asObjectNodeWithIOView(component);
+        return wrapNodeWithVersion(componentNode, String.valueOf(Component.SERIAL_VERSION));
     }
 
     /**
@@ -579,18 +592,15 @@ public class JsonUtils {
         ObjectNode studyNode = (ObjectNode) asObjectNodeWithIOView(study);
 
         // Add components
-        ArrayNode componentArray = (ArrayNode) asObjectNodeWithIOView(
-                study.getComponentList());
+        ArrayNode componentArray = (ArrayNode) asObjectNodeWithIOView(study.getComponentList());
         studyNode.putArray("componentList").addAll(componentArray);
 
         // Add default Batch
-        ArrayNode batchArray = (ArrayNode) asObjectNodeWithIOView(
-                study.getDefaultBatchList());
+        ArrayNode batchArray = (ArrayNode) asObjectNodeWithIOView(study.getDefaultBatchList());
         studyNode.putArray("batchList").addAll(batchArray);
 
         // Add Study version
-        JsonNode nodeForIO = wrapNodeWithVersion(studyNode,
-                String.valueOf(Study.SERIAL_VERSION));
+        JsonNode nodeForIO = wrapNodeWithVersion(studyNode, String.valueOf(Study.SERIAL_VERSION));
 
         // Write to file
         Json.mapper().writeValue(file, nodeForIO);
@@ -600,9 +610,9 @@ public class JsonUtils {
      * Reads the given object into a JsonNode while using the JsonForIO view.
      */
     private JsonNode asObjectNodeWithIOView(Object obj) throws IOException {
-        // Unnecessary conversion into a temporary string - better solution?
-        String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
-                .writeValueAsString(obj);
+            // Unnecessary conversion into a temporary string - better solution?
+            String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
+                    .writeValueAsString(obj);
         return Json.mapper().readTree(tmpStr);
     }
 

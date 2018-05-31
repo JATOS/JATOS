@@ -1,6 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study,
-    allowedWorkerTypes: String, jatosUrl: java.net.URL,
-    studyResultCountsPerWorker: java.util.Map[String, Integer])
+    jatosUrl: java.net.URL)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -97,7 +96,7 @@
 
 @views.html.gui.batch.batchPropertiesModal(study)
 @views.html.gui.batch.batchSessionModal(study)
-@views.html.gui.batch.workerSetup(loggedInUser, study, allowedWorkerTypes, jatosUrl, studyResultCountsPerWorker)
+@views.html.gui.batch.workerSetup(loggedInUser, study, jatosUrl)
 
 <script>
 
