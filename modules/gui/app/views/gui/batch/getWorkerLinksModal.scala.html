@@ -1,0 +1,118 @@
+@(study: common.Study)
+
+<!-- Get Worker Links Modal -->
+<div id="getWorkerLinksGeneralModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Get Worker Links</h4>
+                </div>
+                <div class="modal-body">
+
+                    <div class="chooseBatch form-group row">
+                        <label class="control-label col-xs-5">Choose Batch</label>
+                        <div class="col-xs-7">
+                            <!-- With Bootstrap 3 we can't use <select> -->
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default"></button>
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                                <ul class="dropdown-menu">
+                                    <!-- filled dynamically -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chooseWorkerType form-group row">
+                        <label class="control-label col-xs-5">Choose Worker Type</label>
+                        <div class="col-xs-7">
+                            <!-- With Bootstrap 3 we can't use <select> -->
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE</button>
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE</a></li>
+                                    <li><a href="#">@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE</a></li>
+                                    <li><a href="#">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE</a></li>
+                                    <li><a href="#">@common.workers.MTWorker.UI_WORKER_TYPE</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="button" class="confirmed btn btn-worker" value="Get">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+$('#getWorkerLinksGeneralButton').click(function(event) {
+    removeAlerts("#getWorkerLinksGeneralModal");
+    removeFormErrors("#getWorkerLinksGeneralModal");
+
+    // Set the batch selector
+    var batchList = $('#batchList').data();
+    var dropdownMenu = $('#getWorkerLinksGeneralModal .chooseBatch .dropdown-menu');
+    dropdownMenu.empty();
+    $.each(batchList, function(index, batch) {
+        dropdownMenu.append('<li><a href="#">' + batch.title + '</a></li>');
+        dropdownMenu.find('a:last').data(batch);
+        // pre-set with the first batch
+        if (index == 0) {
+            $('#getWorkerLinksGeneralModal .chooseBatch button:first').text(batch.title);
+            $('#getWorkerLinksGeneralModal .chooseBatch button:first').data(batch);
+        }
+    });
+
+    // Pre-set with Personal Single worker
+    $('#getWorkerLinksGeneralModal .chooseWorkerType button:first').text("@common.workers.PersonalSingleWorker.UI_WORKER_TYPE");
+
+    $('#getWorkerLinksGeneralModal').modal('show');
+});
+
+$('#getWorkerLinksGeneralModal .dropdown-menu').on('click', 'a', function(e) {
+    $(this).closest('.btn-group').find('button:first').text($(this).text());
+    $(this).closest('.btn-group').find('button:first').data($(this).data());
+});
+
+$('#getWorkerLinksGeneralModal').on('click', '.confirmed', function(e) {
+    $('#getWorkerLinksGeneralModal').modal('hide');
+    var batch = $('#getWorkerLinksGeneralModal .chooseBatch .btn-group').find('button:first').data();
+    var workerType = $('#getWorkerLinksGeneralModal .chooseWorkerType .btn-group').find('button:first').text();
+    if (!batch || !workerType) return;
+
+    // Get workerSetupDiv
+    var workerSetupDiv;
+    $('.batchItem').each(function() {
+        var batchFromBatchItem = $(this).data();
+        if (batchFromBatchItem.id == batch.id) {
+            workerSetupDiv = $(this).find('.workerSetupItem');
+            return false;
+        }
+    });
+
+    switch (workerType) {
+    case '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE':
+        getWorkerLinksPersonalSingleModal(batch, workerSetupDiv);
+        break;
+    case '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE':
+        getWorkerLinksPersonalMultipleModal(batch, workerSetupDiv);
+        break;
+    case '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE':
+        showWorkerLinksGeneralSingleModal(batch);
+        break;
+    case '@common.workers.MTWorker.UI_WORKER_TYPE':
+        // todo
+        break;
+    }
+});
+
+</script>

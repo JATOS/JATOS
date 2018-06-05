@@ -3,7 +3,22 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<button id="createBatchButton" class="btn btn-batch">New Batch</button>
+<button id="createBatchButton" type="button" class="btn btn-batch" data-toggle="tooltip"
+    data-placement="bottom" title="Create a new batch of workers">
+    <span class="glyphicon glyphicon-plus"></span>
+    New Batch
+</button>
+<div class="btn-group">
+    <button id="getWorkerLinksGeneralButton" type="button" class="btn btn-worker" data-toggle="tooltip"
+        data-placement="bottom" title="Get run links for workers (you can choose which batch and worker type)">
+        Get Worker Links
+        <span class="glyphicon glyphicon-link"></span>
+    </button>
+    <button id="allWorkersButton" type="button" class="btn btn-worker" data-toggle="tooltip"
+        data-placement="bottom" title="Show all workers of all batches">
+        All Workers
+    </button>
+</div>
 
 <!-- Create Batch Modal -->
 <div class="modal fade" id="createBatchModal" data-backdrop="static"
@@ -95,6 +110,7 @@
 </div>
 
 @views.html.gui.batch.batchPropertiesModal(study)
+@views.html.gui.batch.getWorkerLinksModal(study)
 @views.html.gui.batch.batchSessionModal(study)
 @views.html.gui.batch.workerSetup(loggedInUser, study, jatosUrl)
 
@@ -138,12 +154,16 @@ $("#createBatchForm").submit(function(event) {
     });
 });
 
+$('#allWorkersButton').click(function(event) {
+	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
+});
+
 function loadBatches() {
     $.ajax({
         type: 'GET',
         url: "@controllers.gui.routes.Batches.batchesByStudy(study.getId())",
-        success: function(response) {
-            fillAllBatches(response);
+        success: function(batchList) {
+            fillAllBatches(batchList);
         },
         error: function(response) {
             showError("Couldn't load batches.");
@@ -153,6 +173,8 @@ function loadBatches() {
 
 function fillAllBatches(batchList) {
     $('#batchList').empty();
+    $('#batchList').removeData();
+    $('#batchList').data(batchList);
     $.each(batchList, function(index, batch) {
         var batchItem = $('#batchTemplate').clone().show();
         $(batchItem).removeAttr('id');

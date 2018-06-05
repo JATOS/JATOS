@@ -51,7 +51,7 @@
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
-                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker must be pre-created here (Add button) and it can run a study only once. Typically used to distribute amongst participants that you contact individually. Each link is personalized with the comments.">
+                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker can run a study only once. Typically used to distribute amongst participants that you contact individually. Each link can be personalized with the comments.">
                     <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
                     <span role="button">&nbsp;@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker</span>
                     <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -59,7 +59,7 @@
                 </span>
             </span>
             <span class="btn-group pull-right">
-                <button type="button" class="btn btn-worker addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Single Worker">Add</button>
+                <button type="button" class="btn btn-worker getLinksButton" data-toggle="tooltip" data-placement="bottom" title="Get links for a Personal Single workers">Get Links</button>
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -92,7 +92,7 @@
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
-                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker must be pre-created here (Add button) and it can run a study multiple times. Typically used to distribute amongst your pilot workers. Each link can be personalized with the comments.">
+                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker can run a study multiple times. Typically used to distribute amongst your pilot workers. Each link can be personalized with the comments.">
                     <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
                     <span role="button">&nbsp;@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker</span>
                     <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -100,7 +100,7 @@
                 </span>
             </span>
             <span class="btn-group pull-right">
-                <button type="button" class="btn btn-worker addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Multiple Worker">Add</button>
+                <button type="button" class="btn btn-worker getLinksButton" data-toggle="tooltip" data-placement="bottom" title="Get links for Personal Multiple Workers">Get Links</button>
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -116,6 +116,45 @@
                         <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
                         <th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
                         <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="generalSingleWorkerSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+                    data-placement="bottom" title="Click to see all @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
+                </span>
+                <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                </button>
+                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker can start a study only once. Typically used to distribute in a mailing list or posting in social media.">
+                    <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
+                    <span role="button">&nbsp;@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker</span>
+                    <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+                        title="Number of workers of type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker linkButton" data-toggle="tooltip" data-placement="bottom" title="Get the link for the General Single Worker">Get Link</button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
+                    Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch that are done by @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers"></span>
+                </button>
+            </span>
+        </div>
+        <div class="panel-collapse collapse" role="tabpanel">
+            <table class="table workerTable">
+                <thead>
+                    <tr>
+                        <th>Worker ID</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -167,49 +206,10 @@
             </table>
         </div>
     </div>
-
-    <div class="generalSingleWorkerSetup panel panel-default">
-        <div class="panel-heading">
-            <span class="panel-title">
-                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
-                </span>
-                <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
-                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                </button>
-                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker type is created on the fly when the study is started with the link. This worker can start a study only once. Typically used to distribute in a mailing list or posting it in a public website.">
-                    <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
-                    <span role="button">&nbsp;@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker</span>
-                    <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of workers of type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
-                </span>
-            </span>
-            <span class="btn-group pull-right">
-                <button type="button" class="btn btn-worker linkButton" data-toggle="tooltip" data-placement="bottom" title="Get the link with which one can start a run with a General Single Worker">Link</button>
-                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
-                    title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
-                    Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of study results that belong to this batch that are done by @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers"></span>
-                </button>
-            </span>
-        </div>
-        <div class="panel-collapse collapse" role="tabpanel">
-            <table class="table workerTable">
-                <thead>
-                    <tr>
-                        <th>Worker ID</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
-<!-- Confirmation Modal - run Personal Single or General Single or Personal Multiple -->
-<div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" aria-hidden="true">
+<!-- Get worker link Modal (Personal Single or Personal Multiple) -->
+<div id="getWorkerLinksModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="/" class="form-horizontal" role="form">
@@ -217,12 +217,12 @@
                     <button type="button" class="close" data-dismiss="modal">
                         <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
                     </button>
-                    <h4 class="modal-title">Create runs</h4>
+                    <h4 class="modal-title"></h4>
                 </div>
                 <div class="modal-body">
-                    <p class="modalText">You're about to create workers.</p>
+                    <p class="modalText"></p>
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="comment">Comment&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Use the comment to destinguish the worker(s) from others."></span></label>
+                        <label class="control-label col-xs-3" for="comment">Comment&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Use the comment to distinguish the worker(s) from others."></span></label>
                         <div class="col-xs-9">
                             <input class="comment form-control" type="text" placeholder="Comment">
                         </div>
@@ -243,8 +243,8 @@
     </div>
 </div>
 
-<!-- Show Modal with link to run of study for specified worker -->
-<div id="workerRunLinkModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<!-- Show Modal with link to run study with a worker -->
+<div id="showWorkerLinksModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="/" class="form-horizontal" role="form">
@@ -281,8 +281,8 @@ function generateWorkerSetupDiv(batch) {
     workerTables.jatos = initWorkerTable(workerSetupDiv, '.jatosWorkerSetup');
     workerTables.personalSingle = initWorkerTable(workerSetupDiv, '.personalSingleWorkerSetup');
     workerTables.personalMultiple = initWorkerTable(workerSetupDiv, '.personalMultipleWorkerSetup');
-    workerTables.mt = initWorkerTable(workerSetupDiv, '.mtWorkerTableSetup');
     workerTables.generalSingle = initWorkerTable(workerSetupDiv, '.generalSingleWorkerTableSetup');
+    workerTables.mt = initWorkerTable(workerSetupDiv, '.mtWorkerTableSetup');
 
     $(workerSetupDiv).data('workerTables', workerTables);
 
@@ -353,8 +353,8 @@ function fillWorkerSetup(workerSetupData, workerSetupDiv) {
     toggleTablePagination(".jatosWorkerSetup");
     toggleTablePagination(".personalSingleWorkerSetup");
     toggleTablePagination(".personalMultipleWorkerSetup");
-    toggleTablePagination(".mtWorkerSetup");
     toggleTablePagination(".generalSingleWorkerSetup");
+    toggleTablePagination(".mtWorkerSetup");
 
     setAllowedWorkerTypes(workerSetupDiv, workerSetupData.allowedWorkerTypes);
 
@@ -389,11 +389,11 @@ function setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypes) {
         case '@common.workers.PersonalMultipleWorker.WORKER_TYPE':
             button = $(workerSetupDiv).find(".personalMultipleWorkerSetup .activeWorkerButton");
             break;
-        case '@common.workers.MTWorker.WORKER_TYPE':
-            button = $(workerSetupDiv).find(".mtWorkerSetup .activeWorkerButton");
-            break;
         case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
             button = $(workerSetupDiv).find(".generalSingleWorkerSetup .activeWorkerButton");
+            break;
+        case '@common.workers.MTWorker.WORKER_TYPE':
+            button = $(workerSetupDiv).find(".mtWorkerSetup .activeWorkerButton");
             break;
         }
         if (button) {
@@ -425,10 +425,10 @@ function addWorkersBadges(workerSetupDiv, workerTables) {
     $(workerSetupDiv).find('.personalSingleWorkerSetup .workersBadge').text(rowCount);
     rowCount = workerTables.personalMultiple.data().length;
     $(workerSetupDiv).find('.personalMultipleWorkerSetup .workersBadge').text(rowCount);
-    rowCount = workerTables.mt.data().length;
-    $(workerSetupDiv).find('.mtWorkerSetup .workersBadge').text(rowCount);
     rowCount = workerTables.generalSingle.data().length;
     $(workerSetupDiv).find('.generalSingleWorkerSetup .workersBadge').text(rowCount);
+    rowCount = workerTables.mt.data().length;
+    $(workerSetupDiv).find('.mtWorkerSetup .workersBadge').text(rowCount);
 }
 
 
@@ -439,10 +439,10 @@ function addWorkerResultsBadges(workerSetupDiv, studyResultCountsPerWorker) {
     $(workerSetupDiv).find('.personalSingleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
     resultCount = studyResultCountsPerWorker['@common.workers.PersonalMultipleWorker.WORKER_TYPE'];
     $(workerSetupDiv).find('.personalMultipleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
-    resultCount = studyResultCountsPerWorker['@common.workers.MTWorker.WORKER_TYPE'] + studyResultCountsPerWorker['@common.workers.MTSandboxWorker.WORKER_TYPE'];
-    $(workerSetupDiv).find('.mtWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
     resultCount = studyResultCountsPerWorker['@common.workers.GeneralSingleWorker.WORKER_TYPE'];
     $(workerSetupDiv).find('.generalSingleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+    resultCount = studyResultCountsPerWorker['@common.workers.MTWorker.WORKER_TYPE'] + studyResultCountsPerWorker['@common.workers.MTSandboxWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.mtWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
 }
 
 function fillWorkerTables(allWorkers, workerTables) {
@@ -457,12 +457,12 @@ function fillWorkerTables(allWorkers, workerTables) {
         case '@common.workers.PersonalMultipleWorker.WORKER_TYPE':
             fillPersonalMultipleRow(worker, workerTables.personalMultiple);
             break;
+        case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
+            fillGeneralSingleRow(worker.generalSingle);
+            break;
         case '@common.workers.MTWorker.WORKER_TYPE':
         case '@common.workers.MTSandboxWorker.WORKER_TYPE':
             fillMtRow(worker, workerTables.mturk);
-            break;
-        case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
-            fillGeneralSingleRow(worker.generalSingle);
             break;
         }
     });
@@ -495,7 +495,7 @@ function fillPersonalSingleRow(worker, personalSingleWorkerTable) {
         worker.id,
         worker.comment,
         lastStudyState,
-        '<button type="button" class="btn btn-worker linkButton">Link</button>'
+        '<button type="button" class="btn btn-worker linkButton">Get Link</button>'
     ]);
 }
 
@@ -506,7 +506,16 @@ function fillPersonalMultipleRow(worker, personalMultipleWorkerTable) {
         worker.id,
         worker.comment,
         lastStudyState,
-        '<button type="button" class="btn btn-worker linkButton">Link</button>'
+        '<button type="button" class="btn btn-worker linkButton">Get Link</button>'
+    ]);
+}
+
+function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
+    var lastStudyState = worker.lastStudyResult != null
+            ? worker.lastStudyResult.studyState : "not started yet";
+    generalSingleWorkerTable.row.add([
+        worker.id,
+        lastStudyState
     ]);
 }
 
@@ -518,15 +527,6 @@ function fillMtRow(worker, mtWorkerTable) {
         worker.id,
         worker.mtWorkerId,
         workerType,
-        lastStudyState
-    ]);
-}
-
-function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
-    var lastStudyState = worker.lastStudyResult != null
-            ? worker.lastStudyResult.studyState : "not started yet";
-    generalSingleWorkerTable.row.add([
-        worker.id,
         lastStudyState
     ]);
 }
@@ -562,10 +562,10 @@ function getWorkerTypeFromPanel(panelElem) {
         return "@common.workers.PersonalSingleWorker.WORKER_TYPE";
     } else if ($(panelElem).closest('.panel').is('.personalMultipleWorkerSetup')) {
         return "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
-    } else if ($(panelElem).closest('.panel').is('.mtWorkerSetup')) {
-        return "@common.workers.MTWorker.WORKER_TYPE";
     } else if ($(panelElem).closest('.panel').is('.generalSingleWorkerSetup')) {
         return "@common.workers.GeneralSingleWorker.WORKER_TYPE";
+    } else if ($(panelElem).closest('.panel').is('.mtWorkerSetup')) {
+        return "@common.workers.MTWorker.WORKER_TYPE";
     }
 }
 
@@ -583,46 +583,56 @@ $('#batchList').on('click', '.mtWorkerSourceCode', function() {
     showMTSourceCodeModal(batch.id);
 });
 
-function fillConfirmModalRun(title, text) {
-    $('#confirmModalRun').find('.modal-title').html(title);
-    $('#confirmModalRun').find('.modalText').html(text);
-    $('#confirmModalRun').find('.comment').val("");
-    $('#confirmModalRun').find('.amount').val(1);
-    // Focus on comment input field in modal
-    $('#confirmModalRun').on('shown.bs.modal', function () {
-        $('#confirmModalRun').find('.comment').focus();
-    })
-    $('#confirmModalRun').modal('show');
+$('#batchList').on('click', '.personalSingleWorkerSetup .getLinksButton', function(e) {
+    var batch = getBatchData(this);
+    var workerSetupDiv = $(this).closest('.workerSetupItem');
+    getWorkerLinksPersonalSingleModal(batch, workerSetupDiv);
+});
+
+function getWorkerLinksPersonalSingleModal(batch, workerSetupDiv) {
+    var text = "Use a comment to distinguish these workers from others.";
+    var title = "Get links for Personal Single workers in batch '" + batch.title + "'";
+    fillGetWorkerLinksModal(title, text);
+    $('#getWorkerLinksModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
+        $('#getWorkerLinksModal').modal('hide');
+        var url = "/jatos/@study.getId()/batch/" + batch.id + "/personalSingleRun";
+        postCreatePersonalWorkerLinks(url, showWorkerLinksPersonalSingleModal, batch.id, workerSetupDiv);
+    });
 }
 
-$('#batchList').on('click', '.personalSingleWorkerSetup .addButton', function(e) {
+$('#batchList').on('click', '.personalMultipleWorkerSetup .getLinksButton', function() {
     var batch = getBatchData(this);
     var workerSetupDiv = $(this).closest('.workerSetupItem');
-    var text = "You're about to create Personal Single workers. Use a comment to distinguish these workers from others.";
-    fillConfirmModalRun("Create Personal Single Run", text);
-    $('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
-        $('#confirmModalRun').modal('hide');
-        var url = "/jatos/@study.getId()/batch/" + batch.id + "/personalSingleRun";
-        postCreatePersonalWorkers(url, showPersonalSingleLinkModal, batch.id, workerSetupDiv);
-    });
+    getWorkerLinksPersonalMultipleModal(batch, workerSetupDiv);
 });
 
-$('#batchList').on('click', '.personalMultipleWorkerSetup .addButton', function() {
-    var batch = getBatchData(this);
-    var workerSetupDiv = $(this).closest('.workerSetupItem');
-    var text = "You're about to create Personal Multiple workers. Use a comment to distinguish these workers from others.";
-    fillConfirmModalRun("Create Personal Multiple Run", text);
-    $('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
-        $('#confirmModalRun').modal('hide');
+function getWorkerLinksPersonalMultipleModal(batch, workerSetupDiv) {
+    var text = "Use a comment to distinguish these workers from others.";
+    var title = "Get links for Personal Multiple workers in batch '" + batch.title + "'";
+    fillGetWorkerLinksModal(title, text);
+    $('#getWorkerLinksModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
+        $('#getWorkerLinksModal').modal('hide');
         var url = "/jatos/@study.getId()/batch/" + batch.id + "/personalMultipleRun";
-        postCreatePersonalWorkers(url, showPersonalMultipleLinkModal, batch.id, workerSetupDiv);
+        postCreatePersonalWorkerLinks(url, showWorkerLinksPersonalMultipleModal, batch.id, workerSetupDiv);
     });
-});
+}
 
-function postCreatePersonalWorkers(url, showModal, batchId, workerSetupDiv) {
+function fillGetWorkerLinksModal(title, text) {
+    $('#getWorkerLinksModal').find('.modal-title').html(title);
+    $('#getWorkerLinksModal').find('.modalText').html(text);
+    $('#getWorkerLinksModal').find('.comment').val("");
+    $('#getWorkerLinksModal').find('.amount').val(1);
+    // Focus on comment input field in modal
+    $('#getWorkerLinksModal').on('shown.bs.modal', function () {
+        $('#getWorkerLinksModal').find('.comment').focus();
+    })
+    $('#getWorkerLinksModal').modal('show');
+}
+
+function postCreatePersonalWorkerLinks(url, showModal, batchId, workerSetupDiv) {
     var jsonData = {};
-    jsonData['comment'] = $('#confirmModalRun').find('.comment').val();
-    jsonData['amount'] = $('#confirmModalRun').find('.amount').val();
+    jsonData['comment'] = $('#getWorkerLinksModal').find('.comment').val();
+    jsonData['amount'] = $('#getWorkerLinksModal').find('.amount').val();
     $.ajax({
         type: 'POST',
         url: url,
@@ -630,7 +640,7 @@ function postCreatePersonalWorkers(url, showModal, batchId, workerSetupDiv) {
         dataType: 'text',
         data: JSON.stringify(jsonData),
         success: function(workerIds) {
-            loadWorkers(batchId, workerSetupDiv);
+            if (workerSetupDiv) loadWorkers(batchId, workerSetupDiv);
             showModal($.parseJSON(workerIds));
         },
         error : function(err) {
@@ -647,25 +657,25 @@ $('#batchList').on('click', '.personalSingleWorkerSetup .linkButton', function()
     var workerId = rowData[0];
     var workerIds = [workerId];
     var batch = getBatchData(this);
-    showPersonalSingleLinkModal(workerIds, batch.id);
+    showWorkerLinksPersonalSingleModal(workerIds, batch);
 });
 
-function showPersonalSingleLinkModal(workerIds, batchId) {
-    var title = "Personal Single Run";
+function showWorkerLinksPersonalSingleModal(workerIds, batch) {
+    var title = "Links for Personal Single workers in batch '" + batch.title + "'";
     var preText, postText;
     if (workerIds.length > 1) {
         preText = "Each of these URLs will start a run.";
-        postText = "Copy & paste to hand them to your workers.";
+        postText = "Copy & paste and hand them to your workers.";
     } else {
         preText = "This URL will start the run.";
-        postText = "Copy & paste to hand it to your worker - or press \"Run\" to start it right away.";
+        postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
     }
     var urls = [];
     $.each(workerIds, function(i, workerId) {
         urls.push("@jatosUrl.toString()" + "/publix/@study.getId()/start?"
-            + "batchId=" + batchId + "&personalSingleWorkerId=" + workerId);
+            + "batchId=" + batch.id + "&personalSingleWorkerId=" + workerId);
     });
-    showLinkModal(title, preText, urls, true, postText);
+    showWorkerLinksModal(title, preText, urls, true, postText);
 }
 
 $('#batchList').on('click', '.personalMultipleWorkerSetup .linkButton', function() {
@@ -676,41 +686,45 @@ $('#batchList').on('click', '.personalMultipleWorkerSetup .linkButton', function
     var workerId = rowData[0];
     var workerIds = [workerId];
     var batch = getBatchData(this);
-    showPersonalMultipleLinkModal(workerIds, batch.id);
+    showWorkerLinksPersonalMultipleModal(workerIds, batch);
 });
 
-function showPersonalMultipleLinkModal(workerIds, batchId) {
-    var title = "Personal Multiple Run";
+function showWorkerLinksPersonalMultipleModal(workerIds, batch) {
+    var title = "Links for Personal Multiple workers in batch '" + batch.title + "'";
     var preText, postText;
     if (workerIds.length > 1) {
         preText = "Each of these URLs will start a run.";
-        postText = "Copy & paste to hand them to your workers.";
+        postText = "Copy & paste and hand them to your workers.";
     } else {
         preText = "This URL will start the run.";
-        postText = "Copy & paste to hand it to your worker - or press \"Run\" to start it right away.";
+        postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
     }
     var urls = [];
     $.each(workerIds, function(i, workerId) {
         urls.push("@jatosUrl.toString()" + "/publix/@study.getId()/start?"
-            + "batchId=" + batchId + "&personalMultipleWorkerId=" + workerId);
+            + "batchId=" + batch.id + "&personalMultipleWorkerId=" + workerId);
     });
-    showLinkModal(title, preText, urls, false, postText);
+    showWorkerLinksModal(title, preText, urls, false, postText);
 }
 
 $('#batchList').on('click', '.generalSingleWorkerSetup .linkButton', function() {
     var batch = getBatchData(this);
+    showWorkerLinksGeneralSingleModal(batch);
+});
+
+function showWorkerLinksGeneralSingleModal(batch) {
     var title = "General Single Run";
     var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalSingle";
     var preText = "This URL will start the run.";
-    var postText = "Copy & paste to hand it to your worker - or press \"Run\" to start it right away.";
-    showLinkModal(title, preText, [url], true, postText);
-});
+    var postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
+    showWorkerLinksModal(title, preText, [url], true, postText);
+}
 
-function showLinkModal(title, preText, urls, preCheckbox, postText) {
+function showWorkerLinksModal(title, preText, urls, preCheckbox, postText) {
     var htmlPreText = '<p>' + preText + '</p>';
     var htmlUrl = '<div class="well linkUrls">' + generateHtmlUrlList(urls) + '</div>';
-    var htmlPreCheckbox = '<div class="checkbox"><p><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use this link multiple times if they don\'t get past the first component."></span></label></p></div>'
+    var htmlPreCheckbox = '<div class="checkbox"><p><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use a \'pre\' link multiple times if they don\'t get past the first component."></span></label></p></div>'
     var htmlPostText = '<p>' + postText + '</p>';
     var htmlBody;
     if (preCheckbox) {
@@ -719,14 +733,14 @@ function showLinkModal(title, preText, urls, preCheckbox, postText) {
         htmlBody = htmlPreText + htmlUrl + htmlPostText;
     }
     if (urls.length > 1) {
-        $('#workerRunLinkModal').find('.runButton').hide();
+        $('#showWorkerLinksModal').find('.runButton').hide();
     } else {
-        $('#workerRunLinkModal').find('.runButton').show();
+        $('#showWorkerLinksModal').find('.runButton').show();
     }
-    $('#workerRunLinkModal').find('.modal-title').text(title);
-    $('#workerRunLinkModal').find('.modal-body').html(htmlBody);
-    $('#workerRunLinkModal').find('.linkUrls').data("linkUrls", urls);
-    $('#workerRunLinkModal').modal('show');
+    $('#showWorkerLinksModal').find('.modal-title').text(title);
+    $('#showWorkerLinksModal').find('.modal-body').html(htmlBody);
+    $('#showWorkerLinksModal').find('.linkUrls').data("linkUrls", urls);
+    $('#showWorkerLinksModal').modal('show');
 }
 
 function generateHtmlUrlList(urls) {
@@ -740,22 +754,22 @@ function generateHtmlUrlList(urls) {
 
 
 // Select and copy to clipboard by button
-$('#workerRunLinkModal').on('click', '.copyToClipboardButton', function(e) {
+$('#showWorkerLinksModal').on('click', '.copyToClipboardButton', function(e) {
     var mtSourceCode = $(this).closest('.modal-body').get()[0];
     selectText(mtSourceCode);
     document.execCommand('copy');
 });
 
-$('#workerRunLinkModal').on('click', '.runButton', function() {
+$('#showWorkerLinksModal').on('click', '.runButton', function() {
     // The run button is only shown if there is only one link in the list
     // The we can safely assume that we have only one link here
-    var url = $('#workerRunLinkModal .linkUrls').text();
+    var url = $('#showWorkerLinksModal .linkUrls').text();
     window.open(url);
 });
 
-$('#workerRunLinkModal').on('click', '.preCheckbox', function(e) {
-    var urls = $('#workerRunLinkModal').find('.linkUrls').data("linkUrls");
-    var checkbox = $('#workerRunLinkModal input');
+$('#showWorkerLinksModal').on('click', '.preCheckbox', function(e) {
+    var urls = $('#showWorkerLinksModal').find('.linkUrls').data("linkUrls");
+    var checkbox = $('#showWorkerLinksModal input');
     var newUrls = [];
     $.each(urls, function(i, url) {
         if (checkbox.prop("checked")) {
@@ -765,7 +779,7 @@ $('#workerRunLinkModal').on('click', '.preCheckbox', function(e) {
         }
     });
     var htmlLinkList = generateHtmlUrlList(newUrls);
-    $('#workerRunLinkModal').find('.linkUrls').html(htmlLinkList);
+    $('#showWorkerLinksModal').find('.linkUrls').html(htmlLinkList);
 });
 
 $('#batchList').on('click', '.jatosWorkerSetup .runButton', function() {
