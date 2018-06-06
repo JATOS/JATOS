@@ -24,23 +24,36 @@
 }
 
 /*
- * Batch panel
+ * Batch Bootstrap Panels
  */
 #batchList > .panel {
     margin-top: 20px;
 }
-
 #batchList > .panel {
     background-color: #f5f5f5;
 }
+#batchList .panel > .panel-heading {
+    line-height:32px;
+}
+#batchList .collapseWorkerSetup {
+    margin-right: 10px;
+}
+#batchList .activeBatchButton {
+    margin-right: 10px;
+}
+#batchList .collapseWorkerTable {
+    margin-right: 10px;
+}
+#batchList .activeWorkerButton {
+    margin-right: 10px;
+}
 
 /*
- * Batch's worker panel
+ * Worker Bootstrap Panels
  */
 .workerSetupItem {
     margin: 10px;
 }
-
 .workerSetupItem .panel > .panel-heading {
     overflow: hidden;
     line-height:32px;
@@ -50,7 +63,6 @@
 .workerSetupItem .panel > .panel-heading .btn-group {
     position: relative;
 }
-
 .workerSetupItem .panel > .panel-heading .activeButton {
     margin-left: 10px;
     margin-right: 10px;
@@ -59,6 +71,10 @@
 /*
  * Badges
  */
+#allWorkersButton .badge {
+    color: @btn-worker-bg;
+    background-color: @btn-worker-color;
+}
 .batchItem > .panel-heading .resultsBadge {
     color: @btn-success-bg;
     background-color: @btn-success-color;
@@ -104,7 +120,7 @@
 }
 
 /*
- * Modal for worker run links
+ * Get worker links Bootstrap Modal
  */
 #workerRunLinkModal .linkUrls > ul {
     margin-bottom: 0px;

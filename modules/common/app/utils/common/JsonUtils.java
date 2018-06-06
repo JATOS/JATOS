@@ -497,7 +497,7 @@ public class JsonUtils {
     public JsonNode workerSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker) {
         ObjectNode workerSetupData = Json.mapper().createObjectNode();
 
-        JsonNode workersListNode = allWorkersForGUI(batch.getWorkerList());
+        JsonNode workersListNode = allWorkersForGUI(batch.getWorkerList(), batch);
         workerSetupData.set("allWorkers", workersListNode);
 
         JsonNode studyResultCountsPerWorkerNode = asJsonNode(studyResultCountsPerWorker);
@@ -513,9 +513,25 @@ public class JsonUtils {
      * JatosWorkers the user's email is added. Intended for use in JATOS' GUI.
      */
     private JsonNode allWorkersForGUI(Set<Worker> workerSet) {
+        return allWorkersForGUI(workerSet, null);
+    }
+
+    /**
+     * Returns a JsonNode with the given set of workers. Additionally for
+     * JatosWorkers the user's email is added. Intended for use in JATOS' GUI.
+     */
+    private JsonNode allWorkersForGUI(Set<Worker> workerSet, Batch batch) {
         ArrayNode workerArrayNode = Json.mapper().createArrayNode();
         for (Worker worker : workerSet) {
             ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(worker));
+
+            // If we have a given batch we want the last StudyResult only from within this batch.
+            // Otherwise just return the last StudyResult.
+            StudyResult lastStudyResult =
+                    batch != null ? getLastStudyResultByBatch(worker, batch) : worker.getLastStudyResult();
+            ObjectNode lastStudyResultNode = Json.mapper().valueToTree(lastStudyResult);
+            workerNode.set("lastStudyResult", lastStudyResultNode);
+
             if (worker instanceof JatosWorker) {
                 JatosWorker jatosWorker = (JatosWorker) worker;
                 if (jatosWorker.getUser() != null) {
@@ -531,6 +547,16 @@ public class JsonUtils {
             workerArrayNode.add(workerNode);
         }
         return workerArrayNode;
+    }
+
+    private StudyResult getLastStudyResultByBatch(Worker worker, Batch batch) {
+        List<StudyResult> studyResultList = worker.getStudyResultList();
+        ListIterator<StudyResult> iterator = studyResultList.listIterator(studyResultList.size());
+        while (iterator.hasPrevious()) {
+            StudyResult sr = iterator.previous();
+            if (sr != null && sr.getBatch().equals(batch)) return sr;
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -610,9 +636,9 @@ public class JsonUtils {
      * Reads the given object into a JsonNode while using the JsonForIO view.
      */
     private JsonNode asObjectNodeWithIOView(Object obj) throws IOException {
-            // Unnecessary conversion into a temporary string - better solution?
-            String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
-                    .writeValueAsString(obj);
+        // Unnecessary conversion into a temporary string - better solution?
+        String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
+                .writeValueAsString(obj);
         return Json.mapper().readTree(tmpStr);
     }
 

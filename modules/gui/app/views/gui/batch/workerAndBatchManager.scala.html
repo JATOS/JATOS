@@ -1,5 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study,
-    jatosUrl: java.net.URL)
+    jatosUrl: java.net.URL, allWorkersSize: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -15,21 +15,24 @@
         <span class="glyphicon glyphicon-link"></span>
     </button>
     <button id="allWorkersButton" type="button" class="btn btn-worker" data-toggle="tooltip"
-        data-placement="bottom" title="Show all workers of all batches">
+        data-placement="bottom" title="Show all workers of all batches (incl. the ones that did not start yet)">
         All Workers
+        <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Number of workers in all batches together">
+        @allWorkersSize
+        </span>
     </button>
 </div>
 
 <!-- Create Batch Modal -->
 <div class="modal fade" id="createBatchModal" data-backdrop="static"
-    data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="createBatchForm" method="post" action="/"
                 class="form-horizontal" role="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">
-                        <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+                        <span>&times;</span><span class="sr-only">Close</span>
                     </button>
                     <h4 class="modal-title">Create Batch</h4>
                 </div>
@@ -61,46 +64,43 @@
 </div>
 
 <!-- Template batch -->
-<div id="batchTemplate" class="panel panel-default batchItem" style="display: none">
+<div id="batchTemplate" class="panel panel-default" style="display: none">
     <div class="panel-heading">
         <span class="panel-title">
             <span role="button" class="collapseWorkerSetup glyphicon glyphicon-chevron-right" data-toggle="tooltip"
                 data-placement="bottom" title="Open/close worker setup of this batch">
             </span>
             <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch">
-                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                <span class="glyphicon glyphicon-ok"></span>
             </button>
             <span role="button" class="batchTitle">Batch Title</span>
-            <span class="btn-group pull-right">
-                <div class="batchBtnGroup btn-group pull-right" aria-hidden="true">
-                    <button type="button" class="batchRefreshButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-                        title="Refresh this batch">
-                        <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span></button>
-                    <button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-                        title="Edit this batch's properties">
-                        Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
-                    <button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-                        title="Edit this batch's session data">
-                        Session Data <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span></button>
-                    <button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-                        title="Shows the study results of this batch">
-                        Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of study results that belong to this batch"></span>
+            <span class="batchBtnGroup btn-group pull-right">
+                <button type="button" class="batchRefreshButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Refresh this batch">
+                    <span class="glyphicon glyphicon-refresh"></span></button>
+                <button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Edit this batch's properties">
+                    Properties <span class="glyphicon glyphicon-option-vertical"></span></button>
+                <button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Edit this batch's session data">
+                    Session Data <span class="glyphicon glyphicon-th-list"></span></button>
+                <button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Shows the study results of this batch">
+                    Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch"></span>
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-batch dropdown-toggle" data-toggle="dropdown">
+                        More <span class="caret"></span>
                     </button>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-batch dropdown-toggle"
-                            data-toggle="dropdown">
-                            More <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                            <li data-toggle="tooltip" data-placement="bottom"
-                                title="Deletes this batch but doesn't delete any results">
-                                <a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                    Delete
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li data-toggle="tooltip" data-placement="bottom"
+                            title="Deletes this batch but doesn't delete any results">
+                            <a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove"></span>
+                                Delete
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </span>
         </span>
@@ -113,6 +113,7 @@
 @views.html.gui.batch.getWorkerLinksModal(study)
 @views.html.gui.batch.batchSessionModal(study)
 @views.html.gui.batch.workerSetup(loggedInUser, study, jatosUrl)
+@views.html.gui.batch.mTurkSourceCodeModal(study, jatosUrl)
 
 <script>
 
@@ -174,10 +175,10 @@ function loadBatches() {
 function fillAllBatches(batchList) {
     $('#batchList').empty();
     $('#batchList').removeData();
-    $('#batchList').data(batchList);
     $.each(batchList, function(index, batch) {
         var batchItem = $('#batchTemplate').clone().show();
         $(batchItem).removeAttr('id');
+        $(batchItem).addClass('batchItem');
         fillBatch(batchItem, batch);
         $("#batchList").append(batchItem);
     });
@@ -257,7 +258,7 @@ $('#batchList').on('click', '.batchResultsButton', function() {
 function setBatchItemActive(item, active) {
     var button = $(item).find('.activeBatchButton');
     if (active) {
-        item.removeClass("grayout");
+        //item.removeClass("grayout");
         button.addClass('activeBatch');
         button.removeClass('btn-default');
         button.addClass('btn-batch');
@@ -266,7 +267,7 @@ function setBatchItemActive(item, active) {
                 .removeClass('glyphicon-remove')
                 .addClass('glyphicon-ok').prop('outerHTML'));
     } else {
-        item.addClass("grayout");
+        //item.addClass("grayout");
         button.removeClass('activeBatch');
         button.removeClass('btn-batch');
         button.addClass('btn-default');
@@ -304,6 +305,14 @@ function getBatchData(element) {
     var batchItem = $(element).closest('.batchItem');
     var batch = batchItem.data();
     return batch;
+}
+
+function getBatchListData() {
+    var batchList = [];
+    $('.batchItem').each(function() {
+        batchList.push($(this).data());
+    });
+    return batchList;
 }
 
 </script>

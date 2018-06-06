@@ -92,11 +92,13 @@ public class Batches extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
+        int allWorkersSize =
+                study.getBatchList().stream().mapToInt(b -> b.getWorkerList().size()).sum();
         String breadcrumbs = breadcrumbsService.generateForStudy(study,
                 BreadcrumbsService.WORKER_AND_BATCH_MANAGER);
         URL jatosURL = HttpUtils.getRequestUrl();
         return ok(views.html.gui.batch.workerAndBatchManager.render(loggedInUser, breadcrumbs,
-                HttpUtils.isLocalhost(), study, jatosURL));
+                HttpUtils.isLocalhost(), study, jatosURL, allWorkersSize));
     }
 
     /**
@@ -466,7 +468,7 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result workerSetupData(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".workersData: studyId " + studyId + ", " + "batchId "
+        LOGGER.debug(".workerSetupData: studyId " + studyId + ", " + "batchId "
                 + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();

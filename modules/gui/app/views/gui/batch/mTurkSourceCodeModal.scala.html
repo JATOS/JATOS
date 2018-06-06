@@ -1,11 +1,11 @@
 @(study: common.Study, jatosUrl: java.net.URL)
 
 <!-- Mechanical Turk Source Code Modal Template -->
-<div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
                 <h4 class="modal-title">Source Code for Mechanical Turk</h4>
             </div>
             <div class="modal-body">
@@ -93,6 +93,11 @@
 <script>
 
 var studyId = @study.getId();
+
+$('#batchList').on('click', '.mtWorkerSourceCode', function() {
+    var batch = getBatchData(this);
+    showMTSourceCodeModal(batch.id);
+});
 
 function showMTSourceCodeModal(batchId) {
     var modal = $('#mtSourceCodeModalTemplate').clone();

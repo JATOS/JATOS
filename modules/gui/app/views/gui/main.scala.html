@@ -32,9 +32,9 @@
 function showSuccess(msg, insertAfterElem) {
 	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ '<i class="glyphicon glyphicon-ok-circle" aria-hidden="true"></i>'
+		+ '<i class="glyphicon glyphicon-ok-circle"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
 	if (insertAfterElem) {
@@ -47,9 +47,9 @@ function showSuccess(msg, insertAfterElem) {
 function showInfo(msg, insertAfterElem) {
 	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ '<i class="glyphicon glyphicon-eye-open" aria-hidden="true"></i>'
+		+ '<i class="glyphicon glyphicon-eye-open"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
@@ -62,9 +62,9 @@ function showInfo(msg, insertAfterElem) {
 function showWarning(msg, insertAfterElem) {
 	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ '<i class="glyphicon glyphicon-warning-sign" aria-hidden="true"></i>'
+		+ '<i class="glyphicon glyphicon-warning-sign"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
@@ -77,9 +77,9 @@ function showWarning(msg, insertAfterElem) {
 function showError(msg, insertAfterElem) {
 	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ '<i class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></i>'
+		+ '<i class="glyphicon glyphicon-exclamation-sign"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
@@ -192,17 +192,17 @@ function isJson(string) {
 function getUIWorkerTypeWithGlyphicon(workerType) {
 	switch (workerType) {
 	case "@common.workers.JatosWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-jatos" aria-hidden="true"></span> @common.workers.JatosWorker.UI_WORKER_TYPE';
+		return '<span class="glyphicon glyphicon-jatos"></span> @common.workers.JatosWorker.UI_WORKER_TYPE';
 	case "@common.workers.GeneralSingleWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-general-single" aria-hidden="true"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE';
+		return '<span class="glyphicon glyphicon-general-single"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE';
 	case "@common.workers.PersonalSingleWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE';
+		return '<span class="glyphicon glyphicon-personal-single"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE';
 	case "@common.workers.PersonalMultipleWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE';
+		return '<span class="glyphicon glyphicon-personal-multiple"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE';
 	case "@common.workers.MTWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-mturk" aria-hidden="true"></span> @common.workers.MTWorker.UI_WORKER_TYPE';
+		return '<span class="glyphicon glyphicon-mturk"></span> @common.workers.MTWorker.UI_WORKER_TYPE';
 	case "@common.workers.MTSandboxWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-mturk-sandbox" aria-hidden="true"></span> @common.workers.MTSandboxWorker.UI_WORKER_TYPE';
+		return '<span class="glyphicon glyphicon-mturk-sandbox"></span> @common.workers.MTSandboxWorker.UI_WORKER_TYPE';
 	default:
 		return "unknown";
 	}
@@ -218,8 +218,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 	<div class="container-fluid">
 		<div class="navbar-header">
 			<button type="button" class="navbar-toggle collapsed"
-				data-toggle="collapse" data-target="#jatos-navbar-collapse" aria-expanded="false"
-				aria-controls="navbar">
+				data-toggle="collapse" data-target="#jatos-navbar-collapse">
 				<span class="sr-only">Toggle navigation</span> <span
 					class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
@@ -240,7 +239,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 			<ul class="nav navbar-nav navbar-left">
 				<li data-toggle="tooltip" data-placement="bottom" title="Create a new study">
 					<a id="createStudyLink" href="#">
-						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+						<span class="glyphicon glyphicon-plus"></span>
 						New Study
 					</a>
 				</li>
@@ -248,14 +247,14 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 					name="@common.Study.STUDY" style="display: none;"></li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Import a study from the local file system">
 					<a id="importStudyLink" href="#">
-						<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
+						<span class="glyphicon glyphicon-import"></span>
 						Import Study
 					</a>
 				</li>
 				@if(loggedInUser.hasRole(common.User.Role.ADMIN)) {
 				<li data-toggle="tooltip" data-placement="bottom" title="Create or delete users and change their passwords">
 					<a id="userManagerLink" href="@controllers.gui.routes.Users.userManager()">
-						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+						<span class="glyphicon glyphicon-user"></span>
 						User Manager
 					</a>
 				</li>
@@ -263,11 +262,11 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
 				<li><a href="@controllers.gui.routes.Users.profile(loggedInUser.getEmail())">
-					<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+					<span class="glyphicon glyphicon-user"></span>
 					<span id="navUserText"> @loggedInUser.getName() (@loggedInUser.getEmail())</span>
 				</a></li>
 				<li><a href="@controllers.gui.routes.Authentication.logout()">
-					<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+					<span class="glyphicon glyphicon-off"></span>
 					Logout
 				</a></li>
 			</ul>
@@ -295,11 +294,11 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 </div>
 
 <!-- Confirmation  Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 				<h4 class="modal-title">Confirm</h4>
 			</div>
 			<div class="modal-body">
@@ -418,13 +417,13 @@ function fillSidebarStudyList(studyArray) {
 			listItem += ' currentStudy';
 		}
 		listItem += '">'
-				+ '<span data-toggle="collapse" data-target="#componentsOfStudy' + study.id + '" aria-expanded="false">'
-				+ '<span class="glyphicon glyphicon-chevron-right gray-light study-collapsed" aria-hidden="true"></span>'
+				+ '<span data-toggle="collapse" data-target="#componentsOfStudy' + study.id + '" >'
+				+ '<span class="glyphicon glyphicon-chevron-right gray-light study-collapsed"></span>'
 				+ '</span>'
 				+ '<span class="text-primary" data-toggle="tooltip" data-placement="bottom" title="ID ' + study.id + '" href="/jatos/' + study.id + '">'
 				+ '&nbsp;' + study.title;	
 		if (study.locked) {
-			listItem = listItem + '&nbsp;<span class="glyphicon glyphicon-lock gray-light" aria-hidden="true"></span>';
+			listItem = listItem + '&nbsp;<span class="glyphicon glyphicon-lock gray-light"></span>';
 		}
 		listItem = listItem + '</span>';
 		

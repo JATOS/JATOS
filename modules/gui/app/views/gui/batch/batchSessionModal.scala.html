@@ -2,19 +2,18 @@
 
 <!-- Show Batch Session Data Modal -->
 <div class="modal fade" id="showBatchSessionDataModal" data-backdrop="static"
-	data-keyboard="false" tabindex="-1" role="dialog"
-	aria-labelledby="myModalLabel" aria-hidden="true">
+	data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<form id="batchSessionForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Current Batch Session Data</h4>
 				</div>
 				
 				<div class="modal-body">
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchSession.DATA">Batch Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your batch session data here" aria-hidden="true"></span>
+						<label class="control-label col-xs-3" for="@models.gui.BatchSession.DATA">Batch Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your batch session data here"></span>
 							<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
 						</label>
 						<div class="col-xs-9">

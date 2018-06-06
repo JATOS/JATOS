@@ -1,17 +1,17 @@
 @(study: common.Study)
 
 <!-- Batch Properties Modal -->
-<div class="modal fade" id="batchPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="batchPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="batchPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
                     <h4 class="modal-title">Batch Properties</h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group row">
-                        <div class="col-xs-3"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance" aria-hidden="true"></span></p></div>
+                        <div class="col-xs-3"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
                         <div class="col-xs-9">
                             <p class="@models.gui.BatchProperties.ID"></p>
                         </div>
@@ -25,49 +25,45 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.COMMENTS">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?" aria-hidden="true"></span></label>
+                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.COMMENTS">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
                         <div class="col-xs-9">
                             <textarea rows="3" class="form-control @models.gui.BatchProperties.COMMENTS" id="@models.gui.BatchProperties.COMMENTS" name="@models.gui.BatchProperties.COMMENTS" placeholder="Your comments"></textarea>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
+                        <label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?"></span></label>
                         <div class="col-xs-9" id="allowedWorkerTypes">
-                            <label class="checkbox-inline">
+                            <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span> @common.workers.JatosWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                            </label>
-                            <label class="checkbox-inline">
+                                <span class="glyphicon glyphicon-jatos"></span> @common.workers.JatosWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want."></span>
+                            </label></div>
+                            <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                            </label>
-                            <label class="checkbox-inline">
+                                <span class="glyphicon glyphicon-personal-single"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
+                            </label></div>
+                            <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                            </label>
-                            <label class="checkbox-inline">
+                                <span class="glyphicon glyphicon-personal-multiple"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
+                            </label></div>
+                            <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-mturk" aria-hidden="true"></span> @common.workers.MTWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                            </label>
-                            <label class="checkbox-inline">
+                                <span class="glyphicon glyphicon-mturk"></span> @common.workers.MTWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once."></span>
+                            </label></div>
+                            <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
-                            </label>
+                                <span class="glyphicon glyphicon-general-single"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website."></span>
+                            </label></div>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">Max total workers &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have. It's unlimited if you don't specify it." aria-hidden="true"></span></label>
+                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">Max total workers &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have. It's unlimited if you don't specify it."></span></label>
                         <div class="col-xs-3">
                             <div class="input-group">
                                 <span class="input-group-addon">
@@ -82,7 +78,7 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.JSON_DATA">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span>
+                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.JSON_DATA">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed."></span>
                             <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
                         </label>
                         <div class="col-xs-9">
@@ -94,7 +90,7 @@
                         <h4>Group Properties</h4>
                         <p class="notGroupStudyText">This is not a group study. Enable this option in the study properties.</p>
                         <div class="form-group row">
-                            <label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of members a group can have, active or inactive. It's unlimited if you don't specify it." aria-hidden="true"></span></label>
+                            <label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of members a group can have, active or inactive. It's unlimited if you don't specify it."></span></label>
                             <div class="col-xs-3">
                                 <div class="input-group">
                                     <span class="input-group-addon">
@@ -109,7 +105,7 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time. It's unlimited if you don't specify it." aria-hidden="true"></span></label>
+                            <label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time. It's unlimited if you don't specify it."></span></label>
                             <div class="col-xs-3">
                                 <div class="input-group">
                                     <span class="input-group-addon">

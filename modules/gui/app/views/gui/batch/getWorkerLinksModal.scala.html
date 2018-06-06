@@ -1,7 +1,7 @@
 @(study: common.Study)
 
 <!-- Get Worker Links Modal -->
-<div id="getWorkerLinksGeneralModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div id="getWorkerLinksGeneralModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="/" class="form-horizontal" role="form">
@@ -45,7 +45,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="button" class="confirmed btn btn-worker" value="Get">
+                    <input type="button" class="confirmed btn btn-worker" value="Continue">
                 </div>
             </form>
         </div>
@@ -59,7 +59,7 @@ $('#getWorkerLinksGeneralButton').click(function(event) {
     removeFormErrors("#getWorkerLinksGeneralModal");
 
     // Set the batch selector
-    var batchList = $('#batchList').data();
+    var batchList = getBatchListData();
     var dropdownMenu = $('#getWorkerLinksGeneralModal .chooseBatch .dropdown-menu');
     dropdownMenu.empty();
     $.each(batchList, function(index, batch) {
@@ -101,16 +101,16 @@ $('#getWorkerLinksGeneralModal').on('click', '.confirmed', function(e) {
 
     switch (workerType) {
     case '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE':
-        getWorkerLinksPersonalSingleModal(batch, workerSetupDiv);
+        showGetWorkerLinksPersonalSingleModal(batch, workerSetupDiv);
         break;
     case '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE':
-        getWorkerLinksPersonalMultipleModal(batch, workerSetupDiv);
+        showGetWorkerLinksPersonalMultipleModal(batch, workerSetupDiv);
         break;
     case '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE':
-        showWorkerLinksGeneralSingleModal(batch);
+        showShowWorkerLinksGeneralSingleModal(batch);
         break;
     case '@common.workers.MTWorker.UI_WORKER_TYPE':
-        // todo
+        showMTSourceCodeModal(batch.id);
         break;
     }
 });
