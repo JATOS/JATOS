@@ -86,7 +86,8 @@ GET      /jatos/:studyId/batch/:batchId/workerSetupData                     @con
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.Batches.batchesByStudy(studyId: Long)
-GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Batches.tableDataByStudy(studyId: Long)
+GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Batches.workersTableDataByStudy(studyId: Long)
+GET      /jatos/:studyId/allWorkersTableData                                @controllers.gui.Batches.allWorkersTableDataByStudy(studyId: Long)
 
 # Components controller
 POST     /jatos/:studyId/component                                          @controllers.gui.Components.submitCreated(studyId: Long)

@@ -15,7 +15,7 @@
         <span class="glyphicon glyphicon-link"></span>
     </button>
     <button id="allWorkersButton" type="button" class="btn btn-worker" data-toggle="tooltip"
-        data-placement="bottom" title="Show all workers of all batches (incl. the ones that did not start yet)">
+        data-placement="bottom" title="Show workers of all batches">
         All Workers
         <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Number of workers in all batches together">
         @allWorkersSize
@@ -70,10 +70,11 @@
             <span role="button" class="collapseWorkerSetup glyphicon glyphicon-chevron-right" data-toggle="tooltip"
                 data-placement="bottom" title="Open/close worker setup of this batch">
             </span>
-            <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch">
+            <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch (workers cannot run the study)">
                 <span class="glyphicon glyphicon-ok"></span>
             </button>
             <span role="button" class="batchTitle">Batch Title</span>
+            <span role="button" class="batchWorkersBadge badge" data-toggle="tooltip" data-placement="bottom" title="Number of workers in this batch (without Jatos worker)"></span>
             <span class="batchBtnGroup btn-group pull-right">
                 <button type="button" class="batchRefreshButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
                     title="Refresh this batch">
@@ -111,6 +112,7 @@
 
 @views.html.gui.batch.batchPropertiesModal(study)
 @views.html.gui.batch.getWorkerLinksModal(study)
+@views.html.gui.batch.allWorkersModal(study)
 @views.html.gui.batch.batchSessionModal(study)
 @views.html.gui.batch.workerSetup(loggedInUser, study, jatosUrl)
 @views.html.gui.batch.mTurkSourceCodeModal(study, jatosUrl)
@@ -155,10 +157,6 @@ $("#createBatchForm").submit(function(event) {
     });
 });
 
-$('#allWorkersButton').click(function(event) {
-	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
-});
-
 function loadBatches() {
     $.ajax({
         type: 'GET',
@@ -190,10 +188,11 @@ function fillBatch(batchItem, batch) {
     $(batchItem).data(batch);
     setBatchItemActive(batchItem, batch.active);
     $(batchItem).find('.batchTitle').text(batch.title);
+    $(batchItem).find('.batchWorkersBadge').text(batch.workerCount);
     $(batchItem).find('.batchResultsButton .resultsBadge').text(batch.resultCount);
 }
 
-$('#batchList').on('click', '.collapseWorkerSetup, .batchTitle', function() {
+$('#batchList').on('click', '.collapseWorkerSetup, .batchTitle, .batchWorkersBadge', function() {
     var batchItem = $(this).closest('.batchItem');
     var collapse = $(batchItem).find(".collapse")
     if($(collapse).children().length == 0) {
@@ -262,7 +261,7 @@ function setBatchItemActive(item, active) {
         button.addClass('activeBatch');
         button.removeClass('btn-default');
         button.addClass('btn-batch');
-        button.attr('title', "Click to deactivate this batch");
+        button.attr('title', "Click to deactivate this batch (workers cannot run the study)");
         button.html($(button.html())
                 .removeClass('glyphicon-remove')
                 .addClass('glyphicon-ok').prop('outerHTML'));
@@ -271,7 +270,7 @@ function setBatchItemActive(item, active) {
         button.removeClass('activeBatch');
         button.removeClass('btn-batch');
         button.addClass('btn-default');
-        button.attr('title', "Click to activate this batch");
+        button.attr('title', "Click to activate this batch (workers can run the study)");
         button.html($(button.html())
                 .removeClass('glyphicon-ok')
                 .addClass('glyphicon-remove').prop('outerHTML'));

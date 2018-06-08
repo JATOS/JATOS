@@ -1,0 +1,121 @@
+@(study: common.Study)
+
+<!-- Show all workers Modal -->
+<div class="modal fade" id="allWorkersModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">All Workers</h4>
+            </div>
+
+            <div class="modal-body">
+                <!-- All workers table -->
+                <table id="allWorkersTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <thead>
+                        <tr>
+                            <th data-toggle="tooltip" data-placement="top" title="Click on the ID to go to this worker's results">Worker ID</th>
+                            <th data-toggle="tooltip" data-placement="top" title="Type of the worker, e.g. @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE, @common.workers.JatosWorker.UI_WORKER_TYPE, @common.workers.MTWorker.UI_WORKER_TYPE, @common.workers.GeneralSingleWorker.UI_WORKER_TYPE, @common.workers.PersonalSingleWorker.UI_WORKER_TYPE">Type</th>
+                            <th data-toggle="tooltip" data-placement="top" title="All batches this worker belongs to">Batch(es)</th>
+                            <th data-toggle="tooltip" data-placement="top" title="State of the (last) study started by this worker">(Last) Study State</th>
+                            <th>Additional Info</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+var workersTable;
+
+$('#allWorkersButton').click(function(event) {
+    removeAlerts("#allWorkersModal");
+    if (!workersTable) {
+        workersTable = generateAllWorkersTable();
+    } else {
+        workersTable.ajax.reload();
+    }
+    $('#allWorkersModal').modal('show');
+});
+
+function generateAllWorkersTable() {
+    return $('#allWorkersTable').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : '@controllers.gui.routes.Batches.allWorkersTableDataByStudy(study.getId())',
+            "error": function(reason) {
+                    showError("Couldn't read worker data.")
+            }
+        },
+        "dom": 'ftip',
+        "order": [[ 0, "desc" ]],
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": 10,
+        "pagingType": "simple_numbers",
+        "columns": [
+            {
+                "data": "id",
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    return '<a href="/jatos/worker/'
+                        + data + '/results">' + data + '</a>';
+                }
+            },
+            {
+                "data": "workerType",
+                "width": "19%",
+                "render": getUIWorkerTypeWithGlyphicon
+            },
+            {
+                "data": getBatchColumnText,
+                "width": "30%"
+            },
+            {
+                "data": getStudyState,
+                "width": "20%"
+            },
+            {
+                "data": getAdditionalWorkerInfoColumnText,
+                "width": "30%"
+            }
+        ],
+        "language": {
+            "search": "Search:"
+        }
+    });
+}
+
+function getBatchColumnText(data, type, dataToSet) {
+    var batchTitles = [];
+    data.batchList.forEach(function(batch) {
+        batchTitles.push(batch.title);
+    });
+    return batchTitles.join(', ');
+}
+
+function getStudyState(data, type, dataToSet) {
+    return data.lastStudyState ? data.lastStudyState : "none started yet";
+}
+
+function getAdditionalWorkerInfoColumnText(data, type, dataToSet) {
+    if (data.mtWorkerId) {
+        return "MTurk worker ID: " + data.mtWorkerId;
+    }
+    if (data.userEmail) {
+        return "User email: " + data.userEmail;
+    }
+    if (data.comment) {
+        return "Comment: " + data.comment;
+    }
+    return "none";
+}
+
+</script>

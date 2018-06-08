@@ -1,6 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-study: common.Study, workerSet: Set[common.workers.Worker],
-studyResultsCount: Integer)
+study: common.Study, workersSize: Integer, studyResultsCount: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -28,11 +27,11 @@ studyResultsCount: Integer)
         </button>
         <button id="workers" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
-                title="Shows workers who participated">
+                title="Shows workers with results">
             Workers
             <span class="badge" data-toggle="tooltip" data-placement="bottom"
                     title="Number of workers who did this study so far (at least started the study)">
-                @workerSet.size()
+                @workersSize
             </span>
         </button>
         <button id="studyPropertiesButton" type="button" class="btn btn-study"

@@ -68,6 +68,11 @@
     margin-right: 10px;
 }
 
+.workerSetupItem .panel-collapse {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
 /*
  * Badges
  */
@@ -79,6 +84,10 @@
     color: @btn-success-bg;
     background-color: @btn-success-color;
 }
+.batchItem > .panel-heading .batchWorkersBadge {
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+}
 .workerSetupItem .panel > .panel-heading .resultsBadge {
     color: @btn-worker-bg;
     background-color: @btn-worker-color;
@@ -89,7 +98,33 @@
 }
 
 /*
- * DataTables
+ * DataTables #allWorkersModal
+ */
+#allWorkersModal .pagination > li.active > a {
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+    border-color: darken(@btn-worker-bg, 5%);
+}
+#allWorkersModal .pagination > li.active > a:hover {
+    background-color: darken(@btn-worker-bg, 10%);
+}
+#allWorkersModal .pagination > li > a {
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
+}
+#allWorkersModal .pagination > li:not(.disabled):not(.active) > a:hover {
+    background-color: darken(@btn-default-bg, 10%);
+}
+#allWorkersModal .pagination > li.disabled > a {
+    color: lighten(@btn-default-color, 20%);
+}
+#allWorkersModal .pagination > li.next > a {
+    margin-right: 10px;
+}
+
+/*
+ * DataTables .workerSetupItem
  */
 .workerSetupItem .pagination > li.active > a {
     color: @btn-worker-color;

@@ -105,8 +105,9 @@ public class ResultService {
      */
     public List<StudyResult> getAllowedStudyResultList(User user,
             Worker worker) {
+        // Check for studyResult != null should not be necessary but it lead to an NPE at least once
         return worker.getStudyResultList().stream()
-                .filter(studyResult -> studyResult.getStudy().hasUser(user))
+                .filter(studyResult -> studyResult != null && studyResult.getStudy().hasUser(user))
                 .collect(Collectors.toList());
     }
 

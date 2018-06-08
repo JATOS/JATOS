@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -481,10 +482,25 @@ public class JsonUtils {
      * Returns a JSON string with the given set of workers wrapped in a data
      * object. Intended for use in JATOS' GUI.
      */
-    public JsonNode allWorkersForTableDataByStudy(Set<Worker> workerSet) {
-        JsonNode arrayNode = allWorkersForGUI(workerSet);
+    public JsonNode allWorkersForTableDataByStudy(Set<Worker> workerSet, Study study) {
+        ArrayNode workerArrayNode = Json.mapper().createArrayNode();
+        for (Worker worker : workerSet) {
+            ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(worker));
+
+            List<Batch> batchList = worker.getBatchList().stream()
+                    .filter(b -> study.getBatchList().contains(b))
+                    .collect(Collectors.toList());
+            workerNode.set("batchList", Json.mapper().valueToTree(batchList));
+
+            String lastStudyState = worker.getLastStudyResult() != null ?
+                    worker.getLastStudyResult().getStudyState().name() : null;
+            workerNode.put("lastStudyState", lastStudyState);
+
+            addUserEmailForJatosWorker(worker, workerNode);
+            workerArrayNode.add(workerNode);
+        }
         ObjectNode workersNode = Json.mapper().createObjectNode();
-        workersNode.set(DATA, arrayNode);
+        workersNode.set(DATA, workerArrayNode);
         return workersNode;
     }
 
@@ -497,8 +513,20 @@ public class JsonUtils {
     public JsonNode workerSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker) {
         ObjectNode workerSetupData = Json.mapper().createObjectNode();
 
-        JsonNode workersListNode = allWorkersForGUI(batch.getWorkerList(), batch);
-        workerSetupData.set("allWorkers", workersListNode);
+        ArrayNode workerArrayNode = Json.mapper().createArrayNode();
+        for (Worker worker : batch.getWorkerList()) {
+            ObjectNode workerNode = Json.mapper().valueToTree(worker);
+
+            // We have to get last StudyResult only from within the given batch.
+            StudyResult lastStudyResult = getLastStudyResultByBatch(worker, batch);
+            String lastStudyState =
+                    lastStudyResult != null ? lastStudyResult.getStudyState().name() : null;
+            workerNode.put("lastStudyState", lastStudyState);
+
+            addUserEmailForJatosWorker(worker, workerNode);
+            workerArrayNode.add(workerNode);
+        }
+        workerSetupData.set("allWorkers", workerArrayNode);
 
         JsonNode studyResultCountsPerWorkerNode = asJsonNode(studyResultCountsPerWorker);
         workerSetupData.set("studyResultCountsPerWorker", studyResultCountsPerWorkerNode);
@@ -508,45 +536,19 @@ public class JsonUtils {
         return workerSetupData;
     }
 
-    /**
-     * Returns a JsonNode with the given set of workers. Additionally for
-     * JatosWorkers the user's email is added. Intended for use in JATOS' GUI.
-     */
-    private JsonNode allWorkersForGUI(Set<Worker> workerSet) {
-        return allWorkersForGUI(workerSet, null);
-    }
-
-    /**
-     * Returns a JsonNode with the given set of workers. Additionally for
-     * JatosWorkers the user's email is added. Intended for use in JATOS' GUI.
-     */
-    private JsonNode allWorkersForGUI(Set<Worker> workerSet, Batch batch) {
-        ArrayNode workerArrayNode = Json.mapper().createArrayNode();
-        for (Worker worker : workerSet) {
-            ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(worker));
-
-            // If we have a given batch we want the last StudyResult only from within this batch.
-            // Otherwise just return the last StudyResult.
-            StudyResult lastStudyResult =
-                    batch != null ? getLastStudyResultByBatch(worker, batch) : worker.getLastStudyResult();
-            ObjectNode lastStudyResultNode = Json.mapper().valueToTree(lastStudyResult);
-            workerNode.set("lastStudyResult", lastStudyResultNode);
-
-            if (worker instanceof JatosWorker) {
-                JatosWorker jatosWorker = (JatosWorker) worker;
-                if (jatosWorker.getUser() != null) {
-                    workerNode.put("userEmail", jatosWorker.getUser().getEmail());
-                } else {
-                    workerNode.put("userEmail", "unknown");
-                }
-            } else if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
-                // In case the JatosWorker's user is already removed from the
-                // database Hibernate doesn't use the type JatosWorker
-                workerNode.put("userEmail", "unknown (probably deleted)");
+    private void addUserEmailForJatosWorker(Worker worker, ObjectNode workerNode) {
+        if (worker instanceof JatosWorker) {
+            JatosWorker jatosWorker = (JatosWorker) worker;
+            if (jatosWorker.getUser() != null) {
+                workerNode.put("userEmail", jatosWorker.getUser().getEmail());
+            } else {
+                workerNode.put("userEmail", "unknown");
             }
-            workerArrayNode.add(workerNode);
+        } else if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
+            // In case the JatosWorker's user is already removed from the
+            // database Hibernate doesn't use the type JatosWorker
+            workerNode.put("userEmail", "unknown (probably deleted)");
         }
-        return workerArrayNode;
     }
 
     private StudyResult getLastStudyResultByBatch(Worker worker, Batch batch) {

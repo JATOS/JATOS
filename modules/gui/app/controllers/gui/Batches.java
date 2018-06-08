@@ -445,8 +445,8 @@ public class Batches extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByStudy(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".tableDataByStudy: studyId " + studyId);
+    public Result workersTableDataByStudy(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".workersTableDataByStudy: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
 
@@ -454,8 +454,33 @@ public class Batches extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
 
-            Set<Worker> workerSet = workerService.retrieveWorkers(study);
-            dataAsJson = jsonUtils.allWorkersForTableDataByStudy(workerSet);
+            Set<Worker> workerSet = workerService.retrieveWorkersWithStudyResult(study);
+            dataAsJson = jsonUtils.allWorkersForTableDataByStudy(workerSet, study);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        return ok(dataAsJson);
+    }
+
+    /**
+     * Ajax GET request
+     * <p>
+     * Returns a list of all workers as JSON that belong to this study including the ones that did
+     * not start yet.
+     */
+    @Transactional
+    @Authenticated
+    public Result allWorkersTableDataByStudy(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".allWorkersTableData: studyId " + studyId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+
+        JsonNode dataAsJson = null;
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+
+            Set<Worker> workerSet = workerService.retrieveAllWorkers(study);
+            dataAsJson = jsonUtils.allWorkersForTableDataByStudy(workerSet, study);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }

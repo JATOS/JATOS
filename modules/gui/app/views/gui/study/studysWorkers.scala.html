@@ -22,9 +22,9 @@ $(document).ready(function() {
 	workersTable = $('#workersTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : '@controllers.gui.routes.Batches.tableDataByStudy(study.getId())',
+			"url" : '@controllers.gui.routes.Batches.workersTableDataByStudy(study.getId())',
 			"error": function(reason) {
-					showError("Couldn't read components data.")
+					showError("Couldn't read worker data.")
 			}
 		},
 		"dom": 'ftip',
@@ -63,19 +63,7 @@ $(document).ready(function() {
 		}
 		return "none";
 	}
-	
-	$('#resultsTable tbody').on('click', 'td.details-control', function() {
-		var tr = $(this).closest('tr');
-		var row = resultsTable.row(tr);
-		if (row.child.isShown()) {
-			row.child.hide();
-			tr.removeClass('shown');
-		}
-		else {
-			row.child(childRowFormat(row.data())).show();
-			tr.addClass('shown');
-		}
-	});
+
 });
 
 </script>

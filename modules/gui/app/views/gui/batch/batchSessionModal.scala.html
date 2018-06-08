@@ -2,103 +2,103 @@
 
 <!-- Show Batch Session Data Modal -->
 <div class="modal fade" id="showBatchSessionDataModal" data-backdrop="static"
-	data-keyboard="false" tabindex="-1" role="dialog">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<form id="batchSessionForm" method="post" action="/" class="form-horizontal" role="form">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-					<h4 class="modal-title">Current Batch Session Data</h4>
-				</div>
-				
-				<div class="modal-body">
-					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchSession.DATA">Batch Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your batch session data here"></span>
-							<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
-						</label>
-						<div class="col-xs-9">
-							<input type="hidden" class="batchSessionVersion" name="@models.gui.BatchSession.VERSION" />
-							<textarea rows="12" class="form-control batchSessionData" name="@models.gui.BatchSession.DATA" placeholder="Put your batch session as JSON in here"></textarea>
-						</div>
-					</div>
-				</div>
-				
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" class="confirmed btn btn-batch" value="Save">
-				</div>
-			</form>
-		</div>
-	</div>
+    data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="batchSessionForm" method="post" action="/" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Current Batch Session Data</h4>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group row">
+                        <label class="control-label col-xs-3" for="@models.gui.BatchSession.DATA">Batch Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your batch session data here"></span>
+                            <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
+                        </label>
+                        <div class="col-xs-9">
+                            <input type="hidden" class="batchSessionVersion" name="@models.gui.BatchSession.VERSION" />
+                            <textarea rows="12" class="form-control batchSessionData" name="@models.gui.BatchSession.DATA" placeholder="Put your batch session as JSON in here"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="confirmed btn btn-batch" value="Save">
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
 
 $('#batchList').on('click', '.batchSessionButton', function() {
-	var batch = getBatchData(this);
-	if (!batch) {return} // should never happen
-	$.ajax({
-		type: 'GET',
-		url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
-		success: function(batchSession) {
-			removeAlerts('#showBatchSessionDataModal');
-			removeFormErrors('#showBatchSessionDataModal')
-			clearForm("#batchSessionForm");
-			fillbatchSessionForm(batchSession);
-			$('#showBatchSessionDataModal').data(batch);
-			$('#showBatchSessionDataModal').modal('show');
-		},
-		error: function(response) {
-			showError("Couldn't load batch session data.");
-		}
-	});
+    var batch = getBatchData(this);
+    if (!batch) {return} // should never happen
+    $.ajax({
+        type: 'GET',
+        url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
+        success: function(batchSession) {
+            removeAlerts('#showBatchSessionDataModal');
+            removeFormErrors('#showBatchSessionDataModal')
+            clearForm("#batchSessionForm");
+            fillbatchSessionForm(batchSession);
+            $('#showBatchSessionDataModal').data(batch);
+            $('#showBatchSessionDataModal').modal('show');
+        },
+        error: function(response) {
+            showError("Couldn't load batch session data.");
+        }
+    });
 });
 
 function fillbatchSessionForm(batchSession) {
-	var batchSessionData = batchSession['@models.gui.BatchSession.DATA'];
-	batchSessionData = batchSessionData ? batchSessionData : "";
-	var batchSessionDataPretty = JSON.stringify(JSON.parse(batchSessionData), null, 2);
-	$('#showBatchSessionDataModal .batchSessionData').val(batchSessionDataPretty);
-	var batchSessionVersion = batchSession['@models.gui.BatchSession.VERSION'];
-	$('#showBatchSessionDataModal .batchSessionVersion').val(batchSessionVersion);
+    var batchSessionData = batchSession['@models.gui.BatchSession.DATA'];
+    batchSessionData = batchSessionData ? batchSessionData : "";
+    var batchSessionDataPretty = JSON.stringify(JSON.parse(batchSessionData), null, 2);
+    $('#showBatchSessionDataModal .batchSessionData').val(batchSessionDataPretty);
+    var batchSessionVersion = batchSession['@models.gui.BatchSession.VERSION'];
+    $('#showBatchSessionDataModal .batchSessionVersion').val(batchSessionVersion);
 }
 
 $("#showBatchSessionDataModal .prettyButton").click(function(event) {
-	var jsonInput = $('#showBatchSessionDataModal .batchSessionData').val();
-	removeSingleFormError('#showBatchSessionDataModal .batchSessionData');
-	try {
-		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-		$('#showBatchSessionDataModal .batchSessionData').val(jsonInputPretty);
-	} catch (e) {
-		showSingleFormError('#showBatchSessionDataModal .batchSessionData', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
-	}
+    var jsonInput = $('#showBatchSessionDataModal .batchSessionData').val();
+    removeSingleFormError('#showBatchSessionDataModal .batchSessionData');
+    try {
+        var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+        $('#showBatchSessionDataModal .batchSessionData').val(jsonInputPretty);
+    } catch (e) {
+        showSingleFormError('#showBatchSessionDataModal .batchSessionData', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+    }
 });
 
 $("#batchSessionForm").submit(function(event) {
-	event.preventDefault();
-	var batch = $('#showBatchSessionDataModal').data();
-	if (!batch) {return} // should never happen
-	$.ajax({
-		type: 'POST',
-		url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
-		data: $('#batchSessionForm').serialize(), 
-		success: function(response) {
-			removeAlerts('#showBatchSessionDataModal');
-			removeFormErrors('#showBatchSessionDataModal')
-			$('#showBatchSessionDataModal').modal('hide');
-			loadBatchList();
-		},
-		error: function(response) {
-			removeAlerts('#showBatchSessionDataModal');
-			removeFormErrors('#showBatchSessionDataModal');
-			showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#showBatchSessionDataModal .modal-header");
-			if (isJson(response.responseText)) {
-				showFormErrors('#showBatchSessionDataModal', response)
-			} else {
-				showModalError("#showBatchSessionDataModal .modal-header", response);
-			}
-		}
-	});
+    event.preventDefault();
+    var batch = $('#showBatchSessionDataModal').data();
+    if (!batch) {return} // should never happen
+    $.ajax({
+        type: 'POST',
+        url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
+        data: $('#batchSessionForm').serialize(),
+        success: function(response) {
+            removeAlerts('#showBatchSessionDataModal');
+            removeFormErrors('#showBatchSessionDataModal')
+            $('#showBatchSessionDataModal').modal('hide');
+            loadBatchList();
+        },
+        error: function(response) {
+            removeAlerts('#showBatchSessionDataModal');
+            removeFormErrors('#showBatchSessionDataModal');
+            showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#showBatchSessionDataModal .modal-header");
+            if (isJson(response.responseText)) {
+                showFormErrors('#showBatchSessionDataModal', response)
+            } else {
+                showModalError("#showBatchSessionDataModal .modal-header", response);
+            }
+        }
+    });
 });
 
 </script>

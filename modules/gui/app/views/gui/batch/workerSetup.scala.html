@@ -32,7 +32,7 @@
                     <tr>
                         <th>Worker ID</th>
                         <th>User Email</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="State of the last study started by this worker">Last Study State</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -55,11 +55,15 @@
                     <span class="glyphicon glyphicon-personal-single"></span>
                     <span role="button">&nbsp;@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker</span>
                     <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of workers of type @common.workers.PersonalSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                        title="Number of workers of type @common.workers.PersonalSingleWorker.UI_WORKER_TYPE"></span>
                 </span>
             </span>
             <span class="btn-group pull-right">
-                <button type="button" class="btn btn-worker getLinksButton" data-toggle="tooltip" data-placement="bottom" title="Get links for a Personal Single workers">Get Links</button>
+                <button type="button" class="btn btn-worker getLinksButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Get links for a Personal Single workers">
+                    Get Links
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -96,11 +100,15 @@
                     <span class="glyphicon glyphicon-personal-multiple"></span>
                     <span role="button">&nbsp;@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker</span>
                     <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of workers of type @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                        title="Number of workers of type @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE"></span>
                 </span>
             </span>
             <span class="btn-group pull-right">
-                <button type="button" class="btn btn-worker getLinksButton" data-toggle="tooltip" data-placement="bottom" title="Get links for Personal Multiple Workers">Get Links</button>
+                <button type="button" class="btn btn-worker getLinksButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Get links for Personal Multiple Workers">
+                    Get Links
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -114,7 +122,7 @@
                     <tr>
                         <th>Worker ID</th>
                         <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="State of the last study started by this worker">Last Study State</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -137,11 +145,15 @@
                     <span class="glyphicon glyphicon-general-single"></span>
                     <span role="button">&nbsp;@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker</span>
                     <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of workers of type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
+                        title="Number of workers of type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE"></span>
                 </span>
             </span>
             <span class="btn-group pull-right">
-                <button type="button" class="btn btn-worker linkButton" data-toggle="tooltip" data-placement="bottom" title="Get the link for the General Single Worker">Get Link</button>
+                <button type="button" class="btn btn-worker linkButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Get the link for the General Single Worker">
+                    Get Link
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
                 <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
                     title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -176,7 +188,7 @@
                     <span class="glyphicon glyphicon-mturk"></span>
                     <span role="button">&nbsp;@common.workers.MTWorker.UI_WORKER_TYPE Worker</span>
                     <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of workers of type @common.workers.MTWorker.UI_WORKER_TYPE who at least started this study"></span>
+                        title="Number of workers of type @common.workers.MTWorker.UI_WORKER_TYPE"></span>
                 </span>
             </span>
             <span class="btn-group pull-right">
@@ -357,6 +369,8 @@ function fillWorkerSetup(workerSetupData, workerSetupDiv) {
     setAllowedWorkerTypes(workerSetupDiv, workerSetupData.allowedWorkerTypes);
 
     addWorkersBadges(workerSetupDiv, workerTables);
+    // Set batch's worker badge
+    $(workerSetupDiv).closest('.batchItem').find('.batchWorkersBadge').text(workerSetupData.allWorkers.length);
 
     addWorkerResultsBadges(workerSetupDiv, workerSetupData.studyResultCountsPerWorker);
 
@@ -467,8 +481,7 @@ function fillWorkerTables(allWorkers, workerTables) {
 }
 
 function fillJatosRow(worker, jatosWorkerTable) {
-    var lastStudyState = worker.lastStudyResult != null
-            ? worker.lastStudyResult.studyState : "none started yet";
+    var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
     if ("@loggedInUser.getEmail()" == worker.userEmail) {
         jatosWorkerTable.row.add([
             worker.id,
@@ -487,30 +500,27 @@ function fillJatosRow(worker, jatosWorkerTable) {
 }
 
 function fillPersonalSingleRow(worker, personalSingleWorkerTable) {
-    var lastStudyState = worker.lastStudyResult != null
-            ? worker.lastStudyResult.studyState : "not started yet";
+    var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
     personalSingleWorkerTable.row.add([
         worker.id,
         worker.comment,
         lastStudyState,
-        '<button type="button" class="btn btn-worker linkButton">Get Link</button>'
+        '<button type="button" class="btn btn-worker linkButton">Get Link <span class="glyphicon glyphicon-link"></span></button>'
     ]);
 }
 
 function fillPersonalMultipleRow(worker, personalMultipleWorkerTable) {
-    var lastStudyState = worker.lastStudyResult != null
-            ? worker.lastStudyResult.studyState : "none started yet";
+    var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
     personalMultipleWorkerTable.row.add([
         worker.id,
         worker.comment,
         lastStudyState,
-        '<button type="button" class="btn btn-worker linkButton">Get Link</button>'
+        '<button type="button" class="btn btn-worker linkButton">Get Link <span class="glyphicon glyphicon-link"></span></button>'
     ]);
 }
 
 function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
-    var lastStudyState = worker.lastStudyResult != null
-            ? worker.lastStudyResult.studyState : "not started yet";
+    var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
     generalSingleWorkerTable.row.add([
         worker.id,
         lastStudyState
@@ -519,8 +529,7 @@ function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
 
 function fillMtRow(worker, mtWorkerTable) {
     var workerType = getUIWorkerTypeWithGlyphicon(worker.workerType);
-    var lastStudyState = worker.lastStudyResult != null
-            ? worker.lastStudyResult.studyState : "not started yet";
+    var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
     mtWorkerTable.row.add([
         worker.id,
         worker.mtWorkerId,

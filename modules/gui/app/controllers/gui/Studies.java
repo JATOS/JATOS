@@ -16,7 +16,6 @@ import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
@@ -112,13 +111,12 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
 
-        Set<Worker> workerSet = workerService.retrieveWorkers(study);
+        int workersSize = workerService.retrieveWorkersWithStudyResult(study).size();
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus,
                 views.html.gui.study.study.render(loggedInUser, breadcrumbs,
-                        HttpUtils.isLocalhost(), study, workerSet,
-                        studyResultCount));
+                        HttpUtils.isLocalhost(), study, workersSize, studyResultCount));
     }
 
     @Transactional

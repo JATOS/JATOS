@@ -114,6 +114,7 @@ public abstract class Worker {
         return this.studyResultList;
     }
 
+    @JsonIgnore
     public StudyResult getLastStudyResult() {
         return (!studyResultList.isEmpty())
                 ? studyResultList.get(studyResultList.size() - 1) : null;
