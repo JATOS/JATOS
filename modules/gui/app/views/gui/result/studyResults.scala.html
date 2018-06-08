@@ -1,42 +1,42 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-	study: common.Study, dataUrl: String)
+    study: common.Study, dataUrl: String)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <!-- Results table -->
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
-	<thead>
-		<tr>
-			<!-- If you change something in the head, change it in the footer too! -->
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
-			<th>Result ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
-			<th>Duration</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
-			<th>Group ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
-		</tr>
-	</thead>
-	<tfoot>
-		<tr>
-			<!-- If you change something in the footer, change it in the head too! -->
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
-			<th>Result ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
-			<th>Duration</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
-			<th>Group ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
-		</tr>
-	</tfoot>
+    <thead>
+        <tr>
+            <!-- If you change something in the head, change it in the footer too! -->
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
+            <th>Result ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
+            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
+            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <!-- If you change something in the footer, change it in the head too! -->
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
+            <th>Result ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
+            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
+            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
+        </tr>
+    </tfoot>
 </table>
 
 <script type="text/javascript">
@@ -46,301 +46,301 @@ showInfo("@general.common.MessagesStrings.RESULTS_INFO");
 
 var resultsTable;
 $(document).ready(function() {
-	resultsTable = $('#resultsTable').DataTable({
-		"ajax": {
-			"type": "GET",
-			"url" : "@dataUrl",
-			"error": function(reason) {
-					showError("Couldn't read results data.")
-			}
-		},
-		"dom": '<"pull-right"B>lfrtip',
-		"order": [[ 2, "desc" ]],
-		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-		"pageLength": 10,
-		"columns": [
-			{
-				"class": 'details-control',
-				"orderable": false,
-				"data": null,
-				"render": function (data, type, full, meta) {
-					return '<span class="glyphicon glyphicon-chevron-right" '
-						+ 'data-toggle="tooltip" data-placement="bottom" '
-						+ 'title="Click to expand/collapse this result"></span>';
-				}
-			},
-			{ "data": "id" },
-			{ "data": "startDate" },
-			{
-				"data": "lastSeenDate",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "never";
-				}
-			},
-			{
-				"data": "duration",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "not yet";
-				}
-			},
-			{ 
-				"data": "workerId",
-				"render": function (data, type, full, meta) {
-					return '<a href="/jatos/worker/'
-						+ data + '/results">' + data + '</a>';
-				}
-			},
-			{	"data": "worker.workerType",
-				"render": getUIWorkerTypeWithGlyphicon
-			},
-			{ 
-				"render": function (data, type, full, meta) {
-					var mtWorkerId = (full.worker.mtWorkerId) ?
-							full.worker.mtWorkerId : "none";
-					var confirmationCode = (full.confirmationCode) ?
-							full.confirmationCode : "none";
-					return mtWorkerId + "<br>(" + confirmationCode + ")";
-				}
-			},
-			{ 
-				"data": "groupResultId",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "none";
-				}
-			},
-			{ "data": "studyState" },
-			{ 
-				"data": getMessages,
-				"width": "20%"
-			}
-		],
-		buttons: [
-			{
-				"extend": "colvis",
-				"text": "Show/Hide Columns <span class='caret'></span>",
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
-			},
-			{
-				"extend": "selectAll",
-				"text": "Select All",
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
-			},
-			{
-				"extends": "selectAll",
-				"text": "Select Filtered",
-				"action": function(e, dt, node, config) {
-					dt.rows({ search: 'applied' }).select();
-				},
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
-			},
-			{
-				"extend": "selectNone",
-				"text": "Deselect All",
-				"action": function(e, dt, node, config) {
-					dt.rows().deselect();
-				},
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
-			},
-			{
-				"text": "Export Selected",
-				"action": exportSelectedResultData,
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
-			},
-			{
-				"text": "Export All",
-				"action": exportAllSelectedResultData,
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
-			},
-			{
-				"text": "Delete Selected",
-				"action": deleteSelectedResults,
-				"className": 'btn btn-danger',
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-			},
-			{
-				"text": "Delete All",
-				"action": deleteAllResults,
-				"className": 'btn btn-danger',
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
-			}
-		],
-		"language": {
-			"search": "Filter Results:"
-		}
-	});
-	
-	// Necessary - otherwise the button doesn't work with manually selected rows
-	resultsTable.on('draw', toggleDeselectAllButton);
-	
-	function toggleDeselectAllButton() {
-		if (resultsTable.rows('.selected').any()) {
-			resultsTable.buttons(['.buttons-select-none']).enable();
-		} else {
-			resultsTable.buttons(['.buttons-select-none']).disable();
-		}
-	}
+    resultsTable = $('#resultsTable').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : "@dataUrl",
+            "error": function(reason) {
+                    showError("Couldn't read results data.")
+            }
+        },
+        "dom": '<"pull-right"B>lfrtip',
+        "order": [[ 2, "desc" ]],
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": 10,
+        "columns": [
+            {
+                "class": 'details-control',
+                "orderable": false,
+                "data": null,
+                "render": function (data, type, full, meta) {
+                    return '<span class="glyphicon glyphicon-chevron-right" '
+                        + 'data-toggle="tooltip" data-placement="bottom" '
+                        + 'title="Click to expand/collapse this result"></span>';
+                }
+            },
+            { "data": "id" },
+            { "data": "startDate" },
+            {
+                "data": "lastSeenDate",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "never";
+                }
+            },
+            {
+                "data": "duration",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "not yet";
+                }
+            },
+            {
+                "data": "workerId",
+                "render": function (data, type, full, meta) {
+                    return '<a href="/jatos/worker/'
+                        + data + '/results">' + data + '</a>';
+                }
+            },
+            {	"data": "worker.workerType",
+                "render": getUIWorkerTypeWithGlyphicon
+            },
+            {
+                "render": function (data, type, full, meta) {
+                    var mtWorkerId = (full.worker.mtWorkerId) ?
+                            full.worker.mtWorkerId : "none";
+                    var confirmationCode = (full.confirmationCode) ?
+                            full.confirmationCode : "none";
+                    return mtWorkerId + "<br>(" + confirmationCode + ")";
+                }
+            },
+            {
+                "data": "groupResultId",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "none";
+                }
+            },
+            { "data": "studyState" },
+            {
+                "data": getMessages,
+                "width": "20%"
+            }
+        ],
+        buttons: [
+            {
+                "extend": "colvis",
+                "text": "Show/Hide Columns <span class='caret'></span>",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
+            },
+            {
+                "extend": "selectAll",
+                "text": "Select All",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
+            },
+            {
+                "extends": "selectAll",
+                "text": "Select Filtered",
+                "action": function(e, dt, node, config) {
+                    dt.rows({ search: 'applied' }).select();
+                },
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
+            },
+            {
+                "extend": "selectNone",
+                "text": "Deselect All",
+                "action": function(e, dt, node, config) {
+                    dt.rows().deselect();
+                },
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
+            },
+            {
+                "text": "Export Selected",
+                "action": exportSelectedResultData,
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+            },
+            {
+                "text": "Export All",
+                "action": exportAllSelectedResultData,
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+            },
+            {
+                "text": "Delete Selected",
+                "action": deleteSelectedResults,
+                "className": 'btn btn-danger',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+            },
+            {
+                "text": "Delete All",
+                "action": deleteAllResults,
+                "className": 'btn btn-danger',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+            }
+        ],
+        "language": {
+            "search": "Filter Results:"
+        }
+    });
 
-	function getMTWorkerId(data, type, full, meta) {
-		if (data.MTSandboxWorker) {
-			return data.MTSandboxWorker.mtWorkerId;
-		}
-		if (data.MTWorker) {
-			return data.MTWorker.mtWorkerId;
-		}
-		return "none";
-	}
+    // Necessary - otherwise the button doesn't work with manually selected rows
+    resultsTable.on('draw', toggleDeselectAllButton);
 
-	function getMessages(data, type, dataToSet) {
-		var messages = [];
-		if (data.errorMsg != null) {
-			messages.push(data.errorMsg);
-			messages.push("<br>");
-		}
-		if (data.abortMsg != null) {
-			messages.push(data.abortMsg);
-		}
-		return messages.join("");
-	}
-	
-	$('#resultsTable tbody').on( 'click', 'td:not(:first-child)', function () {
-		var tr = $(this).closest('tr');
-		tr.toggleClass('selected');
-		toggleDeselectAllButton();
-	});
+    function toggleDeselectAllButton() {
+        if (resultsTable.rows('.selected').any()) {
+            resultsTable.buttons(['.buttons-select-none']).enable();
+        } else {
+            resultsTable.buttons(['.buttons-select-none']).disable();
+        }
+    }
 
-	$('#resultsTable tbody').on('click', 'td.details-control', function() {
-		var tr = $(this).closest('tr');
-		var row = resultsTable.row(tr);
-		if (row.child.isShown()) {
-			$('div.slider', row.child()).slideUp( function () {
-				row.child.hide();
-				tr.removeClass('shown');
-			});
-		} else {
-			row.child(childRowFormat(row.data())).show();	
-			tr.addClass('shown');
-			tr.next().addClass('info');
-			$('div.slider', row.child()).slideDown();
-		}
-		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
-				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
-	});
+    function getMTWorkerId(data, type, full, meta) {
+        if (data.MTSandboxWorker) {
+            return data.MTSandboxWorker.mtWorkerId;
+        }
+        if (data.MTWorker) {
+            return data.MTWorker.mtWorkerId;
+        }
+        return "none";
+    }
 
-	function exportSelectedResultData(e, dt, node, config) {	
-		var selectedTrs = resultsTable.rows('.selected').nodes();
-		var ids = [];
-		$.each(selectedTrs, function(index, selectedTr) {
-			var rowData = resultsTable.row(selectedTr).data();
-			ids.push(rowData.id);
-		});
-		if (ids.length == 0) {
-			showError("No results selected");
-			return;
-		}
-		var url = '/jatos/studyResult/export/resultData'
-			+ '?studyResultIds=' + ids.join(", ");
-		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
-		$.fileDownload(url).fail(function () {
-			showError("Export of results failed");
-		});
-	}
+    function getMessages(data, type, dataToSet) {
+        var messages = [];
+        if (data.errorMsg != null) {
+            messages.push(data.errorMsg);
+            messages.push("<br>");
+        }
+        if (data.abortMsg != null) {
+            messages.push(data.abortMsg);
+        }
+        return messages.join("");
+    }
 
-	function exportAllSelectedResultData(e, dt, node, config) {
-		var url = "@controllers.gui.routes.ImportExport.exportDataOfAllStudyResults(study.getId())";
-		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
-		$.fileDownload(url).fail(function () {
-			showError("Export of results failed");
-		});
-	}
+    $('#resultsTable tbody').on( 'click', 'td:not(:first-child)', function () {
+        var tr = $(this).closest('tr');
+        tr.toggleClass('selected');
+        toggleDeselectAllButton();
+    });
 
-	function deleteSelectedResults(e, dt, node, config) {
-		var selectedTrs = resultsTable.rows('.selected').nodes();
-		var ids = [];
-		$.each(selectedTrs, function(index, selectedTr) {
-			var rowData = resultsTable.row(selectedTr).data();
-			ids.push(rowData.id);
-		});
-		if (ids.length <= 0) {
-			showError("No results selected");
-			return;
-		}
-		var title = "Confirm Delete";
-		var htmlText = "<p>You are about to delete the study results "
-			+ "(ID " + ids.join(", ") + ") " 
-			+ "<b>with all their component results</b>.</p>"
-			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-			var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
-			$.ajax({
-				url : url,
-				type : 'DELETE',
-				success : function(result) {
-					$.each(selectedTrs, function(index, selectedTr) {
-						resultsTable.row(selectedTr).remove().draw();
-					});
-				},
-				error : function(err) {
-					showError(err.responseText);
-				}
-			});
-		});
-	}
-	
-	function deleteAllResults(e, dt, node, config) {
-		var title = "Confirm Delete";
-		var htmlText = "<p>You are about to delete <b>ALL</b> study results "
-			+ "<b>with all their component results</b>.</p>"
-			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-			var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
-			$.ajax({
-				url : url,
-				type : 'DELETE',
-				success : function(result) {
-					resultsTable.ajax.reload();
-				},
-				error : function(err) {
-					showError(err.responseText);
-				}
-			});
-		});
-	}
+    $('#resultsTable tbody').on('click', 'td.details-control', function() {
+        var tr = $(this).closest('tr');
+        var row = resultsTable.row(tr);
+        if (row.child.isShown()) {
+            $('div.slider', row.child()).slideUp( function () {
+                row.child.hide();
+                tr.removeClass('shown');
+            });
+        } else {
+            row.child(childRowFormat(row.data())).show();
+            tr.addClass('shown');
+            tr.next().addClass('info');
+            $('div.slider', row.child()).slideDown();
+        }
+        $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+                .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+    });
 
-	function childRowFormat(data) {
-		// `data` is the original data object for the row
-		var html = [];
-		html.push('<div class="slider" style="display: none">',
-			'<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
-			'<tr class="info">',
-			'<td><b>Comp. Result ID</b></td>',
-			'<td><b>Comp. ID</b></td>',
-			'<td><b>Component Title</b></td>',
-			'<td><b>Start Time (Server)</b></td>',
-			'<td><b>Duration</b></td>',
-			'<td><b>State</b></td>',
-			'</tr>');
-			if (data.componentResults.length > 0) {
-				data.componentResults.forEach(function(componentResult) {
-					var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-					html.push('<tr class="info">',
-						'<td>' + componentResult.id + '</td>',
-						'<td>' + componentResult.componentId + '</td>',
-						'<td>' + componentResult.componentTitle + '</td>',
-						'<td>' + componentResult.startDate + '</td>',
-						'<td>' + duration + '</td>',
-						'<td>' + componentResult.componentState + '</td>',
-						'</tr><tr class="info">',
-						'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
-						'</tr>');
-				});
-			} else {
-				html.push('<tr class="info">',
-					'<td colspan="6">empty</td>',
-					'</tr>');
-			}
-			html.push('</table>', '</div>');
-		return html.join("");
-	}
+    function exportSelectedResultData(e, dt, node, config) {
+        var selectedTrs = resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length == 0) {
+            showError("No results selected");
+            return;
+        }
+        var url = '/jatos/studyResult/export/resultData'
+            + '?studyResultIds=' + ids.join(", ");
+        // Using johnculviner's jQuery.fileDownload plugin to detect a fail
+        $.fileDownload(url).fail(function () {
+            showError("Export of results failed");
+        });
+    }
+
+    function exportAllSelectedResultData(e, dt, node, config) {
+        var url = "@controllers.gui.routes.ImportExport.exportDataOfAllStudyResults(study.getId())";
+        // Using johnculviner's jQuery.fileDownload plugin to detect a fail
+        $.fileDownload(url).fail(function () {
+            showError("Export of results failed");
+        });
+    }
+
+    function deleteSelectedResults(e, dt, node, config) {
+        var selectedTrs = resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length <= 0) {
+            showError("No results selected");
+            return;
+        }
+        var title = "Confirm Delete";
+        var htmlText = "<p>You are about to delete the study results "
+            + "(ID " + ids.join(", ") + ") "
+            + "<b>with all their component results</b>.</p>"
+            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+            var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
+            $.ajax({
+                url : url,
+                type : 'DELETE',
+                success : function(result) {
+                    $.each(selectedTrs, function(index, selectedTr) {
+                        resultsTable.row(selectedTr).remove().draw();
+                    });
+                },
+                error : function(err) {
+                    showError(err.responseText);
+                }
+            });
+        });
+    }
+
+    function deleteAllResults(e, dt, node, config) {
+        var title = "Confirm Delete";
+        var htmlText = "<p>You are about to delete <b>ALL</b> study results "
+            + "<b>with all their component results</b>.</p>"
+            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+            var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
+            $.ajax({
+                url : url,
+                type : 'DELETE',
+                success : function(result) {
+                    resultsTable.ajax.reload();
+                },
+                error : function(err) {
+                    showError(err.responseText);
+                }
+            });
+        });
+    }
+
+    function childRowFormat(data) {
+        // `data` is the original data object for the row
+        var html = [];
+        html.push('<div class="slider" style="display: none">',
+            '<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
+            '<tr class="info">',
+            '<td><b>Comp. Result ID</b></td>',
+            '<td><b>Comp. ID</b></td>',
+            '<td><b>Component Title</b></td>',
+            '<td><b>Start Time (Server)</b></td>',
+            '<td><b>Duration</b></td>',
+            '<td><b>State</b></td>',
+            '</tr>');
+            if (data.componentResults.length > 0) {
+                data.componentResults.forEach(function(componentResult) {
+                    var duration = (componentResult.duration) ? componentResult.duration : "not yet";
+                    html.push('<tr class="info">',
+                        '<td>' + componentResult.id + '</td>',
+                        '<td>' + componentResult.componentId + '</td>',
+                        '<td>' + componentResult.componentTitle + '</td>',
+                        '<td>' + componentResult.startDate + '</td>',
+                        '<td>' + duration + '</td>',
+                        '<td>' + componentResult.componentState + '</td>',
+                        '</tr><tr class="info">',
+                        '<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
+                        '</tr>');
+                });
+            } else {
+                html.push('<tr class="info">',
+                    '<td colspan="6">empty</td>',
+                    '</tr>');
+            }
+            html.push('</table>', '</div>');
+        return html.join("");
+    }
 
 });
 

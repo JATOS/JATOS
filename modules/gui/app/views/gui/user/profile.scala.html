@@ -4,9 +4,9 @@
 
 <div id="toolbar" class="btn-group">
 	<button id="editProfile" type="button" class="btn btn-user">Edit Profile</button>
-	<button id="changePassword" type="button" class="btn btn-user">Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span></button>
+	<button id="changePassword" type="button" class="btn btn-user">Change Password <span class="glyphicon glyphicon-lock"></span></button>
 	@if(!loggedInUser.getEmail().equals(services.gui.UserService.ADMIN_EMAIL)) {
-	<button id="deleteUser" type="button" class="btn btn-user">Delete User <span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+	<button id="deleteUser" type="button" class="btn btn-user">Delete User <span class="glyphicon glyphicon-remove"></span></button>
 	}
 </div>
 
@@ -16,12 +16,12 @@
 </ul>
 
 <!-- Edit Profile Modal -->
-<div class="modal fade" id="editProfileModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="editProfileModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="editProfileForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Edit Your Profile</h4>
 				</div>
 				<div class="modal-body">
@@ -33,7 +33,7 @@
 					</div>
 					<div class="form-group row adminRoleRow" style="display:none">
 						<label class="control-label col-xs-4"></label>
-						<div class="col-xs-8"><p>Your user has <b>admin rights</b> <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Users with admin rights can create/change/delete other users." aria-hidden="true"></span>.</p></div>
+						<div class="col-xs-8"><p>Your user has <b>admin rights</b> <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Users with admin rights can create/change/delete other users."></span>.</p></div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -46,12 +46,12 @@
 </div>
 
 <!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="changePasswordForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Change Password</h4>
 				</div>
 				<div class="modal-body">
@@ -79,12 +79,12 @@
 </div>
 
 <!-- Delete user confirmation  modal -->
-<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="deleteUserForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Confirm User Deletion</h4>
 				</div>
 				<div class="modal-body">

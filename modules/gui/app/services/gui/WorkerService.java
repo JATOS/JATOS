@@ -49,11 +49,21 @@ public class WorkerService {
     }
 
     /**
-     * Retrieve all workersProvider that did this study.
+     * Retrieve all workers that at least started the study
      */
-    public Set<Worker> retrieveWorkers(Study study) {
+    public Set<Worker> retrieveWorkersWithStudyResult(Study study) {
         List<StudyResult> studyResultList = studyResultDao.findAllByStudy(study);
         return studyResultList.stream().map(StudyResult::getWorker).collect(Collectors.toSet());
+    }
+
+    /**
+     * Retrieve all workers that belong to the study including the ones that were not started yet
+     */
+    public Set<Worker> retrieveAllWorkers(Study study) {
+        return study.getBatchList().stream()
+                .map(b -> b.getWorkerList())
+                .flatMap(wl -> wl.stream())
+                .collect(Collectors.toSet());
     }
 
     /**

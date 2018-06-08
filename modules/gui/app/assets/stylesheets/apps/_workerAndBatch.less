@@ -1,0 +1,162 @@
+
+/*
+ * Batch buttons use bootstrap success button
+ */
+.btn-batch {
+    &:extend(.btn-success all);
+}
+
+/*
+ * Define worker button colors
+ */
+@btn-worker-color:   #ffffff;
+@btn-worker-bg:      #97cd47;
+@btn-worker-border:  #91c541;
+
+.btn-worker,
+.btn-worker:hover,
+.btn-worker:focus,
+.btn-worker:active,
+.btn-worker:visited {
+	color: @btn-worker-color;
+	background-color: @btn-worker-bg;
+	border-color: @btn-worker-border;
+}
+
+/*
+ * Batch Bootstrap Panels
+ */
+#batchList > .panel {
+    margin-top: 20px;
+}
+#batchList > .panel {
+    background-color: #f5f5f5;
+}
+#batchList .panel > .panel-heading {
+    line-height:32px;
+}
+#batchList .collapseWorkerSetup {
+    margin-right: 10px;
+}
+#batchList .activeBatchButton {
+    margin-right: 10px;
+}
+#batchList .collapseWorkerTable {
+    margin-right: 10px;
+}
+#batchList .activeWorkerButton {
+    margin-right: 10px;
+}
+
+/*
+ * Worker Bootstrap Panels
+ */
+.workerSetupItem {
+    margin: 10px;
+}
+.workerSetupItem .panel > .panel-heading {
+    overflow: hidden;
+    line-height:32px;
+    background-image: none;
+    background-color: white;
+}
+.workerSetupItem .panel > .panel-heading .btn-group {
+    position: relative;
+}
+.workerSetupItem .panel > .panel-heading .activeButton {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.workerSetupItem .panel-collapse {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/*
+ * Badges
+ */
+#allWorkersButton .badge {
+    color: @btn-worker-bg;
+    background-color: @btn-worker-color;
+}
+.batchItem > .panel-heading .resultsBadge {
+    color: @btn-success-bg;
+    background-color: @btn-success-color;
+}
+.batchItem > .panel-heading .batchWorkersBadge {
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+}
+.workerSetupItem .panel > .panel-heading .resultsBadge {
+    color: @btn-worker-bg;
+    background-color: @btn-worker-color;
+}
+.workerSetupItem .panel > .panel-heading .workersBadge {
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+}
+
+/*
+ * DataTables #allWorkersModal
+ */
+#allWorkersModal .pagination > li.active > a {
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+    border-color: darken(@btn-worker-bg, 5%);
+}
+#allWorkersModal .pagination > li.active > a:hover {
+    background-color: darken(@btn-worker-bg, 10%);
+}
+#allWorkersModal .pagination > li > a {
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
+}
+#allWorkersModal .pagination > li:not(.disabled):not(.active) > a:hover {
+    background-color: darken(@btn-default-bg, 10%);
+}
+#allWorkersModal .pagination > li.disabled > a {
+    color: lighten(@btn-default-color, 20%);
+}
+#allWorkersModal .pagination > li.next > a {
+    margin-right: 10px;
+}
+
+/*
+ * DataTables .workerSetupItem
+ */
+.workerSetupItem .pagination > li.active > a {
+    color: @btn-worker-color;
+    background-color: @btn-worker-bg;
+    border-color: darken(@btn-worker-bg, 5%);
+}
+.workerSetupItem .pagination > li.active > a:hover {
+    background-color: darken(@btn-worker-bg, 10%);
+}
+.workerSetupItem .pagination > li > a {
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
+}
+.workerSetupItem .pagination > li:not(.disabled):not(.active) > a:hover {
+    background-color: darken(@btn-default-bg, 10%);
+}
+.workerSetupItem .pagination > li.disabled > a {
+    color: lighten(@btn-default-color, 20%);
+}
+.workerSetupItem .pagination > li.next > a {
+    margin-right: 10px;
+}
+.workerSetupItem table.dataTable thead .sorting:after,
+        #workerSetupTemplate table.dataTable thead .sorting_asc:after,
+        #workerSetupTemplate table.dataTable thead .sorting_desc:after {
+    display: none;
+}
+
+/*
+ * Get worker links Bootstrap Modal
+ */
+#workerRunLinkModal .linkUrls > ul {
+    margin-bottom: 0px;
+}

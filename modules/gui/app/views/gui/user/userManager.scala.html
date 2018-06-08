@@ -4,7 +4,7 @@
 
 <div class="btn-group">
 	<button id="createUserButton" type="button" class="btn btn-user">
-	New User <span class="glyphicon glyphicon-user" aria-hidden="true"></span></button>
+	New User <span class="glyphicon glyphicon-user"></span></button>
 </div>
 
 <table id="userTable" class="table top-buffer">
@@ -24,34 +24,34 @@
 <div id="userAdminToggleButtonDiv" style="display: none">
 	<div class="tooltipWrapper" data-title="">
 		<button type="button" class="btn btn-sm btn-default adminButton">
-			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+			<span class="glyphicon glyphicon-ok"></span>
 		</button>
 	</div>
 </div>
 
 <!-- Template for button toolbar in User's row -->
 <div id="userToolbarDiv" style="display: none">
-	<div class="userBtnGroup btn-group" role="group" role="group" aria-hidden="true">
+	<div class="userBtnGroup btn-group" role="group" role="group">
 		<div class="userChangePasswordTooltip btn-group" data-title="">
 			<button type="button" class="userChangePasswordButton btn btn-user">
-				Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+				Change Password <span class="glyphicon glyphicon-lock"></span>
 			</button>
 		</div>
 		<div class="userDeleteTooltip btn-group" role="group" data-title="">
 			<button type="button" class="userDeleteButton btn btn-user">
-				Delete <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+				Delete <span class="glyphicon glyphicon-remove"></span>
 			</button>
 		</div>
 	</div>
 </div>
 
 <!-- Create User Modal -->
-<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="createUserForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">New User</h4>
 				</div>
 				<div class="modal-body">
@@ -82,7 +82,7 @@
 						<div class="col-xs-offset-4 col-xs-8">
 							<label class="checkbox-inline">
 								<input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
-								Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users." aria-hidden="true"></span>
+								Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users."></span>
 								<!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
 								<input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
 							</label>
@@ -106,12 +106,12 @@
 </div>
 
 <!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="changePasswordForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Change Password</h4>
 				</div>
 				<div class="modal-body">
@@ -139,12 +139,12 @@
 </div>
 
 <!-- Delete user confirmation  modal -->
-<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="deleteUserForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Confirm User Deletion</h4>
 				</div>
 				<div class="modal-body">

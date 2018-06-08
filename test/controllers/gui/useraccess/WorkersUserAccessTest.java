@@ -69,7 +69,7 @@ public class WorkersUserAccessTest {
     @Test
     public void callTableDataByStudy() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Workers
+        Call call = controllers.gui.routes.Batches
                 .tableDataByStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
@@ -82,7 +82,7 @@ public class WorkersUserAccessTest {
     public void callWorkerSetup() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
-        Call call = controllers.gui.routes.Workers.workerSetup(study.getId(),
+        Call call = controllers.gui.routes.Batches.workerSetup(study.getId(),
                 batch.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
@@ -95,7 +95,7 @@ public class WorkersUserAccessTest {
     public void callWorkerData() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
-        Call call = controllers.gui.routes.Workers.workerData(study.getId(),
+        Call call = controllers.gui.routes.Batches.workerData(study.getId(),
                 batch.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),

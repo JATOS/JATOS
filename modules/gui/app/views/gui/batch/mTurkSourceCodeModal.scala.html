@@ -1,17 +1,18 @@
-@(study: common.Study, batchId: Long, jatosUrl: java.net.URL)
+@(study: common.Study, jatosUrl: java.net.URL)
 
-<!-- Mechanical Turk Source Code Modal -->
-<div class="modal fade" id="mtSourceCodeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-				<h4 class="modal-title">Source Code for Mechanical Turk</h4>
-			</div>
-			<div class="modal-body">
-				<p><b>Copy & paste</b> this code into the 'source' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
+<!-- Mechanical Turk Source Code Modal Template -->
+<div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Source Code for Mechanical Turk</h4>
+            </div>
+            <div class="modal-body">
+                <p><b>Copy & paste</b> this code into the 'source' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
+                <p><button class="btn btn-worker copyToClipboardButton">Copy to Clipboard</button></p>
 <!-- Be careful with changing indentation - it changes the view -->
-<pre><code id="mtSourceCode">
+<pre><code class="mtSourceCode">
 &lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
 &lt;section class=&quot;container&quot; id=&quot;SurveyLink&quot; style=&quot;margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;&quot;&gt;
   &lt;div class=&quot;row col-xs-12 col-md-12&quot;&gt;
@@ -72,7 +73,7 @@
       // Show accepted HIT
       document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
       document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
-      var studyUrlHref = host + studyPath + &quot;?batchId=@batchId&&quot; + query;
+      var studyUrlHref = host + studyPath + &quot;?batchId=batchId&&quot; + query;
       var studyUrlText = &quot;link to HIT&quot;;
     }
     document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
@@ -81,38 +82,60 @@
 &lt;/script&gt;
 </code></pre>
 
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 
 var studyId = @study.getId();
 
-$('#mtSourceCode').on("click", function(e) {
-	e.preventDefault();
-	selectText('mtSourceCode');
+$('#batchList').on('click', '.mtWorkerSourceCode', function() {
+    var batch = getBatchData(this);
+    showMTSourceCodeModal(batch.id);
 });
 
-function selectText(element) {
-	var text = document.getElementById(element);
-	var range;
-	var selection;
-	if (document.body.createTextRange) {
-		range = document.body.createTextRange();
-		range.moveToElementText(text);
-		range.select();
-	} else if (window.getSelection) {
-		selection = window.getSelection();
-		range = document.createRange();
-		range.selectNodeContents(text);
-		selection.removeAllRanges();
-		selection.addRange(range);
-	}
+function showMTSourceCodeModal(batchId) {
+    var modal = $('#mtSourceCodeModalTemplate').clone();
+    $(modal).removeAttr('id');
+    // Put real batch ID into source code
+    $(modal).find('.mtSourceCode').text(function() {
+        return $(this).text().replace("?batchId=batchId", "?batchId=" + batchId);
+    });
+    $(modal).modal('show');
+
+    // Select by clicking on source code text
+    $(modal).on('click', '.mtSourceCode', function(e) {
+        selectText(this);
+    });
+
+    // Select and copy to clipboard by button
+    $(modal).on('click', '.copyToClipboardButton', function(e) {
+        var mtSourceCode = $(modal).find('.mtSourceCode').get()[0];
+        selectText(mtSourceCode);
+        document.execCommand('copy');
+    });
+}
+
+// Select and highlights a text (can't use .select() on a tag that's not a textarea)
+function selectText(textElement) {
+    var range;
+    var selection;
+    if (document.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(textElement);
+        range.select();
+    } else if (window.getSelection) {
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(textElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
 }
 
 </script>

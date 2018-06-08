@@ -52,11 +52,6 @@ GET      /jatos/:studyId/results                                            @con
 GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
 DELETE   /jatos/:studyId/allResults                                         @controllers.gui.StudyResults.removeAllOfStudy(studyId: Long)
 
-# Workers controller
-GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Workers.tableDataByStudy(studyId: Long)
-GET      /jatos/:studyId/batch/:batchId/workerData                          @controllers.gui.Workers.workerData(studyId: Long, batchId: Long)
-GET      /jatos/:studyId/batch/:batchId/workerSetup                         @controllers.gui.Workers.workerSetup(studyId: Long, batchId: Long)
-
 # Studies controller
 POST     /jatos/study                                                       @controllers.gui.Studies.submitCreated()
 GET      /jatos/:studyId/properties                                         @controllers.gui.Studies.properties(studyId: Long)
@@ -87,8 +82,12 @@ GET      /jatos/:studyId/batch/:batchId/batchSessionData                    @con
 POST     /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.Batches.submitEditedBatchSessionData(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/personalSingleRun                   @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/personalMultipleRun                 @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
+GET      /jatos/:studyId/batch/:batchId/workerSetupData                     @controllers.gui.Batches.workerSetupData(studyId: Long, batchId: Long)
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
+GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.Batches.batchesByStudy(studyId: Long)
+GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Batches.workersTableDataByStudy(studyId: Long)
+GET      /jatos/:studyId/allWorkersTableData                                @controllers.gui.Batches.allWorkersTableDataByStudy(studyId: Long)
 
 # Components controller
 POST     /jatos/:studyId/component                                          @controllers.gui.Components.submitCreated(studyId: Long)

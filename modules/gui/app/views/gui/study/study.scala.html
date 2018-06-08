@@ -1,6 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-study: common.Study, workerSet: Set[common.workers.Worker],
-studyResultsCount: Integer)
+study: common.Study, workersSize: Integer, studyResultsCount: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -18,7 +17,7 @@ studyResultsCount: Integer)
         <button id="runStudy" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
                 title="Runs the study as a JATOS worker">
-            Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+            Run <span class="glyphicon glyphicon-play"></span>
         </button>
         <button id="studyResults" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
@@ -28,14 +27,17 @@ studyResultsCount: Integer)
         </button>
         <button id="workers" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
-                title="Shows workers who participated">
-            Workers <span class="badge" data-toggle="tooltip" data-placement="bottom"
-                          title="Number of workers who did this study so far">@workerSet.size()</span>
+                title="Shows workers with results">
+            Workers
+            <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of workers who did this study so far (at least started the study)">
+                @workersSize
+            </span>
         </button>
         <button id="studyPropertiesButton" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
                 title="Edit this study's properties">
-            Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+            Properties <span class="glyphicon glyphicon-option-vertical"></span>
         </button>
         <div class="btn-group">
             <button type="button" class="btn btn-study dropdown-toggle"
@@ -46,28 +48,28 @@ studyResultsCount: Integer)
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Export this study to your local file system (including its components and study assets but without its results)">
                     <a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
-                        <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-export"></span>
                         Export
                     </a>
                 </li>
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Clone this study without its results">
                     <a id="cloneStudy" href="#">
-                        <span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-duplicate"></span>
                         Clone
                     </a>
                 </li>
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Change who is member of this study">
                     <a id="changeMemberUsersLink" href="#">
-                        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-user"></span>
                         Change&nbsp;Users
                     </a>
                 </li>
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Show this study's log">
                     <a id="showStudyLog" href="#">
-                        <span class="glyphicon glyphicon-book" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-book"></span>
                         Study Log
                     </a>
                 </li>
@@ -75,7 +77,7 @@ studyResultsCount: Integer)
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Delete this study including its components, assets and results">
                     <a id="removeStudy" href="#">
-                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-remove"></span>
                         Delete
                     </a>
                 </li>
@@ -84,7 +86,7 @@ studyResultsCount: Integer)
     </div>
     <button id="workerAndBatchManagerButton" type="button" class="btn btn-batch"
             data-toggle="tooltip" data-placement="bottom"
-            title="Open Worker & Batch Manager to manage your batches and create workers">
+            title="Open Worker & Batch Manager to manage your batches and get links for workers">
         Worker & Batch Manager
     </button>
     <!-- Content and tooltip of lock button is set later in JS -->
@@ -103,7 +105,7 @@ studyResultsCount: Integer)
         <ul class="dropdown-menu" role="menu">
             <li data-toggle="tooltip" data-placement="bottom" title="Create a new component">
                 <a id="createComponentLink" href="#">
-                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    <span class="glyphicon glyphicon-plus"></span>
                     New
                 </a>
             </li>
@@ -112,7 +114,7 @@ studyResultsCount: Integer)
             <li data-toggle="tooltip" data-placement="bottom"
                 title="Create a new component from imported properties">
                 <a id="importComponentButton" href="#">
-                    <span class="glyphicon glyphicon-import" aria-hidden="true"></span>
+                    <span class="glyphicon glyphicon-import"></span>
                     Import Properties
                 </a>
             </li>
@@ -127,7 +129,7 @@ studyResultsCount: Integer)
     <tr>
         <th data-toggle="tooltip" data-placement="bottom"
             title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position">
-            <span class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>
+            <span class="glyphicon glyphicon-sort"></span></th>
         <th data-toggle="tooltip" data-placement="bottom"
             title="Inactive components won't show up in the next run">Active
         </th>
@@ -144,7 +146,7 @@ studyResultsCount: Integer)
 <div id="componentActiveButtonDiv" style="display: none">
     <button type="button" class="btn btn-sm btn-default activeButton"
             data-toggle="tooltip" data-placement="bottom" title="">
-        <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+        <span class="glyphicon glyphicon-ok"></span>
     </button>
 </div>
 
@@ -157,11 +159,11 @@ studyResultsCount: Integer)
 
 <!-- Template for button toolbar in Component's row -->
 <div id="componentToolbarDiv" style="display: none">
-    <div class="componentBtnGroup btn-group" aria-hidden="true">
+    <div class="componentBtnGroup btn-group">
         <button type="button" class="runComponent btn btn-component"
                 data-toggle="tooltip" data-placement="bottom"
                 title="Runs only this component as a JATOS worker">
-            Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+            Run <span class="glyphicon glyphicon-play"></span>
         </button>
         <button type="button" class="componentResults btn btn-component"
                 data-toggle="tooltip" data-placement="bottom"
@@ -172,7 +174,7 @@ studyResultsCount: Integer)
         <button type="button" class="componentPropertiesButton btn btn-component"
                 data-toggle="tooltip" data-placement="bottom"
                 title="Edit this component's properties">
-            Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+            Properties <span class="glyphicon glyphicon-option-vertical"></span>
         </button>
         <div class="btn-group">
             <button type="button" class="btn btn-component dropdown-toggle"
@@ -183,14 +185,14 @@ studyResultsCount: Integer)
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Export this component's properties to the local file system (without its assets or results)">
                     <a class="exportComponent" href="#">
-                        <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-export"></span>
                         Export Properties
                     </a>
                 </li>
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Clone this component without its results and assets">
                     <a class="cloneComponent" href="#">
-                        <span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-duplicate"></span>
                         Clone
                     </a>
                 </li>
@@ -198,7 +200,7 @@ studyResultsCount: Integer)
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Deletes this component without its results and assets">
                     <a class="removeComponent" href="#">
-                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        <span class="glyphicon glyphicon-remove"></span>
                         Delete
                     </a>
                 </li>
@@ -500,6 +502,7 @@ $('#studyToolbar').on('click', '#runStudy', function() {
 $('#studyToolbar').on('click', '#studyResults', function() {
 	window.location.href = "@controllers.gui.routes.StudyResults.studysStudyResults(study.getId())";
 });
+
 
 $('#studyToolbar').on('click', '#workers', function() {
 	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
