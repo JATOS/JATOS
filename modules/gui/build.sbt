@@ -1,5 +1,5 @@
 name := "jatos-gui"
-version := "3.2.3"
+version := "3.3.1"
 organization := "org.jatos"
 scalaVersion := "2.11.11"
 
