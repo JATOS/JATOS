@@ -239,7 +239,7 @@ $(document).ready(function() {
             return;
         }
         var url = '@{playHttpContext}jatos/studyResult/export/resultData'
-            + '?studyResultIds=' + ids.join(", ");
+            + '?studyResultIds=' + ids.join(",");
         // Using johnculviner's jQuery.fileDownload plugin to detect a fail
         $.fileDownload(url).fail(function () {
             showError("Export of results failed");

@@ -193,7 +193,7 @@ $(document).ready(function() {
 			return;
 		}
 		var url = '@{playHttpContext}jatos/componentResult/export/resultData'
-			+ '?componentResultIds=' + ids.join(", ");
+			+ '?componentResultIds=' + ids.join(",");
 		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
 		$.fileDownload(url).fail(function () {
 			showError("Export of results failed");

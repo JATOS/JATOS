@@ -329,13 +329,11 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfComponentResults(String componentResultIds)
-            throws JatosGuiException {
-        LOGGER.debug(".exportDataOfComponentResults: componentResultIds "
-                + componentResultIds);
+    public Result exportDataOfComponentResults(String componentResultIds) throws JatosGuiException {
+        LOGGER.debug(".exportDataOfComponentResults: componentResultIds " + componentResultIds);
         // Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
         // be sure, in case it's still there)
-        response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
+        response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
         User loggedInUser = authenticationService.getLoggedInUser();
 
         String resultDataAsStr = null;
@@ -345,6 +343,7 @@ public class ImportExport extends Controller {
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
+        prepareResponseForResultDataExport(resultDataAsStr);
         return ok(resultDataAsStr);
     }
 
