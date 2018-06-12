@@ -127,6 +127,11 @@ public class Common {
             Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special character (#?!@$%^&*-).",
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
+    /**
+     * HTTP URL base path: will be the prefix for each URL, e.g. /jatos/test -> /myBasePath/jatos/test
+     */
+    private static String playHttpContext;
+
     @Inject
     Common(Application application, Configuration configuration) {
         basepath = fillBasePath(application);
@@ -150,6 +155,7 @@ public class Common {
         if (userPasswordStrength > userPasswordStrengthRegexList.size()) {
             userPasswordStrength = 0;
         }
+        playHttpContext = configuration.getString("play.http.context");
     }
 
     private String fillBasePath(Application application) {
@@ -290,4 +296,7 @@ public class Common {
         return userPasswordStrengthRegexList.get(userPasswordStrength);
     }
 
+    public static String getPlayHttpContext() {
+        return playHttpContext;
+    }
 }

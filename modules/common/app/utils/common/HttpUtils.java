@@ -43,15 +43,15 @@ public class HttpUtils {
     }
 
     /**
-     * Returns the request's URL without path or query string. It returns the
-     * URL with the proper protocol http or https.
+     * Returns the request's host URL without path (including the 'play.http.context')
+     * or query string. It returns the URL with the proper protocol http or https.
      */
-    public static URL getRequestUrl() {
+    public static URL getHostUrl() {
         try {
             String protocol = getRequestsProtocol();
             return new URL(protocol + "://" + Controller.request().host());
         } catch (MalformedURLException e) {
-            LOGGER.error(".getRequestUrl: couldn't get request's URL", e);
+            LOGGER.error(".getHostUrl: couldn't get request's host URL", e);
         }
         // Should never happen
         return null;

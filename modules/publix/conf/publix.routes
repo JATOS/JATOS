@@ -30,9 +30,9 @@ GET     /publix/:studyId/group/leave                     @controllers.publix.Cha
 
 ### Static resources ###
 
-GET     /public/*file                                    controllers.publix.Assets.versioned(path = "/public", file)
+GET     /public/*file                                    controllers.publix.Assets.at(path = "/public", file)
 
 # Study assets
-GET     /publix/:studyId/:componentId/*file              @controllers.publix.StudyAssets.viaStudyId(studyId: Long, componentId: Long, file: String)
-GET     /study_assets_root/*file                         @controllers.publix.StudyAssets.versioned(file)
-GET     /study_assets/*file                              @controllers.publix.StudyAssets.versioned(file)
+GET     /publix/:studyId/:componentId/*file              @controllers.publix.StudyAssets.viaStudyPath(studyId: Long, componentId: Long, file: String)
+GET     /study_assets_root/*file                         @controllers.publix.StudyAssets.viaAssetsPath(file)
+GET     /study_assets/*file                              @controllers.publix.StudyAssets.viaAssetsPath(file)

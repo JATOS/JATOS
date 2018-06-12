@@ -4,12 +4,12 @@
 # ~~~~
 
 ### Static resources ###
-GET     /favicon.ico                       controllers.Assets.versioned(path="/public", file="favicon.ico")
-GET     /favicon-16x16.png                 controllers.Assets.versioned(path="/public", file="favicon-16x16.png")
-GET     /favicon-32x32.png                 controllers.Assets.versioned(path="/public", file="favicon-32x32.png")
-GET     /favicon-96x96.png                 controllers.Assets.versioned(path="/public", file="favicon-96x96.png")
-GET     /assets/javascripts/jatos.js       controllers.Assets.versioned(path="/public/lib/jatos-publix/javascripts", file = "jatos.js")
-GET     /assets/*file                      controllers.Assets.versioned(path="/public", file)
+GET     /favicon.ico                       controllers.Assets.at(path="/public", file="favicon.ico")
+GET     /favicon-16x16.png                 controllers.Assets.at(path="/public", file="favicon-16x16.png")
+GET     /favicon-32x32.png                 controllers.Assets.at(path="/public", file="favicon-32x32.png")
+GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
+GET     /assets/javascripts/jatos.js       controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.js")
+GET     /assets/*file                      controllers.Assets.at(path="/public", file)
 
 # Include other route files
 ->  /  gui.Routes

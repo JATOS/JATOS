@@ -104,8 +104,7 @@ public class ComponentsControllerTest {
         assertThat(result.session().containsValue("single_component_start"));
         assertThat(result.session().containsKey("run_component_id"));
         assertThat(result.session().containsValue(study.getId().toString()));
-        assertThat(result.headers().get(HttpHeaders.LOCATION)
-                .contains("jatosWorkerId"));
+        assertThat(result.headers().get(HttpHeaders.LOCATION).contains("jatosWorkerId"));
     }
 
     /**

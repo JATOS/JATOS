@@ -67,41 +67,32 @@ public class WorkersUserAccessTest {
     }
 
     @Test
-    public void callTableDataByStudy() throws Exception {
+    public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Batches
-                .tableDataByStudy(study.getId());
+        Call call = controllers.gui.routes.Batches.workersTableDataByStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
-    public void callWorkerSetup() throws Exception {
+    public void callWorkerSetup() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
-        Call call = controllers.gui.routes.Batches.workerSetup(study.getId(),
-                batch.getId());
+        Call call = controllers.gui.routes.Batches.workerSetupData(study.getId(), batch.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
-    public void callWorkerData() throws Exception {
+    public void callWorkerData() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
-        Call call = controllers.gui.routes.Batches.workerData(study.getId(),
-                batch.getId());
+        Call call = controllers.gui.routes.Batches.workerSetupData(study.getId(), batch.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
 }

@@ -1,11 +1,12 @@
 @(loggedInUser: common.User)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Login Modal (used in case of session timeout)-->
 <div class="modal fade" id="loginModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
 			<div class="modal-body">
-				<form id="loginForm" method="post" action="/" class="form-horizontal" role="form">
+				<form id="loginForm" method="post" class="form-horizontal" role="form">
 					<h2 class="form-login-heading">Please log in again</h2>
 					<label class="explanation"></label>
 					<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
@@ -17,7 +18,7 @@
 						</div>
 					</div>
 					<button type="submit" class="btn btn-lg btn-primary btn-block">Log in</button>
-					<label>Or <a href="/jatos/login">login as a different user</a>.</label>
+					<label>Or <a href="@controllers.gui.routes.Authentication.login()">login as a different user</a>.</label>
 				</form>
 			</div>
 		</div>

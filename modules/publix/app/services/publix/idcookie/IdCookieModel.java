@@ -5,233 +5,253 @@ import controllers.publix.workers.JatosPublix.JatosRun;
 /**
  * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
  * study run, e.g. study result ID, worker ID, worker type.
- * 
+ * <p>
  * ID cookies are used to provide those IDs to jatos.js and subsequent to the
  * components JavaScript.
- * 
+ * <p>
  * Additionally the cookies are used to pass on information between Publix calls
  * e.g. between Publix.startStudy and Publix.startComponent. (Since we are
  * RESTful we can't have a state on the server side except in the DB).
- * 
+ *
  * @author Kristian Lange (2016)
  */
 public class IdCookieModel {
 
-	/**
-	 * Every ID cookie name starts with this String.
-	 */
-	public static final String ID_COOKIE_NAME = "JATOS_IDS";
+    /**
+     * Every ID cookie name starts with this String.
+     */
+    public static final String ID_COOKIE_NAME = "JATOS_IDS";
 
-	/**
-	 * Names of the keys in the real cookie.
-	 */
-	public static final String WORKER_ID = "workerId";
-	public static final String WORKER_TYPE = "workerType";
-	public static final String BATCH_ID = "batchId";
-	public static final String GROUP_RESULT_ID = "groupResultId";
-	public static final String STUDY_ID = "studyId";
-	public static final String STUDY_RESULT_ID = "studyResultId";
-	public static final String COMPONENT_ID = "componentId";
-	public static final String COMPONENT_RESULT_ID = "componentResultId";
-	public static final String COMPONENT_POSITION = "componentPos";
-	public static final String STUDY_ASSETS = "studyAssets";
-	public static final String JATOS_RUN = "jatosRun";
-	public static final String CREATION_TIME = "creationTime";
+    /**
+     * Names of the keys in the real cookie.
+     */
+    public static final String WORKER_ID = "workerId";
+    public static final String WORKER_TYPE = "workerType";
+    public static final String BATCH_ID = "batchId";
+    public static final String GROUP_RESULT_ID = "groupResultId";
+    public static final String STUDY_ID = "studyId";
+    public static final String STUDY_RESULT_ID = "studyResultId";
+    public static final String COMPONENT_ID = "componentId";
+    public static final String COMPONENT_RESULT_ID = "componentResultId";
+    public static final String COMPONENT_POSITION = "componentPos";
+    public static final String STUDY_ASSETS = "studyAssets";
+    public static final String JATOS_RUN = "jatosRun";
+    public static final String CREATION_TIME = "creationTime";
+    public static final String URL_BASE_PATH = "urlBasePath";
 
-	/**
-	 * Name of this IdCookie. Every name starts with {@value #ID_COOKIE_NAME}
-	 * and ends with '_' + the ID cookie's index.
-	 */
-	private String name;
+    /**
+     * Name of this IdCookie. Every name starts with {@value #ID_COOKIE_NAME}
+     * and ends with '_' + the ID cookie's index.
+     */
+    private String name;
 
-	/**
-	 * Every IdCookie has an index. It is the last char of its name and from
-	 * intervall [0-9].
-	 */
-	private int index;
+    /**
+     * Every IdCookie has an index. It is the last char of its name and from
+     * intervall [0-9].
+     */
+    private int index;
 
-	/**
-	 * Timestamp of when this IdCookie was created.
-	 */
-	private Long creationTime;
+    /**
+     * Timestamp of when this IdCookie was created.
+     */
+    private Long creationTime;
 
-	/**
-	 * Name of the directory where the study's assets are stored
-	 */
-	private String studyAssets;
+    /**
+     * Name of the directory where the study's assets are stored
+     */
+    private String studyAssets;
 
-	/**
-	 * State of a study run with a JatosWorker. If this run doesn't belong to a
-	 * JatosWorker this field is null. It's mainly used to distinguish between a
-	 * full study run and just a component run.
-	 */
-	private JatosRun jatosRun;
+    /**
+     * Base path as specified in Play's config 'play.http.context'
+     */
+    private String urlBasePath;
 
-	private Long workerId;
-	private String workerType;
-	private Long batchId;
-	private Long groupResultId;
-	private Long studyId;
-	private Long studyResultId;
-	private Long componentId;
-	private Long componentResultId;
-	private Integer componentPosition;
+    /**
+     * State of a study run with a JatosWorker. If this run doesn't belong to a
+     * JatosWorker this field is null. It's mainly used to distinguish between a
+     * full study run and just a component run.
+     */
+    private JatosRun jatosRun;
 
-	public String getStudyAssets() {
-		return studyAssets;
-	}
+    private Long workerId;
+    private String workerType;
+    private Long batchId;
+    private Long groupResultId;
+    private Long studyId;
+    private Long studyResultId;
+    private Long componentId;
+    private Long componentResultId;
+    private Integer componentPosition;
 
-	public void setStudyAssets(String studyAssets) {
-		this.studyAssets = studyAssets;
-	}
+    public String getStudyAssets() {
+        return studyAssets;
+    }
 
-	public JatosRun getJatosRun() {
-		return jatosRun;
-	}
+    public void setStudyAssets(String studyAssets) {
+        this.studyAssets = studyAssets;
+    }
 
-	public void setJatosRun(JatosRun jatosRun) {
-		this.jatosRun = jatosRun;
-	}
+    public String getUrlBasePath() {
+        return urlBasePath;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public void setUrlBasePath(String urlBasePath) {
+        this.urlBasePath = urlBasePath;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public JatosRun getJatosRun() {
+        return jatosRun;
+    }
 
-	public int getIndex() {
-		return index;
-	}
+    public void setJatosRun(JatosRun jatosRun) {
+        this.jatosRun = jatosRun;
+    }
 
-	public void setIndex(int index) {
-		this.index = index;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public Long getWorkerId() {
-		return workerId;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setWorkerId(Long workerId) {
-		this.workerId = workerId;
-	}
+    public int getIndex() {
+        return index;
+    }
 
-	public String getWorkerType() {
-		return workerType;
-	}
+    public void setIndex(int index) {
+        this.index = index;
+    }
 
-	public void setWorkerType(String workerType) {
-		this.workerType = workerType;
-	}
+    public Long getWorkerId() {
+        return workerId;
+    }
 
-	public Long getBatchId() {
-		return batchId;
-	}
+    public void setWorkerId(Long workerId) {
+        this.workerId = workerId;
+    }
 
-	public void setBatchId(Long batchId) {
-		this.batchId = batchId;
-	}
+    public String getWorkerType() {
+        return workerType;
+    }
 
-	public Long getGroupResultId() {
-		return groupResultId;
-	}
+    public void setWorkerType(String workerType) {
+        this.workerType = workerType;
+    }
 
-	public void setGroupResultId(Long groupResultId) {
-		this.groupResultId = groupResultId;
-	}
+    public Long getBatchId() {
+        return batchId;
+    }
 
-	public Long getStudyId() {
-		return studyId;
-	}
+    public void setBatchId(Long batchId) {
+        this.batchId = batchId;
+    }
 
-	public void setStudyId(Long studyId) {
-		this.studyId = studyId;
-	}
+    public Long getGroupResultId() {
+        return groupResultId;
+    }
 
-	public Long getStudyResultId() {
-		return studyResultId;
-	}
+    public void setGroupResultId(Long groupResultId) {
+        this.groupResultId = groupResultId;
+    }
 
-	public void setStudyResultId(Long studyResultId) {
-		this.studyResultId = studyResultId;
-	}
+    public Long getStudyId() {
+        return studyId;
+    }
 
-	public Long getComponentId() {
-		return componentId;
-	}
+    public void setStudyId(Long studyId) {
+        this.studyId = studyId;
+    }
 
-	public void setComponentId(Long componentId) {
-		this.componentId = componentId;
-	}
+    public Long getStudyResultId() {
+        return studyResultId;
+    }
 
-	public Long getComponentResultId() {
-		return componentResultId;
-	}
+    public void setStudyResultId(Long studyResultId) {
+        this.studyResultId = studyResultId;
+    }
 
-	public void setComponentResultId(Long componentResultId) {
-		this.componentResultId = componentResultId;
-	}
+    public Long getComponentId() {
+        return componentId;
+    }
 
-	public Integer getComponentPosition() {
-		return componentPosition;
-	}
+    public void setComponentId(Long componentId) {
+        this.componentId = componentId;
+    }
 
-	public void setComponentPosition(Integer componentPosition) {
-		this.componentPosition = componentPosition;
-	}
+    public Long getComponentResultId() {
+        return componentResultId;
+    }
 
-	public Long getCreationTime() {
-		return creationTime;
-	}
+    public void setComponentResultId(Long componentResultId) {
+        this.componentResultId = componentResultId;
+    }
 
-	public void setCreationTime(Long creationTime) {
-		this.creationTime = creationTime;
-	}
+    public Integer getComponentPosition() {
+        return componentPosition;
+    }
 
-	public boolean equals(Object other) {
-		if (other == this)
-			return true;
-		if (other == null)
-			return false;
-		if (getClass() != other.getClass())
-			return false;
-		IdCookieModel otherIdCookie = (IdCookieModel) other;
-		return ((name == otherIdCookie.name
-				|| (name != null && name.equals(otherIdCookie.name)))
-				&& index == otherIdCookie.index
-				&& (creationTime == otherIdCookie.creationTime
-						|| (creationTime != null && creationTime
-								.equals(otherIdCookie.creationTime)))
-				&& (studyAssets == otherIdCookie.studyAssets
-						|| (studyAssets != null && studyAssets
-								.equals(otherIdCookie.studyAssets)))
-				&& (jatosRun == otherIdCookie.jatosRun || (jatosRun != null
-						&& jatosRun.equals(otherIdCookie.jatosRun)))
-				&& (workerId == otherIdCookie.workerId || (workerId != null
-						&& workerId.equals(otherIdCookie.workerId)))
-				&& (workerType == otherIdCookie.workerType
-						|| (workerType != null
-								&& workerType.equals(otherIdCookie.workerType)))
-				&& (batchId == otherIdCookie.batchId || (batchId != null
-						&& batchId.equals(otherIdCookie.batchId)))
-				&& (groupResultId == otherIdCookie.groupResultId
-						|| (groupResultId != null && groupResultId
-								.equals(otherIdCookie.groupResultId)))
-				&& (studyId == otherIdCookie.studyId || (studyId != null
-						&& studyId.equals(otherIdCookie.studyId)))
-				&& (studyResultId == otherIdCookie.studyResultId
-						|| (studyResultId != null && studyResultId
-								.equals(otherIdCookie.studyResultId)))
-				&& (componentId == otherIdCookie.componentId
-						|| (componentId != null && componentId
-								.equals(otherIdCookie.componentId)))
-				&& (componentResultId == otherIdCookie.componentResultId
-						|| (componentResultId != null && componentResultId
-								.equals(otherIdCookie.componentResultId)))
-				&& (componentPosition == otherIdCookie.componentPosition
-						|| (componentPosition != null && componentPosition
-								.equals(otherIdCookie.componentPosition))));
-	}
+    public void setComponentPosition(Integer componentPosition) {
+        this.componentPosition = componentPosition;
+    }
+
+    public Long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(Long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (getClass() != other.getClass()) {
+            return false;
+        }
+        IdCookieModel otherIdCookie = (IdCookieModel) other;
+        return ((name == otherIdCookie.name
+                || (name != null && name.equals(otherIdCookie.name)))
+                && index == otherIdCookie.index
+                && (creationTime == otherIdCookie.creationTime
+                || (creationTime != null && creationTime
+                .equals(otherIdCookie.creationTime)))
+                && (studyAssets == otherIdCookie.studyAssets
+                || (studyAssets != null && studyAssets
+                .equals(otherIdCookie.studyAssets)))
+                && (urlBasePath == otherIdCookie.urlBasePath
+                || (urlBasePath != null && urlBasePath
+                .equals(otherIdCookie.urlBasePath)))
+                && (jatosRun == otherIdCookie.jatosRun || (jatosRun != null
+                && jatosRun.equals(otherIdCookie.jatosRun)))
+                && (workerId == otherIdCookie.workerId || (workerId != null
+                && workerId.equals(otherIdCookie.workerId)))
+                && (workerType == otherIdCookie.workerType
+                || (workerType != null
+                && workerType.equals(otherIdCookie.workerType)))
+                && (batchId == otherIdCookie.batchId || (batchId != null
+                && batchId.equals(otherIdCookie.batchId)))
+                && (groupResultId == otherIdCookie.groupResultId
+                || (groupResultId != null && groupResultId
+                .equals(otherIdCookie.groupResultId)))
+                && (studyId == otherIdCookie.studyId || (studyId != null
+                && studyId.equals(otherIdCookie.studyId)))
+                && (studyResultId == otherIdCookie.studyResultId
+                || (studyResultId != null && studyResultId
+                .equals(otherIdCookie.studyResultId)))
+                && (componentId == otherIdCookie.componentId
+                || (componentId != null && componentId
+                .equals(otherIdCookie.componentId)))
+                && (componentResultId == otherIdCookie.componentResultId
+                || (componentResultId != null && componentResultId
+                .equals(otherIdCookie.componentResultId)))
+                && (componentPosition == otherIdCookie.componentPosition
+                || (componentPosition != null && componentPosition
+                .equals(otherIdCookie.componentPosition))));
+    }
 
 }

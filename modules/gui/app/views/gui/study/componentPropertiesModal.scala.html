@@ -1,9 +1,10 @@
 @(study: common.Study)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <div class="modal fade" id="componentPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<form id="componentPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="componentPropertiesForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Component Properties</h4>
@@ -84,7 +85,7 @@ $('#studyToolbar').on('click', '#createComponentLink', function() {
 	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
 	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Create & Run");
 	$('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
-	$("#componentPropertiesForm").attr("action", "/jatos/" + studyId + "/component");
+	$("#componentPropertiesForm").attr("action", "@{playHttpContext}jatos/" + studyId + "/component");
 	$('#componentPropertiesModal').modal('show');
 });
 
@@ -115,13 +116,13 @@ function fillComponentPropertiesForm(properties) {
 	if (studyLocked) {
 		showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#componentPropertiesModal .modal-header");
 	}
-	$("#componentPropertiesForm").attr("action", "/jatos/" + studyId + "/" + properties['@models.gui.ComponentProperties.ID'] + "/properties");
+	$("#componentPropertiesForm").attr("action", "@{playHttpContext}jatos/" + studyId + "/" + properties['@models.gui.ComponentProperties.ID'] + "/properties");
 }
 
 $('#componentsTable tbody').on('click', '.componentPropertiesButton', function() {
 	$.ajax({
 		type: 'GET',
-		url: "/jatos/" + studyId + "/" + getComponentId(this) + "/properties",
+		url: "@{playHttpContext}jatos/" + studyId + "/" + getComponentId(this) + "/properties",
 		success: function(response) {
 			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
@@ -178,7 +179,7 @@ $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAV
 		url : $("#componentPropertiesForm").attr("action"),
 		data : $('#componentPropertiesForm').serialize(),
 		success : function(componentId) {
-			window.location.href = "/jatos/" + studyId + "/" + componentId + "/run";
+			window.location.href = "@{playHttpContext}jatos/" + studyId + "/" + componentId + "/run";
 		},
 		error : function(response) {
 			removeAlerts("#componentPropertiesModal");

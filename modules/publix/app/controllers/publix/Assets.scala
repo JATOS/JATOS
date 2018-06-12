@@ -11,4 +11,8 @@ class Assets @Inject()(assets: controllers.Assets) {
     assets.versioned(path, file)
   }
 
+  def at(path: String, file: String): Action[AnyContent] = {
+    assets.at(path, file)
+  }
+
 }

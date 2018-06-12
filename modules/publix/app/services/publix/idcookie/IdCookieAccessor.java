@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix.JatosRun;
+import general.common.Common;
 import general.common.RequestScope;
 import play.Logger;
 import play.Logger.ALogger;
@@ -122,6 +123,8 @@ public class IdCookieAccessor {
                 IdCookieModel.COMPONENT_POSITION, false, cookie.name()));
         idCookie.setStudyAssets(getValueAsString(cookieMap,
                 IdCookieModel.STUDY_ASSETS, true, cookie.name()));
+        idCookie.setUrlBasePath(getValueAsString(cookieMap,
+                IdCookieModel.URL_BASE_PATH, true, cookie.name()));
         idCookie.setJatosRun(valueOfJatosRun(cookieMap, cookie));
         idCookie.setCreationTime(getValueAsLong(cookieMap,
                 IdCookieModel.CREATION_TIME, true, cookie.name()));
@@ -302,7 +305,7 @@ public class IdCookieAccessor {
         String cookieValue = idCookieSerialiser
                 .asCookieValueString(newIdCookie);
         Cookie cookie = new Cookie(newIdCookie.getName(), cookieValue,
-                Integer.MAX_VALUE, "/", null, false, false);
+                Integer.MAX_VALUE, Common.getPlayHttpContext(), null, false, false);
         Publix.response().setCookie(cookie);
 
         idCookieCollection.put(newIdCookie);

@@ -11,6 +11,7 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
+import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -426,7 +427,7 @@ public class ImportExport extends Controller {
         response().setHeader("Content-disposition", "attachment; filename=" + filename);
         // Set transient cookie with no domain or path constraints
         Cookie cookie = new Cookie(JQDOWNLOAD_COOKIE_NAME,
-                JQDOWNLOAD_COOKIE_CONTENT, null, "/", null, false, false);
+                JQDOWNLOAD_COOKIE_CONTENT, null, Common.getPlayHttpContext(), null, false, false);
         response().setCookie(cookie);
     }
 

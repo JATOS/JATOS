@@ -193,7 +193,7 @@ var jatos = {};
 	// a component's jQuery version. Afterwards initialise (jatos.js will always be
 	// initialised - even if jatos.onLoad() is never called).
 	jatos.jQuery = {};
-	getScript('/public/lib/jatos-publix/javascripts/jquery-1.12.4.min.js', function () {
+	getScript('jatos-publix/javascripts/jquery-1.12.4.min.js', function () {
 		jatos.jQuery = jQuery.noConflict(true);
 		loadScripts(initJatos);
 	});
@@ -225,13 +225,16 @@ var jatos = {};
 		if (!jQueryExists()) {
 			return;
 		}
+		jatos.jQuery.ajaxSetup({
+			cache: true
+		});
 		jatos.jQuery.when(
 			// Plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js"),
+			jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
 			// JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
-			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/json-patch-duplex.js"),
+			jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.js"),
 			// JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
-			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jsonpointer.js"),
+			jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.js"),
 			jatos.jQuery.Deferred(function (deferred) {
 				jatos.jQuery(deferred.resolve);
 			})
@@ -256,7 +259,7 @@ var jatos = {};
 			.then(ready);
 
 		if (window.Worker) {
-			heartbeatWorker = new Worker("/public/lib/jatos-publix/javascripts/heartbeat.js");
+			heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
 			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
 		}
 
@@ -330,8 +333,7 @@ var jatos = {};
 		 */
 		function getInitData() {
 			return jatos.jQuery.ajax({
-				url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
-					"/initData" + "?srid=" + jatos.studyResultId,
+				url: "initData" + "?srid=" + jatos.studyResultId,
 				type: "GET",
 				dataType: 'json',
 				timeout: jatos.httpTimeout,
@@ -420,7 +422,7 @@ var jatos = {};
 
 			batchChannel = new WebSocket(
 				((window.location.protocol === "https:") ? "wss://" : "ws://") +
-				window.location.host + "/publix/" + jatos.studyId +
+				window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
 				"/batch/open" + "?srid=" + jatos.studyResultId);
 			batchChannel.onopen = function (event) {
 				// Do nothing -  batch channel opening is only done when we have the batch session version
@@ -856,8 +858,7 @@ var jatos = {};
 		var httpMethod = append ? "POST" : "PUT";
 		submittingResultDataDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/" +
-				jatos.componentId + "/resultData" +	"?srid=" + jatos.studyResultId,
+			url: "resultData" +	"?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
 			method: httpMethod,
@@ -906,7 +907,7 @@ var jatos = {};
 			return deferred;
 		}
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/studySessionData" + "?srid=" + jatos.studyResultId,
+			url: "../studySessionData" + "?srid=" + jatos.studyResultId,
 			data: studySessionDataStr,
 			processData: false,
 			method: "POST",
@@ -940,8 +941,7 @@ var jatos = {};
 		}
 		startingComponent = true;
 		var onComplete = function () {
-			window.location.href = "/publix/" + jatos.studyId + "/" + componentId +
-				"/start" + "?srid=" + jatos.studyResultId;
+			window.location.href = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
@@ -958,8 +958,8 @@ var jatos = {};
 		}
 		startingComponent = true;
 		var onComplete = function () {
-			window.location.href = "/publix/" + jatos.studyId +
-				"/component/start?position=" + componentPos + "&srid=" + jatos.studyResultId;
+			window.location.href = "../component/start?position=" + componentPos +
+				"&srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
@@ -974,8 +974,7 @@ var jatos = {};
 		}
 		startingComponent = true;
 		var onComplete = function () {
-			window.location.href = "/publix/" + jatos.studyId +
-				"/nextComponent/start" + "?srid=" + jatos.studyResultId;
+			window.location.href = "../nextComponent/start" + "?srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
@@ -1023,8 +1022,7 @@ var jatos = {};
 			"Use jatos.startComponent, jatos.startComponentByPos, jatos.startNextComponent, " +
 			"jatos.startLastComponent instead. See http://www.jatos.org/jatos.js-Reference.html.");
 		var onComplete = function () {
-			var url = "/publix/" + jatos.studyId + "/" + jatos.componentId +
-				"/end" + "?srid=" + jatos.studyResultId;
+			var url = "end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (typeof successful != 'undefined' && typeof errorMsg != 'undefined') {
 				fullUrl = url + "&successful=" + successful + "&errorMsg=" + errorMsg;
@@ -1112,7 +1110,7 @@ var jatos = {};
 		joiningGroupDeferred = jatos.jQuery.Deferred();
 		groupChannel = new WebSocket(
 			((window.location.protocol === "https:") ? "wss://" : "ws://") +
-			window.location.host + "/publix/" + jatos.studyId +
+			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
 			"/group/join" + "?srid=" + jatos.studyResultId);
 		groupChannel.onopen = function (event) {
 			// Do nothing -  group channel opening is only done when we have the group session version
@@ -1624,7 +1622,7 @@ var jatos = {};
 
 		reassigningGroupDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/group/reassign" + "?srid=" + jatos.studyResultId,
+			url: "../group/reassign" + "?srid=" + jatos.studyResultId,
 			processData: false,
 			type: "GET",
 			timeout: jatos.httpTimeout,
@@ -1669,7 +1667,7 @@ var jatos = {};
 
 		leavingGroupDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/group/leave" + "?srid=" + jatos.studyResultId,
+			url: "../group/leave" + "?srid=" + jatos.studyResultId,
 			processData: false,
 			type: "GET",
 			timeout: jatos.httpTimeout,
@@ -1709,7 +1707,7 @@ var jatos = {};
 
 		function abort() {
 			abortingDeferred = jatos.jQuery.Deferred();
-			var url = "/publix/" + jatos.studyId + "/abort" + "?srid=" + jatos.studyResultId;
+			var url = "../abort" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (typeof message == 'undefined') {
 				fullUrl = url;
@@ -1755,7 +1753,7 @@ var jatos = {};
 		abortingDeferred = jatos.jQuery.Deferred();
 
 		function abort() {
-			var url = "/publix/" + jatos.studyId + "/abort" + "?srid=" + jatos.studyResultId;
+			var url = "../abort" + "?srid=" + jatos.studyResultId;
 			if (typeof message == 'undefined') {
 				window.location.href = url;
 			} else {
@@ -1789,7 +1787,7 @@ var jatos = {};
 
 		function end() {
 			endingDeferred = jatos.jQuery.Deferred();
-			var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
+			var url = "../end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (typeof successful == 'boolean' && typeof errorMsg == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
@@ -1848,7 +1846,7 @@ var jatos = {};
 
 		function end() {
 			endingDeferred = jatos.jQuery.Deferred();
-			var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
+			var url = "../end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (typeof successful == 'boolean' && typeof errorMsg == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
@@ -1885,8 +1883,7 @@ var jatos = {};
 	 */
 	jatos.log = function (logMsg) {
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
-				"/log" + "?srid=" + jatos.studyResultId,
+			url: "log" + "?srid=" + jatos.studyResultId,
 			data: logMsg,
 			processData: false,
 			type: "POST",

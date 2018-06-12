@@ -3,6 +3,7 @@ package services.publix.workers;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import general.TestHelper;
+import general.common.Common;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import org.junit.Before;
@@ -143,7 +144,7 @@ public class GeneralSingleCookieServiceTest {
 
     private void putCookieInContext(String cookieValue) {
         Cookie cookie = new Cookie(GeneralSingleCookieService.COOKIE_NAME,
-                cookieValue, Integer.MAX_VALUE, "/", "", false, true);
+                cookieValue, Integer.MAX_VALUE, Common.getPlayHttpContext(), "", false, true);
         testHelper.mockContext(cookie);
     }
 

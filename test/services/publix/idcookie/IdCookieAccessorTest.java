@@ -55,10 +55,8 @@ public class IdCookieAccessorTest {
 
         IdCookieCollection idCookieCollection = idCookieAccessor.extract();
         assertThat(idCookieCollection.size()).isEqualTo(2);
-        assertThat(idCookieCollection.findWithStudyResultId(1l))
-                .isEqualTo(idCookie1);
-        assertThat(idCookieCollection.findWithStudyResultId(2l))
-                .isEqualTo(idCookie2);
+        assertThat(idCookieCollection.findWithStudyResultId(1l)).isEqualTo(idCookie1);
+        assertThat(idCookieCollection.findWithStudyResultId(2l)).isEqualTo(idCookie2);
     }
 
     @Test
@@ -72,8 +70,7 @@ public class IdCookieAccessorTest {
     }
 
     @Test
-    public void checkExtractCheckValues()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractCheckValues() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         List<Cookie> cookieList = new ArrayList<>();
         cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
@@ -82,16 +79,13 @@ public class IdCookieAccessorTest {
 
         IdCookieCollection idCookieCollection = idCookieAccessor.extract();
         assertThat(idCookieCollection.size()).isEqualTo(1);
-        IdCookieModel idCookie1Extracted = idCookieCollection
-                .findWithStudyResultId(1l);
+        IdCookieModel idCookie1Extracted = idCookieCollection.findWithStudyResultId(1l);
         idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
-        assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
-                .isTrue();
+        assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName())).isTrue();
     }
 
     @Test
-    public void checkExtractMalformedIndex()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractMalformedIndex() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         idCookie1.setName("JATOS_IDS"); // No index
         List<Cookie> cookieList = new ArrayList<>();
@@ -105,8 +99,7 @@ public class IdCookieAccessorTest {
     }
 
     @Test
-    public void checkExtractMalformedIdStrict()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractMalformedIdStrict() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         idCookie1.setBatchId(null);
         List<Cookie> cookieList = new ArrayList<>();
@@ -120,8 +113,7 @@ public class IdCookieAccessorTest {
     }
 
     @Test
-    public void checkExtractMalformedIdNotStrict()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractMalformedIdNotStrict() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         idCookie1.setComponentId(null); // Not necessary
         List<Cookie> cookieList = new ArrayList<>();
@@ -135,8 +127,7 @@ public class IdCookieAccessorTest {
     }
 
     @Test
-    public void checkExtractMalformedName()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractMalformedName() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         idCookie1.setName("FOO_0"); // Wrong name but with index
         List<Cookie> cookieList = new ArrayList<>();
@@ -150,8 +141,7 @@ public class IdCookieAccessorTest {
     }
 
     @Test
-    public void checkExtractMalformedStudyAssets()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractMalformedStudyAssets() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         idCookie1.setStudyAssets(""); // Malformed study assets
         List<Cookie> cookieList = new ArrayList<>();
@@ -178,8 +168,7 @@ public class IdCookieAccessorTest {
     }
 
     @Test
-    public void checkExtractFromRequestScope()
-            throws IdCookieAlreadyExistsException {
+    public void checkExtractFromRequestScope() throws IdCookieAlreadyExistsException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
         IdCookieCollection idCookieCollection = new IdCookieCollection();
         idCookieCollection.add(idCookie1);

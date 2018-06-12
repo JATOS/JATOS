@@ -34,27 +34,35 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
     */
   val URL_STUDY_ASSETS = "study_assets"
 
+  val jatosPublixPattern = "(.*)(jatos-publix/javascripts/)(.*)".r
+
   /**
     * Returns the study asset file that belongs to the study with the given study ID (component ID
     * is ignored) and has the given relative path within the study assets folder. In difference to
-    * the versioned method it is not neccessary to add the prefix 'study_assets' or the study assets
-    * folder name (because it's retrieved from the DB).
+    * the viaAssetsPath method it is not necessary to add the prefix 'study_assets' or the study
+    * assets folder name (because it's retrieved from the DB).
+    * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
     */
-  def viaStudyId(studyId: Long, componentId: Long, urlPath: String) = {
-    jpa.withTransaction(asJavaSupplier(() => {
-      val study = studyDao.findById(studyId)
-      if (study == null) {
-        BadRequest(MessagesStrings.studyNotExist(studyId))
-      }
-      versioned(study.getDirName() + URL_PATH_SEPARATOR + urlPath)
-    }))
-  }
+  def viaStudyPath(studyId: Long, componentId: Long, urlPath: String) =
+    urlPath match {
+      case "jatos.js" => controllers.Assets.at(path =
+          "/public/lib/jatos-publix/javascripts", file = "jatos.js")
+      case jatosPublixPattern(pathPrefix, identifier, file) => controllers.Assets.at(path =
+          "/public/lib/jatos-publix/javascripts", file)
+      case _ => jpa.withTransaction(asJavaSupplier(() => {
+        val study = studyDao.findById(studyId)
+        if (study == null) {
+          BadRequest(MessagesStrings.studyNotExist(studyId))
+        }
+        viaAssetsPath(study.getDirName() + URL_PATH_SEPARATOR + urlPath)
+      }))
+    }
 
   /**
     * Action called while routing. Translates the given file path from the URL into a file path
     * of the OS's file system and returns the file.
     */
-  def versioned(urlPath: String) = Action { request =>
+  def viaAssetsPath(urlPath: String) = Action { request =>
     // Set Http.Context used in Play with Java. Needed by IdCookieService
     play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
 
@@ -62,16 +70,16 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
       checkProperAssets(urlPath)
       val filePath = urlPath.replace(URL_PATH_SEPARATOR, File.separator)
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
-      logger.debug(s".versioned: loading file ${file.getPath}.")
-      Ok.sendFile(file, true)
+      logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
+      Ok.sendFile(file, true).withHeaders("Cache-Control" -> "private")
     } catch {
       case e: PublixException =>
         val errorMsg = e.getMessage
-        logger.info(".versioned: " + errorMsg)
+        logger.info(".viaAssetsPath: " + errorMsg)
         if (HttpUtils.isAjax) Forbidden(errorMsg)
         else Forbidden(views.html.publix.error.render(errorMsg))
       case e: IOException =>
-        logger.info(s".versioned: failed loading from path ${Common.getStudyAssetsRootPath}" +
+        logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
             s"${File.separator}$urlPath")
         val errorMsg = s"Resource '$urlPath' couldn't be found."
         if (HttpUtils.isAjax) NotFound(errorMsg)
@@ -110,7 +118,7 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
     try {
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
       Ok.sendFile(file, true).as("text/html; charset=utf-8")
-          .withHeaders("Cache-control" -> "no-cache, no-store")
+          .withHeaders("Cache-Control" -> "no-cache, no-store")
     } catch {
       case e: IOException =>
         throw new NotFoundPublixException(

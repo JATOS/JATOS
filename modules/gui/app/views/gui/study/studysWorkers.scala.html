@@ -1,5 +1,6 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
 	study: common.Study)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -36,7 +37,7 @@ $(document).ready(function() {
 			{
 				"data": "id",
 				"render": function (data, type, full, meta) {
-					return '<a href="/jatos/worker/'
+					return '<a href="@{playHttpContext}jatos/worker/'
 						+ data + '/results">' + data + '</a>';
 				}
 			},

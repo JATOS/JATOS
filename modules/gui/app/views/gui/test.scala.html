@@ -1,3 +1,5 @@
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
+
 <!DOCTYPE html>
 
 <html lang="en">
@@ -22,7 +24,9 @@
 
 <p><b>JATOS configuration</b><br>
 Version: @general.common.Common.getJatosVersion()<br>
-Basepath: @general.common.Common.getBasepath()<br>
+URL host: @utils.common.HttpUtils.getHostUrl()<br>
+URL basepath: @general.common.Common.getPlayHttpContext()<br>
+Local basepath: @general.common.Common.getBasepath()<br>
 Study assets root path: @general.common.Common.getStudyAssetsRootPath()<br>
 Uses in-memory DB: @general.common.Common.isInMemoryDb()<br>
 User session timeout: @general.common.Common.getUserSessionTimeout()<br>
@@ -30,30 +34,43 @@ User session inactivity: @general.common.Common.getUserSessionInactivity()<br>
 DB URL: @general.common.Common.getDbDefaultUrl()<br>
 DB driver: @general.common.Common.getDbDefaultDriver()<br>
 JPA unit: @general.common.Common.getJpaDefault()<br>
-Request URL: @utils.common.HttpUtils.getRequestUrl()<br>
 Used memory: @((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024)) MB<br>
 Max memory: @(Runtime.getRuntime.maxMemory() / (1024*1024)) MB
 </p>
 
 <p><b>Tests</b><br>
+Correct URL host: <span id="testHostUrlResult"></span><br>
 Connect to database: <span id="testDatabaseResult"></span><br>
 Access to study assets root folder: <span id="testStudyAssetsRootFolderResult"></span><br>
 Acess internal cache: <span id="testCacheResult"></span><br>
 Internal JSON serialization: <span id="testJsonSerializationResult"></span><br>
-Read jatos.js: <span id="testJatosJsResult"></span><br>
+Read jatos.js (via study path): <span id="testJatosJsViaStudyPathResult"></span><br>
+Read jatos.js (via assets path): <span id="testJatosJsViaAssetsPathResult"></span><br>
+Read heartbeat.js: <span id="testHeartbeatJsResult"></span><br>
 Open WebSocket: <span id="testWebSocketResult"></span><br>
-Correct Request URL: <span id="testRequestUrlResult"></span>
 </p>
 
 <script>
 
+testHostUrl();
 testDatabase();
 testStudyAssetsRootFolder();
 testCache();
 testJsonSerialization();
-testJatosJs();
+testJatosJsViaStudyPath();
+testJatosJsViaAssetsPath();
+testHeartbeatJs();
 testWebSocket();
-testRequestUrl();
+
+function testHostUrl() {
+	var jatosHostUrl = "@utils.common.HttpUtils.getHostUrl()";
+	var browserUrl = window.location.origin;
+	if (jatosHostUrl == browserUrl) {
+		$('#testHostUrlResult').html('<font color="green">OK</font>');
+	} else {
+		$('#testHostUrlResult').html('<font color="red">FAIL</font>');
+	}
+}
 
 function testDatabase() {
 	$.ajax({
@@ -107,16 +124,44 @@ function testJsonSerialization() {
 	});
 }
 
-function testJatosJs() {
+function testJatosJsViaStudyPath() {
 	$.ajax({
 		type: 'GET',
-		url: "/assets/javascripts/jatos.js",
+		url: "@{playHttpContext}publix/1/1/jatos.js",
 		dataType: "text",
 		success: function(result) {
-			$('#testJatosJsResult').html('<font color="green">OK</font>');
+			$('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
 		},
 		error : function(err) {
-			$('#testJatosJsResult').html('<font color="red">FAIL</font>');
+			$('#testJatosJsViaStudyPathResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testJatosJsViaAssetsPath() {
+	$.ajax({
+		type: 'GET',
+		url: "@{playHttpContext}assets/javascripts/jatos.js",
+		dataType: "text",
+		success: function(result) {
+			$('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testJatosJsViaAssetsPathResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testHeartbeatJs() {
+	$.ajax({
+		type: 'GET',
+		url: "@{playHttpContext}publix/1/1/jatos-publix/javascripts/heartbeat.js",
+		dataType: "text",
+		success: function(result) {
+			$('#testHeartbeatJsResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testHeartbeatJsResult').html('<font color="red">FAIL</font>');
 		}
 	});
 }
@@ -140,16 +185,6 @@ function testWebSocket() {
 	webSocket.onopen = function (event) {
 		webSocket.send("test message");
 	};
-}
-
-function testRequestUrl() {
-	var jatosRequestUrl = "@utils.common.HttpUtils.getRequestUrl()";
-	var browserUrl = window.location.origin;
-	if (jatosRequestUrl == browserUrl) {
-		$('#testRequestUrlResult').html('<font color="green">OK</font>');
-	} else {
-		$('#testRequestUrlResult').html('<font color="red">FAIL</font>');
-	}
 }
 
 </script>

@@ -1,4 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)(body: Html)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!DOCTYPE html>
 
@@ -404,7 +405,7 @@ $('#sidebarStudyList').on('click', '.studyListItem', function(e) {
 		$(this).find(".glyphicon-chevron-right, .glyphicon-chevron-down").toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 	} else {
 		var clickedStudyId = $(this).attr('id').replace('sidebarStudy', "");
-		window.location.href = "/jatos/" + clickedStudyId;
+		window.location.href = "@{playHttpContext}jatos/" + clickedStudyId;
 	}
 });
 
@@ -420,7 +421,7 @@ function fillSidebarStudyList(studyArray) {
 				+ '<span data-toggle="collapse" data-target="#componentsOfStudy' + study.id + '" >'
 				+ '<span class="glyphicon glyphicon-chevron-right gray-light study-collapsed"></span>'
 				+ '</span>'
-				+ '<span class="text-primary" data-toggle="tooltip" data-placement="bottom" title="ID ' + study.id + '" href="/jatos/' + study.id + '">'
+				+ '<span class="text-primary" data-toggle="tooltip" data-placement="bottom" title="ID ' + study.id + '" href="@{playHttpContext}jatos/' + study.id + '">'
 				+ '&nbsp;' + study.title;	
 		if (study.locked) {
 			listItem = listItem + '&nbsp;<span class="glyphicon glyphicon-lock gray-light"></span>';

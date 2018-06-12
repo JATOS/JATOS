@@ -1,4 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -19,7 +20,7 @@
 <div class="modal fade" id="editProfileModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="editProfileForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="editProfileForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Edit Your Profile</h4>
@@ -49,7 +50,7 @@
 <div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="changePasswordForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="changePasswordForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Change Password</h4>
@@ -82,7 +83,7 @@
 <div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="deleteUserForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="deleteUserForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Confirm User Deletion</h4>
@@ -131,7 +132,7 @@ function fillStudyList(studyList) {
 	}
 	$.each(studyList, function(index, study) {
 		html += '<li class="list-group-item">'
-				+ '<a href="/jatos/' + study.id + '">' + study.title + ' (ID: ' + study.id + ')</a>'
+				+ '<a href="@{playHttpContext}jatos/' + study.id + '">' + study.title + ' (ID: ' + study.id + ')</a>'
 				+ '</li>';
 	});
 	$("#usersStudyList").html(html);

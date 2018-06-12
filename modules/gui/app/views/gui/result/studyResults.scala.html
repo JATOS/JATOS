@@ -1,5 +1,6 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
     study: common.Study, dataUrl: String)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -86,7 +87,7 @@ $(document).ready(function() {
             {
                 "data": "workerId",
                 "render": function (data, type, full, meta) {
-                    return '<a href="/jatos/worker/'
+                    return '<a href="@{playHttpContext}jatos/worker/'
                         + data + '/results">' + data + '</a>';
                 }
             },
@@ -237,7 +238,7 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
-        var url = '/jatos/studyResult/export/resultData'
+        var url = '@{playHttpContext}jatos/studyResult/export/resultData'
             + '?studyResultIds=' + ids.join(", ");
         // Using johnculviner's jQuery.fileDownload plugin to detect a fail
         $.fileDownload(url).fail(function () {
@@ -270,7 +271,7 @@ $(document).ready(function() {
             + "<b>with all their component results</b>.</p>"
             + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-            var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
+            var url = '@{playHttpContext}jatos/studyResult?studyResultIds=' + ids.toString();
             $.ajax({
                 url : url,
                 type : 'DELETE',

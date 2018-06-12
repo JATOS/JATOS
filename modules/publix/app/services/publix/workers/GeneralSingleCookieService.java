@@ -4,6 +4,7 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import controllers.publix.workers.GeneralSinglePublix;
+import general.common.Common;
 import models.common.Study;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
@@ -94,7 +95,7 @@ public class GeneralSingleCookieService {
 		Cookie oldCookie = GeneralSinglePublix.request().cookie(COOKIE_NAME);
 		String newCookieValue = addStudy(study, worker, oldCookie);
 		Cookie newCookie = new Cookie(COOKIE_NAME, newCookieValue,
-				Integer.MAX_VALUE, "/", null, false, true);
+				Integer.MAX_VALUE, Common.getPlayHttpContext(), null, false, true);
 		Publix.response().setCookie(newCookie);
 	}
 

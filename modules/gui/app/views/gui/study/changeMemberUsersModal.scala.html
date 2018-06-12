@@ -1,4 +1,5 @@
 @(loggedInUser: common.User)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <div class="modal fade" id="changeMemberUsersModal"
 	data-backdrop="static" data-keyboard="false" tabindex="-1"
@@ -94,7 +95,7 @@ function initMemberUserTable() {
 	memberUserTable = $('#changeMemberUsersModal .table').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : "/jatos/" + studyId + "/memberUsers",
+			"url" : "@{playHttpContext}jatos/" + studyId + "/memberUsers",
 			"error": function(reason) {
 				showError("Couldn't read member data.", "#changeMemberUsersModal .modal-header");
 			}
@@ -150,7 +151,7 @@ function toggleTablePagination() {
 
 $('#changeMemberUsersModal').on('click', '#addAllMemberButton', function() {
     $.ajax({
-		url : '/jatos/' + studyId + '/memberUsers',
+		url : '@{playHttpContext}jatos/' + studyId + '/memberUsers',
 		type : "POST",
 		success: function(user) {
 			removeAlerts("#changeMemberUsersModal");
@@ -165,7 +166,7 @@ $('#changeMemberUsersModal').on('click', '#addAllMemberButton', function() {
 
 $('#changeMemberUsersModal').on('click', '#removeAllMemberButton', function() {
     $.ajax({
-		url : '/jatos/' + studyId + '/memberUsers',
+		url : '@{playHttpContext}jatos/' + studyId + '/memberUsers',
 		type : "DELETE",
 		success: function(user) {
 			removeAlerts("#changeMemberUsersModal");
@@ -182,7 +183,7 @@ $('#addMemberToStudyForm').submit(function(event) {
 	event.preventDefault();
 	var emailToChange = $('#addMemberToStudyForm .email').val();
 	$.ajax({
-		url : '/jatos/' + studyId + '/memberUser?email=' + emailToChange + '&isMember=true', 
+		url : '@{playHttpContext}/jatos/' + studyId + '/memberUser?email=' + emailToChange + '&isMember=true',
 		type : "POST",
 		success: function(user) {
 			removeAlerts("#changeMemberUsersModal");
@@ -230,7 +231,7 @@ $('#changeMemberUsersModal .table').on('click', '.memberToggleButton', function(
 		return;
 	}
 	$.ajax({
-		url : '/jatos/' + studyId + '/memberUser?email=' + tableMember.email + '&isMember=' + !tableMember.isMember, 
+		url : '@{playHttpContext}jatos/' + studyId + '/memberUser?email=' + tableMember.email + '&isMember=' + !tableMember.isMember,
 		type : "POST",
 		success: function(user) {
 			removeAlerts("#changeMemberUsersModal");

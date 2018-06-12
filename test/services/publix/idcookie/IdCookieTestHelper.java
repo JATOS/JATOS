@@ -1,6 +1,7 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
+import general.common.Common;
 import models.common.workers.JatosWorker;
 import play.mvc.Http.Cookie;
 
@@ -38,6 +39,7 @@ public class IdCookieTestHelper {
         idCookie.setStudyResultId(1l);
         idCookie.setWorkerId(1l);
         idCookie.setWorkerType(JatosWorker.WORKER_TYPE);
+        idCookie.setUrlBasePath("/somepath/");
         return idCookie;
     }
 
@@ -55,22 +57,20 @@ public class IdCookieTestHelper {
         assertThat(idCookie.getCreationTime()).isGreaterThan(0l);
         assertThat(idCookie.getGroupResultId()).isEqualTo(1l);
         assertThat(idCookie.getIndex()).isEqualTo(0);
-        assertThat(idCookie.getJatosRun())
-                .isEqualTo(JatosRun.RUN_STUDY);
+        assertThat(idCookie.getJatosRun()).isEqualTo(JatosRun.RUN_STUDY);
         assertThat(idCookie.getName()).isEqualTo("JATOS_IDS_0");
-        assertThat(idCookie.getStudyAssets())
-                .isEqualTo("test_study_assets");
+        assertThat(idCookie.getStudyAssets()).isEqualTo("test_study_assets");
         assertThat(idCookie.getStudyId()).isEqualTo(1l);
         assertThat(idCookie.getStudyResultId()).isEqualTo(1l);
         assertThat(idCookie.getWorkerId()).isEqualTo(1l);
-        assertThat(idCookie.getWorkerType())
-                .isEqualTo(JatosWorker.WORKER_TYPE);
+        assertThat(idCookie.getWorkerType()).isEqualTo(JatosWorker.WORKER_TYPE);
+        assertThat(idCookie.getUrlBasePath()).isEqualTo("/somepath/");
     }
 
     public Cookie buildCookie(IdCookieModel idCookie) {
         String cookieValue = idCookieSerialiser.asCookieValueString(idCookie);
-        return new Cookie(idCookie.getName(), cookieValue, Integer.MAX_VALUE, "/", "", false,
-                false);
+        return new Cookie(idCookie.getName(), cookieValue, Integer.MAX_VALUE,
+                Common.getPlayHttpContext(), "", false, false);
     }
 
 }

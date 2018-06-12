@@ -1,5 +1,6 @@
 @(studyList: List[common.Study], loggedInUser: common.User, breadcrumbs: String,
 	localhost: Boolean)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 

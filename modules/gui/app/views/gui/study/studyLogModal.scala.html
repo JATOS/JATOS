@@ -1,4 +1,5 @@
 @(study: common.Study)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Study Log Modal -->
 <div class="modal fade" id="studyLogModal" data-backdrop="static" data-keyboard="false"
@@ -41,7 +42,7 @@ var studyLogPretty;
 $('#studyToolbar').on('click', '#showStudyLog', function() {
     $.ajax({
         type: 'GET',
-        url: "/jatos/@study.getId()/log?limit=" + 100,
+        url: "@{playHttpContext}jatos/@study.getId()/log?limit=" + 100,
         success: showStudyLogModal,
         error: function(response) {
             showError("Couldn't get study log.");
@@ -105,7 +106,7 @@ function showStudyLogRaw() {
 }
 
 $('#studyLogDownload').on('click', function() {
-    var url = "/jatos/@study.getId()/log?limit=-1&download=true";
+    var url = "@{playHttpContext}jatos/@study.getId()/log?limit=-1&download=true";
     // Using johnculviner's jQuery.fileDownload plugin to detect a fail
     $.fileDownload(url).fail(function () {
         showError("Download of study log failed", "#studyLogModal .modal-header");

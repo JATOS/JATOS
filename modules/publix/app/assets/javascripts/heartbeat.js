@@ -30,7 +30,7 @@ onmessage = function(e) {
 	var studyResultId = e.data[1];
 	period = (typeof e.data[2] === 'undefined') ? periodDefault
 			: e.data[2];
-	url = "/publix/" + studyId + "/heartbeat" + "?srid=" + studyResultId;
+	url = "../../../../" + studyId + "/heartbeat" + "?srid=" + studyResultId;
 	if (!ajax) {
 		send();
 	}

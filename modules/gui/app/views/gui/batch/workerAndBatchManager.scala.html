@@ -1,5 +1,6 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study,
     jatosUrl: java.net.URL, allWorkersSize: Integer)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -28,8 +29,7 @@
     data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="createBatchForm" method="post" action="/"
-                class="form-horizontal" role="form">
+            <form id="createBatchForm" method="post" class="form-horizontal" role="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">
                         <span>&times;</span><span class="sr-only">Close</span>
@@ -211,7 +211,7 @@ $('#batchList').on('click', '.activeBatchButton', function() {
     if (!batch) {return} // should never happen
     var active = $(this).hasClass('activeBatch');
     $.ajax({
-        url : "/jatos/" + @study.getId() +"/batch/" + batch.id
+        url : "@{playHttpContext}jatos/" + @study.getId() +"/batch/" + batch.id
                 + "/properties/active?active=" + !active,
         type : "POST",
         success: function(active) {
@@ -238,7 +238,7 @@ $('#batchList').on('click', '.batchRefreshButton', function() {
 function refreshBatch(batchItem, batch) {
     $.ajax({
         type: 'GET',
-        url: "/jatos/" + @study.getId() +"/batch/" + batch.id,
+        url: "@{playHttpContext}jatos/" + @study.getId() +"/batch/" + batch.id,
         success: function(batch) {
             fillBatch(batchItem, batch);
         },
@@ -251,7 +251,7 @@ function refreshBatch(batchItem, batch) {
 $('#batchList').on('click', '.batchResultsButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
-    window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/results";
+    window.location.href =  "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/results";
 });
 
 function setBatchItemActive(item, active) {
@@ -287,7 +287,7 @@ $('#batchList').on('click', '.removeBatch', function() {
         + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
     askConfirmation(title, htmlText, 'Delete', "btn-batch", function() {
         $.ajax({
-            url : "/jatos/" + @study.getId() +"/batch/" + batch.id,
+            url : "@{playHttpContext}jatos/" + @study.getId() +"/batch/" + batch.id,
             type : 'DELETE',
             success : function(result) {
                 showMessages(JSON.parse(result));

@@ -11,6 +11,7 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
+import general.common.Common;
 import general.common.StudyLogger;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -401,7 +402,8 @@ public class Studies extends Controller {
         checkStandardForStudy(studyId, study, loggedInUser);
 
         session("jatos_run", "RUN_STUDY");
-        String startStudyUrl = "/publix/" + study.getId() + "/start?"
+        String startStudyUrl = Common.getPlayHttpContext()
+                + "publix/" + study.getId() + "/start?"
                 + "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
                 + loggedInUser.getWorker().getId();
         return redirect(startStudyUrl);
@@ -492,8 +494,8 @@ public class Studies extends Controller {
             String filename = "jatos_studylog_" + study.getUuid() + ".log";
             response().setHeader("Content-disposition", "attachment; filename=" + filename);
             // Set transient cookie with no domain or path constraints
-            Http.Cookie cookie =
-                    new Http.Cookie("fileDownload", "true", null, "/", null, false, false);
+            Http.Cookie cookie = new Http.Cookie("fileDownload", "true", null,
+                    Common.getPlayHttpContext(), null, false, false);
             response().setCookie(cookie);
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
             return new Result(

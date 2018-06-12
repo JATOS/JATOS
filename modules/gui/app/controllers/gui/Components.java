@@ -12,6 +12,7 @@ import daos.common.StudyDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -106,7 +107,8 @@ public class Components extends Controller {
 		session("jatos_run", "RUN_COMPONENT_START");
 		session("run_component_id", componentId.toString());
 		// Redirect to jatos-publix: start study
-		String startComponentUrl = "/publix/" + study.getId() + "/start?"
+		String startComponentUrl = Common.getPlayHttpContext()
+                + "publix/" + study.getId() + "/start?"
 				+ "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
 				+ loggedInUser.getWorker().getId();
 		return redirect(startComponentUrl);

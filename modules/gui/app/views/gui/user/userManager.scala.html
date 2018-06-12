@@ -1,4 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -49,7 +50,7 @@
 <div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="createUserForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="createUserForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">New User</h4>
@@ -109,7 +110,7 @@
 <div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="changePasswordForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="changePasswordForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Change Password</h4>
@@ -142,7 +143,7 @@
 <div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="deleteUserForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="deleteUserForm" method="post" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Confirm User Deletion</h4>
@@ -305,7 +306,7 @@ $('#userTable tbody').on('click', '.adminButton', function() {
 	var user = userTable.row(tr).data();
 	var adminRole = $(this).hasClass('adminRole');
 	$.ajax({
-		url : "/jatos/user/" + user.email + "/admin?admin=" + !adminRole,
+		url : "@{playHttpContext}jatos/user/" + user.email + "/admin?admin=" + !adminRole,
 		type : "POST",
 		success: function(adminRole) {
 			setAdminButton($(button).parent(), adminRole);
@@ -336,7 +337,7 @@ $("#changePasswordForm").submit(function(event) {
 	var user = $(this).data(user);
 	$.ajax({
 		type: 'POST',
-		url: '/jatos/user/' + user.email + '/password',
+		url: '@{playHttpContext}jatos/user/' + user.email + '/password',
 		data: $('#changePasswordForm').serialize(),
 		success: function(response) {
 			removeAlerts("#changePasswordModal");
@@ -392,7 +393,7 @@ $('#deleteUserForm').submit(function(event) {
 	event.preventDefault();
 	var user = $('#deleteUserForm').data(user);
 	$.ajax({
-		url : "/jatos/user/" + user.email + "/delete",
+		url : "@{playHttpContext}jatos/user/" + user.email + "/delete",
 		type : 'POST',
 		data: $('#deleteUserForm').serialize(), 
 		success : function(result) {

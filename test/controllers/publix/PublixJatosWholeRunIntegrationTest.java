@@ -9,6 +9,7 @@ import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import general.TestHelper;
+import general.common.Common;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -123,7 +124,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check redirect URL
         assertThat(result.header("Location").get())
-                .startsWith("/publix/" + study.getId() + "/"
+                .startsWith(Common.getPlayHttpContext() + "publix/" + study.getId() + "/"
                         + study.getFirstComponent().getId() + "/start?srid=");
 
         // Check that ID cookie exists
@@ -254,8 +255,8 @@ public class PublixJatosWholeRunIntegrationTest {
         assertThat(result.status()).isEqualTo(SEE_OTHER);
 
         // Check redirect URL
-        assertThat(result.header("Location").get()).endsWith(
-                "/publix/" + study.getId() + "/" + study.getComponent(2).getId()
+        assertThat(result.header("Location").get()).endsWith(Common.getPlayHttpContext() +
+                "publix/" + study.getId() + "/" + study.getComponent(2).getId()
                         + "/start?srid=" + studyResult.getId());
 
         // *************************************************************
@@ -346,7 +347,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check redirect URL
         assertThat(result.header("Location").get())
-                .isEqualTo("/jatos/" + study.getId());
+                .isEqualTo(Common.getPlayHttpContext() + "jatos/" + study.getId());
 
         // Check that ID cookie is removed
         assertThat(idCookie.value()).isEmpty();
@@ -408,7 +409,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check redirect URL
         assertThat(result.header("Location").get())
-                .isEqualTo("/jatos/" + study.getId());
+                .isEqualTo(Common.getPlayHttpContext() + "jatos/" + study.getId());
 
         // Check that ID cookie is removed
         assertThat(idCookie.value()).isEmpty();
@@ -424,7 +425,7 @@ public class PublixJatosWholeRunIntegrationTest {
     }
 
     private Result startStudy(Study study, User admin) {
-        String url = "/publix/" + study.getId() + "/start?"
+        String url = Common.getPlayHttpContext() + "publix/" + study.getId() + "/start?"
                 + JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL,
@@ -437,7 +438,7 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result startComponentByPosition(StudyResult studyResult, User admin,
             int position, Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId()
+        String url = Common.getPlayHttpContext() + "publix/" + studyResult.getStudy().getId()
                 + "/component/start?position=" + position + "&srid="
                 + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
@@ -451,7 +452,8 @@ public class PublixJatosWholeRunIntegrationTest {
 
     private Result startComponent(StudyResult studyResult, Component component,
             User admin, Cookie idCookie) {
-        String url = "/publix/" + studyResult.getStudy().getId() + "/"
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId() + "/"
                 + component.getId() + "/start?srid=" + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL,
@@ -464,7 +466,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result startNextComponent(StudyResult studyResult, User admin,
             Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId()
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId()
                 + "/nextComponent/start?srid=" + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL,
@@ -479,7 +482,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result initData(StudyResult studyResult, Component component,
             User admin, Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId() + "/"
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId() + "/"
                 + component.getId() + "/initData?srid=" + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL,
@@ -493,7 +497,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result logError(StudyResult studyResult, User admin, String msg,
             Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId() + "/"
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId() + "/"
                 + studyResult.getStudy().getComponent(3).getId() + "/log?srid="
                 + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(POST).uri(url)
@@ -509,7 +514,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result setStudySessionData(StudyResult studyResult, User admin,
             Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId()
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId()
                 + "/studySessionData?srid=" + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(POST).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL,
@@ -524,7 +530,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result submitResultData(StudyResult studyResult, User admin,
             Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId() + "/"
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId() + "/"
                 + studyResult.getStudy().getFirstComponent().getId()
                 + "/resultData?srid=" + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(PUT).uri(url)
@@ -540,7 +547,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result appendResultData(StudyResult studyResult, User admin,
             Cookie idCookie) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId() + "/"
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId() + "/"
                 + studyResult.getStudy().getFirstComponent().getId()
                 + "/resultData?srid=" + studyResult.getId();
         RequestBuilder request = new RequestBuilder().method(POST).uri(url)
@@ -556,7 +564,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result endStudy(StudyResult studyResult, User admin,
             Cookie idCookie, boolean successful, String errorMsg) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId() + "/end?srid="
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId() + "/end?srid="
                 + studyResult.getId() + "&successful=" + successful
                 + "&errorMsg=" + errorMsg;
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
@@ -571,7 +580,8 @@ public class PublixJatosWholeRunIntegrationTest {
     private Result abortStudy(StudyResult studyResult, User admin,
             Cookie idCookie, String abortMsg) {
         Result result;
-        String url = "/publix/" + studyResult.getStudy().getId()
+        String url = Common.getPlayHttpContext()
+                + "publix/" + studyResult.getStudy().getId()
                 + "/abort?srid=" + studyResult.getId() + "&message=" + abortMsg;
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL,

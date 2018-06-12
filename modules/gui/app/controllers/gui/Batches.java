@@ -96,7 +96,7 @@ public class Batches extends Controller {
                 study.getBatchList().stream().mapToInt(b -> b.getWorkerList().size()).sum();
         String breadcrumbs = breadcrumbsService.generateForStudy(study,
                 BreadcrumbsService.WORKER_AND_BATCH_MANAGER);
-        URL jatosURL = HttpUtils.getRequestUrl();
+        URL jatosURL = HttpUtils.getHostUrl();
         return ok(views.html.gui.batch.workerAndBatchManager.render(loggedInUser, breadcrumbs,
                 HttpUtils.isLocalhost(), study, jatosURL, allWorkersSize));
     }

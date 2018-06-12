@@ -1,11 +1,12 @@
 @(study: common.Study)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Show Batch Session Data Modal -->
 <div class="modal fade" id="showBatchSessionDataModal" data-backdrop="static"
     data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="batchSessionForm" method="post" action="/" class="form-horizontal" role="form">
+            <form id="batchSessionForm" method="post" class="form-horizontal" role="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
                     <h4 class="modal-title">Current Batch Session Data</h4>
@@ -39,7 +40,7 @@ $('#batchList').on('click', '.batchSessionButton', function() {
     if (!batch) {return} // should never happen
     $.ajax({
         type: 'GET',
-        url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
+        url: "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
         success: function(batchSession) {
             removeAlerts('#showBatchSessionDataModal');
             removeFormErrors('#showBatchSessionDataModal')
@@ -80,7 +81,7 @@ $("#batchSessionForm").submit(function(event) {
     if (!batch) {return} // should never happen
     $.ajax({
         type: 'POST',
-        url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
+        url: "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
         data: $('#batchSessionForm').serialize(),
         success: function(response) {
             removeAlerts('#showBatchSessionDataModal');
