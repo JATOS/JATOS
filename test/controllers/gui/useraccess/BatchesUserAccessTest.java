@@ -184,24 +184,6 @@ public class BatchesUserAccessTest {
     }
 
     @Test
-    public void callBatchesWorkersTableDataByStudy() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Batches.workersTableDataByStudy(study.getId());
-        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
-    }
-
-    @Test
-    public void callBatchesAllWorkersTableDataByStudy() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Batches.allWorkersTableDataByStudy(study.getId());
-        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
-    }
-
-    @Test
     public void workerBatchesWorkerSetupData() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();

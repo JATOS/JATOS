@@ -3,6 +3,7 @@ package controllers.gui.useraccess;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import general.TestHelper;
+import models.common.Batch;
 import models.common.Study;
 import org.junit.After;
 import org.junit.Before;
@@ -184,18 +185,27 @@ public class StudiesUserAccessTest {
     }
 
     @Test
-    public void callWorkers() {
+    public void callStudyLog() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.workers(study.getId());
+        Call call = controllers.gui.routes.Studies.studyLog(study.getId(), 100, false);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
-    public void callStudyLog() {
+    public void callStudiesAllWorkers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.studyLog(study.getId(), 100, false);
+        Call call = controllers.gui.routes.Studies.allWorkers(study.getId());
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
+    }
+
+    @Test
+    public void callStudiesAllWorkersWithResults() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = controllers.gui.routes.Studies.allWorkersWithResults(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());

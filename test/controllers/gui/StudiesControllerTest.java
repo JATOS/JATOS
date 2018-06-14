@@ -520,25 +520,6 @@ public class StudiesControllerTest {
     }
 
     /**
-     * Tests Studies.workers()
-     */
-    @Test
-    public void callWorkers() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.workers(study.getId()).url());
-        Result result = route(request);
-
-        assertThat(result.status()).isEqualTo(OK);
-        assertThat(contentAsString(result))
-                .contains(BreadcrumbsService.WORKERS);
-    }
-
-    /**
      * Tests Studies.studyLog()
      */
     @Test
@@ -577,4 +558,41 @@ public class StudiesControllerTest {
         assertThat(result.cookie("fileDownload")).isNotNull();
         assertThat(result.body()).isNotNull();
     }
+
+    /**
+     * Tests Studies.allWorkers()
+     */
+    @Test
+    public void callAllWorkers() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Studies.allWorkers(study.getId()).url());
+        Result result = route(request);
+
+        assertThat(result.status()).isEqualTo(OK);
+        assertThat(contentAsString(result)).isNotNull();
+    }
+
+    /**
+     * Tests Studies.allWorkersWithResults()
+     */
+    @Test
+    public void callAllWorkersWithResults() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+        Http.Session session = testHelper
+                .mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder().method("GET")
+                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Studies.allWorkersWithResults(study.getId()).url());
+        Result result = route(request);
+
+        assertThat(result.status()).isEqualTo(OK);
+        assertThat(contentAsString(result)).isNotNull();
+    }
+
 }
