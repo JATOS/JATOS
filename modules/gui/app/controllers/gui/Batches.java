@@ -31,7 +31,10 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -436,55 +439,6 @@ public class Batches extends Controller {
         }
 
         return ok(jsonUtils.asJsonNode(workerIdList));
-    }
-
-    /**
-     * Ajax GET request
-     * <p>
-     * Returns a list of workers (as JSON) that did the specified study (have a study result).
-     */
-    @Transactional
-    @Authenticated
-    public Result workersTableDataByStudy(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".workersTableDataByStudy: studyId " + studyId);
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        JsonNode dataAsJson = null;
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-
-            Set<Worker> workerSet = workerService.retrieveWorkersWithStudyResult(study);
-            dataAsJson = jsonUtils.workersForTableDataByStudy(workerSet, study);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(dataAsJson);
-    }
-
-    /**
-     * Ajax GET request
-     * <p>
-     * Returns a list of all workers as JSON that belong to this study including the ones that did
-     * not start yet.
-     */
-    @Transactional
-    @Authenticated
-    public Result allWorkersTableDataByStudy(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".allWorkersTableData: studyId " + studyId);
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        JsonNode dataAsJson = null;
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-
-            Set<Worker> workerSet = workerService.retrieveAllWorkers(study);
-            dataAsJson = jsonUtils.workersForTableDataByStudy(workerSet, study);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(dataAsJson);
     }
 
     /**

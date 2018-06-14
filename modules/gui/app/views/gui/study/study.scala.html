@@ -210,6 +210,7 @@ study: common.Study, workersSize: Integer, studyResultsCount: Integer)
     </div>
 </div>
 
+@views.html.gui.batch.workersModal(study)
 @views.html.gui.study.changeMemberUsersModal(loggedInUser)
 @views.html.gui.study.componentPropertiesModal(study)
 @views.html.gui.study.studyLogModal(study)
@@ -221,389 +222,390 @@ $(document).ready(setLockButton(studyLocked));
 
 var componentsTable;
 $(document).ready(function() {
-	// Don't remove pageLength - default is only 10 and it would display only 10 components
-	componentsTable = $('#componentsTable').DataTable({
-		"ajax": {
-			"type": "GET",
-			"url" : '@controllers.gui.routes.Studies.tableDataByStudy(study.getId())',
-			"error": function(reason) {
-					showError("Couldn't read components data.")
-			}
-		},
-		"pageLength": 100,
-		"dom": 't',
-		"columnDefs": [ {
-			"searchable": false,
-			"orderable": false,
-			"targets": "_all"
-		} ],
-		"columns": [
-			{
-				"class": 'componentDragButton',
-				"data": null,
-				"defaultContent": '',
-				"width": "1px",
-				"render": function (data, type, full, meta) {
-					var button = $('#componentDragButtonDiv button:first-child').clone();
-					button.html(button.html() + data.position);
-					button.attr('title', "Use this button to drag and drop this component to a new position");
-					return button.prop('outerHTML');
-				}
-			},
-			{
-				"class": 'activeComponent',
-				"data": null,
-				"defaultContent": '',
-				"width": "1px",
-				"render": function (data, type, full, meta) {
-					var button = $('#componentActiveButtonDiv button:first-child').clone();
-					setButtonActive(button, data.active);
-					return button.prop('outerHTML');
-				}
-			},
-			{
-				"class": "componentId",
-				"data": "id",
-				"width": "1px"
-			},
-			{ 
-				"class": "componentTitle",
-				"data": "title"
-			},
-			{
-				"class": "toolbar",
-				"data": null,
-				"defaultContent": '',
-				"width": "1%",
-				"render": function (data, type, full, meta) {
-					var toolbar = $('#componentToolbarDiv').clone().show();
-					$(toolbar).find('.resultsBadge').text(data.resultCount);
-					return toolbar.html();
-				}
-			}
-		],
-		"createdRow": function(row, data, index) {
-			setRowActive($(row), data.active);
-		},
-		"order" : [],
-		"language": {
-			"emptyTable": "No components yet - go to 'Components' and then 'New', to add new components"
-		}
-	});
-	
-	// Adjust the width of every component's toolbar to the widest one
-	componentsTable.on('column-sizing.dt', function (e, settings) {
-		// Newly created components of an empty study have a negative width (no
-		// clue why) - so set the width only if I have at least 2 components 
-		if ($(".componentResults").length > 1) {
-			setButtonWidthToMax(".componentResults");
-		}
-	});
-	
-	$('#componentsTable tbody').on('click', '.runComponent', function() {
-		window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
-			+ getComponentId(this) + "/run";
-	});
-	
-	$('#componentsTable tbody').on('click', '.componentResults', function() {
-		window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
-			+ getComponentId(this) + "/results";
-	});
-	
-	$('#componentsTable tbody').on('click', '.exportComponent', function() {
-		window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
-			+ getComponentId(this) + "/export";
-	});
-	
-	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
-		$.ajax({
-			type: 'GET',
-			url: "@{playHttpContext}jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
-			success: function(result) {
-				showMessages(JSON.parse(result));
-				componentsTable.ajax.reload();
-				fillSidebar();
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
-	});
-	
-	$('#componentsTable tbody').on('click', '.removeComponent', function() {
-		var element = this;
-		var componentId = getComponentId(this);
-		if (!componentId) {return} // should never happen
-		var componentTitle = getComponentTitle(this);
-		var title = "Confirm Delete";
-		var htmlText = "<p>You are about to delete component \"" + componentTitle 
-			+ "\" (ID " + componentId + ") <b>with all its results</b>.</p>"
-			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
-			$.ajax({
-				url : "@{playHttpContext}jatos/" + @study.getId() +"/" + componentId,
-				type : 'DELETE',
-				success : function(result) {
-					showMessages(JSON.parse(result));
-					componentsTable.ajax.reload();
-					fillSidebar();
-				},
-				error : function(err) {
-					showError(err.responseText);
-				}
-			});
-		});
-	});
-	
-	$('#componentsTable tbody').on('click', '.activeButton', function() {
-		var button = this;
-		var tr = $(this).closest('tr');
-		var componentId = getComponentId(this);
-		var active = $(this).hasClass('activeComponent');
-		$.ajax({
-			url : "@{playHttpContext}jatos/" + @study.getId() +"/" + componentId
-					+ "/properties/active?active=" + !active,
-			type : "POST",
-			success: function(active) {
-				setButtonActive($(button), active);
-				setRowActive(tr, active);
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
-	});
-	
-	function setRowActive(tr, active) {
-		if (active) {
-			tr.find('.btn, .componentId, .componentTitle').removeClass("grayout");
-		} else {
-			tr.find('.btn, .componentId, .componentTitle').addClass("grayout");
-		}
-	}
-	
-	function setButtonActive(button, active) {
-		if (active) {
-			button.addClass('activeComponent');
-			button.removeClass('btn-default');
-			button.addClass('btn-component');
-			button.attr('title', "Click to deactivate this component");
-			button.html($(button.html())
-					.removeClass('glyphicon-remove')
-					.addClass('glyphicon-ok').prop('outerHTML'));
-		} else {
-			button.removeClass('activeComponent');
-			button.removeClass('btn-component');
-			button.addClass('btn-default');
-			button.attr('title', "Click to activate this component");
-			button.html($(button.html())
-					.removeClass('glyphicon-ok')
-					.addClass('glyphicon-remove').prop('outerHTML'));
-		}
-	}
-	
-	$("tbody.sortable").sortable({
-		items: "> tr",
-		handle: '.dragButton',
-		// Interferes with dragging - need to overwrite since default it button 
-		cancel: '',
-		helper: function(e, tr) {
-			var $originals = tr.children();
-			var $helper = tr.clone();
-			$helper.children().each(function(index) {
-				// Set helper cell sizes to match the original sizes
-				$(this).width($originals.eq(index).width());
-			});
-			return $helper;
-		},
-		zIndex: 9999,
-	});
-	
+    // Don't remove pageLength - default is only 10 and it would display only 10 components
+    componentsTable = $('#componentsTable').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : '@controllers.gui.routes.Studies.tableDataByStudy(study.getId())',
+            "error": function(reason) {
+                    showError("Couldn't read components data.")
+            }
+        },
+        "pageLength": 100,
+        "dom": 't',
+        "columnDefs": [ {
+            "searchable": false,
+            "orderable": false,
+            "targets": "_all"
+        } ],
+        "columns": [
+            {
+                "class": 'componentDragButton',
+                "data": null,
+                "defaultContent": '',
+                "width": "1px",
+                "render": function (data, type, full, meta) {
+                    var button = $('#componentDragButtonDiv button:first-child').clone();
+                    button.html(button.html() + data.position);
+                    button.attr('title', "Use this button to drag and drop this component to a new position");
+                    return button.prop('outerHTML');
+                }
+            },
+            {
+                "class": 'activeComponent',
+                "data": null,
+                "defaultContent": '',
+                "width": "1px",
+                "render": function (data, type, full, meta) {
+                    var button = $('#componentActiveButtonDiv button:first-child').clone();
+                    setButtonActive(button, data.active);
+                    return button.prop('outerHTML');
+                }
+            },
+            {
+                "class": "componentId",
+                "data": "id",
+                "width": "1px"
+            },
+            {
+                "class": "componentTitle",
+                "data": "title"
+            },
+            {
+                "class": "toolbar",
+                "data": null,
+                "defaultContent": '',
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    var toolbar = $('#componentToolbarDiv').clone().show();
+                    $(toolbar).find('.resultsBadge').text(data.resultCount);
+                    return toolbar.html();
+                }
+            }
+        ],
+        "createdRow": function(row, data, index) {
+            setRowActive($(row), data.active);
+        },
+        "order" : [],
+        "language": {
+            "emptyTable": "No components yet - go to 'Components' and then 'New', to add new components"
+        }
+    });
+
+    // Adjust the width of every component's toolbar to the widest one
+    componentsTable.on('column-sizing.dt', function (e, settings) {
+        // Newly created components of an empty study have a negative width (no
+        // clue why) - so set the width only if I have at least 2 components
+        if ($(".componentResults").length > 1) {
+            setButtonWidthToMax(".componentResults");
+        }
+    });
+
+    $('#componentsTable tbody').on('click', '.runComponent', function() {
+        window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
+            + getComponentId(this) + "/run";
+    });
+
+    $('#componentsTable tbody').on('click', '.componentResults', function() {
+        window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
+            + getComponentId(this) + "/results";
+    });
+
+    $('#componentsTable tbody').on('click', '.exportComponent', function() {
+        window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
+            + getComponentId(this) + "/export";
+    });
+
+    $('#componentsTable tbody').on('click', '.cloneComponent', function() {
+        $.ajax({
+            type: 'GET',
+            url: "@{playHttpContext}jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
+            success: function(result) {
+                showMessages(JSON.parse(result));
+                componentsTable.ajax.reload();
+                fillSidebar();
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
+    });
+
+    $('#componentsTable tbody').on('click', '.removeComponent', function() {
+        var element = this;
+        var componentId = getComponentId(this);
+        if (!componentId) {return} // should never happen
+        var componentTitle = getComponentTitle(this);
+        var title = "Confirm Delete";
+        var htmlText = "<p>You are about to delete component \"" + componentTitle
+            + "\" (ID " + componentId + ") <b>with all its results</b>.</p>"
+            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
+            $.ajax({
+                url : "@{playHttpContext}jatos/" + @study.getId() +"/" + componentId,
+                type : 'DELETE',
+                success : function(result) {
+                    showMessages(JSON.parse(result));
+                    componentsTable.ajax.reload();
+                    fillSidebar();
+                },
+                error : function(err) {
+                    showError(err.responseText);
+                }
+            });
+        });
+    });
+
+    $('#componentsTable tbody').on('click', '.activeButton', function() {
+        var button = this;
+        var tr = $(this).closest('tr');
+        var componentId = getComponentId(this);
+        var active = $(this).hasClass('activeComponent');
+        $.ajax({
+            url : "@{playHttpContext}jatos/" + @study.getId() +"/" + componentId
+                    + "/properties/active?active=" + !active,
+            type : "POST",
+            success: function(active) {
+                setButtonActive($(button), active);
+                setRowActive(tr, active);
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
+    });
+
+    function setRowActive(tr, active) {
+        if (active) {
+            tr.find('.btn, .componentId, .componentTitle').removeClass("grayout");
+        } else {
+            tr.find('.btn, .componentId, .componentTitle').addClass("grayout");
+        }
+    }
+
+    function setButtonActive(button, active) {
+        if (active) {
+            button.addClass('activeComponent');
+            button.removeClass('btn-default');
+            button.addClass('btn-component');
+            button.attr('title', "Click to deactivate this component");
+            button.html($(button.html())
+                    .removeClass('glyphicon-remove')
+                    .addClass('glyphicon-ok').prop('outerHTML'));
+        } else {
+            button.removeClass('activeComponent');
+            button.removeClass('btn-component');
+            button.addClass('btn-default');
+            button.attr('title', "Click to activate this component");
+            button.html($(button.html())
+                    .removeClass('glyphicon-ok')
+                    .addClass('glyphicon-remove').prop('outerHTML'));
+        }
+    }
+
+    $("tbody.sortable").sortable({
+        items: "> tr",
+        handle: '.dragButton',
+        // Interferes with dragging - need to overwrite since default it button
+        cancel: '',
+        helper: function(e, tr) {
+            var $originals = tr.children();
+            var $helper = tr.clone();
+            $helper.children().each(function(index) {
+                // Set helper cell sizes to match the original sizes
+                $(this).width($originals.eq(index).width());
+            });
+            return $helper;
+        },
+        zIndex: 9999,
+    });
+
 });
 
 $("tbody.sortable").on("sortstop", function(event, ui) {
-	var componentId = getComponentId(ui.item);
-	var newPosition = ui.item.index() + 1;
-	$.ajax({
-		url : "@{playHttpContext}jatos/" + @study.getId() + "/componentOrder"
-				+ "?componentId=" + componentId + "&newPosition="
-				+ newPosition,
-		type : "POST",
-		success : function(response) {
-			componentsTable.ajax.reload();
-			fillSidebar();
-		},
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
+    var componentId = getComponentId(ui.item);
+    var newPosition = ui.item.index() + 1;
+    $.ajax({
+        url : "@{playHttpContext}jatos/" + @study.getId() + "/componentOrder"
+                + "?componentId=" + componentId + "&newPosition="
+                + newPosition,
+        type : "POST",
+        success : function(response) {
+            componentsTable.ajax.reload();
+            fillSidebar();
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
 function getComponentId(element) {
-	var tr = $(element).closest('tr');
-	var rowData = componentsTable.row(tr).data();
-	return rowData.id;
+    var tr = $(element).closest('tr');
+    var rowData = componentsTable.row(tr).data();
+    return rowData.id;
 }
 
 function getComponentTitle(element) {
-	var tr = $(element).closest('tr');
-	var rowData = componentsTable.row(tr).data();
-	return rowData.title;
+    var tr = $(element).closest('tr');
+    var rowData = componentsTable.row(tr).data();
+    return rowData.title;
 }
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
-	$.ajax({
-		url : "@{playHttpContext}jatos/" + @study.getId() + "/changeComponentOrder"
-				+ "?componentId=" + componentId + "&direction="
-				+ direction,
-		type : "POST",
-		success : function(response) {
-			componentsTable.ajax.reload();
-			fillSidebar();
-		},
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
+    $.ajax({
+        url : "@{playHttpContext}jatos/" + @study.getId() + "/changeComponentOrder"
+                + "?componentId=" + componentId + "&direction="
+                + direction,
+        type : "POST",
+        success : function(response) {
+            componentsTable.ajax.reload();
+            fillSidebar();
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 }
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
-	$.ajax({
-		url : "@controllers.gui.routes.Studies.toggleLock(study.getId())",
-		type : "POST",
-		success : function(response) {
-			studyLocked = response === 'true';
-			setLockButton(studyLocked);
-			fillSidebar();
-		},
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
+    $.ajax({
+        url : "@controllers.gui.routes.Studies.toggleLock(study.getId())",
+        type : "POST",
+        success : function(response) {
+            studyLocked = response === 'true';
+            setLockButton(studyLocked);
+            fillSidebar();
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
 function setLockButton(locked) {
-	if (locked) {
-		$('#lockStudy').html('Locked');
-		$('#lockStudy').addClass('btn-warning');
-		$('#lockStudy').removeClass('btn-study');
-		$("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
-	} else {
-		$('#lockStudy').html('Unlocked');
-		$('#lockStudy').addClass('btn-study');
-		$('#lockStudy').removeClass('btn-warning');
-		$("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
-	}
+    if (locked) {
+        $('#lockStudy').html('Locked');
+        $('#lockStudy').addClass('btn-warning');
+        $('#lockStudy').removeClass('btn-study');
+        $("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
+    } else {
+        $('#lockStudy').html('Unlocked');
+        $('#lockStudy').addClass('btn-study');
+        $('#lockStudy').removeClass('btn-warning');
+        $("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
+    }
 }
 
 $('#studyToolbar').on('click', '#runStudy', function() {
-	window.location.href = "@controllers.gui.routes.Studies.runStudy(study.getId())";
+    window.location.href = "@controllers.gui.routes.Studies.runStudy(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#studyResults', function() {
-	window.location.href = "@controllers.gui.routes.StudyResults.studysStudyResults(study.getId())";
+    window.location.href = "@controllers.gui.routes.StudyResults.studysStudyResults(study.getId())";
 });
 
-
 $('#studyToolbar').on('click', '#workers', function() {
-	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
+    removeAlerts("#workersModal");
+    generateWorkersTable(true);
+    $('#workersModal').modal('show');
 });
 
 $('#studyToolbar').on('click', '#workerAndBatchManagerButton', function() {
-	window.location.href = "@controllers.gui.routes.Batches.workerAndBatchManager(study.getId())";
+    window.location.href = "@controllers.gui.routes.Batches.workerAndBatchManager(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
-	var title = "Confirm Delete";
-	var htmlText = "<p>You are about to delete study \"@study.getTitle()\" " 
-		+ "(ID @study.getId()) "
-		+ "<b>with all its components, results, and the entire study assets directory, "
-		+ "including the HTML files</b>.</p>"
-		+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-		$.ajax({
-			url : '@controllers.gui.routes.Studies.remove(study.getId())',
-			type : 'DELETE',
-			success : function(result) {
-				window.location.replace('@controllers.gui.routes.Home.home()');
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
-	});
+    var title = "Confirm Delete";
+    var htmlText = "<p>You are about to delete study \"@study.getTitle()\" "
+        + "(ID @study.getId()) "
+        + "<b>with all its components, results, and the entire study assets directory, "
+        + "including the HTML files</b>.</p>"
+        + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+    askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+        $.ajax({
+            url : '@controllers.gui.routes.Studies.remove(study.getId())',
+            type : 'DELETE',
+            success : function(result) {
+                window.location.replace('@controllers.gui.routes.Home.home()');
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
+    });
 });
 
 $('#studyToolbar').on('click', '#cloneStudy', function() {
-	$.ajax({
-		url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
-		type : 'GET',
-		success : function(result) {
-			fillSidebar();
-		},
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
+    $.ajax({
+        url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
+        type : 'GET',
+        success : function(result) {
+            fillSidebar();
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
 $('#studyToolbar').on('click', '#importComponentButton', function() {
-	$('#importComponentBrowser').trigger("click");
+    $('#importComponentBrowser').trigger("click");
 });
 
 $('#studyToolbar').on('change', '#importComponentBrowser', function() {
-	var data = new FormData();
-	var files = $('#importComponentBrowser').prop('files');
-	$.each(files , function(index, value){
-		data.append('@models.gui.ComponentProperties.COMPONENT', value);
-	});
-	$.ajax({
-		url: '@controllers.gui.routes.ImportExport.importComponent(study.getId())',
-		data: data,
-		cache: false,
-		contentType: false,
-		processData: false,
-		type: 'POST',
-		success: importComponentConfirm,
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
+    var data = new FormData();
+    var files = $('#importComponentBrowser').prop('files');
+    $.each(files , function(index, value){
+        data.append('@models.gui.ComponentProperties.COMPONENT', value);
+    });
+    $.ajax({
+        url: '@controllers.gui.routes.ImportExport.importComponent(study.getId())',
+        data: data,
+        cache: false,
+        contentType: false,
+        processData: false,
+        type: 'POST',
+        success: importComponentConfirm,
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
 function importComponentConfirm(response) {
-	if (response.componentExists) {
-		var title = "Component already exists";
-		var htmlText = "<p>It seems a component \"" + response.componentTitle 
-			+ "\" already exists in this study.</p>"
-			+ "<p>Do you want to overwrite this component?</p>";
-		askConfirmation(title, htmlText, 'Overwrite', 'btn-component', function() {
-			postComponentImportConfirm();
-		});
-	} else {
-		var title = "Create component from imported properties";
-		var htmlText = "<p>You are about to create the component \""
-			+ response.componentTitle + "\".</p>"
-			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Create', 'btn-component', function() {
-			postComponentImportConfirm();
-		});
-	}
+    if (response.componentExists) {
+        var title = "Component already exists";
+        var htmlText = "<p>It seems a component \"" + response.componentTitle
+            + "\" already exists in this study.</p>"
+            + "<p>Do you want to overwrite this component?</p>";
+        askConfirmation(title, htmlText, 'Overwrite', 'btn-component', function() {
+            postComponentImportConfirm();
+        });
+    } else {
+        var title = "Create component from imported properties";
+        var htmlText = "<p>You are about to create the component \""
+            + response.componentTitle + "\".</p>"
+            + "<p>Do you want to proceed?</p>";
+        askConfirmation(title, htmlText, 'Create', 'btn-component', function() {
+            postComponentImportConfirm();
+        });
+    }
 }
 
 function postComponentImportConfirm() {
-	$.ajax({
-		type: 'POST',
-		url: '@controllers.gui.routes.ImportExport.importComponentConfirmed(study.getId())',
-		success: function(result) {
-			componentsTable.ajax.reload();
-			showMessages(JSON.parse(result));
-			fillSidebar();
-		},
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
+    $.ajax({
+        type: 'POST',
+        url: '@controllers.gui.routes.ImportExport.importComponentConfirmed(study.getId())',
+        success: function(result) {
+            componentsTable.ajax.reload();
+            showMessages(JSON.parse(result));
+            fillSidebar();
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 }
 
 

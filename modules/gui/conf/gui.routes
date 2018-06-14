@@ -66,8 +66,9 @@ GET      /jatos/:studyId/run                                                @con
 GET      /jatos/:studyId/clone                                              @controllers.gui.Studies.cloneStudy(studyId: Long)
 POST     /jatos/:studyId/lock/toggle                                        @controllers.gui.Studies.toggleLock(studyId: Long)
 GET      /jatos/:studyId/componentsTableData                                @controllers.gui.Studies.tableDataByStudy(studyId: Long)
-GET      /jatos/:studyId/workers                                            @controllers.gui.Studies.workers(studyId: Long)
 GET      /jatos/:studyId/log                                                @controllers.gui.Studies.studyLog(studyId: Long, limit: Integer ?= -1, download: Boolean ?= false)
+GET      /jatos/:studyId/allWorkersWithResults                              @controllers.gui.Studies.allWorkersWithResults(studyId: Long)
+GET      /jatos/:studyId/allWorkers                                         @controllers.gui.Studies.allWorkers(studyId: Long)
 GET      /jatos/:studyId                                                    @controllers.gui.Studies.study(studyId: Long)
 GET      /jatos/:studyId/                                                   @controllers.gui.Studies.study(studyId: Long)
 
@@ -86,8 +87,6 @@ GET      /jatos/:studyId/batch/:batchId/workerSetupData                     @con
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.Batches.batchesByStudy(studyId: Long)
-GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Batches.workersTableDataByStudy(studyId: Long)
-GET      /jatos/:studyId/allWorkersTableData                                @controllers.gui.Batches.allWorkersTableDataByStudy(studyId: Long)
 
 # Components controller
 POST     /jatos/:studyId/component                                          @controllers.gui.Components.submitCreated(studyId: Long)

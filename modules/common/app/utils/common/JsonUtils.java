@@ -482,7 +482,7 @@ public class JsonUtils {
      * Returns a JSON string with the given set of workers wrapped in a data
      * object. Intended for use in JATOS' GUI.
      */
-    public JsonNode allWorkersForTableDataByStudy(Set<Worker> workerSet, Study study) {
+    public JsonNode workersForTableData(Set<Worker> workerSet, Study study) {
         ArrayNode workerArrayNode = Json.mapper().createArrayNode();
         for (Worker worker : workerSet) {
             ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(worker));

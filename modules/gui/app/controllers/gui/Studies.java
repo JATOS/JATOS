@@ -13,10 +13,10 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.StudyLogger;
-import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
+import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
@@ -429,38 +429,6 @@ public class Studies extends Controller {
     }
 
     /**
-     * Shows view that lists all Workers that did the given study.
-     */
-    @Transactional
-    @Authenticated
-    public Result workers(Long studyId, String errorMsg, int httpStatus)
-            throws JatosGuiException {
-        LOGGER.debug(".workers: studyId " + studyId);
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checkStandardForStudy(studyId, study, loggedInUser);
-
-        RequestScopeMessaging.error(errorMsg);
-        String breadcrumbs = breadcrumbsService.generateForStudy(study,
-                BreadcrumbsService.WORKERS);
-        return status(httpStatus, views.html.gui.study.studysWorkers.render(
-                loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study));
-    }
-
-    @Transactional
-    @Authenticated
-    public Result workers(Long studyId, String errorMsg)
-            throws JatosGuiException {
-        return workers(studyId, errorMsg, Http.Status.OK);
-    }
-
-    @Transactional
-    @Authenticated
-    public Result workers(Long studyId) throws JatosGuiException {
-        return workers(studyId, null, Http.Status.OK);
-    }
-
-    /**
      * Ajax request
      *
      * @param studyId    study's ID
@@ -502,6 +470,54 @@ public class Studies extends Controller {
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }
+    }
+
+    /**
+     * Ajax GET request
+     * <p>
+     * Returns a list of workers (as JSON) that did the specified study (have a study result).
+     */
+    @Transactional
+    @Authenticated
+    public Result allWorkersWithResults(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".workersTableDataByStudy: studyId " + studyId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+
+        JsonNode dataAsJson = null;
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+
+            Set<Worker> workerSet = workerService.retrieveWorkersWithStudyResult(study);
+            dataAsJson = jsonUtils.workersForTableData(workerSet, study);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        return ok(dataAsJson);
+    }
+
+    /**
+     * Ajax GET request
+     * <p>
+     * Returns a list of all workers as JSON that belong to this study.
+     */
+    @Transactional
+    @Authenticated
+    public Result allWorkers(Long studyId) throws JatosGuiException {
+        LOGGER.debug(".allWorkersTableData: studyId " + studyId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+
+        JsonNode dataAsJson = null;
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+
+            Set<Worker> workerSet = workerService.retrieveAllWorkers(study);
+            dataAsJson = jsonUtils.workersForTableData(workerSet, study);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        return ok(dataAsJson);
     }
 
     private void checkStandardForStudy(Long studyId, Study study,

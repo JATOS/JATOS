@@ -112,7 +112,7 @@
 
 @views.html.gui.batch.batchPropertiesModal(study)
 @views.html.gui.batch.getWorkerLinksModal(study)
-@views.html.gui.batch.allWorkersModal(study)
+@views.html.gui.batch.workersModal(study)
 @views.html.gui.batch.batchSessionModal(study)
 @views.html.gui.batch.workerSetup(loggedInUser, study, jatosUrl)
 @views.html.gui.batch.mTurkSourceCodeModal(study, jatosUrl)
@@ -155,6 +155,12 @@ $("#createBatchForm").submit(function(event) {
             }
         }
     });
+});
+
+$('#allWorkersButton').click(function(event) {
+    removeAlerts("#workersModal");
+    generateWorkersTable(false);
+    $('#workersModal').modal('show');
 });
 
 function loadBatches() {

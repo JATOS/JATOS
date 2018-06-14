@@ -2,7 +2,7 @@
 @playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Show all workers Modal -->
-<div class="modal fade" id="allWorkersModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+<div class="modal fade" id="workersModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
 
@@ -13,7 +13,7 @@
 
             <div class="modal-body">
                 <!-- All workers table -->
-                <table id="allWorkersTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
                     <thead>
                         <tr>
                             <th data-toggle="tooltip" data-placement="top" title="Click on the ID to go to this worker's results">Worker ID</th>
@@ -37,21 +37,25 @@
 
 var workersTable;
 
-$('#allWorkersButton').click(function(event) {
-    removeAlerts("#allWorkersModal");
-    if (!workersTable) {
-        workersTable = generateAllWorkersTable();
-    } else {
+function generateWorkersTable(onlyWithResults) {
+    if (workersTable) {
         workersTable.ajax.reload();
+        return;
     }
-    $('#allWorkersModal').modal('show');
-});
 
-function generateAllWorkersTable() {
-    return $('#allWorkersTable').DataTable({
+    var url;
+    if (onlyWithResults) {
+        url = '@controllers.gui.routes.Studies.allWorkersWithResults(study.getId())';
+        $('#workersModal .modal-title').text("All workers with results");
+    } else {
+        url = '@controllers.gui.routes.Studies.allWorkers(study.getId())';
+        $('#workersModal .modal-title').text("All workers");
+    }
+
+    workersTable = $('#workersModal .table').DataTable({
         "ajax": {
             "type": "GET",
-            "url" : '@controllers.gui.routes.Batches.allWorkersTableDataByStudy(study.getId())',
+            "url" : url,
             "error": function(reason) {
                     showError("Couldn't read worker data.")
             }
