@@ -183,7 +183,7 @@ $('#addMemberToStudyForm').submit(function(event) {
 	event.preventDefault();
 	var emailToChange = $('#addMemberToStudyForm .email').val();
 	$.ajax({
-		url : '@{playHttpContext}/jatos/' + studyId + '/memberUser?email=' + emailToChange + '&isMember=true',
+		url : '@{playHttpContext}jatos/' + studyId + '/memberUser?email=' + emailToChange + '&isMember=true',
 		type : "POST",
 		success: function(user) {
 			removeAlerts("#changeMemberUsersModal");
