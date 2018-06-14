@@ -70,7 +70,6 @@ public class Studies extends Controller {
     private final IOUtils ioUtils;
     private final FormFactory formFactory;
     private final StudyLogger studyLogger;
-    private final LogFileReader logFileReader;
 
     @Inject
     Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
@@ -80,8 +79,7 @@ public class Studies extends Controller {
             StudyDao studyDao, ComponentDao componentDao,
             StudyResultDao studyResultDao, UserDao userDao,
             ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-            IOUtils ioUtils, FormFactory formFactory, StudyLogger studyLogger,
-            LogFileReader logFileReader) {
+            IOUtils ioUtils, FormFactory formFactory, StudyLogger studyLogger) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.studyService = studyService;
@@ -98,7 +96,6 @@ public class Studies extends Controller {
         this.ioUtils = ioUtils;
         this.formFactory = formFactory;
         this.studyLogger = studyLogger;
-        this.logFileReader = logFileReader;
     }
 
     /**

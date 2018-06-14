@@ -96,6 +96,9 @@ function generateAllWorkersTable() {
 
 function getBatchColumnText(data, type, dataToSet) {
     var batchTitles = [];
+    if (data.workerType == "@common.workers.JatosWorker.WORKER_TYPE") {
+        return "all";
+    }
     data.batchList.forEach(function(batch) {
         batchTitles.push(batch.title);
     });

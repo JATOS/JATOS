@@ -15,6 +15,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.JatosWorker;
+import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
@@ -121,6 +122,10 @@ public class StudyService {
         return cloneTitle;
     }
 
+    /**
+     * Changes the member user in the study. Additionally changes the user's worker in all of the
+     * study's batches. Persisting.
+     */
     public void changeUserMember(Study study, User userToChange, boolean isMember)
             throws ForbiddenException {
         Set<User> userList = study.getUserList();
@@ -129,6 +134,7 @@ public class StudyService {
                 return;
             }
             study.addUser(userToChange);
+            study.getBatchList().forEach(b -> b.addWorker(userToChange.getWorker()));
         } else {
             if (!userList.contains(userToChange)) {
                 return;
@@ -138,28 +144,38 @@ public class StudyService {
                         MessagesStrings.STUDY_AT_LEAST_ONE_USER);
             }
             study.removeUser(userToChange);
+            study.getBatchList().forEach(b -> b.removeWorker(userToChange.getWorker()));
         }
         studyDao.update(study);
         userDao.update(userToChange);
     }
 
     /**
-     * Adds all users as members to the given study.
+     * Adds all users as members to the given study. Additionally adds all user's Jatos workers to
+     * the study's batches.
      */
     public List<User> addAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
         study.getUserList().addAll(userList);
+        List<Worker> usersWorkerList =
+                userList.stream().map(u -> u.getWorker()).collect(Collectors.toList());
+        study.getBatchList().forEach(b -> b.addAllWorkers(usersWorkerList));
+
         studyDao.update(study);
         userList.forEach(userDao::update);
         return userList;
     }
 
     /**
-     * Removes all member users from the given study except the logged-in user.
+     * Removes all member users from the given study except the logged-in user. Additionally removes
+     * all user's Jatos workers to the study's batches (except the logged-in user's workers).
      */
     public List<User> removeAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
         userList.remove(authenticationService.getLoggedInUser());
+        List<Worker> usersWorkerList =
+                userList.stream().map(u -> u.getWorker()).collect(Collectors.toList());
+        study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
         study.getUserList().removeAll(userList);
         studyDao.update(study);
         userList.forEach(userDao::update);

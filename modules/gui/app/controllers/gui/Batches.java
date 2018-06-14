@@ -441,7 +441,7 @@ public class Batches extends Controller {
     /**
      * Ajax GET request
      * <p>
-     * Returns a list of workers (as JSON) that did the specified study.
+     * Returns a list of workers (as JSON) that did the specified study (have a study result).
      */
     @Transactional
     @Authenticated
@@ -455,7 +455,7 @@ public class Batches extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
 
             Set<Worker> workerSet = workerService.retrieveWorkersWithStudyResult(study);
-            dataAsJson = jsonUtils.allWorkersForTableDataByStudy(workerSet, study);
+            dataAsJson = jsonUtils.workersForTableDataByStudy(workerSet, study);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
@@ -480,7 +480,7 @@ public class Batches extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
 
             Set<Worker> workerSet = workerService.retrieveAllWorkers(study);
-            dataAsJson = jsonUtils.allWorkersForTableDataByStudy(workerSet, study);
+            dataAsJson = jsonUtils.workersForTableDataByStudy(workerSet, study);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
