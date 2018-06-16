@@ -37,13 +37,13 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
   val jatosPublixPattern = "(.*)(jatos-publix/javascripts/)(.*)".r
 
   /**
-    * Returns the study asset file that belongs to the study with the given study ID (component ID
-    * is ignored) and has the given relative path within the study assets folder. In difference to
+    * Returns the study asset file that belongs to the study with the given study ID
+    * and has the given relative path within the study assets folder. In difference to
     * the viaAssetsPath method it is not necessary to add the prefix 'study_assets' or the study
     * assets folder name (because it's retrieved from the DB).
     * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
     */
-  def viaStudyPath(studyId: Long, componentId: Long, urlPath: String) =
+  def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String) =
     urlPath match {
       case "jatos.js" => controllers.Assets.at(path =
           "/public/lib/jatos-publix/javascripts", file = "jatos.js")

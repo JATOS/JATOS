@@ -44,6 +44,7 @@ public interface IPublix {
             Long studyResultId) throws PublixException;
 
     /**
+     * Deprecated!
      * HTTP type: Normal GET request
      * <p>
      * Starts the next component of the study with the given ID. Components

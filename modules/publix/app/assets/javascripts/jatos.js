@@ -649,7 +649,7 @@ var jatos = {};
 	 */
 	jatos.batchSession.clear = function (onSuccess, onFail) {
 		var patches = [];
-		Object.keys(batchSessionData).forEach(function(path) {
+		Object.keys(batchSessionData).forEach(function (path) {
 			var patch = generatePatch("remove", "/" + path, null, null);
 			patches.push(patch);
 		});
@@ -829,7 +829,7 @@ var jatos = {};
 
 	/**
 	 * Appends result data for the currently running component back to the JATOS
-     * server. Contrary to jatos.submitResultData it does not overwrite the result
+	 * server. Contrary to jatos.submitResultData it does not overwrite the result
 	 * data. It offers callbacks, either as parameter or via jQuery.deferred.promise,
 	 * to signal success or failure in the transfer.
 	 *
@@ -858,7 +858,7 @@ var jatos = {};
 		var httpMethod = append ? "POST" : "PUT";
 		submittingResultDataDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "resultData" +	"?srid=" + jatos.studyResultId,
+			url: "resultData" + "?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
 			method: httpMethod,
@@ -953,30 +953,25 @@ var jatos = {};
 	 *            componentPos - Position of the component to start
 	 */
 	jatos.startComponentByPos = function (componentPos) {
-		if (startingComponent) {
-			return;
-		}
-		startingComponent = true;
-		var onComplete = function () {
-			window.location.href = "../component/start?position=" + componentPos +
-				"&srid=" + jatos.studyResultId;
-		};
-		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
+		var componentId = jatos.componentList[componentPos - 1].id;
+		jatos.startComponent(componentId);
 	};
 
 	/**
-	 * Starts the next component of this study. The next component is the one with
-	 * position + 1.
+	 * Starts the next active component of this study. The component's order is
+	 * determined by their position. If the current component is already the 
+	 * last one it finishes the study.
 	 */
 	jatos.startNextComponent = function () {
-		if (startingComponent) {
-			return;
+		if (jatos.componentPos >= jatos.componentList.length) {
+			jatos.endStudy(true);
 		}
-		startingComponent = true;
-		var onComplete = function () {
-			window.location.href = "../nextComponent/start" + "?srid=" + jatos.studyResultId;
-		};
-		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
+		for (var i = jatos.componentPos; i < jatos.componentList.length; i++) {
+			if (jatos.componentList[i].active) {
+				jatos.startComponent(jatos.componentList[i].id);
+				break;
+			}
+		}
 	};
 
 	/**
@@ -986,7 +981,7 @@ var jatos = {};
 	jatos.startLastComponent = function () {
 		for (var i = jatos.componentList.length - 1; i >= 0; i--) {
 			if (jatos.componentList[i].active) {
-				jatos.startComponentByPos(i + 1);
+				jatos.startComponent(jatos.componentList[i].id);
 				break;
 			}
 		}
@@ -1396,7 +1391,7 @@ var jatos = {};
 	 */
 	jatos.groupSession.clear = function (onSuccess, onFail) {
 		var patches = [];
-		Object.keys(groupSessionData).forEach(function(path) {
+		Object.keys(groupSessionData).forEach(function (path) {
 			var patch = generatePatch("remove", "/" + path, null, null);
 			patches.push(patch);
 		});
