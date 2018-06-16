@@ -156,7 +156,7 @@ public class Users extends Controller {
         }
 
         userService.bindToUserAndPersist(newUser);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -179,7 +179,7 @@ public class Users extends Controller {
         // Update user in database: so far it's only the user's name
         String name = form.get().getName();
         userService.updateName(loggedInUser, name);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -209,7 +209,7 @@ public class Users extends Controller {
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -251,7 +251,7 @@ public class Users extends Controller {
             authenticationService.clearSessionCookieAndSessionCache(session(),
                     loggedInUser.getEmail(), request().host());
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     private void checkEmailIsOfLoggedInUser(String email, User loggedInUser)

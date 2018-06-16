@@ -255,7 +255,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         studyLogger.log(study, "Aborted study run", worker);
 
         if (HttpUtils.isAjax()) {
-            return ok();
+            return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (message != null) {
                 Controller.flash("info", PublixErrorMessages.studyFinishedWithMessage(message));
@@ -287,7 +287,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         studyLogger.log(study, "Finished study run", worker);
 
         if (HttpUtils.isAjax()) {
-            return ok();
+            return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (errorMsg != null) {
                 Controller.flash("info", PublixErrorMessages.studyFinishedWithMessage(errorMsg));

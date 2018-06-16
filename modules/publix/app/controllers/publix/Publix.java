@@ -108,10 +108,8 @@ public abstract class Publix<T extends Worker> extends Controller
     public Result startComponentByPosition(Long studyId, Integer position,
             Long studyResultId) throws PublixException {
         LOGGER.info(".startComponentByPosition: studyId " + studyId + ", "
-                + "position " + position + ", " + ", " + "studyResultId "
-                + studyResultId);
-        Component component = publixUtils.retrieveComponentByPosition(studyId,
-                position);
+                + "position " + position + ", " + "studyResultId " + studyResultId);
+        Component component = publixUtils.retrieveComponentByPosition(studyId, position);
         return startComponent(studyId, component.getId(), studyResultId);
     }
 
@@ -123,11 +121,9 @@ public abstract class Publix<T extends Worker> extends Controller
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
         Study study = publixUtils.retrieveStudy(studyId);
-        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-                studyResultId);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
 
-        Component nextComponent = publixUtils
-                .retrieveNextActiveComponent(studyResult);
+        Component nextComponent = publixUtils.retrieveNextActiveComponent(studyResult);
         if (nextComponent == null) {
             // Study has no more components -> finish it
             return redirect(controllers.publix.routes.PublixInterceptor

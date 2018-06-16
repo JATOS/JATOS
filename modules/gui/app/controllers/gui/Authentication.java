@@ -69,7 +69,7 @@ public class Authentication extends Controller {
 			authenticationService.writeSessionCookieAndSessionCache(session(),
 					email, request().remoteAddress());
 			if (HttpUtils.isAjax()) {
-				return ok();
+				return ok(" "); // jQuery.ajax cannot handle empty responses
 			} else {
 				return redirect(controllers.gui.routes.Home.home());
 			}

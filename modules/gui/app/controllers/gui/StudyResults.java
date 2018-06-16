@@ -164,7 +164,7 @@ public class StudyResults extends Controller {
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -189,7 +189,7 @@ public class StudyResults extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -215,7 +215,7 @@ public class StudyResults extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**

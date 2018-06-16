@@ -199,7 +199,7 @@ public class Studies extends Controller {
         }
 
         studyService.updateStudy(study, studyProperties);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -249,7 +249,7 @@ public class Studies extends Controller {
             String errorMsg = e.getMessage();
             return internalServerError(errorMsg);
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -276,7 +276,7 @@ public class Studies extends Controller {
             jatosGuiExceptionThrower.throwAjax(e.getMessage(),
                     Http.Status.INTERNAL_SERVER_ERROR);
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -337,7 +337,7 @@ public class Studies extends Controller {
         }
 
         studyService.addAllUserMembers(study);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -355,7 +355,7 @@ public class Studies extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         studyService.removeAllUserMembers(study);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
 
@@ -380,7 +380,7 @@ public class Studies extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**

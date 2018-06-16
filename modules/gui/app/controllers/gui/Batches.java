@@ -231,7 +231,7 @@ public class Batches extends Controller {
             return forbidden("The Batch Session has been updated since you " +
                     "loaded this page. Reload before trying to save again.");
         }
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**
@@ -290,7 +290,7 @@ public class Batches extends Controller {
         }
 
         batchService.updateBatch(currentBatch, batchProperties);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     /**

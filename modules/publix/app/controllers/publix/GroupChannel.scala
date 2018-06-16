@@ -137,7 +137,7 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
         logger.info(s".reassign: studyId $studyId, workerId ${idCookie.getWorkerId} reassigned to" +
           s" group result ${differentGroupResult.getId}")
     }
-    Ok
+    Ok(" ") // jQuery.ajax cannot handle empty responses
   }
 
   /**
@@ -157,14 +157,14 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
     if (groupResult == null) {
       logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} isn't member of a " +
         s"group result - can't leave.")
-      return Ok
+      return Ok(" ") // jQuery.ajax cannot handle empty responses
     }
 
     groupAdministration.leave(studyResult)
     closeGroupChannel(studyResult, groupResult)
     logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} " +
       s"left group result ${groupResult.getId}")
-    Ok
+    Ok(" ") // jQuery.ajax cannot handle empty responses
   }
 
   /**
