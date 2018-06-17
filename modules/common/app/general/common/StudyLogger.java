@@ -59,6 +59,7 @@ public class StudyLogger {
     public static final String TIMESTAMP = "timestamp";
     public static final String MSG = "msg";
     public static final String STUDY_UUID = "studyUuid";
+    public static final String STUDY_DESCRIPTION_HASH = "studyDescriptionHash";
     public static final String JATOS_VERSION = "jatosVersion";
     public static final String SERVERS_MAC = "serversMac";
     public static final String HASH_FUNCTION = "hashFunction";
@@ -131,7 +132,7 @@ public class StudyLogger {
 
     public void retire(Study study) {
         if (!Common.isStudyLogsEnabled()) return;
-        log(study, "Last entry of the study log", Pair.of("studyUuid", study.getUuid()));
+        log(study, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
         Path logPath = Paths.get(getPath(study));
         Path retiredLogPath = Paths.get(getRetiredPath(study));
         if (Files.exists(logPath)) {
@@ -155,7 +156,7 @@ public class StudyLogger {
         if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
-        jsonObj.put(additionalInfo.getKey(), additionalInfo.getValue().toString());
+        jsonObj.put(additionalInfo.getKey(), String.valueOf(additionalInfo.getValue()));
         log(study, jsonObj);
     }
 
@@ -294,6 +295,11 @@ public class StudyLogger {
                 .map(StudyResult::getComponentResultList).flatMap(List::stream)
                 .collect(Collectors.toList());
         logResultDataRemoving(componentResultList);
+    }
+
+    public void logStudyDescriptionHash(Study study) {
+        log(study, "Study description changed",
+                Pair.of(STUDY_DESCRIPTION_HASH, study.getDescriptionHash()));
     }
 
     /**

@@ -1,5 +1,6 @@
 package services.gui;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
@@ -27,6 +28,7 @@ import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -154,32 +156,30 @@ public class StudyService {
      * Adds all users as members to the given study. Additionally adds all user's Jatos workers to
      * the study's batches.
      */
-    public List<User> addAllUserMembers(Study study) {
+    public void addAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
         study.getUserList().addAll(userList);
         List<Worker> usersWorkerList =
-                userList.stream().map(u -> u.getWorker()).collect(Collectors.toList());
+                userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.addAllWorkers(usersWorkerList));
 
         studyDao.update(study);
         userList.forEach(userDao::update);
-        return userList;
     }
 
     /**
      * Removes all member users from the given study except the logged-in user. Additionally removes
      * all user's Jatos workers to the study's batches (except the logged-in user's workers).
      */
-    public List<User> removeAllUserMembers(Study study) {
+    public void removeAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
         userList.remove(authenticationService.getLoggedInUser());
         List<Worker> usersWorkerList =
-                userList.stream().map(u -> u.getWorker()).collect(Collectors.toList());
+                userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
         study.getUserList().removeAll(userList);
         studyDao.update(study);
         userList.forEach(userDao::update);
-        return userList;
     }
 
     /**
@@ -220,8 +220,7 @@ public class StudyService {
      * the default Batch. If the study has components already it persists them
      * too. Adds the given user to the users of this study.
      */
-    public Study createAndPersistStudy(User loggedInUser,
-            StudyProperties studyProperties) {
+    public Study createAndPersistStudy(User loggedInUser, StudyProperties studyProperties) {
         Study study = bindToStudy(studyProperties);
         return createAndPersistStudy(loggedInUser, study);
     }
@@ -259,6 +258,9 @@ public class StudyService {
         studyDao.update(study);
         studyLogger.create(study);
         studyLogger.log(study, "Created study");
+        if (!Strings.isNullOrEmpty(study.getDescription())) {
+            studyLogger.logStudyDescriptionHash(study);
+        }
         return study;
     }
 
@@ -281,9 +283,12 @@ public class StudyService {
      * Update properties of study with properties of updatedStudy.
      */
     public void updateStudy(Study study, Study updatedStudy) {
+        boolean logStudyDescriptionHash =
+                !Objects.equals(study.getDescriptionHash(), updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
         study.setDirName(updatedStudy.getDirName());
         studyDao.update(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study);
     }
 
     /**
@@ -291,8 +296,11 @@ public class StudyService {
      * Study's field dirName.
      */
     public void updateStudyWithoutDirName(Study study, Study updatedStudy) {
+        boolean logStudyDescriptionHash =
+                !Objects.equals(study.getDescriptionHash(), updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
         studyDao.update(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study);
     }
 
     private void updateStudyCommon(Study study, Study updatedStudy) {
@@ -307,8 +315,11 @@ public class StudyService {
      * dirName field.
      */
     public void updateStudy(Study study, StudyProperties studyProperties) {
+        boolean logStudyDescriptionHash =
+                !Objects.equals(study.getDescription(), studyProperties.getDescription());
         bindToStudyWithoutDirName(study, studyProperties);
         studyDao.update(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study);
     }
 
     /**
