@@ -6,11 +6,13 @@ study: common.Study, workersSize: Integer, studyResultsCount: Integer)
 
 @if(study.getDescription() != null && !study.getDescription().isEmpty()) {
 <div class="panel panel-default">
+} else {
+<div class="panel panel-default" hidden>
+}
     <div id="studyDescription" class="panel-body fixed-panel">
         @study.getDescription()
     </div>
 </div>
-}
 
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
