@@ -497,8 +497,6 @@ var jatos = {};
 					batchSessionTimeout.trigger();
 					break;
 				case "ERROR":
-					// onError or jatos.onError
-					// Got an erro
 					callingOnError(null, batchMsg.errorMsg);
 					break;
 			}
@@ -901,8 +899,7 @@ var jatos = {};
 		try {
 			studySessionDataStr = JSON.stringify(studySessionData);
 		} catch (error) {
-			callingOnError(null, error);
-			callFunctionIfExist(onFail);
+			callingOnError(onFail, error);
 			deferred.reject(errMsg);
 			return deferred;
 		}
@@ -1741,7 +1738,7 @@ var jatos = {};
 	 */
 	jatos.abortStudy = function (message) {
 		if (isDeferredPending(abortingDeferred)) {
-			callingOnError(onError, "Can abort only once");
+			callingOnError(null, "Can abort only once");
 			return rejectedPromise();
 		}
 
@@ -1835,7 +1832,7 @@ var jatos = {};
 	 */
 	jatos.endStudy = function (successful, errorMsg) {
 		if (isDeferredPending(endingDeferred)) {
-			callingOnError(onError, "Can end only once");
+			callingOnError(null, "Can end only once");
 			return rejectedPromise();
 		}
 
@@ -1961,7 +1958,8 @@ var jatos = {};
 
 	/**
 	 * Little helper function that calls error functions. First it tries to call the
-	 * given onError one. If this fails it tries the onJatosError.
+	 * given onError one. If this fails it tries the onJatosError. If this fails
+	 * it calls console.error.
 	 */
 	function callingOnError(onError, errorMsg) {
 		if (onError) {
