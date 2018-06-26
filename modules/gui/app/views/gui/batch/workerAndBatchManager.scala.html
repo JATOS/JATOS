@@ -235,9 +235,9 @@ $('#batchList').on('click', '.batchRefreshButton', function() {
     if (!batch) {return} // should never happen
 
     var batchItem = $(this).closest('.batchItem');
+    refreshBatch(batchItem, batch);
     var workerSetupDiv = $(batchItem).find('.workerSetupItem');
     if (workerSetupDiv.length == 0) {return} // might happen if worker setup was never opened
-    refreshBatch(batchItem, batch);
     loadWorkers(batch.id, workerSetupDiv);
 });
 
