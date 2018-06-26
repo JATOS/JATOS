@@ -35,13 +35,6 @@ public class ComponentResultDao extends AbstractDao {
         super.remove(componentResult);
     }
 
-    public void removeAll(List<ComponentResult> componentResultList) {
-        if (componentResultList.isEmpty()) return;
-        String queryStr = "DELETE FROM ComponentResult cr WHERE cr in :crList";
-        Query query = jpa.em().createQuery(queryStr);
-        query.setParameter("crList", componentResultList).executeUpdate();
-    }
-
     public void refresh(ComponentResult componentResult) {
         super.refresh(componentResult);
     }

@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
-import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
 import general.common.StudyLogger;
 import models.common.Batch;
@@ -32,19 +31,16 @@ public class BatchService {
     private final BatchDao batchDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
-    private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
     private final StudyLogger studyLogger;
 
     @Inject
     BatchService(ResultRemover resultRemover, BatchDao batchDao, StudyDao studyDao,
-            WorkerDao workerDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-            StudyLogger studyLogger) {
+            WorkerDao workerDao, GroupResultDao groupResultDao, StudyLogger studyLogger) {
         this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
-        this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
         this.studyLogger = studyLogger;
     }
@@ -71,7 +67,7 @@ public class BatchService {
     /**
      * Initialises Batch. Does NOT persist.
      */
-    public Batch createBatch(Batch batch, Study study) {
+    Batch createBatch(Batch batch, Study study) {
         initBatch(batch, study);
         batch.setStudy(study);
         return batch;
@@ -219,7 +215,7 @@ public class BatchService {
         resultRemover.removeAllStudyResults(batch);
 
         // Delete all GroupResults
-        groupResultDao.removeAll(groupResultDao.findAllByBatch(batch));
+        groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
 
         // Remove or update Workers of this batch
         for (Worker worker : batch.getWorkerList()) {

@@ -1,7 +1,6 @@
 package services.gui;
 
 import daos.common.ComponentDao;
-import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
@@ -34,17 +33,14 @@ public class ComponentService {
     private final ResultRemover resultRemover;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
-    private final ComponentResultDao componentResultDao;
     private final IOUtils ioUtils;
 
     @Inject
     ComponentService(ResultRemover resultRemover, StudyDao studyDao,
-            ComponentDao componentDao, ComponentResultDao componentResultDao,
-            IOUtils ioUtils) {
+            ComponentDao componentDao, IOUtils ioUtils) {
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
-        this.componentResultDao = componentResultDao;
         this.ioUtils = ioUtils;
     }
 
@@ -80,7 +76,7 @@ public class ComponentService {
     /**
      * Update component's properties with the ones from updatedComponent.
      */
-    public void updateProperties(Component component,
+    void updateProperties(Component component,
             Component updatedComponent) {
         component.setTitle(updatedComponent.getTitle());
         component.setReloadable(updatedComponent.isReloadable());
@@ -146,7 +142,7 @@ public class ComponentService {
     /**
      * Initialise but NOT persists the given Component. Generates UUID.
      */
-    public Component createComponent(Study study, Component component) {
+    Component createComponent(Study study, Component component) {
         if (component.getUuid() == null) {
             component.setUuid(UUID.randomUUID().toString());
         }

@@ -66,8 +66,8 @@ public class ResultRemover {
                 resultService.getComponentResults(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, true);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
-        componentResultDao.removeAll(componentResultList);
         studyLogger.logResultDataRemoving(componentResultList);
+        componentResultList.forEach(this::removeComponentResult);
     }
 
     /**
@@ -99,20 +99,20 @@ public class ResultRemover {
                 componentResultDao.findAllByComponent(component);
         checker.checkComponentResults(componentResultList, user, true);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
-        componentResultDao.removeAll(componentResultList);
         studyLogger.logResultDataRemoving(componentResultList);
+        componentResultList.forEach(this::removeComponentResult);
     }
 
     /**
      * Removes all ComponentResults that belong to the given component. Remove them from their
      * StudyResults.
      */
-    public void removeAllComponentResults(Component component) {
+    void removeAllComponentResults(Component component) {
         List<ComponentResult> componentResultList =
                 componentResultDao.findAllByComponent(component);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
         studyLogger.logResultDataRemoving(componentResultList);
-        componentResultDao.removeAll(componentResultList);
+        componentResultList.forEach(this::removeComponentResult);
     }
 
     private void removeComponentResultFromStudyResult(ComponentResult componentResult) {
@@ -157,10 +157,26 @@ public class ResultRemover {
     /**
      * Removes all StudyResults that belong to the given batch.
      */
-    public void removeAllStudyResults(Batch batch) {
+    void removeAllStudyResults(Batch batch) {
         List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
         studyLogger.logStudyResultDataRemoving(studyResultList);
         studyResultList.forEach(this::removeStudyResult);
+    }
+
+    /**
+     * Remove ComponentResult from its StudyResult and then remove itself.
+     */
+    private void removeComponentResult(ComponentResult componentResult) {
+        StudyResult studyResult = componentResult.getStudyResult();
+        if (studyResult != null) {
+            studyResult.removeComponentResult(componentResult);
+            studyResultDao.update(studyResult);
+        } else {
+            LOGGER.error(".removeComponentResult: StudyResult is null - "
+                    + "but a ComponentResult always belongs to a StudyResult "
+                    + "(ComponentResult's ID is " + componentResult.getId() + ")");
+        }
+        componentResultDao.remove(componentResult);
     }
 
     /**
@@ -170,7 +186,7 @@ public class ResultRemover {
      */
     private void removeStudyResult(StudyResult studyResult) {
         // Remove all component results of this study result
-        componentResultDao.removeAll(studyResult.getComponentResultList());
+        studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
         // Remove study result from worker
         Worker worker = studyResult.getWorker();

@@ -7,7 +7,6 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
@@ -35,13 +34,6 @@ public class GroupResultDao extends AbstractDao {
 
     public void remove(GroupResult groupResult) {
         super.remove(groupResult);
-    }
-
-    public void removeAll(List<GroupResult> groupResultList) {
-        if (groupResultList.isEmpty()) return;
-        String queryStr = "DELETE FROM GroupResult gr WHERE gr in :grList";
-        Query query = jpa.em().createQuery(queryStr);
-        query.setParameter("grList", groupResultList).executeUpdate();
     }
 
     public void refresh(GroupResult groupResult) {
