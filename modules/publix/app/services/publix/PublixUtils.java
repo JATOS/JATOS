@@ -272,10 +272,8 @@ public abstract class PublixUtils<T extends Worker> {
      * Returns the last ComponentResult in the given StudyResult (not study!) or
      * null if it doesn't exist.
      */
-    public ComponentResult retrieveLastComponentResult(
-            StudyResult studyResult) {
-        List<ComponentResult> componentResultList = studyResult
-                .getComponentResultList();
+    public ComponentResult retrieveLastComponentResult(StudyResult studyResult) {
+        List<ComponentResult> componentResultList = studyResult.getComponentResultList();
         if (!componentResultList.isEmpty()) {
             return componentResultList.get(componentResultList.size() - 1);
         } else {
@@ -288,23 +286,17 @@ public abstract class PublixUtils<T extends Worker> {
      * or null if it doesn't exist.
      */
     public Component retrieveLastComponent(StudyResult studyResult) {
-        ComponentResult componentResult = retrieveLastComponentResult(
-                studyResult);
-        return (componentResult != null) ? componentResult.getComponent()
-                : null;
+        ComponentResult componentResult = retrieveLastComponentResult(studyResult);
+        return (componentResult != null) ? componentResult.getComponent() : null;
     }
 
     /**
      * Returns the last ComponentResult of this studyResult but only if it's not
      * 'done'. Returns null if such ComponentResult doesn't exists.
      */
-    public ComponentResult retrieveCurrentComponentResult(
-            StudyResult studyResult) {
-        ComponentResult componentResult = retrieveLastComponentResult(
-                studyResult);
-        if (PublixHelpers.componentDone(componentResult)) {
-            return null;
-        }
+    public ComponentResult retrieveCurrentComponentResult(StudyResult studyResult) {
+        ComponentResult componentResult = retrieveLastComponentResult(studyResult);
+        if (PublixHelpers.componentDone(componentResult)) return null;
         return componentResult;
     }
 
@@ -350,12 +342,10 @@ public abstract class PublixUtils<T extends Worker> {
      */
     public Component retrieveNextActiveComponent(StudyResult studyResult) {
         Component currentComponent = retrieveLastComponent(studyResult);
-        Component nextComponent = studyResult.getStudy()
-                .getNextComponent(currentComponent);
+        Component nextComponent = studyResult.getStudy().getNextComponent(currentComponent);
         // Find next active component or null if study has no more components
         while (nextComponent != null && !nextComponent.isActive()) {
-            nextComponent = studyResult.getStudy()
-                    .getNextComponent(nextComponent);
+            nextComponent = studyResult.getStudy().getNextComponent(nextComponent);
         }
         return nextComponent;
     }
