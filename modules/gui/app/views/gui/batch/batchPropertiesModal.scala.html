@@ -51,14 +51,14 @@
                                 <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
                             </label></div>
                             <div class="checkbox"><label>
-                                <input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-mturk"></span> @common.workers.MTWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once."></span>
-                            </label></div>
-                            <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE">
                                 <span class="glyphicon glyphicon-general-single"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE
                                 <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website."></span>
+                            </label></div>
+                            <div class="checkbox"><label>
+                                <input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE">
+                                <span class="glyphicon glyphicon-mturk"></span> @common.workers.MTWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once."></span>
                             </label></div>
                         </div>
                     </div>
@@ -147,6 +147,7 @@ $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED'
 
 $('#batchList').on('click', '.batchPropertiesButton', function() {
     var batch = getBatchData(this);
+    var batchItem = $(this).closest('.batchItem');
     if (!batch) {return} // should never happen
     $.ajax({
         type: 'GET',
@@ -155,7 +156,7 @@ $('#batchList').on('click', '.batchPropertiesButton', function() {
             removeAlerts('#batchPropertiesModal');
             removeFormErrors('#batchPropertiesModal')
             clearForm("#batchPropertiesForm");
-            fillbatchPropertiesForm(properties);
+            fillbatchPropertiesForm(batch, properties, batchItem);
             $('#batchPropertiesModal').modal('show');
         },
         error: function(response) {
@@ -164,8 +165,10 @@ $('#batchList').on('click', '.batchPropertiesButton', function() {
     });
 });
 
-function fillbatchPropertiesForm(properties) {
-    $('#batchPropertiesModal').data(properties);
+function fillbatchPropertiesForm(batch, properties, batchItem) {
+    $('#batchPropertiesModal').data('batch', batch);
+    $('#batchPropertiesModal').data('properties', properties);
+    $('#batchPropertiesModal').data('batchItem', batchItem);
     $('#batchPropertiesModal .@models.gui.BatchProperties.ID').text(properties['@models.gui.BatchProperties.ID']);
     $('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
     $('#batchPropertiesModal .@models.gui.BatchProperties.COMMENTS').val(properties['@models.gui.BatchProperties.COMMENTS']);
@@ -230,7 +233,7 @@ $("#batchPropertiesForm .prettyButton").click(function(event) {
 
 $("#batchPropertiesForm").submit(function(event) {
     event.preventDefault();
-    var batchProps = $('#batchPropertiesModal').data();
+    var batchProps = $('#batchPropertiesModal').data('properties');
     if (!batchProps) {return} // should never happen
     $.ajax({
         type: 'POST',
@@ -240,7 +243,12 @@ $("#batchPropertiesForm").submit(function(event) {
             removeAlerts('#batchPropertiesModal');
             removeFormErrors('#batchPropertiesModal')
             $('#batchPropertiesModal').modal('hide');
-            loadBatchList();
+            var batchItem = $('#batchPropertiesModal').data('batchItem');
+            var batch = $('#batchPropertiesModal').data('batch');
+            refreshBatch(batchItem, batch);
+            var workerSetupDiv = $(batchItem).find('.workerSetupItem');
+            if (workerSetupDiv.length == 0) {return} // might happen if worker setup was never opened
+            loadWorkers(batch.id, workerSetupDiv);
         },
         error: function(response) {
             removeAlerts('#batchPropertiesModal');
