@@ -1,13 +1,14 @@
 package group
 
-import javax.inject.{Inject, Singleton}
-
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor.SupervisorStrategy.Resume
+import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy}
 import group.GroupDispatcherRegistry.{Get, GetOrCreate, ItsThisOne, Unregister}
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 /**
   * A GroupDispatcherRegistry is an Akka Actor keeps track of all
@@ -48,9 +49,19 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
                                         dispatcherFactory: GroupDispatcher.Factory,
                                         actionHandler: GroupActionHandler,
                                         actionMsgBuilder: GroupActionMsgBuilder)
-  extends Actor with InjectedActorSupport {
+    extends Actor with InjectedActorSupport {
 
   private val logger: Logger = Logger(this.getClass)
+
+  /**
+    * Override this Actor's supervisor strategy: in case of an Exception resume child actor without
+    * stopping. This means that even if a GroupDispatcher throws an Exceptions it continues
+    * running and keeps its internal state (incl registered channels).
+    */
+  override val supervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, true) {
+      case _: Exception => Resume
+    }
 
   /**
     * Contains the dispatchers that are currently registered. Maps the an ID to the ActorRef.

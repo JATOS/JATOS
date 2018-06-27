@@ -1,13 +1,14 @@
 package batch
 
-import javax.inject.{Inject, Singleton}
-
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor.SupervisorStrategy.Resume
+import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy}
 import batch.BatchDispatcherRegistry.{GetOrCreate, ItsThisOne, Unregister}
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 /**
   * A BatchDispatcherRegistry is an Akka Actor that keeps track of all BatchDispatcher Actors.
@@ -42,9 +43,19 @@ class BatchDispatcherRegistry @Inject()(actorSystem: ActorSystem,
                                         dispatcherFactory: BatchDispatcher.Factory,
                                         actionHandler: BatchActionHandler,
                                         actionMsgBuilder: BatchActionMsgBuilder)
-  extends Actor with InjectedActorSupport {
+    extends Actor with InjectedActorSupport {
 
   private val logger: Logger = Logger(this.getClass)
+
+  /**
+    * Override this Actor's supervisor strategy: in case of an Exception resume child actor without
+    * stopping. This means that even if a BatchDispatcher throws an Exceptions it continues
+    * running and keeps its internal state (incl registered channels).
+    */
+  override val supervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, true) {
+      case _: Exception => Resume
+    }
 
   /**
     * Contains the dispatchers that are currently registered. Maps the an ID to the ActorRef.
