@@ -8,6 +8,7 @@ import group.GroupDispatcher._
 import group.GroupDispatcherRegistry.Unregister
 import javax.inject.Inject
 import play.api.Logger
+import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Json}
 
 /**
@@ -199,7 +200,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     } else if (msg.json.keys.contains(GroupActionJsonKey.Recipient.toString)) {
       // We have a message intended for only one recipient (direct msg)
       // Recipient's study result ID comes as a string with quotes and we have to convert to Long
-      val recipient = (msg.json \ GroupActionJsonKey.Recipient.toString).get.toString()
+      val recipient = (msg.json \ GroupActionJsonKey.Recipient.toString).as[String]
           .replace("\"", "").toLong
       tellRecipientOnly(msg, recipient)
 
