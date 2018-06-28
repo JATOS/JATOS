@@ -63,17 +63,17 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
 
       try {
         val clientsVersion = (json \ GroupActionJsonKey.SessionVersion.toString).as[Long]
-        val patch = (json \ GroupActionJsonKey.SessionPatches.toString).get
-        val patchedSessionData = patchSessionData(patch, groupResult)
+        val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
+        val patchedSessionData = patchSessionData(patches, groupResult)
         logger.debug(s".handlePatch: groupResultId $groupResultId, " +
           s"clientsVersion $clientsVersion, " +
-          s"groupSessionPatch ${Json.stringify(patch)}, " +
+          s"groupSessionPatch ${Json.stringify(patches)}, " +
           s"updatedSessionData ${Json.stringify(patchedSessionData)}")
 
         val success = checkVersionAndPersistSessionData(patchedSessionData, groupResult,
           clientsVersion)
         if (success) {
-          val msg1 = msgBuilder.buildSessionPatch(groupResult, studyResultId, patch, TellWhom.All)
+          val msg1 = msgBuilder.buildSessionPatch(groupResult, studyResultId, patches, TellWhom.All)
           val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, TellWhom
             .SenderOnly)
           List(msg1, msg2)
@@ -89,12 +89,19 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     }))
   }
 
-  private def patchSessionData(patch: JsValue, groupResult: GroupResult): JsValue = {
+  private def patchSessionData(patches: JsValue, groupResult: GroupResult): JsValue = {
     val currentSessionData =
       if (!Strings.isNullOrEmpty(groupResult.getGroupSessionData))
         Json.parse(groupResult.getGroupSessionData)
       else Json.obj()
-    JsonPatch.apply(patch)(currentSessionData)
+
+    // Fix for gnieh.diffson JsonPatch for "remove" and "/" - clear session data
+    // Assumes the 'remove' operation is in the first JSON patch
+    if ((patches \ 0 \ "op").as[String] == "remove" && (patches \ 0 \ "path").as[String] == "/") {
+      return Json.obj()
+    }
+
+    JsonPatch.apply(patches)(currentSessionData)
   }
 
   /**

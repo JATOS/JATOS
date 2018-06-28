@@ -1,13 +1,13 @@
 package batch
 
-import javax.inject.{Inject, Singleton}
-
 import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 import com.google.common.base.Strings
 import daos.common.BatchDao
 import gnieh.diffson.playJson._
+import javax.inject.{Inject, Singleton}
 import models.common.Batch
 import play.api.Logger
+import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.db.jpa.JPAApi
 
@@ -53,15 +53,15 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
 
       try {
         val clientsVersion = (json \ BatchActionJsonKey.SessionVersion.toString).as[Long]
-        val patch = (json \ BatchActionJsonKey.SessionPatches.toString).get
-        val patchedSessionData = patchSessionData(patch, batch)
+        val patches = (json \ BatchActionJsonKey.SessionPatches.toString).get
+        val patchedSessionData = patchSessionData(patches, batch)
         logger.debug(s".handlePatch: batchId $batchId, " +
-          s"clientsVersion $clientsVersion, batchSessionPatch ${Json.stringify(patch)}, " +
-          s"updatedSessionData ${Json.stringify(patchedSessionData)}")
+            s"clientsVersion $clientsVersion, batchSessionPatch ${Json.stringify(patches)}, " +
+            s"updatedSessionData ${Json.stringify(patchedSessionData)}")
 
         val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion)
         if (success) {
-          val msg1 = msgBuilder.buildSessionPatch(batch, patch, TellWhom.All)
+          val msg1 = msgBuilder.buildSessionPatch(batch, patches, TellWhom.All)
           val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, TellWhom.SenderOnly)
           List(msg1, msg2)
         } else
@@ -70,18 +70,25 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
       } catch {
         case e: Exception =>
           logger.warn(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
-            s"${e.getClass.getName}: ${e.getMessage}")
+              s"${e.getClass.getName}: ${e.getMessage}")
           List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, TellWhom.SenderOnly))
       }
     }))
   }
 
-  private def patchSessionData(patch: JsValue, batch: Batch): JsValue = {
+  private def patchSessionData(patches: JsValue, batch: Batch): JsValue = {
     val currentSessionData =
       if (!Strings.isNullOrEmpty(batch.getBatchSessionData))
         Json.parse(batch.getBatchSessionData)
       else Json.obj()
-    JsonPatch.apply(patch)(currentSessionData)
+
+    // Fix for gnieh.diffson JsonPatch for "remove" and "/" - clear all session data
+    // Assumes the 'remove' operation is in the first JSON patch
+    if ((patches \ 0 \ "op").as[String] == "remove" && (patches \ 0 \ "path").as[String] == "/") {
+      return Json.obj()
+    }
+
+    JsonPatch.apply(patches)(currentSessionData)
   }
 
   /**

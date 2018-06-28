@@ -50,11 +50,11 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
   /**
     * Builds a BatchActionMessage with the batch session patch and version
     */
-  def buildSessionPatch(batch: Batch, patch: JsValue, tellWhom: TellWhom): BatchMsg = {
+  def buildSessionPatch(batch: Batch, patches: JsValue, tellWhom: TellWhom): BatchMsg = {
     logger.debug(s".buildSessionPatch: batchId ${batch.getId}")
     val json = Json.obj(
       BatchActionJsonKey.Action.toString -> BatchAction.Session.toString,
-      BatchActionJsonKey.SessionPatches.toString -> patch,
+      BatchActionJsonKey.SessionPatches.toString -> patches,
       BatchActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(batch
         .getBatchSessionVersion)))
     BatchMsg(json, tellWhom)

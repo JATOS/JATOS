@@ -73,13 +73,13 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
   /**
     * Builds a GroupMsg with the group session patch and version
     */
-  def buildSessionPatch(groupResult: GroupResult, studyResultId: Long, patch: JsValue,
+  def buildSessionPatch(groupResult: GroupResult, studyResultId: Long, patches: JsValue,
                         tellWhom: TellWhom): GroupMsg = {
     logger.debug(s".buildSessionPatch: groupResultId ${groupResult.getId}, studyResultId " +
         s"$studyResultId")
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> GroupAction.Session.toString,
-      GroupActionJsonKey.SessionPatches.toString -> patch,
+      GroupActionJsonKey.SessionPatches.toString -> patches,
       GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
           .getGroupSessionVersion)))
     GroupMsg(json, tellWhom)

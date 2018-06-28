@@ -483,12 +483,11 @@ var jatos = {};
 		function handleBatchAction(batchMsg) {
 			switch (batchMsg.action) {
 				case "SESSION":
-					// Call onJatosBatchSession with JSON Patch's path
-					if (batchMsg.patches[0] && batchMsg.patches[0].path) {
-						callFunctionIfExist(onJatosBatchSession, batchMsg.patches[0].path);
-					} else {
-						callFunctionIfExist(onJatosBatchSession);
-					}
+					// Call onJatosBatchSession with JSON Patch's path and 
+					// op (operation) for each patch
+					batchMsg.patches.forEach( function(patch) {
+						callFunctionIfExist(onJatosBatchSession, patch.path, patch.op);
+					});
 					break;
 				case "SESSION_ACK":
 					batchSessionTimeout.cancel();
@@ -636,8 +635,7 @@ var jatos = {};
 	};
 
 	/**
-	 * Clears the batch session data. It actually does a 'remove' on
-	 * every sub-object.
+	 * Clears the batch session data.
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
@@ -646,16 +644,8 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.clear = function (onSuccess, onFail) {
-		var patches = [];
-		Object.keys(batchSessionData).forEach(function (path) {
-			var patch = generatePatch("remove", "/" + path, null, null);
-			patches.push(patch);
-		});
-		if (patches.length !== 0) {
-			return sendBatchSessionPatch(patches, onSuccess, onFail);
-		} else {
-			return resolvedPromise();
-		}
+		var patch = generatePatch("remove", "/", null, null);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
@@ -1226,13 +1216,12 @@ var jatos = {};
 				break;
 			case "SESSION":
 				// onGroupSession
-				// Got updated group session data and version
-				// Call onGroupSession with JSON Patch's path
-				if (groupMsg.sessionPatches[0] && groupMsg.sessionPatches[0].path) {
-					callFunctionIfExist(callbacks.onGroupSession, groupMsg.sessionPatches[0].path);
-				} else {
-					callFunctionIfExist(callbacks.onGroupSession);
-				}
+				// Got updated group session data and version.
+				// Call onGroupSession with JSON Patch's path 
+				// and op (operation) for each patch.
+				groupMsg.sessionPatches.forEach( function(patch) {
+					callFunctionIfExist(callbacks.onGroupSession, patch.path, patch.op);
+				});
 				callFunctionIfExist(callbacks.onUpdate);
 				break;
 			case "FIXED":
@@ -1377,8 +1366,7 @@ var jatos = {};
 	};
 
 	/**
-	 * Clears the group session data. It actually does a 'remove' on
-	 * every object of the session.
+	 * Clears the group session data.
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
@@ -1387,16 +1375,8 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.clear = function (onSuccess, onFail) {
-		var patches = [];
-		Object.keys(groupSessionData).forEach(function (path) {
-			var patch = generatePatch("remove", "/" + path, null, null);
-			patches.push(patch);
-		});
-		if (patches.length !== 0) {
-			return sendGroupSessionPatch(patches, onSuccess, onFail);
-		} else {
-			return resolvedPromise();
-		}
+		var patch = generatePatch("remove", "/", null, null);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
@@ -1916,15 +1896,11 @@ var jatos = {};
 	};
 
 	/**
-	 * Calls the function f it f exists. It calls f with parameter a if a exists.
+	 * Calls the function f it f exists with parameters a and b. 
 	 */
-	function callFunctionIfExist(f, a) {
+	function callFunctionIfExist(f, a, b) {
 		if (f && typeof f == 'function') {
-			if (typeof a != 'undefined') {
-				f(a);
-			} else {
-				f();
-			}
+			f(a, b);
 		}
 	}
 
