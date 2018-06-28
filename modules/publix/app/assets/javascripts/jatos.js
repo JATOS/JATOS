@@ -458,7 +458,14 @@ var jatos = {};
 			}
 
 			if (typeof batchMsg.patches != 'undefined') {
-				jsonpatch.apply(batchSessionData, batchMsg.patches);
+				// Add to JSON-Patch for "remove" and "/" - clear all session data
+				// Assumes the 'remove' operation is in the first JSON patch
+				if (batchMsg.patches[0].op == "remove" &&
+					batchMsg.patches[0].path == "/") {
+					batchSessionData = {};
+				} else {
+					jsonpatch.apply(batchSessionData, batchMsg.patches);
+				}
 			}
 			if (typeof batchMsg.data != 'undefined') {
 				if (batchMsg.data === null) {
@@ -485,7 +492,7 @@ var jatos = {};
 				case "SESSION":
 					// Call onJatosBatchSession with JSON Patch's path and 
 					// op (operation) for each patch
-					batchMsg.patches.forEach( function(patch) {
+					batchMsg.patches.forEach(function (patch) {
 						callFunctionIfExist(onJatosBatchSession, patch.path, patch.op);
 					});
 					break;
@@ -1155,7 +1162,14 @@ var jatos = {};
 			jatos.groupChannels = groupMsg.channels;
 		}
 		if (typeof groupMsg.sessionPatches != 'undefined') {
-			jsonpatch.apply(groupSessionData, groupMsg.sessionPatches);
+			// Add to JSON-Patch for "remove" and "/" - clear all session data
+			// Assumes the 'remove' operation is in the first JSON patch
+			if (groupMsg.sessionPatches[0].op == "remove" &&
+				groupMsg.sessionPatches[0].path == "/") {
+				groupSessionData = {};
+			} else {
+				jsonpatch.apply(groupSessionData, groupMsg.sessionPatches);
+			}
 		}
 		if (typeof groupMsg.sessionData != 'undefined') {
 			if (groupMsg.sessionData === null) {
@@ -1219,7 +1233,7 @@ var jatos = {};
 				// Got updated group session data and version.
 				// Call onGroupSession with JSON Patch's path 
 				// and op (operation) for each patch.
-				groupMsg.sessionPatches.forEach( function(patch) {
+				groupMsg.sessionPatches.forEach(function (patch) {
 					callFunctionIfExist(callbacks.onGroupSession, patch.path, patch.op);
 				});
 				callFunctionIfExist(callbacks.onUpdate);
