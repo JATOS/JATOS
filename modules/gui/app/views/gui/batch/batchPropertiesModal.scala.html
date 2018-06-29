@@ -175,6 +175,11 @@ function fillbatchPropertiesForm(batch, properties, batchItem) {
     setInputGroupWithCheckbox('batchPropertiesModal',
             '@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED',
             '@models.gui.BatchProperties.MAX_TOTAL_WORKERS', properties);
+    // First clear all allowed worker types checkboxes
+    $('#allowedWorkerTypes input').each(function() {
+        $(this).prop('checked', false);
+    });
+    // Set allowed worker types checkboxes
     $.each(properties['allowedWorkerTypes'], function(index, workerType) {
         $('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
     });
