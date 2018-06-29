@@ -114,7 +114,7 @@ public class StudyLoggerTest {
         assertThat(Files.exists(retiredLogPath)).isTrue();
 
         List<String> content = Files.readAllLines(retiredLogPath);
-        JsonNode json = Json.parse(content.get(3)); // First line is empty, second line is init msg
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("studyUuid")).isTrue();
@@ -136,20 +136,20 @@ public class StudyLoggerTest {
 
         // Check they wrote something into the log
         List<String> content = Files.readAllLines(logPath);
-        // First line is always empty and second line is the initial msg
-        assertThat(content.get(3)).contains("bla bla bla");
-        assertThat(content.get(4)).contains("foo foo foo");
-        assertThat(content.get(4)).contains("\"batchId\":" + study.getDefaultBatch().getId());
-        assertThat(content.get(5)).contains("bar bar bar");
-        assertThat(content.get(5))
-                .contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
-        assertThat(content.get(6)).contains("fuu fuu fuu");
-        assertThat(content.get(6)).contains("\"batchId\":" + study.getDefaultBatch().getId());
+        // First line is always empty, second line is the initial msg, third line is study created, fourth line is study description
+        assertThat(content.get(4)).contains("bla bla bla");
+        assertThat(content.get(5)).contains("foo foo foo");
+        assertThat(content.get(5)).contains("\"batchId\":" + study.getDefaultBatch().getId());
+        assertThat(content.get(6)).contains("bar bar bar");
         assertThat(content.get(6))
                 .contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
-        assertThat(content.get(7)).contains("bir bir bir");
-        assertThat(content.get(7)).contains("\"birkey\":\"birvalue\"");
-        assertThat(content.get(8)).contains("\"burkey\":\"burvalue\"");
+        assertThat(content.get(7)).contains("fuu fuu fuu");
+        assertThat(content.get(7)).contains("\"batchId\":" + study.getDefaultBatch().getId());
+        assertThat(content.get(7))
+                .contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
+        assertThat(content.get(8)).contains("bir bir bir");
+        assertThat(content.get(8)).contains("\"birkey\":\"birvalue\"");
+        assertThat(content.get(9)).contains("\"burkey\":\"burvalue\"");
     }
 
     @Test
@@ -165,7 +165,7 @@ public class StudyLoggerTest {
 
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(3)); // First line is empty, second line is init msg
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
@@ -195,7 +195,7 @@ public class StudyLoggerTest {
 
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(3)); // First line is empty, second line is init msg
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("msg")).isTrue();
@@ -227,7 +227,7 @@ public class StudyLoggerTest {
 
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(3)); // First line is empty, second line is init msg
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
@@ -253,7 +253,7 @@ public class StudyLoggerTest {
 
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(3)); // First line is empty, second line is init msg
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
@@ -282,7 +282,7 @@ public class StudyLoggerTest {
 
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(3)); // First line is empty, second line is init msg
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
