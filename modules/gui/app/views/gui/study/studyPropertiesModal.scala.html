@@ -62,13 +62,15 @@
 
                     <div class="form-group row">
                         <div class="col-xs-offset-2 col-xs-10">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY" value="true">
-                                Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?"></span>
-                                <!-- We need a hidden input field.
-                                http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-                                <input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
-                            </label>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY" value="true">
+                                    Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?"></span>
+                                    <!-- We need a hidden input field.
+                                    http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                    <input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>

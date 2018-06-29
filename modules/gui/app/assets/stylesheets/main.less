@@ -153,6 +153,7 @@ a:focus {
   }
 }
 
+
 /* Sidebar navigation */
 .nav-sidebar {
   margin-right: -21px; /* 20px padding + 1px border */
@@ -194,6 +195,19 @@ a:focus {
 		padding-right: 40px;
 		padding-left: 40px;
 	}
+}
+
+/*
+ * Fix for Bootstrap 3 radio and checkbox alignment
+ * https://stackoverflow.com/questions/24398901
+ */
+@media (min-width: 768px) {
+  .form-horizontal .radio input[type="radio"],
+  .form-horizontal .checkbox input[type="checkbox"] {
+    float: left;
+    margin: 0 5px 0 5px;
+    margin-left: -20px;
+  }
 }
 
 .main .page-header {
