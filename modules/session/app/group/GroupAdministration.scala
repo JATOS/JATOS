@@ -1,7 +1,9 @@
 package group
 
-import javax.inject.{Inject, Singleton}
+import java.sql.Timestamp
+import java.util.Date
 
+import javax.inject.{Inject, Singleton}
 import daos.common.{GroupResultDao, StudyResultDao}
 import models.common.GroupResult.GroupState
 import models.common.{Batch, GroupResult, StudyResult}
@@ -168,6 +170,7 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
 
   private def finishGroupResult(groupResult: GroupResult) = {
     groupResult.setGroupState(GroupState.FINISHED)
+    groupResult.setEndDate(new Timestamp(new Date().getTime))
     // All session data are temporarily and have to be deleted when the group is finished
     groupResult.setGroupSessionData(null)
     groupResultDao.update(groupResult)

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
+import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
@@ -11,11 +12,13 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import general.gui.RequestScopeMessaging;
 import models.common.Batch;
+import models.common.GroupResult;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
+import models.gui.GroupSession;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
@@ -54,18 +57,20 @@ public class Batches extends Controller {
     private final AuthenticationService authenticationService;
     private final WorkerService workerService;
     private final BatchService batchService;
+    private final GroupService groupService;
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final BatchDao batchDao;
     private final StudyResultDao studyResultDao;
+    private final GroupResultDao groupResultDao;
     private final FormFactory formFactory;
 
     @Inject
     Batches(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
             JsonUtils jsonUtils, AuthenticationService authenticationService,
-            WorkerService workerService, BatchService batchService,
+            WorkerService workerService, BatchService batchService, GroupService groupService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            BatchDao batchDao, StudyResultDao studyResultDao,
+            BatchDao batchDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao,
             FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -73,10 +78,12 @@ public class Batches extends Controller {
         this.authenticationService = authenticationService;
         this.workerService = workerService;
         this.batchService = batchService;
+        this.groupService = groupService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.batchDao = batchDao;
         this.studyResultDao = studyResultDao;
+        this.groupResultDao = groupResultDao;
         this.formFactory = formFactory;
     }
 
@@ -100,8 +107,8 @@ public class Batches extends Controller {
         String breadcrumbs = breadcrumbsService.generateForStudy(study,
                 BreadcrumbsService.WORKER_AND_BATCH_MANAGER);
         URL jatosURL = HttpUtils.getHostUrl();
-        return ok(views.html.gui.batch.workerAndBatchManager.render(loggedInUser, breadcrumbs,
-                HttpUtils.isLocalhost(), study, jatosURL, allWorkersSize));
+        return ok(views.html.gui.workerAndBatch.workerAndBatchManager.render(loggedInUser,
+                breadcrumbs, HttpUtils.isLocalhost(), study, jatosURL, allWorkersSize));
     }
 
     /**
@@ -123,12 +130,14 @@ public class Batches extends Controller {
         }
 
         Integer resultCount = studyResultDao.countByBatch(batch);
-        return ok(jsonUtils.getBatchByStudyForUI(batch, resultCount));
+        Integer groupCount = groupResultDao.countByBatch(batch);
+        return ok(jsonUtils.getBatchByStudyForUI(batch, resultCount, groupCount));
     }
 
     /**
      * Ajax GET request: Returns all Batches of the given study as JSON. It
-     * includes the count of their StudyResults.
+     * includes the count of their StudyResults, count of their GroupResults, and the count of their
+     * Workers.
      */
     @Transactional
     @Authenticated
@@ -145,7 +154,31 @@ public class Batches extends Controller {
         List<Batch> batchList = study.getBatchList();
         List<Integer> resultCountList = new ArrayList<>();
         batchList.forEach(batch -> resultCountList.add(studyResultDao.countByBatch(batch)));
-        return ok(jsonUtils.allBatchesByStudyForUI(batchList, resultCountList));
+        List<Integer> groupCountList = new ArrayList<>();
+        batchList.forEach(batch -> groupCountList.add(groupResultDao.countByBatch(batch)));
+        return ok(jsonUtils.allBatchesByStudyForUI(batchList, resultCountList, groupCountList));
+    }
+
+    /**
+     * Ajax GET request: Returns a list of groups that belong to a batch as JSON
+     */
+    @Transactional
+    @Authenticated
+    public Result groupsByBatch(Long studyId, Long batchId) throws JatosGuiException {
+        LOGGER.debug(".groupsByBatch: studyId " + studyId + ", " + "batchId " + batchId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        Batch batch = batchDao.findById(batchId);
+        JsonNode dataAsJson = null;
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForBatch(batch, study, batchId);
+            dataAsJson = jsonUtils.allGroupResultsForUI(groupResultDao.findAllByBatch(batch));
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        return ok(dataAsJson);
     }
 
     /**
@@ -182,8 +215,7 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result batchSessionData(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".batchSessionData: studyId " + studyId + ", batchId "
-                + batchId);
+        LOGGER.debug(".batchSessionData: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -199,14 +231,34 @@ public class Batches extends Controller {
     }
 
     /**
+     * Ajax GET request to get the group session data as String
+     */
+    @Transactional
+    @Authenticated
+    public Result groupSessionData(Long studyId, Long groupResultId) throws JatosGuiException {
+        LOGGER.debug(".groupSessionData: studyId " + studyId + ", groupResultId " + groupResultId);
+        Study study = studyDao.findById(studyId);
+        GroupResult groupResult = groupResultDao.findById(groupResultId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForGroup(groupResult, study, groupResultId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        GroupSession groupSession = groupService.bindToGroupSession(groupResult);
+        return ok(jsonUtils.asJsonNode(groupSession));
+    }
+
+    /**
      * Ajax POST request to submit changed batch session data
      */
     @Transactional
     @Authenticated
     public Result submitEditedBatchSessionData(Long studyId, Long batchId)
             throws JatosGuiException {
-        LOGGER.debug(".submitEditedBatchSessionData: studyId " + studyId
-                + ", batchId " + batchId);
+        LOGGER.debug(".submitEditedBatchSessionData: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
@@ -218,15 +270,13 @@ public class Batches extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Form<BatchSession> form = formFactory.form(BatchSession.class)
-                .bindFromRequest();
+        Form<BatchSession> form = formFactory.form(BatchSession.class).bindFromRequest();
         if (form.hasErrors()) {
             return badRequest(form.errorsAsJson());
         }
 
         BatchSession batchSession = form.get();
-        boolean success = batchService.updateBatchSession(batch.getId(),
-                batchSession);
+        boolean success = batchService.updateBatchSession(batch.getId(), batchSession);
         if (!success) {
             return forbidden("The Batch Session has been updated since you " +
                     "loaded this page. Reload before trying to save again.");
@@ -235,13 +285,47 @@ public class Batches extends Controller {
     }
 
     /**
+     * Ajax POST request to submit changed group session data
+     */
+    @Transactional
+    @Authenticated
+    public Result submitEditedGroupSessionData(Long studyId, Long groupResultId)
+            throws JatosGuiException {
+        LOGGER.debug(".submitEditedGroupSessionData: studyId " + studyId
+                + ", groupResultId " + groupResultId);
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        GroupResult groupResult = groupResultDao.findById(groupResultId);
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStudyLocked(study);
+            checker.checkStandardForGroup(groupResult, study, groupResultId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        Form<GroupSession> form = formFactory.form(GroupSession.class).bindFromRequest();
+        if (form.hasErrors()) {
+            return badRequest(form.errorsAsJson());
+        }
+
+        GroupSession groupSession = form.get();
+        boolean success = groupService.updateGroupSession(groupResult.getId(), groupSession);
+        if (!success) {
+            return forbidden("The Group Session has been updated since you " +
+                    "loaded this page. Reload before trying to save again.");
+        }
+        return ok(" "); // jQuery.ajax cannot handle empty responses
+    }
+
+
+    /**
      * Ajax GET request to get BatchProperties as JSON
      */
     @Transactional
     @Authenticated
     public Result properties(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(
-                ".properties: studyId " + studyId + ", batchId " + batchId);
+        LOGGER.debug(".properties: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -262,8 +346,7 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result submitEditedProperties(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".submitEditedProperties: studyId " + studyId
-                + ", batchId " + batchId);
+        LOGGER.debug(".submitEditedProperties: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch currentBatch = batchDao.findById(batchId);
@@ -275,8 +358,7 @@ public class Batches extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Form<BatchProperties> form = formFactory.form(BatchProperties.class)
-                .bindFromRequest();
+        Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest();
         if (form.hasErrors()) {
             return badRequest(form.errorsAsJson());
         }
@@ -285,8 +367,7 @@ public class Batches extends Controller {
         String[] allowedWorkerArray = Controller.request().body()
                 .asFormUrlEncoded().get(BatchProperties.ALLOWED_WORKER_TYPES);
         if (allowedWorkerArray != null) {
-            Arrays.stream(allowedWorkerArray)
-                    .forEach(batchProperties::addAllowedWorkerType);
+            Arrays.stream(allowedWorkerArray).forEach(batchProperties::addAllowedWorkerType);
         }
 
         batchService.updateBatch(currentBatch, batchProperties);
@@ -383,8 +464,7 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result createPersonalSingleRun(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".createPersonalSingleRun: studyId " + studyId + ", "
-                + "batchId " + batchId);
+        LOGGER.debug(".createPersonalSingleRun: studyId " + studyId + ", " + "batchId " + batchId);
         Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker =
                 workerService::createAndPersistPersonalSingleWorker;
         return createPersonalRun(studyId, batchId, createAndPersistWorker);
@@ -397,8 +477,8 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result createPersonalMultipleRun(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".createPersonalMultipleRun: studyId " + studyId + ", "
-                + "batchId " + batchId);
+        LOGGER.debug(
+                ".createPersonalMultipleRun: studyId " + studyId + ", " + "batchId " + batchId);
         Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker =
                 workerService::createAndPersistPersonalMultipleWorker;
         return createPersonalRun(studyId, batchId, createAndPersistWorker);
@@ -429,8 +509,8 @@ public class Batches extends Controller {
         int amount = json.findPath("amount").asInt();
         List<Long> workerIdList;
         try {
-            List<? extends Worker> workerList = createAndPersistWorker
-                    .apply(comment, amount, batch);
+            List<? extends Worker> workerList =
+                    createAndPersistWorker.apply(comment, amount, batch);
             workerIdList = workerList.stream().map(Worker::getId).collect(Collectors.toList());
         } catch (BadRequestException e) {
             return badRequest(e.getMessage());
@@ -447,8 +527,7 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result workerSetupData(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".workerSetupData: studyId " + studyId + ", " + "batchId "
-                + batchId);
+        LOGGER.debug(".workerSetupData: studyId " + studyId + ", " + "batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);

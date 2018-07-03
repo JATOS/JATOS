@@ -431,9 +431,18 @@ public class MessagesStrings {
         return "A batch with ID " + batchId + " doesn't exist.";
     }
 
+    public static String groupNotExist(Long groupResultId) {
+        return "A group with ID " + groupResultId + " doesn't exist.";
+    }
+
     public static String batchNotInStudy(Long batchId, Long studyId) {
         return "A batch with ID " + batchId
                 + " is not a batch of the study with ID " + studyId + ".";
+    }
+
+    public static String groupNotInStudy(Long groupResultId, Long studyId) {
+        return "A group with ID " + groupResultId
+                + " does not belong to the study with ID " + studyId + ".";
     }
 
 }

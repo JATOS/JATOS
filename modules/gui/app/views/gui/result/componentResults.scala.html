@@ -1,36 +1,38 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-	study: common.Study, component: common.Component)
+    study: common.Study, component: common.Component)
 @playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
-	<thead>
-		<tr>
-			<!-- If you change something in the head, change it in the footer too! -->
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
-			<th>Comp. Result ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
-			<th>Duration</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
-			<th>Group ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
-		</tr>
-	</thead>
-	<tfoot>
-		<tr>
-			<!-- If you change something in the footer, change it in the head too! -->
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
-			<th>Comp. Result ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
-			<th>Duration</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
-			<th>Group ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
-		</tr>
-	</tfoot>
+    <thead>
+        <tr>
+            <!-- If you change something in the head, change it in the footer too! -->
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
+            <th>Comp. Result ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
+            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+            <th>Batch</th>
+            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <!-- If you change something in the footer, change it in the head too! -->
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
+            <th>Comp. Result ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
+            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+            <th>Batch</th>
+            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
+        </tr>
+    </tfoot>
 </table>
 
 <script type="text/javascript">
@@ -40,229 +42,237 @@ showInfo("@general.common.MessagesStrings.RESULTS_INFO");
 
 var resultsTable;
 $(document).ready(function() {
-	resultsTable = $('#resultsTable').DataTable({
-		"ajax": {
-			"type": "GET",
-			"url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
-			"error": function(reason) {
-					showError("Couldn't read results data.")
-			}
-		},
-		"dom": '<"pull-right"B>lfrtip',
-		"order": [[ 2, "desc" ]],
-		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-		"pageLength": 10,
-		"columns": [
-			{
-				"class": 'details-control',
-				"orderable": false,
-				"data": null,
-				"render": function (data, type, full, meta) {
-					return '<span class="glyphicon glyphicon-chevron-right" '
-						+ 'data-toggle="tooltip" data-placement="bottom" '
-						+ 'title="Click to expand/collapse this result"></span>';
-				}
-			},
-			{ "data": "id" },
-			{ "data": "startDate" },
-			{
-				"data": "duration",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "not yet";
-				}
-			},
-			{
-				"data": "workerId",
-				"render": function (data, type, full, meta) {
-					return '<a href="@{playHttpContext}jatos/worker/'
-						+ data + '/results">' + data + '</a>';
-				}
-			},
-			{ 
-				"data": "groupResultId",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "none";
-				}
-			},
-			{ "data": "componentState" },
-			{ 
-				"data": "errorMsg",
-				"width": "20%"
-			}
-		],
-		buttons: [
-			{
-				"extend": "colvis",
-				"text": "Show/Hide Columns <span class='caret'></span>",
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
-			},
-			{
-				"extend": "selectAll",
-				"text": "Select All",
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
-			},
-			{
-				"extends": "selectAll",
-				"text": "Select Filtered",
-				"action": function(e, dt, node, config) {
-					dt.rows({ search: 'applied' }).select();
-				},
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
-			},
-			{
-				"extend": "selectNone",
-				"text": "Deselect All",
-				"action": function(e, dt, node, config) {
-					dt.rows().deselect();
-				},
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
-			},
-			{
-				"text": "Export Selected",
-				"action": exportSelectedResultData,
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
-			},
-			{
-				"text": "Export All",
-				"action": exportAllSelectedResultData,
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
-			},
-			{
-				"text": "Delete Selected",
-				"action": deleteSelectedResults,
-				"className": 'btn btn-danger',
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-			},
-			{
-				"text": "Delete All",
-				"action": deleteAllResults,
-				"className": 'btn btn-danger',
-				"titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
-			}
-		],
-		"language": {
-			"search": "Filter Results:"
-		}
-	});
-	
-	// Necessary - otherwise the button doesn't work with manually selected rows
-	resultsTable.on('draw', toggleDeselectAllButton);
-	
-	function toggleDeselectAllButton() {
-		if (resultsTable.rows('.selected').any()) {
-			resultsTable.buttons(['.buttons-select-none']).enable();
-		} else {
-			resultsTable.buttons(['.buttons-select-none']).disable();
-		}
-	}
+    resultsTable = $('#resultsTable').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
+            "error": function(reason) {
+                    showError("Couldn't read results data.")
+            }
+        },
+        "dom": '<"pull-right"B>lfrtip',
+        "order": [[ 2, "desc" ]],
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": 10,
+        "columns": [
+            {
+                "class": 'details-control',
+                "orderable": false,
+                "data": null,
+                "render": function (data, type, full, meta) {
+                    return '<span class="glyphicon glyphicon-chevron-right" '
+                        + 'data-toggle="tooltip" data-placement="bottom" '
+                        + 'title="Click to expand/collapse this result"></span>';
+                }
+            },
+            {
+                "data": "id",
+                "width": "1%"
+            },
+            { "data": "startDate" },
+            {
+                "data": "duration",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "not yet";
+                }
+            },
+            {
+                "data": "workerId",
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+                        'data-placement="bottom" title="Opens this worker\'s results" ' +
+                        'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
+                }
+            },
+            { "data": "batchTitle" },
+            {
+                "data": "groupResultId",
+                "visible": false,
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "none";
+                }
+            },
+            { "data": "componentState" },
+            {
+                "data": "errorMsg",
+                "width": "20%"
+            }
+        ],
+        buttons: [
+            {
+                "extend": "colvis",
+                "text": "Show/Hide Columns <span class='caret'></span>",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
+            },
+            {
+                "extend": "selectAll",
+                "text": "Select All",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
+            },
+            {
+                "extends": "selectAll",
+                "text": "Select Filtered",
+                "action": function(e, dt, node, config) {
+                    dt.rows({ search: 'applied' }).select();
+                },
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
+            },
+            {
+                "extend": "selectNone",
+                "text": "Deselect All",
+                "action": function(e, dt, node, config) {
+                    dt.rows().deselect();
+                },
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
+            },
+            {
+                "text": "Export Selected",
+                "action": exportSelectedResultData,
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+            },
+            {
+                "text": "Export All",
+                "action": exportAllSelectedResultData,
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+            },
+            {
+                "text": "Delete Selected",
+                "action": deleteSelectedResults,
+                "className": 'btn btn-danger',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+            },
+            {
+                "text": "Delete All",
+                "action": deleteAllResults,
+                "className": 'btn btn-danger',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+            }
+        ],
+        "language": {
+            "search": "Filter Results:"
+        }
+    });
 
-	$('#resultsTable tbody').on( 'click', 'td:not(:first-child)', function () {
-		var tr = $(this).closest('tr');
-		tr.toggleClass('selected');
-		toggleDeselectAllButton();
-	});
+    // Necessary - otherwise the button doesn't work with manually selected rows
+    resultsTable.on('draw', toggleDeselectAllButton);
 
-	$('#resultsTable tbody').on('click', 'td.details-control', function() {
-		var tr = $(this).closest('tr');
-		var row = resultsTable.row(tr);
-		if (row.child.isShown()) {
-			$('div.slider', row.child()).slideUp( function () {
-				row.child.hide();
-				tr.removeClass('shown');
-			});
-		}
-		else {
-			row.child(childRowFormat(row.data())).show();	
-			tr.addClass('shown');
-			tr.next().addClass('info');
-			$('div.slider', row.child()).slideDown();
-		}
-		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
-				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
-	});
+    function toggleDeselectAllButton() {
+        if (resultsTable.rows('.selected').any()) {
+            resultsTable.buttons(['.buttons-select-none']).enable();
+        } else {
+            resultsTable.buttons(['.buttons-select-none']).disable();
+        }
+    }
 
-	function exportSelectedResultData(e, dt, node, config) {	
-		var selectedTrs = resultsTable.rows('.selected').nodes();
-		var ids = [];
-		$.each(selectedTrs, function(index, selectedTr) {
-			var rowData = resultsTable.row(selectedTr).data();
-			ids.push(rowData.id);
-		});
-		if (ids.length == 0) {
-			showError("No results selected");
-			return;
-		}
-		var url = '@{playHttpContext}jatos/componentResult/export/resultData'
-			+ '?componentResultIds=' + ids.join(",");
-		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
-		$.fileDownload(url).fail(function () {
-			showError("Export of results failed");
-		});
-	}
+    $('#resultsTable tbody').on( 'click', 'td:not(:first-child)', function () {
+        var tr = $(this).closest('tr');
+        tr.toggleClass('selected');
+        toggleDeselectAllButton();
+    });
 
-	function exportAllSelectedResultData(e, dt, node, config) {
-		var url = "@controllers.gui.routes.ImportExport.exportDataOfAllComponentResults(study.getId(), component.getId())";
-		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
-		$.fileDownload(url).fail(function () {
-			showError("Export of results failed");
-		});
-	}
+    $('#resultsTable tbody').on('click', 'td.details-control', function() {
+        var tr = $(this).closest('tr');
+        var row = resultsTable.row(tr);
+        if (row.child.isShown()) {
+            $('div.slider', row.child()).slideUp( function () {
+                row.child.hide();
+                tr.removeClass('shown');
+            });
+        }
+        else {
+            row.child(childRowFormat(row.data())).show();
+            tr.addClass('shown');
+            tr.next().addClass('info');
+            $('div.slider', row.child()).slideDown();
+        }
+        $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+                .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+    });
 
-	function deleteSelectedResults(e, dt, node, config) {
-		var selectedTrs = resultsTable.rows('.selected').nodes();
-		var ids = [];
-		$.each(selectedTrs, function(index, selectedTr) {
-			var rowData = resultsTable.row(selectedTr).data();
-			ids.push(rowData.id);
-		});
-		if (ids.length <= 0) {
-			showError("No results selected");
-			return;
-		}
-		var title = "Confirm Delete";
-		var htmlText = "<p>You are about to delete the component results "
-			+ "(ID " + ids.join(", ") + ").</p>"
-			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-			var url = '@{playHttpContext}jatos/componentResult?componentResultIds=' + ids.toString();
-			$.ajax({
-				url: url,
-				type: 'DELETE',
-				success: function(result) {
-					$.each(selectedTrs, function(index, selectedTr) {
-						resultsTable.row(selectedTr).remove().draw();
-					});
-				},
-				error: function(err) {
-					showError(err.responseText);
-				}
-			});
-		});
-	}
+    function exportSelectedResultData(e, dt, node, config) {
+        var selectedTrs = resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length == 0) {
+            showError("No results selected");
+            return;
+        }
+        var url = '@{playHttpContext}jatos/componentResult/export/resultData'
+            + '?componentResultIds=' + ids.join(",");
+        // Using johnculviner's jQuery.fileDownload plugin to detect a fail
+        $.fileDownload(url).fail(function () {
+            showError("Export of results failed");
+        });
+    }
 
-	function deleteAllResults(e, dt, node, config) {
-		var title = "Confirm Delete";
-		var htmlText = "<p>You are about to delete <b>ALL</b> component results.</p>"
-			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-			var url = "@controllers.gui.routes.ComponentResults.removeAllOfComponent(study.getId(), component.getId())";
-			$.ajax({
-				url: url,
-				type: 'DELETE',
-				success: function(result) {
-					resultsTable.ajax.reload();
-				},
-				error: function(err) {
-					showError(err.responseText);
-				}
-			});
-		});
-	}
-	
-	function childRowFormat(data) {
-		// `data` is the original data object for the row
-		return '<div class="slider" style="display: none"><p><pre class="details-data">' + data.data + '</pre></p></div>';
-	}
+    function exportAllSelectedResultData(e, dt, node, config) {
+        var url = "@controllers.gui.routes.ImportExport.exportDataOfAllComponentResults(study.getId(), component.getId())";
+        // Using johnculviner's jQuery.fileDownload plugin to detect a fail
+        $.fileDownload(url).fail(function () {
+            showError("Export of results failed");
+        });
+    }
+
+    function deleteSelectedResults(e, dt, node, config) {
+        var selectedTrs = resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length <= 0) {
+            showError("No results selected");
+            return;
+        }
+        var title = "Confirm Delete";
+        var htmlText = "<p>You are about to delete the component results "
+            + "(ID " + ids.join(", ") + ").</p>"
+            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+            var url = '@{playHttpContext}jatos/componentResult?componentResultIds=' + ids.toString();
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function(result) {
+                    $.each(selectedTrs, function(index, selectedTr) {
+                        resultsTable.row(selectedTr).remove().draw();
+                    });
+                },
+                error: function(err) {
+                    showError(err.responseText);
+                }
+            });
+        });
+    }
+
+    function deleteAllResults(e, dt, node, config) {
+        var title = "Confirm Delete";
+        var htmlText = "<p>You are about to delete <b>ALL</b> component results.</p>"
+            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+            var url = "@controllers.gui.routes.ComponentResults.removeAllOfComponent(study.getId(), component.getId())";
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function(result) {
+                    resultsTable.ajax.reload();
+                },
+                error: function(err) {
+                    showError(err.responseText);
+                }
+            });
+        });
+    }
+
+    function childRowFormat(data) {
+        // `data` is the original data object for the row
+        return '<div class="slider" style="display: none"><p><pre class="details-data">' + data.data + '</pre></p></div>';
+    }
 
 });
 

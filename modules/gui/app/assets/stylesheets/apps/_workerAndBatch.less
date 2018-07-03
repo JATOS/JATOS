@@ -5,6 +5,10 @@
 .btn-batch {
     &:extend(.btn-success all);
 }
+@btn-batch-color:   @btn-success-color;
+@btn-batch-bg:      @btn-success-bg;
+@btn-batch-border:  @btn-success-border;
+
 
 /*
  * Define worker button colors
@@ -12,7 +16,6 @@
 @btn-worker-color:   #ffffff;
 @btn-worker-bg:      #97cd47;
 @btn-worker-border:  #91c541;
-
 .btn-worker,
 .btn-worker:hover,
 .btn-worker:focus,
@@ -81,8 +84,12 @@
     background-color: @btn-worker-color;
 }
 .batchItem > .panel-heading .resultsBadge {
-    color: @btn-success-bg;
-    background-color: @btn-success-color;
+    color: @btn-batch-bg;
+    background-color: @btn-batch-color;
+}
+.batchItem > .panel-heading .groupsBadge {
+    color: @btn-batch-bg;
+    background-color: @btn-batch-color;
 }
 .batchItem > .panel-heading .batchWorkersBadge {
     color: @btn-worker-color;
@@ -98,30 +105,61 @@
 }
 
 /*
- * DataTables #allWorkersModal
+ * DataTables #workersModal
  */
-#allWorkersModal .pagination > li.active > a {
+#workersModal .pagination > li.active > a {
     color: @btn-worker-color;
     background-color: @btn-worker-bg;
     border-color: darken(@btn-worker-bg, 5%);
 }
-#allWorkersModal .pagination > li.active > a:hover {
+#workersModal .pagination > li.active > a:hover {
     background-color: darken(@btn-worker-bg, 10%);
 }
-#allWorkersModal .pagination > li > a {
+#workersModal .pagination > li > a {
     color: @btn-default-color;
     background-color: @btn-default-bg;
     border-color: darken(@btn-default-bg, 20%);
 }
-#allWorkersModal .pagination > li:not(.disabled):not(.active) > a:hover {
+#workersModal .pagination > li:not(.disabled):not(.active) > a:hover {
     background-color: darken(@btn-default-bg, 10%);
 }
-#allWorkersModal .pagination > li.disabled > a {
+#workersModal .pagination > li.disabled > a {
     color: lighten(@btn-default-color, 20%);
 }
-#allWorkersModal .pagination > li.next > a {
+#workersModal .pagination > li.next > a {
     margin-right: 10px;
 }
+
+
+/*
+ * DataTables #groupsModal
+ */
+#groupsModal a.btn-worker {
+    margin-bottom: 2px;
+}
+#groupsModal .pagination > li.active > a {
+    color: @btn-batch-color;
+    background-color: @btn-batch-bg;
+    border-color: darken(@btn-batch-bg, 5%);
+}
+#groupsModal .pagination > li.active > a:hover {
+    background-color: darken(@btn-batch-bg, 10%);
+}
+#groupsModal .pagination > li > a {
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
+}
+#groupsModal .pagination > li:not(.disabled):not(.active) > a:hover {
+    background-color: darken(@btn-default-bg, 10%);
+}
+#groupsModal .pagination > li.disabled > a {
+    color: lighten(@btn-default-color, 20%);
+}
+#groupsModal .pagination > li.next > a {
+    margin-right: 10px;
+}
+
 
 /*
  * DataTables .workerSetupItem

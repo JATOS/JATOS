@@ -7,6 +7,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
@@ -46,9 +47,15 @@ public class GroupResultDao extends AbstractDao {
 
     public List<GroupResult> findAllByBatch(Batch batch) {
         String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
-        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr,
-                GroupResult.class);
+        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr, GroupResult.class);
         return query.setParameter("batch", batch).getResultList();
+    }
+
+    public Integer countByBatch(Batch batch) {
+        String queryStr = "SELECT COUNT(*) FROM GroupResult gr WHERE gr.batch=:batch";
+        Query query = jpa.em().createQuery(queryStr).setParameter("batch", batch);
+        Number result = (Number) query.getSingleResult();
+        return result.intValue();
     }
 
     public List<GroupResult> findAllStartedByBatch(Batch batch) {

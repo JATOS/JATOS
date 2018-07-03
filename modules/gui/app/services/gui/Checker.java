@@ -1,20 +1,13 @@
 package services.gui;
 
-import java.util.List;
-
-import javax.inject.Singleton;
-
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
-import models.common.Batch;
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.User;
-import models.common.workers.JatosWorker;
+import models.common.*;
 import models.common.workers.Worker;
+
+import javax.inject.Singleton;
+import java.util.List;
 
 /**
  * Service class that provides checks for different entities
@@ -55,6 +48,22 @@ public class Checker {
         // Check that the study has this batch
         if (!study.hasBatch(batch)) {
             String errorMsg = MessagesStrings.batchNotInStudy(batchId, study.getId());
+            throw new ForbiddenException(errorMsg);
+        }
+    }
+
+    /**
+     * Checks the group and throws an Exception in case of a problem.
+     */
+    public void checkStandardForGroup(GroupResult groupResult, Study study, Long groupResultId)
+            throws ForbiddenException, BadRequestException {
+        if (groupResult == null) {
+            String errorMsg = MessagesStrings.groupNotExist(groupResultId);
+            throw new BadRequestException(errorMsg);
+        }
+        // Check that the group belongs to the study
+        if (!groupResult.getBatch().getStudy().equals(study)) {
+            String errorMsg = MessagesStrings.groupNotInStudy(groupResultId, study.getId());
             throw new ForbiddenException(errorMsg);
         }
     }
@@ -150,28 +159,6 @@ public class Checker {
     public void checkWorker(Worker worker, Long workerId) throws BadRequestException {
         if (worker == null) {
             throw new BadRequestException(MessagesStrings.workerNotExist(workerId));
-        }
-    }
-
-    /**
-     * Check whether the removal of this worker is allowed
-     */
-    public void checkRemovalAllowed(Worker worker, User loggedInUser)
-            throws ForbiddenException, BadRequestException {
-        // JatosWorker associated to a JATOS user must not be removed
-        if (worker instanceof JatosWorker) {
-            JatosWorker maWorker = (JatosWorker) worker;
-            String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(
-                    worker.getId(), maWorker.getUser().getName(),
-                    maWorker.getUser().getEmail());
-            throw new ForbiddenException(errorMsg);
-        }
-
-        // Check for every study if removal is allowed
-        for (StudyResult studyResult : worker.getStudyResultList()) {
-            Study study = studyResult.getStudy();
-            checkStandardForStudy(study, study.getId(), loggedInUser);
-            checkStudyLocked(study);
         }
     }
 

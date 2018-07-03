@@ -17,6 +17,7 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
+            <th>Batch</th>
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
@@ -33,6 +34,7 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
+            <th>Batch</th>
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
@@ -70,7 +72,10 @@ $(document).ready(function() {
                         + 'title="Click to expand/collapse this result"></span>';
                 }
             },
-            { "data": "id" },
+            {
+                "data": "id",
+                "width": "1%"
+            },
             { "data": "startDate" },
             {
                 "data": "lastSeenDate",
@@ -86,9 +91,11 @@ $(document).ready(function() {
             },
             {
                 "data": "workerId",
+                "width": "1%",
                 "render": function (data, type, full, meta) {
-                    return '<a href="@{playHttpContext}jatos/worker/'
-                        + data + '/results">' + data + '</a>';
+                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+                        'data-placement="bottom" title="Opens this worker\'s results" ' +
+                        'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             },
             {	"data": "worker.workerType",
@@ -103,8 +110,11 @@ $(document).ready(function() {
                     return mtWorkerId + "<br>(" + confirmationCode + ")";
                 }
             },
+            { "data": "batchTitle" },
             {
                 "data": "groupResultId",
+                "visible": false,
+                "width": "1%",
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "none";
                 }

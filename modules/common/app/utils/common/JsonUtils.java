@@ -146,6 +146,33 @@ public class JsonUtils {
     }
 
     /**
+     * Returns all GroupResults as a JSON string intended for GUI.
+     */
+    public JsonNode allGroupResultsForUI(List<GroupResult> groupResultList) {
+        ObjectNode allGroupResultsNode = Json.newObject();
+        ArrayNode arrayNode = allGroupResultsNode.arrayNode();
+        for (GroupResult groupResult : groupResultList) {
+            ObjectNode groupResultNode = Json.mapper().valueToTree(groupResult);
+
+            // Add active workers
+            ArrayNode activeWorkerIdListNode = groupResultNode.arrayNode();
+            groupResult.getActiveMemberList()
+                    .forEach(w -> activeWorkerIdListNode.add(w.getWorkerId()));
+            groupResultNode.set("activeWorkerList", activeWorkerIdListNode);
+
+            // Add history workers
+            ArrayNode historyWorkerIdListNode = groupResultNode.arrayNode();
+            groupResult.getHistoryMemberList()
+                    .forEach(w -> historyWorkerIdListNode.add(w.getWorkerId()));
+            groupResultNode.set("historyWorkerList", historyWorkerIdListNode);
+
+            arrayNode.add(groupResultNode);
+        }
+        allGroupResultsNode.set(DATA, arrayNode);
+        return allGroupResultsNode;
+    }
+
+    /**
      * Returns the data string of a componentResult limited to
      * MAX_CHAR_PER_RESULT characters.
      */
@@ -213,6 +240,7 @@ public class JsonUtils {
         // Add extra variables
         studyResultNode.put("studyId", studyResult.getStudy().getId());
         studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
+        studyResultNode.put("batchTitle", studyResult.getBatch().getTitle());
         studyResultNode.put("duration", getDurationPretty(
                 studyResult.getStartDate(), studyResult.getEndDate()));
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
@@ -248,29 +276,24 @@ public class JsonUtils {
      * Returns an ObjectNode of the given ComponentResult. It contains the study
      * ID, component ID and component title.
      */
-    private JsonNode componentResultAsJsonNode(
-            ComponentResult componentResult) {
-        ObjectNode componentResultNode = Json.mapper()
-                .valueToTree(componentResult);
+    private JsonNode componentResultAsJsonNode(ComponentResult componentResult) {
+        ObjectNode componentResultNode = Json.mapper().valueToTree(componentResult);
 
         // Add extra variables
-        componentResultNode.put("studyId",
-                componentResult.getComponent().getStudy().getId());
-        componentResultNode.put("componentId",
-                componentResult.getComponent().getId());
-        componentResultNode.put("componentTitle",
-                componentResult.getComponent().getTitle());
+        componentResultNode.put("studyId", componentResult.getComponent().getStudy().getId());
+        componentResultNode.put("componentId", componentResult.getComponent().getId());
+        componentResultNode.put("componentTitle", componentResult.getComponent().getTitle());
         componentResultNode.put("duration", getDurationPretty(
                 componentResult.getStartDate(), componentResult.getEndDate()));
-        GroupResult groupResult = componentResult.getStudyResult()
-                .getActiveGroupResult();
+        GroupResult groupResult = componentResult.getStudyResult().getActiveGroupResult();
         String groupResultId = groupResult != null
                 ? groupResult.getId().toString() : null;
         componentResultNode.put("groupResultId", groupResultId);
+        componentResultNode.put("batchTitle",
+                componentResult.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
-        componentResultNode.put(DATA,
-                componentResultDataForUI(componentResult));
+        componentResultNode.put(DATA, componentResultDataForUI(componentResult));
 
         return componentResultNode;
     }
@@ -427,14 +450,17 @@ public class JsonUtils {
     }
 
     /**
-     * Returns a JSON string of all batches that belong to the given study. This
-     * includes the 'resultCount', the number of StudyResults of this batch so
-     * far. Intended for use in JATOS' GUI.
+     * Returns a JSON string of all batches that belong to the given study. This includes the
+     * 'resultCount' (the number of StudyResults of this batch so far), 'workerCount' (number of
+     * workers without JatosWorkers), and the 'groupCount' (number of GroupResults of this batch
+     * so far). Intended for use in JATOS' GUI.
      */
-    public JsonNode allBatchesByStudyForUI(List<Batch> batchList, List<Integer> resultCountList) {
+    public JsonNode allBatchesByStudyForUI(List<Batch> batchList, List<Integer> resultCountList,
+            List<Integer> groupCountList) {
         ArrayNode batchListNode = Json.mapper().createArrayNode();
         for (int i = 0; i < batchList.size(); i++) {
-            ObjectNode batchNode = getBatchByStudyForUI(batchList.get(i), resultCountList.get(i));
+            ObjectNode batchNode = getBatchByStudyForUI(batchList.get(i), resultCountList.get(i),
+                    groupCountList.get(i));
             int position = i + 1;
             batchNode.put("position", position);
             batchListNode.add(batchNode);
@@ -443,15 +469,19 @@ public class JsonUtils {
     }
 
     /**
-     * Returns a JSON string of one batch. This includes the 'resultCount', the number of
-     * StudyResults of this batch so far. Intended for use in JATOS' GUI.
+     * Returns a JSON string of one batch. This includes the 'resultCount' (the number of
+     * StudyResults of this batch so far), 'workerCount' (number of workers without JatosWorkers),
+     * and the 'groupCount' (number of GroupResults of this batch so far).
+     * Intended for use in JATOS' GUI.
      */
-    public ObjectNode getBatchByStudyForUI(Batch batch, Integer resultCount) {
+    public ObjectNode getBatchByStudyForUI(Batch batch, Integer resultCount, Integer groupCount) {
         ObjectNode batchNode = Json.mapper().valueToTree(batch);
-        // Add count of batch's results
+        // Add count of batch's study results
         batchNode.put("resultCount", resultCount);
         // Add count of batch's workers (without JatosWorker)
         batchNode.put("workerCount", batch.getWorkerList().size());
+        // Add count of batch's group results
+        batchNode.put("groupCount", groupCount);
         return batchNode;
     }
 

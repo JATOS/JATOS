@@ -83,12 +83,17 @@
                     title="Edit this batch's properties">
                     Properties <span class="glyphicon glyphicon-option-vertical"></span></button>
                 <button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-                    title="Edit this batch's session data">
-                    Session Data <span class="glyphicon glyphicon-th-list"></span></button>
+                    title="See and edit this batch's session data">
+                    Batch Session Data <span class="glyphicon glyphicon-th-list"></span></button>
                 <button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
                     title="Shows the study results of this batch">
                     Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
                     title="Number of study results that belong to this batch"></span>
+                </button>
+                <button type="button" class="groupsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+                    title="Shows all groups of this batch">
+                    Groups <span class="groupsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of groups that belong to this batch"></span>
                 </button>
                 <div class="btn-group">
                     <button type="button" class="btn btn-batch dropdown-toggle" data-toggle="dropdown">
@@ -110,12 +115,13 @@
     </div>
 </div>
 
-@views.html.gui.batch.batchPropertiesModal(study)
-@views.html.gui.batch.getWorkerLinksModal(study)
-@views.html.gui.batch.workersModal(study)
-@views.html.gui.batch.batchSessionModal(study)
-@views.html.gui.batch.workerSetup(loggedInUser, study, jatosUrl)
-@views.html.gui.batch.mTurkSourceCodeModal(study, jatosUrl)
+@views.html.gui.workerAndBatch.batchPropertiesModal(study)
+@views.html.gui.workerAndBatch.getWorkerLinksModal(study)
+@views.html.gui.workerAndBatch.workersModal(study)
+@views.html.gui.workerAndBatch.groupsModal(study)
+@views.html.gui.workerAndBatch.batchSessionModal(study)
+@views.html.gui.workerAndBatch.workerSetup(loggedInUser, study, jatosUrl)
+@views.html.gui.workerAndBatch.mTurkSourceCodeModal(study, jatosUrl)
 
 <script>
 
@@ -187,6 +193,7 @@ function fillAllBatches(batchList) {
         $("#batchList").append(batchItem);
     });
     setButtonWidthToMax("#batchList .batchResultsButton");
+    setButtonWidthToMax("#batchList .groupsButton");
 }
 
 function fillBatch(batchItem, batch) {
@@ -196,6 +203,10 @@ function fillBatch(batchItem, batch) {
     $(batchItem).find('.batchTitle').text(batch.title);
     $(batchItem).find('.batchWorkersBadge').text(batch.workerCount);
     $(batchItem).find('.batchResultsButton .resultsBadge').text(batch.resultCount);
+    $(batchItem).find('.groupsButton .groupsBadge').text(batch.groupCount);
+    if (!@study.isGroupStudy()) {
+        $(batchItem).find('.groupsButton').toggleClass('disabled', true);
+    }
 }
 
 $('#batchList').on('click', '.collapseWorkerSetup, .batchTitle, .batchWorkersBadge', function() {
@@ -258,6 +269,11 @@ $('#batchList').on('click', '.batchResultsButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
     window.location.href =  "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/results";
+});
+
+$('#batchList').on('click', '.groupsButton', function() {
+    var batch = getBatchData(this);
+    showGroupsModal(batch);
 });
 
 function setBatchItemActive(item, active) {

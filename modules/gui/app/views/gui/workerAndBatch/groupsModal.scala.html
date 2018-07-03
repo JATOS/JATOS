@@ -1,0 +1,137 @@
+@(study: common.Study)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
+
+<!-- Show all groups Modal -->
+<div class="modal fade" id="groupsModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">All Groups</h4>
+            </div>
+
+            <div class="modal-body">
+                <!-- All groups table -->
+                <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <thead>
+                        <tr>
+                            <th>Group ID</th>
+                            <th data-toggle="tooltip" data-placement="top" title="All currently active workers">Active Workers</th>
+                            <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group">Former Workers</th>
+                            <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server)</th>
+                            <th data-toggle="tooltip" data-placement="top" title="">End Time (Server)</th>
+                            <th data-toggle="tooltip" data-placement="top" title="Current state of the group">Group State</th>
+                            <th class="groupSessionDataColumn"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+var groupsTable;
+
+function showGroupsModal(batch) {
+    removeAlerts("#groupsModal");
+    generateGroupsTable(batch);
+    $('#groupsModal .modal-title').text('All Groups of Batch "' + batch.title + '"')
+    $('#groupsModal').modal('show');
+}
+
+function generateGroupsTable(batch) {
+    var dataUrl = "@{playHttpContext}jatos/" + @study.getId() +"/batch/" + batch.id + "/groups";
+
+    if (groupsTable) {
+        groupsTable.ajax.url(dataUrl).load();
+        return;
+    }
+
+    groupsTable = $('#groupsModal .table').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : dataUrl,
+            "error": function(reason) {
+                    showError("Couldn't read group data.")
+            }
+        },
+        "dom": 'ftip',
+        "order": [[ 0, "desc" ]],
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": 10,
+        "pagingType": "simple_numbers",
+        "columns": [
+            {
+                "data": "id",
+                "width": "1%"
+            },
+            {
+                "data": "activeWorkerList",
+                "render": renderWorkerColumn
+            },
+            {
+                "data": "historyWorkerList",
+                "render": renderWorkerColumn
+            },
+            {
+                "data": "startDate",
+                "class": 'time'
+            },
+            {
+                "data": "endDate",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "not yet";
+                }
+            },
+            {
+                "data": "groupState",
+                "width": "1%"
+            },
+            {
+                "render" : renderSessionDataColumn
+            }
+        ],
+        "language": {
+            "search": "Search:"
+        },
+        "drawCallback": function(settings) {
+            $('th.groupSessionDataColumn').removeClass('sorting');
+        }
+    });
+}
+
+function renderWorkerColumn(data, type, dataToSet) {
+    if (data.length == 0) return "none";
+
+    var workerLinks = [];
+    data.forEach(function(workerId) {
+        workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+        'data-placement="bottom" title="Opens this worker\'s results" ' +
+        'href="@{playHttpContext}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
+    });
+    return workerLinks.join(' ');
+}
+
+function renderSessionDataColumn(data, type, dataToSet) {
+    return '<button type="button" class="groupSessionButton btn btn-batch pull-right" data-toggle="tooltip" data-placement="bottom"' +
+        'title="See and edit this group\'s session data">Group Session Data <span class="glyphicon glyphicon-th-list"></span></button>';
+}
+
+$('#groupsModal').on('click', '.groupSessionButton', function() {
+    var tr = $(this).closest('tr');
+    var groupId = groupsTable.row(tr).data().id;
+    if (!groupId) {return} // should never happen
+    var dataUrl = "@{playHttpContext}jatos/@study.getId()/group/" + groupId + "/groupSessionData";
+    $('#showSessionDataModal').data('id', groupId);
+    $('#showSessionDataModal').data('type', 'group');
+    getSession(dataUrl);
+});
+
+</script>

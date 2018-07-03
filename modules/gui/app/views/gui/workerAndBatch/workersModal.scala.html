@@ -70,8 +70,9 @@ function generateWorkersTable(onlyWithResults) {
                 "data": "id",
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    return '<a href="@{playHttpContext}jatos/worker/'
-                        + data + '/results">' + data + '</a>';
+                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+                    'data-placement="bottom" title="Opens this worker\'s results" ' +
+                    'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             },
             {

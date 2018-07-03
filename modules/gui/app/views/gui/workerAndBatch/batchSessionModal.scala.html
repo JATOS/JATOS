@@ -1,0 +1,122 @@
+@(study: common.Study)
+@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
+
+<!-- Show Batch or Group Session Data Modal -->
+<div class="modal fade" id="showSessionDataModal" data-backdrop="static"
+    data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="sessionForm" method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Current Session Data</h4>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group row">
+                        <label class="control-label col-xs-3" for="data">Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your session data here"></span>
+                            <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
+                        </label>
+                        <div class="col-xs-9">
+                            <input type="hidden" class="sessionVersion" name="version" />
+                            <textarea rows="12" class="form-control sessionData" name="data" placeholder="Put your session as JSON in here"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="confirmed btn btn-batch" value="Save">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+$('#batchList').on('click', '.batchSessionButton', function() {
+    var batch = getBatchData(this);
+    if (!batch) {return} // should never happen
+    var dataUrl = "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
+    $('#showSessionDataModal').data('id', batch.id);
+    $('#showSessionDataModal').data('type', 'batch');
+    getSession(dataUrl);
+});
+
+function getSession(dataUrl) {
+    $.ajax({
+        type: 'GET',
+        url: dataUrl,
+        success: function(session) {
+            removeAlerts('#showSessionDataModal');
+            removeFormErrors('#showSessionDataModal')
+            clearForm("#sessionForm");
+            fillSessionForm(session);
+            $('#showSessionDataModal').modal('show');
+        },
+        error: function(response) {
+            showError("Couldn't load session data.");
+        }
+    });
+}
+
+function fillSessionForm(session) {
+    var sessionData = session['data'];
+    sessionData = sessionData ? sessionData : "{}";
+    var sessionDataPretty = JSON.stringify(JSON.parse(sessionData), null, 2);
+    $('#showSessionDataModal .sessionData').val(sessionDataPretty);
+    var sessionVersion = session['version'];
+    $('#showSessionDataModal .sessionVersion').val(sessionVersion);
+}
+
+$("#showSessionDataModal .prettyButton").click(function(event) {
+    var jsonInput = $('#showSessionDataModal .sessionData').val();
+    removeSingleFormError('#showSessionDataModal .sessionData');
+    try {
+        var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+        $('#showSessionDataModal .sessionData').val(jsonInputPretty);
+    } catch (e) {
+        showSingleFormError('#showSessionDataModal .sessionData', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+    }
+});
+
+$("#sessionForm").submit(function(event) {
+    event.preventDefault();
+    var id = $('#showSessionDataModal').data('id');
+    var type = $('#showSessionDataModal').data('type');
+    if (!id || !type) {return} // should never happen
+
+    if (type == 'batch') {
+        var postUrl = "@{playHttpContext}jatos/@study.getId()/batch/" + id + "/batchSessionData";
+        postSession(postUrl);
+    } else if (type == 'group') {
+        var postUrl = "@{playHttpContext}jatos/@study.getId()/group/" + id + "/groupSessionData";
+        postSession(postUrl);
+    }
+});
+
+function postSession(postUrl) {
+    $.ajax({
+        type: 'POST',
+        url: postUrl,
+        data: $('#sessionForm').serialize(),
+        success: function(response) {
+            removeAlerts('#showSessionDataModal');
+            removeFormErrors('#showSessionDataModal')
+            $('#showSessionDataModal').modal('hide');
+        },
+        error: function(response) {
+            removeAlerts('#showSessionDataModal');
+            removeFormErrors('#showSessionDataModal');
+            showWarning("Data weren't saved", "#showSessionDataModal .modal-header");
+            if (isJson(response.responseText)) {
+                showFormErrors('#showSessionDataModal', response)
+            } else {
+                showModalError("#showSessionDataModal .modal-header", response);
+            }
+        }
+    });
+}
+
+</script>
