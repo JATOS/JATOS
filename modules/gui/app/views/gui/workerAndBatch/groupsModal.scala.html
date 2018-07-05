@@ -18,7 +18,7 @@
                         <tr>
                             <th>Group ID</th>
                             <th data-toggle="tooltip" data-placement="top" title="All currently active workers">Active Workers</th>
-                            <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group">Former Workers</th>
+                            <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group">Past Workers</th>
                             <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server)</th>
                             <th data-toggle="tooltip" data-placement="top" title="">End Time (Server)</th>
                             <th data-toggle="tooltip" data-placement="top" title="Current state of the group">Group State</th>
@@ -32,6 +32,21 @@
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Template groups button bar -->
+<div id="groupButtonBarTemplate" style="display: none">
+    <div class="btn-group pull-right" role="group">
+        <button type="button" class="groupSessionButton btn btn-batch"
+            data-toggle="tooltip" data-placement="bottom" title="See and edit this group's session data">
+            Group Session Data <span class="glyphicon glyphicon-th-list"></span>
+        </button>
+        <button type="button" class="groupResultsButton btn btn-batch" data-toggle="tooltip"
+            data-placement="bottom" title="Shows the study results of this group">
+            Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+            title="Number of study results that belong to this group"></span>
+        </button>
     </div>
 </div>
 
@@ -59,7 +74,7 @@ function generateGroupsTable(batch) {
             "type": "GET",
             "url" : dataUrl,
             "error": function(reason) {
-                    showError("Couldn't read group data.")
+                showError("Couldn't read group data.", "#groupsModal .modal-header")
             }
         },
         "dom": 'ftip',
@@ -95,7 +110,7 @@ function generateGroupsTable(batch) {
                 "width": "1%"
             },
             {
-                "render" : renderSessionDataColumn
+                "render" : renderGroupButtonBarColumn
             }
         ],
         "language": {
@@ -103,8 +118,11 @@ function generateGroupsTable(batch) {
         },
         "drawCallback": function(settings) {
             $('th.groupSessionDataColumn').removeClass('sorting');
+            // Adjust the width of every group's toolbar to the widest one
         }
     });
+
+    setButtonWidthToMax("#groupsModal .groupResultsButton");
 }
 
 function renderWorkerColumn(data, type, dataToSet) {
@@ -119,19 +137,17 @@ function renderWorkerColumn(data, type, dataToSet) {
     return workerLinks.join(' ');
 }
 
-function renderSessionDataColumn(data, type, dataToSet) {
-    return '<button type="button" class="groupSessionButton btn btn-batch pull-right" data-toggle="tooltip" data-placement="bottom"' +
-        'title="See and edit this group\'s session data">Group Session Data <span class="glyphicon glyphicon-th-list"></span></button>';
+function renderGroupButtonBarColumn(data, type, dataToSet) {
+    var groupButtonBar = $('#groupButtonBarTemplate').clone().show();
+    $(groupButtonBar).removeAttr('id');
+    $(groupButtonBar).find('.groupResultsButton .resultsBadge').text(dataToSet.resultCount);
+    return groupButtonBar.html();
 }
 
-$('#groupsModal').on('click', '.groupSessionButton', function() {
+$('#groupsModal').on('click', '.groupResultsButton', function() {
     var tr = $(this).closest('tr');
     var groupId = groupsTable.row(tr).data().id;
-    if (!groupId) {return} // should never happen
-    var dataUrl = "@{playHttpContext}jatos/@study.getId()/group/" + groupId + "/groupSessionData";
-    $('#showSessionDataModal').data('id', groupId);
-    $('#showSessionDataModal').data('type', 'group');
-    getSession(dataUrl);
+    window.location.href =  "@{playHttpContext}jatos/@study.getId()/group/" + groupId + "/results";
 });
 
 </script>

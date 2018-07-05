@@ -157,14 +157,19 @@ public class JsonUtils {
             // Add active workers
             ArrayNode activeWorkerIdListNode = groupResultNode.arrayNode();
             groupResult.getActiveMemberList()
-                    .forEach(w -> activeWorkerIdListNode.add(w.getWorkerId()));
+                    .forEach(sr -> activeWorkerIdListNode.add(sr.getWorkerId()));
             groupResultNode.set("activeWorkerList", activeWorkerIdListNode);
 
             // Add history workers
             ArrayNode historyWorkerIdListNode = groupResultNode.arrayNode();
             groupResult.getHistoryMemberList()
-                    .forEach(w -> historyWorkerIdListNode.add(w.getWorkerId()));
+                    .forEach(sr -> historyWorkerIdListNode.add(sr.getWorkerId()));
             groupResultNode.set("historyWorkerList", historyWorkerIdListNode);
+
+            // Add study result count
+            int resultCount = groupResult.getActiveMemberList().size() +
+                    groupResult.getHistoryMemberList().size();
+            groupResultNode.put("resultCount", resultCount);
 
             arrayNode.add(groupResultNode);
         }
@@ -197,7 +202,7 @@ public class JsonUtils {
      * Returns all studyResults as a JSON string. It's including the
      * studyResult's componentResults.
      */
-    public JsonNode allStudyResultsForUI(List<StudyResult> studyResultList) {
+    public JsonNode allStudyResultsForUI(Collection<StudyResult> studyResultList) {
         ObjectNode allStudyResultsNode = Json.mapper().createObjectNode();
         ArrayNode arrayNode = allStudyResultsNode.arrayNode();
         for (StudyResult studyResult : studyResultList) {

@@ -14,10 +14,10 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
             <th>Duration</th>
+            <th>Batch</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
-            <th>Batch</th>
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
@@ -31,10 +31,10 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
             <th>Duration</th>
+            <th>Batch</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
-            <th>Batch</th>
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
@@ -89,6 +89,7 @@ $(document).ready(function() {
                     return (data) ? data : "not yet";
                 }
             },
+            { "data": "batchTitle" },
             {
                 "data": "workerId",
                 "width": "1%",
@@ -110,7 +111,6 @@ $(document).ready(function() {
                     return mtWorkerId + "<br>(" + confirmationCode + ")";
                 }
             },
-            { "data": "batchTitle" },
             {
                 "data": "groupResultId",
                 "visible": false,

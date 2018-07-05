@@ -20,7 +20,7 @@ import java.util.Set;
  * A member (StudyResult) can join a group (GroupResult) or leave a group.
  * <p>
  * An active member is a StudyResult who joined a group and is in the
- * activeMemberList. A former member is in the historyMemberList.
+ * activeMemberList. A past member is in the historyMemberList.
  * <p>
  * 'Group result' and 'group' are used interchangeably.
  *
@@ -59,6 +59,7 @@ public class GroupResult {
      * converts it into JSON. We use versioning to prevent concurrent changes of
      * the data. It's initialised with an empty JSON object.
      */
+    @JsonIgnore
     @Lob
     private String groupSessionData = "{}";
 
@@ -79,13 +80,15 @@ public class GroupResult {
      * Contains all currently active members of this group. Members are
      * StudyResults. This relationship is bidirectional.
      */
+    @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "activeGroupResult")
     private Set<StudyResult> activeMemberList = new HashSet<>();
 
     /**
-     * Contains all former members of this group (not active any more) that
+     * Contains all past members of this group (not active any more) that
      * somehow finished this study. This relationship is bidirectional.
      */
+    @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "historyGroupResult")
     private Set<StudyResult> historyMemberList = new HashSet<>();
 

@@ -12,8 +12,8 @@
             <th>Comp. Result ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
             <th>Duration</th>
-            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th>Batch</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
@@ -26,8 +26,8 @@
             <th>Comp. Result ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
             <th>Duration</th>
-            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th>Batch</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
@@ -76,6 +76,7 @@ $(document).ready(function() {
                     return (data) ? data : "not yet";
                 }
             },
+            { "data": "batchTitle" },
             {
                 "data": "workerId",
                 "width": "1%",
@@ -85,7 +86,6 @@ $(document).ready(function() {
                         'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             },
-            { "data": "batchTitle" },
             {
                 "data": "groupResultId",
                 "visible": false,

@@ -57,7 +57,7 @@ function generateWorkersTable(onlyWithResults) {
             "type": "GET",
             "url" : url,
             "error": function(reason) {
-                    showError("Couldn't read worker data.")
+                    showError("Couldn't read worker data.", "#workersModal .modal-header")
             }
         },
         "dom": 'ftip',

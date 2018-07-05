@@ -2,7 +2,7 @@
 @playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Show Batch or Group Session Data Modal -->
-<div class="modal fade" id="showSessionDataModal" data-backdrop="static"
+<div class="modal fade" id="sessionModal" data-backdrop="static"
     data-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -39,8 +39,18 @@ $('#batchList').on('click', '.batchSessionButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
     var dataUrl = "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
-    $('#showSessionDataModal').data('id', batch.id);
-    $('#showSessionDataModal').data('type', 'batch');
+    $('#sessionModal').data('id', batch.id);
+    $('#sessionModal').data('type', 'batch');
+    getSession(dataUrl);
+});
+
+$('#groupsModal').on('click', '.groupSessionButton', function() {
+    var tr = $(this).closest('tr');
+    var groupId = groupsTable.row(tr).data().id;
+    if (!groupId) {return} // should never happen
+    var dataUrl = "@{playHttpContext}jatos/@study.getId()/group/" + groupId + "/groupSessionData";
+    $('#sessionModal').data('id', groupId);
+    $('#sessionModal').data('type', 'group');
     getSession(dataUrl);
 });
 
@@ -49,11 +59,7 @@ function getSession(dataUrl) {
         type: 'GET',
         url: dataUrl,
         success: function(session) {
-            removeAlerts('#showSessionDataModal');
-            removeFormErrors('#showSessionDataModal')
-            clearForm("#sessionForm");
-            fillSessionForm(session);
-            $('#showSessionDataModal').modal('show');
+            fillSessionModal(session);
         },
         error: function(response) {
             showError("Couldn't load session data.");
@@ -61,30 +67,45 @@ function getSession(dataUrl) {
     });
 }
 
-function fillSessionForm(session) {
+function fillSessionModal(session, type) {
+    removeAlerts('#sessionModal');
+    removeFormErrors('#sessionModal');
+    clearForm("#sessionForm");
+
+    var type = $('#sessionModal').data('type');
+    if (type == 'batch') {
+        $('#sessionModal .modal-title').text("Current Batch Session Data");
+    } else if (type == 'group') {
+        $('#sessionModal .modal-title').text("Current Group Session Data");
+    }
+
     var sessionData = session['data'];
     sessionData = sessionData ? sessionData : "{}";
     var sessionDataPretty = JSON.stringify(JSON.parse(sessionData), null, 2);
-    $('#showSessionDataModal .sessionData').val(sessionDataPretty);
+    $('#sessionModal .sessionData').val(sessionDataPretty);
     var sessionVersion = session['version'];
-    $('#showSessionDataModal .sessionVersion').val(sessionVersion);
+    $('#sessionModal .sessionVersion').val(sessionVersion);
+
+    showInfo("Changing session data can affect your running studies. " +
+        "Edit only if you know what you are doing.", "#sessionModal .modal-header");
+    $('#sessionModal').modal('show');
 }
 
-$("#showSessionDataModal .prettyButton").click(function(event) {
-    var jsonInput = $('#showSessionDataModal .sessionData').val();
-    removeSingleFormError('#showSessionDataModal .sessionData');
+$("#sessionModal .prettyButton").click(function(event) {
+    var jsonInput = $('#sessionModal .sessionData').val();
+    removeSingleFormError('#sessionModal .sessionData');
     try {
         var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-        $('#showSessionDataModal .sessionData').val(jsonInputPretty);
+        $('#sessionModal .sessionData').val(jsonInputPretty);
     } catch (e) {
-        showSingleFormError('#showSessionDataModal .sessionData', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+        showSingleFormError('#sessionModal .sessionData', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
     }
 });
 
 $("#sessionForm").submit(function(event) {
     event.preventDefault();
-    var id = $('#showSessionDataModal').data('id');
-    var type = $('#showSessionDataModal').data('type');
+    var id = $('#sessionModal').data('id');
+    var type = $('#sessionModal').data('type');
     if (!id || !type) {return} // should never happen
 
     if (type == 'batch') {
@@ -102,18 +123,18 @@ function postSession(postUrl) {
         url: postUrl,
         data: $('#sessionForm').serialize(),
         success: function(response) {
-            removeAlerts('#showSessionDataModal');
-            removeFormErrors('#showSessionDataModal')
-            $('#showSessionDataModal').modal('hide');
+            removeAlerts('#sessionModal');
+            removeFormErrors('#sessionModal')
+            $('#sessionModal').modal('hide');
         },
         error: function(response) {
-            removeAlerts('#showSessionDataModal');
-            removeFormErrors('#showSessionDataModal');
-            showWarning("Data weren't saved", "#showSessionDataModal .modal-header");
+            removeAlerts('#sessionModal');
+            removeFormErrors('#sessionModal');
+            showWarning("Data weren't saved", "#sessionModal .modal-header");
             if (isJson(response.responseText)) {
-                showFormErrors('#showSessionDataModal', response)
+                showFormErrors('#sessionModal', response)
             } else {
-                showModalError("#showSessionDataModal .modal-header", response);
+                showModalError("#sessionModal .modal-header", response);
             }
         }
     });

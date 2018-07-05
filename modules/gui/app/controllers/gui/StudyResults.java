@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
+import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
@@ -11,10 +12,7 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
-import models.common.Batch;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.User;
+import models.common.*;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
@@ -30,6 +28,7 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
@@ -51,6 +50,7 @@ public class StudyResults extends Controller {
     private final ResultService resultService;
     private final StudyDao studyDao;
     private final BatchDao batchDao;
+    private final GroupResultDao groupResultDao;
     private final WorkerDao workerDao;
     private final StudyResultDao studyResultDao;
 
@@ -59,7 +59,7 @@ public class StudyResults extends Controller {
             Checker checker, AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
             ResultService resultService, StudyDao studyDao, BatchDao batchDao,
-            JsonUtils jsonUtils, WorkerDao workerDao,
+            GroupResultDao groupResultDao, JsonUtils jsonUtils, WorkerDao workerDao,
             StudyResultDao studyResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -69,6 +69,7 @@ public class StudyResults extends Controller {
         this.resultService = resultService;
         this.studyDao = studyDao;
         this.batchDao = batchDao;
+        this.groupResultDao = groupResultDao;
         this.jsonUtils = jsonUtils;
         this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
@@ -122,6 +123,32 @@ public class StudyResults extends Controller {
         String dataUrl = controllers.gui.routes.StudyResults
                 .tableDataByBatch(study.getId(), batch.getId(), workerType)
                 .url();
+        return ok(views.html.gui.result.studyResults.render(loggedInUser,
+                breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
+    }
+
+    /**
+     * Shows view with all StudyResults of a group.
+     */
+    @Transactional
+    @Authenticated
+    public Result groupsStudyResults(Long studyId, Long groupId) throws JatosGuiException {
+        LOGGER.debug(".batchesStudyResults: studyId " + studyId + ", " + "groupId " + groupId);
+        Study study = studyDao.findById(studyId);
+        GroupResult groupResult = groupResultDao.findById(groupId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForGroup(groupResult, study, groupId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwStudy(e, study.getId());
+        }
+
+        String breadcrumbsTitle = BreadcrumbsService.RESULTS;
+        String breadcrumbs = breadcrumbsService
+                .generateForGroup(study, groupResult.getBatch(), groupResult, breadcrumbsTitle);
+        String dataUrl = controllers.gui.routes.StudyResults
+                .tableDataByGroup(study.getId(), groupResult.getId()).url();
         return ok(views.html.gui.result.studyResults.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
     }
@@ -244,9 +271,10 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByBatch(Long studyId, Long batchId,
-            String workerType) throws JatosGuiException {
-        LOGGER.debug(".tableDataByBatch: studyId " + studyId);
+    public Result tableDataByBatch(Long studyId, Long batchId, String workerType)
+            throws JatosGuiException {
+        LOGGER.debug(".tableDataByBatch: studyId " + studyId + ", batchId " + batchId +
+                ", workerType " + workerType);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -260,10 +288,32 @@ public class StudyResults extends Controller {
                     workerType);
             // If worker type is MT then add MTSandbox on top
             if (MTWorker.WORKER_TYPE.equals(workerType)) {
-                studyResultList.addAll(
-                        studyResultDao.findAllByBatchAndWorkerType(batch,
-                                MTSandboxWorker.WORKER_TYPE));
+                studyResultList.addAll(studyResultDao.findAllByBatchAndWorkerType(batch,
+                        MTSandboxWorker.WORKER_TYPE));
             }
+            dataAsJson = jsonUtils.allStudyResultsForUI(studyResultList);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        return ok(dataAsJson);
+    }
+
+    /**
+     * Ajax request: Returns all StudyResults of a group in JSON format.
+     */
+    @Transactional
+    @Authenticated
+    public Result tableDataByGroup(Long studyId, Long groupResultId) throws JatosGuiException {
+        LOGGER.debug(".tableDataByGroup: studyId " + studyId + ", groupResultId " + groupResultId);
+        Study study = studyDao.findById(studyId);
+        GroupResult groupResult = groupResultDao.findById(groupResultId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        JsonNode dataAsJson = null;
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForGroup(groupResult, study, groupResultId);
+            Set<StudyResult> studyResultList = groupResult.getActiveMemberList();
+            studyResultList.addAll(groupResult.getHistoryMemberList());
             dataAsJson = jsonUtils.allStudyResultsForUI(studyResultList);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
