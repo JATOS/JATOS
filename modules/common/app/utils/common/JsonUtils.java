@@ -222,8 +222,7 @@ public class JsonUtils {
         ObjectNode allComponentResultsNode = Json.mapper().createObjectNode();
         ArrayNode arrayNode = allComponentResultsNode.arrayNode();
         for (ComponentResult componentResult : componentResultList) {
-            JsonNode componentResultNode = componentResultAsJsonNode(
-                    componentResult);
+            JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
             arrayNode.add(componentResultNode);
         }
         allComponentResultsNode.set(DATA, arrayNode);
@@ -252,10 +251,8 @@ public class JsonUtils {
 
         // Add all componentResults
         ArrayNode arrayNode = studyResultNode.arrayNode();
-        for (ComponentResult componentResult : studyResult
-                .getComponentResultList()) {
-            JsonNode componentResultNode = componentResultAsJsonNode(
-                    componentResult);
+        for (ComponentResult componentResult : studyResult.getComponentResultList()) {
+            JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
             arrayNode.add(componentResultNode);
         }
         studyResultNode.set("componentResults", arrayNode);
@@ -264,8 +261,8 @@ public class JsonUtils {
     }
 
     /**
-     * Returns group result ID of the given StudyResult or 'none' if it doesn't
-     * exist.
+     * Returns group result ID of the given StudyResult or null if it doesn't exist.
+     * Get group result Id either from active or history group result.
      */
     private String getGroupResultId(StudyResult studyResult) {
         if (studyResult.getActiveGroupResult() != null) {
@@ -273,13 +270,12 @@ public class JsonUtils {
         } else if (studyResult.getHistoryGroupResult() != null) {
             return studyResult.getHistoryGroupResult().getId().toString();
         } else {
-            return "none";
+            return null;
         }
     }
 
     /**
-     * Returns an ObjectNode of the given ComponentResult. It contains the study
-     * ID, component ID and component title.
+     * Returns an ObjectNode of the given ComponentResult.
      */
     private JsonNode componentResultAsJsonNode(ComponentResult componentResult) {
         ObjectNode componentResultNode = Json.mapper().valueToTree(componentResult);
@@ -290,12 +286,10 @@ public class JsonUtils {
         componentResultNode.put("componentTitle", componentResult.getComponent().getTitle());
         componentResultNode.put("duration", getDurationPretty(
                 componentResult.getStartDate(), componentResult.getEndDate()));
-        GroupResult groupResult = componentResult.getStudyResult().getActiveGroupResult();
-        String groupResultId = groupResult != null
-                ? groupResult.getId().toString() : null;
+        String groupResultId = getGroupResultId(componentResult.getStudyResult());
         componentResultNode.put("groupResultId", groupResultId);
-        componentResultNode.put("batchTitle",
-                componentResult.getStudyResult().getBatch().getTitle());
+        componentResultNode
+                .put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
         componentResultNode.put(DATA, componentResultDataForUI(componentResult));

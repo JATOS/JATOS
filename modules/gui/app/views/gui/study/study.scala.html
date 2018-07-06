@@ -280,6 +280,7 @@ $(document).ready(function() {
                 "width": "1%",
                 "render": function (data, type, full, meta) {
                     var toolbar = $('#componentToolbarDiv').clone().show();
+                    $(toolbar).removeAttr('id');
                     $(toolbar).find('.resultsBadge').text(data.resultCount);
                     return toolbar.html();
                 }
