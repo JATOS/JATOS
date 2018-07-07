@@ -173,14 +173,9 @@ $("#studyPropertiesForm").submit(function(event) {
                 fillSidebar();
                 var title = $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
                 $('#breadcrumbs li:last-child').text(title);
-                var description = $('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').val();
-                if (description) {
-                    $('#studyDescription').text(description);
-                    $('#studyDescription').closest('.panel').show();
-                } else {
-                    $('#studyDescription').text("");
-                    $('#studyDescription').closest('.panel').hide();
-                }
+                var studyDescription = $('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').val();
+                $('#studyDescription .full').text(studyDescription);
+                showStudyDescription();
             }
         },
         error : function(response) {
