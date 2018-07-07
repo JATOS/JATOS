@@ -81,7 +81,8 @@ public class MessagesStrings {
     public static final String ONLY_ADMIN_CAN_SEE_LOGS =
             "Only an admin can see the logs";
     public static final String COULDNT_OPEN_LOG = "Error: Could not open log file";
-    public static final String LOG_CUT = "--- Log is cut here. Download it to get the whole file. ---";
+    public static final String LOG_CUT =
+            "--- Log is cut here. Download it to get the whole file. ---";
     public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE =
             "Sorry, it's not possible to remove your own admin rights. Although you can ask another admin to remove them for you.";
     public static final String NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS =
@@ -190,16 +191,14 @@ public class MessagesStrings {
         return "An study with ID " + studyId + " doesn't exist.";
     }
 
-    public static String studyNotUser(String username, String email,
-            Long studyId, String studyTitle) {
-        return username + " (" + email + ") isn't user of study "
-                + studyId + " \"" + studyTitle + "\".";
+    public static String studyNotUser(String username, String email, Long studyId, String title) {
+        return username + " (" + email + ") isn't user of study \"" + title + "\" (" +
+                studyId + ").";
     }
 
-    public static String studyReorderUnknownPosition(String position,
-            Long studyId) {
+    public static String studyReorderUnknownPosition(String position, Long studyId, String title) {
         return "Unknown position " + position + ". Couldn't reorder "
-                + "components in study with ID " + studyId + ".";
+                + "components in study with ID " + "study \"" + title + "\" (" + studyId + ").";
     }
 
     public static String studyImportNotUser(String studyTitle) {
@@ -211,41 +210,37 @@ public class MessagesStrings {
                 + "and import it here again.";
     }
 
-    public static String studyAssetsOverwritten(String studyAssetsName,
-            Long studyId) {
-        return "Assets \"" + studyAssetsName + "\" of study with ID "
-                + studyId + " were overwritten.";
+    public static String studyAssetsOverwritten(String studyAssetsName, Long studyId,
+            String studyTitle) {
+        return "Assets \"" + studyAssetsName + "\" of study \"" + studyTitle + "\" (ID "
+                + studyId + ") were overwritten.";
     }
 
-    public static String studysPropertiesOverwritten(Long studyId) {
-        return "Properties of study with ID " + studyId
-                + " were overwritten.";
+    public static String studysPropertiesOverwritten(Long studyId, String studyTitle) {
+        return "Properties of of study \"" + studyTitle + "\" (ID " + studyId +
+                ") were overwritten.";
     }
 
-    public static String importedNewStudy(String studyAssetsName,
-            Long studyId) {
-        return "New study imported: ID " + studyId
-                + " and study assets \"" + studyAssetsName + "\".";
+    public static String importedNewStudy(String studyAssetsName, Long studyId, String studyTitle) {
+        return "Newly imported study \"" + studyTitle + "\" (ID " + studyId
+                + ") with study assets \"" + studyAssetsName + "\"";
     }
 
-    public static String componentExportFailure(Long componentId) {
-        return "Failure during export of component with ID "
-                + componentId + ".";
+    public static String componentExportFailure(Long componentId, String componentTitle) {
+        return "Failure during export of component \"" + componentTitle + "\" (ID "
+                + componentId + ")";
     }
 
-    public static String componentsPropertiesOverwritten(Long componentId,
-            String title) {
-        return "Properties of component \"" + title + "\"  with ID "
-                + componentId + " were overwritten.";
+    public static String componentsPropertiesOverwritten(Long componentId, String title) {
+        return "Properties of component \"" + title + "\" (ID " + componentId +
+                ") were overwritten.";
     }
 
     public static String importedNewComponent(Long componentId, String title) {
-        return "New component \"" + title + "\" with ID "
-                + componentId + " imported.";
+        return "New component \"" + title + "\" (ID " + componentId + ") imported.";
     }
 
-    public static String componentNotBelongToStudy(Long studyId,
-            Long componentId) {
+    public static String componentNotBelongToStudy(Long studyId, Long componentId) {
         return "There is no study with ID " + studyId
                 + " that has a component with ID " + componentId + ".";
     }
@@ -329,19 +324,18 @@ public class MessagesStrings {
                 + "'s HTML file path is empty.";
     }
 
-    public static String htmlFilePathNotExist(String studyDirName,
-            String htmlFilePath) {
+    public static String htmlFilePathNotExist(String studyDirName, String htmlFilePath) {
         return "HTML file " + htmlFilePath + " in study assets "
                 + studyDirName + " couldn't be found.";
     }
 
-    public static String studyExportFailure(Long studyId) {
-        return "Export of study with ID " + studyId + " failed.";
+    public static String studyExportFailure(Long studyId, String studyTitle) {
+        return "Export of study \"" + studyTitle + "\" (ID " + studyId + ") failed.";
     }
 
-    public static String studyLocked(Long studyId) {
-        return "Study " + studyId
-                + " is locked. Unlock it if you want to make changes.";
+    public static String studyLocked(Long studyId, String title) {
+        return "Study \"" + title + "\" (" + studyId +
+                ") is locked. Unlock it if you want to make changes.";
     }
 
     public static String studyCreationOfPersonalSingleRunFailed(Long studyId) {
@@ -387,15 +381,13 @@ public class MessagesStrings {
                 + ") couldn't be created because it already exists.";
     }
 
-    public static String studyAssetsDirExistsBelongsToDifferentStudy(
-            String dirName) {
+    public static String studyAssetsDirExistsBelongsToDifferentStudy(String dirName) {
         return "The uploaded study assets' directory \"" + dirName
                 + "\" already exists but belongs to another study. Try renaming"
                 + " the study assets' directory name in the study properties.";
     }
 
-    public static String studyAssetsDirNotRenamed(String oldDirName,
-            String newDirName) {
+    public static String studyAssetsDirNotRenamed(String oldDirName, String newDirName) {
         return "Couldn't rename study assets' directory from \"" + oldDirName
                 + "\" to \"" + newDirName + "\".";
     }
@@ -404,21 +396,18 @@ public class MessagesStrings {
         return "Couldn't create new study assets' directory (" + dirName + ").";
     }
 
-    public static String studyAssetsNotRenamedBecauseExists(String oldDirName,
-            String newDirName) {
+    public static String studyAssetsNotRenamedBecauseExists(String oldDirName, String newDirName) {
         return "Study assets directory \"" + oldDirName
                 + "\" couldn't be renamed to \"" + newDirName
                 + "\" because it already exists.";
     }
 
-    public static String htmlFileNotRenamedBecauseExists(String oldFilePath,
-            String newFilePath) {
+    public static String htmlFileNotRenamedBecauseExists(String oldFilePath, String newFilePath) {
         return "HTML file \"" + oldFilePath + "\" couldn't be renamed to \""
                 + newFilePath + "\" because it already exists.";
     }
 
-    public static String htmlFileNotRenamed(String oldFilePath,
-            String newFilePath) {
+    public static String htmlFileNotRenamed(String oldFilePath, String newFilePath) {
         return "Couldn't rename HTML file from \"" + oldFilePath + "\" to \""
                 + newFilePath + "\".";
     }

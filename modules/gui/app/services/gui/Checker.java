@@ -84,7 +84,7 @@ public class Checker {
      */
     public void checkStudyLocked(Study study) throws ForbiddenException {
         if (study.isLocked()) {
-            String errorMsg = MessagesStrings.studyLocked(study.getId());
+            String errorMsg = MessagesStrings.studyLocked(study.getId(), study.getTitle());
             throw new ForbiddenException(errorMsg);
         }
     }

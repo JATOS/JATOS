@@ -238,7 +238,7 @@ public class ImportExportService {
                 moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, currentStudy.getDirName());
             }
             RequestScopeMessaging.success(MessagesStrings.studyAssetsOverwritten(
-                    importedStudy.getDirName(), currentStudy.getId()));
+                    importedStudy.getDirName(), currentStudy.getId(), currentStudy.getTitle()));
         }
         if (studyEntityConfirm) {
             if (studysDirConfirm) {
@@ -250,8 +250,8 @@ public class ImportExportService {
                 studyService.updateStudyWithoutDirName(currentStudy, importedStudy);
             }
             updateStudysComponents(currentStudy, importedStudy);
-            RequestScopeMessaging.success(
-                    MessagesStrings.studysPropertiesOverwritten(currentStudy.getId()));
+            RequestScopeMessaging.success(MessagesStrings
+                    .studysPropertiesOverwritten(currentStudy.getId(), currentStudy.getTitle()));
         }
     }
 
@@ -260,7 +260,7 @@ public class ImportExportService {
         moveStudyAssetsDir(tempUnzippedStudyDir, null, importedStudy.getDirName());
         studyService.createAndPersistStudy(loggedInUser, importedStudy);
         RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
-                importedStudy.getDirName(), importedStudy.getId()));
+                importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
     }
 
     public File createStudyExportZipFile(Study study) throws IOException {

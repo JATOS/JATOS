@@ -167,7 +167,7 @@ public class ImportExport extends Controller {
         try {
             zipFile = importExportService.createStudyExportZipFile(study);
         } catch (IOException e) {
-            String errorMsg = MessagesStrings.studyExportFailure(studyId);
+            String errorMsg = MessagesStrings.studyExportFailure(studyId, study.getTitle());
             LOGGER.error(".exportStudy: " + errorMsg, e);
             jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
         }
@@ -201,7 +201,8 @@ public class ImportExport extends Controller {
         try {
             componentAsJson = jsonUtils.componentAsJsonForIO(component);
         } catch (IOException e) {
-            String errorMsg = MessagesStrings.componentExportFailure(componentId);
+            String errorMsg =
+                    MessagesStrings.componentExportFailure(componentId, component.getTitle());
             jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
         }
 

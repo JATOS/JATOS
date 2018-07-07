@@ -186,8 +186,7 @@ public class JsonUtils {
         String data = componentResult.getData();
         if (data != null) {
             // Escape HTML tags and &
-            data = data.replace("&", "&amp").replace("<", "&lt;").replace(">",
-                    "&gt;");
+            data = data.replace("&", "&amp").replace("<", "&lt;").replace(">", "&gt;");
             if (data.length() < MAX_CHAR_PER_RESULT) {
                 return data;
             } else {
