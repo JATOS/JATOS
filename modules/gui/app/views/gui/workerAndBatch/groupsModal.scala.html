@@ -37,7 +37,7 @@
 
 <!-- Template groups button bar -->
 <div id="groupButtonBarTemplate" style="display: none">
-    <div class="btn-group pull-right" role="group">
+    <div class="btn-group" role="group">
         <button type="button" class="groupSessionButton btn btn-batch"
             data-toggle="tooltip" data-placement="bottom" title="See and edit this group's session data">
             Group Session Data <span class="glyphicon glyphicon-th-list"></span>
@@ -118,30 +118,41 @@ function generateGroupsTable(batch) {
         },
         "drawCallback": function(settings) {
             $('th.groupSessionDataColumn').removeClass('sorting');
-            // Adjust the width of every group's toolbar to the widest one
+            setGroupResultsButtonWidthToMax();
         }
     });
 
-    setButtonWidthToMax("#groupsModal .groupResultsButton");
-}
+    function renderWorkerColumn(data, type, dataToSet) {
+        if (data.length == 0) return "none";
 
-function renderWorkerColumn(data, type, dataToSet) {
-    if (data.length == 0) return "none";
+        var workerLinks = [];
+        data.forEach(function(workerId) {
+            workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+            'data-placement="bottom" title="Opens this worker\'s results" ' +
+            'href="@{playHttpContext}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
+        });
+        return workerLinks.join(' ');
+    }
 
-    var workerLinks = [];
-    data.forEach(function(workerId) {
-        workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
-        'data-placement="bottom" title="Opens this worker\'s results" ' +
-        'href="@{playHttpContext}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
-    });
-    return workerLinks.join(' ');
-}
+    function renderGroupButtonBarColumn(data, type, dataToSet) {
+        var groupButtonBar = $('#groupButtonBarTemplate').clone().show();
+        $(groupButtonBar).removeAttr('id');
+        $(groupButtonBar).find('.groupResultsButton .resultsBadge').text(dataToSet.resultCount);
+        return groupButtonBar.html();
+    }
 
-function renderGroupButtonBarColumn(data, type, dataToSet) {
-    var groupButtonBar = $('#groupButtonBarTemplate').clone().show();
-    $(groupButtonBar).removeAttr('id');
-    $(groupButtonBar).find('.groupResultsButton .resultsBadge').text(dataToSet.resultCount);
-    return groupButtonBar.html();
+    function setGroupResultsButtonWidthToMax() {
+        // That's an ugly hack: just using datatables "drawCallback" doesn't work. For some reason the
+        // buttons have an width of near 0. Here we wait until the first button has a width of > 1 and
+        // only then trigger the button resizing.
+        var buttons = $("#groupsModal .groupResultsButton");
+        if (!(buttons && buttons.length && $(buttons[0]).width() > 1)) {
+            window.requestAnimationFrame(setGroupResultsButtonWidthToMax);
+        } else {
+            setButtonWidthToMax("#groupsModal .groupResultsButton");
+            groupsTable.columns.adjust();
+        }
+    };
 }
 
 $('#groupsModal').on('click', '.groupResultsButton', function() {
