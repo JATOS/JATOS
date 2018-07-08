@@ -29,14 +29,22 @@
 /*
  * Batch Bootstrap Panels
  */
-#batchList > .panel {
+#batchList {
     margin-top: 20px;
 }
 #batchList > .panel {
-    background-color: #f5f5f5;
+    background-color: white;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid #cccccc;
 }
-#batchList .panel > .panel-heading {
+#batchList > .panel > .panel-heading {
     line-height:32px;
+    background-image: none;
+    background-color: white;
+}
+#batchList .panel-collapse {
+    padding-bottom: 20px;
 }
 #batchList .collapseWorkerSetup {
     margin-right: 10px;
@@ -61,16 +69,15 @@
     overflow: hidden;
     line-height:32px;
     background-image: none;
-    background-color: white;
+    background-color: #f0f0f0;
 }
-.workerSetupItem .panel > .panel-heading .btn-group {
-    position: relative;
+.workerSetupItem .panel > .panel-heading .collapseWorkerTable {
+    background-color: #f0f0f0;
 }
 .workerSetupItem .panel > .panel-heading .activeButton {
     margin-left: 10px;
     margin-right: 10px;
 }
-
 .workerSetupItem .panel-collapse {
     padding-left: 20px;
     padding-right: 20px;

@@ -67,9 +67,9 @@ $(document).ready(function() {
                 "orderable": false,
                 "data": null,
                 "render": function (data, type, full, meta) {
-                    return '<span class="glyphicon glyphicon-chevron-right" '
-                        + 'data-toggle="tooltip" data-placement="bottom" '
-                        + 'title="Click to expand/collapse this result"></span>';
+                    return '<button type="button" class="btn btn-default" data-toggle="tooltip"' +
+                        'data-placement="bottom" title="Click to show/hide result data">' +
+                        '<span class="glyphicon glyphicon-chevron-right"></span></button>';
                 }
             },
             {

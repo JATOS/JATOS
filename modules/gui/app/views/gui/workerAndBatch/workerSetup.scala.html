@@ -6,9 +6,10 @@
     <div class="jatosWorkerSetup panel panel-default">
         <div class="panel-heading">
              <span class="panel-title">
-                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all @common.workers.JatosWorker.UI_WORKER_TYPE workers">
-                </span>
+                <button type="button" class="collapseWorkerTable btn btn-default" data-toggle="tooltip"
+                    data-placement="bottom" title="Show/hide all @common.workers.JatosWorker.UI_WORKER_TYPE workers">
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
@@ -46,9 +47,10 @@
     <div class="personalSingleWorkerSetup panel panel-default">
         <div class="panel-heading">
             <span class="panel-title">
-                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
-                </span>
+                <button type="button" class="collapseWorkerTable btn btn-default" data-toggle="tooltip"
+                    data-placement="bottom" title="Show/hide all @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
@@ -91,9 +93,10 @@
     <div class="personalMultipleWorkerSetup panel panel-default">
         <div class="panel-heading">
             <span class="panel-title">
-                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
-                </span>
+                <button type="button" class="collapseWorkerTable btn btn-default" data-toggle="tooltip"
+                    data-placement="bottom" title="Show/hide all @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
@@ -136,9 +139,10 @@
     <div class="generalSingleWorkerSetup panel panel-default">
         <div class="panel-heading">
             <span class="panel-title">
-                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
-                </span>
+                <button type="button" class="collapseWorkerTable btn btn-default" data-toggle="tooltip"
+                    data-placement="bottom" title="Show/hide all @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
@@ -179,9 +183,10 @@
     <div class="mtWorkerSetup panel panel-default">
         <div class="panel-heading">
             <span class="panel-title">
-                <span role="button" class="collapseWorkerTable glyphicon glyphicon-chevron-right" data-toggle="tooltip"
-                    data-placement="bottom" title="Click to see all @common.workers.MTWorker.UI_WORKER_TYPE workers">
-                </span>
+                <button type="button" class="collapseWorkerTable btn btn-default" data-toggle="tooltip"
+                    data-placement="bottom" title="Show/hide all @common.workers.MTWorker.UI_WORKER_TYPE workers">
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
                 <button type="button" class="btn btn-sm btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
@@ -541,7 +546,7 @@ function fillMtRow(worker, mtWorkerTable) {
 
 $('#batchList').on('click', '.collapseWorkerTable', function() {
     var collapse = $(this).closest('.panel').find('.collapse').toggle();
-    $(this).closest('.panel').find('.collapseWorkerTable.glyphicon')
+    $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
         .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });
 

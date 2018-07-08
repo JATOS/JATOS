@@ -67,9 +67,10 @@
 <div id="batchTemplate" class="panel panel-default" style="display: none">
     <div class="panel-heading">
         <span class="panel-title">
-            <span role="button" class="collapseWorkerSetup glyphicon glyphicon-chevron-right" data-toggle="tooltip"
+            <button type="button" class="collapseWorkerSetup btn btn-default" data-toggle="tooltip"
                 data-placement="bottom" title="Open/close worker setup of this batch">
-            </span>
+                <span class="glyphicon glyphicon-chevron-right"></span>
+            </button>
             <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch ( if deactivated workers cannot run the study in this batch)">
                 <span class="glyphicon glyphicon-ok"></span>
             </button>
@@ -219,7 +220,8 @@ $('#batchList').on('click', '.collapseWorkerSetup, .batchTitle, .batchWorkersBad
         $(collapse).append(workerSetupDiv)
     }
     $(collapse).toggle();
-    $(this).parent().find('.collapseWorkerSetup').toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+    $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+                    .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });
 
 $('#batchList').on('click', '.activeBatchButton', function() {
