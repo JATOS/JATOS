@@ -37,25 +37,16 @@
 
 var workersTable;
 
-function generateWorkersTable(onlyWithResults) {
+function generateWorkersTable() {
     if (workersTable) {
         workersTable.ajax.reload();
         return;
     }
 
-    var url;
-    if (onlyWithResults) {
-        url = '@controllers.gui.routes.Studies.allWorkersWithResults(study.getId())';
-        $('#workersModal .modal-title').text("All workers with results");
-    } else {
-        url = '@controllers.gui.routes.Studies.allWorkers(study.getId())';
-        $('#workersModal .modal-title').text("All workers");
-    }
-
     workersTable = $('#workersModal .table').DataTable({
         "ajax": {
             "type": "GET",
-            "url" : url,
+            "url" : '@controllers.gui.routes.Studies.allWorkers(study.getId())',
             "error": function(reason) {
                     showError("Couldn't read worker data.", "#workersModal .modal-header")
             }

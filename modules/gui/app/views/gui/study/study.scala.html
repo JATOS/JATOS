@@ -1,5 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-study: common.Study, workersSize: Integer, studyResultsCount: Integer)
+study: common.Study, studyResultsCount: Integer)
 @playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
@@ -25,15 +25,6 @@ study: common.Study, workersSize: Integer, studyResultsCount: Integer)
                 title="Shows study results">
             Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
                           title="Number of study results of this study">@studyResultsCount</span>
-        </button>
-        <button id="workers" type="button" class="btn btn-study"
-                data-toggle="tooltip" data-placement="bottom"
-                title="Shows workers with results">
-            Workers
-            <span class="badge" data-toggle="tooltip" data-placement="bottom"
-                    title="Number of workers who did this study so far (at least started the study)">
-                @workersSize
-            </span>
         </button>
         <button id="studyPropertiesButton" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
@@ -210,7 +201,6 @@ study: common.Study, workersSize: Integer, studyResultsCount: Integer)
     </div>
 </div>
 
-@views.html.gui.workerAndBatch.workersModal(study)
 @views.html.gui.study.changeMemberUsersModal(loggedInUser)
 @views.html.gui.study.componentPropertiesModal(study)
 @views.html.gui.study.studyLogModal(study)
@@ -506,12 +496,6 @@ $('#studyToolbar').on('click', '#studyResults', function() {
     window.location.href = "@controllers.gui.routes.StudyResults.studysStudyResults(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#workers', function() {
-    removeAlerts("#workersModal");
-    generateWorkersTable(true);
-    $('#workersModal').modal('show');
-});
-
 $('#studyToolbar').on('click', '#workerAndBatchManagerButton', function() {
     window.location.href = "@controllers.gui.routes.Batches.workerAndBatchManager(study.getId())";
 });
@@ -541,8 +525,9 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
     $.ajax({
         url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
         type : 'GET',
-        success : function(result) {
+        success : function(cloneTitle) {
             fillSidebar();
+            showInfo('Created clone "' + cloneTitle + '"');
         },
         error : function(err) {
             showError(err.responseText);

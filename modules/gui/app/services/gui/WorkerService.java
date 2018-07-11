@@ -1,32 +1,20 @@
 package services.gui;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import daos.common.BatchDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.Study;
-import models.common.StudyResult;
-import models.common.workers.GeneralSingleWorker;
-import models.common.workers.JatosWorker;
-import models.common.workers.MTSandboxWorker;
-import models.common.workers.MTWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
-import models.common.workers.Worker;
+import models.common.workers.*;
 import play.data.validation.ValidationError;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -49,20 +37,12 @@ public class WorkerService {
     }
 
     /**
-     * Retrieve all workers that at least started the study
-     */
-    public Set<Worker> retrieveWorkersWithStudyResult(Study study) {
-        List<StudyResult> studyResultList = studyResultDao.findAllByStudy(study);
-        return studyResultList.stream().map(StudyResult::getWorker).collect(Collectors.toSet());
-    }
-
-    /**
      * Retrieve all workers that belong to the study including the ones that were not started yet
      */
     public Set<Worker> retrieveAllWorkers(Study study) {
         return study.getBatchList().stream()
-                .map(b -> b.getWorkerList())
-                .flatMap(wl -> wl.stream())
+                .map(Batch::getWorkerList)
+                .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
     }
 

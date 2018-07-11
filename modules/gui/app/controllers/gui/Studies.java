@@ -109,12 +109,11 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
 
-        int workersSize = workerService.retrieveWorkersWithStudyResult(study).size();
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus,
                 views.html.gui.study.study.render(loggedInUser, breadcrumbs,
-                        HttpUtils.isLocalhost(), study, workersSize, studyResultCount));
+                        HttpUtils.isLocalhost(), study, studyResultCount));
     }
 
     @Transactional
@@ -269,14 +268,15 @@ public class Studies extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
+        Study clone = null;
         try {
-            Study clone = studyService.clone(study);
+            clone = studyService.clone(study);
             studyService.createAndPersistStudy(loggedInUser, clone);
         } catch (IOException e) {
             jatosGuiExceptionThrower.throwAjax(e.getMessage(),
                     Http.Status.INTERNAL_SERVER_ERROR);
         }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok(clone.getTitle());
     }
 
     /**
@@ -470,30 +470,6 @@ public class Studies extends Controller {
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }
-    }
-
-    /**
-     * Ajax GET request
-     * <p>
-     * Returns a list of workers (as JSON) that did the specified study (have a study result).
-     */
-    @Transactional
-    @Authenticated
-    public Result allWorkersWithResults(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".workersTableDataByStudy: studyId " + studyId);
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        JsonNode dataAsJson = null;
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-
-            Set<Worker> workerSet = workerService.retrieveWorkersWithStudyResult(study);
-            dataAsJson = jsonUtils.workersForTableData(workerSet, study);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(dataAsJson);
     }
 
     /**
