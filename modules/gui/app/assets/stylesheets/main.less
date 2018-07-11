@@ -6,6 +6,13 @@
 body {
   padding-top: 50px;
 }
+a:hover,
+a:focus {
+    text-decoration: none;
+}
+.gray-light{
+	color: #aaa;
+}
 
 /*
  * Glyphicons
@@ -13,98 +20,54 @@ body {
 @import "lib/bootstrap/less/variables.less";
 @import (reference) "lib/bootstrap/less/bootstrap.less";
 @import (reference) "lib/bootstrap/less/glyphicons.less";
-
-.gray-light{
-	color: #aaa;
-}
-
 .glyphicon-mturk {
 	&:extend(.glyphicon-knight all);
 	color: #af00ef;
 }
-
 .glyphicon-mturk-sandbox {
 	&:extend(.glyphicon-knight all);
 	color: #ff55ff;
 }
-
 .glyphicon-jatos {
 	&:extend(.glyphicon-wrench all);
 	color: #ffcc00;
 }
-
 .glyphicon-general-single {
 	&:extend(.glyphicon-glass all);
 	color: #b30000;
 }
-
 .glyphicon-personal-single {
 	&:extend(.glyphicon-leaf all);
 	color: #00e600;
 }
-
 .glyphicon-personal-multiple {
 	&:extend(.glyphicon-tree-deciduous all);
 	color: #004d00;
 }
-
-.sidebar-nav {
-    position: absolute;
-    top: 0;
-    margin: 0;
-    margin-top: 20px;
-    margin-right: 2px;
-    padding: 0;
-    list-style: none;
-}
-
-.sidebar-nav li.studyListItem {
-	padding: 10px;
-}
-
-.sidebar-nav li.currentStudy {
-	background-color: #fff;
-}
-
-.sidebar-nav li.studyListItem:hover,
-.sidebar-nav li.studyListItem:focus {
-	background-color: #fff;
-    cursor: pointer;
-}
-
-a:hover,
-a:focus {
-    text-decoration: none;
-}
-
 .glyphicon-plus.study-collapsed {
 	display:inline; 
 }
-
 .glyphicon-plus.study-expanded {
 	display:none;
 }
-
 .glyphicon-minus.study-expanded {
 	display:inline;
 }
-
 .glyphicon-minus.study-collapsed {
 	display:none;
 }
-
-.dragButton {
-	cursor: move;
+.glyphicon-none:before {
+    content: "\2122";
+    color: transparent !important;
 }
+
 
 /*
  * Alerts
  */
-
 .alert .glyphicon{
   display:table-cell;
 }
-
 .alert div,
 .alert span{
   padding-left: 5px;
@@ -115,11 +78,11 @@ a:focus {
 /*
  * Global add-ons
  */
-
 .sub-header {
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
 }
+
 
 /*
  * Top navigation
@@ -129,10 +92,30 @@ a:focus {
   border: 0;
 }
 
+
 /*
  * Sidebar
  */
-
+.sidebar-nav {
+  position: absolute;
+  top: 0;
+  margin: 0;
+  margin-top: 20px;
+  margin-right: 2px;
+  padding: 0;
+  list-style: none;
+}
+.sidebar-nav li.studyListItem {
+  padding: 10px;
+}
+.sidebar-nav li.currentStudy {
+  background-color: #fff;
+}
+.sidebar-nav li.studyListItem:hover,
+.sidebar-nav li.studyListItem:focus {
+  background-color: #fff;
+  cursor: pointer;
+}
 /* Hide for mobile, show later */
 .sidebar {
   display: none;
@@ -154,7 +137,9 @@ a:focus {
 }
 
 
-/* Sidebar navigation */
+/*
+ * Sidebar navigation
+ */
 .nav-sidebar {
   margin-right: -21px; /* 20px padding + 1px border */
   margin-bottom: 20px;
@@ -171,6 +156,7 @@ a:focus {
   background-color: #428bca;
 }
 
+
 /*
  * Login modal
  * Setup if another modal there (http://stackoverflow.com/questions/19305821)
@@ -182,20 +168,30 @@ a:focus {
 	z-index: 1041 !important;
 }
 
+
 /*
  * Main content
  */
-
 .main {
   padding: 20px;
 }
-
 @media (min-width: 768px) {
 	.main {
 		padding-right: 40px;
 		padding-left: 40px;
 	}
 }
+.main .page-header {
+	margin-top: 0;
+}
+.top-buffer {
+	margin-top: 10px;
+}
+.grayout {
+	opacity: 0.6; /* Real browsers */
+	filter: alpha(opacity=60); /* MSIE */
+}
+
 
 /*
  * Fix for Bootstrap 3 radio and checkbox alignment
@@ -210,17 +206,21 @@ a:focus {
   }
 }
 
-.main .page-header {
-	margin-top: 0;
+/*
+ * General Datatables stuff
+ */
+table.dataTable tbody tr.selected {
+    color: black !important;
+    background-color: #aaa !important;
 }
-
-.top-buffer {
-	margin-top: 10px;
+table.dataTable tbody tr.selected a {
+    color: white;
 }
-
-.grayout {
-	opacity: 0.6; /* Real browsers */
-	filter: alpha(opacity=60); /* MSIE */
+.dropdown-menu > .active > a,
+.dropdown-menu > .active > a:focus,
+.dropdown-menu > .active > a:hover {
+    color: black;
+    background-color: #aaa;
 }
 
 
