@@ -9,6 +9,7 @@
         <tr>
             <!-- If you change something in the head, change it in the footer too! -->
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></th>
             <th>Comp. Result ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
             <th>Duration</th>
@@ -23,6 +24,7 @@
         <tr>
             <!-- If you change something in the footer, change it in the head too! -->
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></th>
             <th>Comp. Result ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
             <th>Duration</th>
@@ -38,8 +40,6 @@
 <script type="text/javascript">
 var studyId = @study.getId();
 
-showInfo("@general.common.MessagesStrings.RESULTS_INFO");
-
 var resultsTable;
 $(document).ready(function() {
     resultsTable = $('#resultsTable').DataTable({
@@ -54,6 +54,7 @@ $(document).ready(function() {
         "order": [[ 2, "desc" ]],
         "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "pageLength": 10,
+        "stateSave": true,
         "columns": [
             {
                 "class": 'details-control',
@@ -61,8 +62,17 @@ $(document).ready(function() {
                 "data": null,
                 "render": function (data, type, full, meta) {
                     return '<button type="button" class="btn btn-default" data-toggle="tooltip"' +
-                       'data-placement="bottom" title="Click to show/hide result data">' +
+                       'data-placement="bottom" title="Show/hide result data">' +
                        '<span class="glyphicon glyphicon-chevron-right"></span></button>';
+                }
+            },
+            {
+                "data": null,
+                "orderable": false,
+                "render": function (data, type, full, meta) {
+                    return '<button type="button" class="btn btn-default selectCheckbox" data-toggle="tooltip"' +
+                        'data-placement="bottom" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION">' +
+                        '<span class="glyphicon glyphicon-none"></span></button>';
                 }
             },
             {
@@ -103,6 +113,10 @@ $(document).ready(function() {
                 "width": "20%"
             }
         ],
+        select: {
+            style: 'multi',
+            selector: 'td:nth-child(2)'
+        },
         buttons: [
             {
                 "extend": "colvis",
@@ -161,6 +175,20 @@ $(document).ready(function() {
     // Necessary - otherwise the button doesn't work with manually selected rows
     resultsTable.on('draw', toggleDeselectAllButton);
 
+    resultsTable.on('select', function (e, dt, type, indexes) {
+        if (type == "row") {
+            resultsTable.rows(indexes).nodes().to$().find('.selectCheckbox .glyphicon')
+                .removeClass('glyphicon-none').addClass('glyphicon-ok');
+        }
+    });
+
+    resultsTable.on('deselect', function (e, dt, type, indexes) {
+        if (type == "row") {
+            resultsTable.rows(indexes).nodes().to$().find('.selectCheckbox .glyphicon')
+                .removeClass('glyphicon-ok').addClass('glyphicon-none');
+        }
+    });
+
     function toggleDeselectAllButton() {
         if (resultsTable.rows('.selected').any()) {
             resultsTable.buttons(['.buttons-select-none']).enable();
@@ -168,12 +196,6 @@ $(document).ready(function() {
             resultsTable.buttons(['.buttons-select-none']).disable();
         }
     }
-
-    $('#resultsTable tbody').on( 'click', 'td:not(:first-child)', function () {
-        var tr = $(this).closest('tr');
-        tr.toggleClass('selected');
-        toggleDeselectAllButton();
-    });
 
     $('#resultsTable tbody').on('click', 'td.details-control', function() {
         var tr = $(this).closest('tr');

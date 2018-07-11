@@ -135,26 +135,20 @@ public class MessagesStrings {
             "Export all results as a text file to your local file system";
     public static final String RESULTS_DELETE = "Delete selected results";
     public static final String RESULTS_DELETE_ALL = "Delete all results";
-    public static final String RESULTS_INFO =
-            "Select a result for export or deletion by clicking anywhere on its row.";
-    public static final String RESULTS_DATA =
-            "Click on the + icon to open the result's data";
-    public static final String RESULTS_START_TIME =
-            "Time according to the JATOS server";
+    public static final String RESULTS_DATA = "Click on the > icon to open the result's data";
+    public static final String RESULTS_DATA_SELECTION = "Check the box to select this result data for export or deleting";
+    public static final String RESULTS_START_TIME = "Time according to the JATOS server";
     public static final String RESULTS_LAST_SEEN_TIME =
             "Time of the last heartbeat according to the JATOS server";
     public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
             + MTWorker.UI_WORKER_TYPE + ", "
             + PersonalMultipleWorker.UI_WORKER_TYPE + ", "
             + PersonalSingleWorker.UI_WORKER_TYPE;
-    public static final String RESULTS_WORKER_ID =
-            "Click on the ID to go to this worker's results";
-    public static final String RESULTS_STUDY_ID =
-            "Click on the ID to go to this study";
+    public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
+    public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
     public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE =
             "Mechanical Turk's worker ID and in brackets the confirmation code for Mechanical Turk";
-    public static final String RESULTS_CONFIRMATION_CODE =
-            "Confirmation code for Mechanical Turk";
+    public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
     public static final String RESULTS_STUDY_STATE =
             "Current state of this study's run, like "
                     + StudyState.allStatesAsString();
