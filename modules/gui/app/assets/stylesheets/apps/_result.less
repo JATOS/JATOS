@@ -17,3 +17,26 @@ div.dataTables_wrapper { clear: both; }
 #resultsTable_filter {
 	margin-top: 10px;
 }
+
+#componentResultsTable_wrapper .pagination > li.active > a {
+    color: @btn-component-color;
+    background-color: @btn-component-bg;
+    border-color: darken(@btn-component-bg, 5%);
+}
+#componentResultsTable_wrapper .pagination > li.active > a:hover {
+    background-color: darken(@btn-component-bg, 10%);
+}
+#componentResultsTable_wrapper .pagination > li > a {
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
+}
+#componentResultsTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
+    background-color: darken(@btn-default-bg, 10%);
+}
+#componentResultsTable_wrapper .pagination > li.disabled > a {
+    color: lighten(@btn-default-color, 20%);
+}
+#componentResultsTable_wrapper .pagination > li.next > a {
+    margin-right: 10px;
+}

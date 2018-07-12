@@ -4,7 +4,7 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+<table id="componentResultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
     <thead>
         <tr>
             <!-- If you change something in the head, change it in the footer too! -->
@@ -42,7 +42,7 @@ var studyId = @study.getId();
 
 var resultsTable;
 $(document).ready(function() {
-    resultsTable = $('#resultsTable').DataTable({
+    resultsTable = $('#componentResultsTable').DataTable({
         "ajax": {
             "type": "GET",
             "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
@@ -207,7 +207,7 @@ $(document).ready(function() {
         }
     }
 
-    $('#resultsTable tbody').on('click', 'td.details-control', function() {
+    $('#componentResultsTable tbody').on('click', 'td.details-control', function() {
         var tr = $(this).closest('tr');
         var row = resultsTable.row(tr);
         if (row.child.isShown()) {
