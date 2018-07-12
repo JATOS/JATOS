@@ -244,8 +244,14 @@ public class JsonUtils {
         studyResultNode.put("studyId", studyResult.getStudy().getId());
         studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
         studyResultNode.put("batchTitle", studyResult.getBatch().getTitle());
-        studyResultNode.put("duration", getDurationPretty(
-                studyResult.getStartDate(), studyResult.getEndDate()));
+        String duration;
+        if (studyResult.getEndDate() != null) {
+            duration = getDurationPretty(studyResult.getStartDate(), studyResult.getEndDate());
+        } else {
+            duration = getDurationPretty(studyResult.getStartDate(), studyResult.getLastSeenDate());
+            duration = duration != null ? duration + " (unfinished)" : "none";
+        }
+        studyResultNode.put("duration", duration);
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
 
         // Add all componentResults
@@ -296,24 +302,21 @@ public class JsonUtils {
         return componentResultNode;
     }
 
-    private static String getDurationPretty(Timestamp startDate,
-            Timestamp endDate) {
-        if (endDate != null) {
-            long duration = endDate.getTime() - startDate.getTime();
-            long diffSeconds = duration / 1000 % 60;
-            long diffMinutes = duration / (60 * 1000) % 60;
-            long diffHours = duration / (60 * 60 * 1000) % 24;
-            long diffDays = duration / (24 * 60 * 60 * 1000);
-            String asStr = String.format("%02d", diffHours) + ":"
-                    + String.format("%02d", diffMinutes) + ":"
-                    + String.format("%02d", diffSeconds);
-            if (diffDays == 0) {
-                return asStr;
-            } else {
-                return diffDays + ":" + asStr;
-            }
+    private static String getDurationPretty(Timestamp startDate, Timestamp endDate) {
+        if (endDate == null) return null;
+        long duration = endDate.getTime() - startDate.getTime();
+        long diffSeconds = duration / 1000 % 60;
+        long diffMinutes = duration / (60 * 1000) % 60;
+        long diffHours = duration / (60 * 60 * 1000) % 24;
+        long diffDays = duration / (24 * 60 * 60 * 1000);
+        String asStr = String.format("%02d", diffHours) + ":"
+                + String.format("%02d", diffMinutes) + ":"
+                + String.format("%02d", diffSeconds);
+        if (diffDays == 0) {
+            return asStr;
+        } else {
+            return diffDays + ":" + asStr;
         }
-        return null;
     }
 
     /**

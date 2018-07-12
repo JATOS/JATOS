@@ -61,7 +61,7 @@ $(document).ready(function() {
                 "orderable": false,
                 "data": null,
                 "render": function (data, type, full, meta) {
-                    return '<button type="button" class="btn btn-default" data-toggle="tooltip"' +
+                    return '<button type="button" class="btn btn-component" data-toggle="tooltip"' +
                        'data-placement="bottom" title="Show/hide result data">' +
                        '<span class="glyphicon glyphicon-chevron-right"></span></button>';
                 }
@@ -72,7 +72,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     return '<button type="button" class="btn btn-default selectCheckbox" data-toggle="tooltip"' +
                         'data-placement="bottom" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION">' +
-                        '<span class="glyphicon glyphicon-none"></span></button>';
+                        '<span class="glyphicon glyphicon-minus"></span></button>';
                 }
             },
             {
@@ -121,16 +121,19 @@ $(document).ready(function() {
             {
                 "extend": "colvis",
                 "text": "Show/Hide Columns <span class='caret'></span>",
+                "className": "btn btn-component",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
             },
             {
                 "extend": "selectAll",
                 "text": "Select All",
+                "className": "btn btn-component",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
             },
             {
                 "extends": "selectAll",
                 "text": "Select Filtered",
+                "className": "btn btn-component",
                 "action": function(e, dt, node, config) {
                     dt.rows({ search: 'applied' }).select();
                 },
@@ -139,6 +142,7 @@ $(document).ready(function() {
             {
                 "extend": "selectNone",
                 "text": "Deselect All",
+                "className": "btn btn-component",
                 "action": function(e, dt, node, config) {
                     dt.rows().deselect();
                 },
@@ -147,11 +151,13 @@ $(document).ready(function() {
             {
                 "text": "Export Selected",
                 "action": exportSelectedResultData,
+                "className": "btn btn-component",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
             },
             {
                 "text": "Export All",
                 "action": exportAllSelectedResultData,
+                "className": "btn btn-component",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
             },
             {
@@ -177,15 +183,19 @@ $(document).ready(function() {
 
     resultsTable.on('select', function (e, dt, type, indexes) {
         if (type == "row") {
-            resultsTable.rows(indexes).nodes().to$().find('.selectCheckbox .glyphicon')
-                .removeClass('glyphicon-none').addClass('glyphicon-ok');
+            resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
+                $(selectedRow).find('.selectCheckbox').removeClass('btn-default').addClass('btn-component');
+                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-minus').addClass('glyphicon-ok');
+            });
         }
     });
 
     resultsTable.on('deselect', function (e, dt, type, indexes) {
         if (type == "row") {
-            resultsTable.rows(indexes).nodes().to$().find('.selectCheckbox .glyphicon')
-                .removeClass('glyphicon-ok').addClass('glyphicon-none');
+            resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
+                $(selectedRow).find('.selectCheckbox').removeClass('btn-component').addClass('btn-default');
+                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-minus');
+            });
         }
     });
 

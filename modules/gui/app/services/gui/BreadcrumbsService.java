@@ -2,6 +2,7 @@ package services.gui;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import controllers.gui.routes;
 import models.common.*;
 import models.common.workers.Worker;
 import models.gui.Breadcrumbs;
@@ -30,7 +31,7 @@ public class BreadcrumbsService {
     public String generateForHome(String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
         if (last != null) {
-            breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
+            breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(HOME, "");
@@ -44,10 +45,9 @@ public class BreadcrumbsService {
 
     public String generateForUser(User user, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
+        breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         if (last != null) {
-            breadcrumbs.addBreadcrumb(user.toString(),
-                    controllers.gui.routes.Users.profile(user.getEmail()).url());
+            breadcrumbs.addBreadcrumb(user.toString(), routes.Users.profile(user.getEmail()).url());
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(user.toString(), "");
@@ -61,10 +61,9 @@ public class BreadcrumbsService {
 
     public String generateForStudy(Study study, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
+        breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         if (last != null) {
-            breadcrumbs.addBreadcrumb(study.getTitle(),
-                    controllers.gui.routes.Studies.study(study.getId()).url());
+            breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(study.getTitle(), "");
@@ -74,10 +73,10 @@ public class BreadcrumbsService {
 
     public String generateForBatch(Study study, Batch batch, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
-        breadcrumbs.addBreadcrumb(study.getTitle(),
-                controllers.gui.routes.Studies.study(study.getId()).url());
-        breadcrumbs.addBreadcrumb(batch.getTitle(), "");
+        breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
+        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
+        breadcrumbs.addBreadcrumb(batch.getTitle(),
+                routes.Batches.workerAndBatchManager(study.getId()).url());
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");
         }
@@ -86,10 +85,10 @@ public class BreadcrumbsService {
 
     public String generateForGroup(Study study, Batch batch, GroupResult groupResult, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
-        breadcrumbs.addBreadcrumb(study.getTitle(),
-                controllers.gui.routes.Studies.study(study.getId()).url());
-        breadcrumbs.addBreadcrumb(batch.getTitle(), "");
+        breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
+        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
+        breadcrumbs.addBreadcrumb(batch.getTitle(),
+                routes.Batches.workerAndBatchManager(study.getId()).url());
         breadcrumbs.addBreadcrumb("Group " + groupResult.getId(), "");
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");
@@ -99,7 +98,7 @@ public class BreadcrumbsService {
 
     public String generateForWorker(Worker worker, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
+        breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         breadcrumbs.addBreadcrumb("Worker " + worker.getId(), "");
         breadcrumbs.addBreadcrumb(last, "");
         return asJson(breadcrumbs);
@@ -107,9 +106,8 @@ public class BreadcrumbsService {
 
     public String generateForComponent(Study study, Component component, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
-        breadcrumbs.addBreadcrumb(study.getTitle(),
-                controllers.gui.routes.Studies.study(study.getId()).url());
+        breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
+        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
         breadcrumbs.addBreadcrumb(component.getTitle(), "");
         breadcrumbs.addBreadcrumb(last, "");
         return asJson(breadcrumbs);

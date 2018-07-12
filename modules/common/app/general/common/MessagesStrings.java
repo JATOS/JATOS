@@ -137,9 +137,12 @@ public class MessagesStrings {
     public static final String RESULTS_DELETE_ALL = "Delete all results";
     public static final String RESULTS_DATA = "Click on the > icon to open the result's data";
     public static final String RESULTS_DATA_SELECTION = "Check the box to select this result data for export or deleting";
-    public static final String RESULTS_START_TIME = "Time according to the JATOS server";
+    public static final String RESULTS_START_TIME = "Start of study time according to the JATOS server";
+    public static final String RESULTS_END_TIME = "End of study time according to the JATOS server";
     public static final String RESULTS_LAST_SEEN_TIME =
             "Time of the last heartbeat according to the JATOS server";
+    public static final String RESULTS_DURATION =
+            "Duration from start to end or if the study isn't finished yet from start to last seen. Format is (days:)hours:minutes:seconds.";
     public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
             + MTWorker.UI_WORKER_TYPE + ", "
             + PersonalMultipleWorker.UI_WORKER_TYPE + ", "
@@ -149,6 +152,7 @@ public class MessagesStrings {
     public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE =
             "Mechanical Turk's worker ID and in brackets the confirmation code for Mechanical Turk";
     public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
+    public static final String RESULTS_NUMBER_COMPONENT_RESULTS = "Current number of component results";
     public static final String RESULTS_STUDY_STATE =
             "Current state of this study's run, like "
                     + StudyState.allStatesAsString();

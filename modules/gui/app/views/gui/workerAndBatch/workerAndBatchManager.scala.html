@@ -67,15 +67,15 @@
 <div id="batchTemplate" class="panel panel-default" style="display: none">
     <div class="panel-heading">
         <span class="panel-title">
-            <button type="button" class="collapseWorkerSetup btn btn-default" data-toggle="tooltip"
+            <button type="button" class="collapseWorkerSetup btn btn-batch" data-toggle="tooltip"
                 data-placement="bottom" title="Open/close worker setup of this batch">
+                <span class="batchWorkersBadge badge"></span>&nbsp;
                 <span class="glyphicon glyphicon-chevron-right"></span>
             </button>
-            <button type="button" class="btn btn-sm btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch ( if deactivated workers cannot run the study in this batch)">
+            <button type="button" class="btn btn-default activeBatchButton" data-toggle="tooltip" data-placement="bottom" title="Activate/deactivate batch ( if deactivated workers cannot run the study in this batch)">
                 <span class="glyphicon glyphicon-ok"></span>
             </button>
             <span role="button" class="batchTitle">Batch Title</span>
-            <span role="button" class="batchWorkersBadge badge" data-toggle="tooltip" data-placement="bottom" title="Number of workers in this batch"></span>
             <span class="btn-group pull-right">
                 <button type="button" class="batchRefreshButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
                     title="Refresh this batch">
@@ -193,6 +193,7 @@ function fillAllBatches(batchList) {
         fillBatch(batchItem, batch);
         $("#batchList").append(batchItem);
     });
+    setButtonWidthToMax("#batchList .collapseWorkerSetup");
     setButtonWidthToMax("#batchList .batchResultsButton");
     setButtonWidthToMax("#batchList .groupsButton");
 }

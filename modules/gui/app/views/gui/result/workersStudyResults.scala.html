@@ -37,8 +37,9 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></th>
             <th>Result ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_END_TIME">End Time (Server)</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
-            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DURATION">Duration</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_ID">Study ID</th>
             <th>Study</th>
             <th>Batch</th>
@@ -55,8 +56,9 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></th>
             <th>Result ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_END_TIME">End Time (Server)</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME">Last Seen (Server)</th>
-            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DURATION">Duration</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_ID">Study ID</th>
             <th>Study</th>
             <th>Batch</th>
@@ -93,8 +95,11 @@ $(document).ready(function() {
                 "orderable": false,
                 "data": null,
                 "render": function (data, type, full, meta) {
-                    return '<button type="button" class="btn btn-default" data-toggle="tooltip"' +
-                        'data-placement="bottom" title="Show/hide result data">' +
+                    var numberOfResults = (full.componentResults.constructor === Array) ?
+                        full.componentResults.length : 0;
+                    return '<button type="button" class="btn btn-study collapseResultData" data-toggle="tooltip"' +
+                        'data-placement="bottom" title="Show/hide component result data">' +
+                        '<span class="badge">' + numberOfResults + '</span>&nbsp;' +
                         '<span class="glyphicon glyphicon-chevron-right"></span></button>';
                 }
             },
@@ -104,7 +109,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     return '<button type="button" class="btn btn-default selectCheckbox" data-toggle="tooltip"' +
                         'data-placement="bottom" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION">' +
-                        '<span class="glyphicon glyphicon-none"></span></button>';
+                        '<span class="glyphicon glyphicon-minus"></span></button>';
                 }
             },
             {
@@ -114,6 +119,13 @@ $(document).ready(function() {
             {
                 "class": 'time',
                 "data": "startDate"
+            },
+            {
+                "data": "endDate",
+                "visible": false,
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "never";
+                }
             },
             {
                 "data": "lastSeenDate",
@@ -165,16 +177,19 @@ $(document).ready(function() {
             {
                 "extend": "colvis",
                 "text": "Show/Hide Columns <span class='caret'></span>",
+                "className": "btn btn-study",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
             },
             {
                 "extend": "selectAll",
                 "text": "Select All",
+                "className": "btn btn-study",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
             },
             {
                 "extends": "selectAll",
                 "text": "Select Filtered",
+                "className": "btn btn-study",
                 "action": function(e, dt, node, config) {
                     dt.rows({ search: 'applied' }).select();
                 },
@@ -183,6 +198,7 @@ $(document).ready(function() {
             {
                 "extend": "selectNone",
                 "text": "Deselect All",
+                "className": "btn btn-study",
                 "action": function(e, dt, node, config) {
                     dt.rows().deselect();
                 },
@@ -191,11 +207,13 @@ $(document).ready(function() {
             {
                 "text": "Export Selected",
                 "action": exportSelectedResultData,
+                "className": "btn btn-study",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
             },
             {
                 "text": "Export All",
                 "action": exportAllSelectedResultData,
+                "className": "btn btn-study",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
             },
             {
@@ -216,20 +234,27 @@ $(document).ready(function() {
         }
     });
 
-    // Necessary - otherwise the button doesn't work with manually selected rows
-    resultsTable.on('draw', toggleDeselectAllButton);
+    resultsTable.on('draw', function() {
+        // Necessary - otherwise the button doesn't work with manually selected rows
+        toggleDeselectAllButton();
+        setButtonWidthToMax("button.collapseResultData");
+    });
 
     resultsTable.on('select', function (e, dt, type, indexes) {
         if (type == "row") {
-            resultsTable.rows(indexes).nodes().to$().find('.selectCheckbox .glyphicon')
-                .removeClass('glyphicon-none').addClass('glyphicon-ok');
+            resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
+                $(selectedRow).find('.selectCheckbox').removeClass('btn-default').addClass('btn-study');
+                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-minus').addClass('glyphicon-ok');
+            });
         }
     });
 
     resultsTable.on('deselect', function (e, dt, type, indexes) {
         if (type == "row") {
-            resultsTable.rows(indexes).nodes().to$().find('.selectCheckbox .glyphicon')
-                .removeClass('glyphicon-ok').addClass('glyphicon-none');
+            resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
+                $(selectedRow).find('.selectCheckbox').removeClass('btn-study').addClass('btn-default');
+                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-minus');
+            });
         }
     });
 
