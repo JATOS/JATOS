@@ -56,11 +56,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String batchNotExist(Long batchId) {
-		return workerNotExist(String.valueOf(batchId));
-	}
-
-	public static String batchNotExist(String batchIdStr) {
-		return "A batch with ID " + batchIdStr + " doesn't exist.";
+		return "A batch with ID " + batchId + " doesn't exist.";
 	}
 
 	public static String batchMaxTotalWorkerReached(Long batchId) {

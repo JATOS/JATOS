@@ -436,26 +436,27 @@ public abstract class PublixUtils<T extends Worker> {
 
     /**
      * Gets the batch with given ID from the database or if the batchId is -1
-     * returns the default batch of this study.
+     * returns the default batch of this study. If the batch doesn't exist it throws an
+     * NotFoundPublixException.
      */
-    public Batch retrieveBatchByIdOrDefault(Long batchId, Study study) {
+    public Batch retrieveBatchByIdOrDefault(Long batchId, Study study)
+            throws NotFoundPublixException {
         if (batchId == -1) {
             // The default batch is always the first one in study's batch list
             return study.getDefaultBatch();
         } else {
-            return batchDao.findById(batchId);
+            return retrieveBatch(batchId);
         }
     }
 
     /**
      * Retrieves batch from database. If the batch doesn't exist it throws an
-     * ForbiddenPublixException.
+     * NotFoundPublixException.
      */
-    public Batch retrieveBatch(Long batchId) throws ForbiddenPublixException {
+    public Batch retrieveBatch(Long batchId) throws NotFoundPublixException {
         Batch batch = batchDao.findById(batchId);
         if (batch == null) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.batchNotExist(batchId));
+            throw new NotFoundPublixException(PublixErrorMessages.batchNotExist(batchId));
         }
         return batch;
     }
