@@ -768,8 +768,7 @@ var jatos = {};
 	 * JATOS server. With this function one can set the period with which the
 	 * heartbeat is send.
 	 * 
-	 * @param {Number}
-	 *            heartbeatPeriod - in milliseconds (Integer)
+	 * @param {Number} heartbeatPeriod - in milliseconds (Integer)
 	 */
 	jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
 		if (typeof heartbeatPeriod == 'number' && heartbeatWorker) {
@@ -810,12 +809,9 @@ var jatos = {};
 	 * It offers callbacks, either as parameter or via jQuery.deferred.promise,
 	 * to signal success or failure in the transfer.
 	 * 
-	 * @param {Object}
-	 *            resultData - String to be submitted
-	 * @param {optional
-	 *            Function} onSuccess - Function to be called in case of successful
-	 * @param {optional
-	 *            Function} onError - Function to be called in case of error
+	 * @param {Object} resultData - String or Object to be submitted
+	 * @param {optional Function} onSuccess - Function to be called in case of success
+	 * @param {optional Function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
@@ -828,12 +824,9 @@ var jatos = {};
 	 * data. It offers callbacks, either as parameter or via jQuery.deferred.promise,
 	 * to signal success or failure in the transfer.
 	 *
-	 * @param {Object}
-	 *            resultData - String to be appended
-	 * @param {optional
-	 *            Function} onSuccess - Function to be called in case of successful
-	 * @param {optional
-	 *            Function} onError - Function to be called in case of error
+	 * @param {Object} resultData - String or Object to be appended
+	 * @param {optional Function} onSuccess - Function to be called in case of success
+	 * @param {optional Function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.appendResultData = function (resultData, onSuccess, onError) {
@@ -851,6 +844,9 @@ var jatos = {};
 		}
 
 		var httpMethod = append ? "POST" : "PUT";
+		if (resultData === Object(resultData)) {
+			resultData = JSON.stringify(resultData);
+		}
 		submittingResultDataDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
 			url: "resultData" + "?srid=" + jatos.studyResultId,
@@ -880,14 +876,10 @@ var jatos = {};
 	 * all functions that start a new component, so it shouldn't be necessary to
 	 * call it manually.
 	 * 
-	 * @param {Object}
-	 *            studySessionData - Object to be submitted
-	 * @param {optional
-	 *            Function} onSuccess - Function to be called after this function is
-	 *            finished
-	 * @param {optional
-	 *            Function} onFail - Function to be called after if this this
-	 *            functions fails
+	 * @param {Object} studySessionData - Object to be submitted
+	 * @param {optional Function} onSuccess - Function to be called after this
+	 *				function is finished
+	 * @param {optional Function} onFail - Callback if fail
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
@@ -924,12 +916,16 @@ var jatos = {};
 	};
 
 	/**
-	 * Starts the component with the given ID.
+	 * Starts the component with the given ID. Before it calls
+	 * jatos.appendResultData (sends result data to the JATOS server and 
+	 * appends them to the already existing ones for this component) and 
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
-	 * @param {Object}
-	 *            componentId - ID of the component to start
+	 * @param {Object} componentId - ID of the component to start
+	 * @param {optional Object} resultData - String or Object be sent as result data
+	 * @param {optional Function} onError - callback if fail
 	 */
-	jatos.startComponent = function (componentId) {
+	jatos.startComponent = function (componentId, resultData, onError) {
 		if (startingComponent) {
 			return;
 		}
@@ -937,32 +933,51 @@ var jatos = {};
 		var onComplete = function () {
 			window.location.href = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
 		};
-		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
+		if (resultData) {
+			$.when(jatos.appendResultData(resultData),
+					jatos.setStudySessionData(jatos.studySessionData))
+				.then(onComplete, onError);
+		} else {
+			$.when(jatos.setStudySessionData(jatos.studySessionData))
+				.then(onComplete, onError);
+		}
 	};
 
 	/**
-	 * Starts the component with the given position (# of component within study).
+	 * Starts the component with the given position (position of the first
+	 * component of a study is 1). Before this it calls 
+	 * jatos.appendResultData (sends result data to the JATOS server and 
+	 * appends them to the already existing ones for this component) and 
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
-	 * @param {Object}
-	 *            componentPos - Position of the component to start
+	 * @param {Object} componentPos - Position of the component to start
+	 * @param {optional Object} resultData - String or Object be sent as result data
+	 * @param {optional Function} onError - callback if fail
 	 */
-	jatos.startComponentByPos = function (componentPos) {
+	jatos.startComponentByPos = function (componentPos, resultData, onError) {
 		var componentId = jatos.componentList[componentPos - 1].id;
-		jatos.startComponent(componentId);
+		jatos.startComponent(componentId, resultData, onError);
 	};
 
 	/**
 	 * Starts the next active component of this study. The component's order is
 	 * determined by their position. If the current component is already the 
-	 * last one it finishes the study.
+	 * last one it finishes the study. Before this it calls 
+	 * jatos.appendResultData (sends result data to the JATOS server and 
+	 * appends them to the already existing ones for this component) and 
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * 
+	 * @param {optional Object} resultData - String or Object be sent as result data
+	 * @param {optional Function} onError - callback if fail
 	 */
-	jatos.startNextComponent = function () {
+	jatos.startNextComponent = function (resultData, onError) {
 		if (jatos.componentPos >= jatos.componentList.length) {
 			jatos.endStudy(true);
 		}
 		for (var i = jatos.componentPos; i < jatos.componentList.length; i++) {
 			if (jatos.componentList[i].active) {
-				jatos.startComponent(jatos.componentList[i].id);
+				var nextComponentId = jatos.componentList[i].id;
+				jatos.startComponent(nextComponentId, resultData, onError);
 				break;
 			}
 		}
@@ -970,12 +985,19 @@ var jatos = {};
 
 	/**
 	 * Starts the last component of this study or if it's inactive the component
-	 * with the highest position that is active.
+	 * with the highest position that is active. Before this it calls 
+	 * jatos.appendResultData (sends result data to the JATOS server and 
+	 * appends them to the already existing ones for this component) and 
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * 
+	 * @param {optional Object} resultData - String or Object be sent as result data
+	 * @param {optional Function} onError - callback if fail
 	 */
-	jatos.startLastComponent = function () {
+	jatos.startLastComponent = function (resultData, onError) {
 		for (var i = jatos.componentList.length - 1; i >= 0; i--) {
 			if (jatos.componentList[i].active) {
-				jatos.startComponent(jatos.componentList[i].id);
+				var lastComponentId = jatos.componentList[i].id;
+				jatos.startComponent(lastComponentId, resultData, onError);
 				break;
 			}
 		}
@@ -988,17 +1010,13 @@ var jatos = {};
 	 * useful to explicitly tell about a FAIL and submit an error message. Finishing
 	 * the component doesn't finish the study.
 	 * 
-	 * @param {optional
-	 *            Boolean} successful - 'true' if study should finish successful and
-	 *            the participant should get the confirmation code - 'false'
-	 *            otherwise.
-	 * @param {optional
-	 *            String} errorMsg - Error message that should be logged.
-	 * @param {optional
-	 *            Function} onSuccess - Function to be called in case of successful
-	 *            submit
-	 * @param {optional
-	 *            Function} onError - Function to be called in case of error
+	 * @param {optional Boolean} successful - 'true' if study should finish
+	 *				successful and the participant should get the confirmation code
+	 *				- 'false' otherwise.
+	 * @param {optional String} errorMsg - Error message that should be logged.
+	 * @param {optional Function} onSuccess - Function to be called in case of
+	 *				successful submit
+	 * @param {optional Function} onError - Function to be called in case of error
 	 */
 	jatos.endComponent = function (successful, errorMsg, onSuccess, onError) {
 		if (isDeferredPending(endingDeferred)) {
@@ -1676,13 +1694,10 @@ var jatos = {};
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
 	 * 
-	 * @param {optional
-	 *            String} message - Message that should be logged
-	 * @param {optional
-	 *            Function} onSuccess - Function to be called in case of successful
-	 *            submit
-	 * @param {optional
-	 *            Function} onError - Function to be called in case of error
+	 * @param {optional String} message - Message that should be logged
+	 * @param {optional Function} onSuccess - Function to be called in case of
+	 *				successful submit
+	 * @param {optional Function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
@@ -1727,8 +1742,7 @@ var jatos = {};
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
 	 * 
-	 * @param {optional
-	 *            String} message - Message that should be logged
+	 * @param {optional String} message - Message that should be logged
 	 */
 	jatos.abortStudy = function (message) {
 		if (isDeferredPending(abortingDeferred)) {
@@ -1752,17 +1766,13 @@ var jatos = {};
 	/**
 	 * Ends study with an Ajax call.
 	 * 
-	 * @param {optional
-	 *            Boolean} successful - 'true' if study should finish successful and
-	 *            the participant should get the confirmation code - 'false'
-	 *            otherwise.
-	 * @param {optional
-	 *            String} errorMsg - Error message that should be logged.
-	 * @param {optional
-	 *            Function} onSuccess - Function to be called in case of successful
-	 *            submit
-	 * @param {optional
-	 *            Function} onError - Function to be called in case of error
+	 * @param {optional Boolean} successful - 'true' if study should finish
+	 *				successful and the participant should get the confirmation
+	 *				code - 'false' otherwise.
+	 * @param {optional String} errorMsg - Error message that should be logged.
+	 * @param {optional Function} onSuccess - Function to be called in case of
+	 *				successful submit
+	 * @param {optional Function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.endStudyAjax = function (successful, errorMsg, onSuccess, onError) {
@@ -1817,12 +1827,10 @@ var jatos = {};
 	/**
 	 * Ends study.
 	 * 
-	 * @param {optional
-	 *            Boolean} successful - 'true' if study should finish successful and
-	 *            the participant should get the confirmation code - 'false'
-	 *            otherwise.
-	 * @param {optional
-	 *            String} errorMsg - Error message that should be logged.
+	 * @param {optional Boolean} successful - 'true' if study should finish
+	 *			successful and the participant should get the confirmation code
+	 *			- 'false' otherwise.
+	 * @param {optional String} errorMsg - Error message that should be logged.
 	 */
 	jatos.endStudy = function (successful, errorMsg) {
 		if (isDeferredPending(endingDeferred)) {
@@ -1890,8 +1898,7 @@ var jatos = {};
 	 * study result ID, component result ID, group result ID, group member ID)
 	 * to the given object.
 	 * 
-	 * @param {Object}
-	 *            obj - Object to which the IDs will be added
+	 * @param {Object} obj - Object to which the IDs will be added
 	 */
 	jatos.addJatosIds = function (obj) {
 		obj.studyId = jatos.studyId;
