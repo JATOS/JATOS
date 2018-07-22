@@ -33,8 +33,13 @@ function start() {
     # In case './bin/jatos' isn't executable set the x bit
     chmod u+x "$dir/bin/jatos"
 
+    if [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]]
+    then
+        localEnvVars="env JAVA_HOME=$JAVA_HOME"
+    fi
+
     # Start JATOS with configuration file and application secret
-    "$dir/bin/jatos" -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address -J-server $args > /dev/null &
+    $localEnvVars "$dir/bin/jatos" -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address -J-server $args > /dev/null &
 
     echo "...started"
     echo "To use JATOS type $address:$port in your browser's address bar"
@@ -82,7 +87,20 @@ function checkAlreadyRunning() {
 }
 
 function checkJava() {
-    # Get Java version if installed
+    # Check local Java
+    if [[ -n "$dir/jre/linux_x64_jre" ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
+    then
+        echo "JATOS uses local Java"
+        JAVA_HOME="$dir/jre/linux_x64_jre"
+        return
+    elif [[ -n "$dir/jre/mac_x64_jre" ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
+    then
+        echo "JATOS uses local Java"
+        JAVA_HOME="$dir/jre/mac_x64_jre"
+        return
+    fi
+
+    # Check installed Java
     if type -p java
     then
         echo "Found Java"
@@ -94,20 +112,10 @@ function checkJava() {
     fi
 
     # If we don't have a version or if the version is not a number or if the version is smaller 18 (Java 8) try to find a local Java installation
-    if [[ -z "$java_version" ]] || [[ ! "$java_version" =~ ^[0-9]+$ ]] || [[ "$java_version" -lt 18 ]]
+    if [[ -z "$java_version" ]] || [[ ! "$java_version" =~ ^[0-9]+$ ]] || [[ "$java_version" -ne 18 ]]
     then
-        if [[ -n "$dir/jre/linux_x64_jre" ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
-        then
-            echo "Jatos uses local JRE"
-            export JAVA_HOME="$dir/jre/linux_x64_jre"
-        elif [[ -n "$dir/jre/mac_x64_jre" ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
-        then
-            echo "Jatos uses local JRE"
-            export JAVA_HOME="$dir/jre/mac_x64_jre"
-        else
-            echo "No Java found"
-            exit 1
-        fi
+        echo "No Java with version 8 found - exit"
+        exit 1
     fi
 }
 
