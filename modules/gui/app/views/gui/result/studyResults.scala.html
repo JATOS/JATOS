@@ -116,7 +116,7 @@ $(document).ready(function() {
                 "data": "workerId",
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+                    return '<a data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Opens this worker\'s results" ' +
                         'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
@@ -139,7 +139,7 @@ $(document).ready(function() {
                 "width": "1%",
                 "render": function (data, type, full, meta) {
                     if (!data) return "none";
-                    return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
+                    return '<a data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Opens this group\'s results" ' +
                         'href="@{playHttpContext}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
                 }
@@ -186,28 +186,67 @@ $(document).ready(function() {
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
             },
             {
-                "text": "Export Selected",
-                "action": exportSelectedResultData,
+                "extend": 'collection',
+                "text": 'Export Results <span class="caret"></span>',
                 "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": exportSelectedResultData,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+                    },
+                    {
+                        "text": "All",
+                        "action": exportAllSelectedResultData,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                    }
+                ]
             },
             {
-                "text": "Export All",
-                "action": exportAllSelectedResultData,
+                "extend": 'collection',
+                "text": 'Export Metadata <span class="caret"></span>',
                 "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "buttons": [
+                    {
+                        "extend": 'csv',
+                        "text": "Selected",
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
+                        "exportOptions": {
+                            "columns": ':nth-child(n+3):visible',
+                            "modifier": {
+                                "selected": true
+                            }
+                        }
+                    },
+                    {
+                        "extend": 'csv',
+                        "text": "All",
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
+                        "exportOptions": {
+                            "columns": ':nth-child(n+3):visible'
+                        }
+                    }
+                ]
             },
             {
-                "text": "Delete Selected",
-                "action": deleteSelectedResults,
-                "className": 'btn btn-danger',
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-            },
-            {
-                "text": "Delete All",
-                "action": deleteAllResults,
-                "className": 'btn btn-danger',
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+                "extend": 'collection',
+                "text": 'Delete <span class="caret"></span>',
+                "className": "btn btn-danger",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": deleteSelectedResults,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+                    },
+                    {
+                        "text": "All",
+                        "action": deleteAllResults,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+                    }
+                ]
             }
         ],
         "language": {

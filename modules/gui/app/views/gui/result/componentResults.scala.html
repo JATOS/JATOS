@@ -91,7 +91,7 @@ $(document).ready(function() {
                 "data": "workerId",
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+                    return '<a data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Opens this worker\'s results" ' +
                         'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
@@ -102,7 +102,7 @@ $(document).ready(function() {
                 "width": "1%",
                 "render": function (data, type, full, meta) {
                     if (!data) return "none";
-                    return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
+                    return '<a data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Opens this group\'s results" ' +
                         'href="@{playHttpContext}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
                 }
