@@ -149,28 +149,67 @@ $(document).ready(function() {
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
             },
             {
-                "text": "Export Selected",
-                "action": exportSelectedResultData,
+                "extend": 'collection',
+                "text": 'Export Results <span class="caret"></span>',
                 "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": exportSelectedResultData,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+                    },
+                    {
+                        "text": "All",
+                        "action": exportAllSelectedResultData,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                    }
+                ]
             },
             {
-                "text": "Export All",
-                "action": exportAllSelectedResultData,
+                "extend": 'collection',
+                "text": 'Export Metadata <span class="caret"></span>',
                 "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "buttons": [
+                    {
+                        "extend": 'csv',
+                        "text": "Selected",
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
+                        "exportOptions": {
+                            "columns": ':nth-child(n+3):visible',
+                            "modifier": {
+                                "selected": true
+                            }
+                        }
+                    },
+                    {
+                        "extend": 'csv',
+                        "text": "All",
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
+                        "exportOptions": {
+                            "columns": ':nth-child(n+3):visible'
+                        }
+                    }
+                ]
             },
             {
-                "text": "Delete Selected",
-                "action": deleteSelectedResults,
-                "className": 'btn btn-danger',
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-            },
-            {
-                "text": "Delete All",
-                "action": deleteAllResults,
-                "className": 'btn btn-danger',
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+                "extend": 'collection',
+                "text": 'Delete <span class="caret"></span>',
+                "className": "btn btn-danger",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": deleteSelectedResults,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+                    },
+                    {
+                        "text": "All",
+                        "action": deleteAllResults,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+                    }
+                ]
             }
         ],
         "language": {

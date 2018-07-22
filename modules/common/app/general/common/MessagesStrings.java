@@ -133,6 +133,12 @@ public class MessagesStrings {
             "Export selected results as a text file to your local file system";
     public static final String RESULTS_EXPORT_ALL_DATA =
             "Export all results as a text file to your local file system";
+    public static final String RESULTS_METADATA =
+            "Metadata are all data that are not result data, e.g. Result ID, Start Time, State";
+    public static final String RESULTS_EXPORT_ALL_METADATA =
+            "Export all metadata as a CSV file to your local file system";
+    public static final String RESULTS_EXPORT_SELECTED_METADATA =
+            "Export seleceted metadata as a CSV file to your local file system";
     public static final String RESULTS_DELETE = "Delete selected results";
     public static final String RESULTS_DELETE_ALL = "Delete all results";
     public static final String RESULTS_DATA = "Click on the > icon to open the result's data";
