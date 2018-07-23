@@ -23,6 +23,7 @@
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
+            <th>Invisible column for result data filtering</th>
         </tr>
     </thead>
     <tfoot>
@@ -42,6 +43,7 @@
             <th>Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
+            <th>Invisible column for result data filtering</th>
         </tr>
     </tfoot>
 </table>
@@ -148,18 +150,29 @@ $(document).ready(function() {
             {
                 "data": getMessages,
                 "width": "20%"
+            },
+            {
+                "data": function(data, type, dataToSet) {
+                    var allResultDataForSearch = [];
+                    data.componentResults.forEach(function(componentResult) {
+                        allResultDataForSearch.push(componentResult.data);
+                    });
+                    return allResultDataForSearch.join(" ");
+                },
+                "visible": false
             }
         ],
         select: {
-            style: 'multi',
-            selector: 'td:nth-child(2)'
+            "style": 'multi',
+            "selector": 'td:nth-child(2)'
         },
         buttons: [
             {
                 "extend": "colvis",
                 "text": "Show/Hide Columns <span class='caret'></span>",
                 "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY',
+                "columns": ':not(:last)'
             },
             {
                 "extend": "selectAll",
@@ -250,7 +263,7 @@ $(document).ready(function() {
             }
         ],
         "language": {
-            "search": "Filter Results:"
+            "search": 'Filter Results <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table\'s content (metadata) or search in the result data themselves"></span>:'
         }
     });
 
