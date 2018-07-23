@@ -16,11 +16,12 @@
                 <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
                     <thead>
                         <tr>
-                            <th data-toggle="tooltip" data-placement="top" title="Click on the ID to go to this worker's results">Worker ID</th>
+                            <th>Worker ID</th>
                             <th data-toggle="tooltip" data-placement="top" title="Type of the worker, e.g. @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE, @common.workers.JatosWorker.UI_WORKER_TYPE, @common.workers.MTWorker.UI_WORKER_TYPE, @common.workers.GeneralSingleWorker.UI_WORKER_TYPE, @common.workers.PersonalSingleWorker.UI_WORKER_TYPE">Type</th>
                             <th data-toggle="tooltip" data-placement="top" title="All batches this worker belongs to">Batch(es)</th>
                             <th data-toggle="tooltip" data-placement="top" title="State of the (last) study started by this worker">(Last) Study State</th>
                             <th>Additional Info</th>
+                            <th></th>
                         </tr>
                     </thead>
                 </table>
@@ -59,16 +60,11 @@ function generateWorkersTable() {
         "columns": [
             {
                 "data": "id",
-                "width": "1%",
-                "render": function (data, type, full, meta) {
-                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
-                    'data-placement="bottom" title="Opens this worker\'s results" ' +
-                    'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
-                }
+                "width": "1%"
             },
             {
                 "data": "workerType",
-                "width": "19%",
+                "width": "18%",
                 "render": getUIWorkerTypeWithGlyphicon
             },
             {
@@ -82,6 +78,16 @@ function generateWorkersTable() {
             {
                 "data": getAdditionalWorkerInfoColumnText,
                 "width": "30%"
+            },
+            {
+                "data": "id",
+                "orderable": false,
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    return '<a type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip"' +
+                        'data-placement="bottom" title="Shows study results of this worker"' +
+                        'href="@{playHttpContext}jatos/worker/' + data + '/results">Results</a>';
+                }
             }
         ],
         "language": {
