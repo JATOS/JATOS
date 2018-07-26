@@ -29,7 +29,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -114,19 +113,18 @@ public class ImportExportServiceTest {
                 throw new UncheckedIOException(e);
             }
         });
-        assertThat(jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean()).isTrue();
-        assertThat(jsonNode.get(ImportExportService.COMPONENT_TITLE).asText())
-                .isEqualTo("Quit button");
+        assertThat(jsonNode.get("componentExists").asBoolean()).isTrue();
+        assertThat(jsonNode.get("componentTitle").asText()).isEqualTo("Quit button");
 
         // Change properties of first component, so we have something to check
         // later on
         Component firstComponent = jpaApi.withTransaction(() -> {
             Component component = study.getFirstComponent();
             component = testHelper.fetchTheLazyOnes(component);
-            component.setTitle("Changed Title");
+            component.setTitle("Another Component Title");
             component.setActive(false);
-            component.setComments("Changed comments");
-            component.setHtmlFilePath("changedHtmlFilePath");
+            component.setComments("Another comments");
+            component.setHtmlFilePath("anotherHtmlFilePath");
             component.setJsonData("{}");
             component.setReloadable(false);
             componentDao.update(component);
@@ -155,9 +153,9 @@ public class ImportExportServiceTest {
         assertThat(updatedComponent.getUuid()).isEqualTo(firstComponent.getUuid());
 
         // Check changed component properties
-        assertThat(updatedComponent.getTitle()).isEqualTo("Changed Title");
-        assertThat(updatedComponent.getComments()).isEqualTo("Changed comments");
-        assertThat(updatedComponent.getHtmlFilePath()).isEqualTo("changedHtmlFilePath");
+        assertThat(updatedComponent.getTitle()).isEqualTo("Another Component Title");
+        assertThat(updatedComponent.getComments()).isEqualTo("Another comments");
+        assertThat(updatedComponent.getHtmlFilePath()).isEqualTo("anotherHtmlFilePath");
         assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
         assertThat(updatedComponent.getStudy()).isEqualTo(study);
         assertThat(updatedComponent.isActive()).isFalse();
@@ -196,10 +194,8 @@ public class ImportExportServiceTest {
         });
 
         // Check returned JSON object
-        assertThat(
-                jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean()).isFalse();
-        assertThat(jsonNode.get(ImportExportService.COMPONENT_TITLE).asText())
-                .isEqualTo("Quit button");
+        assertThat(jsonNode.get("componentExists").asBoolean()).isFalse();
+        assertThat(jsonNode.get("componentTitle").asText()).isEqualTo("Quit button");
 
         // Import 2. part: Call importComponentConfirmed(): The new component
         // will be put on the end of study's component list
@@ -232,6 +228,12 @@ public class ImportExportServiceTest {
         }
     }
 
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * Test 5) !study exists - !udir exists : new study - write both
+     */
     @Test
     public void importNewStudy() throws Exception {
         // Import 1. part: Call importStudy()
@@ -241,24 +243,32 @@ public class ImportExportServiceTest {
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
         // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean()).isFalse();
-        assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
-                .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean()).isFalse();
-        assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
-                + IOUtils.ZIP_FILE_SUFFIX).isEqualTo("basic_example_study.zip");
+        assertThat(jsonNode.get("studyExists").asBoolean()).isFalse();
+        assertThat(jsonNode.get("uploadedStudyTitle").asText()).isEqualTo("Basic Example Study");
+        assertThat(jsonNode.get("uploadedStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("uploadedDirName").asText()).isEqualTo("basic_example_study");
+        assertThat(jsonNode.get("uploadedDirExists").asBoolean()).isFalse();
 
         // Import 2. part: Call importStudyConfirmed(): Since this study is new,
         // the overwrite parameters don't matter
         ObjectNode node = Json.mapper().createObjectNode();
-        node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
-        node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
+        node.put("overwriteStudysProperties", true);
+        node.put("overwriteStudysDir", true);
+        node.put("renameDir", false);
         importStudyConfirmed(node);
 
         // Check properties and assets of imported study
         checkPropertiesAndAssets("basic_example_study");
     }
 
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * Test 1) study exists  -  udir exists - udir == cdir
+     * User chooses to overwrite properties and assets dir
+     */
     @Test
     public void importStudyOverwritePropertiesAndAssets() throws Exception {
         testHelper.mockContext();
@@ -268,7 +278,7 @@ public class ImportExportServiceTest {
 
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "changed_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -281,37 +291,45 @@ public class ImportExportServiceTest {
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
         // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
-                .isTrue();
-        assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
-                .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
-                .isFalse();
-        assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
-                + IOUtils.ZIP_FILE_SUFFIX).isEqualTo("basic_example_study.zip");
+        assertThat(jsonNode.get("studyExists").asBoolean()).isTrue();
+        assertThat(jsonNode.get("currentStudyTitle").asText()).isEqualTo("Another Title");
+        assertThat(jsonNode.get("currentStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("currentDirName").asText()).isEqualTo("another_example_dirname");
+        assertThat(jsonNode.get("uploadedStudyTitle").asText()).isEqualTo("Basic Example Study");
+        assertThat(jsonNode.get("uploadedStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("uploadedDirName").asText()).isEqualTo("basic_example_study");
+        assertThat(jsonNode.get("uploadedDirExists").asBoolean()).isFalse();
 
-        // Import 2. call: importStudyConfirmed(): Allow properties and assets
-        // to be overwritten
+        // Import 2. call: importStudyConfirmed(): Allow properties and assets to be overwritten
         ObjectNode node = Json.mapper().createObjectNode();
-        node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
-        node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
+        node.put("overwriteStudysProperties", true);
+        node.put("overwriteStudysDir", true);
+        node.put("keepCurrentDirName", false);
         importStudyConfirmed(node);
 
         // Check properties and assets of imported study
         checkPropertiesAndAssets("basic_example_study");
     }
 
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * Test 1) study exists  -  udir exists - udir == cdir
+     * User chooses to keep properties and overwrite assets dir
+     */
     @Test
-    public void importStudyOverwritePropertiesNotAssets() throws Exception {
+    public void importStudyKeepPropertiesOverwriteAssets() throws Exception {
         testHelper.mockContext();
 
         // Import study and alter it, so we have something to overwrite later on
         Study study = getAlteredStudy();
 
-        // Change study assets dir name, so we can check it later on
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "original_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -321,96 +339,176 @@ public class ImportExportServiceTest {
         File studyFile = getExampleStudyFile();
         FilePart<File> filePart = new FilePart<>(Study.STUDY,
                 studyFile.getName(), "multipart/form-data", studyFile);
-        ObjectNode jsonNode = importStudy(filePart.getFile());
+        importStudy(filePart.getFile());
 
-        // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
-                .isTrue();
-        assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
-                .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
-                .isFalse();
-        assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
-                + IOUtils.ZIP_FILE_SUFFIX).isEqualTo("basic_example_study.zip");
-
-        // Call importStudyConfirmed(): Allow properties but not assets to be
-        // overwritten
+        // Import 2. call: importStudyConfirmed(): Allow properties and assets to be overwritten
         ObjectNode node = Json.mapper().createObjectNode();
-        node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
-        node.put(ImportExportService.STUDYS_DIR_CONFIRM, false);
+        node.put("overwriteStudysProperties", false);
+        node.put("overwriteStudysDir", true);
+        node.put("keepCurrentDirName", true);
         importStudyConfirmed(node);
 
-        // Check properties (overwritten) and assets (not overwritten)
-        checkPropertiesAndAssets("original_dirname");
+        // Check that properties are unchanged
+        jpaApi.withTransaction(() -> {
+            Study importedStudy = studyDao.findById(study.getId());
+            assertThat(importedStudy.getTitle()).isEqualTo("Another Title");
+        });
+        // todo Check that assets are different
+        // todo check content of dir
+        // Since properties aren't overwritten the dir name stays unchanged
+        checkAssetsOfBasicExampleStudy(study, "another_example_dirname");
     }
 
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * Test 1) study exists  -  udir exists - udir == cdir
+     * User chooses to overwrite properties and keep assets dir
+     */
     @Test
-    public void importStudyOverwriteAssetsNotProperties() throws Exception {
-        // Import study and alter it, so we have something to overwrite
+    public void importStudyOverwritePropertiesKeepAssets() throws Exception {
+        testHelper.mockContext();
+
+        // Import study and alter it, so we have something to overwrite later on
         Study study = getAlteredStudy();
 
-        // Change study assets dir name so we have something to overwrite
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "original_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
 
-        // Import 1. call
+        // Import 1. call: importStudy()
+        File studyFile = getExampleStudyFile();
+        FilePart<File> filePart = new FilePart<>(Study.STUDY,
+                studyFile.getName(), "multipart/form-data", studyFile);
+        importStudy(filePart.getFile());
+
+        // Import 2. call: importStudyConfirmed(): Allow properties and assets to be overwritten
+        ObjectNode node = Json.mapper().createObjectNode();
+        node.put("overwriteStudysProperties", true);
+        node.put("overwriteStudysDir", false);
+        node.put("keepCurrentDirName", false);
+        importStudyConfirmed(node);
+
+        // Check that properties are overwritten
+        jpaApi.withTransaction(() -> {
+            Study importedStudy = studyDao.findById(study.getId());
+            assertThat(importedStudy.getTitle()).isEqualTo("Basic Example Study");
+        });
+        // Check that assets are unchanged
+        checkAssetsOfBasicExampleStudy(study, "another_example_dirname");
+    }
+
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * Test 4) !study exists -  udir exists
+     * Should rename uploaded dir (generate new dir name)
+     */
+    @Test
+    public void importStudyStudyNewButDirExists() throws Exception {
+        testHelper.mockContext();
+
+        // Create and persist a study with an UUID different from the study to be imported
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        study.setUuid("123");
+        jpaApi.withTransaction(() -> studyDao.update(study));
+
+        // Import 1. call: importStudy()
         File studyFile = getExampleStudyFile();
         FilePart<File> filePart = new FilePart<>(Study.STUDY,
                 studyFile.getName(), "multipart/form-data", studyFile);
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
         // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean()).isTrue();
-        assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
-                .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean()).isFalse();
-        assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
-                + IOUtils.ZIP_FILE_SUFFIX).isEqualTo("basic_example_study.zip");
+        assertThat(jsonNode.get("studyExists").asBoolean()).isFalse();
+        assertThat(jsonNode.get("uploadedStudyTitle").asText()).isEqualTo("Basic Example Study");
+        assertThat(jsonNode.get("uploadedStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("uploadedDirName").asText()).isEqualTo("basic_example_study");
+        assertThat(jsonNode.get("uploadedDirExists").asBoolean()).isTrue();
 
-        // Import 2. call: importStudyConfirmed(): Allow assets but not
-        // properties to be overwritten
+        // Import 2. call: importStudyConfirmed(): Allow properties and assets to be overwritten
         ObjectNode node = Json.mapper().createObjectNode();
-        node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, false);
-        node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
+        node.put("overwriteStudysProperties", true);
+        node.put("overwriteStudysDir", true);
+        node.put("renameDir", true);
         importStudyConfirmed(node);
 
-        // Check Properties (should not have changed)
-        jpaApi.withTransaction(() -> {
-            Study updatedStudy = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            assertThat(updatedStudy.getComponentList().size()).isEqualTo(6);
-            assertThat(updatedStudy.getComponent(1).getTitle())
-                    .isEqualTo("Task instructions ");
-            assertThat(updatedStudy.getLastComponent().getTitle())
-                    .isEqualTo("Changed title");
-            assertThat(updatedStudy.getDate()).isNull();
-            assertThat(updatedStudy.getDescription())
-                    .isEqualTo("Changed description");
-            assertThat(updatedStudy.getId()).isPositive();
-            assertThat(updatedStudy.getJsonData()).isEqualTo("{}");
-            assertThat(updatedStudy.getUserList().contains(admin)).isTrue();
-            assertThat(updatedStudy.getTitle()).isEqualTo("Changed Title");
-            assertThat(updatedStudy.getUuid())
-                    .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        Study importedStudy = jpaApi.withTransaction(
+                () -> studyDao.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617"));
+        // Check that properties are unchanged
+        assertThat(importedStudy.getTitle()).isEqualTo("Basic Example Study");
+        // Check that assets are renamed (have '_2' suffix)
+        checkAssetsOfBasicExampleStudy(importedStudy, "basic_example_study_2");
+    }
 
-            // Asset dir name should not have changed
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * Test 2) study exists  -  udir exists - udir != cdir
+     * User chooses to overwrite properties and overwrite assets dir; dir keeps cdir name
+     */
+    @Test
+    public void importStudyOverwritePropertiesOverwriteAssetsButUdirExists() throws Exception {
+        testHelper.mockContext();
+
+        // Import study and alter it, so we have something to overwrite later on
+        Study study = getAlteredStudy();
+        jpaApi.withTransaction(() -> {
             try {
-                checkAssetsOfBasicExampleStudy(study, "original_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
 
+        // Create a assets dir that does not belong to the study
+        ioUtils.createStudyAssetsDir("basic_example_study");
+
+        // Import 1. call: importStudy()
+        File studyFile = getExampleStudyFile();
+        FilePart<File> filePart = new FilePart<>(Study.STUDY,
+                studyFile.getName(), "multipart/form-data", studyFile);
+        ObjectNode jsonNode = importStudy(filePart.getFile());
+
+        // Check returned JSON object
+        assertThat(jsonNode.get("studyExists").asBoolean()).isTrue();
+        assertThat(jsonNode.get("currentStudyTitle").asText()).isEqualTo("Another Title");
+        assertThat(jsonNode.get("currentStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("currentDirName").asText()).isEqualTo("another_example_dirname");
+        assertThat(jsonNode.get("uploadedStudyTitle").asText()).isEqualTo("Basic Example Study");
+        assertThat(jsonNode.get("uploadedStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("uploadedDirName").asText()).isEqualTo("basic_example_study");
+        assertThat(jsonNode.get("uploadedDirExists").asBoolean()).isTrue();
+
+        // Import 2. call: importStudyConfirmed(): Allow properties and assets to be overwritten
+        ObjectNode node = Json.mapper().createObjectNode();
+        node.put("overwriteStudysProperties", true);
+        node.put("overwriteStudysDir", true);
+        node.put("keepCurrentDirName", true);
+        importStudyConfirmed(node);
+
+        // Check that properties are unchanged
+        jpaApi.withTransaction(() -> {
+            Study importedStudy = studyDao.findById(study.getId());
+            assertThat(importedStudy.getTitle()).isEqualTo("Basic Example Study");
+        });
+
+        // Check that dir name is unchanged
+        checkAssetsOfBasicExampleStudy(study, "another_example_dirname");
     }
 
     @Test
-    public void checkCreateStudyExportZipFile()
-            throws NoSuchAlgorithmException, IOException, ForbiddenException {
+    public void checkCreateStudyExportZipFile() throws IOException {
         testHelper.mockContext();
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -422,19 +520,21 @@ public class ImportExportServiceTest {
         ObjectNode jsonNode = importStudy(studyFile);
 
         // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
-                .isTrue();
-        assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
-                .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
-                .isTrue();
-        assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText())
-                .isNotEmpty();
+        assertThat(jsonNode.get("studyExists").asBoolean()).isTrue();
+        assertThat(jsonNode.get("currentStudyTitle").asText()).isEqualTo("Basic Example Study");
+        assertThat(jsonNode.get("currentStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("currentDirName").asText()).isEqualTo("basic_example_study");
+        assertThat(jsonNode.get("uploadedStudyTitle").asText()).isEqualTo("Basic Example Study");
+        assertThat(jsonNode.get("uploadedStudyUuid").asText())
+                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(jsonNode.get("uploadedDirName").asText()).isEqualTo("basic_example_study");
+        assertThat(jsonNode.get("uploadedDirExists").asBoolean()).isTrue();
 
         // importStudy() should remember the study file name in the Play session
         String studyFileName = Http.Context.current.get().session()
                 .get(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
-        assertThat(studyFileName).isNotEmpty();
+        assertThat(studyFileName).startsWith("JatosImport_");
     }
 
     /**
@@ -485,8 +585,7 @@ public class ImportExportServiceTest {
      * still point to a dirName of 'basic_example_study'.
      */
     private File getExampleStudyFile() throws IOException {
-        final String basicExampleStudyZip =
-                "test/resources/basic_example_study.zip";
+        final String basicExampleStudyZip = "test/resources/basic_example_study.zip";
         File studyFile = new File(basicExampleStudyZip);
         File studyFileCopy = new File(System.getProperty("java.io.tmpdir"),
                 "basic_example_study_copy.zip");
@@ -511,31 +610,23 @@ public class ImportExportServiceTest {
 
     private void checkPropertiesOfBasicExampleStudy(Study study, User admin) {
         assertThat(study.getComponentList().size()).isEqualTo(7);
-        assertThat(study.getComponent(1).getTitle())
-                .isEqualTo("Show JSON input ");
-        assertThat(study.getLastComponent().getTitle())
-                .isEqualTo("Quit button");
+        assertThat(study.getComponent(1).getTitle()).isEqualTo("Show JSON input ");
+        assertThat(study.getLastComponent().getTitle()).isEqualTo("Quit button");
         assertThat(study.getDate()).isNull();
-        assertThat(study.getDescription())
-                .isEqualTo("A couple of sample components.");
+        assertThat(study.getDescription()).isEqualTo("A couple of sample components.");
         assertThat(study.getId()).isPositive();
-        assertThat(study.getJsonData().contains("\"totalStudySlides\":17"))
-                .isTrue();
+        assertThat(study.getJsonData().contains("\"totalStudySlides\":17")).isTrue();
         assertThat(study.getUserList().contains(admin)).isTrue();
         assertThat(study.getTitle()).isEqualTo("Basic Example Study");
-        assertThat(study.getUuid())
-                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(study.getUuid()).isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
     }
 
-    private void checkAssetsOfBasicExampleStudy(Study study, String dirName)
-            throws IOException {
+    private void checkAssetsOfBasicExampleStudy(Study study, String dirName) throws IOException {
         assertThat(study.getDirName()).isEqualTo(dirName);
-        assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName()))
-                .isTrue();
+        assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName())).isTrue();
 
         // Check the number of files and directories in the study assets
-        String[] fileList = ioUtils.getStudyAssetsDir(study.getDirName())
-                .list();
+        String[] fileList = ioUtils.getStudyAssetsDir(study.getDirName()).list();
         assertThat(fileList.length).isEqualTo(11);
     }
 
@@ -551,10 +642,10 @@ public class ImportExportServiceTest {
 
     private void alterStudyProperties(Study study) {
         study.getComponentList().remove(0);
-        study.getLastComponent().setTitle("Changed title");
-        study.setDescription("Changed description");
+        study.getLastComponent().setTitle("Another Component Title");
+        study.setDescription("Another description");
         study.setJsonData("{}");
-        study.setTitle("Changed Title");
+        study.setTitle("Another Title");
     }
 
 }

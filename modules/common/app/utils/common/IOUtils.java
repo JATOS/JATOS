@@ -1,20 +1,18 @@
 package utils.common;
 
+import general.common.Common;
+import general.common.MessagesStrings;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import javax.inject.Singleton;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import general.common.Common;
-import general.common.MessagesStrings;
 
 /**
  * Utility class that handles access to the system's file system.
@@ -61,7 +59,7 @@ public class IOUtils {
      * traversal attack. path and filePath together build the full path (like
      * path/filePath). path must be a directory.
      */
-    public File getFileSecurely(String baseDirPathStr, String filePathStr)
+    private File getFileSecurely(String baseDirPathStr, String filePathStr)
             throws IOException {
         Path baseDirPath = Paths.get(baseDirPathStr);
         Path filePath = Paths.get(filePathStr);
@@ -91,7 +89,7 @@ public class IOUtils {
      * Gets the File object of the directory while preventing a path traversal
      * attack and checks if the directory actually exists.
      */
-    public File getExistingDirSecurely(String fullPathStr) throws IOException {
+    private File getExistingDirSecurely(String fullPathStr) throws IOException {
         Path fullPath = Paths.get(fullPathStr);
         if (!fullPath.isAbsolute()) {
             throw new IOException(MessagesStrings.pathNotAbsolute(fullPathStr));
@@ -151,17 +149,13 @@ public class IOUtils {
     }
 
     /**
-     * Generates a filename from a name and an ID in a specified length and adds
-     * the suffix. If the ID is null it uses the title only. If the suffix is
-     * null it won't have a file suffix.
+     * Generates a filename from a name in a specified length and adds the
+     * suffix.
      */
-    public String generateFileName(String rawName, Long id, String suffix) {
+    public String generateFileName(String rawName, String suffix) {
         String filename = rawName.trim()
                 .replaceAll(REGEX_ILLEGAL_IN_FILENAME, "_").toLowerCase();
         filename = StringUtils.left(filename, MAX_FILENAME_LENGTH);
-        if (id != null) {
-            filename = filename.concat("_" + id);
-        }
         if (suffix != null) {
             filename = filename.concat("." + suffix);
         }
@@ -172,15 +166,7 @@ public class IOUtils {
      * Generates a filename from a name in a specified length.
      */
     public String generateFileName(String rawName) {
-        return generateFileName(rawName, null, null);
-    }
-
-    /**
-     * Generates a filename from a name in a specified length and adds the
-     * suffix.
-     */
-    public String generateFileName(String rawName, String suffix) {
-        return generateFileName(rawName, null, suffix);
+        return generateFileName(rawName, null);
     }
 
     /**
@@ -284,6 +270,16 @@ public class IOUtils {
             i++;
         }
         return clonedFile;
+    }
+
+    public String findNonExistingStudyAssetsDirName(String dirName) {
+        int i = 2;
+        String newDirName = dirName;
+        while (checkStudyAssetsDirExists(newDirName)) {
+            newDirName = dirName + "_" + i;
+            i++;
+        }
+        return newDirName;
     }
 
     /**

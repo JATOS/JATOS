@@ -42,14 +42,6 @@ public class ImportExportService {
 
     private static final ALogger LOGGER = Logger.of(ImportExportService.class);
 
-    public static final String COMPONENT_TITLE = "componentTitle";
-    public static final String COMPONENT_EXISTS = "componentExists";
-    public static final String DIR_PATH = "dirPath";
-    public static final String DIR_EXISTS = "dirExists";
-    public static final String STUDY_TITLE = "studyTitle";
-    public static final String STUDY_EXISTS = "studyExists";
-    public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
-    public static final String STUDYS_ENTITY_CONFIRM = "studysEntityConfirm";
     public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
     public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 
@@ -104,8 +96,8 @@ public class ImportExportService {
 
         // Create JSON response
         ObjectNode objectNode = Json.mapper().createObjectNode();
-        objectNode.put(COMPONENT_EXISTS, componentExists);
-        objectNode.put(COMPONENT_TITLE, uploadedComponent.getTitle());
+        objectNode.put("componentExists", componentExists);
+        objectNode.put("componentTitle", uploadedComponent.getTitle());
         return objectNode;
     }
 
@@ -144,6 +136,16 @@ public class ImportExportService {
         }
     }
 
+    /**
+     * Import a uploaded study: there are 5 possible cases:
+     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
+     * <p>
+     * 1) study exists  -  udir exists - udir == cdir : ask confirmation to overwrite study and/or dir
+     * 2) study exists  -  udir exists - udir != cdir : ask confirmation to overwrite study and/or (dir && rename to cdir)
+     * 3) study exists  - !udir exists : shouldn't happen, ask confirmation to overwrite study
+     * 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
+     * 5) !study exists - !udir exists : new study - write both
+     */
     public ObjectNode importStudy(User loggedInUser, File file)
             throws IOException, ForbiddenException {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
@@ -155,33 +157,48 @@ public class ImportExportService {
 
         Study currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean studyExists = currentStudy != null;
-        boolean dirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
-        checkStudyImport(loggedInUser, uploadedStudy, currentStudy, studyExists, dirExists);
+        boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
+        checkStudyImport(loggedInUser, currentStudy, studyExists);
 
         // Create JSON response
         ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put(ImportExportService.STUDY_EXISTS, studyExists);
-        responseJson.put(ImportExportService.STUDY_TITLE, uploadedStudy.getTitle());
-        responseJson.put(ImportExportService.DIR_EXISTS, dirExists);
-        responseJson.put(ImportExportService.DIR_PATH, uploadedStudy.getDirName());
+        responseJson.put("studyExists", studyExists);
+        if (studyExists) {
+            responseJson.put("currentStudyTitle", currentStudy.getTitle());
+            responseJson.put("currentStudyUuid", currentStudy.getUuid());
+            responseJson.put("currentDirName", currentStudy.getDirName());
+        }
+        responseJson.put("uploadedStudyTitle", uploadedStudy.getTitle());
+        responseJson.put("uploadedStudyUuid", uploadedStudy.getUuid());
+        responseJson.put("uploadedDirName", uploadedStudy.getDirName());
+        responseJson.put("uploadedDirExists", uploadedDirExists);
+        if (!studyExists && uploadedDirExists) {
+            String newDirName =
+                    ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
+            responseJson.put("newDirName", newDirName);
+        }
         return responseJson;
+    }
+
+    private void checkStudyImport(User loggedInUser, Study currentStudy,
+            boolean studyExists) throws ForbiddenException {
+        if (studyExists && !currentStudy.hasUser(loggedInUser)) {
+            String errorMsg = MessagesStrings.studyImportNotUser(currentStudy.getTitle());
+            throw new ForbiddenException(errorMsg);
+        }
     }
 
     public void importStudyConfirmed(User loggedInUser, JsonNode json)
             throws IOException, ForbiddenException, BadRequestException {
-        if (json == null) {
-            LOGGER.error(".importStudyConfirmed: JSON is null");
+        if (json == null || json.findPath("overwriteStudysProperties") == null ||
+                json.findPath("overwriteStudysDir") == null) {
+            LOGGER.error(".importStudyConfirmed: " + "JSON is malformed");
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
-        if (json.findPath(STUDYS_ENTITY_CONFIRM) == null
-                || json.findPath(STUDYS_DIR_CONFIRM) == null) {
-            LOGGER.error(".importStudyConfirmed: " + "JSON is malformed: "
-                    + STUDYS_ENTITY_CONFIRM + " or " + STUDYS_DIR_CONFIRM
-                    + " missing");
-            throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
-        }
-        Boolean studysEntityConfirm = json.findPath(STUDYS_ENTITY_CONFIRM).asBoolean();
-        Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM).asBoolean();
+        Boolean overwriteStudysProperties = json.findPath("overwriteStudysProperties").asBoolean();
+        Boolean overwriteStudysDir = json.findPath("overwriteStudysDir").asBoolean();
+        Boolean keepCurrentDirName = json.findPath("keepCurrentDirName").booleanValue();
+        Boolean renameDir = json.findPath("renameDir").booleanValue();
 
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
@@ -189,15 +206,31 @@ public class ImportExportService {
                     + "missing unzipped study directory in temp directory");
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
-        Study importedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
-        Study currentStudy = studyDao.findByUuid(importedStudy.getUuid());
+        Study uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
+        Study currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 
+        // 1) study exists  -  udir exists - udir == cdir
+        // 2) study exists  -  udir exists - udir != cdir
+        // 3) study exists  - !udir exists
         boolean studyExists = (currentStudy != null);
         if (studyExists) {
-            overwriteExistingStudy(loggedInUser, studysEntityConfirm,
-                    studysDirConfirm, tempUnzippedStudyDir, importedStudy, currentStudy);
-        } else {
-            importNewStudy(loggedInUser, tempUnzippedStudyDir, importedStudy);
+            overwriteExistingStudy(loggedInUser, overwriteStudysProperties, overwriteStudysDir,
+                    keepCurrentDirName, tempUnzippedStudyDir, uploadedStudy, currentStudy);
+            return;
+        }
+
+        // 4) !study exists -  udir exists
+        // 5) !study exists - !udir exists
+        if (overwriteStudysProperties && overwriteStudysDir) {
+            boolean uploadedDirExists =
+                    ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
+            if (uploadedDirExists && !renameDir) return;
+            if (renameDir) {
+                String newDirName =
+                        ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
+                uploadedStudy.setDirName(newDirName);
+            }
+            importNewStudy(loggedInUser, tempUnzippedStudyDir, uploadedStudy);
         }
     }
 
@@ -209,47 +242,29 @@ public class ImportExportService {
         Controller.session().remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
     }
 
-    private void checkStudyImport(User loggedInUser, Study uploadedStudy,
-            Study currentStudy, boolean studyExists, boolean dirExists) throws ForbiddenException {
-        if (studyExists && !currentStudy.hasUser(loggedInUser)) {
-            String errorMsg = MessagesStrings.studyImportNotUser(currentStudy.getTitle());
-            throw new ForbiddenException(errorMsg);
-        }
-        if (dirExists && (currentStudy == null || !currentStudy.getDirName()
-                .equals(uploadedStudy.getDirName()))) {
-            String errorMsg = MessagesStrings.studyAssetsDirExistsBelongsToDifferentStudy(
-                    uploadedStudy.getDirName());
-            throw new ForbiddenException(errorMsg);
-        }
-    }
-
     private void overwriteExistingStudy(User loggedInUser,
-            Boolean studyEntityConfirm, Boolean studysDirConfirm,
-            File tempUnzippedStudyDir, Study importedStudy, Study currentStudy)
+            boolean overwriteStudysProperties, boolean overwriteStudysDir,
+            boolean keepCurrentDirName,
+            File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
             throws IOException, ForbiddenException, BadRequestException {
         checker.checkStandardForStudy(currentStudy, currentStudy.getId(), loggedInUser);
         checker.checkStudyLocked(currentStudy);
-        if (studysDirConfirm) {
-            if (studyEntityConfirm) {
-                moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, importedStudy.getDirName());
-            } else {
-                // If we don't overwrite the properties, don't use the
-                // updated study assets' dir name
-                moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, currentStudy.getDirName());
-            }
+
+        if (overwriteStudysDir) {
+            String dirName =
+                    keepCurrentDirName ? currentStudy.getDirName() : uploadedStudy.getDirName();
+            moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, dirName);
             RequestScopeMessaging.success(MessagesStrings.studyAssetsOverwritten(
-                    importedStudy.getDirName(), currentStudy.getId(), currentStudy.getTitle()));
+                    dirName, currentStudy.getId(), currentStudy.getTitle()));
         }
-        if (studyEntityConfirm) {
-            if (studysDirConfirm) {
-                studyService.updateStudy(currentStudy, importedStudy);
+
+        if (overwriteStudysProperties) {
+            if (keepCurrentDirName || !overwriteStudysDir) {
+                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy);
             } else {
-                // If we don't overwrite the current study dir with the
-                // uploaded one, don't change the study dir name in the
-                // properties
-                studyService.updateStudyWithoutDirName(currentStudy, importedStudy);
+                studyService.updateStudy(currentStudy, uploadedStudy);
             }
-            updateStudysComponents(currentStudy, importedStudy);
+            updateStudysComponents(currentStudy, uploadedStudy);
             RequestScopeMessaging.success(MessagesStrings
                     .studysPropertiesOverwritten(currentStudy.getId(), currentStudy.getTitle()));
         }
