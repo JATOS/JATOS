@@ -211,7 +211,7 @@ public class ResultServiceTest {
                 checker.checkComponentResults(componentResultList, admin, true);
             } catch (ForbiddenException e) {
                 assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.studyLocked(study.getId()));
+                        .isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
             } catch (BadRequestException e) {
                 throw new RuntimeException(e);
             }
@@ -277,7 +277,7 @@ public class ResultServiceTest {
                 checker.checkStudyResults(studyResultList, admin, true);
             } catch (ForbiddenException e) {
                 assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.studyLocked(study.getId()));
+                        .isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
             } catch (BadRequestException e) {
                 throw new RuntimeException(e);
             }

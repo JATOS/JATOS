@@ -202,13 +202,4 @@ public class StudiesUserAccessTest {
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
-    @Test
-    public void callStudiesAllWorkersWithResults() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.allWorkersWithResults(study.getId());
-        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
-    }
-
 }

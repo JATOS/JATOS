@@ -32,8 +32,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
     private MTPublixUtils mtPublixUtils;
 
     @Test
-    public void checkRetrieveTypedWorker()
-            throws NoSuchAlgorithmException, IOException, PublixException {
+    public void checkRetrieveTypedWorker() {
 
         MTWorker mtWorker = jpaApi.withTransaction(() -> {
             MTWorker w = new MTWorker();
@@ -62,8 +61,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
     }
 
     @Test
-    public void checkRetrieveTypedWorkerWrongType()
-            throws NoSuchAlgorithmException, IOException, PublixException {
+    public void checkRetrieveTypedWorkerWrongType() {
         GeneralSingleWorker generalSingleWorker = jpaApi.withTransaction(() -> {
             GeneralSingleWorker w = new GeneralSingleWorker();
             workerDao.create(w);
@@ -102,7 +100,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             publixUtils.setUrlQueryParameter(studyResult);
             assertThat(studyResult.getUrlQueryParameters()).isEqualTo(
-                    "{\"foo\":\"bar\",\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\"}");
+                    "{\"workerId\":\"123\",\"foo\":\"bar\",\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\"}");
         });
     }
 

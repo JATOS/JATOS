@@ -1,20 +1,7 @@
 package services.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.inject.Inject;
-
-import org.fest.assertions.Fail;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.TestHelper;
@@ -22,10 +9,20 @@ import general.common.MessagesStrings;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
+import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
+import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * Tests Checker
@@ -123,7 +120,7 @@ public class CheckerTest {
             Fail.fail();
         } catch (ForbiddenException e) {
             assertThat(e.getMessage())
-                    .isEqualTo(MessagesStrings.studyLocked(study.getId()));
+                    .isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
         }
     }
 

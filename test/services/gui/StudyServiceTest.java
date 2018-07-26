@@ -387,7 +387,7 @@ public class StudyServiceTest {
                 Fail.fail();
             } catch (BadRequestException e) {
                 assertThat(e.getMessage()).isEqualTo(MessagesStrings
-                        .studyReorderUnknownPosition("100", s.getId()));
+                        .studyReorderUnknownPosition("100", s.getId(), s.getTitle()));
             }
         });
     }

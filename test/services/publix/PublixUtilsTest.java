@@ -209,8 +209,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * new component result should be created and the old one should be finished
      */
     @Test
-    public void checkStartComponentFinishReloadableComponentResult()
-            throws IOException, ForbiddenReloadException {
+    public void checkStartComponentFinishReloadableComponentResult() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         long studyResultId = createStudyResultAndStartFirstComponent(study);
@@ -244,8 +243,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * and the first component result should be finished
      */
     @Test
-    public void checkStartComponentNotReloadable()
-            throws IOException, ForbiddenReloadException {
+    public void checkStartComponentNotReloadable() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Create a StudyResult and set the first component as not reloadable
@@ -297,7 +295,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * and component data should be empty also they were filled before)
      */
     @Test
-    public void checkAbortStudy() throws IOException, ForbiddenReloadException {
+    public void checkAbortStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Create a StudyResult and study session data.
@@ -347,8 +345,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * successful
      */
     @Test
-    public void checkFinishStudyResultSuccessful()
-            throws IOException, ForbiddenReloadException {
+    public void checkFinishStudyResultSuccessful() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and the first 2 components and both times set result
@@ -395,8 +392,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * and finish successful
      */
     @Test
-    public void checkFinishStudyResultFailed()
-            throws IOException, ForbiddenReloadException {
+    public void checkFinishStudyResultFailed() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and the first 2 components and both times set result
@@ -533,7 +529,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      */
     @Test
     public void checkFinishAbandonedStudyResultsEmpty()
-            throws IOException, PublixException {
+            throws PublixException {
         // Generate empty ID cookie list
         List<Cookie> cookieList = new ArrayList<>();
         testHelper.mockContext(cookieList);
@@ -647,8 +643,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * BadRequestPublixException if the study result isn't present in the DB
      */
     @Test
-    public void checkRetrieveStudyResultNeverDidStudy()
-            throws IOException, PublixException {
+    public void checkRetrieveStudyResultNeverDidStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Never started any study
@@ -1190,7 +1185,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * in DB a NotFoundPublixException should be thrown
      */
     @Test
-    public void checkRetrieveStudyNotFound() throws IOException {
+    public void checkRetrieveStudyNotFound() {
         testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
@@ -1209,8 +1204,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * component belongs to the study the method should just return
      */
     @Test
-    public void checkCheckComponentBelongsToStudy()
-            throws IOException, PublixException {
+    public void checkCheckComponentBelongsToStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
@@ -1229,8 +1223,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * belong to the study the method should throw a BadRequestPublixException
      */
     @Test
-    public void checkCheckComponentBelongsToStudyFail()
-            throws IOException, PublixException {
+    public void checkCheckComponentBelongsToStudyFail() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Study clone = createClone(study);
 
@@ -1254,8 +1247,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * PublixUtils.checkStudyIsGroupStudy()
      */
     @Test
-    public void checkCheckStudyIsGroupStudy()
-            throws IOException, PublixException {
+    public void checkCheckStudyIsGroupStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
@@ -1279,8 +1271,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * PublixUtils.checkStudyIsGroupStudy()
      */
     @Test
-    public void checkCheckStudyIsGroupStudyFalse()
-            throws IOException, PublixException {
+    public void checkCheckStudyIsGroupStudyFalse() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
@@ -1307,12 +1298,16 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * is -1
      */
     @Test
-    public void checkRetrieveBatchByIdOrDefaultDefault()
-            throws IOException, PublixException {
+    public void checkRetrieveBatchByIdOrDefaultDefault() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            Batch retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(-1L, study);
+            Batch retrievedBatch;
+            try {
+                retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(-1L, study);
+            } catch (NotFoundPublixException e) {
+                throw new RuntimeException(e);
+            }
             assertThat(retrievedBatch).isEqualTo(study.getDefaultBatch());
         });
     }
@@ -1321,8 +1316,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * PublixUtils.retrieveBatchByIdOrDefault(): get batch specified by ID
      */
     @Test
-    public void checkRetrieveBatchByIdOrDefaultById()
-            throws IOException, PublixException {
+    public void checkRetrieveBatchByIdOrDefaultById() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         long batchId = jpaApi.withTransaction(() -> {
@@ -1334,8 +1328,13 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             Batch batch = batchDao.findById(batchId);
-            Batch retrievedBatch = publixUtils
-                    .retrieveBatchByIdOrDefault(batch.getId(), study);
+            Batch retrievedBatch;
+            try {
+                retrievedBatch = publixUtils
+                        .retrieveBatchByIdOrDefault(batch.getId(), study);
+            } catch (NotFoundPublixException e) {
+                throw new RuntimeException(e);
+            }
             assertThat(retrievedBatch).isEqualTo(batch);
         });
     }
@@ -1344,7 +1343,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * PublixUtils.retrieveBatch(): get batch specified by ID
      */
     @Test
-    public void checkRetrieveBatch() throws IOException, PublixException {
+    public void checkRetrieveBatch() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         long batchId = jpaApi.withTransaction(() -> {
@@ -1359,7 +1358,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 Batch batch = batchDao.findById(batchId);
                 Batch retrievedBatch = publixUtils.retrieveBatch(batch.getId());
                 assertThat(retrievedBatch).isEqualTo(batch);
-            } catch (ForbiddenPublixException e) {
+            } catch (NotFoundPublixException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -1370,14 +1369,14 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * exist throw an ForbiddenPublixException
      */
     @Test
-    public void checkRetrieveBatchFail() throws IOException, PublixException {
+    public void checkRetrieveBatchFail() {
         testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
             try {
                 publixUtils.retrieveBatch(999L);
                 Fail.fail();
-            } catch (ForbiddenPublixException e) {
+            } catch (NotFoundPublixException e) {
                 // Just an exception is fine
             }
         });
@@ -1387,8 +1386,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * PublixUtils.setPreStudyStateByPre()
      */
     @Test
-    public void checkSetPreStudyStateByPre()
-            throws IOException, PublixException {
+    public void checkSetPreStudyStateByPre() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         long studyResultId = createStudyResult(study);
@@ -1409,8 +1407,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * first component
      */
     @Test
-    public void checkSetPreStudyStateByComponentId()
-            throws IOException, PublixException {
+    public void checkSetPreStudyStateByComponentId() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         long studyResultId = createStudyResult(study);

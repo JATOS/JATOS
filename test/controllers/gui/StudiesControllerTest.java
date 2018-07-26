@@ -577,22 +577,4 @@ public class StudiesControllerTest {
         assertThat(contentAsString(result)).isNotNull();
     }
 
-    /**
-     * Tests Studies.allWorkersWithResults()
-     */
-    @Test
-    public void callAllWorkersWithResults() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.allWorkersWithResults(study.getId()).url());
-        Result result = route(request);
-
-        assertThat(result.status()).isEqualTo(OK);
-        assertThat(contentAsString(result)).isNotNull();
-    }
-
 }

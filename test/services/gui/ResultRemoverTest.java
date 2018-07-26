@@ -260,7 +260,7 @@ public class ResultRemoverTest {
                 Fail.fail();
             } catch (ForbiddenException e) {
                 assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.studyLocked(study.getId()));
+                        .isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
             } catch (BadRequestException e) {
                 throw new RuntimeException(e);
             }
