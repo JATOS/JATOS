@@ -31,19 +31,18 @@ study: common.Study, studyResultsCount: Integer)
                 title="Edit this study's properties">
             Properties <span class="glyphicon glyphicon-option-vertical"></span>
         </button>
+        <a type="button" class="btn btn-study"
+                data-toggle="tooltip" data-placement="bottom"
+                title="Export this study to your local file system (including its components and study assets but without its results)"
+                href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
+            Export <span class="glyphicon glyphicon-export"></span>
+        </a>
         <div class="btn-group">
             <button type="button" class="btn btn-study dropdown-toggle"
                     data-toggle="dropdown">
                 More <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">
-                <li data-toggle="tooltip" data-placement="bottom"
-                    title="Export this study to your local file system (including its components and study assets but without its results)">
-                    <a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
-                        <span class="glyphicon glyphicon-export"></span>
-                        Export
-                    </a>
-                </li>
                 <li data-toggle="tooltip" data-placement="bottom"
                     title="Clone this study without its results">
                     <a id="cloneStudy" href="#">
