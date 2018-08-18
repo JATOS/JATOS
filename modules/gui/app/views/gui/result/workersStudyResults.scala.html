@@ -44,7 +44,7 @@
             <th>Study</th>
             <th>Batch</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_CONFIRMATION_CODE">Confirmation Code</th>
-            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_GROUP_ID">Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
             <th>Invisible column for result data filtering</th>
@@ -64,7 +64,7 @@
             <th>Study</th>
             <th>Batch</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_CONFIRMATION_CODE">Confirmation Code</th>
-            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_GROUP_ID">Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
             <th>Invisible column for result data filtering</th>
@@ -146,7 +146,7 @@ $(document).ready(function() {
                 "width": "1%",
                 "visible": false,
                 "render": function (data, type, full, meta) {
-                return '<a data-toggle="tooltip" ' +
+                return '<a type="button" class="btn btn-study btn-xs" data-toggle="tooltip" ' +
                     'data-placement="bottom" title="Opens this study" ' +
                     'href="@{playHttpContext}jatos/' + data + '">' + data + '</a>';
                 }
@@ -160,8 +160,8 @@ $(document).ready(function() {
                 "visible": false,
                 "render": function (data, type, full, meta) {
                     if (!data) return "none";
-                    return '<a data-toggle="tooltip" ' +
-                        'data-placement="bottom" title="Opens this group\'s results" ' +
+                    return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
+                        'data-placement="bottom" title="Click to get this group\'s results" ' +
                         'href="@{playHttpContext}jatos/' + full.studyId + '/group/' + data + '/results">' + data + '</a>';
                 }
             },

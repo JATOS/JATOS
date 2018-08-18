@@ -154,6 +154,7 @@ public class MessagesStrings {
             + PersonalMultipleWorker.UI_WORKER_TYPE + ", "
             + PersonalSingleWorker.UI_WORKER_TYPE;
     public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
+    public static final String RESULTS_GROUP_ID = "Click on the ID to go to this group's results";
     public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
     public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE =
             "Mechanical Turk's worker ID and in brackets the confirmation code for Mechanical Turk";

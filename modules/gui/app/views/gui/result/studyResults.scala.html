@@ -20,7 +20,7 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
-            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_GROUP_ID">Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
             <th>Invisible column for result data filtering</th>
@@ -40,7 +40,7 @@
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
-            <th>Group ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_GROUP_ID">Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
             <th>Invisible column for result data filtering</th>
@@ -118,8 +118,8 @@ $(document).ready(function() {
                 "data": "workerId",
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    return '<a data-toggle="tooltip" ' +
-                        'data-placement="bottom" title="Opens this worker\'s results" ' +
+                    return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+                        'data-placement="bottom" title="Click to get to this worker\'s results page" ' +
                         'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             },
@@ -141,8 +141,8 @@ $(document).ready(function() {
                 "width": "1%",
                 "render": function (data, type, full, meta) {
                     if (!data) return "none";
-                    return '<a data-toggle="tooltip" ' +
-                        'data-placement="bottom" title="Opens this group\'s results" ' +
+                    return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
+                        'data-placement="bottom" title="Click to get this group\'s results page" ' +
                         'href="@{playHttpContext}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
                 }
             },

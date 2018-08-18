@@ -17,8 +17,8 @@
                     <thead>
                         <tr>
                             <th>Group ID</th>
-                            <th data-toggle="tooltip" data-placement="top" title="All currently active workers">Active Workers</th>
-                            <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group">Past Workers</th>
+                            <th data-toggle="tooltip" data-placement="top" title="All currently active workers (click on the workers to get to their results page)">Active Workers</th>
+                            <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group (click on the workers to get to their results page)">Past Workers</th>
                             <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server)</th>
                             <th data-toggle="tooltip" data-placement="top" title="">End Time (Server)</th>
                             <th data-toggle="tooltip" data-placement="top" title="Current state of the group">Group State</th>
@@ -128,7 +128,7 @@ function generateGroupsTable(batch) {
         var workerLinks = [];
         data.forEach(function(workerId) {
             workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
-            'data-placement="bottom" title="Opens this worker\'s results" ' +
+            'data-placement="bottom" title="Click to get to this worker\'s results page" ' +
             'href="@{playHttpContext}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
         });
         return workerLinks.join(' ');
