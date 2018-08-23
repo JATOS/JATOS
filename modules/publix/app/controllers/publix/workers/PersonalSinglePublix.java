@@ -90,14 +90,19 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         PersonalSingleWorker worker = publixUtils.retrieveTypedWorker(workerIdStr);
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
+        // 1. pre first -> new sr, new cookie, finishAbandonedStudyResults
+        // 2. pre other, same browser -> get sr, keep cookie, -
+        // 3. pre other, different browser -> get sr, new cookie, finishAbandonedStudyResults
+        // 4. no pre first -> new sr, new cookie, finishAbandonedStudyResults
+        // 5. no pre other -> exception
+        publixUtils.finishAbandonedStudyResults();
         StudyResult studyResult;
         if (worker.getStudyResultList().isEmpty()) {
-            publixUtils.finishAbandonedStudyResults();
             studyResult = resultCreator.createStudyResult(study, batch, worker);
-            idCookieService.writeIdCookie(worker, batch, studyResult);
         } else {
             studyResult = worker.getLastStudyResult();
         }
+        idCookieService.writeIdCookie(worker, batch, studyResult);
         publixUtils.setPreStudyStateByPre(pre, studyResult);
         publixUtils.setUrlQueryParameter(studyResult);
 
