@@ -124,7 +124,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
                 + batchId + ") " + "assigned to worker with ID "
                 + worker.getId());
 
-        publixUtils.finishAbandonedStudyResults();
+        publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult);

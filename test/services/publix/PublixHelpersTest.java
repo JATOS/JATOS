@@ -23,7 +23,6 @@ import play.inject.guice.GuiceApplicationLoader;
 import services.gui.UserService;
 
 import javax.inject.Inject;
-import java.io.IOException;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -73,38 +72,29 @@ public class PublixHelpersTest {
      * of a StudyResult
      */
     @Test
-    public void checkFinishedStudyAlready() throws IOException {
+    public void checkFinishedStudyAlready() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
+            StudyResult studyResult = resultCreator
+                    .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
 
-            // Study results in state FINISHED, ABORTED, or FAIL must return
-            // true
+            // Study results in state FINISHED, ABORTED, or FAIL must return true
             studyResult.setStudyState(StudyState.FINISHED);
-            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(),
-                    study)).isTrue();
+            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study)).isTrue();
             studyResult.setStudyState(StudyState.ABORTED);
-            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(),
-                    study)).isTrue();
+            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study)).isTrue();
             studyResult.setStudyState(StudyState.FAIL);
-            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(),
-                    study)).isTrue();
+            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study)).isTrue();
 
-            // Study results in state PRE, STARTED, or DATA_RETRIEVED must
-            // return
-            // false
+            // Study results in state PRE, STARTED, or DATA_RETRIEVED must return false
             studyResult.setStudyState(StudyState.PRE);
-            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(),
-                    study)).isFalse();
+            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study)).isFalse();
             studyResult.setStudyState(StudyState.STARTED);
-            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(),
-                    study)).isFalse();
+            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study)).isFalse();
             studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(),
-                    study)).isFalse();
+            assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study)).isFalse();
         });
     }
 
@@ -112,20 +102,17 @@ public class PublixHelpersTest {
      * Test PublixUtils.didStudyAlready(): normal functioning
      */
     @Test
-    public void checkDidStudyAlready() throws IOException {
+    public void checkDidStudyAlready() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
-                    .isFalse();
+            assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study)).isFalse();
 
             // Create a result for the admin's worker
-            resultCreator.createStudyResult(study, study.getDefaultBatch(),
-                    admin.getWorker());
+            resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
 
-            assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
-                    .isTrue();
+            assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study)).isTrue();
         });
     }
 
@@ -133,7 +120,7 @@ public class PublixHelpersTest {
      * Tests PublixHelpers.studyDone() for the different study result states
      */
     @Test
-    public void checkStudyDone() throws IOException {
+    public void checkStudyDone() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
@@ -165,21 +152,20 @@ public class PublixHelpersTest {
      * result states
      */
     @Test
-    public void checkComponentDone()
-            throws IOException, ForbiddenReloadException {
+    public void checkComponentDone() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
 
             // Create a study result and start a component to get a component result
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
+            StudyResult studyResult = resultCreator
+                    .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
 
             ComponentResult componentResult;
             try {
-                componentResult = publixUtils
-                        .startComponent(study.getFirstComponent(), studyResult);
+                componentResult =
+                        publixUtils.startComponent(study.getFirstComponent(), studyResult);
             } catch (ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }

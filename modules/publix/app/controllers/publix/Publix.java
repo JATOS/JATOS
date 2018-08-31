@@ -73,8 +73,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     public Result startComponent(Long studyId, Long componentId, Long studyResultId)
             throws PublixException {
         LOGGER.info(".startComponent: studyId " + studyId + ", "
-                + "componentId " + componentId + ", " + "studyResultId "
-                + studyResultId);
+                + "componentId " + componentId + ", " + "studyResultId " + studyResultId);
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
         Study study = publixUtils.retrieveStudy(studyId);

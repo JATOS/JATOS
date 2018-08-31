@@ -96,20 +96,14 @@ abstract class BatchChannel[A <: Worker](publixUtils: PublixUtils[A],
 }
 
 @Singleton
-class GeneralSingleBatchChannel @Inject()(publixUtils: GeneralSinglePublixUtils,
-                                          studyAuthorisation: GeneralSingleStudyAuthorisation)
-  extends BatchChannel[GeneralSingleWorker](publixUtils, studyAuthorisation)
-
-@Singleton
 class JatosBatchChannel @Inject()(publixUtils: JatosPublixUtils,
                                   studyAuthorisation: JatosStudyAuthorisation)
   extends BatchChannel[JatosWorker](publixUtils, studyAuthorisation)
 
-// Handles both MTWorker and MTSandboxWorker
 @Singleton
-class MTBatchChannel @Inject()(publixUtils: MTPublixUtils,
-                               studyAuthorisation: MTStudyAuthorisation)
-  extends BatchChannel[MTWorker](publixUtils, studyAuthorisation)
+class PersonalSingleBatchChannel @Inject()(publixUtils: PersonalSinglePublixUtils,
+                                           studyAuthorisation: PersonalSingleStudyAuthorisation)
+  extends BatchChannel[PersonalSingleWorker](publixUtils, studyAuthorisation)
 
 @Singleton
 class PersonalMultipleBatchChannel @Inject()(publixUtils: PersonalMultiplePublixUtils,
@@ -117,6 +111,17 @@ class PersonalMultipleBatchChannel @Inject()(publixUtils: PersonalMultiplePublix
   extends BatchChannel[PersonalMultipleWorker](publixUtils, studyAuthorisation)
 
 @Singleton
-class PersonalSingleBatchChannel @Inject()(publixUtils: PersonalSinglePublixUtils,
-                                           studyAuthorisation: PersonalSingleStudyAuthorisation)
-  extends BatchChannel[PersonalSingleWorker](publixUtils, studyAuthorisation)
+class GeneralSingleBatchChannel @Inject()(publixUtils: GeneralSinglePublixUtils,
+                                          studyAuthorisation: GeneralSingleStudyAuthorisation)
+  extends BatchChannel[GeneralSingleWorker](publixUtils, studyAuthorisation)
+
+@Singleton
+class GeneralMultipleBatchChannel @Inject()(publixUtils: GeneralMultiplePublixUtils,
+                                          studyAuthorisation: GeneralMultipleStudyAuthorisation)
+  extends BatchChannel[GeneralMultipleWorker](publixUtils, studyAuthorisation)
+
+// Handles both MTWorker and MTSandboxWorker
+@Singleton
+class MTBatchChannel @Inject()(publixUtils: MTPublixUtils,
+                               studyAuthorisation: MTStudyAuthorisation)
+  extends BatchChannel[MTWorker](publixUtils, studyAuthorisation)

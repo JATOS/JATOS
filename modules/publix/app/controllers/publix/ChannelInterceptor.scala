@@ -23,16 +23,18 @@ import scala.concurrent.Future
 @PublixAccessLogging
 class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
                                    jpa: JPAApi,
-                                   generalSingleBatchChannel: GeneralSingleBatchChannel,
                                    jatosBatchChannel: JatosBatchChannel,
-                                   mTBatchChannel: MTBatchChannel,
-                                   personalMultipleBatchChannel: PersonalMultipleBatchChannel,
                                    personalSingleBatchChannel: PersonalSingleBatchChannel,
-                                   generalSingleGroupChannel: GeneralSingleGroupChannel,
+                                   personalMultipleBatchChannel: PersonalMultipleBatchChannel,
+                                   generalSingleBatchChannel: GeneralSingleBatchChannel,
+                                   generalMultipleBatchChannel: GeneralMultipleBatchChannel,
+                                   mTBatchChannel: MTBatchChannel,
                                    jatosGroupChannel: JatosGroupChannel,
-                                   mTGroupChannel: MTGroupChannel,
+                                   personalSingleGroupChannel: PersonalSingleGroupChannel,
                                    personalMultipleGroupChannel: PersonalMultipleGroupChannel,
-                                   personalSingleGroupChannel: PersonalSingleGroupChannel)
+                                   generalSingleGroupChannel: GeneralSingleGroupChannel,
+                                   generalMultipleGroupChannel: GeneralMultipleGroupChannel,
+                                   mTGroupChannel: MTGroupChannel)
   extends Controller {
 
   private val logger: Logger = Logger(this.getClass)
@@ -59,18 +61,20 @@ class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
         jpa.withTransaction(asJavaSupplier(() =>
           try {
             idCookie.getWorkerType match {
-              case MTWorker.WORKER_TYPE =>
-                Right(mTBatchChannel.open(studyId, studyResultId))
-              case MTSandboxWorker.WORKER_TYPE =>
-                Right(mTBatchChannel.open(studyId, studyResultId))
               case JatosWorker.WORKER_TYPE =>
                 Right(jatosBatchChannel.open(studyId, studyResultId))
-              case PersonalMultipleWorker.WORKER_TYPE =>
-                Right(personalMultipleBatchChannel.open(studyId, studyResultId))
               case PersonalSingleWorker.WORKER_TYPE =>
                 Right(personalSingleBatchChannel.open(studyId, studyResultId))
+              case PersonalMultipleWorker.WORKER_TYPE =>
+                Right(personalMultipleBatchChannel.open(studyId, studyResultId))
               case GeneralSingleWorker.WORKER_TYPE =>
                 Right(generalSingleBatchChannel.open(studyId, studyResultId))
+              case GeneralMultipleWorker.WORKER_TYPE =>
+                Right(generalMultipleBatchChannel.open(studyId, studyResultId))
+              case MTSandboxWorker.WORKER_TYPE =>
+                Right(mTBatchChannel.open(studyId, studyResultId))
+              case MTWorker.WORKER_TYPE =>
+                Right(mTBatchChannel.open(studyId, studyResultId))
               case _ => Left(Results.BadRequest)
             }
           } catch {
@@ -116,36 +120,41 @@ class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
 
           try {
             idCookie.getWorkerType match {
-              case MTWorker.WORKER_TYPE =>
-                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
-                  mTGroupChannel.join(studyId, studyResultId)
-                ))
-                Right(mTGroupChannel.open(studyResult))
-              case MTSandboxWorker.WORKER_TYPE =>
-                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
-                  mTGroupChannel.join(studyId, studyResultId)
-                ))
-                Right(mTGroupChannel.open(studyResult))
               case JatosWorker.WORKER_TYPE =>
                 val studyResult = jpa.withTransaction(asJavaSupplier(() =>
                   jatosGroupChannel.join(studyId, studyResultId)
                 ))
                 Right(jatosGroupChannel.open(studyResult))
-              case PersonalMultipleWorker.WORKER_TYPE =>
-                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
-                  personalMultipleGroupChannel.join(studyId, studyResultId)
-                ))
-                Right(personalMultipleGroupChannel.open(studyResult))
               case PersonalSingleWorker.WORKER_TYPE =>
                 val studyResult = jpa.withTransaction(asJavaSupplier(() =>
                   personalSingleGroupChannel.join(studyId, studyResultId)
                 ))
                 Right(personalSingleGroupChannel.open(studyResult))
+              case PersonalMultipleWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  personalMultipleGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(personalMultipleGroupChannel.open(studyResult))
               case GeneralSingleWorker.WORKER_TYPE =>
                 val studyResult = jpa.withTransaction(asJavaSupplier(() =>
                   generalSingleGroupChannel.join(studyId, studyResultId)
                 ))
                 Right(generalSingleGroupChannel.open(studyResult))
+              case GeneralMultipleWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  generalMultipleGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(generalMultipleGroupChannel.open(studyResult))
+              case MTSandboxWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  mTGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(mTGroupChannel.open(studyResult))
+              case MTWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  mTGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(mTGroupChannel.open(studyResult))
               case _ => Left(Results.BadRequest)
             }
           } catch {
@@ -190,18 +199,20 @@ class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
       jpa.withTransaction(asJavaSupplier(() => {
 
         idCookie.getWorkerType match {
-          case MTWorker.WORKER_TYPE =>
-            mTGroupChannel.reassign(studyId, studyResultId)
-          case MTSandboxWorker.WORKER_TYPE =>
-            mTGroupChannel.reassign(studyId, studyResultId)
           case JatosWorker.WORKER_TYPE =>
             jatosGroupChannel.reassign(studyId, studyResultId)
-          case PersonalMultipleWorker.WORKER_TYPE =>
-            personalMultipleGroupChannel.reassign(studyId, studyResultId)
           case PersonalSingleWorker.WORKER_TYPE =>
             personalSingleGroupChannel.reassign(studyId, studyResultId)
+          case PersonalMultipleWorker.WORKER_TYPE =>
+            personalMultipleGroupChannel.reassign(studyId, studyResultId)
           case GeneralSingleWorker.WORKER_TYPE =>
             generalSingleGroupChannel.reassign(studyId, studyResultId)
+          case GeneralMultipleWorker.WORKER_TYPE =>
+            generalMultipleGroupChannel.reassign(studyId, studyResultId)
+          case MTSandboxWorker.WORKER_TYPE =>
+            mTGroupChannel.reassign(studyId, studyResultId)
+          case MTWorker.WORKER_TYPE =>
+            mTGroupChannel.reassign(studyId, studyResultId)
           case _ => Results.BadRequest
         }
       }))
@@ -228,18 +239,20 @@ class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
       jpa.withTransaction(asJavaSupplier(() => {
 
         idCookie.getWorkerType match {
-          case MTWorker.WORKER_TYPE =>
-            mTGroupChannel.leave(studyId, studyResultId)
-          case MTSandboxWorker.WORKER_TYPE =>
-            mTGroupChannel.leave(studyId, studyResultId)
           case JatosWorker.WORKER_TYPE =>
             jatosGroupChannel.leave(studyId, studyResultId)
-          case PersonalMultipleWorker.WORKER_TYPE =>
-            personalMultipleGroupChannel.leave(studyId, studyResultId)
           case PersonalSingleWorker.WORKER_TYPE =>
             personalSingleGroupChannel.leave(studyId, studyResultId)
+          case PersonalMultipleWorker.WORKER_TYPE =>
+            personalMultipleGroupChannel.leave(studyId, studyResultId)
           case GeneralSingleWorker.WORKER_TYPE =>
             generalSingleGroupChannel.leave(studyId, studyResultId)
+          case GeneralMultipleWorker.WORKER_TYPE =>
+            generalMultipleGroupChannel.leave(studyId, studyResultId)
+          case MTSandboxWorker.WORKER_TYPE =>
+            mTGroupChannel.leave(studyId, studyResultId)
+          case MTWorker.WORKER_TYPE =>
+            mTGroupChannel.leave(studyId, studyResultId)
           case _ => Results.BadRequest
         }
       }))

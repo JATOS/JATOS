@@ -1,17 +1,7 @@
 package services.publix.workers;
 
-import static org.fest.assertions.Assertions.assertThat;
-
-import javax.inject.Inject;
-
-import org.fest.assertions.Fail;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
@@ -22,6 +12,10 @@ import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
+import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.ApplicationLoader;
 import play.Environment;
 import play.db.jpa.JPAApi;
@@ -29,6 +23,10 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import services.publix.PublixErrorMessages;
 import services.publix.ResultCreator;
+
+import javax.inject.Inject;
+
+import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
@@ -85,10 +83,8 @@ public class MTStudyAuthorisationTest {
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study,
-                batch);
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker,
-                study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker, study, batch);
     }
 
     @Test
@@ -116,13 +112,11 @@ public class MTStudyAuthorisationTest {
                     batch);
             Fail.fail();
         } catch (PublixException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
 
         // MTSandboxWorker is allowed to start again
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker,
-                study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker, study, batch);
     }
 
     @Test
@@ -144,8 +138,7 @@ public class MTStudyAuthorisationTest {
         createStudyResult(study, batch, mtWorker, StudyState.STARTED);
 
         studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
-        studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study,
-                batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study, batch);
     }
 
     @Test
@@ -166,24 +159,22 @@ public class MTStudyAuthorisationTest {
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study,
-                    batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                    .workerTypeNotAllowed(mtWorker.getUIWorkerType(),
-                            study.getId(), batch.getId()));
+                    .workerTypeNotAllowed(mtWorker.getUIWorkerType(), study.getId(),
+                            batch.getId()));
         }
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker,
-                    study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                    .workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType(),
-                            study.getId(), batch.getId()));
+                    .workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType(), study.getId(),
+                            batch.getId()));
         }
     }
 
@@ -207,12 +198,10 @@ public class MTStudyAuthorisationTest {
         // ABORTED
         createStudyResult(study, batch, mtWorker, StudyState.FINISHED);
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study,
-                    batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
         createStudyResult(study, batch, mtWorker, StudyState.FAIL);
         try {
@@ -220,8 +209,7 @@ public class MTStudyAuthorisationTest {
                     batch);
             Fail.fail();
         } catch (PublixException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
         createStudyResult(study, batch, mtWorker, StudyState.ABORTED);
         try {
@@ -229,20 +217,17 @@ public class MTStudyAuthorisationTest {
                     batch);
             Fail.fail();
         } catch (PublixException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
 
         // MTSandboxWorkers can repeat the same study
-        studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study,
-                batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study, batch);
     }
 
-    private StudyResult createStudyResult(Study study, Batch batch,
-            MTWorker mtWorker, StudyState studyState) {
+    private StudyResult createStudyResult(Study study, Batch batch, MTWorker mtWorker,
+            StudyState studyState) {
         return jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    batch, mtWorker);
+            StudyResult studyResult = resultCreator.createStudyResult(study, batch, mtWorker);
             studyResult.setStudyState(studyState);
             return studyResult;
         });

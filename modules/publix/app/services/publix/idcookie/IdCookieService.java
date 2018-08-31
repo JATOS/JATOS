@@ -33,6 +33,10 @@ public class IdCookieService {
         this.idCookieAccessor = idCookieAccessor;
     }
 
+    public boolean hasIdCookie(Long studyResultId) throws InternalServerErrorPublixException {
+        return getIdCookieCollection().findWithStudyResultId(studyResultId) != null;
+    }
+
     /**
      * Returns the IdCookie that corresponds to the given study result ID. If
      * the cookie doesn't exist it throws a BadRequestPublixException.
@@ -52,7 +56,7 @@ public class IdCookieService {
     /**
      * Returns the whole IdCookieCollection
      */
-    public IdCookieCollection getIdCookieCollection()
+    IdCookieCollection getIdCookieCollection()
             throws InternalServerErrorPublixException {
         try {
             return idCookieAccessor.extract();
@@ -199,8 +203,7 @@ public class IdCookieService {
      * in the cookie.
      */
     public void discardIdCookie(Long studyResultId)
-            throws BadRequestPublixException,
-            InternalServerErrorPublixException {
+            throws InternalServerErrorPublixException {
         try {
             idCookieAccessor.discard(studyResultId);
         } catch (IdCookieAlreadyExistsException e) {

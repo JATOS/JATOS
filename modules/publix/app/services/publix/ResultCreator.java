@@ -40,12 +40,24 @@ public class ResultCreator {
     /**
      * Creates StudyResult and adds it to the given Worker.
      */
-    public StudyResult createStudyResult(Study study, Batch batch, Worker worker) {
+    public StudyResult createStudyResult(Study study, Batch batch, Worker worker, boolean pre) {
         StudyResult studyResult = new StudyResult(study, batch, worker);
+        if (pre) {
+            studyResult.setStudyState(StudyResult.StudyState.PRE);
+        } else {
+            studyResult.setStudyState(StudyResult.StudyState.STARTED);
+        }
         worker.addStudyResult(studyResult);
         studyResultDao.create(studyResult);
         workerDao.update(worker);
         return studyResult;
+    }
+
+    /**
+     * Creates StudyResult and adds it to the given Worker.
+     */
+    public StudyResult createStudyResult(Study study, Batch batch, Worker worker) {
+        return createStudyResult(study, batch, worker, false);
     }
 
     public ComponentResult createComponentResult(StudyResult studyResult, Component component) {

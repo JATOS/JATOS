@@ -10,7 +10,8 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
-import models.common.workers.GeneralSingleWorker;
+import models.common.workers.GeneralMultipleWorker;
+import models.common.workers.PersonalMultipleWorker;
 import org.fest.assertions.Fail;
 import org.junit.After;
 import org.junit.Before;
@@ -30,7 +31,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * @author Kristian Lange
  */
-public class GeneralSingleStudyAuthorisationTest {
+public class GeneralMultipleStudyAuthorisationTest {
 
     private Injector injector;
 
@@ -47,7 +48,7 @@ public class GeneralSingleStudyAuthorisationTest {
     private ResultCreator resultCreator;
 
     @Inject
-    private GeneralSingleStudyAuthorisation studyAuthorisation;
+    private GeneralMultipleStudyAuthorisation studyAuthorisation;
 
     @Before
     public void startApp() throws Exception {
@@ -69,42 +70,23 @@ public class GeneralSingleStudyAuthorisationTest {
     public void checkWorkerAllowedToDoStudy() throws ForbiddenPublixException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
-        batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        batch.addAllowedWorkerType(GeneralMultipleWorker.WORKER_TYPE);
 
-        GeneralSingleWorker worker = new GeneralSingleWorker();
+        GeneralMultipleWorker worker = new GeneralMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
-
-        jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
-            studyResult.setStudyState(StudyState.STARTED);
-        });
 
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
     }
 
     @Test
-    public void checkWorkerAllowedToStartStudyPre() throws ForbiddenPublixException {
+    public void checkWorkerAllowedToWrongWorkerType() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
-        batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        batch.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 
-        GeneralSingleWorker worker = new GeneralSingleWorker();
+        GeneralMultipleWorker worker = new GeneralMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
-        // Does start if there is an StudyResult which is in state PRE
-        createStudyResult(study, batch, worker, StudyState.PRE);
-
-        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-    }
-
-    @Test
-    public void checkWorkerAllowedToDoStudyWrongWorkerType() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        Batch batch = study.getDefaultBatch();
-        GeneralSingleWorker worker = new GeneralSingleWorker();
-
-        // Study doesn't allow this worker type
         try {
             studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
             Fail.fail();
@@ -115,31 +97,22 @@ public class GeneralSingleStudyAuthorisationTest {
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudyFinishedStudy() {
+    public void checkWorkerAllowedToDoStudyFinishedStudy() throws ForbiddenPublixException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
         Batch batch = study.getDefaultBatch();
-        study.getDefaultBatch().addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        batch.addAllowedWorkerType(GeneralMultipleWorker.WORKER_TYPE);
 
-        GeneralSingleWorker worker = new GeneralSingleWorker();
+        GeneralMultipleWorker worker = new GeneralMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
-        jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
-            studyResult.setStudyState(StudyState.FINISHED);
-        });
-
-        // General single workers can't repeat the same study
-        try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-            Fail.fail();
-        } catch (PublixException e) {
-            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
-        }
+        // State of study has no influence. General multiple workers can do
+        // studies multiple times (we create a StudyResult just in case)
+        createStudyResult(study, batch, worker, StudyState.FINISHED);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
     }
 
     private StudyResult createStudyResult(Study study, Batch batch,
-            GeneralSingleWorker worker, StudyState studyState) {
+            GeneralMultipleWorker worker, StudyState studyState) {
         return jpaApi.withTransaction(() -> {
             StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
             studyResult.setStudyState(studyState);

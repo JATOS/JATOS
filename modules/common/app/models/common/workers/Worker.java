@@ -83,16 +83,18 @@ public abstract class Worker {
         switch (workerType) {
             case JatosWorker.WORKER_TYPE:
                 return JatosWorker.UI_WORKER_TYPE;
+            case PersonalSingleWorker.WORKER_TYPE:
+                return PersonalSingleWorker.UI_WORKER_TYPE;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                return PersonalMultipleWorker.UI_WORKER_TYPE;
             case GeneralSingleWorker.WORKER_TYPE:
                 return GeneralSingleWorker.UI_WORKER_TYPE;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                return GeneralMultipleWorker.UI_WORKER_TYPE;
             case MTSandboxWorker.WORKER_TYPE:
                 return MTSandboxWorker.UI_WORKER_TYPE;
             case MTWorker.WORKER_TYPE:
                 return MTWorker.UI_WORKER_TYPE;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                return PersonalMultipleWorker.UI_WORKER_TYPE;
-            case PersonalSingleWorker.WORKER_TYPE:
-                return PersonalSingleWorker.UI_WORKER_TYPE;
             default:
                 return "Unknown";
         }

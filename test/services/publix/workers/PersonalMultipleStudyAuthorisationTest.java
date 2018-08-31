@@ -24,8 +24,6 @@ import services.publix.PublixErrorMessages;
 import services.publix.ResultCreator;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -68,8 +66,7 @@ public class PersonalMultipleStudyAuthorisationTest {
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
-            IOException, ForbiddenPublixException {
+    public void checkWorkerAllowedToDoStudy() throws ForbiddenPublixException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
@@ -81,9 +78,7 @@ public class PersonalMultipleStudyAuthorisationTest {
     }
 
     @Test
-    public void checkWorkerAllowedToWrongWorkerType()
-            throws NoSuchAlgorithmException, IOException,
-            ForbiddenPublixException {
+    public void checkWorkerAllowedToWrongWorkerType() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
@@ -92,20 +87,16 @@ public class PersonalMultipleStudyAuthorisationTest {
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
-                    batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                    .workerTypeNotAllowed(worker.getUIWorkerType(),
-                            study.getId(), batch.getId()));
+                    .workerTypeNotAllowed(worker.getUIWorkerType(), study.getId(), batch.getId()));
         }
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudyFinishedStudy()
-            throws NoSuchAlgorithmException, IOException,
-            ForbiddenPublixException {
+    public void checkWorkerAllowedToDoStudyFinishedStudy() throws ForbiddenPublixException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
@@ -119,11 +110,10 @@ public class PersonalMultipleStudyAuthorisationTest {
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
     }
 
-    private StudyResult createStudyResult(Study study, Batch batch,
-            PersonalMultipleWorker worker, StudyState studyState) {
+    private StudyResult createStudyResult(Study study, Batch batch, PersonalMultipleWorker worker,
+            StudyState studyState) {
         return jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    batch, worker);
+            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
             studyResult.setStudyState(studyState);
             return studyResult;
         });

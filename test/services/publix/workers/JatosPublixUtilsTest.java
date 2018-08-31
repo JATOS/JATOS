@@ -17,8 +17,6 @@ import services.gui.UserService;
 import services.publix.PublixUtilsTest;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,8 +53,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
     }
 
     @Test
-    public void checkRetrieveTypedWorkerWrongType()
-            throws NoSuchAlgorithmException, IOException, PublixException {
+    public void checkRetrieveTypedWorkerWrongType() {
         GeneralSingleWorker generalSingleWorker = jpaApi.withTransaction(() -> {
             GeneralSingleWorker w = new GeneralSingleWorker();
             workerDao.create(w);
@@ -87,8 +84,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
     }
 
     @Test
-    public void checkRetrieveJatosRunFromSessionFail()
-            throws ForbiddenPublixException {
+    public void checkRetrieveJatosRunFromSessionFail() {
         testHelper.mockContext();
 
         try {

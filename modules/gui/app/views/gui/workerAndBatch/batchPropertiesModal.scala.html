@@ -43,17 +43,22 @@
                             <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE">
                                 <span class="glyphicon glyphicon-personal-single"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link that can be used only once and always assigns the results to the same worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
                             </label></div>
                             <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE">
                                 <span class="glyphicon glyphicon-personal-multiple"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it."></span>
                             </label></div>
                             <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE">
                                 <span class="glyphicon glyphicon-general-single"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website."></span>
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website."></span>
+                            </label></div>
+                            <div class="checkbox"><label>
+                                <input type="checkbox" class="@common.workers.GeneralMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralMultipleWorker.WORKER_TYPE">
+                                <span class="glyphicon glyphicon-general-multiple"></span> @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE
+                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link that can be used many times and that creates a new worker with each run. Typically used where it's no problem that participants can do the same study several times."></span>
                             </label></div>
                             <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE">

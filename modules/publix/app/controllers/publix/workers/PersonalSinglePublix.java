@@ -73,7 +73,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
      * and PersonalSingleWorker) it's possible to have a preview of the study.
      * To get into the preview mode one has to add 'pre' to the URL query
      * string. In the preview mode a worker can start the study (with 'pre') and
-     * start the first component as often as he wants. The study result switches
+     * start the first active component as often as he wants. The study result switches
      * into 'STARTED' and back to normal behavior by starting the study without
      * the 'pre' in the query string or by going on and start a component
      * different then the first.
@@ -90,20 +90,23 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         PersonalSingleWorker worker = publixUtils.retrieveTypedWorker(workerIdStr);
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-        // 1. pre first -> new sr, new cookie, finishAbandonedStudyResults
-        // 2. pre other, same browser -> get sr, keep cookie, -
-        // 3. pre other, different browser -> get sr, new cookie, finishAbandonedStudyResults
-        // 4. no pre first -> new sr, new cookie, finishAbandonedStudyResults
-        // 5. no pre other -> exception
-        publixUtils.finishAbandonedStudyResults();
+        // There are 5 possibilities
+        // 1. Preview study, first call -> create StudyResult, call finishOldestStudyResult
+        // 2. Preview study, second+ call, same browser -> get StudyResult, do not call finishOldestStudyResult
+        // 3. Preview study, second+ call, different browser -> get StudyResult, call finishOldestStudyResult
+        // 4. No preview study, first call -> create StudyResult, call finishOldestStudyResult
+        // 5. No preview study, second+ call -> throw exception
         StudyResult studyResult;
         if (worker.getStudyResultList().isEmpty()) {
-            studyResult = resultCreator.createStudyResult(study, batch, worker);
+            publixUtils.finishOldestStudyResult();
+            studyResult = resultCreator.createStudyResult(study, batch, worker, pre);
         } else {
             studyResult = worker.getLastStudyResult();
+            if (!idCookieService.hasIdCookie(studyResult.getId())) {
+                publixUtils.finishOldestStudyResult();
+            }
         }
         idCookieService.writeIdCookie(worker, batch, studyResult);
-        publixUtils.setPreStudyStateByPre(pre, studyResult);
         publixUtils.setUrlQueryParameter(studyResult);
 
         Component component = publixUtils.retrieveFirstActiveComponent(study);

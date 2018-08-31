@@ -195,17 +195,10 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     /**
-     * Checks if there are abandoned study results and finishes them with a
-     * state FAIL.
-     * <p>
-     * All studies that currently run in this Request's browser have an ID
-     * cookie. This method checks if there is an abandoned study result and if
-     * so finishes it. An abandoned study result happens when to many studies
-     * are started in the same browser without finishing them. The abandoned one
-     * to be deleted is the oldest ID cookie. This method should only be called
-     * during starting a study.
+     * Checks if the max number of ID cookies is reached and if yes finishes the oldest one with a
+     * state FAIL. This method should only be called during start of a study.
      */
-    public void finishAbandonedStudyResults() throws PublixException {
+    public void finishOldestStudyResult() throws PublixException {
         if (!idCookieService.maxIdCookiesReached()) {
             return;
         }
@@ -462,28 +455,17 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     /**
-     * Sets the StudyResult's StudyState either to PRE (if pre is true) or START
-     * (if pre is false).
-     */
-    public void setPreStudyStateByPre(boolean pre, StudyResult studyResult) {
-        if (pre) {
-            studyResult.setStudyState(StudyState.PRE);
-        } else {
-            studyResult.setStudyState(StudyState.STARTED);
-        }
-    }
-
-    /**
      * Sets the StudyResult's StudyState to STARTED if the study is currently in
-     * state PRE and the study result moved away from the first component (this
+     * state PRE and the study result moved away from the first active component (this
      * means the given componentId isn't the first component's one).
      */
-    public void setPreStudyStateByComponentId(StudyResult studyResult,
-            Study study, Long componentId) {
+    public void setPreStudyStateByComponentId(StudyResult studyResult, Study study,
+            Long componentId) throws NotFoundPublixException {
         if (studyResult.getStudyState() == StudyState.PRE
-                && !study.getFirstComponent().getId().equals(componentId)) {
+                && !retrieveFirstActiveComponent(study).getId().equals(componentId)) {
             studyResult.setStudyState(StudyState.STARTED);
         }
+        studyResultDao.update(studyResult);
     }
 
     /**

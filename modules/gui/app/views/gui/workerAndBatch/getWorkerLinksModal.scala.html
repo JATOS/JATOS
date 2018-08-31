@@ -34,10 +34,7 @@
                                 <button type="button" class="btn btn-default">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE</button>
                                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
                                 <ul class="dropdown-menu">
-                                    <li><a href="#">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE</a></li>
-                                    <li><a href="#">@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE</a></li>
-                                    <li><a href="#">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE</a></li>
-                                    <li><a href="#">@common.workers.MTWorker.UI_WORKER_TYPE</a></li>
+                                    <!-- filled dynamically -->
                                 </ul>
                             </div>
                         </div>
@@ -61,33 +58,40 @@ $('#getWorkerLinksGeneralButton').click(function(event) {
 
     // Set the batch selector
     var batchList = getBatchListData();
-    var dropdownMenu = $('#getWorkerLinksGeneralModal .chooseBatch .dropdown-menu');
-    dropdownMenu.empty();
+    var dropdownMenuBatch = $('#getWorkerLinksGeneralModal .chooseBatch .dropdown-menu');
+    dropdownMenuBatch.empty();
     $.each(batchList, function(index, batch) {
-        dropdownMenu.append('<li><a href="#">' + batch.title + '</a></li>');
-        dropdownMenu.find('a:last').data(batch);
-        // pre-set with the first batch
+        dropdownMenuBatch.append('<li><a href="#">' + batch.title + '</a></li>');
+        dropdownMenuBatch.find('a:last').data(batch);
+        // Pre-set with the first batch
         if (index == 0) {
             $('#getWorkerLinksGeneralModal .chooseBatch button:first').text(batch.title);
             $('#getWorkerLinksGeneralModal .chooseBatch button:first').data(batch);
         }
     });
 
+    var dropdownMenuWorkerType = $('#getWorkerLinksGeneralModal .chooseWorkerType .dropdown-menu');
+    dropdownMenuWorkerType.empty();
+    dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.PersonalSingleWorker.WORKER_TYPE') + '</a></li>');
+    dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.PersonalMultipleWorker.WORKER_TYPE') + '</a></li>');
+    dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.GeneralSingleWorker.WORKER_TYPE') + '</a></li>');
+    dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.GeneralMultipleWorker.WORKER_TYPE') + '</a></li>');
+    dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.MTWorker.WORKER_TYPE') + '</a></li>');
     // Pre-set with Personal Single worker
-    $('#getWorkerLinksGeneralModal .chooseWorkerType button:first').text("@common.workers.PersonalSingleWorker.UI_WORKER_TYPE");
+    $('#getWorkerLinksGeneralModal .chooseWorkerType button:first').html(getUIWorkerTypeWithGlyphicon('@common.workers.PersonalSingleWorker.WORKER_TYPE'));
 
     $('#getWorkerLinksGeneralModal').modal('show');
 });
 
 $('#getWorkerLinksGeneralModal .dropdown-menu').on('click', 'a', function(e) {
-    $(this).closest('.btn-group').find('button:first').text($(this).text());
+    $(this).closest('.btn-group').find('button:first').html($(this).html());
     $(this).closest('.btn-group').find('button:first').data($(this).data());
 });
 
 $('#getWorkerLinksGeneralModal').on('click', '.confirmed', function(e) {
     $('#getWorkerLinksGeneralModal').modal('hide');
     var batch = $('#getWorkerLinksGeneralModal .chooseBatch .btn-group').find('button:first').data();
-    var workerType = $('#getWorkerLinksGeneralModal .chooseWorkerType .btn-group').find('button:first').text();
+    var workerType = $('#getWorkerLinksGeneralModal .chooseWorkerType .btn-group').find('button:first').text().trim();
     if (!batch || !workerType) return;
 
     // Get workerSetupDiv
@@ -109,6 +113,9 @@ $('#getWorkerLinksGeneralModal').on('click', '.confirmed', function(e) {
         break;
     case '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE':
         showShowWorkerLinksGeneralSingleModal(batch);
+        break;
+    case '@common.workers.GeneralMultipleWorker.UI_WORKER_TYPE':
+        showShowWorkerLinksGeneralMultipleModal(batch);
         break;
     case '@common.workers.MTWorker.UI_WORKER_TYPE':
         showMTSourceCodeModal(batch.id);

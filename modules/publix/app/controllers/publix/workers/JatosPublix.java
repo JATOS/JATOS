@@ -132,7 +132,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 throw new ForbiddenPublixException(
                         JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
         }
-        publixUtils.finishAbandonedStudyResults();
+        publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);

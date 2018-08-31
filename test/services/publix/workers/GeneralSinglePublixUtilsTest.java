@@ -24,8 +24,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
-public class GeneralSinglePublixUtilsTest
-        extends PublixUtilsTest<GeneralSingleWorker> {
+public class GeneralSinglePublixUtilsTest extends PublixUtilsTest<GeneralSingleWorker> {
 
     @Inject
     private GeneralSingleErrorMessages generalSingleErrorMessages;
@@ -43,8 +42,8 @@ public class GeneralSinglePublixUtilsTest
 
         jpaApi.withTransaction(() -> {
             try {
-                GeneralSingleWorker retrievedWorker = generalSinglePublixUtils
-                        .retrieveTypedWorker(worker.getId());
+                GeneralSingleWorker retrievedWorker =
+                        generalSinglePublixUtils.retrieveTypedWorker(worker.getId());
                 assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
             } catch (ForbiddenPublixException e) {
                 throw new RuntimeException(e);

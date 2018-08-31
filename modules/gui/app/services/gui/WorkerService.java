@@ -111,9 +111,10 @@ public class WorkerService {
         Consumer<String> putCountToMap = (String workerType) -> resultsPerWorker
                 .put(workerType, studyResultDao.countByBatchAndWorkerType(batch, workerType));
         putCountToMap.accept(JatosWorker.WORKER_TYPE);
-        putCountToMap.accept(GeneralSingleWorker.WORKER_TYPE);
         putCountToMap.accept(PersonalSingleWorker.WORKER_TYPE);
         putCountToMap.accept(PersonalMultipleWorker.WORKER_TYPE);
+        putCountToMap.accept(GeneralSingleWorker.WORKER_TYPE);
+        putCountToMap.accept(GeneralMultipleWorker.WORKER_TYPE);
         putCountToMap.accept(MTWorker.WORKER_TYPE);
         putCountToMap.accept(MTSandboxWorker.WORKER_TYPE);
         return resultsPerWorker;

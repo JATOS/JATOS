@@ -28,16 +28,18 @@ import java.io.IOException;
  * in the request's query string. Then the worker type is put into JATOS' ID
  * cookie (IdCookie) and used in subsequent requests of the same study run.
  * <p>
- * 1. Requests coming from MechTurk or MechTurk Sandbox will be forwarded to
- * MTPublix. They use MTWorker and MTSandboxWorker.<br>
- * 2. Requests coming from Jatos' UI run (if clicked on run study/component
+ * 1. Requests coming from Jatos' UI run (if clicked on run study/component
  * button) run will be forwarded to JatosPublix. They use JatosWorker.<br>
+ * 2. Requests coming from a Personal Single run will be forwarded to
+ * PersonalSinglePublix. They use PersonalSingleWorker.<br>
  * 3. Requests coming from a Personal Multiple run will be forwarded to
  * PersonalMultiplePublix. They use PersonalMultipleWorker.<br>
- * 4. Requests coming from a Personal Single run will be forwarded to
- * PersonalSinglePublix. They use PersonalSingleWorker.<br>
- * 5. Requests coming from an General Single run will be forwarded to
+ * 4. Requests coming from an General Single run will be forwarded to
  * GeneralSinglePublix. They use the GeneralSingleWorker.<br>
+ * 5. Requests coming from an General Multiple run will be forwarded to
+ * GeneralMultiplePublix. They use the GeneralMultipleWorker.<br>
+ * 6. Requests coming from MechTurk or MechTurk Sandbox will be forwarded to
+ * MTPublix. They use MTWorker and MTSandboxWorker.<br>
  *
  * @author Kristian Lange
  */
@@ -60,23 +62,26 @@ public class PublixInterceptor extends Controller implements IPublix {
         Result result;
         String workerType = getWorkerTypeFromQuery();
         switch (workerType) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).startStudy(studyId, batchId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class).startStudy(studyId, batchId);
+                break;
+            case PersonalSingleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalSinglePublix.class).startStudy(studyId, batchId);
                 break;
             case PersonalMultipleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalMultiplePublix.class)
                         .startStudy(studyId, batchId);
                 break;
-            case PersonalSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalSinglePublix.class).startStudy(studyId, batchId);
-                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class).startStudy(studyId, batchId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class).startStudy(studyId, batchId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class).startStudy(studyId, batchId);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -90,27 +95,31 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).startComponent(studyId,
-                        componentId, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .startComponent(studyId, componentId, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .startComponent(studyId, componentId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .startComponent(studyId, componentId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .startComponent(studyId, componentId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
                         .startComponent(studyId, componentId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .startComponent(studyId, componentId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class).startComponent(studyId,
+                        componentId, studyResultId);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -124,26 +133,30 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .startComponentByPosition(studyId, position, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .startComponentByPosition(studyId, position, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .startComponentByPosition(studyId, position, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .startComponentByPosition(studyId, position, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .startComponentByPosition(studyId, position, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .startComponentByPosition(studyId, position, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .startComponentByPosition(studyId, position, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .startComponentByPosition(studyId, position, studyResultId);
                 break;
             default:
@@ -157,26 +170,30 @@ public class PublixInterceptor extends Controller implements IPublix {
     public Result startNextComponent(Long studyId, Long studyResultId) throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .startNextComponent(studyId, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .startNextComponent(studyId, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .startNextComponent(studyId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .startNextComponent(studyId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .startNextComponent(studyId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .startNextComponent(studyId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .startNextComponent(studyId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .startNextComponent(studyId, studyResultId);
                 break;
             default:
@@ -191,26 +208,30 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException, IOException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .getInitData(studyId, componentId, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .getInitData(studyId, componentId, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .getInitData(studyId, componentId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .getInitData(studyId, componentId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .getInitData(studyId, componentId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .getInitData(studyId, componentId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .getInitData(studyId, componentId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .getInitData(studyId, componentId, studyResultId);
                 break;
             default:
@@ -224,26 +245,30 @@ public class PublixInterceptor extends Controller implements IPublix {
     public Result setStudySessionData(Long studyId, Long studyResultId) throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .setStudySessionData(studyId, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .setStudySessionData(studyId, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .setStudySessionData(studyId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .setStudySessionData(studyId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .setStudySessionData(studyId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .setStudySessionData(studyId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .setStudySessionData(studyId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .setStudySessionData(studyId, studyResultId);
                 break;
             default:
@@ -257,27 +282,31 @@ public class PublixInterceptor extends Controller implements IPublix {
     public Result heartbeat(Long studyId, Long studyResultId) throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).heartbeat(studyId,
-                        studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class).heartbeat(studyId,
                         studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
-                        .heartbeat(studyId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .heartbeat(studyId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .heartbeat(studyId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
                         .heartbeat(studyId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .heartbeat(studyId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class).heartbeat(studyId,
+                        studyResultId);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -291,26 +320,30 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .submitResultData(studyId, componentId, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .submitResultData(studyId, componentId, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .submitResultData(studyId, componentId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .submitResultData(studyId, componentId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .submitResultData(studyId, componentId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .submitResultData(studyId, componentId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .submitResultData(studyId, componentId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .submitResultData(studyId, componentId, studyResultId);
                 break;
             default:
@@ -325,26 +358,30 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .appendResultData(studyId, componentId, studyResultId);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .appendResultData(studyId, componentId, studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .appendResultData(studyId, componentId, studyResultId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .appendResultData(studyId, componentId, studyResultId);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .appendResultData(studyId, componentId, studyResultId);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .appendResultData(studyId, componentId, studyResultId);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .appendResultData(studyId, componentId, studyResultId);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .appendResultData(studyId, componentId, studyResultId);
                 break;
             default:
@@ -359,27 +396,31 @@ public class PublixInterceptor extends Controller implements IPublix {
             Boolean successful, String errorMsg) throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).finishComponent(studyId,
-                        componentId, studyResultId, successful, errorMsg);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class).finishComponent(
                         studyId, componentId, studyResultId, successful, errorMsg);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
-                        .finishComponent(studyId, componentId, studyResultId, successful, errorMsg);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .finishComponent(studyId, componentId, studyResultId, successful, errorMsg);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .finishComponent(studyId, componentId, studyResultId, successful, errorMsg);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
                         .finishComponent(studyId, componentId, studyResultId, successful, errorMsg);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .finishComponent(studyId, componentId, studyResultId, successful, errorMsg);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class).finishComponent(studyId,
+                        componentId, studyResultId, successful, errorMsg);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -393,26 +434,30 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .abortStudy(studyId, studyResultId, message);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .abortStudy(studyId, studyResultId, message);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .abortStudy(studyId, studyResultId, message);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .abortStudy(studyId, studyResultId, message);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .abortStudy(studyId, studyResultId, message);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .abortStudy(studyId, studyResultId, message);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .abortStudy(studyId, studyResultId, message);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .abortStudy(studyId, studyResultId, message);
                 break;
             default:
@@ -427,26 +472,30 @@ public class PublixInterceptor extends Controller implements IPublix {
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
-                break;
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
                         .finishStudy(studyId, studyResultId, successful, errorMsg);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
                         .finishStudy(studyId, studyResultId, successful, errorMsg);
                 break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class)
+                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
+                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class)
+                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class)
                         .finishStudy(studyId, studyResultId, successful, errorMsg);
                 break;
             default:
@@ -460,22 +509,25 @@ public class PublixInterceptor extends Controller implements IPublix {
     public Result log(Long studyId, Long componentId, Long studyResultId)
             throws PublixException {
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                return instanceOfPublix(MTPublix.class)
-                        .log(studyId, componentId, studyResultId);
             case JatosWorker.WORKER_TYPE:
                 return instanceOfPublix(JatosPublix.class)
-                        .log(studyId, componentId, studyResultId);
-            case PersonalMultipleWorker.WORKER_TYPE:
-                return instanceOfPublix(PersonalMultiplePublix.class)
                         .log(studyId, componentId, studyResultId);
             case PersonalSingleWorker.WORKER_TYPE:
                 return instanceOfPublix(PersonalSinglePublix.class)
                         .log(studyId, componentId, studyResultId);
+            case PersonalMultipleWorker.WORKER_TYPE:
+                return instanceOfPublix(PersonalMultiplePublix.class)
+                        .log(studyId, componentId, studyResultId);
             case GeneralSingleWorker.WORKER_TYPE:
                 return instanceOfPublix(GeneralSinglePublix.class)
+                        .log(studyId, componentId, studyResultId);
+            case GeneralMultipleWorker.WORKER_TYPE:
+                return instanceOfPublix(GeneralMultiplePublix.class)
+                        .log(studyId, componentId, studyResultId);
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                return instanceOfPublix(MTPublix.class)
                         .log(studyId, componentId, studyResultId);
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -517,23 +569,29 @@ public class PublixInterceptor extends Controller implements IPublix {
         if (mtWorkerId != null) {
             return instanceOfPublix(MTPublix.class).retrieveWorkerType();
         }
-        // Check for Personal Multiple Worker
-        String pmWorkerId = HttpUtils.getQueryString(
-                PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
-        if (pmWorkerId != null) {
-            return PersonalMultipleWorker.WORKER_TYPE;
-        }
         // Check for Personal Single Worker
         String personalSingleWorkerId = HttpUtils
                 .getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
         if (personalSingleWorkerId != null) {
             return PersonalSingleWorker.WORKER_TYPE;
         }
+        // Check for Personal Multiple Worker
+        String pmWorkerId = HttpUtils.getQueryString(
+                PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
+        if (pmWorkerId != null) {
+            return PersonalMultipleWorker.WORKER_TYPE;
+        }
         // Check for General Single Worker
         String generalSingle = HttpUtils
                 .getQueryString(GeneralSinglePublix.GENERALSINGLE);
         if (generalSingle != null) {
             return GeneralSingleWorker.WORKER_TYPE;
+        }
+        // Check for General Multiple Worker
+        String generalMultiple = HttpUtils
+                .getQueryString(GeneralMultiplePublix.GENERALMULTIPLE);
+        if (generalMultiple != null) {
+            return GeneralMultipleWorker.WORKER_TYPE;
         }
         throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
     }

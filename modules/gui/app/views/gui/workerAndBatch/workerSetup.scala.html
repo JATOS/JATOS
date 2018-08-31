@@ -176,6 +176,49 @@
         </div>
     </div>
 
+    <div class="generalMultipleWorkerSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <button type="button" class="collapseWorkerTable btn btn-worker" data-toggle="tooltip"
+                    data-placement="bottom" title="Show/hide all @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE workers">
+                    <span class="workersBadge badge"></span>&nbsp;
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
+                <button type="button" class="btn btn-default activeWorkerButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+                <span class="collapseWorkerTable" data-toggle="tooltip" title="This worker can start a study only once. Typically used to distribute in a mailing list or posting in social media.">
+                    <span class="glyphicon glyphicon-general-multiple"></span>
+                    <span role="button">&nbsp;@common.workers.GeneralMultipleWorker.UI_WORKER_TYPE Worker</span>
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker linkButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Get the link for the General Multiple Worker">
+                    Get Link
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Shows study results only of @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE workers">
+                    Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch that are done by @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE workers"></span>
+                </button>
+            </span>
+        </div>
+        <div class="panel-collapse collapse" role="tabpanel">
+            <table class="table workerTable">
+                <thead>
+                    <tr>
+                        <th>Worker ID</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="mtWorkerSetup panel panel-default">
         <div class="panel-heading">
             <span class="panel-title">
@@ -293,6 +336,7 @@ function generateWorkerSetupDiv(batch) {
     workerTables.personalSingle = initWorkerTable(workerSetupDiv, '.personalSingleWorkerSetup');
     workerTables.personalMultiple = initWorkerTable(workerSetupDiv, '.personalMultipleWorkerSetup');
     workerTables.generalSingle = initWorkerTable(workerSetupDiv, '.generalSingleWorkerSetup');
+    workerTables.generalMultiple = initWorkerTable(workerSetupDiv, '.generalMultipleWorkerSetup');
     workerTables.mt = initWorkerTable(workerSetupDiv, '.mtWorkerSetup');
 
     $(workerSetupDiv).data('workerTables', workerTables);
@@ -365,6 +409,7 @@ function fillWorkerSetup(workerSetupData, workerSetupDiv) {
     toggleTablePagination(".personalSingleWorkerSetup");
     toggleTablePagination(".personalMultipleWorkerSetup");
     toggleTablePagination(".generalSingleWorkerSetup");
+    toggleTablePagination(".generalMultipleWorkerSetup");
     toggleTablePagination(".mtWorkerSetup");
 
     setAllowedWorkerTypes(workerSetupDiv, workerSetupData.allowedWorkerTypes);
@@ -406,6 +451,9 @@ function setAllowedWorkerTypes(workerSetupDiv, allowedWorkerTypes) {
         case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
             button = $(workerSetupDiv).find(".generalSingleWorkerSetup .activeWorkerButton");
             break;
+        case '@common.workers.GeneralMultipleWorker.WORKER_TYPE':
+            button = $(workerSetupDiv).find(".generalMultipleWorkerSetup .activeWorkerButton");
+            break;
         case '@common.workers.MTWorker.WORKER_TYPE':
             button = $(workerSetupDiv).find(".mtWorkerSetup .activeWorkerButton");
             break;
@@ -441,6 +489,8 @@ function addWorkersBadges(workerSetupDiv, workerTables) {
     $(workerSetupDiv).find('.personalMultipleWorkerSetup .workersBadge').text(rowCount);
     rowCount = workerTables.generalSingle.data().length;
     $(workerSetupDiv).find('.generalSingleWorkerSetup .workersBadge').text(rowCount);
+    rowCount = workerTables.generalMultiple.data().length;
+    $(workerSetupDiv).find('.generalMultipleWorkerSetup .workersBadge').text(rowCount);
     rowCount = workerTables.mt.data().length;
     $(workerSetupDiv).find('.mtWorkerSetup .workersBadge').text(rowCount);
 }
@@ -455,6 +505,8 @@ function addWorkerResultsBadges(workerSetupDiv, studyResultCountsPerWorker) {
     $(workerSetupDiv).find('.personalMultipleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
     resultCount = studyResultCountsPerWorker['@common.workers.GeneralSingleWorker.WORKER_TYPE'];
     $(workerSetupDiv).find('.generalSingleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
+    resultCount = studyResultCountsPerWorker['@common.workers.GeneralMultipleWorker.WORKER_TYPE'];
+    $(workerSetupDiv).find('.generalMultipleWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
     resultCount = studyResultCountsPerWorker['@common.workers.MTWorker.WORKER_TYPE'] + studyResultCountsPerWorker['@common.workers.MTSandboxWorker.WORKER_TYPE'];
     $(workerSetupDiv).find('.mtWorkerSetup .workerResultsButton .resultsBadge').text(resultCount);
 }
@@ -473,6 +525,9 @@ function fillWorkerTables(allWorkers, workerTables) {
             break;
         case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
             fillGeneralSingleRow(worker, workerTables.generalSingle);
+            break;
+        case '@common.workers.GeneralMultipleWorker.WORKER_TYPE':
+            fillGeneralMultipleRow(worker, workerTables.generalMultiple);
             break;
         case '@common.workers.MTWorker.WORKER_TYPE':
         case '@common.workers.MTSandboxWorker.WORKER_TYPE':
@@ -529,6 +584,14 @@ function fillGeneralSingleRow(worker, generalSingleWorkerTable) {
     ]);
 }
 
+function fillGeneralMultipleRow(worker, generalMultipleWorkerTable) {
+    var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
+    generalMultipleWorkerTable.row.add([
+        worker.id,
+        lastStudyState
+    ]);
+}
+
 function fillMtRow(worker, mtWorkerTable) {
     var workerType = getUIWorkerTypeWithGlyphicon(worker.workerType);
     var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
@@ -573,6 +636,8 @@ function getWorkerTypeFromPanel(panelElem) {
         return "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
     } else if ($(panelElem).closest('.panel').is('.generalSingleWorkerSetup')) {
         return "@common.workers.GeneralSingleWorker.WORKER_TYPE";
+    } else if ($(panelElem).closest('.panel').is('.generalMultipleWorkerSetup')) {
+            return "@common.workers.GeneralMultipleWorker.WORKER_TYPE";
     } else if ($(panelElem).closest('.panel').is('.mtWorkerSetup')) {
         return "@common.workers.MTWorker.WORKER_TYPE";
     }
@@ -716,6 +781,11 @@ $('#batchList').on('click', '.generalSingleWorkerSetup .linkButton', function() 
     showShowWorkerLinksGeneralSingleModal(batch);
 });
 
+$('#batchList').on('click', '.generalMultipleWorkerSetup .linkButton', function() {
+    var batch = getBatchData(this);
+    showShowWorkerLinksGeneralMultipleModal(batch);
+});
+
 function showShowWorkerLinksGeneralSingleModal(batch) {
     var title = "Link for General Single workers in batch '" + batch.title + "'";
     var url = "@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?" +
@@ -725,10 +795,19 @@ function showShowWorkerLinksGeneralSingleModal(batch) {
     showShowWorkerLinksModal(title, preText, [url], true, postText);
 }
 
+function showShowWorkerLinksGeneralMultipleModal(batch) {
+    var title = "Link for General Multiple workers in batch '" + batch.title + "'";
+    var url = "@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?" +
+        "batchId=" + batch.id + "&generalMultiple";
+    var preText = "This URL will start the run.";
+    var postText = "Copy & paste and hand it to your workers - or press 'Run' to start it right away.";
+    showShowWorkerLinksModal(title, preText, [url], false, postText);
+}
+
 function showShowWorkerLinksModal(title, preText, urls, preCheckbox, postText) {
     var htmlPreText = '<p>' + preText + '</p>';
     var htmlUrl = '<div class="well linkUrls">' + generateHtmlUrlList(urls) + '</div>';
-    var htmlPreCheckbox = '<div class="checkbox"><p><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use a \'pre\' link multiple times if they don\'t get past the first component."></span></label></p></div>'
+    var htmlPreCheckbox = '<div class="checkbox"><p><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use a \'pre\' link multiple times as long as they don\'t get past the first active component."></span></label></p></div>'
     var htmlPostText = '<p>' + postText + '</p>';
     var htmlBody;
     if (preCheckbox) {

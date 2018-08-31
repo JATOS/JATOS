@@ -12,8 +12,6 @@ import org.junit.Test;
 import services.publix.PublixUtilsTest;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,8 +20,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * @author Kristian Lange
  */
-public class PersonalMultiplePublixUtilsTest
-        extends PublixUtilsTest<PersonalMultipleWorker> {
+public class PersonalMultiplePublixUtilsTest extends PublixUtilsTest<PersonalMultipleWorker> {
 
     @Inject
     private PersonalMultipleErrorMessages personalMultipleErrorMessages;
@@ -32,8 +29,7 @@ public class PersonalMultiplePublixUtilsTest
     private PersonalMultiplePublixUtils personalMultiplePublixUtils;
 
     @Test
-    public void checkRetrieveTypedWorker()
-            throws NoSuchAlgorithmException, IOException, PublixException {
+    public void checkRetrieveTypedWorker() {
         PersonalMultipleWorker worker = jpaApi.withTransaction(() -> {
             PersonalMultipleWorker w = new PersonalMultipleWorker();
             workerDao.create(w);
@@ -42,8 +38,8 @@ public class PersonalMultiplePublixUtilsTest
 
         jpaApi.withTransaction(() -> {
             try {
-                PersonalMultipleWorker retrievedWorker = personalMultiplePublixUtils
-                        .retrieveTypedWorker(worker.getId().toString());
+                PersonalMultipleWorker retrievedWorker =
+                        personalMultiplePublixUtils.retrieveTypedWorker(worker.getId().toString());
                 assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
             } catch (ForbiddenPublixException e) {
                 throw new RuntimeException(e);
@@ -52,8 +48,7 @@ public class PersonalMultiplePublixUtilsTest
     }
 
     @Test
-    public void checkRetrieveTypedWorkerWrongType()
-            throws NoSuchAlgorithmException, IOException, PublixException {
+    public void checkRetrieveTypedWorkerWrongType() {
         GeneralSingleWorker generalSingleWorker = jpaApi.withTransaction(() -> {
             GeneralSingleWorker w = new GeneralSingleWorker();
             workerDao.create(w);
@@ -62,13 +57,12 @@ public class PersonalMultiplePublixUtilsTest
 
         jpaApi.withTransaction(() -> {
             try {
-                personalMultiplePublixUtils.retrieveTypedWorker(
-                        generalSingleWorker.getId().toString());
+                personalMultiplePublixUtils
+                        .retrieveTypedWorker(generalSingleWorker.getId().toString());
                 Fail.fail();
             } catch (PublixException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        personalMultipleErrorMessages.workerNotCorrectType(
-                                generalSingleWorker.getId()));
+                assertThat(e.getMessage()).isEqualTo(personalMultipleErrorMessages
+                        .workerNotCorrectType(generalSingleWorker.getId()));
             }
         });
     }

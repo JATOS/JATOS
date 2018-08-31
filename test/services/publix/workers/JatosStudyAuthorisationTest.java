@@ -1,20 +1,7 @@
 package services.publix.workers;
 
-import static org.fest.assertions.Assertions.assertThat;
-
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.inject.Inject;
-
-import org.fest.assertions.Fail;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import controllers.publix.workers.JatosPublix;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
@@ -22,12 +9,20 @@ import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
+import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http;
 import services.publix.PublixErrorMessages;
+
+import javax.inject.Inject;
+
+import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
@@ -59,23 +54,19 @@ public class JatosStudyAuthorisationTest {
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
-            IOException, ForbiddenPublixException {
+    public void checkWorkerAllowedToDoStudy() throws ForbiddenPublixException {
         testHelper.mockContext();
         User admin = testHelper.getAdmin();
-        Http.Context.current().session().put(JatosPublix.SESSION_USER_EMAIL,
-                admin.getEmail());
+        Http.Context.current().session().put(JatosPublix.SESSION_USER_EMAIL, admin.getEmail());
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
 
-        studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study,
-                batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudyWrongWorkerType()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkWorkerAllowedToDoStudyWrongWorkerType() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
 
@@ -85,19 +76,17 @@ public class JatosStudyAuthorisationTest {
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-                    study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                    .workerTypeNotAllowed(admin.getWorker().getUIWorkerType(),
-                            study.getId(), batch.getId()));
+                    .workerTypeNotAllowed(admin.getWorker().getUIWorkerType(), study.getId(),
+                            batch.getId()));
         }
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudyNotUser()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkWorkerAllowedToDoStudyNotUser() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         User admin = testHelper.getAdmin();
@@ -106,18 +95,16 @@ public class JatosStudyAuthorisationTest {
 
         // User has to be a user of this study
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-                    study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
             Fail.fail();
         } catch (PublixException e) {
-            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                    .workerNotAllowedStudy(admin.getWorker(), study.getId()));
+            assertThat(e.getMessage()).isEqualTo(
+                    PublixErrorMessages.workerNotAllowedStudy(admin.getWorker(), study.getId()));
         }
     }
 
     @Test
-    public void checkWorkerAllowedToDoStudyNotLoggedIn()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkWorkerAllowedToDoStudyNotLoggedIn() {
         testHelper.mockContext();
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -126,12 +113,11 @@ public class JatosStudyAuthorisationTest {
 
         // User has to be logged in
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-                    study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
             Fail.fail();
         } catch (PublixException e) {
-            assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                    .workerNotAllowedStudy(admin.getWorker(), study.getId()));
+            assertThat(e.getMessage()).isEqualTo(
+                    PublixErrorMessages.workerNotAllowedStudy(admin.getWorker(), study.getId()));
         }
     }
 

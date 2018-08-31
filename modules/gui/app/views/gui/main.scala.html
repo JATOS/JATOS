@@ -194,16 +194,18 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 	switch (workerType) {
 	case "@common.workers.JatosWorker.WORKER_TYPE":
 		return '<span class="glyphicon glyphicon-jatos"></span> @common.workers.JatosWorker.UI_WORKER_TYPE';
-	case "@common.workers.GeneralSingleWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-general-single"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE';
 	case "@common.workers.PersonalSingleWorker.WORKER_TYPE":
 		return '<span class="glyphicon glyphicon-personal-single"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE';
 	case "@common.workers.PersonalMultipleWorker.WORKER_TYPE":
 		return '<span class="glyphicon glyphicon-personal-multiple"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE';
-	case "@common.workers.MTWorker.WORKER_TYPE":
-		return '<span class="glyphicon glyphicon-mturk"></span> @common.workers.MTWorker.UI_WORKER_TYPE';
+	case "@common.workers.GeneralSingleWorker.WORKER_TYPE":
+		return '<span class="glyphicon glyphicon-general-single"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE';
+	case "@common.workers.GeneralMultipleWorker.WORKER_TYPE":
+		return '<span class="glyphicon glyphicon-general-multiple"></span> @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE';
 	case "@common.workers.MTSandboxWorker.WORKER_TYPE":
 		return '<span class="glyphicon glyphicon-mturk-sandbox"></span> @common.workers.MTSandboxWorker.UI_WORKER_TYPE';
+	case "@common.workers.MTWorker.WORKER_TYPE":
+		return '<span class="glyphicon glyphicon-mturk"></span> @common.workers.MTWorker.UI_WORKER_TYPE';
 	default:
 		return "unknown";
 	}

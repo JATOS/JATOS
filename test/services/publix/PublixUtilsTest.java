@@ -434,11 +434,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Test PublixUtils.finishAbandonedStudyResults: if there are exactly the
+     * Test PublixUtils.finishOldestStudyResult: if there are exactly the
      * max allowed number of ID cookies than the oldest cookie should be deleted
      */
     @Test
-    public void checkFinishAbandonedStudyResultsEqualAllowed()
+    public void checkFinishOldestStudyResultEqualAllowed()
             throws InternalServerErrorPublixException,
             BadRequestPublixException {
         List<Cookie> cookieList = generateIdCookieList(
@@ -447,7 +447,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.finishAbandonedStudyResults();
+                publixUtils.finishOldestStudyResult();
             } catch (PublixException e) {
                 throw new RuntimeException(e);
             }
@@ -466,13 +466,13 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Test PublixUtils.finishAbandonedStudyResults: if there are more ID
+     * Test PublixUtils.finishOldestStudyResult: if there are more ID
      * cookies than the max allowed number than the oldest cookie should be
      * deleted (this case should actually never happen in live - there shouldn't
      * be more than the max allowed number of ID cookies).
      */
     @Test
-    public void checkFinishAbandonedStudyResultsMoreThanAllowed()
+    public void checkFinishOldestStudyResultMoreThanAllowed()
             throws InternalServerErrorPublixException,
             BadRequestPublixException {
         List<Cookie> cookieList = generateIdCookieList(
@@ -481,7 +481,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.finishAbandonedStudyResults();
+                publixUtils.finishOldestStudyResult();
             } catch (PublixException e) {
                 throw new RuntimeException(e);
             }
@@ -500,11 +500,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Test PublixUtils.finishAbandonedStudyResults: if there are less ID
+     * Test PublixUtils.finishOldestStudyResult: if there are less ID
      * cookies than the max allowed number than all ID cookies should be kept
      */
     @Test
-    public void checkFinishAbandonedStudyResultsNoDeleting()
+    public void checkFinishOldestStudyResultNoDeleting()
             throws BadRequestPublixException,
             InternalServerErrorPublixException {
         List<Cookie> cookieList = generateIdCookieList(
@@ -513,7 +513,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.finishAbandonedStudyResults();
+                publixUtils.finishOldestStudyResult();
             } catch (PublixException e) {
                 throw new RuntimeException(e);
             }
@@ -524,11 +524,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Test PublixUtils.finishAbandonedStudyResults: function should work even
+     * Test PublixUtils.finishOldestStudyResult: function should work even
      * if there are no ID cookies yet
      */
     @Test
-    public void checkFinishAbandonedStudyResultsEmpty()
+    public void checkFinishOldestStudyResultEmpty()
             throws PublixException {
         // Generate empty ID cookie list
         List<Cookie> cookieList = new ArrayList<>();
@@ -536,7 +536,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.finishAbandonedStudyResults();
+                publixUtils.finishOldestStudyResult();
             } catch (PublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1383,28 +1383,9 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * PublixUtils.setPreStudyStateByPre()
-     */
-    @Test
-    public void checkSetPreStudyStateByPre() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long studyResultId = createStudyResult(study);
-
-        jpaApi.withTransaction(() -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
-            publixUtils.setPreStudyStateByPre(true, studyResult);
-            assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
-            publixUtils.setPreStudyStateByPre(false, studyResult);
-            assertThat(studyResult.getStudyState())
-                    .isEqualTo(StudyState.STARTED);
-        });
-    }
-
-    /**
      * PublixUtils.setPreStudyStateByComponentId(): should set study result's to
      * STARTED only and only if the state is originally in PRE and it is not the
-     * first component
+     * first active component
      */
     @Test
     public void checkSetPreStudyStateByComponentId() {
@@ -1413,34 +1394,38 @@ public abstract class PublixUtilsTest<T extends Worker> {
         long studyResultId = createStudyResult(study);
 
         jpaApi.withTransaction(() -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
+            try {
+                StudyResult studyResult = studyResultDao.findById(studyResultId);
 
-            // PRE && first => stays in PRE
-            studyResult.setStudyState(StudyState.PRE);
-            publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                    study.getFirstComponent().getId());
-            assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
+                // PRE && first (active) => stays in PRE
+                studyResult.setStudyState(StudyState.PRE);
+                publixUtils.setPreStudyStateByComponentId(studyResult, study,
+                        study.getFirstComponent().getId());
+                assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
 
-            // STARTED && first => keeps state
-            studyResult.setStudyState(StudyState.STARTED);
-            publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                    study.getFirstComponent().getId());
-            assertThat(studyResult.getStudyState())
-                    .isEqualTo(StudyState.STARTED);
+                // STARTED && first => keeps state
+                studyResult.setStudyState(StudyState.STARTED);
+                publixUtils.setPreStudyStateByComponentId(studyResult, study,
+                        study.getFirstComponent().getId());
+                assertThat(studyResult.getStudyState())
+                        .isEqualTo(StudyState.STARTED);
 
-            // PRE && second => changes to STARTED
-            studyResult.setStudyState(StudyState.PRE);
-            publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                    study.getComponent(2).getId());
-            assertThat(studyResult.getStudyState())
-                    .isEqualTo(StudyState.STARTED);
+                // PRE && second => changes to STARTED
+                studyResult.setStudyState(StudyState.PRE);
+                publixUtils.setPreStudyStateByComponentId(studyResult, study,
+                        study.getComponent(2).getId());
+                assertThat(studyResult.getStudyState())
+                        .isEqualTo(StudyState.STARTED);
 
-            // STARTED && second => keeps state
-            studyResult.setStudyState(StudyState.STARTED);
-            publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                    study.getComponent(2).getId());
-            assertThat(studyResult.getStudyState())
-                    .isEqualTo(StudyState.STARTED);
+                // STARTED && second => keeps state
+                studyResult.setStudyState(StudyState.STARTED);
+                publixUtils.setPreStudyStateByComponentId(studyResult, study,
+                        study.getComponent(2).getId());
+                assertThat(studyResult.getStudyState())
+                        .isEqualTo(StudyState.STARTED);
+            } catch (NotFoundPublixException e) {
+                e.printStackTrace();
+            }
         });
     }
 

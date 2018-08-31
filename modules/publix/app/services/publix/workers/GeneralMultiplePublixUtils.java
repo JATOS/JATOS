@@ -1,12 +1,12 @@
 package services.publix.workers;
 
-import controllers.publix.workers.GeneralSinglePublix;
+import controllers.publix.workers.GeneralMultiplePublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import general.common.StudyLogger;
 import group.GroupAdministration;
-import models.common.workers.GeneralSingleWorker;
+import models.common.workers.GeneralMultipleWorker;
 import models.common.workers.Worker;
 import play.mvc.Http;
 import services.publix.PublixUtils;
@@ -19,18 +19,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * GeneralSinglePublix' implementation of PublixUtils
+ * GeneralMultiplePublix' implementation of PublixUtils
  *
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
+public class GeneralMultiplePublixUtils extends PublixUtils<GeneralMultipleWorker> {
 
     @Inject
-    GeneralSinglePublixUtils(ResultCreator resultCreator,
+    GeneralMultiplePublixUtils(ResultCreator resultCreator,
             IdCookieService idCookieService,
             GroupAdministration groupAdministration,
-            GeneralSingleErrorMessages errorMessages, StudyDao studyDao,
+            GeneralMultipleErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
             BatchDao batchDao, StudyLogger studyLogger) {
@@ -40,23 +40,21 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
     }
 
     @Override
-    public GeneralSingleWorker retrieveTypedWorker(Long workerId)
+    public GeneralMultipleWorker retrieveTypedWorker(Long workerId)
             throws ForbiddenPublixException {
         Worker worker = super.retrieveWorker(workerId);
-        if (!(worker instanceof GeneralSingleWorker)) {
-            throw new ForbiddenPublixException(
-                    errorMessages.workerNotCorrectType(worker.getId()));
+        if (!(worker instanceof GeneralMultipleWorker)) {
+            throw new ForbiddenPublixException(errorMessages.workerNotCorrectType(worker.getId()));
         }
-        return (GeneralSingleWorker) worker;
+        return (GeneralMultipleWorker) worker;
     }
 
     @Override
     public Map<String, String> getNonJatosUrlQueryParameters() {
         Map<String, String> queryMap = new HashMap<>();
         Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
-        queryMap.remove(GeneralSinglePublix.GENERALSINGLE);
+        queryMap.remove(GeneralMultiplePublix.GENERALMULTIPLE);
         queryMap.remove("batchId");
-        queryMap.remove("pre");
         return queryMap;
     }
 

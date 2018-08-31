@@ -1,14 +1,15 @@
 package services.publix.workers;
 
-import controllers.publix.workers.PersonalSinglePublix;
+import controllers.publix.workers.GeneralMultiplePublix;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.workers.GeneralSingleWorker;
-import models.common.workers.PersonalSingleWorker;
+import models.common.User;
+import models.common.workers.GeneralMultipleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
+import services.gui.UserService;
 import services.publix.PublixUtilsTest;
 
 import javax.inject.Inject;
@@ -20,26 +21,26 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * @author Kristian Lange
  */
-public class PersonalSinglePublixUtilsTest extends PublixUtilsTest<PersonalSingleWorker> {
+public class GeneralMultiplePublixUtilsTest extends PublixUtilsTest<GeneralMultipleWorker> {
 
     @Inject
-    private PersonalSingleErrorMessages personalSingleErrorMessages;
+    private GeneralMultipleErrorMessages generalMultipleErrorMessages;
 
     @Inject
-    private PersonalSinglePublixUtils personalSinglePublixUtils;
+    private GeneralMultiplePublixUtils generalMultiplePublixUtils;
 
     @Test
     public void checkRetrieveTypedWorker() {
-        PersonalSingleWorker worker = jpaApi.withTransaction(() -> {
-            PersonalSingleWorker w = new PersonalSingleWorker();
+        GeneralMultipleWorker worker = jpaApi.withTransaction(() -> {
+            GeneralMultipleWorker w = new GeneralMultipleWorker();
             workerDao.create(w);
             return w;
         });
 
         jpaApi.withTransaction(() -> {
             try {
-                PersonalSingleWorker retrievedWorker =
-                        personalSinglePublixUtils.retrieveTypedWorker(worker.getId().toString());
+                GeneralMultipleWorker retrievedWorker = generalMultiplePublixUtils
+                        .retrieveTypedWorker(worker.getId());
                 assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
             } catch (ForbiddenPublixException e) {
                 throw new RuntimeException(e);
@@ -49,20 +50,14 @@ public class PersonalSinglePublixUtilsTest extends PublixUtilsTest<PersonalSingl
 
     @Test
     public void checkRetrieveTypedWorkerWrongType() {
-        GeneralSingleWorker generalSingleWorker = jpaApi.withTransaction(() -> {
-            GeneralSingleWorker w = new GeneralSingleWorker();
-            workerDao.create(w);
-            return w;
-        });
-
         jpaApi.withTransaction(() -> {
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             try {
-                personalSinglePublixUtils
-                        .retrieveTypedWorker(generalSingleWorker.getId().toString());
+                generalMultiplePublixUtils.retrieveTypedWorker(admin.getWorker().getId());
                 Fail.fail();
             } catch (PublixException e) {
-                assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
-                        .workerNotCorrectType(generalSingleWorker.getId()));
+                assertThat(e.getMessage()).isEqualTo(generalMultipleErrorMessages
+                        .workerNotCorrectType(admin.getWorker().getId()));
             }
         });
     }
@@ -77,9 +72,8 @@ public class PersonalSinglePublixUtilsTest extends PublixUtilsTest<PersonalSingl
         queryString.put("foo", new String[]{"bar"});
         queryString.put("para2", new String[]{"1234567890"});
         queryString.put("para3", new String[]{"i%20like%20gizmodo"});
-        queryString.put(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID, new String[]{"123"});
+        queryString.put(GeneralMultiplePublix.GENERALMULTIPLE, new String[]{"abc"});
         queryString.put("batchId", new String[]{"3"});
-        queryString.put("pre", new String[]{""});
         testHelper.mockContext(queryString);
 
         jpaApi.withTransaction(() -> {

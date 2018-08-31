@@ -15,7 +15,6 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.UUID;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -48,7 +47,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void retrieveWorkerByStudyAlreadyDone() throws IOException {
+    public void retrieveWorkerByStudyAlreadyDone() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
 
@@ -59,7 +58,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void retrieveWorkerByStudyNotDone() throws IOException {
+    public void retrieveWorkerByStudyNotDone() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
 
@@ -70,7 +69,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void retrieveWorkerByStudyEmptyValue() throws IOException {
+    public void retrieveWorkerByStudyEmptyValue() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
 
@@ -81,7 +80,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void retrieveWorkerByStudyWeirdValue() throws IOException {
+    public void retrieveWorkerByStudyWeirdValue() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
 
@@ -92,7 +91,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void retrieveWorkerByStudyWeirdValue2() throws IOException {
+    public void retrieveWorkerByStudyWeirdValue2() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
 
@@ -103,7 +102,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void retrieveWorkerByStudyWeirdValue3() throws IOException {
+    public void retrieveWorkerByStudyWeirdValue3() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
 
@@ -114,7 +113,7 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void addStudy() throws IOException {
+    public void addStudy() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
         GeneralSingleWorker worker = mock(GeneralSingleWorker.class);
@@ -122,24 +121,21 @@ public class GeneralSingleCookieServiceTest {
         Cookie cookie = mock(Cookie.class);
         when(cookie.value()).thenReturn(DUMMY_COOKIE);
 
-        String cookieValue = generalSingleCookieService.addStudy(study, worker,
-                cookie);
-        assertThat(cookieValue).isEqualTo(
-                DUMMY_COOKIE + "&" + study.getUuid() + "=" + worker.getId());
+        String cookieValue = generalSingleCookieService.addStudy(study, worker, cookie);
+        assertThat(cookieValue)
+                .isEqualTo(DUMMY_COOKIE + "&" + study.getUuid() + "=" + worker.getId());
     }
 
     @Test
-    public void addStudyEmptyCookie() throws IOException {
+    public void addStudyEmptyCookie() {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
         GeneralSingleWorker worker = mock(GeneralSingleWorker.class);
         when(worker.getId()).thenReturn(1l);
 
         // No cookie
-        String cookieValue = generalSingleCookieService.addStudy(study, worker,
-                null);
-        assertThat(cookieValue)
-                .isEqualTo(study.getUuid() + "=" + worker.getId());
+        String cookieValue = generalSingleCookieService.addStudy(study, worker, null);
+        assertThat(cookieValue).isEqualTo(study.getUuid() + "=" + worker.getId());
     }
 
     private void putCookieInContext(String cookieValue) {

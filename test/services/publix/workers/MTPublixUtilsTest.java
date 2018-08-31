@@ -2,7 +2,6 @@ package services.publix.workers;
 
 import controllers.publix.workers.MTPublix;
 import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.GeneralSingleWorker;
@@ -13,8 +12,6 @@ import org.junit.Test;
 import services.publix.PublixUtilsTest;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,13 +44,10 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                MTWorker retrievedWorker = mtPublixUtils
-                        .retrieveTypedWorker(mtWorker.getId());
+                MTWorker retrievedWorker = mtPublixUtils.retrieveTypedWorker(mtWorker.getId());
                 assertThat(retrievedWorker.getId()).isEqualTo(mtWorker.getId());
-                retrievedWorker = mtPublixUtils
-                        .retrieveTypedWorker(mtSandboxWorker.getId());
-                assertThat(retrievedWorker.getId())
-                        .isEqualTo(mtSandboxWorker.getId());
+                retrievedWorker = mtPublixUtils.retrieveTypedWorker(mtSandboxWorker.getId());
+                assertThat(retrievedWorker.getId()).isEqualTo(mtSandboxWorker.getId());
             } catch (ForbiddenPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -73,8 +67,8 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
                 mtPublixUtils.retrieveTypedWorker(generalSingleWorker.getId());
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(mtErrorMessages
-                        .workerNotCorrectType(generalSingleWorker.getId()));
+                assertThat(e.getMessage()).isEqualTo(
+                        mtErrorMessages.workerNotCorrectType(generalSingleWorker.getId()));
             }
         });
     }
