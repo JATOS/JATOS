@@ -76,6 +76,11 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
     });
 });
 
+$('#collapseStudyImportDetails').on('hide.bs.collapse show.bs.collapse', function() {
+    $(this).parent().find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+        .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+});
+
 function importStudyConfirm(response) {
     if (response.studyExists && response.uploadedDirExists && response.uploadedDirName == response.currentDirName) {
         // 1) study exists  -  udir exists - udir == cdir : ask confirmation to overwrite study and/or dir
