@@ -10,11 +10,13 @@
             <!-- If you change something in the head, change it in the footer too! -->
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></th>
-            <th>Comp. Result ID</th>
-            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
-            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID">Comp. Result ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT">Start Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT">End Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT">Duration</th>
             <th>Batch</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_GROUP_ID">Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
@@ -26,11 +28,13 @@
             <!-- If you change something in the footer, change it in the head too! -->
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></th>
-            <th>Comp. Result ID</th>
-            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
-            <th>Duration</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID">Comp. Result ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT">Start Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT">End Time (Server)</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT">Duration</th>
             <th>Batch</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+            <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_GROUP_ID">Group ID</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
             <th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
@@ -83,6 +87,13 @@ $(document).ready(function() {
             },
             { "data": "startDate" },
             {
+                "data": "endDate",
+                "visible": false,
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "never";
+                }
+            },
+            {
                 "data": "duration",
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "not yet";
@@ -97,6 +108,10 @@ $(document).ready(function() {
                         'data-placement="bottom" title="Click to get this worker\'s results" ' +
                         'href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
+            },
+            {
+                "data": "workerType",
+                "render": getUIWorkerTypeWithGlyphicon
             },
             {
                 "data": "groupResultId",

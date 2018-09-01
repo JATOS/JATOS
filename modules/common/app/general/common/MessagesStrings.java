@@ -144,11 +144,15 @@ public class MessagesStrings {
     public static final String RESULTS_DATA = "Click on the > icon to open the result's data";
     public static final String RESULTS_DATA_SELECTION = "Check the box to select this result data for export or deleting";
     public static final String RESULTS_START_TIME = "Start of study time according to the JATOS server";
+    public static final String RESULTS_START_TIME_COMPONENT = "Start of component time according to the JATOS server";
     public static final String RESULTS_END_TIME = "End of study time according to the JATOS server";
+    public static final String RESULTS_END_TIME_COMPONENT = "End of component time according to the JATOS server";
     public static final String RESULTS_LAST_SEEN_TIME =
             "Time of the last heartbeat according to the JATOS server";
     public static final String RESULTS_DURATION =
             "Duration from start to end or if the study isn't finished yet from start to last seen. Format is (days:)hours:minutes:seconds.";
+    public static final String RESULTS_DURATION_COMPONENT =
+            "Duration from start to end. Format is (days:)hours:minutes:seconds.";
     public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
             + MTWorker.UI_WORKER_TYPE + ", "
             + PersonalMultipleWorker.UI_WORKER_TYPE + ", "
@@ -156,6 +160,7 @@ public class MessagesStrings {
     public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
     public static final String RESULTS_GROUP_ID = "Click on the ID to go to this group's results";
     public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
+    public static final String RESULTS_COMPONENT_RESULT_ID = "ID of this component result";
     public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE =
             "Mechanical Turk's worker ID and in brackets the confirmation code for Mechanical Turk";
     public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
