@@ -10,11 +10,13 @@
     <p>Version @general.common.Common.JATOS_VERSION</p>
     <p>Simply set up your own online studies</p>
     <p><a href="http://www.jatos.org/Whats-JATOS.html" class="btn btn-default" role="button">Learn more in our docs &raquo;</a></p>
-    @if(localhost){
-    <p>Your study assets root path is: <samp>@general.common.Common.getStudyAssetsRootPath()</samp></p>
-    <p>Your JATOS installation is in: <samp>@general.common.Common.getBasepath()</samp></p>
-    }
 </div>
+@if(localhost){
+<div class="jumbotron text-center hidden-xs hidden-sm">
+    Your study assets root path is: <samp>@general.common.Common.getStudyAssetsRootPath()</samp><br>
+    Your JATOS installation is in: <samp>@general.common.Common.getBasepath()</samp>
+</div>
+}
 
 <ul class="list-group visible-xs visible-sm">
     @for(study <- studyList) {
