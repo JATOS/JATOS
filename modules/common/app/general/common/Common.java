@@ -38,7 +38,7 @@ public class Common {
      * located
      */
     private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";
-    public static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
+    private static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
 
     /**
      * JATOS' absolute base path without trailing '/.'
