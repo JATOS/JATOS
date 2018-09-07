@@ -101,8 +101,7 @@ function showAllowedWorkerTypesInfo(currentBatch) {
         allowedWorkerTypes.push(getUIWorkerTypeWithGlyphicon(allowedWorkerType));
     });
     var html = 'In batch "' + currentBatch.title + '"'
-        + ' currently the worker types ' + allowedWorkerTypes.join(", ")
-        + ' are allowed.';
+        + ' the currently allowed worker types are: ' + allowedWorkerTypes.join(", ");
     $("#getWorkerLinksGeneralModal .allowedWorkerTypesInfo").html(html);
 }
 
