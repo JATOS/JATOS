@@ -24,6 +24,9 @@
                                 </ul>
                             </div>
                         </div>
+                        <div class="allowedWorkerTypesInfo col-xs-offset-5 col-xs-7">
+                            <!-- filled dynamically -->
+                        </div>
                     </div>
 
                     <div class="chooseWorkerType form-group row">
@@ -67,6 +70,7 @@ $('#getWorkerLinksGeneralButton').click(function(event) {
         if (index == 0) {
             $('#getWorkerLinksGeneralModal .chooseBatch button:first').text(batch.title);
             $('#getWorkerLinksGeneralModal .chooseBatch button:first').data(batch);
+            showAllowedWorkerTypesInfo(batch);
         }
     });
 
@@ -86,7 +90,21 @@ $('#getWorkerLinksGeneralButton').click(function(event) {
 $('#getWorkerLinksGeneralModal .dropdown-menu').on('click', 'a', function(e) {
     $(this).closest('.btn-group').find('button:first').html($(this).html());
     $(this).closest('.btn-group').find('button:first').data($(this).data());
+    if ($(this).data().allowedWorkerTypes) {
+        showAllowedWorkerTypesInfo($(this).data());
+    }
 });
+
+function showAllowedWorkerTypesInfo(currentBatch) {
+    var allowedWorkerTypes = [];
+    $.each(currentBatch.allowedWorkerTypes, function(index, allowedWorkerType) {
+        allowedWorkerTypes.push(getUIWorkerTypeWithGlyphicon(allowedWorkerType));
+    });
+    var html = 'In batch "' + currentBatch.title + '"'
+        + ' currently the worker types ' + allowedWorkerTypes.join(", ")
+        + ' are allowed.';
+    $("#getWorkerLinksGeneralModal .allowedWorkerTypesInfo").html(html);
+}
 
 $('#getWorkerLinksGeneralModal').on('click', '.confirmed', function(e) {
     $('#getWorkerLinksGeneralModal').modal('hide');

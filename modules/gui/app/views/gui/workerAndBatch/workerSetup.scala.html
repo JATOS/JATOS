@@ -709,7 +709,7 @@ function postGetWorkerLinksPersonal(url, showWorkerLinksModal, batch, workerSetu
         dataType: 'text',
         data: JSON.stringify(jsonData),
         success: function(workerIds) {
-            if (workerSetupDiv) loadWorkers(batch.id, workerSetupDiv);
+            if (workerSetupDiv.length > 0) loadWorkers(batch.id, workerSetupDiv);
             showWorkerLinksModal($.parseJSON(workerIds), batch);
         },
         error : function(err) {
@@ -731,20 +731,22 @@ $('#batchList').on('click', '.personalSingleWorkerSetup .linkButton', function()
 
 function showShowWorkerLinksPersonalSingleModal(workerIds, batch) {
     var title = "Links for Personal Single workers in batch '" + batch.title + "'";
-    var preText, postText;
-    if (workerIds.length > 1) {
-        preText = "Each of these URLs will start a run.";
-        postText = "Copy & paste and hand them to your workers.";
-    } else {
-        preText = "This URL will start the run.";
-        postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
-    }
     var urls = [];
     $.each(workerIds, function(i, workerId) {
         urls.push("@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?"
             + "batchId=" + batch.id + "&personalSingleWorkerId=" + workerId);
     });
-    showShowWorkerLinksModal(title, preText, urls, true, postText);
+    var showRunButton = (urls.length == 1
+            && batch.allowedWorkerTypes.includes("@common.workers.PersonalSingleWorker.WORKER_TYPE"));
+    var preText, postText;
+    if (showRunButton) {
+        preText = "This URL will start the run.";
+        postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
+    } else {
+        preText = "Each of these URLs will start a run.";
+        postText = "Copy & paste and hand them to your workers.";
+    }
+    showShowWorkerLinksModal(title, preText, urls, true, postText, showRunButton);
 }
 
 $('#batchList').on('click', '.personalMultipleWorkerSetup .linkButton', function() {
@@ -760,20 +762,22 @@ $('#batchList').on('click', '.personalMultipleWorkerSetup .linkButton', function
 
 function showShowWorkerLinksPersonalMultipleModal(workerIds, batch) {
     var title = "Links for Personal Multiple workers in batch '" + batch.title + "'";
-    var preText, postText;
-    if (workerIds.length > 1) {
-        preText = "Each of these URLs will start a run.";
-        postText = "Copy & paste and hand them to your workers.";
-    } else {
-        preText = "This URL will start the run.";
-        postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
-    }
     var urls = [];
     $.each(workerIds, function(i, workerId) {
         urls.push("@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?"
             + "batchId=" + batch.id + "&personalMultipleWorkerId=" + workerId);
     });
-    showShowWorkerLinksModal(title, preText, urls, false, postText);
+    var showRunButton = (urls.length == 1
+            && batch.allowedWorkerTypes.includes("@common.workers.PersonalMultipleWorker.WORKER_TYPE"));
+    var preText, postText;
+    if (showRunButton) {
+        preText = "This URL will start the run.";
+        postText = "Copy & paste and hand it to your worker - or press 'Run' to start it right away.";
+    } else {
+        preText = "Each of these URLs will start a run.";
+        postText = "Copy & paste and hand them to your workers.";
+    }
+    showShowWorkerLinksModal(title, preText, urls, false, postText, showRunButton);
 }
 
 $('#batchList').on('click', '.generalSingleWorkerSetup .linkButton', function() {
@@ -791,8 +795,14 @@ function showShowWorkerLinksGeneralSingleModal(batch) {
     var url = "@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalSingle";
     var preText = "This URL will start the run.";
-    var postText = "Copy & paste and hand it to your workers - or press 'Run' to start it right away.";
-    showShowWorkerLinksModal(title, preText, [url], true, postText);
+    var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE");
+    var postText;
+    if (showRunButton) {
+        postText = "Copy & paste and hand it to your workers - or press 'Run' to start it right away.";
+    } else {
+        postText = "Copy & paste and hand it to your workers.";
+    }
+    showShowWorkerLinksModal(title, preText, [url], true, postText, showRunButton);
 }
 
 function showShowWorkerLinksGeneralMultipleModal(batch) {
@@ -800,11 +810,17 @@ function showShowWorkerLinksGeneralMultipleModal(batch) {
     var url = "@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalMultiple";
     var preText = "This URL will start the run.";
-    var postText = "Copy & paste and hand it to your workers - or press 'Run' to start it right away.";
-    showShowWorkerLinksModal(title, preText, [url], false, postText);
+    var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE");
+    var postText;
+    if (showRunButton) {
+        postText = "Copy & paste and hand it to your workers - or press 'Run' to start it right away.";
+    } else {
+        postText = "Copy & paste and hand it to your workers.";
+    }
+    showShowWorkerLinksModal(title, preText, [url], false, postText, showRunButton);
 }
 
-function showShowWorkerLinksModal(title, preText, urls, preCheckbox, postText) {
+function showShowWorkerLinksModal(title, preText, urls, preCheckbox, postText, showRunButton) {
     var htmlPreText = '<p>' + preText + '</p>';
     var htmlUrl = '<div class="well linkUrls">' + generateHtmlUrlList(urls) + '</div>';
     var htmlPreCheckbox = '<div class="checkbox"><p><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use a \'pre\' link multiple times as long as they don\'t get past the first active component."></span></label></p></div>'
@@ -815,10 +831,10 @@ function showShowWorkerLinksModal(title, preText, urls, preCheckbox, postText) {
     } else {
         htmlBody = htmlPreText + htmlUrl + htmlPostText;
     }
-    if (urls.length > 1) {
-        $('#showWorkerLinksModal').find('.runButton').hide();
-    } else {
+    if (showRunButton) {
         $('#showWorkerLinksModal').find('.runButton').show();
+    } else {
+        $('#showWorkerLinksModal').find('.runButton').hide();
     }
     $('#showWorkerLinksModal').find('.modal-title').text(title);
     $('#showWorkerLinksModal').find('.modal-body').html(htmlBody);
