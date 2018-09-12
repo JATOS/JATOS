@@ -158,7 +158,6 @@ public abstract class PublixUtils<T extends Worker> {
     public String finishStudyResult(Boolean successful, String errorMsg, StudyResult studyResult) {
         String confirmationCode;
         if (successful) {
-            finishAllComponentResults(studyResult);
             confirmationCode = studyResult.getWorker().generateConfirmationCode();
             retrieveCurrentComponentResult(studyResult).setComponentState(ComponentState.FINISHED);
             studyResult.setStudyState(StudyState.FINISHED);
@@ -167,6 +166,7 @@ public abstract class PublixUtils<T extends Worker> {
             retrieveCurrentComponentResult(studyResult).setComponentState(ComponentState.FAIL);
             studyResult.setStudyState(StudyState.FAIL);
         }
+        finishAllComponentResults(studyResult);
         studyResult.setConfirmationCode(confirmationCode);
         studyResult.setErrorMsg(errorMsg);
         studyResult.setEndDate(new Timestamp(new Date().getTime()));
