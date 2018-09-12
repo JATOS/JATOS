@@ -249,7 +249,7 @@ public class JsonUtils {
             duration = getDurationPretty(studyResult.getStartDate(), studyResult.getEndDate());
         } else {
             duration = getDurationPretty(studyResult.getStartDate(), studyResult.getLastSeenDate());
-            duration = duration != null ? duration + " (unfinished)" : "none";
+            duration = duration != null ? duration + " (not finished yet)" : "none";
         }
         studyResultNode.put("duration", duration);
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
