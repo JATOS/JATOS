@@ -421,7 +421,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                     .isEqualTo(ComponentState.FINISHED);
             assertThat(componentResult1.getData()).isEqualTo("test data 1");
             assertThat(componentResult2.getComponentState())
-                    .isEqualTo(ComponentState.STARTED);
+                    .isEqualTo(ComponentState.FAIL);
             assertThat(componentResult2.getData()).isEqualTo("test data 2");
 
             // Check study result
@@ -669,7 +669,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     public void checkRetrieveStudyResultAlreadyFinished() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        long studyResultId1 = createStudyResult(study);
+        long studyResultId1 = createStudyResultAndStartFirstComponent(study);
 
         jpaApi.withTransaction(() -> {
             StudyResult studyResult1 = studyResultDao.findById(studyResultId1);
@@ -1464,6 +1464,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
+
             return studyResult.getId();
         });
     }
