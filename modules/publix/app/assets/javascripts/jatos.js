@@ -934,11 +934,11 @@ var jatos = {};
 			window.location.href = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
 		};
 		if (resultData) {
-			$.when(jatos.appendResultData(resultData),
+			jatos.jQuery.when(jatos.appendResultData(resultData),
 					jatos.setStudySessionData(jatos.studySessionData))
 				.then(onComplete, onError);
 		} else {
-			$.when(jatos.setStudySessionData(jatos.studySessionData))
+			jatos.jQuery.when(jatos.setStudySessionData(jatos.studySessionData))
 				.then(onComplete, onError);
 		}
 	};
