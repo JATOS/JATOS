@@ -788,16 +788,14 @@ var jatos = {};
 	};
 
 	/**
-	 * Defines callback function that is to be called in case jatos.js produces an
-	 * error, e.g. Ajax errors.
+	 * Defines callback function to be called if an patch for the batch session was received
 	 */
 	jatos.onBatchSession = function (onBatchSession) {
 		onJatosBatchSession = onBatchSession;
 	};
 
 	/**
-	 * Defines callback function that is to be called in case jatos.js produces an
-	 * error, e.g. Ajax errors.
+	 * Defines callback function to be called if jatos.js produces an error, e.g. Ajax errors.
 	 */
 	jatos.onError = function (onError) {
 		onJatosError = onError;
