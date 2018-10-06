@@ -264,9 +264,8 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 				}
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
-				<li><a href="@controllers.gui.routes.Users.profile(loggedInUser.getEmail())">
-					<span class="glyphicon glyphicon-user"></span>
-					<span id="navUserText"> @loggedInUser.getName() (@loggedInUser.getEmail())</span>
+				<li><a id="navUserText" href="@controllers.gui.routes.Users.profile(loggedInUser.getEmail())">
+					<span class="glyphicon glyphicon-user"></span> @loggedInUser.getName()
 				</a></li>
 				<li><a href="@controllers.gui.routes.Authentication.logout()">
 					<span class="glyphicon glyphicon-off"></span>
