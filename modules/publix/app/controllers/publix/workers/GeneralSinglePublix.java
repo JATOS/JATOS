@@ -6,6 +6,7 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
 import models.common.Batch;
@@ -116,7 +117,9 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
         } else {
             worker = publixUtils.retrieveTypedWorker(workerId);
             studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-            studyResult = worker.getLastStudyResult();
+            studyResult = worker.getLastStudyResult()
+                    .orElseThrow(() -> new InternalServerErrorPublixException(
+                            "Repeated study run but couldn't find last study result"));
             if (!idCookieService.hasIdCookie(studyResult.getId())) {
                 publixUtils.finishOldestStudyResult();
                 generalSingleCookieService.set(study, worker);

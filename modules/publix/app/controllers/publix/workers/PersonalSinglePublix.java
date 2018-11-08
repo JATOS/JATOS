@@ -27,6 +27,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Optional;
 
 /**
  * Implementation of JATOS' public API for personal single study runs (runs with
@@ -96,24 +97,23 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         // 3. Preview study, second+ call, different browser -> get StudyResult, call finishOldestStudyResult
         // 4. No preview study, first call -> create StudyResult, call finishOldestStudyResult
         // 5. No preview study, second+ call -> throw exception
-        StudyResult studyResult;
-        if (worker.getStudyResultList().isEmpty()) {
+        Optional<StudyResult> studyResult = worker.getLastStudyResult();
+        if (!studyResult.isPresent()) {
             publixUtils.finishOldestStudyResult();
-            studyResult = resultCreator.createStudyResult(study, batch, worker, pre);
+            studyResult = Optional.of(resultCreator.createStudyResult(study, batch, worker, pre));
         } else {
-            studyResult = worker.getLastStudyResult();
-            if (!idCookieService.hasIdCookie(studyResult.getId())) {
+            if (!idCookieService.hasIdCookie(studyResult.get().getId())) {
                 publixUtils.finishOldestStudyResult();
             }
         }
-        idCookieService.writeIdCookie(worker, batch, studyResult);
-        publixUtils.setUrlQueryParameter(studyResult);
+        idCookieService.writeIdCookie(worker, batch, studyResult.get());
+        publixUtils.setUrlQueryParameter(studyResult.get());
 
         Component component = publixUtils.retrieveFirstActiveComponent(study);
         studyLogger.log(study, "Started study run with " + PersonalSingleWorker.UI_WORKER_TYPE
                 + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, component.getId(), studyResult.getId()));
+                studyId, component.getId(), studyResult.get().getId()));
     }
 
 }

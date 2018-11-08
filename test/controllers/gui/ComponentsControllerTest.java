@@ -1,32 +1,17 @@
 package controllers.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static play.mvc.Http.Status.OK;
-import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.route;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.http.HttpHeaders;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import daos.common.ComponentDao;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.gui.ComponentProperties;
+import org.apache.http.HttpHeaders;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -38,6 +23,18 @@ import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.SEE_OTHER;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.route;
 
 /**
  * Testing actions of controller.Components.
@@ -86,17 +83,16 @@ public class ComponentsControllerTest {
      * Checks action with route Components.showComponent.
      */
     @Test
-    public void callRunComponent() throws Exception {
+    public void callRunComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
-                        controllers.gui.routes.Components
-                                .runComponent(study.getId(),
-                                        study.getComponent(1).getId(), -1L)
-                                .url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Components.runComponent(study.getId(),
+                        study.getComponent(1).getId(), -1L).url());
         Result result = route(request);
 
         assertEquals(SEE_OTHER, result.status());
@@ -123,13 +119,11 @@ public class ComponentsControllerTest {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
-                        controllers.gui.routes.Components
-                                .runComponent(study.getId(),
-                                        study.getComponent(1).getId(), -1L)
-                                .url());
-        // Empty html path must lead to an JatosGuiException with a HTTP status
-        // of 400
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Components.runComponent(study.getId(),
+                        study.getComponent(1).getId(), -1L).url());
+        // Empty html path must lead to an JatosGuiException with a HTTP status of 400
         testHelper.assertJatosGuiException(request, Http.Status.BAD_REQUEST,
                 "HTML file path is empty");
     }
@@ -144,11 +138,10 @@ public class ComponentsControllerTest {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
-                        controllers.gui.routes.Components
-                                .properties(study.getId(),
-                                        study.getFirstComponent().getId())
-                                .url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Components
+                        .properties(study.getId(), study.getFirstComponent().get().getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -158,27 +151,25 @@ public class ComponentsControllerTest {
         // Check properties in JSON
         JsonNode node = Json.mapper().readTree(contentAsString(result));
         assertThat(node.get(ComponentProperties.TITLE).toString())
-                .isEqualTo("\"" + study.getFirstComponent().getTitle() + "\"");
+                .isEqualTo("\"" + study.getFirstComponent().get().getTitle() + "\"");
         assertThat(node.get(ComponentProperties.ACTIVE).toString()).isEqualTo(
-                String.valueOf(study.getFirstComponent().isActive()));
+                String.valueOf(study.getFirstComponent().get().isActive()));
         assertThat(node.get(ComponentProperties.COMMENTS).toString()).isEqualTo(
-                "\"" + study.getFirstComponent().getComments() + "\"");
+                "\"" + study.getFirstComponent().get().getComments() + "\"");
         assertThat(node.get(ComponentProperties.HTML_FILE_PATH).toString())
-                .isEqualTo("\"" + study.getFirstComponent().getHtmlFilePath()
-                        + "\"");
+                .isEqualTo("\"" + study.getFirstComponent().get().getHtmlFilePath() + "\"");
         assertThat(node.get(ComponentProperties.JSON_DATA).toString()).contains(
                 "This component displays text and reacts to key presses.");
         assertThat(node.get(ComponentProperties.RELOADABLE).toString())
-                .isEqualTo(String
-                        .valueOf(study.getFirstComponent().isReloadable()));
+                .isEqualTo(String.valueOf(study.getFirstComponent().get().isReloadable()));
         assertThat(node.get(ComponentProperties.UUID).toString())
-                .isEqualTo("\"" + study.getFirstComponent().getUuid() + "\"");
+                .isEqualTo("\"" + study.getFirstComponent().get().getUuid() + "\"");
         assertThat(node.get(ComponentProperties.ID).toString())
-                .isEqualTo(String.valueOf(study.getFirstComponent().getId()));
+                .isEqualTo(String.valueOf(study.getFirstComponent().get().getId()));
         assertThat(node.get("studyId").toString()).isEqualTo(
-                String.valueOf(study.getFirstComponent().getStudy().getId()));
+                String.valueOf(study.getFirstComponent().get().getStudy().getId()));
         assertThat(node.get("date").toString())
-                .isEqualTo(String.valueOf(study.getFirstComponent().getDate()));
+                .isEqualTo(String.valueOf(study.getFirstComponent().get().getDate()));
     }
 
     /**
@@ -186,23 +177,22 @@ public class ComponentsControllerTest {
      * page should be shown.
      */
     @Test
-    public void callSubmitCreated() throws Exception {
+    public void callSubmitCreated() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Map<String, String> form = new HashMap<>();
         form.put(ComponentProperties.TITLE, "Title Test");
         form.put(ComponentProperties.RELOADABLE, "true");
-        form.put(ComponentProperties.HTML_FILE_PATH,
-                "html_file_path_test.html");
+        form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
         form.put(ComponentProperties.COMMENTS, "Comments test test.");
         form.put(ComponentProperties.JSON_DATA, "{}");
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(form).uri(controllers.gui.routes.Components
-                        .submitCreated(study.getId()).url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(form)
+                .uri(controllers.gui.routes.Components.submitCreated(study.getId()).url());
         Result result = route(request);
 
         assertEquals(OK, result.status());
@@ -213,26 +203,23 @@ public class ComponentsControllerTest {
      * itself should be shown.
      */
     @Test
-    public void callSubmitEdited() throws Exception {
+    public void callSubmitEdited() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Map<String, String> form = new HashMap<>();
         form.put(ComponentProperties.TITLE, "Title Test");
         form.put(ComponentProperties.RELOADABLE, "true");
-        form.put(ComponentProperties.HTML_FILE_PATH,
-                "html_file_path_test.html");
+        form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
         form.put(ComponentProperties.COMMENTS, "Comments test test.");
         form.put(ComponentProperties.JSON_DATA, "{}");
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(form).uri(
-                        controllers.gui.routes.Components
-                                .submitEdited(study.getId(),
-                                        study.getFirstComponent().getId())
-                                .url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(form)
+                .uri(controllers.gui.routes.Components.submitEdited(study.getId(),
+                        study.getFirstComponent().get().getId()).url());
         Result result = route(request);
 
         assertEquals(OK, result.status());
@@ -256,9 +243,10 @@ public class ComponentsControllerTest {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(form).uri(controllers.gui.routes.Components
-                        .submitCreated(study.getId()).url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(form)
+                .uri(controllers.gui.routes.Components.submitCreated(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.contentType().get()).isEqualTo("application/json");
@@ -266,9 +254,7 @@ public class ComponentsControllerTest {
         assertThat(node.get(ComponentProperties.TITLE).toString())
                 .isEqualTo("[\"" + MessagesStrings.MISSING_TITLE + "\"]");
         assertThat(node.get(ComponentProperties.HTML_FILE_PATH).toString())
-                .isEqualTo(
-                        "[\"" + MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY
-                                + "\"]");
+                .isEqualTo("[\"" + MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY + "\"]");
         assertThat(node.get(ComponentProperties.COMMENTS).toString())
                 .isEqualTo("[\"" + MessagesStrings.NO_HTML_ALLOWED + "\"]");
         assertThat(node.get(ComponentProperties.JSON_DATA).toString())
@@ -276,30 +262,28 @@ public class ComponentsControllerTest {
     }
 
     @Test
-    public void callChangeProperty() throws Exception {
+    public void callChangeProperty() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
-                        controllers.gui.routes.Components
-                                .toggleActive(study.getId(),
-                                        study.getComponent(1).getId(), true)
-                                .url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.Components.toggleActive(study.getId(),
+                        study.getComponent(1).getId(), true).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
     }
 
     @Test
-    public void callCloneComponent() throws Exception {
+    public void callCloneComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(controllers.gui.routes.Components.cloneComponent(
                         study.getId(), study.getComponent(1).getId()).url());
         Result result = route(request);
@@ -308,16 +292,15 @@ public class ComponentsControllerTest {
     }
 
     @Test
-    public void callRemove() throws Exception {
+    public void callRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("DELETE")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(controllers.gui.routes.Components
-                        .remove(study.getId(), study.getComponent(1).getId())
-                        .url());
+                        .remove(study.getId(), study.getComponent(1).getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);

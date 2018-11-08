@@ -114,8 +114,8 @@ public class StudyAssetsTest {
         Result startStudyResult = startStudy(study);
         Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
-        Call call = controllers.publix.routes.StudyAssets
-                .viaStudyPath(study.getId(), "bla", study.getFirstComponent().getHtmlFilePath());
+        Call call = controllers.publix.routes.StudyAssets.viaStudyPath(study.getId(), "bla",
+                study.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
         Result result = route(request);
@@ -143,9 +143,8 @@ public class StudyAssetsTest {
         Result startStudyResult = startStudy(study);
         Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
-        Call call = controllers.publix.routes.StudyAssets
-                .viaAssetsPath(study.getDirName() + "/"
-                        + study.getFirstComponent().getHtmlFilePath());
+        Call call = controllers.publix.routes.StudyAssets.viaAssetsPath(study.getDirName() + "/"
+                + study.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
         Result result = route(request);
@@ -172,9 +171,8 @@ public class StudyAssetsTest {
         Result startStudyResult = startStudy(study);
         Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
-        Call call = controllers.publix.routes.StudyAssets
-                .viaAssetsPath("wrong_study_dir/"
-                        + study.getFirstComponent().getHtmlFilePath());
+        Call call = controllers.publix.routes.StudyAssets.viaAssetsPath("wrong_study_dir/"
+                + study.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request = new RequestBuilder().method(Helpers.GET)
                 .uri(call.url()).cookie(idCookie);
         Result result = route(request);
@@ -189,9 +187,8 @@ public class StudyAssetsTest {
         Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
         // Started study but ask for asset of otherStudy
-        Call call = controllers.publix.routes.StudyAssets
-                .viaAssetsPath(otherStudy.getDirName() + "/"
-                        + otherStudy.getFirstComponent().getHtmlFilePath());
+        Call call = controllers.publix.routes.StudyAssets.viaAssetsPath(otherStudy.getDirName()
+                + "/" + otherStudy.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
         Result result = route(request);
@@ -234,7 +231,7 @@ public class StudyAssetsTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Result result = studyAssets.retrieveComponentHtmlFile(study.getDirName(),
-                study.getFirstComponent().getHtmlFilePath()).asJava();
+                study.getFirstComponent().get().getHtmlFilePath()).asJava();
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualTo("utf-8");

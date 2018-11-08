@@ -111,10 +111,10 @@ public class StudyServiceTest {
 
         // Check properties equal in original study and clone
         assertThat(clone.getComponentList().size()).isEqualTo(study.getComponentList().size());
-        assertThat(clone.getFirstComponent().getTitle())
-                .isEqualTo(study.getFirstComponent().getTitle());
-        assertThat(clone.getLastComponent().getTitle())
-                .isEqualTo(study.getLastComponent().getTitle());
+        assertThat(clone.getFirstComponent().get().getTitle())
+                .isEqualTo(study.getFirstComponent().get().getTitle());
+        assertThat(clone.getLastComponent().get().getTitle())
+                .isEqualTo(study.getLastComponent().get().getTitle());
         assertThat(clone.getDate()).isEqualTo(study.getDate());
         assertThat(clone.getDescription()).isEqualTo(study.getDescription());
         assertThat(clone.getComments()).isEqualTo(study.getComments());
@@ -365,25 +365,23 @@ public class StudyServiceTest {
         checkChangeToPosition(1, 1, study.getId());
 
         // Last component to last position -> still last
-        int lastPostion = study.getComponentPosition(study.getLastComponent());
+        int lastPostion = study.getComponentPosition(study.getLastComponent().get());
         checkChangeToPosition(lastPostion, lastPostion, study.getId());
 
         // NumberFormatException if the position isn't a number
         try {
-            studyService.changeComponentPosition("bla", study,
-                    study.getFirstComponent());
+            studyService.changeComponentPosition("bla", study, study.getFirstComponent().get());
             Fail.fail();
         } catch (BadRequestException e) {
-            assertThat(e.getMessage()).isEqualTo(
-                    MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
+            assertThat(e.getMessage())
+                    .isEqualTo(MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
         }
 
         // IndexOutOfBoundsException if the position isn't within the study
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
             try {
-                studyService.changeComponentPosition("100", s,
-                        s.getFirstComponent());
+                studyService.changeComponentPosition("100", s, s.getFirstComponent().get());
                 Fail.fail();
             } catch (BadRequestException e) {
                 assertThat(e.getMessage()).isEqualTo(MessagesStrings
@@ -426,21 +424,17 @@ public class StudyServiceTest {
 
         // Check changed properties of the study
         assertThat(study.getTitle()).isEqualTo(updatedProps.getTitle());
-        assertThat(study.getDescription())
-                .isEqualTo(updatedProps.getDescription());
+        assertThat(study.getDescription()).isEqualTo(updatedProps.getDescription());
         assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
         assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
 
         // Check the unchanged properties
         assertThat(study.getComponentList().size()).isEqualTo(7);
-        assertThat(study.getComponent(1).getTitle())
-                .isEqualTo("Show JSON input ");
-        assertThat(study.getLastComponent().getTitle())
-                .isEqualTo("Quit button");
+        assertThat(study.getComponent(1).getTitle()).isEqualTo("Show JSON input ");
+        assertThat(study.getLastComponent().get().getTitle()).isEqualTo("Quit button");
         assertThat(study.getId()).isEqualTo(studyId);
         assertThat(study.getUserList()).contains(testHelper.getAdmin());
-        assertThat(study.getUuid())
-                .isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+        assertThat(study.getUuid()).isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
     }
 
     /**
@@ -463,8 +457,7 @@ public class StudyServiceTest {
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
             assertThat(s.getDirName()).isEqualTo("changed_dirname");
-            assertThat(ioUtils.checkStudyAssetsDirExists("changed_dirname"))
-                    .isTrue();
+            assertThat(ioUtils.checkStudyAssetsDirExists("changed_dirname")).isTrue();
             assertThat(ioUtils.checkStudyAssetsDirExists(oldDirName)).isFalse();
         });
     }
@@ -500,15 +493,12 @@ public class StudyServiceTest {
                     b -> assertThat(batchDao.findById(b.getId())).isNull());
 
             // This study is removed from all its member users
-            study.getUserList()
-                    .forEach(u -> assertThat(
-                            userDao.findByEmail(u.getEmail()).hasStudy(s))
-                            .isFalse());
+            study.getUserList().forEach(
+                    u -> assertThat(userDao.findByEmail(u.getEmail()).hasStudy(s)).isFalse());
         });
 
         // Check study assets are removed
-        assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName()))
-                .isFalse();
+        assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName())).isFalse();
     }
 
 }

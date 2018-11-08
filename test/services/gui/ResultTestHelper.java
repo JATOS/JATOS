@@ -52,9 +52,9 @@ public class ResultTestHelper {
                 StudyResult studyResult = resultCreator
                         .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
                 ComponentResult componentResult1 = jatosPublixUtils
-                        .startComponent(study.getFirstComponent(), studyResult);
+                        .startComponent(study.getFirstComponent().get(), studyResult);
                 ComponentResult componentResult2 = jatosPublixUtils
-                        .startComponent(study.getFirstComponent(), studyResult);
+                        .startComponent(study.getFirstComponent().get(), studyResult);
                 String ids = componentResult1.getId() + ", "
                         + componentResult2.getId();
 
@@ -79,22 +79,22 @@ public class ResultTestHelper {
                 StudyResult studyResult1 = resultCreator
                         .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
                 ComponentResult componentResult11 =
-                        jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult1);
+                        jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult1);
                 componentResult11.setData(
                         "First ComponentResult's data of the first StudyResult.");
                 ComponentResult componentResult12 =
-                        jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult1);
+                        jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult1);
                 componentResult12.setData(
                         "Second ComponentResult's data of the first StudyResult.");
 
                 StudyResult studyResult2 = resultCreator
                         .createStudyResult(study, study.getBatchList().get(0), admin.getWorker());
                 ComponentResult componentResult21 = jatosPublixUtils
-                        .startComponent(study.getFirstComponent(), studyResult2);
+                        .startComponent(study.getFirstComponent().get(), studyResult2);
                 componentResult21.setData(
                         "First ComponentResult's data of the second StudyResult.");
                 ComponentResult componentResult22 = jatosPublixUtils
-                        .startComponent(study.getFirstComponent(), studyResult2);
+                        .startComponent(study.getFirstComponent().get(), studyResult2);
                 componentResult22.setData(
                         "Second ComponentResult's data of the second StudyResult.");
 

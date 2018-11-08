@@ -50,8 +50,7 @@ public class StudyResultDao extends AbstractDao {
     public int countByStudy(Study study) {
         String queryStr = "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.study=:study";
         Query query = jpa.em().createQuery(queryStr);
-        Number result = (Number) query.setParameter("study", study)
-                .getSingleResult();
+        Number result = (Number) query.setParameter("study", study).getSingleResult();
         return result.intValue();
     }
 
@@ -80,18 +79,14 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public List<StudyResult> findAllByStudy(Study study) {
-        String queryStr = "SELECT sr FROM StudyResult sr "
-                + "WHERE sr.study=:study";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr,
-                StudyResult.class);
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
+        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
         return query.setParameter("study", study).getResultList();
     }
 
     public List<StudyResult> findAllByBatch(Batch batch) {
-        String queryStr = "SELECT sr FROM StudyResult sr "
-                + "WHERE sr.batch=:batch";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr,
-                StudyResult.class);
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch";
+        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
         return query.setParameter("batch", batch).getResultList();
     }
 
@@ -99,15 +94,12 @@ public class StudyResultDao extends AbstractDao {
      * Returns a list of all StudyResults that belongs to the given Batch and
      * worker type.
      */
-    public List<StudyResult> findAllByBatchAndWorkerType(Batch batch,
-            String workerType) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE "
-                + "sr.batch=:batch "
+    public List<StudyResult> findAllByBatchAndWorkerType(Batch batch, String workerType) {
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
                 + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr,
-                StudyResult.class);
-        return query.setParameter("batch", batch)
-                .setParameter("workerType", workerType).getResultList();
+        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("batch", batch).setParameter("workerType", workerType)
+                .getResultList();
     }
 
 }

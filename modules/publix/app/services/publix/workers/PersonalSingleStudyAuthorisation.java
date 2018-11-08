@@ -6,11 +6,14 @@ import javax.inject.Singleton;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
+import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.StudyAuthorisation;
+
+import java.util.Optional;
 
 /**
  * PersonalSinglePublix's implementation of StudyAuthorization
@@ -32,8 +35,8 @@ public class PersonalSingleStudyAuthorisation extends StudyAuthorisation<Persona
         }
         // Personal Single Runs are used only once - don't start if worker has a
         // study result (although it is in state PRE)
-        if (!worker.getStudyResultList().isEmpty() &&
-                worker.getStudyResultList().get(0).getStudyState() != StudyState.PRE) {
+        Optional<StudyResult> first = worker.getFirstStudyResult();
+        if (first.isPresent() && first.get().getStudyState() != StudyResult.StudyState.PRE) {
             throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
         checkMaxTotalWorkers(batch, worker);

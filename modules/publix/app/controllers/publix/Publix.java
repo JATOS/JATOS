@@ -27,6 +27,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * Abstract controller class for all controllers that implement the IPublix
@@ -114,14 +115,15 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Study study = publixUtils.retrieveStudy(studyId);
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
 
-        Component nextComponent = publixUtils.retrieveNextActiveComponent(studyResult);
-        if (nextComponent == null) {
-            // Study has no more components -> finish it
-            return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyId, studyResult.getId(), true, null));
+        Optional<Component> nextComponent = publixUtils.retrieveNextActiveComponent(studyResult);
+        // Study has no more components -> finish it
+        if (!nextComponent.isPresent()) {
+            return redirect(controllers.publix.routes.PublixInterceptor.finishStudy(
+                    studyId, studyResult.getId(), true, null));
+        } else {
+            return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
+                    studyId, nextComponent.get().getId(), studyResult.getId()));
         }
-        return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, nextComponent.getId(), studyResult.getId()));
     }
 
     @Override
@@ -212,8 +214,9 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
-        ComponentResult componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (componentResult == null) {
+        Optional<ComponentResult> componentResult =
+                publixUtils.retrieveCurrentComponentResult(studyResult);
+        if (!componentResult.isPresent()) {
             String error = PublixErrorMessages
                     .componentNeverStarted(studyId, componentId, "submitResultData");
             return redirect(routes.PublixInterceptor
@@ -223,16 +226,16 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         String postedResultData = request().body().asText();
         String resultData;
         if (append) {
-            String currentResultData = componentResult.getData();
+            String currentResultData = componentResult.get().getData();
             resultData = currentResultData != null ?
                     currentResultData + postedResultData : postedResultData;
         } else {
             resultData = postedResultData;
         }
-        componentResult.setData(resultData);
-        componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-        componentResultDao.update(componentResult);
-        studyLogger.logResultDataStoring(componentResult);
+        componentResult.get().setData(resultData);
+        componentResult.get().setComponentState(ComponentState.RESULTDATA_POSTED);
+        componentResultDao.update(componentResult.get());
+        studyLogger.logResultDataStoring(componentResult.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -252,8 +255,9 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
-        ComponentResult componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (componentResult == null) {
+        Optional<ComponentResult> componentResult =
+                publixUtils.retrieveCurrentComponentResult(studyResult);
+        if (!componentResult.isPresent()) {
             String error = PublixErrorMessages
                     .componentNeverStarted(studyId, componentId, "submitResultData");
             return redirect(controllers.publix.routes.PublixInterceptor
@@ -261,13 +265,13 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         }
 
         if (successful) {
-            componentResult.setComponentState(ComponentState.FINISHED);
-            componentResult.setErrorMsg(errorMsg);
+            componentResult.get().setComponentState(ComponentState.FINISHED);
+            componentResult.get().setErrorMsg(errorMsg);
         } else {
-            componentResult.setComponentState(ComponentState.FAIL);
-            componentResult.setErrorMsg(errorMsg);
+            componentResult.get().setComponentState(ComponentState.FAIL);
+            componentResult.get().setErrorMsg(errorMsg);
         }
-        componentResultDao.update(componentResult);
+        componentResultDao.update(componentResult.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 

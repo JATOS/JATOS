@@ -1,18 +1,14 @@
 package controllers.gui.useraccess;
 
-import javax.inject.Inject;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import general.TestHelper;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -20,6 +16,8 @@ import play.api.mvc.Call;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.test.Helpers;
+
+import javax.inject.Inject;
 
 /**
  * Testing controller actions of ImportExport whether they have proper access
@@ -68,95 +66,82 @@ public class ImportExportUserAccessTest {
     }
 
     @Test
-    public void callImportStudy() throws Exception {
+    public void callImportStudy() {
         Call call = controllers.gui.routes.ImportExport.importStudy();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callImportStudyConfirmed() throws Exception {
+    public void callImportStudyConfirmed() {
         Call call = controllers.gui.routes.ImportExport.importStudyConfirmed();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callExportStudy() throws Exception {
+    public void callExportStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ImportExport
-                .exportStudy(study.getId());
+        Call call = controllers.gui.routes.ImportExport.exportStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
     }
 
     @Test
-    public void callExportComponent() throws Exception {
+    public void callExportComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.ImportExport
                 .exportComponent(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
     }
 
     @Test
-    public void callImportComponent() throws Exception {
+    public void callImportComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ImportExport
-                .importComponent(study.getId());
+        Call call = controllers.gui.routes.ImportExport.importComponent(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.POST);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
 
     @Test
-    public void callImportComponentConfirmed() throws Exception {
+    public void callImportComponentConfirmed() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ImportExport
-                .importComponentConfirmed(study.getId());
+        Call call = controllers.gui.routes.ImportExport.importComponentConfirmed(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.POST);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
 
     @Test
-    public void callExportDataOfStudyResults() throws Exception {
-        Call call = controllers.gui.routes.ImportExport
-                .exportDataOfStudyResults("1");
+    public void callExportDataOfStudyResults() {
+        Call call = controllers.gui.routes.ImportExport.exportDataOfStudyResults("1");
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callExportDataOfAllStudyResults() throws Exception {
+    public void callExportDataOfAllStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ImportExport
-                .exportDataOfAllStudyResults(study.getId());
+        Call call = controllers.gui.routes.ImportExport.exportDataOfAllStudyResults(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
     }
 
     @Test
-    public void callExportDataOfComponentResults() throws Exception {
-        Call call = controllers.gui.routes.ImportExport
-                .exportDataOfComponentResults("1");
+    public void callExportDataOfComponentResults() {
+        Call call = controllers.gui.routes.ImportExport.exportDataOfComponentResults("1");
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callExportDataOfAllComponentResults() throws Exception {
+    public void callExportDataOfAllComponentResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         Call call = controllers.gui.routes.ImportExport
-                .exportDataOfAllComponentResults(study.getId(),
-                        component.getId());
+                .exportDataOfAllComponentResults(study.getId(), component.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
     }
 
     @Test
-    public void callExportAllResultDataOfWorker() throws Exception {
+    public void callExportAllResultDataOfWorker() {
         User admin = testHelper.getAdmin();
         Call call = controllers.gui.routes.ImportExport
                 .exportAllResultDataOfWorker(admin.getWorker().getId());

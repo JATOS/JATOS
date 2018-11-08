@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -143,8 +144,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 publixUtils.retrieveWorker(2222L);
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(PublixErrorMessages.workerNotExist("2222"));
+                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.workerNotExist("2222"));
             }
         });
     }
@@ -161,13 +161,10 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check that everything went normal
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            assertThat(studyResult.getComponentResultList().size())
-                    .isEqualTo(1);
+            assertThat(studyResult.getComponentResultList().size()).isEqualTo(1);
             assertThat(studyResult.getComponentResultList().get(0)
                     .getComponentState()).isEqualTo(ComponentState.STARTED);
-            assertThat(
-                    studyResult.getComponentResultList().get(0).getStartDate())
-                    .isNotNull();
+            assertThat(studyResult.getComponentResultList().get(0).getStartDate()).isNotNull();
         });
     }
 
@@ -188,18 +185,14 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult1 = studyResult
-                    .getComponentResultList().get(0);
-            ComponentResult componentResult2 = studyResult
-                    .getComponentResultList().get(1);
+            ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
+            ComponentResult componentResult2 = studyResult.getComponentResultList().get(1);
 
             // Check new ComponentResult
-            assertThat(componentResult2.getComponentState())
-                    .isEqualTo(ComponentState.STARTED);
+            assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.STARTED);
 
             // Check that prior ComponentResult was finished properly
-            assertThat(componentResult1.getComponentState())
-                    .isEqualTo(ComponentState.FINISHED);
+            assertThat(componentResult1.getComponentState()).isEqualTo(ComponentState.FINISHED);
             assertThat(componentResult1.getEndDate()).isNotNull();
         });
     }
@@ -220,20 +213,15 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult1 = studyResult
-                    .getComponentResultList().get(0);
-            ComponentResult componentResult2 = studyResult
-                    .getComponentResultList().get(1);
+            ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
+            ComponentResult componentResult2 = studyResult.getComponentResultList().get(1);
 
             // Check second ComponentResult
-            assertThat(componentResult2.getComponentState())
-                    .isEqualTo(ComponentState.STARTED);
+            assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.STARTED);
 
             // Check that prior ComponentResult was finished properly
-            assertThat(componentResult1.getComponentState())
-                    .isEqualTo(ComponentState.RELOADED);
-            assertThat(studyResult.getComponentResultList().get(0).getEndDate())
-                    .isNotNull();
+            assertThat(componentResult1.getComponentState()).isEqualTo(ComponentState.RELOADED);
+            assertThat(studyResult.getComponentResultList().get(0).getEndDate()).isNotNull();
         });
     }
 
@@ -251,10 +239,9 @@ public abstract class PublixUtilsTest<T extends Worker> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
-            study.getFirstComponent().setReloadable(false);
+            study.getFirstComponent().get().setReloadable(false);
             try {
-                publixUtils.startComponent(study.getFirstComponent(),
-                        studyResult);
+                publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
             } catch (ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -277,15 +264,13 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult1 = studyResult
-                    .getComponentResultList().get(0);
+            ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
 
             // No second ComponentResult created
             assertThat(studyResult.getComponentResultList()).hasSize(1);
 
             // Check that prior ComponentResult was finished properly
-            assertThat(componentResult1.getComponentState())
-                    .isEqualTo(ComponentState.FAIL);
+            assertThat(componentResult1.getComponentState()).isEqualTo(ComponentState.FAIL);
             assertThat(componentResult1.getEndDate()).isNotNull();
         });
     }
@@ -321,19 +306,14 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult1 = studyResult
-                    .getComponentResultList().get(0);
-            ComponentResult componentResult2 = studyResult
-                    .getComponentResultList().get(1);
+            ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
+            ComponentResult componentResult2 = studyResult.getComponentResultList().get(1);
 
-            assertThat(componentResult1.getComponentState())
-                    .isEqualTo(ComponentState.ABORTED);
+            assertThat(componentResult1.getComponentState()).isEqualTo(ComponentState.ABORTED);
             assertThat(componentResult1.getData()).isNullOrEmpty();
-            assertThat(componentResult2.getComponentState())
-                    .isEqualTo(ComponentState.ABORTED);
+            assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.ABORTED);
             assertThat(componentResult2.getData()).isNullOrEmpty();
-            assertThat(studyResult.getStudyState())
-                    .isEqualTo(StudyResult.StudyState.ABORTED);
+            assertThat(studyResult.getStudyState()).isEqualTo(StudyResult.StudyState.ABORTED);
             assertThat(studyResult.getAbortMsg()).isEqualTo("abort message");
             assertThat(studyResult.getEndDate()).isNotNull();
             assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
@@ -348,8 +328,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     public void checkFinishStudyResultSuccessful() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        // Start a study and the first 2 components and both times set result
-        // data
+        // Start a study and the first 2 components and both times set result data
         long studyResultId = createStudyResult(study);
         startComponentAndSetData(study, studyResultId, 1, "test data 1");
         startComponentAndSetData(study, studyResultId, 2, "test data 2");
@@ -363,22 +342,17 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult1 = studyResult
-                    .getComponentResultList().get(0);
-            ComponentResult componentResult2 = studyResult
-                    .getComponentResultList().get(1);
+            ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
+            ComponentResult componentResult2 = studyResult.getComponentResultList().get(1);
 
             // Check component results: all should be finished
-            assertThat(componentResult1.getComponentState())
-                    .isEqualTo(ComponentState.FINISHED);
+            assertThat(componentResult1.getComponentState()).isEqualTo(ComponentState.FINISHED);
             assertThat(componentResult1.getData()).isEqualTo("test data 1");
-            assertThat(componentResult2.getComponentState())
-                    .isEqualTo(ComponentState.FINISHED);
+            assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.FINISHED);
             assertThat(componentResult2.getData()).isEqualTo("test data 2");
 
             // Check study result
-            assertThat(studyResult.getStudyState())
-                    .isEqualTo(StudyState.FINISHED);
+            assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FINISHED);
             // Not possible to check confirmation code because it depends on the
             // worker and can be null
             assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
@@ -410,18 +384,14 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult1 = studyResult
-                    .getComponentResultList().get(0);
-            ComponentResult componentResult2 = studyResult
-                    .getComponentResultList().get(1);
+            ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
+            ComponentResult componentResult2 = studyResult.getComponentResultList().get(1);
 
             // Check component results: first one should be finished last one
             // started (but not failed)
-            assertThat(componentResult1.getComponentState())
-                    .isEqualTo(ComponentState.FINISHED);
+            assertThat(componentResult1.getComponentState()).isEqualTo(ComponentState.FINISHED);
             assertThat(componentResult1.getData()).isEqualTo("test data 1");
-            assertThat(componentResult2.getComponentState())
-                    .isEqualTo(ComponentState.FAIL);
+            assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.FAIL);
             assertThat(componentResult2.getData()).isEqualTo("test data 2");
 
             // Check study result
@@ -439,10 +409,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
      */
     @Test
     public void checkFinishOldestStudyResultEqualAllowed()
-            throws InternalServerErrorPublixException,
-            BadRequestPublixException {
-        List<Cookie> cookieList = generateIdCookieList(
-                IdCookieCollection.MAX_ID_COOKIES);
+            throws InternalServerErrorPublixException, BadRequestPublixException {
+        List<Cookie> cookieList = generateIdCookieList(IdCookieCollection.MAX_ID_COOKIES);
         testHelper.mockContext(cookieList);
 
         jpaApi.withTransaction(() -> {
@@ -473,10 +441,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
      */
     @Test
     public void checkFinishOldestStudyResultMoreThanAllowed()
-            throws InternalServerErrorPublixException,
-            BadRequestPublixException {
-        List<Cookie> cookieList = generateIdCookieList(
-                IdCookieCollection.MAX_ID_COOKIES + 1);
+            throws InternalServerErrorPublixException, BadRequestPublixException {
+        List<Cookie> cookieList = generateIdCookieList(IdCookieCollection.MAX_ID_COOKIES + 1);
         testHelper.mockContext(cookieList);
 
         jpaApi.withTransaction(() -> {
@@ -505,10 +471,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
      */
     @Test
     public void checkFinishOldestStudyResultNoDeleting()
-            throws BadRequestPublixException,
-            InternalServerErrorPublixException {
-        List<Cookie> cookieList = generateIdCookieList(
-                IdCookieCollection.MAX_ID_COOKIES - 1);
+            throws BadRequestPublixException, InternalServerErrorPublixException {
+        List<Cookie> cookieList = generateIdCookieList(IdCookieCollection.MAX_ID_COOKIES - 1);
         testHelper.mockContext(cookieList);
 
         jpaApi.withTransaction(() -> {
@@ -528,8 +492,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
      * if there are no ID cookies yet
      */
     @Test
-    public void checkFinishOldestStudyResultEmpty()
-            throws PublixException {
+    public void checkFinishOldestStudyResultEmpty() throws PublixException {
         // Generate empty ID cookie list
         List<Cookie> cookieList = new ArrayList<>();
         testHelper.mockContext(cookieList);
@@ -567,9 +530,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 persistedStudyResult1 = publixUtils.retrieveStudyResult(
                         admin.getWorker(), study, studyResultId1);
                 assertThat(persistedStudyResult1).isEqualTo(studyResult1);
-                StudyResult persistedStudyResult2 = publixUtils
-                        .retrieveStudyResult(admin.getWorker(), study,
-                                studyResultId2);
+                StudyResult persistedStudyResult2 =
+                        publixUtils.retrieveStudyResult(admin.getWorker(), study, studyResultId2);
                 assertThat(persistedStudyResult2).isEqualTo(studyResult2);
             } catch (PublixException e) {
                 throw new RuntimeException(e);
@@ -595,12 +557,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 
             try {
-                publixUtils.retrieveStudyResult(admin.getWorker(), clone,
-                        studyResultId1);
+                publixUtils.retrieveStudyResult(admin.getWorker(), clone, studyResultId1);
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
+                assertThat(e.getMessage())
+                        .isEqualTo(PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
             } catch (BadRequestPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -679,61 +640,14 @@ public abstract class PublixUtilsTest<T extends Worker> {
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             try {
-                publixUtils.retrieveStudyResult(admin.getWorker(), study,
-                        studyResultId1);
+                publixUtils.retrieveStudyResult(admin.getWorker(), study, studyResultId1);
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        PublixErrorMessages.workerFinishedStudyAlready(
-                                admin.getWorker(), study.getId()));
+                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.workerFinishedStudyAlready(
+                        admin.getWorker(), study.getId()));
             } catch (BadRequestPublixException e) {
                 throw new RuntimeException(e);
             }
-        });
-    }
-
-    /**
-     * Tests PublixUtils.retrieveLastComponentResult(): check that the last
-     * component result is returned
-     */
-    @Test
-    public void checkRetrieveLastComponentResult() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        // Start a study and its first two components
-        long studyResultId = createStudyResult(study);
-        startComponentByPosition(1, study, studyResultId);
-        long componentResultId2 = startComponentByPosition(2, study,
-                studyResultId);
-
-        // Check that the second result is returned
-        jpaApi.withTransaction(() -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
-            // Get the second component result
-            ComponentResult componentResult2 = componentResultDao
-                    .findById(componentResultId2);
-
-            ComponentResult retrievedComponentResult = publixUtils
-                    .retrieveLastComponentResult(studyResult);
-            assertThat(retrievedComponentResult).isEqualTo(componentResult2);
-        });
-    }
-
-    /**
-     * Tests PublixUtils.retrieveLastComponentResult(): if no component result
-     * exist null should be returned
-     */
-    @Test
-    public void checkRetrieveLastComponentResultEmpty() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        long studyResultId = createStudyResult(study);
-
-        jpaApi.withTransaction(() -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
-            // Check that null is returned
-            ComponentResult retrievedComponentResult = publixUtils
-                    .retrieveLastComponentResult(studyResult);
-            assertThat(retrievedComponentResult).isNull();
         });
     }
 
@@ -753,8 +667,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Check that the second result is returned
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            Component retrievedComponent = publixUtils
-                    .retrieveLastComponent(studyResult);
+            Component retrievedComponent = publixUtils.retrieveLastComponent(studyResult).get();
             assertThat(retrievedComponent).isEqualTo(study.getComponent(2));
         });
     }
@@ -769,12 +682,10 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         long studyResultId = createStudyResult(study);
 
-        // Check that null is returned
+        // Check that component is empty
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            Component retrievedComponent = publixUtils
-                    .retrieveLastComponent(studyResult);
-            assertThat(retrievedComponent).isNull();
+            assertThat(publixUtils.retrieveLastComponent(studyResult).isPresent()).isFalse();
         });
     }
 
@@ -789,17 +700,15 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Start a study and its first two components
         long studyResultId = createStudyResult(study);
         startComponentByPosition(1, study, studyResultId);
-        long componentResultId2 = startComponentByPosition(2, study,
-                studyResultId);
+        long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
         // Check that the second result is returned
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             // Get the second component result
-            ComponentResult componentResult2 = componentResultDao
-                    .findById(componentResultId2);
+            ComponentResult componentResult2 = componentResultDao.findById(componentResultId2);
             ComponentResult retrievedComponentResult = publixUtils
-                    .retrieveCurrentComponentResult(studyResult);
+                    .retrieveCurrentComponentResult(studyResult).get();
             assertThat(retrievedComponentResult).isEqualTo(componentResult2);
         });
     }
@@ -815,23 +724,20 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Start a study and its first two components
         long studyResultId = createStudyResult(study);
         startComponentByPosition(1, study, studyResultId);
-        long componentResultId2 = startComponentByPosition(2, study,
-                studyResultId);
+        long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
         // Set the second ComponentResult to FINISHED
         jpaApi.withTransaction(() -> {
-            ComponentResult componentResult2 = componentResultDao
-                    .findById(componentResultId2);
+            ComponentResult componentResult2 = componentResultDao.findById(componentResultId2);
             componentResult2.setComponentState(ComponentState.FINISHED);
             componentResultDao.update(componentResult2);
         });
 
-        // Check that null is returned
+        // Check that component result is empty
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult retrievedComponentResult = publixUtils
-                    .retrieveCurrentComponentResult(studyResult);
-            assertThat(retrievedComponentResult).isNull();
+            assertThat(publixUtils.retrieveCurrentComponentResult(studyResult).isPresent())
+                    .isFalse();
         });
     }
 
@@ -846,21 +752,17 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Start a study and its first two components
         long studyResultId = createStudyResult(study);
         startComponentByPosition(1, study, studyResultId);
-        long componentResultId2 = startComponentByPosition(2, study,
-                studyResultId);
+        long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
         // Check that the second result is returned since it is not 'done' -
         // even if the one 'asked' for is the third component
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult2 = componentResultDao
-                    .findById(componentResultId2);
+            ComponentResult componentResult2 = componentResultDao.findById(componentResultId2);
             try {
                 ComponentResult retrievedComponentResult = publixUtils
-                        .retrieveStartedComponentResult(study.getComponent(3),
-                                studyResult);
-                assertThat(retrievedComponentResult)
-                        .isEqualTo(componentResult2);
+                        .retrieveStartedComponentResult(study.getComponent(3), studyResult);
+                assertThat(retrievedComponentResult).isEqualTo(componentResult2);
             } catch (ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -878,13 +780,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Start a study and its first two components
         long studyResultId = createStudyResult(study);
         startComponentByPosition(1, study, studyResultId);
-        long componentResultId2 = startComponentByPosition(2, study,
-                studyResultId);
+        long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
         // Set the second ComponentResult to FINISHED
         jpaApi.withTransaction(() -> {
-            ComponentResult componentResult2 = componentResultDao
-                    .findById(componentResultId2);
+            ComponentResult componentResult2 = componentResultDao.findById(componentResultId2);
             componentResult2.setComponentState(ComponentState.FINISHED);
             componentResultDao.update(componentResult2);
         });
@@ -893,14 +793,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // since the last one is 'done'
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-            ComponentResult componentResult2 = componentResultDao
-                    .findById(componentResultId2);
+            ComponentResult componentResult2 = componentResultDao.findById(componentResultId2);
             try {
                 ComponentResult retrievedComponentResult = publixUtils
-                        .retrieveStartedComponentResult(study.getComponent(2),
-                                studyResult);
-                assertThat(retrievedComponentResult)
-                        .isNotEqualTo(componentResult2);
+                        .retrieveStartedComponentResult(study.getComponent(2), studyResult);
+                assertThat(retrievedComponentResult).isNotEqualTo(componentResult2);
                 assertThat(retrievedComponentResult.getComponent())
                         .isEqualTo(study.getComponent(2));
             } catch (ForbiddenReloadException e) {
@@ -917,7 +814,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            Component component = study.getFirstComponent();
+            Component component = study.getFirstComponent().get();
             component.setActive(false);
             componentDao.update(component);
         });
@@ -925,8 +822,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         jpaApi.withTransaction(() -> {
             try {
                 Study s = studyDao.findById(study.getId());
-                Component component = publixUtils
-                        .retrieveFirstActiveComponent(s);
+                Component component = publixUtils.retrieveFirstActiveComponent(s);
                 assertThat(component).isEqualTo(s.getComponent(2));
             } catch (NotFoundPublixException e) {
                 throw new RuntimeException(e);
@@ -972,11 +868,16 @@ public abstract class PublixUtilsTest<T extends Worker> {
         long studyResultId = createStudyResultAndStartFirstComponent(study);
 
         jpaApi.withTransaction(() -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
-            Component component = publixUtils
-                    .retrieveNextActiveComponent(studyResult);
-            // Next component is the 2nd
-            assertThat(component).isEqualTo(study.getComponent(2));
+            try {
+                StudyResult studyResult = studyResultDao.findById(studyResultId);
+                Optional<Component> component =
+                        publixUtils.retrieveNextActiveComponent(studyResult);
+                assertThat(component.isPresent()).isTrue();
+                // Next component is the 2nd
+                assertThat(component.get()).isEqualTo(study.getComponent(2));
+            } catch (InternalServerErrorPublixException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
@@ -999,11 +900,15 @@ public abstract class PublixUtilsTest<T extends Worker> {
         long studyResultId = createStudyResultAndStartFirstComponent(study);
 
         jpaApi.withTransaction(() -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
-            Component component = publixUtils
-                    .retrieveNextActiveComponent(studyResult);
-            // Since all components are not active it should be null
-            assertThat(component).isNull();
+            try {
+                StudyResult studyResult = studyResultDao.findById(studyResultId);
+                Optional<Component> component =
+                        publixUtils.retrieveNextActiveComponent(studyResult);
+                // Since all components are not active it should not be present
+                assertThat(component.isPresent()).isFalse();
+            } catch (InternalServerErrorPublixException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
@@ -1018,11 +923,10 @@ public abstract class PublixUtilsTest<T extends Worker> {
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
             try {
-                Component component = publixUtils.retrieveComponent(s,
-                        s.getLastComponent().getId());
-                assertThat(component).isEqualTo(s.getLastComponent());
-            } catch (NotFoundPublixException | BadRequestPublixException
-                    | ForbiddenPublixException e) {
+                Component component =
+                        publixUtils.retrieveComponent(s, s.getLastComponent().get().getId());
+                assertThat(component).isEqualTo(s.getLastComponent().get());
+            } catch (NotFoundPublixException | BadRequestPublixException | ForbiddenPublixException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -1061,13 +965,12 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.retrieveComponent(study,
-                        clone.getFirstComponent().getId());
+                publixUtils.retrieveComponent(study, clone.getFirstComponent().get().getId());
                 Fail.fail();
             } catch (BadRequestPublixException e) {
                 assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
                         .componentNotBelongToStudy(study.getId(),
-                                clone.getFirstComponent().getId()));
+                                clone.getFirstComponent().get().getId()));
             } catch (NotFoundPublixException | ForbiddenPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1083,20 +986,19 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            Component component = study.getFirstComponent();
+            Component component = study.getFirstComponent().get();
             component.setActive(false);
             componentDao.update(component);
         });
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.retrieveComponent(study,
-                        study.getFirstComponent().getId());
+                publixUtils.retrieveComponent(study, study.getFirstComponent().get().getId());
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        PublixErrorMessages.componentNotActive(study.getId(),
-                                study.getFirstComponent().getId()));
+                assertThat(e.getMessage())
+                        .isEqualTo(PublixErrorMessages.componentNotActive(study.getId(),
+                                study.getFirstComponent().get().getId()));
             } catch (NotFoundPublixException | BadRequestPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1112,9 +1014,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                Component component = publixUtils
-                        .retrieveComponentByPosition(study.getId(), 1);
-                assertThat(component).isEqualTo(study.getFirstComponent());
+                Component component = publixUtils.retrieveComponentByPosition(study.getId(), 1);
+                assertThat(component).isEqualTo(study.getFirstComponent().get());
             } catch (PublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1134,8 +1035,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 publixUtils.retrieveComponentByPosition(study.getId(), null);
                 Fail.fail();
             } catch (BadRequestPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
+                assertThat(e.getMessage())
+                        .isEqualTo(PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
             } catch (PublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1193,8 +1094,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 publixUtils.retrieveStudy(999L);
                 Fail.fail();
             } catch (NotFoundPublixException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(PublixErrorMessages.studyNotExist(999L));
+                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.studyNotExist(999L));
             }
         });
     }
@@ -1210,8 +1110,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         jpaApi.withTransaction(() -> {
             try {
                 Study s = studyDao.findById(study.getId());
-                publixUtils.checkComponentBelongsToStudy(s,
-                        s.getFirstComponent());
+                publixUtils.checkComponentBelongsToStudy(s, s.getFirstComponent().get());
             } catch (BadRequestPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1232,13 +1131,12 @@ public abstract class PublixUtilsTest<T extends Worker> {
             try {
                 Study s = studyDao.findById(study.getId());
                 Study c = studyDao.findById(clone.getId());
-                publixUtils.checkComponentBelongsToStudy(s,
-                        c.getFirstComponent());
+                publixUtils.checkComponentBelongsToStudy(s, c.getFirstComponent().get());
                 Fail.fail();
             } catch (BadRequestPublixException e) {
                 assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
                         .componentNotBelongToStudy(study.getId(),
-                                clone.getFirstComponent().getId()));
+                                clone.getFirstComponent().get().getId()));
             }
         });
     }
@@ -1330,8 +1228,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
             Batch batch = batchDao.findById(batchId);
             Batch retrievedBatch;
             try {
-                retrievedBatch = publixUtils
-                        .retrieveBatchByIdOrDefault(batch.getId(), study);
+                retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(batch.getId(), study);
             } catch (NotFoundPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1400,31 +1297,28 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 // PRE && first (active) => stays in PRE
                 studyResult.setStudyState(StudyState.PRE);
                 publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                        study.getFirstComponent().getId());
+                        study.getFirstComponent().get().getId());
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
 
                 // STARTED && first => keeps state
                 studyResult.setStudyState(StudyState.STARTED);
                 publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                        study.getFirstComponent().getId());
-                assertThat(studyResult.getStudyState())
-                        .isEqualTo(StudyState.STARTED);
+                        study.getFirstComponent().get().getId());
+                assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 
                 // PRE && second => changes to STARTED
                 studyResult.setStudyState(StudyState.PRE);
                 publixUtils.setPreStudyStateByComponentId(studyResult, study,
                         study.getComponent(2).getId());
-                assertThat(studyResult.getStudyState())
-                        .isEqualTo(StudyState.STARTED);
+                assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 
                 // STARTED && second => keeps state
                 studyResult.setStudyState(StudyState.STARTED);
                 publixUtils.setPreStudyStateByComponentId(studyResult, study,
                         study.getComponent(2).getId());
-                assertThat(studyResult.getStudyState())
-                        .isEqualTo(StudyState.STARTED);
+                assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
             } catch (NotFoundPublixException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         });
     }
@@ -1435,8 +1329,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
             try {
-                publixUtils.startComponent(study.getFirstComponent(),
-                        studyResult);
+                publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
             } catch (ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -1444,12 +1337,10 @@ public abstract class PublixUtilsTest<T extends Worker> {
         });
     }
 
-    private long startComponentByPosition(int position, Study study,
-            long studyResultId) {
+    private long startComponentByPosition(int position, Study study, long studyResultId) {
         return jpaApi.withTransaction(() -> {
             try {
-                StudyResult studyResult = studyResultDao
-                        .findById(studyResultId);
+                StudyResult studyResult = studyResultDao.findById(studyResultId);
                 ComponentResult componentResult = publixUtils.startComponent(
                         study.getComponent(position), studyResult);
                 return componentResult.getId();
@@ -1464,13 +1355,12 @@ public abstract class PublixUtilsTest<T extends Worker> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
-
             return studyResult.getId();
         });
     }
 
-    private void startComponentAndSetData(Study study, long studyResultId,
-            int position, String data) {
+    private void startComponentAndSetData(Study study, long studyResultId, int position,
+            String data) {
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             try {

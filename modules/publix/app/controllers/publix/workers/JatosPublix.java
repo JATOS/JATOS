@@ -8,6 +8,7 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.PublixException;
 import general.common.Common;
 import general.common.StudyLogger;
@@ -31,6 +32,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Optional;
 
 /**
  * Implementation of JATOS' public API for studies and components that are
@@ -167,8 +169,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 jatosRun = JatosRun.RUN_COMPONENT_FINISHED;
                 break;
             case RUN_COMPONENT_FINISHED:
-                ComponentResult lastComponentResult =
-                        publixUtils.retrieveLastComponentResult(studyResult);
+                ComponentResult lastComponentResult = studyResult.getLastComponentResult()
+                        .orElseThrow(() -> new InternalServerErrorPublixException(
+                                "Couldn't find last run component.")
+                        );
                 if (!lastComponentResult.getComponent().equals(component)) {
                     // It's already the second component (first is finished and it
                     // isn't a reload of the same one). Finish study after first component.
@@ -208,7 +212,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         JatosRun jatosRun = idCookie.getJatosRun();
         switch (jatosRun) {
             case RUN_STUDY:
-                studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
                 break;
             case RUN_COMPONENT_START:
                 // Should never happen
@@ -222,14 +225,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         }
         idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
 
-        Component nextComponent = publixUtils.retrieveNextActiveComponent(studyResult);
-        if (nextComponent == null) {
+        Optional<Component> nextComponent = publixUtils.retrieveNextActiveComponent(studyResult);
+        if (!nextComponent.isPresent()) {
             // Study has no more components -> finish it
-            return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyId, studyResult.getId(), true, null));
+            return redirect(controllers.publix.routes.PublixInterceptor.finishStudy(
+                    studyId, studyResult.getId(), true, null));
+        } else {
+            return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
+                    studyId, nextComponent.get().getId(), studyResult.getId()));
         }
-        return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, nextComponent.getId(), studyResult.getId()));
     }
 
     @Override

@@ -9,10 +9,7 @@ import utils.common.JsonUtils;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Domain model / entity of a study. Used for JSON marshalling and JPA
@@ -269,11 +266,7 @@ public class Study {
      */
     public Integer getComponentPosition(Component component) {
         int index = componentList.indexOf(component);
-        if (index != -1) {
-            return index + 1;
-        } else {
-            return null;
-        }
+        return index != -1 ? index + 1 : null;
     }
 
     public void addComponent(Component component) {
@@ -289,28 +282,31 @@ public class Study {
     }
 
     @JsonIgnore
-    public Component getFirstComponent() {
+    public Optional<Component> getFirstComponent() {
         if (componentList.size() > 0) {
-            return componentList.get(0);
+            return Optional.of(componentList.get(0));
+        } else {
+            return Optional.empty();
         }
-        return null;
     }
 
     @JsonIgnore
-    public Component getLastComponent() {
+    public Optional<Component> getLastComponent() {
         if (componentList.size() > 0) {
-            return componentList.get(componentList.size() - 1);
+            return Optional.of(componentList.get(componentList.size() - 1));
+        } else {
+            return Optional.empty();
         }
-        return null;
     }
 
     @JsonIgnore
-    public Component getNextComponent(Component component) {
+    public Optional<Component> getNextComponent(Component component) {
         int index = componentList.indexOf(component);
         if (index < componentList.size() - 1) {
-            return componentList.get(index + 1);
+            return Optional.of(componentList.get(index + 1));
+        } else {
+            return Optional.empty();
         }
-        return null;
     }
 
     public void setBatchList(List<Batch> batchList) {

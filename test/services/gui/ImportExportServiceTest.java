@@ -119,7 +119,7 @@ public class ImportExportServiceTest {
         // Change properties of first component, so we have something to check
         // later on
         Component firstComponent = jpaApi.withTransaction(() -> {
-            Component component = study.getFirstComponent();
+            Component component = study.getFirstComponent().get();
             component = testHelper.fetchTheLazyOnes(component);
             component.setTitle("Another Component Title");
             component.setActive(false);
@@ -177,12 +177,13 @@ public class ImportExportServiceTest {
         // Remove the last component (so we can import it again later on)
         Study studyWithoutLast = jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            componentService.remove(s.getLastComponent());
+            componentService.remove(s.getLastComponent().get());
             return s;
         });
 
         // Check that the last component is removed
-        assertThat(studyWithoutLast.getLastComponent().getTitle()).isNotEqualTo("Quit button");
+        assertThat(studyWithoutLast.getLastComponent().get().getTitle())
+                .isNotEqualTo("Quit button");
 
         // Import 1. part: Call importComponent()
         ObjectNode jsonNode = jpaApi.withTransaction(() -> {
@@ -210,8 +211,8 @@ public class ImportExportServiceTest {
         });
 
         // Check all properties of the imported component
-        Component importedComponent = studyWithImportedComponent.getLastComponent();
-        assertThat(study.getLastComponent().getTitle()).isEqualTo("Quit button");
+        Component importedComponent = studyWithImportedComponent.getLastComponent().get();
+        assertThat(study.getLastComponent().get().getTitle()).isEqualTo("Quit button");
         assertThat(importedComponent.getId()).isNotNull();
         assertThat(importedComponent.getUuid()).isEqualTo("503941c3-a0d5-43dc-ae56-083ab08df4b2");
         assertThat(importedComponent.getComments()).isEqualTo("");
@@ -441,7 +442,7 @@ public class ImportExportServiceTest {
         importStudyConfirmed(node);
 
         Study importedStudy = jpaApi.withTransaction(
-                () -> studyDao.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617"));
+                () -> studyDao.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617").get());
         // Check that properties are unchanged
         assertThat(importedStudy.getTitle()).isEqualTo("Basic Example Study");
         // Check that assets are renamed (have '_2' suffix)
@@ -611,7 +612,7 @@ public class ImportExportServiceTest {
     private void checkPropertiesOfBasicExampleStudy(Study study, User admin) {
         assertThat(study.getComponentList().size()).isEqualTo(7);
         assertThat(study.getComponent(1).getTitle()).isEqualTo("Show JSON input ");
-        assertThat(study.getLastComponent().getTitle()).isEqualTo("Quit button");
+        assertThat(study.getLastComponent().get().getTitle()).isEqualTo("Quit button");
         assertThat(study.getDate()).isNull();
         assertThat(study.getDescription()).isEqualTo("A couple of sample components.");
         assertThat(study.getId()).isPositive();
@@ -642,7 +643,7 @@ public class ImportExportServiceTest {
 
     private void alterStudyProperties(Study study) {
         study.getComponentList().remove(0);
-        study.getLastComponent().setTitle("Another Component Title");
+        study.getLastComponent().get().setTitle("Another Component Title");
         study.setDescription("Another description");
         study.setJsonData("{}");
         study.setTitle("Another Title");

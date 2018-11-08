@@ -1,22 +1,7 @@
 package controllers.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static play.test.Helpers.route;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
-import javax.inject.Inject;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.publix.ForbiddenReloadException;
@@ -25,6 +10,11 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.JatosWorker;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -40,6 +30,13 @@ import services.gui.StudyService;
 import services.gui.UserService;
 import services.publix.ResultCreator;
 import services.publix.workers.JatosPublixUtils;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static play.test.Helpers.route;
 
 /**
  * A study can be locked. Then it shouldn't be possible to change its
@@ -105,10 +102,10 @@ public class LockedStudyControllerTest {
      * HTTP status 403.
      */
     private void checkForbiddenBecauseLocked(Call call, String method) {
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method(method)
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(call.url());
         testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
     }
@@ -124,7 +121,7 @@ public class LockedStudyControllerTest {
      * Check that Batches.submitCreated() doesn't work if study is locked
      */
     @Test
-    public void callBatchesSubmitCreated() throws Exception {
+    public void callBatchesSubmitCreated() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Batches.submitCreated(study.getId());
@@ -136,7 +133,7 @@ public class LockedStudyControllerTest {
      * locked
      */
     @Test
-    public void callBatchesSubmitEditedProperties() throws Exception {
+    public void callBatchesSubmitEditedProperties() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Batches.submitEditedProperties(
@@ -148,7 +145,7 @@ public class LockedStudyControllerTest {
      * Check that Batches.toggleActive() doesn't work if study is locked
      */
     @Test
-    public void callBatchesToggleActive() throws Exception {
+    public void callBatchesToggleActive() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Batches.toggleActive(study.getId(),
@@ -161,12 +158,11 @@ public class LockedStudyControllerTest {
      * locked
      */
     @Test
-    public void callBatchesToggleAllowedWorkerType() throws Exception {
+    public void callBatchesToggleAllowedWorkerType() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Batches.toggleAllowedWorkerType(
-                study.getId(), study.getDefaultBatch().getId(),
-                JatosWorker.WORKER_TYPE, true);
+                study.getId(), study.getDefaultBatch().getId(), JatosWorker.WORKER_TYPE, true);
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -174,11 +170,11 @@ public class LockedStudyControllerTest {
      * Check that Batches.remove() doesn't work if study is locked
      */
     @Test
-    public void callBatchesRemove() throws Exception {
+    public void callBatchesRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
-        Call call = controllers.gui.routes.Batches.remove(study.getId(),
-                study.getDefaultBatch().getId());
+        Call call = controllers.gui.routes.Batches
+                .remove(study.getId(), study.getDefaultBatch().getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -187,7 +183,7 @@ public class LockedStudyControllerTest {
      * locked
      */
     @Test
-    public void callBatchesCreatePersonalSingleRun() throws Exception {
+    public void callBatchesCreatePersonalSingleRun() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Batches.createPersonalSingleRun(
@@ -200,7 +196,7 @@ public class LockedStudyControllerTest {
      * locked
      */
     @Test
-    public void callBatchesCreatePersonalMultipleRun() throws Exception {
+    public void callBatchesCreatePersonalMultipleRun() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Batches.createPersonalMultipleRun(
@@ -212,11 +208,10 @@ public class LockedStudyControllerTest {
      * Check that Components.submitCreated() doesn't work if study is locked
      */
     @Test
-    public void callComponentsSubmitCreated() throws Exception {
+    public void callComponentsSubmitCreated() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
-        Call call = controllers.gui.routes.Components
-                .submitCreated(study.getId());
+        Call call = controllers.gui.routes.Components.submitCreated(study.getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -224,11 +219,11 @@ public class LockedStudyControllerTest {
      * Check that Components.submitEdited() doesn't work if study is locked
      */
     @Test
-    public void callComponentsSubmitEdited() throws Exception {
+    public void callComponentsSubmitEdited() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Components
-                .submitEdited(study.getId(), study.getFirstComponent().getId());
+                .submitEdited(study.getId(), study.getFirstComponent().get().getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -236,11 +231,11 @@ public class LockedStudyControllerTest {
      * Check that Components.toggleActive() doesn't work if study is locked
      */
     @Test
-    public void callComponentsToggleActive() throws Exception {
+    public void callComponentsToggleActive() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Components.toggleActive(
-                study.getId(), study.getFirstComponent().getId(), true);
+                study.getId(), study.getFirstComponent().get().getId(), true);
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -248,11 +243,11 @@ public class LockedStudyControllerTest {
      * Check that Components.cloneComponent() doesn't work if study is locked
      */
     @Test
-    public void callComponentsCloneComponent() throws Exception {
+    public void callComponentsCloneComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Components.cloneComponent(
-                study.getId(), study.getFirstComponent().getId());
+                study.getId(), study.getFirstComponent().get().getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -260,11 +255,11 @@ public class LockedStudyControllerTest {
      * Check that Components.remove() doesn't work if study is locked
      */
     @Test
-    public void callComponentsRemove() throws Exception {
+    public void callComponentsRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Components.remove(study.getId(),
-                study.getFirstComponent().getId());
+                study.getFirstComponent().get().getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -272,11 +267,10 @@ public class LockedStudyControllerTest {
      * Check that ImportExport.importComponent() doesn't work if study is locked
      */
     @Test
-    public void callImportExportImportComponent() throws Exception {
+    public void callImportExportImportComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
-        Call call = controllers.gui.routes.ImportExport
-                .importComponent(study.getId());
+        Call call = controllers.gui.routes.ImportExport.importComponent(study.getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
@@ -285,16 +279,15 @@ public class LockedStudyControllerTest {
      * is locked
      */
     @Test
-    public void callImportExportImportComponentConfirmed() throws Exception {
+    public void callImportExportImportComponentConfirmed() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
-        Call call = controllers.gui.routes.ImportExport
-                .importComponentConfirmed(study.getId());
+        Call call = controllers.gui.routes.ImportExport.importComponentConfirmed(study.getId());
         checkForbiddenBecauseLocked(call, Helpers.POST);
     }
 
     @Test
-    public void callStudiesSubmitEdited() throws Exception {
+    public void callStudiesSubmitEdited() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Studies.submitEdited(study.getId());
@@ -302,7 +295,7 @@ public class LockedStudyControllerTest {
     }
 
     @Test
-    public void callStudiesRemove() throws Exception {
+    public void callStudiesRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Studies.remove(study.getId());
@@ -310,7 +303,7 @@ public class LockedStudyControllerTest {
     }
 
     @Test
-    public void callStudiesChangeComponentOrder() throws Exception {
+    public void callStudiesChangeComponentOrder() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         lockStudy(study);
         Call call = controllers.gui.routes.Studies.changeComponentOrder(
@@ -319,8 +312,7 @@ public class LockedStudyControllerTest {
     }
 
     @Test
-    public void callExportComponentResults()
-            throws IOException, ForbiddenReloadException {
+    public void callExportComponentResults() {
         // Create a study with a StudyResult
         long firstComponentResultId = jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
@@ -336,23 +328,20 @@ public class LockedStudyControllerTest {
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
             try {
-                jatosPublixUtils.startComponent(study.getFirstComponent(),
-                        studyResult);
-                jatosPublixUtils.startComponent(study.getFirstComponent(),
-                        studyResult);
+                jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
+                jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
             } catch (ForbiddenReloadException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
             return studyResult.getComponentResultList().get(0).getId();
         });
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.ImportExport
-                        .exportDataOfComponentResults(
-                                String.valueOf(firstComponentResultId)).url());
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(controllers.gui.routes.ImportExport.exportDataOfComponentResults(
+                        String.valueOf(firstComponentResultId)).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(Http.Status.OK);

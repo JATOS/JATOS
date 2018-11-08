@@ -65,10 +65,9 @@ public class CheckerTest {
      * Test Checker.checkStandardForComponents()
      */
     @Test
-    public void checkCheckStandardForComponents()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkCheckStandardForComponents() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
 
         try {
             checker.checkStandardForComponents(study.getId(), component.getId(), component);
@@ -87,12 +86,11 @@ public class CheckerTest {
 
         component.setStudy(null);
         try {
-            checker.checkStandardForComponents(study.getId(), component.getId(),
-                    component);
+            checker.checkStandardForComponents(study.getId(), component.getId(), component);
             Fail.fail();
         } catch (BadRequestException e) {
-            assertThat(e.getMessage()).isEqualTo(
-                    MessagesStrings.componentHasNoStudy(component.getId()));
+            assertThat(e.getMessage())
+                    .isEqualTo(MessagesStrings.componentHasNoStudy(component.getId()));
         }
 
         component = null;
@@ -134,8 +132,7 @@ public class CheckerTest {
         } catch (ForbiddenException e) {
             Fail.fail();
         } catch (BadRequestException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(MessagesStrings.studyNotExist(1l));
+            assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotExist(1l));
         }
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -150,9 +147,8 @@ public class CheckerTest {
             checker.checkStandardForStudy(study, study.getId(), admin);
             Fail.fail();
         } catch (ForbiddenException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(MessagesStrings.studyNotUser(admin.getName(),
-                            admin.getEmail(), study.getId(), study.getTitle()));
+            assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotUser(admin.getName(),
+                    admin.getEmail(), study.getId(), study.getTitle()));
         } catch (BadRequestException e) {
             Fail.fail();
         }

@@ -54,8 +54,7 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     public List<ComponentResult> findAllByComponent(Component component) {
-        String queryStr = "SELECT cr FROM ComponentResult cr "
-                + "WHERE cr.component=:component";
+        String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.component=:component";
         TypedQuery<ComponentResult> query = jpa.em().createQuery(queryStr, ComponentResult.class);
         return query.setParameter("component", component).getResultList();
     }

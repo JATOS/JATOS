@@ -9,10 +9,7 @@ import models.common.StudyResult;
 import play.data.validation.ValidationError;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Abstract domain model / entity of a worker. It's used for JSON marshaling and
@@ -117,9 +114,15 @@ public abstract class Worker {
     }
 
     @JsonIgnore
-    public StudyResult getLastStudyResult() {
-        return (!studyResultList.isEmpty())
-                ? studyResultList.get(studyResultList.size() - 1) : null;
+    public Optional<StudyResult> getFirstStudyResult() {
+        return !studyResultList.isEmpty()
+                ? Optional.of(studyResultList.get(0)) : Optional.empty();
+    }
+
+    @JsonIgnore
+    public Optional<StudyResult> getLastStudyResult() {
+        return !studyResultList.isEmpty()
+                ? Optional.of(studyResultList.get(studyResultList.size() - 1)) : Optional.empty();
     }
 
     public void addStudyResult(StudyResult studyResult) {

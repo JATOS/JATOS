@@ -77,11 +77,10 @@ public class ComponentServiceTest {
      * Test ComponentService.updateComponentAfterEdit
      */
     @Test
-    public void checkUpdateComponentAfterEdit()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkUpdateComponentAfterEdit() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         ComponentProperties updatedProps = new ComponentProperties();
         updatedProps.setActive(false);
         updatedProps.setComments("Changed comments");
@@ -96,42 +95,34 @@ public class ComponentServiceTest {
         // Use ComponentService.updateComponentAfterEdit()
         Component updatedComponent = jpaApi.withTransaction(() -> {
             componentService.updateComponentAfterEdit(component, updatedProps);
-            Component retrievedComponent = componentDao
-                    .findByUuid(component.getUuid(), study);
+            Component retrievedComponent =
+                    componentDao.findByUuid(component.getUuid(), study).get();
             testHelper.fetchTheLazyOnes(retrievedComponent.getStudy());
             return retrievedComponent;
         });
 
         // Check unchanged fields
-        assertThat(updatedComponent.isActive() == component.isActive())
-                .isTrue();
+        assertThat(updatedComponent.isActive() == component.isActive()).isTrue();
         assertThat(updatedComponent.getId().equals(component.getId())).isTrue();
         assertThat(updatedComponent.getStudy().equals(study)).isTrue();
-        assertThat(updatedComponent.getUuid().equals(component.getUuid()))
-                .isTrue();
-        assertThat(updatedComponent.getHtmlFilePath())
-                .isEqualTo(component.getHtmlFilePath());
+        assertThat(updatedComponent.getUuid().equals(component.getUuid())).isTrue();
+        assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(component.getHtmlFilePath());
 
         // Check changed fields
-        assertThat(updatedComponent.getComments())
-                .isEqualTo(updatedProps.getComments());
+        assertThat(updatedComponent.getComments()).isEqualTo(updatedProps.getComments());
         assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
-        assertThat(updatedComponent.getTitle())
-                .isEqualTo(updatedProps.getTitle());
-        assertThat(
-                updatedComponent.isReloadable() == updatedProps.isReloadable())
-                .isTrue();
+        assertThat(updatedComponent.getTitle()).isEqualTo(updatedProps.getTitle());
+        assertThat(updatedComponent.isReloadable() == updatedProps.isReloadable()).isTrue();
     }
 
     /**
      * Test ComponentService.renameHtmlFilePath()
      */
     @Test
-    public void checkRenameHtmlFilePath()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkRenameHtmlFilePath() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
 
         File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
                 component.getHtmlFilePath());
@@ -147,8 +138,7 @@ public class ComponentServiceTest {
         });
 
         // Check standard renaming
-        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
-                "foo.html");
+        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
         assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
         assertThat(htmlFile.exists());
     }
@@ -157,11 +147,10 @@ public class ComponentServiceTest {
      * Test ComponentService.renameHtmlFilePath()
      */
     @Test
-    public void checkRenameHtmlFilePathNewFileExists()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkRenameHtmlFilePathNewFileExists() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         // Study not set automatically, weird!
         component.setStudy(study);
 
@@ -173,13 +162,12 @@ public class ComponentServiceTest {
         jpaApi.withTransaction(() -> {
             try {
                 componentService.renameHtmlFilePath(component,
-                        study.getLastComponent().getHtmlFilePath());
+                        study.getLastComponent().get().getHtmlFilePath());
                 Fail.fail();
             } catch (IOException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        MessagesStrings.htmlFileNotRenamedBecauseExists(
-                                component.getHtmlFilePath(), study
-                                        .getLastComponent().getHtmlFilePath()));
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings
+                        .htmlFileNotRenamedBecauseExists(component.getHtmlFilePath(), study
+                                .getLastComponent().get().getHtmlFilePath()));
             }
         });
 
@@ -192,35 +180,31 @@ public class ComponentServiceTest {
      * Test ComponentService.renameHtmlFilePath()
      */
     @Test
-    public void checkRenameHtmlFilePathWithSubFolder()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkRenameHtmlFilePathWithSubFolder() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         // Study not set automatically, weird!
         component.setStudy(study);
 
-        File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
-                component.getHtmlFilePath());
+        File htmlFile =
+                ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
         assertThat(htmlFile.exists());
 
         // Create subfolder
-        File subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
-                "subfolder");
+        File subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder");
         subfolder.mkdir();
         assertThat(subfolder.exists());
 
         // Check renaming into a subfolder
         jpaApi.withTransaction(() -> {
             try {
-                componentService.renameHtmlFilePath(component,
-                        "subfolder/foo.html");
+                componentService.renameHtmlFilePath(component, "subfolder/foo.html");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
-        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
-                "subfolder/foo.html");
+        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder/foo.html");
         assertThat(component.getHtmlFilePath()).isEqualTo("subfolder/foo.html");
         assertThat(htmlFile.exists());
         assertThat(htmlFile.getParentFile().getName()).isEqualTo("subfolder");
@@ -233,8 +217,7 @@ public class ComponentServiceTest {
                 throw new UncheckedIOException(e);
             }
         });
-        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
-                "foo.html");
+        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
         assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
         assertThat(htmlFile.exists());
     }
@@ -243,11 +226,10 @@ public class ComponentServiceTest {
      * Test ComponentService.renameHtmlFilePath()
      */
     @Test
-    public void checkRenameHtmlFilePathEmptyNewFile()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkRenameHtmlFilePathEmptyNewFile() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         // Study not set automatically, weird!
         component.setStudy(study);
 
@@ -271,11 +253,10 @@ public class ComponentServiceTest {
      * Test ComponentService.renameHtmlFilePath()
      */
     @Test
-    public void checkRenameHtmlFilePathCurrentFileNotExistNewFileNotExist()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkRenameHtmlFilePathCurrentFileNotExistNewFileNotExist() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         // Study not set automatically, weird!
         component.setStudy(study);
 
@@ -296,8 +277,7 @@ public class ComponentServiceTest {
                 throw new UncheckedIOException(e);
             }
         });
-        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
-                "foo.html");
+        htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
         assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
         assertThat(!htmlFile.exists());
     }
@@ -306,11 +286,10 @@ public class ComponentServiceTest {
      * Test ComponentService.renameHtmlFilePath()
      */
     @Test
-    public void checkRenameHtmlFilePathCurrentFileNotExistNewFileExist()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkRenameHtmlFilePathCurrentFileNotExistNewFileExist() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component component = study.getFirstComponent();
+        Component component = study.getFirstComponent().get();
         // Study not set automatically, weird!
         component.setStudy(study);
 
@@ -318,7 +297,7 @@ public class ComponentServiceTest {
                 component.getHtmlFilePath());
         assertThat(htmlFile.exists());
         File differentHtmlFile = ioUtils.getFileInStudyAssetsDir(
-                study.getDirName(), study.getLastComponent().getHtmlFilePath());
+                study.getDirName(), study.getLastComponent().get().getHtmlFilePath());
         assertThat(differentHtmlFile.exists());
 
         // Remove current HTML file
@@ -330,13 +309,13 @@ public class ComponentServiceTest {
         jpaApi.withTransaction(() -> {
             try {
                 componentService.renameHtmlFilePath(component,
-                        study.getLastComponent().getHtmlFilePath());
+                        study.getLastComponent().get().getHtmlFilePath());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
         assertThat(component.getHtmlFilePath())
-                .isEqualTo(study.getLastComponent().getHtmlFilePath());
+                .isEqualTo(study.getLastComponent().get().getHtmlFilePath());
         assertThat(differentHtmlFile.exists());
     }
 
@@ -344,17 +323,15 @@ public class ComponentServiceTest {
      * Test ComponentService.clone()
      */
     @Test
-    public void checkCloneComponent()
-            throws NoSuchAlgorithmException, IOException {
+    public void checkCloneComponent() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Component original = study.getFirstComponent();
+        Component original = study.getFirstComponent().get();
         Component clone = componentService.clone(original);
 
         // Equal
         assertThat(clone.getComments()).isEqualTo(original.getComments());
-        assertThat(clone.getHtmlFilePath())
-                .isEqualTo(original.getHtmlFilePath());
+        assertThat(clone.getHtmlFilePath()).isEqualTo(original.getHtmlFilePath());
         assertThat(clone.getJsonData()).isEqualTo(original.getJsonData());
         assertThat(clone.getTitle()).isEqualTo(original.getTitle());
         assertThat(clone.isActive()).isEqualTo(original.isActive());

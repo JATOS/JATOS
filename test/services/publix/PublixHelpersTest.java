@@ -165,7 +165,7 @@ public class PublixHelpersTest {
             ComponentResult componentResult;
             try {
                 componentResult =
-                        publixUtils.startComponent(study.getFirstComponent(), studyResult);
+                        publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
             } catch (ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }

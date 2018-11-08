@@ -525,8 +525,8 @@ public class JsonUtils {
                     .collect(Collectors.toList());
             workerNode.set("batchList", Json.mapper().valueToTree(batchList));
 
-            String lastStudyState = worker.getLastStudyResult() != null ?
-                    worker.getLastStudyResult().getStudyState().name() : null;
+            Optional<StudyResult> last = worker.getLastStudyResult();
+            String lastStudyState = last.isPresent() ? last.get().getStudyState().name() : null;
             workerNode.put("lastStudyState", lastStudyState);
 
             addUserEmailForJatosWorker(worker, workerNode);

@@ -1,14 +1,7 @@
 package controllers.gui.useraccess;
 
-import javax.inject.Inject;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import daos.common.UserDao;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
@@ -16,6 +9,9 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -27,6 +23,8 @@ import play.test.Helpers;
 import services.gui.UserService;
 import services.publix.ResultCreator;
 import services.publix.workers.JatosPublixUtils;
+
+import javax.inject.Inject;
 
 /**
  * Testing controller actions of ComponentResults whether they have proper
@@ -93,33 +91,28 @@ public class ComponentResultUserAccessTest {
         Call call = controllers.gui.routes.ComponentResults
                 .componentResults(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
     public void callComponentResultsRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         StudyResult studyResult = createTwoComponentResults(study);
-        ComponentResult componentResult = studyResult.getComponentResultList()
-                .get(0);
-        Call call = controllers.gui.routes.ComponentResults
-                .remove(componentResult.getId().toString());
+        ComponentResult componentResult = studyResult.getComponentResultList().get(0);
+        Call call =
+                controllers.gui.routes.ComponentResults.remove(componentResult.getId().toString());
 
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 
         // Logged-in user must be an user of the study to which the
         // ComponentResult belongs that is to be deleted - if not an HTTP 403 is
         // expected
-        User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
-                "bla");
-        userAccessTestHelpers.checkThatCallIsForbidden(call, Helpers.DELETE,
-                someUser, "isn't user of study");
+        User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+        userAccessTestHelpers
+                .checkThatCallIsForbidden(call, Helpers.DELETE, someUser, "isn't user of study");
 
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE, testHelper.getAdmin());
 
         testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
@@ -127,13 +120,11 @@ public class ComponentResultUserAccessTest {
     private StudyResult createTwoComponentResults(Study study) {
         return jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
+            StudyResult studyResult = resultCreator
+                    .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
             try {
-                jatosPublixUtils.startComponent(study.getFirstComponent(),
-                        studyResult);
-                jatosPublixUtils.startComponent(study.getFirstComponent(),
-                        studyResult);
+                jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
+                jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
             } catch (ForbiddenReloadException e) {
                 e.printStackTrace();
             }
@@ -145,26 +136,20 @@ public class ComponentResultUserAccessTest {
     public void callComponentResultsRemoveAllOfComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.ComponentResults
-                .removeAllOfComponent(study.getId(),
-                        study.getComponent(1).getId());
+                .removeAllOfComponent(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.DELETE);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.DELETE);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE, testHelper.getAdmin());
     }
 
     @Test
     public void callComponentResultsTableDataByComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.ComponentResults
-                .tableDataByComponent(study.getId(),
-                        study.getComponent(1).getId());
+                .tableDataByComponent(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
 }

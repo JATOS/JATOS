@@ -11,6 +11,8 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.StudyAuthorisation;
 
+import java.util.Optional;
+
 /**
  * GeneralSinglePublix's implementation of StudyAuthorization
  *
@@ -27,8 +29,8 @@ public class GeneralSingleStudyAuthorisation extends StudyAuthorisation<GeneralS
         }
         // General Single Runs are used only once - don't start if worker has a
         // study result (although it is in state PRE)
-        if (!worker.getStudyResultList().isEmpty() &&
-                worker.getStudyResultList().get(0).getStudyState() != StudyResult.StudyState.PRE) {
+        Optional<StudyResult> first = worker.getFirstStudyResult();
+        if (first.isPresent() && first.get().getStudyState() != StudyResult.StudyState.PRE) {
             throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
 

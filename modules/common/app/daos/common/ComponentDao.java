@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * DAO for Component entity
@@ -50,17 +51,16 @@ public class ComponentDao extends AbstractDao {
      * Searches for components with this UUID within the study with the given
      * ID.
      */
-    public Component findByUuid(String uuid, Study study) {
+    public Optional<Component> findByUuid(String uuid, Study study) {
         String queryStr = "SELECT c FROM Component c WHERE "
                 + "c.uuid=:uuid and c.study=:study";
-        TypedQuery<Component> query = jpa.em().createQuery(queryStr,
-                Component.class);
+        TypedQuery<Component> query = jpa.em().createQuery(queryStr, Component.class);
         query.setParameter("uuid", uuid);
         query.setParameter("study", study);
         // There can be only one component with this UUID
         query.setMaxResults(1);
         List<Component> studyList = query.getResultList();
-        return studyList.isEmpty() ? null : studyList.get(0);
+        return !studyList.isEmpty() ? Optional.of(studyList.get(0)) : Optional.empty();
     }
 
     /**
@@ -69,8 +69,7 @@ public class ComponentDao extends AbstractDao {
      */
     public List<Component> findByTitle(String title) {
         String queryStr = "SELECT c FROM Component c WHERE " + "c.title=:title";
-        TypedQuery<Component> query = jpa.em().createQuery(queryStr,
-                Component.class);
+        TypedQuery<Component> query = jpa.em().createQuery(queryStr, Component.class);
         return query.setParameter("title", title).getResultList();
     }
 

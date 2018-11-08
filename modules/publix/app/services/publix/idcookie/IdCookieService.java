@@ -175,8 +175,7 @@ public class IdCookieService {
             Component component = componentResult.getComponent();
             idCookie.setComponentId(component.getId());
             idCookie.setComponentResultId(componentResult.getId());
-            idCookie.setComponentPosition(
-                    study.getComponentPosition(component));
+            idCookie.setComponentPosition(study.getComponentPosition(component));
         }
 
         // Might not have a GroupResult because it's not a group study

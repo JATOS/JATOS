@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -87,7 +88,7 @@ public class ImportExportService {
 
         Component uploadedComponent = unmarshalComponent(file);
         boolean componentExists =
-                componentDao.findByUuid(uploadedComponent.getUuid(), study) != null;
+                componentDao.findByUuid(uploadedComponent.getUuid(), study).isPresent();
 
         // Move uploaded component file to Java's tmp folder
         Path source = file.toPath();
@@ -101,8 +102,8 @@ public class ImportExportService {
         return objectNode;
     }
 
-    public void importComponentConfirmed(Study study,
-            String tempComponentFileName) throws IOException {
+    public void importComponentConfirmed(Study study, String tempComponentFileName)
+            throws IOException {
         File componentFile = getTempComponentFile(tempComponentFileName);
         if (componentFile == null) {
             LOGGER.warn(".importComponentConfirmed: unzipping failed, "
@@ -110,15 +111,14 @@ public class ImportExportService {
             throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
         }
         Component uploadedComponent = unmarshalComponent(componentFile);
-        Component currentComponent = componentDao.findByUuid(uploadedComponent.getUuid(), study);
-        boolean componentExistsInStudy = (currentComponent != null);
-        if (componentExistsInStudy) {
-            componentService.updateProperties(currentComponent, uploadedComponent);
+        Optional<Component> currentComponent =
+                componentDao.findByUuid(uploadedComponent.getUuid(), study);
+        if (currentComponent.isPresent()) {
+            componentService.updateProperties(currentComponent.get(), uploadedComponent);
             RequestScopeMessaging.success(MessagesStrings.componentsPropertiesOverwritten(
-                    currentComponent.getId(), uploadedComponent.getTitle()));
+                    currentComponent.get().getId(), uploadedComponent.getTitle()));
         } else {
-            componentService.createAndPersistComponent(study,
-                    uploadedComponent);
+            componentService.createAndPersistComponent(study, uploadedComponent);
             RequestScopeMessaging.success(MessagesStrings.importedNewComponent(
                     uploadedComponent.getId(), uploadedComponent.getTitle()));
         }
@@ -155,37 +155,31 @@ public class ImportExportService {
         Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
                 tempUnzippedStudyDir.getName());
 
-        Study currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
-        boolean studyExists = currentStudy != null;
+        Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
-        checkStudyImport(loggedInUser, currentStudy, studyExists);
+        if (currentStudy.isPresent() && !currentStudy.get().hasUser(loggedInUser)) {
+            String errorMsg = MessagesStrings.studyImportNotUser(currentStudy.get().getTitle());
+            throw new ForbiddenException(errorMsg);
+        }
 
         // Create JSON response
         ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put("studyExists", studyExists);
-        if (studyExists) {
-            responseJson.put("currentStudyTitle", currentStudy.getTitle());
-            responseJson.put("currentStudyUuid", currentStudy.getUuid());
-            responseJson.put("currentDirName", currentStudy.getDirName());
+        responseJson.put("studyExists", currentStudy.isPresent());
+        if (currentStudy.isPresent()) {
+            responseJson.put("currentStudyTitle", currentStudy.get().getTitle());
+            responseJson.put("currentStudyUuid", currentStudy.get().getUuid());
+            responseJson.put("currentDirName", currentStudy.get().getDirName());
         }
         responseJson.put("uploadedStudyTitle", uploadedStudy.getTitle());
         responseJson.put("uploadedStudyUuid", uploadedStudy.getUuid());
         responseJson.put("uploadedDirName", uploadedStudy.getDirName());
         responseJson.put("uploadedDirExists", uploadedDirExists);
-        if (!studyExists && uploadedDirExists) {
+        if (!currentStudy.isPresent() && uploadedDirExists) {
             String newDirName =
                     ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
             responseJson.put("newDirName", newDirName);
         }
         return responseJson;
-    }
-
-    private void checkStudyImport(User loggedInUser, Study currentStudy,
-            boolean studyExists) throws ForbiddenException {
-        if (studyExists && !currentStudy.hasUser(loggedInUser)) {
-            String errorMsg = MessagesStrings.studyImportNotUser(currentStudy.getTitle());
-            throw new ForbiddenException(errorMsg);
-        }
     }
 
     public void importStudyConfirmed(User loggedInUser, JsonNode json)
@@ -197,8 +191,8 @@ public class ImportExportService {
         }
         Boolean overwriteStudysProperties = json.findPath("overwriteStudysProperties").asBoolean();
         Boolean overwriteStudysDir = json.findPath("overwriteStudysDir").asBoolean();
-        Boolean keepCurrentDirName = json.findPath("keepCurrentDirName").booleanValue();
-        Boolean renameDir = json.findPath("renameDir").booleanValue();
+        boolean keepCurrentDirName = json.findPath("keepCurrentDirName").booleanValue();
+        boolean renameDir = json.findPath("renameDir").booleanValue();
 
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
@@ -207,15 +201,14 @@ public class ImportExportService {
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
         Study uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
-        Study currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
+        Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 
         // 1) study exists  -  udir exists - udir == cdir
         // 2) study exists  -  udir exists - udir != cdir
         // 3) study exists  - !udir exists
-        boolean studyExists = (currentStudy != null);
-        if (studyExists) {
+        if (currentStudy.isPresent()) {
             overwriteExistingStudy(loggedInUser, overwriteStudysProperties, overwriteStudysDir,
-                    keepCurrentDirName, tempUnzippedStudyDir, uploadedStudy, currentStudy);
+                    keepCurrentDirName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
             return;
         }
 

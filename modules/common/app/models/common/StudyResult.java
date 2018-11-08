@@ -9,10 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Domain model /entity of a study result. It's used for JSON marshalling and
@@ -50,6 +47,9 @@ public class StudyResult {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp lastSeenDate;
 
+    /**
+     * State of this study run (it actual should be called StudyResultState)
+     */
     public enum StudyState {
         PRE, // Preview of study (exists only in PersonalSingleWorker and GeneralSingleWorker)
         STARTED, // Study was started
@@ -268,6 +268,24 @@ public class StudyResult {
 
     public List<ComponentResult> getComponentResultList() {
         return this.componentResultList;
+    }
+
+    @JsonIgnore
+    public Optional<ComponentResult> getFirstComponentResult() {
+        if (componentResultList.size() > 0) {
+            return Optional.of(componentResultList.get(0));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @JsonIgnore
+    public Optional<ComponentResult> getLastComponentResult() {
+        if (componentResultList.size() > 0) {
+            return Optional.of(componentResultList.get(componentResultList.size() - 1));
+        } else {
+            return Optional.empty();
+        }
     }
 
     public void removeComponentResult(ComponentResult componentResult) {

@@ -34,6 +34,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Optional;
 
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk. A
@@ -100,38 +101,35 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
         // Check if it's just a preview coming from MTurk. We don't allow
         // previews.
-        if (mtAssignmentId != null
-                && mtAssignmentId.equals("ASSIGNMENT_ID_NOT_AVAILABLE")) {
+        if (mtAssignmentId != null && mtAssignmentId.equals("ASSIGNMENT_ID_NOT_AVAILABLE")) {
             // It's a preview coming from Mechanical Turk -> no previews
             throw new BadRequestPublixException(errorMessages.noPreviewAvailable(studyId));
         }
 
         // Check worker and create if doesn't exists
         if (mtWorkerId == null) {
-            throw new BadRequestPublixException(
-                    MTErrorMessages.NO_MTURK_WORKERID);
+            throw new BadRequestPublixException(MTErrorMessages.NO_MTURK_WORKERID);
         }
-        MTWorker worker = mtWorkerDao.findByMTWorkerId(mtWorkerId);
-        if (worker == null) {
+        Optional<MTWorker> worker = mtWorkerDao.findByMTWorkerId(mtWorkerId);
+        if (!worker.isPresent()) {
             String workerType = retrieveWorkerTypeFromQueryString();
             boolean isRequestFromMTurkSandbox = workerType
                     .equals(MTSandboxWorker.WORKER_TYPE);
-            worker = workerCreator.createAndPersistMTWorker(mtWorkerId,
-                    isRequestFromMTurkSandbox, batch);
+            worker = Optional.of(workerCreator.createAndPersistMTWorker(mtWorkerId,
+                    isRequestFromMTurkSandbox, batch));
         }
-        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(worker.get(), study, batch);
         LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
-                + batchId + ") " + "assigned to worker with ID "
-                + worker.getId());
+                + batchId + ") " + "assigned to worker with ID " + worker.get().getId());
 
         publixUtils.finishOldestStudyResult();
-        StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
+        StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker.get());
         publixUtils.setUrlQueryParameter(studyResult);
-        idCookieService.writeIdCookie(worker, batch, studyResult);
+        idCookieService.writeIdCookie(worker.get(), batch, studyResult);
 
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
         studyLogger.log(study, "Started study run with " + MTWorker.UI_WORKER_TYPE
-                + " worker", batch, worker);
+                + " worker", batch, worker.get());
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyId, firstComponent.getId(), studyResult.getId()));
     }

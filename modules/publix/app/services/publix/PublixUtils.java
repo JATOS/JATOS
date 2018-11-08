@@ -14,8 +14,8 @@ import utils.common.JsonUtils;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -83,8 +83,9 @@ public abstract class PublixUtils<T extends Worker> {
     public ComponentResult startComponent(Component component, StudyResult studyResult)
             throws ForbiddenReloadException {
         // Deal with the last component
-        ComponentResult lastComponentResult = retrieveLastComponentResult(studyResult);
-        if (lastComponentResult != null) {
+        Optional<ComponentResult> lastComponentResultOpt = studyResult.getLastComponentResult();
+        if (lastComponentResultOpt.isPresent()) {
+            ComponentResult lastComponentResult = lastComponentResultOpt.get();
             if (lastComponentResult.getComponent().equals(component)) {
                 // The component to be started is the same as the last one
                 if (component.isReloadable()) {
@@ -121,9 +122,9 @@ public abstract class PublixUtils<T extends Worker> {
      */
     public void abortStudy(String message, StudyResult studyResult) {
         // Put current ComponentResult into state ABORTED
-        ComponentResult currentComponentResult = retrieveCurrentComponentResult(studyResult);
-        finishComponentResult(currentComponentResult, ComponentState.ABORTED);
-
+        retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
+            finishComponentResult(currentComponentResult, ComponentState.ABORTED);
+        });
         // Finish the other ComponentResults
         finishAllComponentResults(studyResult);
 
@@ -157,15 +158,21 @@ public abstract class PublixUtils<T extends Worker> {
      */
     public String finishStudyResult(Boolean successful, String errorMsg, StudyResult studyResult) {
         String confirmationCode;
+        StudyState studyState;
+        ComponentState componentState;
         if (successful) {
             confirmationCode = studyResult.getWorker().generateConfirmationCode();
-            retrieveCurrentComponentResult(studyResult).setComponentState(ComponentState.FINISHED);
-            studyResult.setStudyState(StudyState.FINISHED);
+            componentState = ComponentState.FINISHED;
+            studyState = StudyState.FINISHED;
         } else {
             confirmationCode = null;
-            retrieveCurrentComponentResult(studyResult).setComponentState(ComponentState.FAIL);
-            studyResult.setStudyState(StudyState.FAIL);
+            componentState = ComponentState.FAIL;
+            studyState = StudyState.FAIL;
         }
+        retrieveCurrentComponentResult(studyResult)
+                .ifPresent(componentResult -> componentResult.setComponentState(componentState));
+        studyResult.setStudyState(studyState);
+
         finishAllComponentResults(studyResult);
         studyResult.setConfirmationCode(confirmationCode);
         studyResult.setErrorMsg(errorMsg);
@@ -250,35 +257,23 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     /**
-     * Returns the last ComponentResult in the given StudyResult (not study!) or
-     * null if it doesn't exist.
+     * Returns an Optional of the last ComponentResult's component (of the given StudyResult.
      */
-    public ComponentResult retrieveLastComponentResult(StudyResult studyResult) {
-        List<ComponentResult> componentResultList = studyResult.getComponentResultList();
-        if (!componentResultList.isEmpty()) {
-            return componentResultList.get(componentResultList.size() - 1);
+    public Optional<Component> retrieveLastComponent(StudyResult studyResult) {
+        return studyResult.getLastComponentResult().map(ComponentResult::getComponent);
+    }
+
+    /**
+     * Returns an Optional of the last ComponentResult of this studyResult but only if it's not
+     * 'done'.
+     */
+    public Optional<ComponentResult> retrieveCurrentComponentResult(StudyResult studyResult) {
+        Optional<ComponentResult> last = studyResult.getLastComponentResult();
+        if (last.isPresent() && !PublixHelpers.componentDone(last.get())) {
+            return last;
         } else {
-            return null;
+            return Optional.empty();
         }
-    }
-
-    /**
-     * Retrieves the last ComponentResult's component (of the given StudyResult)
-     * or null if it doesn't exist.
-     */
-    public Component retrieveLastComponent(StudyResult studyResult) {
-        ComponentResult componentResult = retrieveLastComponentResult(studyResult);
-        return (componentResult != null) ? componentResult.getComponent() : null;
-    }
-
-    /**
-     * Returns the last ComponentResult of this studyResult but only if it's not
-     * 'done'. Returns null if such ComponentResult doesn't exists.
-     */
-    public ComponentResult retrieveCurrentComponentResult(StudyResult studyResult) {
-        ComponentResult componentResult = retrieveLastComponentResult(studyResult);
-        if (PublixHelpers.componentDone(componentResult)) return null;
-        return componentResult;
     }
 
     /**
@@ -288,47 +283,43 @@ public abstract class PublixUtils<T extends Worker> {
      */
     public ComponentResult retrieveStartedComponentResult(Component component,
             StudyResult studyResult) throws ForbiddenReloadException {
-        ComponentResult componentResult = retrieveCurrentComponentResult(
-                studyResult);
-        // Start the component if it was never started (== null) or if it's
-        // a reload of the component
-        if (componentResult == null) {
-            componentResult = startComponent(component, studyResult);
-        }
-        return componentResult;
+        Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
+        // Start the component if it was never started or if it's a reload of the component
+        return current.isPresent() ? current.get() : startComponent(component, studyResult);
     }
 
     /**
      * Returns the first component in the given study that is active. If there
      * is no such component it throws a NotFoundPublixException.
      */
-    public Component retrieveFirstActiveComponent(Study study)
-            throws NotFoundPublixException {
-        Component component = study.getFirstComponent();
+    public Component retrieveFirstActiveComponent(Study study) throws NotFoundPublixException {
+        Optional<Component> component = study.getFirstComponent();
         // Find first active component or null if study has no active components
-        while (component != null && !component.isActive()) {
-            component = study.getNextComponent(component);
+        while (component.isPresent() && !component.get().isActive()) {
+            component = study.getNextComponent(component.get());
         }
-        if (component == null) {
+        if (!component.isPresent()) {
             throw new NotFoundPublixException(PublixErrorMessages
                     .studyHasNoActiveComponents(study.getId()));
         }
-        return component;
+        return component.get();
     }
 
     /**
-     * Returns the next active component in the list of components that
-     * correspond to the ComponentResults of the given StudyResult. Returns null
-     * if such component doesn't exist.
+     * Returns an Optional to the next active component in the list of components that
+     * correspond to the ComponentResults of the given StudyResult.
      */
-    public Component retrieveNextActiveComponent(StudyResult studyResult) {
-        Component currentComponent = retrieveLastComponent(studyResult);
-        Component nextComponent = studyResult.getStudy().getNextComponent(currentComponent);
+    public Optional<Component> retrieveNextActiveComponent(StudyResult studyResult)
+            throws InternalServerErrorPublixException {
+        Component current = retrieveLastComponent(studyResult).orElseThrow(() ->
+                new InternalServerErrorPublixException(
+                        "Couldn't find the last running component."));
+        Optional<Component> next = studyResult.getStudy().getNextComponent(current);
         // Find next active component or null if study has no more components
-        while (nextComponent != null && !nextComponent.isActive()) {
-            nextComponent = studyResult.getStudy().getNextComponent(nextComponent);
+        while (next.isPresent() && !next.get().isActive()) {
+            next = studyResult.getStudy().getNextComponent(next.get());
         }
-        return nextComponent;
+        return next;
     }
 
     /**

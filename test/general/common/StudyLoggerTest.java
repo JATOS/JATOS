@@ -218,7 +218,7 @@ public class StudyLoggerTest {
         Batch batch = study.getDefaultBatch();
 
         StudyResult studyResult1 = new StudyResult(study, batch, worker);
-        ComponentResult componentResult = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult = new ComponentResult(study.getFirstComponent().get());
         componentResult.setStudyResult(studyResult1);
         componentResult.setData("result data 1");
         studyResult1.addComponentResult(componentResult);
@@ -233,7 +233,7 @@ public class StudyLoggerTest {
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("componentUuid")).isTrue();
         assertThat(json.get("componentUuid").asText())
-                .isEqualTo(study.getFirstComponent().getUuid());
+                .isEqualTo(study.getFirstComponent().get().getUuid());
         assertThat(json.has("workerId")).isTrue();
         assertThat(json.get("workerId").asLong()).isEqualTo(worker.getId());
         assertThat(json.has("dataHash")).isTrue();
@@ -262,8 +262,9 @@ public class StudyLoggerTest {
 
         // Check component UUID
         assertThat(json.has("componentUuids")).isTrue();
-        json.get("componentUuids").forEach(
-                node -> assertThat(node.asText()).isEqualTo(study.getFirstComponent().getUuid()));
+        json.get("componentUuids").forEach(node ->
+                assertThat(node.asText()).isEqualTo(study.getFirstComponent().get().getUuid())
+        );
 
         // Check worker IDs
         assertThat(json.has("workerIds")).isTrue();
@@ -291,8 +292,9 @@ public class StudyLoggerTest {
 
         // Check component UUID
         assertThat(json.has("componentUuids")).isTrue();
-        json.get("componentUuids").forEach(
-                node -> assertThat(node.asText()).isEqualTo(study.getFirstComponent().getUuid()));
+        json.get("componentUuids").forEach(node ->
+                assertThat(node.asText()).isEqualTo(study.getFirstComponent().get().getUuid())
+        );
 
         // Check worker IDs
         assertThat(json.has("workerIds")).isTrue();
@@ -316,21 +318,21 @@ public class StudyLoggerTest {
 
     private List<StudyResult> get2StudyResults(Study study, Worker worker, Batch batch) {
         StudyResult studyResult1 = new StudyResult(study, batch, worker);
-        ComponentResult componentResult1 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult1 = new ComponentResult(study.getFirstComponent().get());
         componentResult1.setStudyResult(studyResult1);
         componentResult1.setData("result data 1");
         studyResult1.addComponentResult(componentResult1);
-        ComponentResult componentResult2 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult2 = new ComponentResult(study.getFirstComponent().get());
         componentResult2.setStudyResult(studyResult1);
         componentResult2.setData("result data 2");
         studyResult1.addComponentResult(componentResult2);
 
         StudyResult studyResult2 = new StudyResult(study, batch, worker);
-        ComponentResult componentResult3 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult3 = new ComponentResult(study.getFirstComponent().get());
         componentResult3.setStudyResult(studyResult2);
         componentResult3.setData("result data 3");
         studyResult2.addComponentResult(componentResult3);
-        ComponentResult componentResult4 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult4 = new ComponentResult(study.getFirstComponent().get());
         componentResult4.setStudyResult(studyResult2);
         // component result 4 gets no result data
         studyResult2.addComponentResult(componentResult4);
@@ -343,16 +345,16 @@ public class StudyLoggerTest {
 
     private List<ComponentResult> get4ComponentResults(Study study, Worker worker, Batch batch) {
         StudyResult studyResult = new StudyResult(study, batch, worker);
-        ComponentResult componentResult1 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult1 = new ComponentResult(study.getFirstComponent().get());
         componentResult1.setData("result data 1");
         componentResult1.setStudyResult(studyResult);
-        ComponentResult componentResult2 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult2 = new ComponentResult(study.getFirstComponent().get());
         componentResult2.setData("result data 2");
         componentResult2.setStudyResult(studyResult);
-        ComponentResult componentResult3 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult3 = new ComponentResult(study.getFirstComponent().get());
         componentResult3.setData("result data 3");
         componentResult3.setStudyResult(studyResult);
-        ComponentResult componentResult4 = new ComponentResult(study.getFirstComponent());
+        ComponentResult componentResult4 = new ComponentResult(study.getFirstComponent().get());
         // component result does not get a result data
         componentResult4.setStudyResult(studyResult);
 
