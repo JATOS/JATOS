@@ -167,8 +167,7 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Closes the group channel which includes sending a left message to all
-    * group members.
+    * Closes the group channel which includes sending a left message to all group members.
     */
   def closeGroupChannel(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
@@ -178,16 +177,13 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Close the group channel that belongs to the given StudyResult and
-    * GroupResult and tell every group member about it. It just sends the
-    * closing message to the GroupDispatcher
-    * without waiting for an answer. We don't use the StudyResult's GroupResult
-    * but ask for a separate parameter for the GroupResult because the
-    * StudyResult's GroupResult might already be null in the process of leaving
-    * a GroupResult.
+    * Close the group channel that belongs to the given StudyResult and GroupResult and tell every
+    * group member about it. It just sends the closing message to the GroupDispatcher without
+    * waiting for an answer. We don't use the StudyResult's GroupResult but ask for a separate
+    * parameter for the GroupResult because the StudyResult's GroupResult might already be null in
+    * the process of leaving a GroupResult.
     */
-  private def closeGroupChannel(studyResult: StudyResult, groupResult:
-  GroupResult): Unit = {
+  private def closeGroupChannel(studyResult: StudyResult, groupResult: GroupResult): Unit = {
     val groupDispatcherOption = getDispatcher(groupResult.getId)
     if (groupDispatcherOption.isDefined) {
       groupDispatcherOption.get ! PoisonChannel(studyResult.getId)
@@ -196,24 +192,20 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Closes the group channel that belongs to the given StudyResult and is
-    * managed by the given GroupDispatcher. Waits until it receives a result
-    * from the GroupDispatcher actor. It returns true if the
-    * GroupChannelActor was
-    * managed by the GroupDispatcher and was successfully removed from the
-    * GroupDispatcher - false otherwise (it was probably never managed by the
-    * dispatcher).
+    * Closes the group channel that belongs to the given StudyResult and is managed by the given
+    * GroupDispatcher. Waits (and blocks) until it receives a result from the GroupDispatcher actor.
+    * It returns true if the GroupChannelActor was managed by the GroupDispatcher and was
+    * successfully removed from the GroupDispatcher - false otherwise (it was probably never managed
+    * by the dispatcher).
     */
-  private def closeGroupChannelBlocking(studyResultId: Long,
-                                        groupDispatcher: ActorRef): Boolean = {
+  private def closeGroupChannelBlocking(studyResultId: Long, groupDispatcher: ActorRef): Boolean = {
     val future = groupDispatcher ? PoisonChannel(studyResultId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean]
   }
 
   /**
-    * Sends a message to each member of the group (the GroupResult this
-    * studyResult is in). This message tells that this member has joined the
-    * GroupResult.
+    * Sends a message to each member of the group (the GroupResult this studyResult is in). This
+    * message tells that this member has joined the GroupResult.
     */
   private def sendJoinedMsg(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
@@ -225,11 +217,10 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Sends a message to each member of the GroupResult that this member
-    * (specified by StudyResult) has left the GroupResult.
+    * Sends a message to each member of the GroupResult that this member (specified by StudyResult)
+    * has left the GroupResult.
     */
-  private def sendLeftMsg(studyResult: StudyResult, groupResult: GroupResult)
-  : Unit = {
+  private def sendLeftMsg(studyResult: StudyResult, groupResult: GroupResult): Unit = {
     if (groupResult != null) {
       val groupDispatcherOption = getDispatcher(groupResult.getId)
       if (groupDispatcherOption.isDefined)
@@ -238,8 +229,7 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Get the GroupDispatcher to this GroupResult. The answer is an
-    * ActorRef (to a GroupDispatcher).
+    * Get the GroupDispatcher to this GroupResult. The answer is an ActorRef (to a GroupDispatcher).
     */
   private def getDispatcher(groupResultId: Long): Option[ActorRef] = {
     val future = groupDispatcherRegistry ? Get(groupResultId)
@@ -248,9 +238,8 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Asks the GroupDispatcherRegistry to get or create a group dispatcher for
-    * the given ID. It waits until it receives an answer. The answer is an
-    * ActorRef (to a GroupDispatcher).
+    * Asks the GroupDispatcherRegistry to get or create a group dispatcher for the given ID. It
+    * waits until it receives an answer. The answer is an ActorRef (to a GroupDispatcher).
     */
   private def getOrCreateDispatcher(groupResultId: Long): ActorRef = {
     val future = groupDispatcherRegistry ? GetOrCreate(groupResultId)
@@ -259,9 +248,9 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
   }
 
   /**
-    * Reassigns the given group channel that is associated with the given
-    * StudyResult. It moves the group channel from the current GroupDispatcher
-    * to a different one that is associated with the given GroupResult.
+    * Reassigns the given group channel that is associated with the given StudyResult. It moves the
+    * group channel from the current GroupDispatcher to a different one that is associated with the
+    * given GroupResult.
     */
   def reassignGroupChannel(studyResult: StudyResult,
                            currentGroupResult: GroupResult,
