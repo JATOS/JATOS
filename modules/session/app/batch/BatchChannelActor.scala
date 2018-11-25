@@ -1,10 +1,9 @@
 package batch
 
-import javax.inject.Inject
-
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import batch.BatchDispatcher._
-import play.api.libs.json.JsObject
+import javax.inject.Inject
+import play.api.libs.json.{JsObject, Json}
 
 /**
   * BatchChannelActor is an Akka Actor that represents the batch channel's WebSocket.
@@ -36,13 +35,18 @@ class BatchChannelActor @Inject()(out: ActorRef,
 
   override def postStop() = batchDispatcher ! UnregisterChannel(studyResultId)
 
+  val pong = Json.obj("heartbeat" -> "pong")
+
   def receive = {
+    case msg: JsObject if msg.keys.contains("heartbeat") =>
+      // If we receive a heartbeat ping, answer directly with a pong
+      out ! pong
     case msg: JsObject =>
-      // If we receive an JSON object (can only come from the client) wrap it in a
+      // If we receive an JSON object (can only come from the client), wrap it in a
       // BatchMsg and forward it to the BatchDispatcher
       batchDispatcher ! BatchMsg(msg)
     case msg: BatchMsg =>
-      // If we receive a BatchMsg (can only come from the BatchDispatcher)
+      // If we receive a BatchMsg (can only come from the BatchDispatcher),
       // send the unwrapped JSON to the client
       out ! msg.json
     case _: PoisonChannel =>

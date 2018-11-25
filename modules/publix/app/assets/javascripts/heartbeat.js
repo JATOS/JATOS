@@ -2,7 +2,8 @@
  * heartbeat.js
  * 
  * Web worker used in jatos.js that sends a periodic Ajax request back to the
- * JATOS server.
+ * JATOS server. JATOS has two different kinds of heartbeats: this one and the
+ * channel heartbeats (not here defined).
  * 
  * http://www.jatos.org
  * Author Kristian Lange 2014 - 2016

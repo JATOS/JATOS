@@ -1,7 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2017
+ * Author Kristian Lange 2014 - 2018
  * Licensed under Apache License 2.0
  * 
  * Uses plugin jquery.ajax-retry:
@@ -126,49 +126,75 @@ var jatos = {};
 	 */
 	jatos.channelSendingTimeoutTime = 10000;
 	/**
-	 * JS timeout objects
+	 * Waiting time in ms between channel heartbeats
+	 */
+	jatos.channelHeartbeatInterval = 10000; //25000
+	/**
+	 * Waiting time in ms for JATOS answer to a channel heartbeat ('pong')
+	 */
+	jatos.channelHeartbeatTimeoutTime = 5000; //10000
+	/**
+	 * Waiting time in ms between checking if channels are closed unexpectedly
+	 */
+	jatos.channelClosedCheckInterval = 2000;
+	/**
+	 * Min and max waiting time between channel reopening attempts 
+	 */
+	jatos.channelOpeningBackoffTimeMin = 1000;
+	jatos.channelOpeningBackoffTimeMax = 120000; // 2 min
+	/**
+	 * Channel timeout and interval objects
 	 */
 	var batchSessionTimeout;
 	var groupSessionTimeout;
 	var groupFixedTimeout;
+	var batchChannelHeartbeatTimer;
+	var groupChannelHeartbeatTimer;
+	var batchChannelHeartbeatTimeoutTimers = [];
+	var groupChannelHeartbeatTimeoutTimers = [];
+	var batchChannelClosedCheckTimer;
+	var groupChannelClosedCheckTimer;
 	/**
 	 * Version of the current group and batch session data. This is used to prevent
 	 * concurrent changes of the data.
 	 */
-	var groupSessionVersion;
 	var batchSessionVersion;
+	var groupSessionVersion;
+	/**
+	 * Batch channel WebSocket: exchange date between study runs of a batch
+	 */
+	var batchChannel;
 	/**
 	 * Group channel WebSocket to exchange messages between workers of a group.
 	 * Not to be confused with 'jatos.groupChannels'. Accessible only by jatos.js.
 	 */
 	var groupChannel;
 	/**
-	 * Batch channel WebSocket: exchange date between study runs of a batch
+	 * Object with group channel callbacks (details in jatos.joinGroup)
 	 */
-	var batchChannel;
+	var groupChannelCallbacks;
 	/**
 	 * WebSocket support by the browser is needed for group channel.
 	 */
 	var webSocketSupported = 'WebSocket' in window;
 	/**
 	 * Web worker initialized in initJatos() that sends a periodic Ajax request
-	 * back to the JATOS server.
+	 * back to the JATOS server. Don't confuse with channel heartbeats.
 	 */
 	var heartbeatWorker;
-
 	/**
 	 * State booleans. If true jatos.js is in this state. Several states can be true
 	 * at the same time.
 	 */
 	var initialized = false;
-	var onJatosLoadCalled = false;
+	var onLoadCalled = false;
 	var startingComponent = false;
 	/**
 	 * jQuery.Deferred objects: can hold state pending, resolved, or rejected
 	 */
 	var openingBatchChannelDeferred;
 	var sendingBatchSessionDeferred;
-	var joiningGroupDeferred;
+	var openingGroupChannelDeferred;
 	var sendingGroupSessionDeferred;
 	var sendingGroupFixedDeferred;
 	var reassigningGroupDeferred;
@@ -179,7 +205,7 @@ var jatos = {};
 	/**
 	 * Callback function defined via jatos.onLoad.
 	 */
-	var onJatosLoad;
+	var onLoadCallback;
 	/**
 	 * Callback function defined via jatos.onBatchSession
 	 */
@@ -190,12 +216,14 @@ var jatos = {};
 	var onJatosError;
 
 	// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
-	// a component's jQuery version. Afterwards initialise (jatos.js will always be
-	// initialised - even if jatos.onLoad() is never called).
+	// a component's jQuery version. Afterwards call initJatos.
 	jatos.jQuery = {};
 	getScript('jatos-publix/javascripts/jquery-1.12.4.min.js', function () {
 		jatos.jQuery = jQuery.noConflict(true);
-		loadScripts(initJatos);
+		jatos.jQuery.ajaxSetup({
+			cache: true
+		});
+		initJatos();
 	});
 
 	/**
@@ -219,295 +247,388 @@ var jatos = {};
 	}
 
 	/**
-	 * Load and run additional JS.
+	 * Initialising jatos.js
 	 */
-	function loadScripts(onSuccess) {
-		if (!jQueryExists()) {
-			return;
-		}
-		jatos.jQuery.ajaxSetup({
-			cache: true
-		});
+	function initJatos() {
+
+		// There is a natural order to this world, and those who try to upend it do not fare well.
+		// 1) Load additional scripts
+		// 2) Do more init stuff that doesn't involve HTTP requests
+		// 3) Get init data from JATOS server
+		// 4) Try to open the batch channel
+		// 5) Call readyForOnLoad
 		jatos.jQuery.when(
-			// Plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-			jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
-			// JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
-			jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.js"),
-			// JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
-			jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.js"),
-			jatos.jQuery.Deferred(function (deferred) {
-				jatos.jQuery(deferred.resolve);
+				// Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
+				jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
+				// Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
+				jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.js"),
+				// Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
+				jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.js")
+			)
+			.then(function () {
+				jatos.studyResultId = getUrlQueryParameter("srid");
+				readIdCookie();
+				// Start the heartbeat (the general one - not the channel one)
+				if (window.Worker) {
+					heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
+					heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
+				}
 			})
-		).done(onSuccess).fail(function (err) {
-			callingOnError(null, getAjaxErrorMsg(err));
+			.then(getInitData)
+			.then(openBatchChannelWithRetry)
+			.always(function () {
+				initialized = true;
+				readyForOnLoad();
+			});
+	}
+
+	/**
+	 * Extracts the given URL query parameter from the URL query string
+	 */
+	function getUrlQueryParameter(parameter) {
+		var a = window.location.search.substr(1).split('&');
+		if (a === "") return {};
+		var b = {};
+		for (var i = 0; i < a.length; ++i) {
+			var p = a[i].split('=', 2);
+			if (p.length == 1)
+				b[p[0]] = "";
+			else
+				b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+		}
+		return b[parameter];
+	}
+
+	/**
+	 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
+	 * and stores all key-value pairs into jatos scope.
+	 */
+	function readIdCookie() {
+		var idCookieName = "JATOS_IDS";
+		var cookieArray = document.cookie.split(';');
+		var fillJatos = function (key, value) {
+			jatos[key] = value;
+		};
+		for (var i = 0; i < cookieArray.length; i++) {
+			var cookie = cookieArray[i];
+			// Remove leading spaces in cookie string
+			while (cookie.charAt(0) === ' ') {
+				cookie = cookie.substring(1, cookie.length);
+			}
+			if (cookie.indexOf(idCookieName) !== 0) {
+				continue;
+			}
+			var cookieStr = cookie.substr(
+				cookie.indexOf(idCookieName) + idCookieName.length + 3,
+				cookie.length);
+			var idArray = cookieStr.split("&");
+			var idMap = getIdsFromCookie(idArray);
+			if (idMap.studyResultId == jatos.studyResultId) {
+				jatos.jQuery.each(idMap, fillJatos);
+				// Convert component's position to int
+				jatos.componentPos = parseInt(jatos.componentPos);
+				break;
+			}
+		}
+	}
+
+	function getIdsFromCookie(idArray) {
+		var idMap = {};
+		idArray.forEach(function (entry) {
+			var keyValuePair = entry.split("=");
+			var value = decodeURIComponent(keyValuePair[1]);
+			idMap[keyValuePair[0]] = value;
+		});
+		return idMap;
+	}
+
+	/**
+	 * Gets the study's session data, the study's properties, and the
+	 * component's properties from the JATOS server and stores them in
+	 * jatos.studySessionData, jatos.studyProperties, and
+	 * jatos.componentProperties. Additionally it stores study's JsonInput
+	 * into jatos.studyJsonInput and component's JsonInput into
+	 * jatos.componentJsonInput.
+	 */
+	function getInitData() {
+		return jatos.jQuery.ajax({
+			url: "initData" + "?srid=" + jatos.studyResultId,
+			type: "GET",
+			dataType: 'json',
+			timeout: jatos.httpTimeout,
+			success: setInitData,
+			error: function (err) {
+				callingOnError(null, getAjaxErrorMsg(err));
+			}
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
 		});
 	}
 
 	/**
-	 * Initialising jatos.js
+	 * Puts the init data into jatos variables
 	 */
-	function initJatos() {
-		if (!jQueryExists()) {
+	function setInitData(initData) {
+		// Batch properties
+		jatos.batchProperties = initData.batchProperties;
+		if (typeof jatos.batchProperties.jsonData != 'undefined') {
+			jatos.batchJsonInput = jatos.jQuery
+				.parseJSON(jatos.batchProperties.jsonData);
+		} else {
+			jatos.batchJsonInput = {};
+		}
+		delete jatos.batchProperties.jsonData;
+
+		// Study session data
+		try {
+			jatos.studySessionData = JSON.parse(initData.studySessionData);
+		} catch (e) {
+			callingOnError(null, error);
+		}
+
+		// Study properties
+		jatos.studyProperties = initData.studyProperties;
+		if (typeof jatos.studyProperties.jsonData != 'undefined') {
+			jatos.studyJsonInput = jatos.jQuery
+				.parseJSON(jatos.studyProperties.jsonData);
+		} else {
+			jatos.studyJsonInput = {};
+		}
+		delete jatos.studyProperties.jsonData;
+
+		// Study's component list and study length
+		jatos.componentList = initData.componentList;
+		jatos.studyLength = initData.componentList.length;
+
+		// Component properties
+		jatos.componentProperties = initData.componentProperties;
+		if (typeof jatos.componentProperties.jsonData != 'undefined') {
+			jatos.componentJsonInput = jatos.jQuery
+				.parseJSON(jatos.componentProperties.jsonData);
+		} else {
+			jatos.componentJsonInput = {};
+		}
+		delete jatos.componentProperties.jsonData;
+
+		// Query string parameters of the URL that starts the study
+		jatos.urlQueryParameters = initData.urlQueryParameters;
+	}
+
+	/**
+	 * Defines callback function that is to be called when jatos.js finished its initialisation.
+	 * @param {Function} callback - Function that is to be called when jatos.js is done initializing
+	 */
+	jatos.onLoad = function (callback) {
+		onLoadCallback = callback;
+		readyForOnLoad();
+	};
+
+	/**
+	 * Calls onLoadCallback if it already exists and jatos.js is initialised.
+	 * We can't use Deferred since jQuery might not be defined yet.
+	 */
+	function readyForOnLoad() {
+		if (onLoadCallback && !onLoadCalled && initialized) {
+			onLoadCalled = true;
+			onLoadCallback();
+		}
+	}
+
+	/**
+	 * Open batch channel with retry and exponential backoff
+	 */
+	function openBatchChannelWithRetry(backoffTime) {
+		if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
+		return openBatchChannel().fail(function () {
+			if (backoffTime < jatos.channelOpeningBackoffTimeMax) backoffTime *= 2;
+			setTimeout(function () {
+				openBatchChannelWithRetry(backoffTime);
+			}, backoffTime);
+		});
+	}
+
+	/**
+	 * Opens the WebSocket for the batch channel which is used to get and
+	 * update the batch session data.
+	 */
+	function openBatchChannel() {
+		if (!webSocketSupported) {
+			callingOnError(null, "This browser does not support WebSockets. Can't open batch channel.");
+			return rejectedPromise();
+		}
+		// WebSocket's readyState:
+		//		CONNECTING 0 The connection is not yet open.
+		//		OPEN       1 The connection is open and ready to communicate.
+		//		CLOSING    2 The connection is in the process of closing.
+		//		CLOSED     3 The connection is closed or couldn't be opened.
+		if (batchChannel && batchChannel.readyState != batchChannel.CLOSED) {
+			return rejectedPromise();
+		}
+		if (isDeferredPending(openingBatchChannelDeferred)) {
+			callingOnError(null, "Can open only one batch channel.");
+			return rejectedPromise();
+		}
+		openingBatchChannelDeferred = jatos.jQuery.Deferred();
+
+		batchChannel = new WebSocket(
+			((window.location.protocol === "https:") ? "wss://" : "ws://") +
+			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
+			"/batch/open" + "?srid=" + jatos.studyResultId);
+		batchChannel.onopen = function (event) {
+			batchChannelHeartbeat();
+			batchChannelClosedCheck();
+			// The actual batch channel opening is done when we have the 
+			// current version of the batch session
+		};
+		batchChannel.onmessage = function (event) {
+			handleBatchMsg(event.data);
+		};
+		batchChannel.onerror = function () {
+			callingOnError(null, "Batch channel error");
+			openingBatchChannelDeferred.reject();
+		};
+		// Some browsers call it with leaving/reloading the page
+		// Called with closing the WebSocket intentionally 
+		// Called with network error, after ws.onerror
+		batchChannel.onclose = function () {
+			clearBatchChannel();
+			openingBatchChannelDeferred.reject();
+		};
+
+		return openingBatchChannelDeferred.promise();
+	}
+
+	/**
+	 * Closes the batch channel, cleans channel objects and timers and reopens
+	 * the channel.
+	 */
+	function reopenBatchChannel() {
+		if (isDeferredPending(openingBatchChannelDeferred)) return;
+		if (batchChannel instanceof WebSocket) batchChannel.close();
+		clearBatchChannel();
+		openBatchChannelWithRetry();
+	}
+
+	/**
+	 * Periodically sends a heartbeat in the batch channel. This is supposed
+	 * to keep the WebSocket open in routers. This heartbeat is additional
+	 * to the ping/pong heartbeat of the underlying WebSocket. For each
+	 * heartbeat ping we set a timeout until when the pong has to be received.
+	 * If no pong arrived the batch channel will be closed and reopened.
+	 */
+	function batchChannelHeartbeat() {
+		clearInterval(batchChannelHeartbeatTimer);
+		batchChannelHeartbeatTimer = setInterval(function () {
+			if (batchChannel.readyState == batchChannel.OPEN) {
+				batchChannel.send('{"heartbeat":"ping"}');
+				var timeout = setTimeout(function () {
+					callingOnError(null, "Batch channel heartbeat fail");
+					reopenBatchChannel();
+				}, jatos.channelHeartbeatTimeoutTime);
+				batchChannelHeartbeatTimeoutTimers.push(timeout);
+			}
+		}, jatos.channelHeartbeatInterval);
+	}
+
+	/**
+	 * Periodically checks whether the batch channel is closed and if yes
+	 * reopens it. We don't rely on WebSocket's onClose callback (we could
+	 * just put reopenBatchChannel() in there) because it's not always called
+	 * and additionally sometimes called (unwanted) in case of a page 
+	 * reload/closing.
+	 */
+	function batchChannelClosedCheck() {
+		clearInterval(batchChannelClosedCheckTimer);
+		batchChannelClosedCheckTimer = setInterval(function () {
+			if (batchChannel.readyState == batchChannel.CLOSED) {
+				callingOnError(null, "Batch channel closed unexpectedly");
+				clearInterval(batchChannelClosedCheckTimer);
+				reopenBatchChannel();
+			}
+		}, jatos.channelClosedCheckInterval);
+	}
+
+	function clearBatchChannel() {
+		batchSessionData = {};
+		batchSessionVersion = null;
+		clearBatchChannelHeartbeatTimeoutTimers();
+		clearInterval(batchChannelHeartbeatTimer);
+		// Don't clear batchChannelClosedCheckTimer here
+	}
+
+	function clearBatchChannelHeartbeatTimeoutTimers() {
+		batchChannelHeartbeatTimeoutTimers.forEach(function (timeout) {
+			clearTimeout(timeout);
+		});
+		batchChannelHeartbeatTimeoutTimers = [];
+	}
+
+	/**
+	 * Handles a batch msg received via the batch channel
+	 */
+	function handleBatchMsg(msg) {
+		var batchMsg;
+		try {
+			batchMsg = JSON.parse(msg);
+		} catch (error) {
+			callingOnError(null, error);
 			return;
 		}
-
-		jatos.studyResultId = getUrlQueryParameter("srid");
-		readIdCookie();
-
-		getInitData()
-			.then(openBatchChannel)
-			.then(ready);
-
-		if (window.Worker) {
-			heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
-			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
+		if (typeof batchMsg.heartbeat != 'undefined') {
+			// Batch channel is alive - clear all heartbeat timeouts
+			clearBatchChannelHeartbeatTimeoutTimers();
+			return;
 		}
-
-		/**
-		 * Extracts the given URL query parameter from the URL query string
-		 */
-		function getUrlQueryParameter(parameter) {
-			var a = window.location.search.substr(1).split('&');
-			if (a === "") return {};
-			var b = {};
-			for (var i = 0; i < a.length; ++i) {
-				var p = a[i].split('=', 2);
-				if (p.length == 1)
-					b[p[0]] = "";
-				else
-					b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
-			}
-			return b[parameter];
-		}
-
-		/**
-		 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
-		 * and stores all key-value pairs into jatos scope.
-		 */
-		function readIdCookie() {
-			var idCookieName = "JATOS_IDS";
-			var cookieArray = document.cookie.split(';');
-			var fillJatos = function (key, value) {
-				jatos[key] = value;
-			};
-			for (var i = 0; i < cookieArray.length; i++) {
-				var cookie = cookieArray[i];
-				// Remove leading spaces in cookie string
-				while (cookie.charAt(0) === ' ') {
-					cookie = cookie.substring(1, cookie.length);
-				}
-				if (cookie.indexOf(idCookieName) !== 0) {
-					continue;
-				}
-				var cookieStr = cookie.substr(
-					cookie.indexOf(idCookieName) + idCookieName.length + 3,
-					cookie.length);
-				var idArray = cookieStr.split("&");
-				var idMap = getIdsFromCookie(idArray);
-				if (idMap.studyResultId == jatos.studyResultId) {
-					jatos.jQuery.each(idMap, fillJatos);
-					// Convert component's position to int
-					jatos.componentPos = parseInt(jatos.componentPos);
-					break;
-				}
-			}
-		}
-
-		function getIdsFromCookie(idArray) {
-			var idMap = {};
-			idArray.forEach(function (entry) {
-				var keyValuePair = entry.split("=");
-				var value = decodeURIComponent(keyValuePair[1]);
-				idMap[keyValuePair[0]] = value;
-			});
-			return idMap;
-		}
-
-		/**
-		 * Gets the study's session data, the study's properties, and the
-		 * component's properties from the JATOS server and stores them in
-		 * jatos.studySessionData, jatos.studyProperties, and
-		 * jatos.componentProperties. Additionally it stores study's JsonInput
-		 * into jatos.studyJsonInput and component's JsonInput into
-		 * jatos.componentJsonInput.
-		 */
-		function getInitData() {
-			return jatos.jQuery.ajax({
-				url: "initData" + "?srid=" + jatos.studyResultId,
-				type: "GET",
-				dataType: 'json',
-				timeout: jatos.httpTimeout,
-				success: setInitData,
-				error: function (err) {
-					callingOnError(null, getAjaxErrorMsg(err));
-				}
-			}).retry({
-				times: jatos.httpRetry,
-				timeout: jatos.httpRetryWait
-			});
-		}
-
-		/**
-		 * Puts the ajax response into the different jatos variables.
-		 */
-		function setInitData(initData) {
-			// Batch properties
-			jatos.batchProperties = initData.batchProperties;
-			if (typeof jatos.batchProperties.jsonData != 'undefined') {
-				jatos.batchJsonInput = jatos.jQuery
-					.parseJSON(jatos.batchProperties.jsonData);
-			} else {
-				jatos.batchJsonInput = {};
-			}
-			delete jatos.batchProperties.jsonData;
-
-			// Study session data
-			try {
-				jatos.studySessionData = JSON.parse(initData.studySessionData);
-			} catch (e) {
-				callingOnError(null, error);
-			}
-
-			// Study properties
-			jatos.studyProperties = initData.studyProperties;
-			if (typeof jatos.studyProperties.jsonData != 'undefined') {
-				jatos.studyJsonInput = jatos.jQuery
-					.parseJSON(jatos.studyProperties.jsonData);
-			} else {
-				jatos.studyJsonInput = {};
-			}
-			delete jatos.studyProperties.jsonData;
-
-			// Study's component list and study length
-			jatos.componentList = initData.componentList;
-			jatos.studyLength = initData.componentList.length;
-
-			// Component properties
-			jatos.componentProperties = initData.componentProperties;
-			if (typeof jatos.componentProperties.jsonData != 'undefined') {
-				jatos.componentJsonInput = jatos.jQuery
-					.parseJSON(jatos.componentProperties.jsonData);
-			} else {
-				jatos.componentJsonInput = {};
-			}
-			delete jatos.componentProperties.jsonData;
-
-			// Query string parameters of the URL that starts the study
-			jatos.urlQueryParameters = initData.urlQueryParameters;
-
-			// Initialising finished
-			initialized = true;
-		}
-
-		/**
-		 * Opens the WebSocket for the batch channel which is used to get and
-		 * update the batch session data.
-		 */
-		function openBatchChannel() {
-			if (!webSocketSupported) {
-				callingOnError(null, "This browser does not support WebSockets. Can't open batch channel.");
-				return resolvedPromise();
-			}
-			// WebSocket's readyState:
-			//		CONNECTING 0 The connection is not yet open.
-			//		OPEN       1 The connection is open and ready to communicate.
-			//		CLOSING    2 The connection is in the process of closing.
-			//		CLOSED     3 The connection is closed or couldn't be opened.
-			if (isDeferredPending(openingBatchChannelDeferred) ||
-				(batchChannel && batchChannel.readyState != 3)) {
-				callingOnError(null, "Can open only one batch channel.");
-				return resolvedPromise();
-			}
-			openingBatchChannelDeferred = jatos.jQuery.Deferred();
-
-			batchChannel = new WebSocket(
-				((window.location.protocol === "https:") ? "wss://" : "ws://") +
-				window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
-				"/batch/open" + "?srid=" + jatos.studyResultId);
-			batchChannel.onopen = function (event) {
-				// Do nothing -  batch channel opening is only done when we have the batch session version
-			};
-			batchChannel.onmessage = function (event) {
-				handleBatchMsg(event.data);
-			};
-			batchChannel.onerror = function () {
-				// Resolve anyway so initialization can continue
-				openingBatchChannelDeferred.resolve();
-				callingOnError(null, "Couldn't open a batch channel");
-			};
-			batchChannel.onclose = function () {
-				// Resolve anyway so initialization can continue
-				openingBatchChannelDeferred.resolve();
+		if (typeof batchMsg.patches != 'undefined') {
+			// Add to JSON-Patch for "remove" and "/" - clear all session data
+			// Assumes the 'remove' operation is in the first JSON patch
+			if (batchMsg.patches[0].op == "remove" &&
+				batchMsg.patches[0].path == "/") {
 				batchSessionData = {};
-				batchSessionVersion = null;
-			};
-
-			return openingBatchChannelDeferred.promise();
-		}
-
-		/**
-		 * Handles a batch msg received via the batch channel
-		 */
-		function handleBatchMsg(msg) {
-			var batchMsg;
-			try {
-				batchMsg = JSON.parse(msg);
-			} catch (error) {
-				callingOnError(null, error);
-				return;
-			}
-
-			if (typeof batchMsg.patches != 'undefined') {
-				// Add to JSON-Patch for "remove" and "/" - clear all session data
-				// Assumes the 'remove' operation is in the first JSON patch
-				if (batchMsg.patches[0].op == "remove" &&
-					batchMsg.patches[0].path == "/") {
-					batchSessionData = {};
-				} else {
-					jsonpatch.apply(batchSessionData, batchMsg.patches);
-				}
-			}
-			if (typeof batchMsg.data != 'undefined') {
-				if (batchMsg.data === null) {
-					batchSessionData = {};
-				} else {
-					batchSessionData = batchMsg.data;
-				}
-			}
-			if (typeof batchMsg.version != 'undefined') {
-				batchSessionVersion = batchMsg.version;
-				// Batch channel opening is only done when we have the batch session version
-				openingBatchChannelDeferred.resolve();
-			}
-			if (typeof batchMsg.action != 'undefined') {
-				handleBatchAction(batchMsg);
+			} else {
+				jsonpatch.apply(batchSessionData, batchMsg.patches);
 			}
 		}
-
-		/**
-		 * Handels a batch action message received via the batch channel
-		 */
-		function handleBatchAction(batchMsg) {
-			switch (batchMsg.action) {
-				case "SESSION":
-					// Call onJatosBatchSession with JSON Patch's path and 
-					// op (operation) for each patch
-					batchMsg.patches.forEach(function (patch) {
-						callFunctionIfExist(onJatosBatchSession, patch.path, patch.op);
-					});
-					break;
-				case "SESSION_ACK":
-					batchSessionTimeout.cancel();
-					break;
-				case "SESSION_FAIL":
-					batchSessionTimeout.trigger();
-					break;
-				case "ERROR":
-					callingOnError(null, batchMsg.errorMsg);
-					break;
+		if (typeof batchMsg.data != 'undefined') {
+			if (batchMsg.data === null) {
+				batchSessionData = {};
+			} else {
+				batchSessionData = batchMsg.data;
 			}
 		}
+		if (typeof batchMsg.version != 'undefined') {
+			batchSessionVersion = batchMsg.version;
+			// Batch channel opening is only done when we have the batch session version
+			openingBatchChannelDeferred.resolve();
+		}
+		if (typeof batchMsg.action != 'undefined') {
+			handleBatchAction(batchMsg);
+		}
+	}
 
+	/**
+	 * Handels a batch action message received via the batch channel
+	 */
+	function handleBatchAction(batchMsg) {
+		switch (batchMsg.action) {
+			case "SESSION":
+				// Call onJatosBatchSession with JSON Patch's path and 
+				// op (operation) for each patch
+				batchMsg.patches.forEach(function (patch) {
+					callFunctionIfExist(onJatosBatchSession, patch.path, patch.op);
+				});
+				break;
+			case "SESSION_ACK":
+				batchSessionTimeout.cancel();
+				break;
+			case "SESSION_FAIL":
+				batchSessionTimeout.trigger();
+				break;
+			case "ERROR":
+				callingOnError(null, batchMsg.errorMsg);
+				break;
+		}
 	}
 
 	/**
@@ -727,7 +848,7 @@ var jatos = {};
 	 * a single patch object or an array of patch objects.
 	 */
 	function sendBatchSessionPatch(patches, onSuccess, onFail) {
-		if (!batchChannel || batchChannel.readyState != 1) {
+		if (!batchChannel || batchChannel.readyState != batchChannel.OPEN) {
 			callingOnError(onFail, "No open batch channel");
 			return rejectedPromise();
 		}
@@ -754,16 +875,6 @@ var jatos = {};
 	}
 
 	/**
-	 * Call onJatosLoad() if it already exists and jatos.js is initialised
-	 */
-	function ready() {
-		if (onJatosLoad && !onJatosLoadCalled && initialized) {
-			onJatosLoadCalled = true;
-			onJatosLoad();
-		}
-	}
-
-	/**
 	 * A web worker used in jatos.js to send periodic Ajax requests back to the
 	 * JATOS server. With this function one can set the period with which the
 	 * heartbeat is send.
@@ -776,15 +887,6 @@ var jatos = {};
 				heartbeatPeriod
 			]);
 		}
-	};
-
-	/**
-	 * Defines callback function that is to be called when jatos.js finished its
-	 * initialisation.
-	 */
-	jatos.onLoad = function (onLoad) {
-		onJatosLoad = onLoad;
-		ready();
 	};
 
 	/**
@@ -866,7 +968,7 @@ var jatos = {};
 			times: jatos.httpRetry,
 			timeout: jatos.httpRetryWait
 		});
-		return submittingResultDataDeferred;
+		return submittingResultDataDeferred.promise();
 	}
 
 	/**
@@ -910,7 +1012,7 @@ var jatos = {};
 			times: jatos.httpRetry,
 			timeout: jatos.httpRetryWait
 		});
-		return deferred;
+		return deferred.promise();
 	};
 
 	/**
@@ -925,6 +1027,7 @@ var jatos = {};
 	 */
 	jatos.startComponent = function (componentId, resultData, onError) {
 		if (startingComponent) {
+			callingOnError(null, "Can start only one component at the same time");
 			return;
 		}
 		startingComponent = true;
@@ -932,7 +1035,8 @@ var jatos = {};
 			window.location.href = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
 		};
 		if (resultData) {
-			jatos.jQuery.when(jatos.appendResultData(resultData),
+			jatos.jQuery.when(
+					jatos.appendResultData(resultData),
 					jatos.setStudySessionData(jatos.studySessionData))
 				.then(onComplete, onError);
 		} else {
@@ -1093,9 +1197,15 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.joinGroup = function (callbacks) {
-		callbacks = callbacks ? callbacks : {};
+		groupChannelCallbacks = callbacks ? callbacks : {};
+		// Try open only once - no retry like with batch channel or with openGroupChannelWithRetry
+		// Any retry has to be implemented in the component's JS.
+		return openGroupChannel();
+	};
+
+	function openGroupChannel() {
 		if (!webSocketSupported) {
-			callingOnError(callbacks.onError,
+			callingOnError(groupChannelCallbacks.onError,
 				"This browser does not support WebSockets.");
 			return rejectedPromise();
 		}
@@ -1104,65 +1214,173 @@ var jatos = {};
 		//		OPEN       1 The connection is open and ready to communicate.
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
-		if (isDeferredPending(joiningGroupDeferred) ||
-			isDeferredPending(reassigningGroupDeferred) ||
-			isDeferredPending(leavingGroupDeferred) ||
-			!callbacks || (groupChannel && groupChannel.readyState != 3)) {
-			callingOnError(callbacks.onError, "Can join only once");
+		if (groupChannel && groupChannel.readyState != groupChannel.CLOSED) {
+			return rejectedPromise();
+		}
+		if (isDeferredPending(openingGroupChannelDeferred)) {
+			callingOnError(groupChannelCallbacks.onError, "Can open group channel only once");
+			return rejectedPromise();
+		}
+		if (isDeferredPending(leavingGroupDeferred)) {
+			callingOnError(groupChannelCallbacks.onError, "Can't open group channel while leaving a group");
+			return rejectedPromise();
+		}
+		if (isDeferredPending(reassigningGroupDeferred)) {
+			callingOnError(groupChannelCallbacks.onError, "Can't open group channel while reassigning a group");
 			return rejectedPromise();
 		}
 
-		joiningGroupDeferred = jatos.jQuery.Deferred();
+		openingGroupChannelDeferred = jatos.jQuery.Deferred();
 		groupChannel = new WebSocket(
 			((window.location.protocol === "https:") ? "wss://" : "ws://") +
 			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
 			"/group/join" + "?srid=" + jatos.studyResultId);
 		groupChannel.onopen = function (event) {
-			// Do nothing -  group channel opening is only done when we have the group session version
+			groupChannelHeartbeat();
+			groupChannelClosedCheck();
+			// The actual group channel opening is done when we have the current
+			// version of the group session
 		};
 		groupChannel.onmessage = function (event) {
-			handleGroupMsg(event.data, callbacks);
+			handleGroupMsg(event.data);
 		};
 		groupChannel.onerror = function () {
-			joiningGroupDeferred.reject();
-			callingOnError(callbacks.onError, "Couldn't open a group channel");
+			callingOnError(groupChannelCallbacks.onError, "Group channel error");
+			openingGroupChannelDeferred.reject();
 		};
 		groupChannel.onclose = function () {
-			joiningGroupDeferred.reject();
-			jatos.groupMemberId = null;
-			jatos.groupResultId = null;
-			jatos.groupState = null;
-			jatos.groupMembers = [];
-			jatos.groupChannels = [];
-			groupSessionData = {};
-			groupSessionVersion = null;
-			callFunctionIfExist(callbacks.onClose);
+			clearGroupChannel();
+			callFunctionIfExist(groupChannelCallbacks.onClose);
+			openingGroupChannelDeferred.reject();
 		};
-		return joiningGroupDeferred;
-	};
+
+		return openingGroupChannelDeferred.promise();
+	}
+
+	/**
+	 * Open group channel with retry and exponential backoff
+	 */
+	function openGroupChannelWithRetry(backoffTime) {
+		if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
+		openGroupChannel().fail(function () {
+			if (backoffTime < jatos.channelOpeningBackoffTimeMax) backoffTime *= 2;
+			setTimeout(function () {
+				openGroupChannelWithRetry(backoffTime);
+			}, backoffTime);
+		});
+	}
+
+	/**
+	 * Closes the group channel, cleans channel objects and timers and reopens
+	 * the channel.
+	 */
+	function reopenGroupChannel(backoffTime) {
+		if (isDeferredPending(openingGroupChannelDeferred) ||
+			isDeferredPending(reassigningGroupDeferred) ||
+			isDeferredPending(leavingGroupDeferred)) {
+			return;
+		}
+		if (groupChannel && groupChannel.readyState != groupChannel.CLOSED) {
+			groupChannel.close();
+		}
+		clearGroupChannel();
+		openGroupChannelWithRetry();
+	}
+
+	/**
+	 * Periodically sends a heartbeat in the group channel. This is supposed
+	 * to keep the WebSocket open in routers. This heartbeat is additional
+	 * to the ping/pong heartbeat of the underlying WebSocket. For each
+	 * heartbeat ping we set a timeout until when the pong has to be received.
+	 * If no pong arrived the batch channel will be closed and reopened.
+	 */
+	function groupChannelHeartbeat() {
+		clearInterval(groupChannelHeartbeatTimer);
+		groupChannelHeartbeatTimer = setInterval(function () {
+			if (groupChannel.readyState == groupChannel.OPEN) {
+				groupChannel.send('{"heartbeat":"ping"}');
+				var timeout = setTimeout(function () {
+					callingOnError(groupChannelCallbacks.onError,
+						"Group channel heartbeat fail");
+					reopenGroupChannel(jatos.channelOpeningBackoffTimeMin);
+				}, jatos.channelHeartbeatTimeoutTime);
+				groupChannelHeartbeatTimeoutTimers.push(timeout);
+			}
+		}, jatos.channelHeartbeatInterval);
+	}
+
+	/**
+	 * Periodically checks whether the group channel is closed and if yes
+	 * reopens it. We don't rely on WebSocket's onClose callback (we could
+	 * just put reopenGroupChannel() in there) because it's not always called
+	 * and additionally sometimes called (unwanted) in case of a page 
+	 * reload/closing.
+	 */
+	function groupChannelClosedCheck() {
+		clearInterval(groupChannelClosedCheckTimer);
+		groupChannelClosedCheckTimer = setInterval(function () {
+			if (groupChannel.readyState == groupChannel.CLOSED) {
+				callingOnError(groupChannelCallbacks.onError,
+					"Group channel closed unexpectedly");
+				clearInterval(groupChannelClosedCheckTimer);
+				reopenGroupChannel(jatos.channelOpeningBackoffTimeMin);
+			}
+		}, jatos.channelClosedCheckInterval);
+	}
+
+	function clearGroupChannelHeartbeatTimeoutTimers() {
+		groupChannelHeartbeatTimeoutTimers.forEach(function (timeout) {
+			clearTimeout(timeout);
+		});
+		groupChannelHeartbeatTimeoutTimers = [];
+	}
+
+	function clearGroupChannel() {
+		jatos.groupMemberId = null;
+		jatos.groupResultId = null;
+		jatos.groupState = null;
+		jatos.groupMembers = [];
+		jatos.groupChannels = [];
+		groupSessionData = {};
+		groupSessionVersion = null;
+		clearGroupChannelHeartbeatTimeoutTimers();
+		clearInterval(groupChannelHeartbeatTimer);
+		// Don't clear groupChannelClosedCheckTimer here
+	}
 
 	/**
 	 * A group message from the JATOS server can be an action, a message from an
-	 * other group member, or an error. An action usually comes with the current
-	 * group variables (members, channels, group session data etc.). A group message
-	 * from the JATOS server is always in JSON format.
+	 * other group member, a heartbeat, or an error. An action usually comes
+	 * with the current group variables (members, channels, group session data
+	 * etc.). A group message from the JATOS server is always in JSON format.
 	 */
-	function handleGroupMsg(msg, callbacks) {
-		var groupMsg = JSON.parse(msg);
-		updateGroupVars(groupMsg, callbacks);
+	function handleGroupMsg(msg) {
+		var groupMsg;
+		try {
+			groupMsg = JSON.parse(msg);
+		} catch (error) {
+			callingOnError(groupChannelCallbacks.onError, error);
+			return;
+		}
+		if (typeof groupMsg.heartbeat != 'undefined') {
+			// Group channel is alive - clear all heartbeat timeouts
+			clearGroupChannelHeartbeatTimeoutTimers();
+			return;
+		}
+		updateGroupVars(groupMsg);
 		// Now handle the action and map them to callbacks that were given as
 		// parameter to joinGroup
-		callGroupActionCallbacks(groupMsg, callbacks);
+		callGroupActionCallbacks(groupMsg);
 		// Handle onMessage callback
-		if (groupMsg.msg && callbacks.onMessage) {
-			callbacks.onMessage(groupMsg.msg);
+		if (groupMsg.msg && groupChannelCallbacks.onMessage) {
+			groupChannelCallbacks.onMessage(groupMsg.msg);
 		}
 	}
 
 	/**
 	 * Update the group variables that usually come with an group action
 	 */
-	function updateGroupVars(groupMsg, callbacks) {
+	function updateGroupVars(groupMsg) {
 		if (typeof groupMsg.groupResultId != 'undefined') {
 			jatos.groupResultId = groupMsg.groupResultId.toString();
 			// Group member ID is equal to study result ID
@@ -1197,11 +1415,11 @@ var jatos = {};
 		if (typeof groupMsg.sessionVersion != 'undefined') {
 			groupSessionVersion = groupMsg.sessionVersion;
 			// Group joining is only done after the session version is received
-			joiningGroupDeferred.resolve();
+			openingGroupChannelDeferred.resolve();
 		}
 	}
 
-	function callGroupActionCallbacks(groupMsg, callbacks) {
+	function callGroupActionCallbacks(groupMsg) {
 		if (!groupMsg.action) {
 			return;
 		}
@@ -1211,10 +1429,10 @@ var jatos = {};
 				// Someone opened a group channel; distinguish between the worker running
 				// this study and others
 				if (groupMsg.memberId == jatos.groupMemberId) {
-					callFunctionIfExist(callbacks.onOpen, groupMsg.memberId);
+					callFunctionIfExist(groupChannelCallbacks.onOpen, groupMsg.memberId);
 				} else {
-					callFunctionIfExist(callbacks.onMemberOpen, groupMsg.memberId);
-					callFunctionIfExist(callbacks.onUpdate);
+					callFunctionIfExist(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
+					callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "CLOSED":
@@ -1222,8 +1440,8 @@ var jatos = {};
 				// Some member closed its group channel
 				// (onClose callback function is handled during groupChannel.onclose)
 				if (groupMsg.memberId != jatos.groupMemberId) {
-					callFunctionIfExist(callbacks.onMemberClose, groupMsg.memberId);
-					callFunctionIfExist(callbacks.onUpdate);
+					callFunctionIfExist(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
+					callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "JOINED":
@@ -1231,8 +1449,8 @@ var jatos = {};
 				// Some member joined (it should not happen, but check the group member ID
 				// (aka study result ID) is not the one of the joined member)
 				if (groupMsg.memberId != jatos.groupMemberId) {
-					callFunctionIfExist(callbacks.onMemberJoin, groupMsg.memberId);
-					callFunctionIfExist(callbacks.onUpdate);
+					callFunctionIfExist(groupChannelCallbacks.onMemberJoin, groupMsg.memberId);
+					callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "LEFT":
@@ -1240,8 +1458,8 @@ var jatos = {};
 				// Some member left (it should not happen, but check the group member ID
 				// (aka study result ID) is not the one of the left member)
 				if (groupMsg.memberId != jatos.groupMemberId) {
-					callFunctionIfExist(callbacks.onMemberLeave, groupMsg.memberId);
-					callFunctionIfExist(callbacks.onUpdate);
+					callFunctionIfExist(groupChannelCallbacks.onMemberLeave, groupMsg.memberId);
+					callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "SESSION":
@@ -1250,16 +1468,16 @@ var jatos = {};
 				// Call onGroupSession with JSON Patch's path 
 				// and op (operation) for each patch.
 				groupMsg.sessionPatches.forEach(function (patch) {
-					callFunctionIfExist(callbacks.onGroupSession, patch.path, patch.op);
+					callFunctionIfExist(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
 				});
-				callFunctionIfExist(callbacks.onUpdate);
+				callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				break;
 			case "FIXED":
 				// The group is now fixed (no new members)
 				if (groupFixedTimeout) {
 					groupFixedTimeout.cancel();
 				}
-				callFunctionIfExist(callbacks.onUpdate);
+				callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				break;
 			case "SESSION_ACK":
 				groupSessionTimeout.cancel();
@@ -1270,7 +1488,7 @@ var jatos = {};
 			case "ERROR":
 				// onError or jatos.onError
 				// Got an error
-				callingOnError(callbacks.onError, groupMsg.errorMsg);
+				callingOnError(groupChannelCallbacks.onError, groupMsg.errorMsg);
 				break;
 		}
 	}
@@ -1457,7 +1675,7 @@ var jatos = {};
 	 * a single patch object or an array of patch objects.
 	 */
 	function sendGroupSessionPatch(patches, onSuccess, onFail) {
-		if (!groupChannel || groupChannel.readyState != 1) {
+		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
 			callingOnError(onFail, "No open group channel");
 			return rejectedPromise();
 		}
@@ -1492,11 +1710,10 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.setGroupFixed = function (onSuccess, onFail) {
-		if (!groupChannel || groupChannel.readyState != 1) {
+		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
 			callingOnError(onFail, "No open group channel");
 			return rejectedPromise();
 		}
-
 		if (isDeferredPending(sendingGroupFixedDeferred)) {
 			callingOnError(onFail, "Can fix group only once");
 			return rejectedPromise();
@@ -1533,7 +1750,7 @@ var jatos = {};
 	 * that we joined a group.
 	 */
 	jatos.hasOpenGroupChannel = function () {
-		return groupChannel && groupChannel.readyState == 1;
+		return groupChannel && groupChannel.readyState == groupChannel.OPEN;
 	};
 
 	/**
@@ -1568,7 +1785,7 @@ var jatos = {};
 	 *         or maximum active member size.
 	 */
 	jatos.isGroupOpen = function () {
-		if (groupChannel && groupChannel.readyState == 1) {
+		if (groupChannel && groupChannel.readyState == groupChannel.OPEN) {
 			return jatos.groupMembers.length == jatos.groupChannels.length;
 		} else {
 			return false;
@@ -1581,7 +1798,7 @@ var jatos = {};
 	 * @param {Object} msg - Any JavaScript object
 	 */
 	jatos.sendGroupMsg = function (msg) {
-		if (groupChannel && groupChannel.readyState == 1) {
+		if (groupChannel && groupChannel.readyState == groupChannel.OPEN) {
 			var msgObj = {};
 			msgObj.msg = msg;
 			groupChannel.send(JSON.stringify(msgObj));
@@ -1596,7 +1813,7 @@ var jatos = {};
 	 * @param {Object} msg - Any JavaScript object
 	 */
 	jatos.sendGroupMsgTo = function (recipient, msg) {
-		if (groupChannel && groupChannel.readyState == 1) {
+		if (groupChannel && groupChannel.readyState == groupChannel.OPEN) {
 			var msgObj = {};
 			msgObj.recipient = recipient;
 			msgObj.msg = msg;
@@ -1606,6 +1823,8 @@ var jatos = {};
 
 	/**
 	 * Asks the JATOS server to reassign this study run to a different group.
+	 * Successful reassigning reuses the current group channel (and WebSocket) -
+	 * it does not close the channel and opens a new one.
 	 * 
 	 * @param {optional Function} onSuccess - Function to be called if the
 	 *            reassignment was successful
@@ -1614,11 +1833,20 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
-		if (isDeferredPending(joiningGroupDeferred) ||
-			isDeferredPending(reassigningGroupDeferred) ||
-			isDeferredPending(leavingGroupDeferred) ||
-			(groupChannel && groupChannel.readyState != 1)) {
-			callingOnError(onFail, "Can reassign only once");
+		if (isDeferredPending(openingGroupChannelDeferred)) {
+			callingOnError(onFail, "Can't reassign group if not joined yet");
+			return rejectedPromise();
+		}
+		if (isDeferredPending(leavingGroupDeferred)) {
+			callingOnError(onFail, "Can't reassign group during leaving");
+			return rejectedPromise();
+		}
+		if (isDeferredPending(reassigningGroupDeferred)) {
+			callingOnError(onFail, "Can't reassign group twice at the same time");
+			return rejectedPromise();
+		}
+		if (groupChannel && groupChannel.readyState != groupChannel.OPEN) {
+			callingOnError(onFail, "Group channel not open");
 			return rejectedPromise();
 		}
 
@@ -1630,7 +1858,7 @@ var jatos = {};
 			timeout: jatos.httpTimeout,
 			statusCode: {
 				200: function () {
-					// Successful reassignment
+					// Successful reassignment (keeps the same WebSocket)
 					callFunctionIfExist(onSuccess);
 					reassigningGroupDeferred.resolve();
 				},
@@ -1646,7 +1874,7 @@ var jatos = {};
 				reassigningGroupDeferred.reject(errMsg);
 			}
 		});
-		return reassigningGroupDeferred;
+		return reassigningGroupDeferred.promise();
 	};
 
 	/**
@@ -1660,9 +1888,15 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
-		if (isDeferredPending(joiningGroupDeferred) ||
-			isDeferredPending(reassigningGroupDeferred) ||
-			isDeferredPending(leavingGroupDeferred)) {
+		if (isDeferredPending(openingGroupChannelDeferred)) {
+			callingOnError(onError, "Can't leave group if not joined yet");
+			return rejectedPromise();
+		}
+		if (isDeferredPending(reassigningGroupDeferred)) {
+			callingOnError(onError, "Can't leave group during reassigning");
+			return rejectedPromise();
+		}
+		if (isDeferredPending(leavingGroupDeferred)) {
 			callingOnError(onError, "Can leave only once");
 			return rejectedPromise();
 		}
@@ -1674,6 +1908,7 @@ var jatos = {};
 			type: "GET",
 			timeout: jatos.httpTimeout,
 			success: function (response) {
+				clearInterval(groupChannelClosedCheckTimer);
 				callFunctionIfExist(onSuccess, response);
 				leavingGroupDeferred.resolve(response);
 			},
@@ -1686,7 +1921,7 @@ var jatos = {};
 			times: jatos.httpRetry,
 			timeout: jatos.httpRetryWait
 		});
-		return leavingGroupDeferred;
+		return leavingGroupDeferred.promise();
 	};
 
 	/**
@@ -1731,7 +1966,7 @@ var jatos = {};
 				times: jatos.httpRetry,
 				timeout: jatos.httpRetryWait
 			});
-			return abortingDeferred;
+			return abortingDeferred.promise();
 		}
 
 		return jatos.setStudySessionData(jatos.studySessionData).always(abort);
@@ -1817,7 +2052,7 @@ var jatos = {};
 				times: jatos.httpRetry,
 				timeout: jatos.httpRetryWait
 			});
-			return endingDeferred;
+			return endingDeferred.promise();
 		}
 		return jatos.setStudySessionData(jatos.studySessionData).always(end);
 	};
@@ -1924,24 +2159,11 @@ var jatos = {};
 	}
 
 	/**
-	 * Should be called in the beginning of each function that wants to use jQuery.
-	 */
-	function jQueryExists() {
-		if (!jatos.jQuery) {
-			if (onJatosError) {
-				onJatosError("jatos.js' jQuery not (yet?) loaded");
-			}
-			return false;
-		}
-		return true;
-	}
-
-	/**
 	 * Takes a jQuery Ajax response and returns an error message.
 	 */
 	function getAjaxErrorMsg(jqxhr) {
 		if (jqxhr.statusText == 'timeout') {
-			return "JATOS server not responding while trying to get URL";
+			return "JATOS server not responding";
 		} else {
 			if (jqxhr.responseText) {
 				return jqxhr.statusText + ": " + jqxhr.responseText;
@@ -1989,7 +2211,7 @@ var jatos = {};
 	}
 
 	/**
-	 * Checks if the given jQuery Deferred object exists and is not in state pending
+	 * Checks if the given jQuery Deferred or Promise object exists and is not in state pending
 	 */
 	function isDeferredPending(deferred) {
 		return typeof deferred != 'undefined' && deferred.state() == 'pending';

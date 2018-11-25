@@ -1,10 +1,9 @@
 package group
 
 import javax.inject.Inject
-
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import group.GroupDispatcher._
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, Json}
 
 /**
   * GroupChannelActor is an Akka Actor that represents the group channel's WebSocket. A group
@@ -22,7 +21,7 @@ import play.api.libs.json.JsObject
   * UnregisterChannel message. A GroupChannelActor can, if it's told to, reassign itself to a
   * different GroupDispatcher.
   *
-  * @author Kristian Lange (2015, 2017)
+  * @author Kristian Lange (2015 - 2018)
   */
 object GroupChannelActor {
   def props(out: ActorRef, studyResultId: Long, groupDispatcher: ActorRef): Props =
@@ -33,11 +32,16 @@ class GroupChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
                                   var groupDispatcher: ActorRef) extends Actor {
 
+  val pong = Json.obj("heartbeat" -> "pong")
+
   override def preStart() = groupDispatcher ! RegisterChannel(studyResultId)
 
   override def postStop() = groupDispatcher ! UnregisterChannel(studyResultId)
 
   def receive = {
+    case msg: JsObject if msg.keys.contains("heartbeat") =>
+      // If we receive a heartbeat ping, answer directly with a pong
+      out ! pong
     case json: JsObject =>
       // If we receive a JsonNode (only from the client) wrap it in a GroupMsg and forward it to
       // the GroupDispatcher
