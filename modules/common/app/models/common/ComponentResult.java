@@ -29,8 +29,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @Entity
 @Table(name = "ComponentResult")
-@JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType",
-        "componentState" })
+@JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType", "componentState" })
 public class ComponentResult {
 
     public static final String COMPONENT_RESULTS = "componentResults";
