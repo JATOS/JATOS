@@ -66,14 +66,16 @@ object BatchDispatcher {
     */
   object BatchActionJsonKey extends Enumeration {
     type BatchActionKey = Value
-    val Action = Value("action") // JSON key name for an action (mandatory for an BatchMsg)
-    val SessionData = Value("data") // JSON key name for session data (must be accompanied with a
-    // session version)
-    val SessionPatches = Value("patches") // JSON key name for a session patches (must be
-    // accompanied with a session version)
-    val SessionVersion = Value("version") // JSON key name for the batch session version (always
-    // together with either session data or patches)
-    val ErrorMsg = Value("errorMsg") // JSON key name for an error message
+    // JSON key for an action (mandatory for an BatchMsg)
+    val Action = Value("action")
+    // JSON key for session data (must be accompanied with a session version)
+    val SessionData = Value("data")
+    // JSON key for a session patches (must be accompanied with a session version)
+    val SessionPatches = Value("patches")
+    // JSON key for the batch session version (always together with either session data or patches)
+    val SessionVersion = Value("version")
+    // JSON key for an error message
+    val ErrorMsg = Value("errorMsg")
   }
 
   /**
@@ -121,8 +123,8 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     */
   private def handleActionMsg(actionMsg: BatchMsg) = {
     logger.debug(s".handleActionMsg: batchId $batchId, " +
-      s"studyResultId ${channelRegistry.getStudyResult(sender).get}, " +
-      s"actionMsg ${Json.stringify(actionMsg.json)}")
+        s"studyResultId ${channelRegistry.getStudyResult(sender).get}, " +
+        s"actionMsg ${Json.stringify(actionMsg.json)}")
     val msgList = actionHandler.handleActionMsg(actionMsg, batchId)
     tellActionMsg(msgList)
   }
