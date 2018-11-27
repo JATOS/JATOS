@@ -128,11 +128,11 @@ var jatos = {};
 	/**
 	 * Waiting time in ms between channel heartbeats
 	 */
-	jatos.channelHeartbeatInterval = 10000; //25000
+	jatos.channelHeartbeatInterval = 25000;
 	/**
 	 * Waiting time in ms for JATOS answer to a channel heartbeat ('pong')
 	 */
-	jatos.channelHeartbeatTimeoutTime = 5000; //10000
+	jatos.channelHeartbeatTimeoutTime = 10000;
 	/**
 	 * Waiting time in ms between checking if channels are closed unexpectedly
 	 */
