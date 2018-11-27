@@ -1,5 +1,5 @@
 /**
- * Web worker used in JATOS to regularly check for session timeouts
+ * Web worker used in JATOS to regularly check for user session timeouts
  * The actual session timeout handling is of course done on the server side.
  * These timeouts just cause an login overlay.
  * 
