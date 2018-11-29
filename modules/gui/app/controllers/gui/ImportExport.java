@@ -11,7 +11,6 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
-import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -23,7 +22,6 @@ import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.Http.Cookie;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import services.gui.*;
@@ -34,8 +32,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Controller that cares for import/export of components, studies and their result data.
@@ -47,12 +45,6 @@ import java.util.Date;
 public class ImportExport extends Controller {
 
     private static final ALogger LOGGER = Logger.of(ImportExport.class);
-
-    public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
-    public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
-    public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";
-    public static final SimpleDateFormat DATE_FORMATER_FILE = new SimpleDateFormat(
-            DATE_FORMAT_FILE);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
@@ -265,45 +257,40 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
+     * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to StudyResults
-     * specified in the given string of study result IDs. Returns the results as
-     * text.
+     * Returns all result data of ComponentResults belonging to the given StudyResults. The
+     * StudyResults are specified by their IDs in the request's body. Returns the result data as
+     * text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfStudyResults(String studyResultIds) throws JatosGuiException {
-        LOGGER.debug(".exportDataOfStudyResults: studyResultIds " + studyResultIds);
-        // Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-        // be sure, in case it's still there)
-        response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
+    public Result exportDataOfStudyResults() throws JatosGuiException {
+        LOGGER.debug(".exportDataOfStudyResults");
         User loggedInUser = authenticationService.getLoggedInUser();
-
-        String resultDataAsStr = null;
+        List<Long> studyResultIdList = new ArrayList<>();
+        request().body().asJson().get("resultIds")
+                .forEach(node -> studyResultIdList.add(node.asLong()));
+        String resultData = "";
         try {
-            resultDataAsStr = resultDataExportService
-                    .fromListOfStudyResultIds(studyResultIds, loggedInUser);
+            resultData = resultDataExportService
+                    .fromStudyResultIdList(studyResultIdList, loggedInUser);
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForResultDataExport(resultDataAsStr);
-        return ok(resultDataAsStr);
+        return ok(resultData);
     }
 
     /**
-     * Ajax request
+     * Ajax request  (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to StudyResults
-     * belonging to the given study.
+     * Returns all result data of ComponentResults belonging to StudyResults belonging to the
+     * given study. Returns the result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
     public Result exportDataOfAllStudyResults(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".exportDataOfAllStudyResults");
-        // Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-        // be sure, in case it's still there)
-        response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
+        LOGGER.debug(".exportDataOfAllStudyResults: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -311,48 +298,44 @@ public class ImportExport extends Controller {
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-
-        String resultDataAsStr = null;
+        String resultData = "";
         try {
-            resultDataAsStr = resultDataExportService.forStudy(loggedInUser, study);
+            resultData = resultDataExportService.forStudy(loggedInUser, study);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForResultDataExport(resultDataAsStr);
-        return ok(resultDataAsStr);
+        return ok(resultData);
     }
 
     /**
-     * Ajax request
+     * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults specified in the given string
-     * of study component result IDs. Returns the results as text.
+     * Returns all result data of ComponentResults. The ComponentResults are specified by their IDs
+     * in the request's body. Returns the result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfComponentResults(String componentResultIds) throws JatosGuiException {
-        LOGGER.debug(".exportDataOfComponentResults: componentResultIds " + componentResultIds);
-        // Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-        // be sure, in case it's still there)
-        response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
+    public Result exportDataOfComponentResults() throws JatosGuiException {
+        LOGGER.debug(".exportDataOfComponentResults");
         User loggedInUser = authenticationService.getLoggedInUser();
-
-        String resultDataAsStr = null;
+        List<Long> componentResultIdList = new ArrayList<>();
+        request().body().asJson().get("resultIds")
+                .forEach(node -> componentResultIdList.add(node.asLong()));
+        String resultData = "";
         try {
-            resultDataAsStr = resultDataExportService
-                    .fromListOfComponentResultIds(componentResultIds, loggedInUser);
+            resultData = resultDataExportService
+                    .fromComponentResultIdList(componentResultIdList, loggedInUser);
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForResultDataExport(resultDataAsStr);
-        return ok(resultDataAsStr);
+        return ok(resultData);
     }
 
     /**
-     * Ajax request
+     * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to the given
-     * component and study.
+     * Returns all result data of ComponentResults belonging to the given component and study.
+     * Returns the result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
@@ -360,11 +343,8 @@ public class ImportExport extends Controller {
             throws JatosGuiException {
         LOGGER.debug(".exportDataOfAllComponentResults: studyId " + studyId
                 + ", " + "componentId " + componentId);
-        // Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-        // be sure, in case it's still there)
-        response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
-        Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
+        Study study = studyDao.findById(studyId);
         Component component = componentDao.findById(componentId);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -373,62 +353,41 @@ public class ImportExport extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        String resultDataAsStr = null;
+        String resultData = "";
         try {
-            resultDataAsStr = resultDataExportService.forComponent(loggedInUser, component);
+            resultData = resultDataExportService.forComponent(loggedInUser, component);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForResultDataExport(resultDataAsStr);
-        return ok(resultDataAsStr).as("application/x-download");
+
+        return ok(resultData);
     }
 
     /**
-     * Ajax request
+     * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to the given
-     * worker's StudyResults.
+     * Returns all result data of ComponentResults belonging to the given worker's StudyResults.
+     * Returns the result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
     public Result exportAllResultDataOfWorker(Long workerId) throws JatosGuiException {
         LOGGER.debug(".exportAllResultDataOfWorker: workerId " + workerId);
-        // Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-        // be sure, in case it's still there)
-        response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
         Worker worker = workerDao.findById(workerId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkWorker(worker, workerId);
         } catch (BadRequestException e) {
-            jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
+            jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        String resultDataAsStr = null;
+        String resultData = "";
         try {
-            resultDataAsStr = resultDataExportService.forWorker(loggedInUser, worker);
+            resultData = resultDataExportService.forWorker(loggedInUser, worker);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        prepareResponseForResultDataExport(resultDataAsStr);
-        return ok(resultDataAsStr).as("application/x-download");
-    }
-
-    /**
-     * Prepares the response for a download with the johnculviner's
-     * jQuery.fileDownload plugin. This plugin is merely used to detect a failed
-     * download. If the response isn't OK and it doesn't have this cookie then
-     * the plugin regards it as a fail.
-     */
-    private void prepareResponseForResultDataExport(String resultDataAsStr) {
-        String dateForFile = DATE_FORMATER_FILE.format(new Date());
-        String filename = "jatos_results_" + dateForFile + "."
-                + IOUtils.TXT_FILE_SUFFIX;
-        response().setHeader("Content-disposition", "attachment; filename=" + filename);
-        // Set transient cookie with no domain or path constraints
-        Cookie cookie = new Cookie(JQDOWNLOAD_COOKIE_NAME,
-                JQDOWNLOAD_COOKIE_CONTENT, null, Common.getPlayHttpContext(), null, false, false);
-        response().setCookie(cookie);
+        return ok(resultData);
     }
 
 }

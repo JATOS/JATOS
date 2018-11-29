@@ -433,9 +433,9 @@ public class Studies extends Controller {
      *
      * @param studyId    study's ID
      * @param entryLimit It cuts the log after the number of lines given in entryLimit
-     * @param download   If true it prepares the Response for johnculviner's jQuery.fileDownload
-     * @return Returns the content of the study log file in reverse order and as 'Transfer-Encoding:chunked'.
-     * @throws JatosGuiException
+     * @param download   If true streams the whole study log file - if not only until entryLimit
+     * @return Depending on 'download' flag returns the whole study log file - or only part of it
+     * (until entryLimit) in reverse order and 'Transfer-Encoding:chunked'
      */
     @Transactional
     @Authenticated
@@ -448,20 +448,10 @@ public class Studies extends Controller {
         checkStandardForStudy(studyId, study, loggedInUser);
 
         if (download) {
-            // Prepares the response for a download with the johnculviner's
-            // jQuery.fileDownload plugin. This plugin is merely used to detect a failed
-            // download. If the response isn't OK and it doesn't have this cookie then
-            // the plugin regards it as a fail.
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
             if (Files.notExists(studyLogPath)) {
                 return notFound();
             }
-            String filename = "jatos_studylog_" + study.getUuid() + ".log";
-            response().setHeader("Content-disposition", "attachment; filename=" + filename);
-            // Set transient cookie with no domain or path constraints
-            Http.Cookie cookie = new Http.Cookie("fileDownload", "true", null,
-                    Common.getPlayHttpContext(), null, false, false);
-            response().setCookie(cookie);
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
             return new Result(
                     new ResponseHeader(200, Collections.emptyMap(), Option.apply("")),

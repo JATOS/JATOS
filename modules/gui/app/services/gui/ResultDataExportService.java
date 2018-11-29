@@ -49,9 +49,9 @@ public class ResultDataExportService {
         List<StudyResult> allowedStudyResultList =
                 resultService.getAllowedStudyResultList(user, worker);
         checker.checkStudyResults(allowedStudyResultList, user, false);
-        String resultDataAsStr = resultService.studyResultDataToString(allowedStudyResultList);
-        studyLogger.logStudyResultDataExporting(allowedStudyResultList, resultDataAsStr);
-        return resultDataAsStr;
+        String resultData = resultService.studyResultDataToString(allowedStudyResultList);
+        studyLogger.logStudyResultDataExporting(allowedStudyResultList, resultData);
+        return resultData;
     }
 
     /**
@@ -61,9 +61,9 @@ public class ResultDataExportService {
     public String forStudy(User user, Study study) throws ForbiddenException, BadRequestException {
         List<StudyResult> studyResultList = studyResultDao.findAllByStudy(study);
         checker.checkStudyResults(studyResultList, user, false);
-        String resultDataAsStr = resultService.studyResultDataToString(studyResultList);
-        studyLogger.logStudyResultDataExporting(studyResultList, resultDataAsStr);
-        return resultDataAsStr;
+        String resultData = resultService.studyResultDataToString(studyResultList);
+        studyLogger.logStudyResultDataExporting(studyResultList, resultData);
+        return resultData;
     }
 
     /**
@@ -75,38 +75,37 @@ public class ResultDataExportService {
         List<ComponentResult> componentResultList =
                 componentResultDao.findAllByComponent(component);
         checker.checkComponentResults(componentResultList, user, false);
-        String resultDataAsStr = resultService.componentResultDataToString(componentResultList);
-        studyLogger.logComponentResultDataExporting(componentResultList, resultDataAsStr);
-        return resultDataAsStr;
+        String resultData = resultService.componentResultDataToString(componentResultList);
+        studyLogger.logComponentResultDataExporting(componentResultList, resultData);
+        return resultData;
     }
 
     /**
      * Retrieves the StudyResults that correspond to the IDs, checks them and
      * returns all their result data in one string.
      */
-    public String fromListOfStudyResultIds(String studyResultIds, User user)
+    public String fromStudyResultIdList(List<Long> studyResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
-        List<Long> studyResultIdList = resultService.extractResultIds(studyResultIds);
         List<StudyResult> studyResultList = resultService.getStudyResults(studyResultIdList);
         checker.checkStudyResults(studyResultList, user, false);
-        String resultDataAsStr = resultService.studyResultDataToString(studyResultList);
-        studyLogger.logStudyResultDataExporting(studyResultList, resultDataAsStr);
-        return resultDataAsStr;
+        String resultData = resultService.studyResultDataToString(studyResultList);
+        studyLogger.logStudyResultDataExporting(studyResultList, resultData);
+//        if (!resultDataAsStr.isEmpty() ) throw new ForbiddenException("forbidden it is");
+        return resultData;
     }
 
     /**
      * Retrieves the ComponentResults that correspond to the IDs, checks them
      * and returns all their result data in one string.
      */
-    public String fromListOfComponentResultIds(String componentResultIds, User user)
+    public String fromComponentResultIdList(List<Long> componentResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
-        List<Long> componentResultIdList = resultService.extractResultIds(componentResultIds);
         List<ComponentResult> componentResultList =
                 resultService.getComponentResults(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, false);
-        String resultDataAsStr = resultService.componentResultDataToString(componentResultList);
-        studyLogger.logComponentResultDataExporting(componentResultList, resultDataAsStr);
-        return resultDataAsStr;
+        String resultData = resultService.componentResultDataToString(componentResultList);
+        studyLogger.logComponentResultDataExporting(componentResultList, resultData);
+        return resultData;
     }
 
 }

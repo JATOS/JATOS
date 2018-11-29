@@ -103,8 +103,8 @@ GET      /jatos/:studyId/:componentId/clone                                 @con
 
 # ImportExport controller
 GET      /jatos/worker/:workerId/export/allResultData                       @controllers.gui.ImportExport.exportAllResultDataOfWorker(workerId: Long)
-GET      /jatos/studyResult/export/resultData                               @controllers.gui.ImportExport.exportDataOfStudyResults(studyResultIds: String)
-GET      /jatos/componentResult/export/resultData                           @controllers.gui.ImportExport.exportDataOfComponentResults(componentResultIds: String)
+POST     /jatos/studyResult/export/resultData                               @controllers.gui.ImportExport.exportDataOfStudyResults()
+POST     /jatos/componentResult/export/resultData                           @controllers.gui.ImportExport.exportDataOfComponentResults()
 POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy()
 POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed()
 GET      /jatos/:studyId/export                                             @controllers.gui.ImportExport.exportStudy(studyId: Long)

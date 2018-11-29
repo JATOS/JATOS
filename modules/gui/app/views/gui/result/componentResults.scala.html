@@ -298,19 +298,30 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
-        var url = '@{playHttpContext}jatos/componentResult/export/resultData'
-            + '?componentResultIds=' + ids.join(",");
-        // Using johnculviner's jQuery.fileDownload plugin to detect a fail
-        $.fileDownload(url).fail(function () {
-            showError("Export of results failed");
+        // Use download.js (http://danml.com/download.html) to get the result data and offer them
+        // as download to the user. download.js allows to use an Ajax call and error handling.
+        $.ajax({
+            url: '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()',
+            type : 'POST',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({resultIds: ids}),
+            success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
+            error : function(err) {
+                showError(err.responseText);
+            }
         });
     }
 
     function exportAllSelectedResultData(e, dt, node, config) {
-        var url = "@controllers.gui.routes.ImportExport.exportDataOfAllComponentResults(study.getId(), component.getId())";
-        // Using johnculviner's jQuery.fileDownload plugin to detect a fail
-        $.fileDownload(url).fail(function () {
-            showError("Export of results failed");
+        // Use download.js (http://danml.com/download.html) to get the result data and offer them
+        // as download to the user. download.js allows to use an Ajax call and error handling.
+        $.ajax({
+            url: '@controllers.gui.routes.ImportExport.exportDataOfAllComponentResults(study.getId(), component.getId())',
+            type : 'GET',
+            success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
+            error : function(err) {
+                showError(err.responseText);
+            }
         });
     }
 
