@@ -131,8 +131,8 @@ public class Checker {
     }
 
     /**
-     * Checks a list of StudyResult. Checks each StudyResult whether the
-     * belonging Study is fine (checkStandard). It also checks whether the study
+     * Checks a list of StudyResult. Checks each StudyResult whether the belonging Study is fine,
+     * especially that the StudyResult belongs to this user. It also checks whether the study
      * is locked.
      *
      * @param studyResultList      A list of StudyResults
