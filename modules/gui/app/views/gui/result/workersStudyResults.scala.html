@@ -1,4 +1,4 @@
-    @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
     worker: common.workers.Worker)
 @playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
@@ -71,6 +71,18 @@
         </tr>
     </tfoot>
 </table>
+
+<!-- Search / filter field with RegEx and Case button-->
+<div id="resultsTableSearch" style="display: none">
+    <label for="resultsTableSearch">Filter Results <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table's content (metadata) or search in the result data themselves"></span>:</label>
+    <div class="input-group">
+        <input type="search" class="form-control" placeholder="" autofocus>
+        <div class="input-group-btn">
+            <button type="button" class="btn btn-default regex" data-toggle="tooltip" data-placement="bottom" title="Treat as regular expression">RegEx</button>
+            <button type="button" class="btn btn-default caseSensitive" data-toggle="tooltip" data-placement="bottom" title="Search case sensitive">Aa</button>
+        </div>
+    </div>
+</div>
 
 <script type="text/javascript">
 
@@ -280,11 +292,14 @@ $(document).ready(function() {
                     }
                 ]
             }
-        ],
-        "language": {
-            "search": 'Filter Results <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table\'s content (metadata) or search in the result data themselves"></span>:'
-        }
+        ]
     });
+
+    // Swap dataTables filter field with our own
+    $("#resultsTable_filter").empty();
+    $("#resultsTable_filter").append($("#resultsTableSearch"));
+    $("#resultsTableSearch").show();
+    $("#resultsTableSearch input").focus();
 
     resultsTable.on('draw', function() {
         // Necessary - otherwise the button doesn't work with manually selected rows
@@ -309,6 +324,31 @@ $(document).ready(function() {
             });
         }
     });
+
+    $('#resultsTableSearch input').on('keyup click', searchResultTable);
+
+    $('#resultsTableSearch button.regex, button.caseSensitive').on('click', function () {
+        var button = $(this);
+        if (button.hasClass('checked')) {
+            button.removeClass('checked');
+            button.removeClass('btn-study');
+            button.addClass('btn-default');
+        } else {
+            button.addClass('checked');
+            button.removeClass('btn-default');
+            button.addClass('btn-study');
+        }
+        searchResultTable();
+    });
+
+    function searchResultTable() {
+        resultsTable.search(
+            $('#resultsTableSearch input').val(),
+            $('#resultsTableSearch .regex').hasClass('checked'),
+            !$('#resultsTableSearch .regex').hasClass('checked'),
+            !$('#resultsTableSearch .caseSensitive').hasClass('checked')
+        ).draw();
+    }
 
     function toggleDeselectAllButton() {
         if (resultsTable.rows('.selected').any()) {
