@@ -2,6 +2,7 @@ package controllers.gui.useraccess;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import controllers.gui.routes;
 import general.TestHelper;
 import org.junit.After;
 import org.junit.Before;
@@ -62,28 +63,24 @@ public class HomeUserAccessTest {
 
     @Test
     public void callHome() throws Exception {
-        Call call = controllers.gui.routes.Home.home();
+        Call call = routes.Home.home();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
     public void callSidebarStudyList() throws Exception {
-        Call call = controllers.gui.routes.Home.sidebarStudyList();
+        Call call = routes.Home.sidebarStudyList();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
     public void callLog() throws Exception {
-        Call call = controllers.gui.routes.Home.log(1000);
+        Call call = routes.Home.log(1000);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
 }

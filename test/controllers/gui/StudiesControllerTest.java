@@ -94,7 +94,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.study(study.getId()).url());
+                .uri(routes.Studies.study(study.getId()).url());
         Result result = route(request);
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualTo("utf-8");
@@ -120,7 +120,7 @@ public class StudiesControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Studies.submitCreated().url());
+                .uri(routes.Studies.submitCreated().url());
         Result result = route(request);
 
         assertEquals(OK, result.status());
@@ -162,7 +162,7 @@ public class StudiesControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Studies.submitCreated().url());
+                .uri(routes.Studies.submitCreated().url());
         Result result = route(request);
 
         assertThat(result.contentType().get()).isEqualTo("application/json");
@@ -197,7 +197,7 @@ public class StudiesControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Studies.submitCreated().url());
+                .uri(routes.Studies.submitCreated().url());
         Result result = route(request);
 
         assertThat(contentAsString(result)).contains(
@@ -215,7 +215,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.properties(study.getId()).url());
+                .uri(routes.Studies.properties(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -260,7 +260,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap).uri(controllers.gui.routes.Studies
+                .bodyForm(formMap).uri(routes.Studies
                         .submitEdited(study.getId()).url());
         Result result = route(request);
 
@@ -286,7 +286,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.toggleLock(study.getId()).url());
+                .uri(routes.Studies.toggleLock(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -303,7 +303,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("DELETE")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.remove(study.getId()).url());
+                .uri(routes.Studies.remove(study.getId()).url());
         Result result = route(request);
         assertThat(result.status()).isEqualTo(OK);
     }
@@ -318,7 +318,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.cloneStudy(study.getId()).url());
+                .uri(routes.Studies.cloneStudy(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -334,7 +334,7 @@ public class StudiesControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.memberUsers(study.getId()).url());
+                .uri(routes.Studies.memberUsers(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -355,7 +355,7 @@ public class StudiesControllerTest {
         Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.toggleMemberUser(
+                .uri(routes.Studies.toggleMemberUser(
                         study.getId(), someUser.getEmail(), true).url());
         Result result = route(request);
 
@@ -365,7 +365,7 @@ public class StudiesControllerTest {
         // Remove admin as member from study
         request = new RequestBuilder().method("POST").session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Studies.toggleMemberUser(
+                .uri(routes.Studies.toggleMemberUser(
                         study.getId(), admin.getEmail(), false).url());
         result = route(request);
 
@@ -552,10 +552,6 @@ public class StudiesControllerTest {
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
-        String filename = "jatos_studylog_" + study.getUuid() + ".log";
-        assertThat(result.header("Content-disposition").get())
-                .isEqualTo("attachment; filename=" + filename);
-        assertThat(result.cookie("fileDownload")).isNotNull();
         assertThat(result.body()).isNotNull();
     }
 

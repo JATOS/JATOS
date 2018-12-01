@@ -7,10 +7,8 @@ import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
-import general.common.MessagesStrings;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
@@ -46,7 +44,7 @@ public class ResultDataStringGeneratorTests {
     private JPAApi jpaApi;
 
     @Inject
-    private ResultDataExportService resultDataStringGenerator;
+    private ResultDataExportService resultDataExportService;
 
     @Inject
     private JatosPublixUtils jatosPublixUtils;
@@ -96,7 +94,7 @@ public class ResultDataStringGeneratorTests {
             try {
                 createTwoStudyResults(study.getId());
                 User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                return resultDataStringGenerator.forWorker(admin, admin.getWorker());
+                return resultDataExportService.forWorker(admin, admin.getWorker());
             } catch (ForbiddenException | BadRequestException | ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -121,7 +119,7 @@ public class ResultDataStringGeneratorTests {
             try {
                 createTwoStudyResults(study.getId());
                 User admin = testHelper.getAdmin();
-                return resultDataStringGenerator.forStudy(admin, study);
+                return resultDataExportService.forStudy(admin, study);
             } catch (ForbiddenException | BadRequestException | ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -146,7 +144,7 @@ public class ResultDataStringGeneratorTests {
             try {
                 createTwoStudyResults(study.getId());
                 User admin = testHelper.getAdmin();
-                return resultDataStringGenerator
+                return resultDataExportService
                         .forComponent(admin, study.getFirstComponent().get());
             } catch (ForbiddenException | BadRequestException | ForbiddenReloadException e) {
                 throw new RuntimeException(e);
@@ -157,95 +155,6 @@ public class ResultDataStringGeneratorTests {
                         + "1. StudyResult, 1. Component, 2. ComponentResult\n"
                         + "2. StudyResult, 1. Component, 1. ComponentResult\n"
                         + "2. StudyResult, 1. Component, 2. ComponentResult");
-    }
-
-    /**
-     * Test ResultDataStringGenerator.fromListOfComponentResultIds()
-     */
-    @Test
-    public void checkFromListOfComponentResultIds() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        String resultData = jpaApi.withTransaction(() -> {
-            try {
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                String componentResultIds;
-                componentResultIds = createTwoComponentResultsWithData(study.getId());
-                return resultDataStringGenerator
-                        .fromListOfComponentResultIds(componentResultIds, admin);
-            } catch (BadRequestException | NotFoundException | ForbiddenException | ForbiddenReloadException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        assertThat(resultData)
-                .isEqualTo("Thats a first component result.\nThats a second component result.");
-    }
-
-    /**
-     * Test ResultDataStringGenerator.fromListOfComponentResultIds() without any
-     * result data
-     */
-    @Test
-    public void checkFromListOfComponentResultIdsEmpty() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                String componentResultIds = createTwoComponentResultsWithoutData(study.getId());
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                resultDataStringGenerator.fromListOfComponentResultIds(componentResultIds, admin);
-            } catch (NotFoundException e) {
-                assertThat(e.getMessage()).isEqualTo(MessagesStrings.componentResultNotExist(1l));
-            } catch (BadRequestException | ForbiddenException | ForbiddenReloadException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Test ResultDataStringGenerator.fromListOfStudyResultIds()
-     */
-    @Test
-    public void checkFromListOfStudyResultIds() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        String resultData = jpaApi.withTransaction(() -> {
-            try {
-                String ids = createTwoStudyResults(study.getId());
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                return resultDataStringGenerator.fromListOfStudyResultIds(ids, admin);
-            } catch (NotFoundException | BadRequestException | ForbiddenException | ForbiddenReloadException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        assertThat(resultData)
-                .isEqualTo("1. StudyResult, 1. Component, 1. ComponentResult\n"
-                        + "1. StudyResult, 1. Component, 2. ComponentResult\n"
-                        + "2. StudyResult, 1. Component, 1. ComponentResult\n"
-                        + "2. StudyResult, 1. Component, 2. ComponentResult\n"
-                        + "2. StudyResult, 2. Component, 1. ComponentResult\n"
-                        + "2. StudyResult, 2. Component, 2. ComponentResult");
-    }
-
-    /**
-     * Test ResultDataStringGenerator.fromListOfStudyResultIds() without any
-     * results
-     */
-    @Test
-    public void checkFromListOfStudyResultIdsEmpty() {
-        testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        // Never added any results
-        jpaApi.withTransaction(() -> {
-            try {
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                resultDataStringGenerator.fromListOfStudyResultIds("1, 2", admin);
-            } catch (NotFoundException e) {
-                assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyResultNotExist(1l));
-            } catch (BadRequestException | ForbiddenException e) {
-                throw new RuntimeException(e);
-            }
-        });
     }
 
     private String createTwoComponentResultsWithData(long studyId)

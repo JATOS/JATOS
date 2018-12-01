@@ -2,6 +2,7 @@ package controllers.gui.useraccess;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import controllers.gui.routes;
 import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
@@ -68,7 +69,7 @@ public class StudiesUserAccessTest {
     public void callStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Call call = controllers.gui.routes.Studies.study(study.getId());
+        Call call = routes.Studies.study(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -76,14 +77,14 @@ public class StudiesUserAccessTest {
 
     @Test
     public void callSubmitCreated() {
-        Call call = controllers.gui.routes.Studies.submitCreated();
+        Call call = routes.Studies.submitCreated();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
     public void callProperties() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.properties(study.getId());
+        Call call = routes.Studies.properties(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -92,7 +93,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callSubmitEdited() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.submitEdited(study.getId());
+        Call call = routes.Studies.submitEdited(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
@@ -103,7 +104,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callToggleLock() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.toggleLock(study.getId());
+        Call call = routes.Studies.toggleLock(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
@@ -111,7 +112,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.remove(study.getId());
+        Call call = routes.Studies.remove(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.DELETE);
     }
@@ -119,7 +120,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callCloneStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.cloneStudy(study.getId());
+        Call call = routes.Studies.cloneStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
     }
@@ -127,7 +128,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callMemberUsers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.memberUsers(study.getId());
+        Call call = routes.Studies.memberUsers(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -136,7 +137,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callToggleMemberUser() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.toggleMemberUser(study.getId(), "email", true);
+        Call call = routes.Studies.toggleMemberUser(study.getId(), "email", true);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
@@ -144,7 +145,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callAddAllMemberUsers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.addAllMemberUsers(study.getId());
+        Call call = routes.Studies.addAllMemberUsers(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
@@ -152,7 +153,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callRemoveAllMemberUsers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.removeAllMemberUsers(study.getId());
+        Call call = routes.Studies.removeAllMemberUsers(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.DELETE);
     }
@@ -160,7 +161,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies
+        Call call = routes.Studies
                 .tableDataByStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
@@ -170,7 +171,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callChangeComponentOrder() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.changeComponentOrder(
+        Call call = routes.Studies.changeComponentOrder(
                 study.getId(), study.getComponentList().get(0).getId(), "1");
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
@@ -179,7 +180,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callRunStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.runStudy(study.getId(), -1L);
+        Call call = routes.Studies.runStudy(study.getId(), -1L);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
     }
@@ -187,7 +188,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callStudyLog() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.studyLog(study.getId(), 100, false);
+        Call call = routes.Studies.studyLog(study.getId(), 100, false);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -196,7 +197,7 @@ public class StudiesUserAccessTest {
     @Test
     public void callStudiesAllWorkers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.Studies.allWorkers(study.getId());
+        Call call = routes.Studies.allWorkers(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());

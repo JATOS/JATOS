@@ -2,6 +2,7 @@ package controllers.gui.useraccess;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import controllers.gui.routes;
 import daos.common.UserDao;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
@@ -88,7 +89,7 @@ public class ComponentResultUserAccessTest {
     @Test
     public void callComponentResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ComponentResults
+        Call call = routes.ComponentResults
                 .componentResults(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
@@ -135,7 +136,7 @@ public class ComponentResultUserAccessTest {
     @Test
     public void callComponentResultsRemoveAllOfComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ComponentResults
+        Call call = routes.ComponentResults
                 .removeAllOfComponent(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.DELETE);
@@ -145,7 +146,7 @@ public class ComponentResultUserAccessTest {
     @Test
     public void callComponentResultsTableDataByComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = controllers.gui.routes.ComponentResults
+        Call call = routes.ComponentResults
                 .tableDataByComponent(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);

@@ -85,7 +85,7 @@ public class UsersControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Users.userManager().url());
+                .uri(routes.Users.userManager().url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -104,7 +104,7 @@ public class UsersControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Users.allUserData().url());
+                .uri(routes.Users.allUserData().url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -122,7 +122,7 @@ public class UsersControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Users
+                .uri(routes.Users
                         .toggleAdmin(TestHelper.BLA_EMAIL, true).url());
         Result result = route(request);
 
@@ -143,7 +143,7 @@ public class UsersControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Users
+                .uri(routes.Users
                         .profile(UserService.ADMIN_EMAIL).url());
         Result result = route(request);
 
@@ -162,7 +162,7 @@ public class UsersControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Users
+                .uri(routes.Users
                         .singleUserData(UserService.ADMIN_EMAIL).url());
         Result result = route(request);
 
@@ -189,7 +189,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Users.submitCreated().url());
+                .uri(routes.Users.submitCreated().url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -209,7 +209,7 @@ public class UsersControllerTest {
         Http.Session session = testHelper.mockSessionCookieandCache(userBla);
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap).uri(controllers.gui.routes.Users
+                .bodyForm(formMap).uri(routes.Users
                         .submitEditedProfile(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
@@ -240,7 +240,7 @@ public class UsersControllerTest {
         Http.Session session = testHelper.mockSessionCookieandCache(userBla);
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap).uri(controllers.gui.routes.Users
+                .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
@@ -272,7 +272,7 @@ public class UsersControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap).uri(controllers.gui.routes.Users
+                .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
@@ -304,7 +304,7 @@ public class UsersControllerTest {
         Http.Session session = testHelper.mockSessionCookieandCache(userBla);
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap).uri(controllers.gui.routes.Users
+                .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
@@ -336,7 +336,7 @@ public class UsersControllerTest {
         Http.Session session = testHelper.mockSessionCookieandCache(userBla);
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap).uri(controllers.gui.routes.Users
+                .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
@@ -364,7 +364,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL).url());
+                .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -391,7 +391,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL).url());
+                .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -420,7 +420,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Users.remove("foo@foo.org").url());
+                .uri(routes.Users.remove("foo@foo.org").url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
@@ -445,7 +445,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
-                .uri(controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL).url());
+                .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);

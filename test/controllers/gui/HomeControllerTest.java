@@ -66,7 +66,7 @@ public class HomeControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Home.home().url());
+                .uri(routes.Home.home().url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -81,7 +81,7 @@ public class HomeControllerTest {
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Home.log(1000).url());
+                .uri(routes.Home.log(1000).url());
         Result result = route(request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -99,7 +99,7 @@ public class HomeControllerTest {
                 .mockSessionCookieandCache(notAdminUser);
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Home.log(1000).url());
+                .uri(routes.Home.log(1000).url());
         testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
 
         testHelper.removeUser(TestHelper.BLA_EMAIL);

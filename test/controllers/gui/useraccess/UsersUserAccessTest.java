@@ -2,6 +2,7 @@ package controllers.gui.useraccess;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import controllers.gui.routes;
 import general.TestHelper;
 import models.common.User;
 import org.junit.After;
@@ -63,44 +64,35 @@ public class UsersUserAccessTest {
 
     @Test
     public void callUserManager() {
-        Call call = controllers.gui.routes.Users.userManager();
+        Call call = routes.Users.userManager();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
     public void callAllUserData() {
-        Call call = controllers.gui.routes.Users.allUserData();
+        Call call = routes.Users.allUserData();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-                Helpers.GET);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.GET);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
     public void callToggleAdmin() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
-        Call call =
-                controllers.gui.routes.Users.toggleAdmin(TestHelper.BLA_EMAIL,
-                        true);
+        Call call = routes.Users.toggleAdmin(TestHelper.BLA_EMAIL, true);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-                Helpers.POST);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.POST,
-                testHelper.getAdmin());
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.POST);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.POST, testHelper.getAdmin());
         testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
 
     @Test
     public void callProfile() {
         User someUser =
-                testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
-                        "bla");
-        Call call = controllers.gui.routes.Users.profile(someUser.getEmail());
+                testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+        Call call = routes.Users.profile(someUser.getEmail());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkThatCallLeadsToRedirect(call, Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);
@@ -109,34 +101,28 @@ public class UsersUserAccessTest {
 
     @Test
     public void callSubmitCreated() {
-        Call call = controllers.gui.routes.Users.submitCreated();
+        Call call = routes.Users.submitCreated();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-                Helpers.POST);
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.POST);
     }
 
     @Test
     public void callSingleUserData() {
-        User someUser =
-                testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
-                        "bla");
-        Call call = controllers.gui.routes.Users
-                .singleUserData(TestHelper.BLA_EMAIL);
+        User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+        Call call = routes.Users.singleUserData(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);
     }
 
     @Test
     public void callSubmitEditedProfile() {
-        Call call = controllers.gui.routes.Users
-                .submitEditedProfile(TestHelper.BLA_EMAIL);
+        Call call = routes.Users.submitEditedProfile(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
     public void callSubmitChangedPassword() {
-        Call call = controllers.gui.routes.Users
-                .submitChangedPassword(TestHelper.BLA_EMAIL);
+        Call call = routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
@@ -144,8 +130,7 @@ public class UsersUserAccessTest {
     public void callRemove() {
         Call call = controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-                Helpers.POST);
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.POST);
     }
 
 }

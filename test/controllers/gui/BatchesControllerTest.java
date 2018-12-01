@@ -74,7 +74,7 @@ public class BatchesControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyJson(jsonNode)
-                .uri(controllers.gui.routes.Batches.createPersonalSingleRun(
+                .uri(routes.Batches.createPersonalSingleRun(
                         study.getId(), study.getDefaultBatch().getId()).url());
         Result result = route(request);
 
@@ -96,7 +96,7 @@ public class BatchesControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyJson(jsonNode)
-                .uri(controllers.gui.routes.Batches.createPersonalMultipleRun(
+                .uri(routes.Batches.createPersonalMultipleRun(
                         study.getId(), study.getDefaultBatch().getId()).url());
         Result result = route(request);
 

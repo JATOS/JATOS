@@ -91,7 +91,7 @@ public class ComponentsControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Components.runComponent(study.getId(),
+                .uri(routes.Components.runComponent(study.getId(),
                         study.getComponent(1).getId(), -1L).url());
         Result result = route(request);
 
@@ -121,7 +121,7 @@ public class ComponentsControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Components.runComponent(study.getId(),
+                .uri(routes.Components.runComponent(study.getId(),
                         study.getComponent(1).getId(), -1L).url());
         // Empty html path must lead to an JatosGuiException with a HTTP status of 400
         testHelper.assertJatosGuiException(request, Http.Status.BAD_REQUEST,
@@ -140,7 +140,7 @@ public class ComponentsControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Components
+                .uri(routes.Components
                         .properties(study.getId(), study.getFirstComponent().get().getId()).url());
         Result result = route(request);
 
@@ -192,7 +192,7 @@ public class ComponentsControllerTest {
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(form)
-                .uri(controllers.gui.routes.Components.submitCreated(study.getId()).url());
+                .uri(routes.Components.submitCreated(study.getId()).url());
         Result result = route(request);
 
         assertEquals(OK, result.status());
@@ -218,7 +218,7 @@ public class ComponentsControllerTest {
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(form)
-                .uri(controllers.gui.routes.Components.submitEdited(study.getId(),
+                .uri(routes.Components.submitEdited(study.getId(),
                         study.getFirstComponent().get().getId()).url());
         Result result = route(request);
 
@@ -246,7 +246,7 @@ public class ComponentsControllerTest {
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(form)
-                .uri(controllers.gui.routes.Components.submitCreated(study.getId()).url());
+                .uri(routes.Components.submitCreated(study.getId()).url());
         Result result = route(request);
 
         assertThat(result.contentType().get()).isEqualTo("application/json");
@@ -269,7 +269,7 @@ public class ComponentsControllerTest {
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Components.toggleActive(study.getId(),
+                .uri(routes.Components.toggleActive(study.getId(),
                         study.getComponent(1).getId(), true).url());
         Result result = route(request);
 
@@ -284,7 +284,7 @@ public class ComponentsControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Components.cloneComponent(
+                .uri(routes.Components.cloneComponent(
                         study.getId(), study.getComponent(1).getId()).url());
         Result result = route(request);
 
@@ -299,7 +299,7 @@ public class ComponentsControllerTest {
         RequestBuilder request = new RequestBuilder().method("DELETE")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(controllers.gui.routes.Components
+                .uri(routes.Components
                         .remove(study.getId(), study.getComponent(1).getId()).url());
         Result result = route(request);
 

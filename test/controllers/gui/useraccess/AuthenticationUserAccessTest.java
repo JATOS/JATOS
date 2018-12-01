@@ -2,6 +2,7 @@ package controllers.gui.useraccess;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import controllers.gui.routes;
 import general.TestHelper;
 import org.junit.After;
 import org.junit.Before;
@@ -62,7 +63,7 @@ public class AuthenticationUserAccessTest {
 
     @Test
     public void callLogout() throws Exception {
-        Call call = controllers.gui.routes.Authentication.logout();
+        Call call = routes.Authentication.logout();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
