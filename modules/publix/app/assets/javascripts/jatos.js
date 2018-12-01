@@ -30,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.3.2";
+	jatos.version = "3.3.3";
 	/**
 	 * How long should JATOS wait until to retry the HTTP call. Warning: There is a
 	 * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
@@ -251,7 +251,7 @@ var jatos = {};
 	 */
 	function initJatos() {
 
-		// There is a natural order to this world, and those who try to upend it do not fare well.
+		// "There is a natural order to this world, and those who try to upend it do not fare well."
 		// 1) Load additional scripts
 		// 2) Do more init stuff that doesn't involve HTTP requests
 		// 3) Get init data from JATOS server

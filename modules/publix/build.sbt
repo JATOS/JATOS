@@ -1,5 +1,5 @@
 name := "jatos-publix"
-version := "3.3.2"
+version := "3.3.3"
 organization := "org.jatos"
 scalaVersion := "2.11.11"
 
