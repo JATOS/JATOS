@@ -9,3 +9,7 @@ This software is licensed under the [Apache 2 License](http://www.apache.org/lic
    target="_blank">
    <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
+
+[![Deploy to Azure](https://azuredeploy.net/deploybutton.svg)](https://deploy.azure.com/?repository=https://github.com/JATOS/JATOS)
+
+
