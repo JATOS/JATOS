@@ -56,6 +56,7 @@
     "imageOffer": "UbuntuServer",
     "ubuntuOSVersion": "18.04-LTS",
     "OSDiskName": "osDisk",
+    "location": "[parameters('siteLocation')]",
     "nsgName": "[concat(parameters('vmName'),'jatosNSG')]",
     "nicName": "[concat(parameters('vmName'),'jatosNIC')]",
     "dockerExtensionName": "DockerExtension",
