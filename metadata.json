@@ -1,9 +1,0 @@
-{
-  "$schema": "https://aka.ms/azure-quickstart-templates-metadata-schema#",
-  "type": "QuickStart",
-  "itemDisplayName": "Deploy JATOS Server with Docker",
-  "description": "This template allows you to deploy JATOS. It uses an Ubuntu VM with Docker installed and a JATOS container.",
-  "summary": "Deploy JATOS as a single VM containerized application",
-  "githubUsername": "kristian-lange",
-  "dateUpdated": "2018-12-01"
-}
