@@ -54,7 +54,7 @@
   "variables": {
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
-    "ubuntuOSVersion": "18.04-LTS",
+    "ubuntuOSVersion": "16.04-LTS",
     "OSDiskName": "osDisk",
     "location": "[parameters('siteLocation')]",
     "nsgName": "[concat(parameters('vmName'),'jatosNSG')]",
