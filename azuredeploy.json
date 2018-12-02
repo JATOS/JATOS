@@ -4,6 +4,7 @@
   "parameters": {
     "adminUsername": {
       "type": "string",
+      "defaultValue": "admin",
       "metadata": {
         "description": "Username for the Virtual Machine."
       }
@@ -22,17 +23,21 @@
     },
     "vmName": {
       "type": "string",
-      "defaultValue": "jatosdockervm",
+      "defaultValue": "jatos",
       "metadata": {
-        "description": "Name of the sample VM to create"
+        "description": "Name of the VM to create"
       }
     },
     "vmSize": {
       "type": "string",
       "defaultValue": "Standard_A1",
       "allowedValues": [
+        "Basic_A1",
+        "Basic_A2",
         "Standard_A1",
-        "Standard_A2"
+        "Standard_A2",
+        "Standard_A1_v2",
+        "Standard_A2_v2"
       ],
       "metadata": {
         "description": "Size of the Virtual Machine."
@@ -40,7 +45,10 @@
     },
     "siteLocation": {
         "type": "string",
-        "defaultValue": "[resourceGroup().location]"
+        "defaultValue": "[resourceGroup().location]",
+        "metadata": {
+          "description": "Location of all resources."
+        }
     }
   },
   "variables": {
