@@ -197,7 +197,7 @@
         "settings": {
           "compose": {
             "jatos": {
-              "image": "jatos/jatos",
+              "image": "jatos/jatos:3.3.1",
               "ports": [
                 "80:9000"
               ],
