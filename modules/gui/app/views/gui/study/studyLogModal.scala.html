@@ -14,6 +14,7 @@
                 <h4 class="modal-title">Study Log</h4>
             </div>
             <div class="modal-body">
+                <div class="messages"></div>
                 <div class="btn-group" data-toggle="buttons">
                     <label class="btn btn-study active">
                         <input id="studyLogPretty" type="radio" name="options" autocomplete="off" checked>Pretty
@@ -58,18 +59,18 @@ function showStudyLogModal(response) {
     try {
         studyLog = JSON.parse(studyLogRaw);
     } catch(e) {
-        showError("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.", "#studyLogModal .modal-header");
+        showError("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.", "#studyLogModal .messages");
         showStudyLogRaw();
         $('#studyLogModal').modal('show');
         return;
     }
     if (studyLog[0] == "@general.common.MessagesStrings.COULDNT_OPEN_LOG") {
-        showError("Couldn't get study log.", "#studyLogModal .modal-header");
+        showError("Couldn't get study log.", "#studyLogModal .messages");
     }
     var entryLimit = studyLog.length - 1;
     if (studyLog[entryLimit] == "@general.common.MessagesStrings.LOG_CUT") {
         var txt = "This study log has more than " + entryLimit + " entries. Only the last " + entryLimit + " entries are shown. To get the whole study log download it and display it locally.";
-        showInfo(txt, "#studyLogModal .modal-header");
+        showInfo(txt, "#studyLogModal .messages");
     }
     studyLog.forEach(function(entry) {
         if (entry.timestamp) {
@@ -113,7 +114,7 @@ $('#studyLogDownload').on('click', function() {
         type : 'GET',
         success: download.bind(true, "text/plain", "jatos_studylog_@{study.getUuid()}.log"),
         error : function(err) {
-            showError("Download of study log failed", "#studyLogModal .modal-header");
+            showError("Download of study log failed", "#studyLogModal .messages");
         }
     });
 });

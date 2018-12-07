@@ -12,6 +12,7 @@
             </div>
 
             <div class="modal-body">
+                <div class="messages"></div>
                 <!-- All workers table -->
                 <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
                     <thead>
@@ -49,7 +50,7 @@ function generateWorkersTable() {
             "type": "GET",
             "url" : '@controllers.gui.routes.Studies.allWorkers(study.getId())',
             "error": function(reason) {
-                    showError("Couldn't read worker data.", "#workersModal .modal-header")
+                    showError("Couldn't read worker data.", "#workersModal .messages")
             }
         },
         "dom": 'ftip',
