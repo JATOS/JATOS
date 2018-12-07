@@ -11,6 +11,9 @@
                     <h4 class="modal-title">Batch Properties</h4>
                 </div>
                 <div class="modal-body">
+
+                    <div class="messages"></div>
+
                     <div class="form-group row">
                         <div class="col-xs-3"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
                         <div class="col-xs-9">
@@ -84,11 +87,13 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.JSON_DATA">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed."></span>
+                        <label class="control-label col-xs-3" for="@models.gui.BatchProperties.JSON_DATA">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
                             <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
                         </label>
                         <div class="col-xs-9">
-                            <textarea rows="6" class="form-control @models.gui.BatchProperties.JSON_DATA" id="@models.gui.BatchProperties.JSON_DATA" name="@models.gui.BatchProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
+                            <div class="form-control @models.gui.BatchProperties.JSON_DATA" id="batchJsonData"></div>
+                            <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
+                            <textarea class="@models.gui.BatchProperties.JSON_DATA" name="@models.gui.BatchProperties.JSON_DATA" hidden></textarea>
                         </div>
                     </div>
 
@@ -137,6 +142,8 @@
 </div>
 
 <script>
+
+var batchJsonDataEditor;
 
 $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED').change(function() {
     $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_WORKERS').prop("disabled", !this.checked);
@@ -188,12 +195,14 @@ function fillbatchPropertiesForm(batch, properties, batchItem) {
     $.each(properties['allowedWorkerTypes'], function(index, workerType) {
         $('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
     });
+    // Setup editor for JSON input data
+    if (!batchJsonDataEditor) setupBatchJsonDataEditor();
     try {
         var jsonInput = (properties['@models.gui.BatchProperties.JSON_DATA']) ? properties['@models.gui.BatchProperties.JSON_DATA'] : "";
         var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-        $('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val(jsonInputPretty);
+        batchJsonDataEditor.getSession().setValue(jsonInputPretty);
     } catch (e) {
-        $('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val("");
+        batchJsonDataEditor.getSession().setValue("");
     }
     // Group properties
     @if(!study.isGroupStudy) {
@@ -212,9 +221,24 @@ function fillbatchPropertiesForm(batch, properties, batchItem) {
             '@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
             '@models.gui.BatchProperties.MAX_TOTAL_MEMBERS', properties);
     if (@study.isLocked()) {
-        showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#batchPropertiesModal .modal-header");
+        showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#batchPropertiesModal .messages");
         $('#batchPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", @study.isLocked());
     }
+}
+
+function setupBatchJsonDataEditor() {
+    var jsonDataDiv = $("#batchPropertiesModal div.@models.gui.BatchProperties.JSON_DATA").get(0);
+    batchJsonDataEditor = ace.edit(jsonDataDiv);
+    batchJsonDataEditor.setTheme("ace/theme/clouds");
+    batchJsonDataEditor.session.setMode("ace/mode/json");
+    batchJsonDataEditor.setOptions({
+        autoScrollEditorIntoView: true,
+        showPrintMargin: false,
+        wrapBehavioursEnabled: true,
+        wrap: true,
+        minLines: 8,
+        maxLines: 30
+    });
 }
 
 function setInputGroupWithCheckbox(modal, checkboxVarName, inputVarName, properties) {
@@ -231,18 +255,21 @@ function setInputGroupWithCheckbox(modal, checkboxVarName, inputVarName, propert
 }
 
 $("#batchPropertiesForm .prettyButton").click(function(event) {
-    var jsonInput = $('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val();
-    removeSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA');
+    var jsonInput = batchJsonDataEditor.getSession().getValue();
+    removeSingleFormError('#batchPropertiesModal div.@models.gui.BatchProperties.JSON_DATA');
     try {
         var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-        $('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val(jsonInputPretty);
+        batchJsonDataEditor.getSession().setValue(jsonInputPretty);
     } catch (e) {
-        showSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+        showSingleFormError('#batchPropertiesModal div.@models.gui.BatchProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
     }
 });
 
 $("#batchPropertiesForm").submit(function(event) {
     event.preventDefault();
+    // Put JSON from editor into textarea to let it be picked up by form.serialize
+    var jsonData = batchJsonDataEditor.getSession().getValue();
+    $("#batchPropertiesModal textarea.@models.gui.BatchProperties.JSON_DATA").val(jsonData);
     var batchProps = $('#batchPropertiesModal').data('properties');
     if (!batchProps) {return} // should never happen
     $.ajax({
@@ -263,11 +290,11 @@ $("#batchPropertiesForm").submit(function(event) {
         error: function(response) {
             removeAlerts('#batchPropertiesModal');
             removeFormErrors('#batchPropertiesModal');
-            showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#batchPropertiesModal .modal-header");
+            showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#batchPropertiesModal .messages");
             if (isJson(response.responseText)) {
                 showFormErrors('#batchPropertiesModal', response)
             } else {
-                showModalError("#batchPropertiesModal .modal-header", response);
+                showModalError("#batchPropertiesModal .messages", response);
             }
         }
     });

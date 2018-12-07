@@ -37,6 +37,7 @@
                     <h4 class="modal-title">Create Batch</h4>
                 </div>
                 <div class="modal-body">
+                    <div class="messages"></div>
                     <div class="form-group">
                         <label class="control-label col-xs-3"
                             for="@models.gui.BatchProperties.TITLE">Title</label>
@@ -154,11 +155,11 @@ $("#createBatchForm").submit(function(event) {
         error: function(response) {
             removeAlerts("#createBatchModal");
             removeFormErrors("#createBatchModal");
-            showWarning("Batch wasn't created", "#createBatchModal .modal-header");
+            showWarning("Batch wasn't created", "#createBatchModal .messages");
             if (isJson(response.responseText)) {
                 showFormErrors("#createBatchModal", response);
             } else {
-                showModalError("#createBatchModal .modal-header", response);
+                showModalError("#createBatchModal .messages", response);
             }
         }
     });

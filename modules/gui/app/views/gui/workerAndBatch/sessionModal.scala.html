@@ -13,13 +13,16 @@
                 </div>
 
                 <div class="modal-body">
+                    <div class="messages"></div>
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="data">Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your session data here"></span>
+                        <label class="control-label col-xs-2" for="data">Session Data&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Edit your session data here"></span><br>
                             <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
                         </label>
-                        <div class="col-xs-9">
+                        <div class="col-xs-10">
+                            <div class="form-control sessionData" id="data"></div>
+                            <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
+                            <textarea class="sessionData" name="data" hidden></textarea>
                             <input type="hidden" class="sessionVersion" name="version" />
-                            <textarea rows="12" class="form-control sessionData" name="data" placeholder="Put your session as JSON in here"></textarea>
                         </div>
                     </div>
                 </div>
@@ -34,6 +37,8 @@
 </div>
 
 <script>
+
+var sessionDataEditor;
 
 $('#batchList').on('click', '.batchSessionButton', function() {
     var batch = getBatchData(this);
@@ -79,24 +84,40 @@ function fillSessionModal(session, type) {
         $('#sessionModal .modal-title').text("Current Group Session Data");
     }
 
+    if (!sessionDataEditor) setupSessionDataEditor();
     var sessionData = session['data'];
     sessionData = sessionData ? sessionData : "{}";
     var sessionDataPretty = JSON.stringify(JSON.parse(sessionData), null, 2);
-    $('#sessionModal .sessionData').val(sessionDataPretty);
+    sessionDataEditor.getSession().setValue(sessionDataPretty);
     var sessionVersion = session['version'];
     $('#sessionModal .sessionVersion').val(sessionVersion);
 
     showInfo("Changing session data can affect your running studies. " +
-        "Edit only if you know what you are doing.", "#sessionModal .modal-header");
+        "Edit only if you know what you are doing.", "#sessionModal .messages");
     $('#sessionModal').modal('show');
 }
 
+function setupSessionDataEditor() {
+    var sessionDataDiv = $("#sessionModal div.sessionData").get(0);
+    sessionDataEditor = ace.edit(sessionDataDiv);
+    sessionDataEditor.setTheme("ace/theme/clouds");
+    sessionDataEditor.session.setMode("ace/mode/json");
+    sessionDataEditor.setOptions({
+        autoScrollEditorIntoView: true,
+        showPrintMargin: false,
+        wrapBehavioursEnabled: true,
+        wrap: true,
+        minLines: 12,
+        maxLines: 30
+    });
+}
+
 $("#sessionModal .prettyButton").click(function(event) {
-    var jsonInput = $('#sessionModal .sessionData').val();
+    var sessionData = sessionDataEditor.getSession().getValue();
     removeSingleFormError('#sessionModal .sessionData');
     try {
-        var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-        $('#sessionModal .sessionData').val(jsonInputPretty);
+        var sessionDataPretty = JSON.stringify(JSON.parse(sessionData), null, 2);
+        sessionDataEditor.getSession().setValue(sessionDataPretty);
     } catch (e) {
         showSingleFormError('#sessionModal .sessionData', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
     }
@@ -104,6 +125,9 @@ $("#sessionModal .prettyButton").click(function(event) {
 
 $("#sessionForm").submit(function(event) {
     event.preventDefault();
+    // Put JSON from editor into textarea to let it be picked up by form.serialize
+    var sessionData = sessionDataEditor.getSession().getValue();
+    $("#sessionModal textarea.sessionData").val(sessionData);
     var id = $('#sessionModal').data('id');
     var type = $('#sessionModal').data('type');
     if (!id || !type) {return} // should never happen
@@ -130,11 +154,11 @@ function postSession(postUrl) {
         error: function(response) {
             removeAlerts('#sessionModal');
             removeFormErrors('#sessionModal');
-            showWarning("Data weren't saved", "#sessionModal .modal-header");
+            showWarning("Data weren't saved", "#sessionModal .messages");
             if (isJson(response.responseText)) {
                 showFormErrors('#sessionModal', response)
             } else {
-                showModalError("#sessionModal .modal-header", response);
+                showModalError("#sessionModal .messages", response);
             }
         }
     });

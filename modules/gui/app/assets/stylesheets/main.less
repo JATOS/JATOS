@@ -206,10 +206,21 @@ a:focus {
 	filter: alpha(opacity=60); /* MSIE */
 }
 
+
+/*
+ * Bootstrap modal
+ */
 .modal {
     overflow-y: auto;
 }
 
+/*
+ * ACE editor and Bootstrap modals: stop jumping to the top with
+ * https://stackoverflow.com/questions/43738707
+ */
+.ace_text-input {
+    position: absolute!important;
+}
 
 /*
  * Fix for Bootstrap 3 radio and checkbox alignment

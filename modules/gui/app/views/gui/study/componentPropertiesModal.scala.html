@@ -2,196 +2,220 @@
 @playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <div class="modal fade" id="componentPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<form id="componentPropertiesForm" method="post" class="form-horizontal" role="form">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-					<h4 class="modal-title">Component Properties</h4>
-				</div>
-				<div class="modal-body">
-					<div class="form-group">
-						<div class="col-xs-2"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
-						<div class="col-xs-10">
-							<p class="@models.gui.ComponentProperties.ID"></p>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of components between different JATOS instances"></span></p></div>
-						<div class="col-xs-10">
-							<p class="@models.gui.ComponentProperties.UUID"></p>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-2" for="componentTitle">Title</label>
-						<div class="col-xs-10">
-							<input type="text" class="form-control @models.gui.ComponentProperties.TITLE" id="componentTitle" name="@models.gui.ComponentProperties.TITLE" placeholder="Your component title">
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-xs-offset-2 col-xs-10">
-							<label class="checkbox-inline">
-								<input type="checkbox" class="@models.gui.ComponentProperties.RELOADABLE" name="@models.gui.ComponentProperties.RELOADABLE" value="true"
-										>Allow workers to reload <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="If this box is not checked reloading this component's page will lead to an error and subsequent ending of the whole study."></span>
-								<!-- We need a hidden input field.
-								http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-								<input type="hidden" name="@models.gui.ComponentProperties.RELOADABLE" value="false" />
-							</label>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-2" for="@models.gui.ComponentProperties.HTML_FILE_PATH">HTML file path&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study's assets. Use '/' as a directory separator - even on MS Windows."></span></label>
-						<div class="col-xs-10">
-							<div class="input-group" id="htmlFilePath">
-								<span class="input-group-addon">/@study.getDirName()/</span>
-								<input type="text" class="form-control @models.gui.ComponentProperties.HTML_FILE_PATH" id="@models.gui.ComponentProperties.HTML_FILE_PATH" name="@models.gui.ComponentProperties.HTML_FILE_PATH" placeholder="Path to the actual HTML file">
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-2" for="componentComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
-						<div class="col-xs-10">
-							<textarea rows="3" class="form-control @models.gui.ComponentProperties.COMMENTS" id="componentComments" name="@models.gui.ComponentProperties.COMMENTS" placeholder="Your comments"></textarea>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-2" for="componentJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed."></span>
-							<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
-						</label>
-						<div class="col-xs-10">
-							<textarea rows="6" class="form-control @models.gui.ComponentProperties.JSON_DATA" id="componentJsonData" name="@models.gui.ComponentProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" name="@controllers.gui.Components.EDIT_SUBMIT_NAME" class="confirmed btn btn-component @controllers.gui.Components.EDIT_SAVE" value="@controllers.gui.Components.EDIT_SAVE">
-					<button type="button" class="confirmed btn btn-component @controllers.gui.Components.EDIT_SAVE_AND_RUN">@controllers.gui.Components.EDIT_SAVE_AND_RUN</button>
-				</div>
-			</form>
-		</div>
-	</div>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="componentPropertiesForm" method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Component Properties</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="messages"></div>
+                    <div class="form-group">
+                        <div class="col-xs-2"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
+                        <div class="col-xs-10">
+                            <p class="@models.gui.ComponentProperties.ID"></p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of components between different JATOS instances"></span></p></div>
+                        <div class="col-xs-10">
+                            <p class="@models.gui.ComponentProperties.UUID"></p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-2" for="componentTitle">Title</label>
+                        <div class="col-xs-10">
+                            <input type="text" class="form-control @models.gui.ComponentProperties.TITLE" id="componentTitle" name="@models.gui.ComponentProperties.TITLE" placeholder="Your component title">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-xs-offset-2 col-xs-10">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" class="@models.gui.ComponentProperties.RELOADABLE" name="@models.gui.ComponentProperties.RELOADABLE" value="true"
+                                        >Allow workers to reload <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="If this box is not checked reloading this component's page will lead to an error and subsequent ending of the whole study."></span>
+                                <!-- We need a hidden input field.
+                                http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                <input type="hidden" name="@models.gui.ComponentProperties.RELOADABLE" value="false" />
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-2" for="@models.gui.ComponentProperties.HTML_FILE_PATH">HTML file path&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study's assets. Use '/' as a directory separator - even on MS Windows."></span></label>
+                        <div class="col-xs-10">
+                            <div class="input-group" id="htmlFilePath">
+                                <span class="input-group-addon">/@study.getDirName()/</span>
+                                <input type="text" class="form-control @models.gui.ComponentProperties.HTML_FILE_PATH" id="@models.gui.ComponentProperties.HTML_FILE_PATH" name="@models.gui.ComponentProperties.HTML_FILE_PATH" placeholder="Path to the actual HTML file">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-2" for="componentComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
+                        <div class="col-xs-10">
+                            <textarea rows="3" class="form-control @models.gui.ComponentProperties.COMMENTS" id="componentComments" name="@models.gui.ComponentProperties.COMMENTS" placeholder="Your comments"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-2" for="componentJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
+                            <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
+                        </label>
+                        <div class="col-xs-10">
+                            <div class="form-control @models.gui.ComponentProperties.JSON_DATA" id="componentJsonData"></div>
+                            <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
+                            <textarea class="@models.gui.ComponentProperties.JSON_DATA" name="@models.gui.ComponentProperties.JSON_DATA" hidden></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" name="@controllers.gui.Components.EDIT_SUBMIT_NAME" class="confirmed btn btn-component @controllers.gui.Components.EDIT_SAVE" value="@controllers.gui.Components.EDIT_SAVE">
+                    <button type="button" class="confirmed btn btn-component @controllers.gui.Components.EDIT_SAVE_AND_RUN">@controllers.gui.Components.EDIT_SAVE_AND_RUN</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
 
+var componentJsonDataEditor;
+
 $('#studyToolbar').on('click', '#createComponentLink', function() {
-	removeAlerts("#componentPropertiesModal");
-	removeFormErrors("#componentPropertiesModal");
-	clearForm("#componentPropertiesForm");
-	$('#componentPropertiesModal .modal-title').text("Create Component");
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').hide();
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').hide();
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Create & Run");
-	$('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
-	$("#componentPropertiesForm").attr("action", "@{playHttpContext}jatos/" + studyId + "/component");
-	$('#componentPropertiesModal').modal('show');
+    removeAlerts("#componentPropertiesModal");
+    removeFormErrors("#componentPropertiesModal");
+    clearForm("#componentPropertiesForm");
+    $('#componentPropertiesModal .modal-title').text("Create Component");
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').hide();
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').hide();
+    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
+    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Create & Run");
+    $('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
+    $("#componentPropertiesForm").attr("action", "@{playHttpContext}jatos/" + studyId + "/component");
+    $('#componentPropertiesModal').modal('show');
 });
 
 function fillComponentPropertiesForm(properties) {
-	$('#componentPropertiesModal .modal-title').text("Edit Component Properties");
-	var id = (properties['@models.gui.ComponentProperties.ID']) ? properties['@models.gui.ComponentProperties.ID'] : "-";
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.ID').text(id);
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').show();
-	var uuid = (properties['@models.gui.ComponentProperties.UUID']) ? properties['@models.gui.ComponentProperties.UUID'] : "-";
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').text(uuid);
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').show();
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.TITLE').val(properties['@models.gui.ComponentProperties.TITLE']);
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.RELOADABLE').prop('checked', properties['@models.gui.ComponentProperties.RELOADABLE']);
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val(properties['@models.gui.ComponentProperties.HTML_FILE_PATH']);
-	var comments = (properties['@models.gui.ComponentProperties.COMMENTS']) ? properties['@models.gui.ComponentProperties.COMMENTS'] : "";
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.COMMENTS').val(comments);
-	try {
-		var jsonInput = (properties['@models.gui.ComponentProperties.JSON_DATA']) ? properties['@models.gui.ComponentProperties.JSON_DATA'] : "";
-		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-		$('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA').val(jsonInputPretty);
-	} catch (e) {
-		$('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA').val("");
-	}
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Save");
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Save & Run");
-	$('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", studyLocked);
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').attr("disabled", studyLocked);
-	if (studyLocked) {
-		showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#componentPropertiesModal .modal-header");
-	}
-	$("#componentPropertiesForm").attr("action", "@{playHttpContext}jatos/" + studyId + "/" + properties['@models.gui.ComponentProperties.ID'] + "/properties");
+    $('#componentPropertiesModal .modal-title').text("Edit Component Properties");
+    var id = (properties['@models.gui.ComponentProperties.ID']) ? properties['@models.gui.ComponentProperties.ID'] : "-";
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.ID').text(id);
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').show();
+    var uuid = (properties['@models.gui.ComponentProperties.UUID']) ? properties['@models.gui.ComponentProperties.UUID'] : "-";
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').text(uuid);
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').show();
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.TITLE').val(properties['@models.gui.ComponentProperties.TITLE']);
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.RELOADABLE').prop('checked', properties['@models.gui.ComponentProperties.RELOADABLE']);
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val(properties['@models.gui.ComponentProperties.HTML_FILE_PATH']);
+    var comments = (properties['@models.gui.ComponentProperties.COMMENTS']) ? properties['@models.gui.ComponentProperties.COMMENTS'] : "";
+    $('#componentPropertiesModal .@models.gui.ComponentProperties.COMMENTS').val(comments);
+    if (!componentJsonDataEditor) setupComponentJsonDataEditor();
+    try {
+        var jsonInput = (properties['@models.gui.ComponentProperties.JSON_DATA']) ? properties['@models.gui.ComponentProperties.JSON_DATA'] : "";
+        var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+        componentJsonDataEditor.getSession().setValue(jsonInputPretty);
+    } catch (e) {
+        componentJsonDataEditor.getSession().setValue("");
+    }
+    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Save");
+    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Save & Run");
+    $('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", studyLocked);
+    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').attr("disabled", studyLocked);
+    if (studyLocked) {
+        showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#componentPropertiesModal .messages");
+    }
+    $("#componentPropertiesForm").attr("action", "@{playHttpContext}jatos/" + studyId + "/" + properties['@models.gui.ComponentProperties.ID'] + "/properties");
+}
+
+function setupComponentJsonDataEditor() {
+    var jsonDataDiv = $("#componentPropertiesModal div.@models.gui.ComponentProperties.JSON_DATA").get(0);
+    componentJsonDataEditor = ace.edit(jsonDataDiv);
+    componentJsonDataEditor.setTheme("ace/theme/clouds");
+    componentJsonDataEditor.session.setMode("ace/mode/json");
+    componentJsonDataEditor.setOptions({
+        autoScrollEditorIntoView: true,
+        showPrintMargin: false,
+        wrapBehavioursEnabled: true,
+        wrap: true,
+        minLines: 8,
+        maxLines: 30
+    });
 }
 
 $('#componentsTable tbody').on('click', '.componentPropertiesButton', function() {
-	$.ajax({
-		type: 'GET',
-		url: "@{playHttpContext}jatos/" + studyId + "/" + getComponentId(this) + "/properties",
-		success: function(response) {
-			removeAlerts("#componentPropertiesModal");
-			removeFormErrors("#componentPropertiesModal");
-			clearForm("#componentPropertiesForm");
-			fillComponentPropertiesForm(response);
-			$('#componentPropertiesModal').modal('show');
-		},
-		error: function(response) {
-			showError("Couldn't load component properties.");
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: "@{playHttpContext}jatos/" + studyId + "/" + getComponentId(this) + "/properties",
+        success: function(response) {
+            removeAlerts("#componentPropertiesModal");
+            removeFormErrors("#componentPropertiesModal");
+            clearForm("#componentPropertiesForm");
+            fillComponentPropertiesForm(response);
+            $('#componentPropertiesModal').modal('show');
+        },
+        error: function(response) {
+            showError("Couldn't load component properties.");
+        }
+    });
 });
 
 $("#componentPropertiesForm .prettyButton").click(function(event) {
-	var jsonInput = $('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA').val();
-	removeSingleFormError('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA');
-	try {
-		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-		$('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA').val(jsonInputPretty);
-	} catch (e) {
-		showSingleFormError('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
-	}
+    var jsonInput = componentJsonDataEditor.getSession().getValue();
+    removeSingleFormError('#componentPropertiesModal div.@models.gui.ComponentProperties.JSON_DATA');
+    try {
+        var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+        componentJsonDataEditor.getSession().setValue(jsonInputPretty);
+    } catch (e) {
+        showSingleFormError('#componentPropertiesModal div.@models.gui.ComponentProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+    }
 });
 
 $("#componentPropertiesForm").submit(function(event) {
-	event.preventDefault();
-	$.ajax({
-		type : 'POST',
-		url : $("#componentPropertiesForm").attr("action"),
-		data : $('#componentPropertiesForm').serialize(),
-		success : function(response) {
-			removeAlerts("#componentPropertiesModal");
-			removeFormErrors("#componentPropertiesModal");
-			$('#componentPropertiesModal').modal('hide');
-			fillSidebar();
-			componentsTable.ajax.reload();
-		},
-		error : function(response) {
-			removeAlerts("#componentPropertiesModal");
-			removeFormErrors("#componentPropertiesModal");
-			showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .modal-header");
-			if (isJson(response.responseText)) {
-				showFormErrors("#componentPropertiesModal", response);
-			} else {
-				showModalError("#componentPropertiesModal .modal-header", response);
-			}
-		}
-	});
+    event.preventDefault();
+    // Put JSON from editor into textarea to let it be picked up by form.serialize
+    var jsonData = componentJsonDataEditor.getSession().getValue();
+    $("#componentPropertiesModal textarea.@models.gui.ComponentProperties.JSON_DATA").val(jsonData);
+    $.ajax({
+        type : 'POST',
+        url : $("#componentPropertiesForm").attr("action"),
+        data : $('#componentPropertiesForm').serialize(),
+        success : function(response) {
+            removeAlerts("#componentPropertiesModal");
+            removeFormErrors("#componentPropertiesModal");
+            $('#componentPropertiesModal').modal('hide');
+            fillSidebar();
+            componentsTable.ajax.reload();
+        },
+        error : function(response) {
+            removeAlerts("#componentPropertiesModal");
+            removeFormErrors("#componentPropertiesModal");
+            showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .messages");
+            if (isJson(response.responseText)) {
+                showFormErrors("#componentPropertiesModal", response);
+            } else {
+                showModalError("#componentPropertiesModal .messages", response);
+            }
+        }
+    });
 });
 
 $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_RUN', function() {
-	$.ajax({
-		type : 'POST',
-		url : $("#componentPropertiesForm").attr("action"),
-		data : $('#componentPropertiesForm').serialize(),
-		success : function(componentId) {
-			window.location.href = "@{playHttpContext}jatos/" + studyId + "/" + componentId + "/run";
-		},
-		error : function(response) {
-			removeAlerts("#componentPropertiesModal");
-			removeFormErrors("#componentPropertiesModal");
-			showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .modal-header");
-			if (isJson(response.responseText)) {
-				showFormErrors("#componentPropertiesModal", response);
-			} else {
-				showModalError("#componentPropertiesModal .modal-header", response);
-			}
-		}
-	});
+    $.ajax({
+        type : 'POST',
+        url : $("#componentPropertiesForm").attr("action"),
+        data : $('#componentPropertiesForm').serialize(),
+        success : function(componentId) {
+            window.location.href = "@{playHttpContext}jatos/" + studyId + "/" + componentId + "/run";
+        },
+        error : function(response) {
+            removeAlerts("#componentPropertiesModal");
+            removeFormErrors("#componentPropertiesModal");
+            showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .messages");
+            if (isJson(response.responseText)) {
+                showFormErrors("#componentPropertiesModal", response);
+            } else {
+                showModalError("#componentPropertiesModal .messages", response);
+            }
+        }
+    });
 });
 
 </script>
