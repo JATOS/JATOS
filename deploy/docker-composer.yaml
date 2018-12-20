@@ -19,8 +19,8 @@ services:
       - proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik.toml:/traefik.toml
-      - ./acme.json:/acme.json
+      - /root/traefik.toml:/traefik.toml
+      - /root/acme.json:/acme.json
     container_name: traefik
     restart: always
 
