@@ -1,11 +1,6 @@
-#Define the EntryPoint for HTTP and HTTPS
-defaultEntryPoints = ["https","http"]
+# Traefik config for JATOS + Traefik with automatic encryption
 
-#Enable Traefik Dashboard on port 8080
-#with basic authentication method
-#mohammad and password
-[web]
-address = ":8080"
+defaultEntryPoints = ["https","http"]
 
 [entryPoints]
   [entryPoints.http]
@@ -25,11 +20,9 @@ watch = true
 exposedByDefault = false
 
 [acme]
-  email = "lange.kristian@gmail.com"
+  email = "<EMAIL>"
   storage = "acme.json"
   entryPoint = "https"
   onHostRule = true
-#  onDemand = false
-#  caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
   [acme.httpChallenge]
   entryPoint = "http"

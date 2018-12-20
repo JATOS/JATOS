@@ -1,5 +1,7 @@
 version: '3'
 
+# Docker Compose config for JATOS + Traefik with automatic encryption
+
 networks:
   proxy:
     external: true
@@ -13,7 +15,6 @@ services:
     command: --api --docker
     ports:
       - 80:80
-      - 8080:8080
       - 443:443
     networks:
       - proxy
