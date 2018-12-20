@@ -1,0 +1,41 @@
+version: '3'
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: false
+
+services:
+
+  traefik:
+    image: traefik:latest
+    command: --api --docker
+    ports:
+      - 80:80
+      - 8080:8080
+      - 443:443
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/traefik.toml
+      - ./acme.json:/acme.json
+    container_name: traefik
+    restart: always
+
+  jatos:
+    image: jatos/jatos:latest
+    networks:
+      - internal
+      - proxy
+    expose:
+      - "9000"
+    container_name: jatos
+    restart: always
+    labels:
+      - "traefik.docker.network=proxy"
+      - "traefik.enable=true"
+      - "traefik.basic.frontend.rule=Host:neocortex.jatos.org"
+      - "traefik.basic.port=9000"
+      - "traefik.basic.protocol=http"
