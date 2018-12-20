@@ -36,6 +36,6 @@ services:
     labels:
       - "traefik.docker.network=proxy"
       - "traefik.enable=true"
-      - "traefik.basic.frontend.rule=Host:neocortex.jatos.org"
+      - "traefik.basic.frontend.rule=Host:<DOMAIN_NAME>"
       - "traefik.basic.port=9000"
       - "traefik.basic.protocol=http"

@@ -20,7 +20,7 @@ address = ":8080"
 
 [docker]
 endpoint = "unix:///var/run/docker.sock"
-domain = "neocortex.jatos.org"
+domain = "<DOMAIN_NAME>"
 watch = true
 exposedByDefault = false
 
