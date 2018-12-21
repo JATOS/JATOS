@@ -12,7 +12,7 @@ services:
 
   traefik:
     image: traefik:latest
-    command: --api --docker
+    command: --docker
     ports:
       - 80:80
       - 443:443
