@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaJpa,
   javaWs,
-  cache,
+  ehcache,
+  guice,
   "org.webjars" % "bootstrap" % "3.3.4"
 )
 

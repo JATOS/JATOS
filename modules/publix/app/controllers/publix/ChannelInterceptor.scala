@@ -1,13 +1,12 @@
 package controllers.publix
 
-import javax.inject.{Inject, Singleton}
-
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging
 import exceptions.publix.{BadRequestPublixException, ForbiddenPublixException, NotFoundPublixException, PublixException}
+import javax.inject.{Inject, Singleton}
 import models.common.workers._
 import play.api.Logger
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action, Controller, Results, WebSocket}
+import play.api.mvc._
 import play.db.jpa.JPAApi
 import services.publix.idcookie.IdCookieService
 
@@ -21,7 +20,8 @@ import scala.concurrent.Future
   */
 @Singleton
 @PublixAccessLogging
-class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
+class ChannelInterceptor @Inject()(components: ControllerComponents,
+                                   idCookieService: IdCookieService,
                                    jpa: JPAApi,
                                    jatosBatchChannel: JatosBatchChannel,
                                    personalSingleBatchChannel: PersonalSingleBatchChannel,
@@ -35,7 +35,7 @@ class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
                                    generalSingleGroupChannel: GeneralSingleGroupChannel,
                                    generalMultipleGroupChannel: GeneralMultipleGroupChannel,
                                    mTGroupChannel: MTGroupChannel)
-  extends Controller {
+  extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 

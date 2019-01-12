@@ -4,6 +4,7 @@ organization := "org.jatos"
 scalaVersion := "2.11.11"
 
 libraryDependencies ++= Seq(
+  guice,
   "org.apache.commons" % "commons-collections4" % "4.0",
   "org.gnieh" % "diffson-play-json_2.11" % "2.1.0"
 )

@@ -7,7 +7,7 @@ import exceptions.publix.{ForbiddenPublixException, NotFoundPublixException, Pub
 import general.common.{Common, MessagesStrings}
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.mvc.{Action, Controller, Result}
+import play.api.mvc._
 import play.db.jpa.JPAApi
 import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
@@ -22,8 +22,8 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   * @author Kristian Lange
   */
 @Singleton
-class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, jpa: JPAApi,
-                            studyDao: StudyDao, componentDao: ComponentDao) extends Controller {
+class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, idCookieService: IdCookieService, jpa: JPAApi,
+                            studyDao: StudyDao, componentDao: ComponentDao) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -46,9 +46,9 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
   def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String) =
     urlPath match {
       case "jatos.js" => controllers.Assets.at(path =
-          "/public/lib/jatos-publix/javascripts", file = "jatos.js")
+        "/public/lib/jatos-publix/javascripts", file = "jatos.js")
       case jatosPublixPattern(pathPrefix, identifier, file) => controllers.Assets.at(path =
-          "/public/lib/jatos-publix/javascripts", file)
+        "/public/lib/jatos-publix/javascripts", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
         val study = studyDao.findById(studyId)
         if (study == null) {
@@ -80,7 +80,7 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
         else Forbidden(views.html.publix.error.render(errorMsg))
       case e: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
-            s"${File.separator}$urlPath")
+          s"${File.separator}$urlPath")
         val errorMsg = s"Resource '$urlPath' couldn't be found."
         if (HttpUtils.isAjax) NotFound(errorMsg)
         else NotFound(views.html.publix.error.render(errorMsg))
@@ -118,7 +118,7 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService, 
     try {
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
       Ok.sendFile(file, true).as("text/html; charset=utf-8")
-          .withHeaders("Cache-Control" -> "no-cache, no-store")
+        .withHeaders("Cache-Control" -> "no-cache, no-store")
     } catch {
       case e: IOException =>
         throw new NotFoundPublixException(

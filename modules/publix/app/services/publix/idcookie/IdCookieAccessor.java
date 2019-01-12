@@ -1,5 +1,7 @@
 package services.publix.idcookie;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import general.common.Common;
 import general.common.RequestScope;
 import play.Logger;
 import play.Logger.ALogger;
+import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import services.publix.PublixErrorMessages;
@@ -304,8 +307,10 @@ public class IdCookieAccessor {
         // Put new IdCookie into Response
         String cookieValue = idCookieSerialiser
                 .asCookieValueString(newIdCookie);
-        Cookie cookie = new Cookie(newIdCookie.getName(), cookieValue,
+        Cookie cookie2 = new Cookie(newIdCookie.getName(), cookieValue,
                 Integer.MAX_VALUE, Common.getPlayHttpContext(), null, false, false);
+        Cookie cookie = Cookie.builder(newIdCookie.getName(), cookieValue).withMaxAge(Duration.of(1, ChronoUnit.CENTURIES))
+                .withSecure(false).withHttpOnly(true).withPath(Common.getPlayHttpContext()).build();
         Publix.response().setCookie(cookie);
 
         idCookieCollection.put(newIdCookie);

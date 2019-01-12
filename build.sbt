@@ -3,12 +3,16 @@ import com.typesafe.sbt.packager.docker._
 name := "JATOS"
 version := "3.3.3"
 organization := "org.jatos"
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "1.9.5" % "test",
   "org.easytesting" % "fest-assert" % "1.4" % Test,
-  "com.h2database" % "h2" % "1.4.192",
+  "com.h2database" % "h2" % "1.4.193",
+  "com.typesafe.play" %% "play-json" % "2.6.13",
+  "com.typesafe.play" %% "play-iteratees" % "2.6.1",
+  "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
+  guice,
   filters
 )
 

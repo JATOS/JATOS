@@ -8,6 +8,7 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaJpa,
   javaWs,
+  guice,
   "org.apache.commons" % "commons-collections4" % "4.0"
 )
 
