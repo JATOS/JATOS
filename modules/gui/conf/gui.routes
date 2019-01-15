@@ -24,6 +24,10 @@ GET      /                                                                  @con
 # /jatos/admin/log is deprecated and /jatos/log should be used instead
 GET      /jatos/admin/log                                                   @controllers.gui.Home.log(limit: Integer ?= 1000)
 GET      /jatos/log                                                         @controllers.gui.Home.log(limit: Integer ?= 1000)
+GET      /jatos/getLatestJatosInfo                                          @controllers.gui.Home.getLatestJatosInfo()
+POST     /jatos/downloadLatestJatos                                         @controllers.gui.Home.downloadLatestJatos(dry:Boolean ?= false)
+POST     /jatos/updateJatosFiles                                            @controllers.gui.Home.updateJatosFiles(dry:Boolean ?= false)
+POST     /jatos/restartJatos                                                @controllers.gui.Home.restartJatos()
 
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager()

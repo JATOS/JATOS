@@ -79,6 +79,9 @@ publishArtifact in(Compile, packageDoc) := false
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
 
 // Add loader.sh to distribution
+mappings in Universal in packageBin += file(baseDirectory.value + "/update.sh") -> "update.sh"
+
+// Add loader.sh to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
 
 // Add conf/production.conf to distribution

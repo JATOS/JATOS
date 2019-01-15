@@ -1,5 +1,6 @@
 package general.common;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Configuration;
 import play.Logger;
@@ -11,7 +12,9 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
@@ -28,9 +31,14 @@ public class Common {
     private static final ALogger LOGGER = Logger.of(Common.class);
 
     /**
-     * JATOS version
+     * JATOS version or "unknown"
      */
-    public static final String JATOS_VERSION = Common.class.getPackage().getImplementationVersion();
+    private static String jatosVersion;
+
+    /**
+     * OS name
+     */
+    private static String osName = System.getProperty("os.name");
 
     /**
      * Property name in application config for the path in the file system to
@@ -134,6 +142,8 @@ public class Common {
 
     @Inject
     Common(Application application, Configuration configuration) {
+        String version = Common.class.getPackage().getImplementationVersion();
+        jatosVersion = !Strings.isNullOrEmpty(version) ? version : "unknown";
         basepath = fillBasePath(application);
         studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
         studyLogsEnabled = configuration.getBoolean("jatos.studyLogs.enabled");
@@ -237,7 +247,11 @@ public class Common {
     }
 
     public static String getJatosVersion() {
-        return JATOS_VERSION;
+        return jatosVersion;
+    }
+
+    public static String getOsName() {
+        return osName;
     }
 
     public static String getBasepath() {

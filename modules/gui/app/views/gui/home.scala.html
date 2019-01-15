@@ -7,10 +7,15 @@
 <div class="jumbotron text-center hidden-xs hidden-sm">
     <img src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
     <h1>JATOS</h1>
-    <p>Version @general.common.Common.JATOS_VERSION</p>
+    <p>Version @general.common.Common.getJatosVersion()</p>
+    <div id="updateJatos" style="display: none">
+        <p id="updateJatosMsg"></p>
+        <p><button class="btn btn-default" role="button" style="display: none">Update</button></p>
+    </div>
     <p>Simply set up your own online studies</p>
     <p><a href="http://www.jatos.org/Whats-JATOS.html" class="btn btn-default" role="button">Learn more in our docs &raquo;</a></p>
 </div>
+
 @if(localhost){
 <div class="jumbotron text-center hidden-xs hidden-sm">
     Your study assets root path is: <samp>@general.common.Common.getStudyAssetsRootPath()</samp><br>
@@ -24,7 +29,158 @@
     }
 </ul>
 
+<!-- Update JATOS confirmation modal -->
+<div class="modal fade" id="updateJatosModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Update JATOS</h4>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <img class="waiting" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")" style="display: none">
+                <p class="confirmationText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">No, this is too risky</button>
+                <button type="button" class="confirmed btn btn-default">Go on, I understand, proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
+
+checkJatosUpdateAvailable();
+
+function checkJatosUpdateAvailable() {
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Home.getLatestJatosInfo()',
+        success: showJatosUpdate,
+        error: function () {
+            console.warn("Couldn't check for a JATOS update.");
+        }
+    });
+}
+
+function showJatosUpdate(latestVersion) {
+    var osName = "@general.common.Common.getOsName()".toLowerCase();
+    var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+    //var currentVersion = @general.common.Common.getJatosVersion();
+    var currentVersion = "3.3.2";
+    var currentVersionNumber, latestVersionNumber;
+    try {
+        currentVersionNumber = parseInt(currentVersion.replace(/\./g, ""));
+        latestVersionNumber = parseInt(latestVersion.replace(/\./g, ""));
+    } catch(e) {
+        console.warn("Couldn't check for JATOS update - couldn't parse version");
+        return;
+    }
+
+    if (latestVersionNumber > currentVersionNumber) {
+        var text;
+        // Only show update button if user is admin and JATOS server's OS is Linux or MacOS
+        if ((osName.indexOf("linux") !== -1 || osName.indexOf("mac")  !== -1)
+                && loggedInUserIsAdmin) {
+            text = "There is an update of JATOS available. Do you want to update to version " + latestVersion + "?";
+            $("#updateJatos button").show();
+        } else {
+            text = "There is an update of JATOS to version " + latestVersion + " available.";
+        }
+        $("#updateJatosMsg").text(text);
+        $("#updateJatos").show();
+    }
+}
+
+$("#updateJatos button").click(function() {
+    removeAlerts("#updateJatosModal");
+    $("#updateJatosModal .confirmationText").text("Do you really want to update JATOS? You might destroy everything! First we download the new version.");
+    $("#updateJatosModal").addClass("shown");
+    $("#updateJatosModal").modal('show');
+});
+
+// States shown, downloading, downloaded, updatingFiles, updatedFiles, restarting, restarted
+$("#updateJatosModal button.confirmed").click(function() {
+    if ($("#updateJatosModal").hasClass("shown")) {
+        $("#updateJatosModal").removeClass("shown");
+        $("#updateJatosModal").addClass("downloading");
+        downloadLatestJatos();
+    } else if ($("#updateJatosModal").hasClass("downloaded")) {
+        $("#updateJatosModal").removeClass("downloaded");
+        $("#updateJatosModal").addClass("updatingFiles");
+        updateJatosFiles();
+    } else if ($("#updateJatosModal").hasClass("updatedFiles")) {
+        $("#updateJatosModal").removeClass("updatedFiles");
+        $("#updateJatosModal").addClass("restarting");
+        restartJatos();
+    }
+});
+
+function downloadLatestJatos() {
+    $("#updateJatosModal .waiting").show();
+    $.ajax({
+        type: 'POST',
+        url: '@controllers.gui.routes.Home.downloadLatestJatos(true)',
+        timeout: 0, // Do not timeout
+        success: function() {
+            $("#updateJatosModal").removeClass("downloading");
+            $("#updateJatosModal").addClass("downloaded");
+            $("#updateJatosModal .waiting").hide();
+            $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update?");
+            showInfo("Downloaded.");
+        },
+        error: function (err) {
+            $("#updateJatosModal").removeClass("downloading");
+            $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal').modal('hide');
+            showError(err.responseText)
+        }
+    });
+}
+
+function updateJatosFiles() {
+    $("#updateJatosModal .waiting").show();
+    $.ajax({
+        type: 'POST',
+        url: '@controllers.gui.routes.Home.updateJatosFiles(true)',
+        timeout: 0, // Do not timeout
+        success: function() {
+            $("#updateJatosModal").removeClass("updatingFiles");
+            $("#updateJatosModal").addClass("updatedFiles");
+            $("#updateJatosModal .waiting").hide();
+            $("#updateJatosModal .confirmationText").text("Files updated. Restart?");
+            showInfo("Updated.");
+        },
+        error: function (err) {
+            $("#updateJatosModal").removeClass("updatingFiles");
+            $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal').modal('hide');
+            showError(err.responseText)
+        }
+    });
+}
+
+function restartJatos() {
+    $("#updateJatosModal .waiting").show();
+    showInfo("Restarting.");
+    // todo
+    $.ajax({
+        type: 'POST',
+        url: '@controllers.gui.routes.Home.restartJatos()',
+        success: function() {
+            // todo
+            $("#updateJatosModal .waiting").hide();
+        },
+        error: function (err) {
+            $("#updateJatosModal").removeClass("restarting");
+            $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal').modal('hide');
+            showError(err.responseText)
+        }
+    });
+}
 
 </script>
 }

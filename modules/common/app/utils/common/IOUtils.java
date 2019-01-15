@@ -25,7 +25,6 @@ public class IOUtils {
     public static final String STUDY_FILE_SUFFIX = "jas";
     public static final String COMPONENT_FILE_SUFFIX = "jac";
     public static final String ZIP_FILE_SUFFIX = "zip";
-    public static final String TXT_FILE_SUFFIX = "txt";
 
     /**
      * Regular expression of illegal characters or strings in file or directory
@@ -391,6 +390,12 @@ public class IOUtils {
         if (!result) {
             throw new IOException(MessagesStrings
                     .htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
+        }
+    }
+
+    public static String readFirstLine(final String filename) throws IOException {
+        try (final BufferedReader in = new BufferedReader(new FileReader(filename))) {
+            return in.readLine();
         }
     }
 
