@@ -1,7 +1,7 @@
 import com.typesafe.sbt.packager.docker._
 
 name := "JATOS"
-version := "3.3.3"
+version := "3.3.4"
 organization := "org.jatos"
 scalaVersion := "2.11.11"
 
