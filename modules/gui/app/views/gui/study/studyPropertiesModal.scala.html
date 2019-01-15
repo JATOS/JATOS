@@ -98,6 +98,7 @@ $('#jatosHeader').on('click', '#createStudyLink', function() {
     $('#studyPropertiesModal .modal-title').text("Create Study");
     $('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').closest('.form-group').hide();
     $('#studyPropertiesModal .@models.gui.StudyProperties.UUID').closest('.form-group').hide();
+    if (!studyJsonDataEditor) setupStudyJsonDataEditor();
     $('#studyPropertiesModal .confirmed').val("Create");
     $('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
     $("#studyPropertiesForm").attr("action", "@controllers.gui.routes.Studies.submitCreated()");
