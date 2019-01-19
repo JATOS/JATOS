@@ -90,7 +90,6 @@ public class ResultDataExportService {
         checker.checkStudyResults(studyResultList, user, false);
         String resultData = resultService.studyResultDataToString(studyResultList);
         studyLogger.logStudyResultDataExporting(studyResultList, resultData);
-//        if (!resultDataAsStr.isEmpty() ) throw new ForbiddenException("forbidden it is");
         return resultData;
     }
 
