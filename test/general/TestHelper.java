@@ -8,7 +8,6 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.RequestScope;
-import general.common.StudyLogger;
 import models.common.Study;
 import models.common.User;
 import org.apache.commons.io.FileUtils;
@@ -30,10 +29,8 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.util.*;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -148,7 +145,9 @@ public class TestHelper {
 
     public Study importExampleStudy(Injector injector) throws IOException {
         File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
-        File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
+        File tempUnzippedStudyDir = Files.createTempDirectory(
+                "JatosImport_" + UUID.randomUUID().toString()).toFile();
+        ZipUtil.unzip(studyZip, tempUnzippedStudyDir);
         File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
                 IOUtils.STUDY_FILE_SUFFIX);
         File studyFile = studyFileList[0];

@@ -3,6 +3,7 @@ package controllers.gui;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
+import general.common.UpdateJatos;
 import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
@@ -17,14 +18,12 @@ import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
-import general.common.UpdateJatos;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Controller that provides actions for the home view.
@@ -106,84 +105,61 @@ public class Home extends Controller {
                 .as("text/plain; charset=utf-8");
     }
 
+    /**
+     * Checks whether there is an JATOS update available and if yes returns the version name.
+     */
     @Transactional
     @Authenticated
-    public CompletionStage<Result> getLatestJatosInfo() {
+    public CompletionStage<Result> checkUpdatable() {
         LOGGER.debug(".checkUpdatable");
-        return updateJatos.checkUpdatable().handle((result, error) -> {
+        return updateJatos.checkUpdatable().handle((latestJatosVersion, error) -> {
             if (error != null) {
-                Logger.error("Couldn't request latest JATOS info.");
+                LOGGER.error("Couldn't request latest JATOS info.");
                 return status(503, "Couldn't request latest JATOS info.");
             } else {
-                return ok(result);
+                return ok(latestJatosVersion);
             }
         });
     }
 
     /**
-     * Downloads the latest JATOS release into the tmp directory without installing it
+     * Downloads the latest JATOS release into the system's tmp directory without installing it.
+     *
+     * @param dry Allows testing the endpoint without actually downloading anything
      */
     @Transactional
     @Authenticated(Role.ADMIN)
-    public Result downloadLatestJatos(Boolean dry) {
+    public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
         LOGGER.debug(".downloadLatestJatos");
-        if (UpdateJatos.isOsUx()) {
-            Logger.error("Tried to update JATOS on a system other than Linux or MacOS.");
-            return forbidden("Can only update JATOS on a Linux or MacOS system.");
-        }
-
-        try {
-            if (dry) {
-                TimeUnit.SECONDS.sleep(5);
+        return updateJatos.downloadFromGitHubAndUnzip(dry).handle((jatosDir, error) -> {
+            if (error != null) {
+                LOGGER.error("An error occurred while downloading a new JATOS version.", error);
+                return internalServerError(
+                        "An error occurred while downloading a new JATOS version.");
             } else {
-                updateJatos.download();
+                return ok(" "); // jQuery can't deal with empty POST response
             }
-        } catch (IOException | InterruptedException e) {
-            LOGGER.error("An error occurred while downloading the new JATOS version.");
-            return internalServerError(
-                    "An error occurred while downloading the new JATOS version.");
-        }
-        Logger.info("Successfully downloaded JATOS update.");
-        return ok(" "); // jQuery can't deal with empty POST response
+        });
     }
 
     /**
-     * Moves JATOS update files from tmp directory into the current JATOS working dir
+     * Moves JATOS update files from tmp directory into the current JATOS working dir into a
+     * separate folder. It does not overwrite any files. Then it restarts using the laoder script
+     * with the 'update' argument. The actual update of files is done in the loader script.
+     *
+     * @param dry Allows testing the endpoint without actually updating. Restarts happens anyway.
      */
     @Transactional
     @Authenticated(Role.ADMIN)
-    public Result updateJatosFiles(Boolean dry) {
-        LOGGER.debug(".updateJatosFiles");
-        if (UpdateJatos.isOsUx()) {
-            Logger.error("Tried to update JATOS on a system other than Linux or MacOS.");
-            return forbidden("Can only update JATOS on a Linux or MacOS system.");
-        }
-
+    public Result updateAndRestart(Boolean dry) {
+        LOGGER.debug(".updateAndRestart");
         try {
-            if (dry) {
-                TimeUnit.SECONDS.sleep(2);
-            } else {
-                updateJatos.updateFiles();
-            }
-        } catch (IOException | InterruptedException e) {
-            LOGGER.error("An error occurred while updating to the new JATOS version.");
+            updateJatos.updateAndRestart(dry);
+        } catch (IOException e) {
+            LOGGER.error("An error occurred while updating to the new JATOS version.", e);
             return internalServerError(
                     "An error occurred while updating to the new JATOS version.");
         }
-        Logger.info("Successfully moved files for JATOS update.");
-        return ok(" "); // jQuery can't deal with empty POST response
-    }
-
-    @Transactional
-    @Authenticated(Role.ADMIN)
-    public Result restartJatos() {
-        LOGGER.debug(".restartJatos");
-        if (UpdateJatos.isOsUx()) {
-            Logger.error("Tried to restart JATOS on a system other than Linux or MacOS.");
-            return forbidden("Can only restart JATOS on a Linux or MacOS system.");
-        }
-
-        updateJatos.restartJatos();
         return ok(" "); // jQuery can't deal with empty POST response
     }
 

@@ -5,17 +5,16 @@ import models.gui.Messages;
 import utils.common.JsonUtils;
 
 /**
- * Passes on messages (info/warning/error/success) to the view. Uses
- * RequestScope. JATOS has two similar messaging services, this and
- * FlashScopeMessaging. Difference to RequestScopeMessaging: only one of each
- * kind, but it survives a redirect (according to Play's documentation, flash
- * scope isn't reliable).
+ * Passes on messages (info/warning/error/success) to the view. Uses RequestScope. JATOS has two
+ * similar messaging services, this and FlashScopeMessaging. Difference to FlashScopeMessaging:
+ * RequestScopeMessaging can have multiple messages for each kind (info/warning/error/success), but
+ * it does not survive a redirect (according to Play's documentation, flash scope isn't reliable).
  * 
  * @author Kristian Lange
  */
 public class RequestScopeMessaging {
 
-	public static final String MESSAGES = "messages";
+	private static final String MESSAGES = "messages";
 
 	public static String getAsJson() {
 		Messages messages = ((Messages) RequestScope.get(MESSAGES));

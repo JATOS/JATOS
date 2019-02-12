@@ -1,4 +1,5 @@
 import com.typesafe.sbt.packager.docker._
+import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
 version := "3.3.4"
@@ -49,7 +50,11 @@ lazy val jatos: Project = (project in file("."))
 
 // Submodule jatos-utils: common utils for JSON, disk IO and such
 lazy val common = (project in file("modules/common"))
-    .enablePlugins(PlayJava)
+    .enablePlugins(PlayJava, BuildInfoPlugin)
+    .settings(
+      buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+      buildInfoPackage := "general.common"
+    )
 
 // Submodule jatos-session: does group and batch session
 lazy val session = (project in file("modules/session"))
@@ -77,9 +82,6 @@ publishArtifact in(Compile, packageDoc) := false
 
 // Add loader.sh to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
-
-// Add loader.sh to distribution
-mappings in Universal in packageBin += file(baseDirectory.value + "/update.sh") -> "update.sh"
 
 // Add loader.sh to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"

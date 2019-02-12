@@ -36,6 +36,8 @@ public class IOUtils {
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
+    public static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+
     /**
      * Reads the given file and returns the content as String.
      */
@@ -399,4 +401,13 @@ public class IOUtils {
         }
     }
 
+    /**
+     * Creates the given File as a directory, including necessary and non-existent parent directories.
+     * If the file already exists it will be deleted before.
+     */
+    public static void createDir(File file) throws IOException {
+        if (!file.mkdirs()) {
+            throw new IOException("Couldn't create directory " + file.getPath());
+        }
+    }
 }

@@ -22,9 +22,20 @@ class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserServ
 
   private val logger: Logger = Logger(this.getClass)
 
+  checkUpdate()
   checkAdmin()
   checkStudyAssetsRootDir()
   logger.info("JATOS initialized")
+
+  private def checkUpdate() {
+    if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
+      case "success" => logger.info("JATOS was successfully updated")
+      case "update_folder_not_found" => logger.error("JATOS update failed: update folder not found")
+      case "more_than_one_update_folder" => logger.error("JATOS update: there is more than one " +
+          "update folder")
+      case msg => logger.error(msg)
+    }
+  }
 
   /**
     * Check for user admin: In case the application is started the first time

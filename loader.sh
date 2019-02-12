@@ -1,31 +1,35 @@
 #!/bin/bash
 # JATOS loader for Linux and MacOS X
 
-# Change IP address and port here
-# Alternatively you can use command-line arguments -Dhttp.address and -Dhttp.port
-address="127.0.0.1"
-port="9000"
+# Change IP address and port
+# (DEPRECATED - use 'production.conf' instead)
+#address="1.2.3.4"
+#port="80"
 
-# Don't change after here unless you know what you're doing
+# Don't change after here - unless you know what you're doing
 ###########################################################
 
-# Get JATOS directory
+# Get JATOS' path
 dir="$( cd "$( dirname "$0" )" && pwd )"
 pidfile="$dir/RUNNING_PID"
-args=${@:2}
+args=("${@:2}")
 
 function start() {
-    getJavaArgs
-    checkAlreadyRunning
+
+    # Check if JATOS is already running
+    if [[ -f "$pidfile" ]] && kill -0 $(cat "$pidfile") 2>&1 >/dev/null; then
+        echo "There seems to be a running JATOS."
+        exit 1
+    fi
+
     checkJava
 
-    echo -n "Starting JATOS"
+    echo -n "Starting JATOS... "
 
     # Generate application secret for the Play framework
     secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
 
-    if [ ! -f "$dir/bin/jatos" ]
-    then
+    if [[ ! -f "$dir/bin/jatos" ]]; then
         echo -e "\n$dir/bin/jatos doesn't exist!"
         exit 1
     fi
@@ -33,57 +37,64 @@ function start() {
     # In case './bin/jatos' isn't executable set the x bit
     chmod u+x "$dir/bin/jatos"
 
-    if [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]]
-    then
-        localEnvVars="env JAVA_HOME=$JAVA_HOME"
-    fi
+    # Add address and port to arguments if set
+    [[ -z ${address+x} ]] || args+=(-Dhttp.address=$address)
+    [[ -z ${port+x} ]] || args+=(-Dhttp.port=$port)
 
-    # Start JATOS with configuration file and application secret
-    $localEnvVars "$dir/bin/jatos" -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address -J-server $args > /dev/null &
+    args+=(-Dconfig.file="$dir/conf/production.conf")
+    args+=(-Dplay.crypto.secret=$secret)
 
-    echo "...started"
-    echo "To use JATOS type $address:$port in your browser's address bar"
+    # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
+    "$dir/bin/jatos" ${args[*]} -J-server
 }
 
-function stop() {
-    if [ ! -f "$pidfile" ] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null
-    then
-        echo "This JATOS was not running"
-        exit 1
-    fi
-    echo -n "Stopping JATOS"
-    kill -SIGTERM $(cat "$pidfile")
-    rm -f "$pidfile"
-    echo "...stopped"
-}
-
-function getJavaArgs() {
-    for i in $args ; do
-        case $i in
-        -Dhttp.address=*)
-            address=${i#*=}
-            ;;
-        -Dhttp.port=*)
-            port=${i#*=}
-            ;;
-        esac
+function update() {
+    # Wait max 10s for JATOS to be fully stopped
+    while [[ -f "$pidfile" ]] && kill -0 $(cat "$pidfile") 2>&1 >/dev/null; do
+        if [[ $i -gt 10 ]]; then
+            echo "`date` JATOS didn't shut down. Cannot update. Exit." | tee ${dir}/update.log
+            exit 1
+        fi
+        sleep 1
+        let "i++"
     done
-}
 
-function checkAlreadyRunning() {
-    if [ -f "$pidfile" ] && kill -0 $(cat "$pidfile") 2>&1 >/dev/null
-    then
-        echo "There seems to be a running JATOS."
-        exit 1
+    # Check that we have exactly one update folder
+    updateDirsCount=$(find ${dir} -maxdepth 1 -type d -name "update-*" | wc -l)
+    if [[ $updateDirsCount < 1 ]]; then
+        echo "`date` No update folder found. Start JATOS without update." | tee ${dir}/update.log
+        args+=('-DJATOS_UPDATE_MSG="update_folder_not_found"')
+        return
     fi
-    # Delete old PID file (just to be sure)
-    rm -f "$pidfile"
+    if [[ $updateDirsCount > 1 ]]; then
+        echo "`date` There is more than one folder with a JATOS update. Remove the undesirable ones and start JATOS again. Start JATOS without update." | tee ${dir}/update.log
+        args+=('-DJATOS_UPDATE_MSG="more_than_one_update_folder"')
+        return
+    fi
+    updateDir=(${dir}/update-*)
+    echo "`date` Start update of JATOS from folder ${updateDir}." | tee ${dir}/update.log
 
-    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null
-    then
-        echo "Some other program is using port $port already. Maybe another JATOS?"
-        exit 1
+    # Backup conf/production.conf
+    mv -f ${dir}/conf/production.conf ${dir}/conf/production.bkp
+
+    # Move everything from the update folder into the current JATOS folder
+    cp -a -v ${updateDir}/* ${dir} | tee -a ${dir}/update.log
+
+    # Remove update dir
+    rm -rf ${updateDir}
+
+    # Recover conf/production.conf
+    if cmp -s ${dir}/conf/production.conf ${dir}/conf/production.bkp; then
+        mv ${dir}/conf/production.conf ${dir}/conf/production.new
+        mv ${dir}/conf/production.bkp ${dir}/conf/production.conf
+        echo "`date` Recovered conf/production.conf but there is a new version stored in conf/production.new." | tee -a ${dir}/update.log
+    else
+        echo "`date` Recovered conf/production.conf." | tee -a ${dir}/update.log
+        rm ${dir}/conf/production.bkp
     fi
+
+    echo "`date` Update successfully finished." | tee -a ${dir}/update.log
+    args+=('-DJATOS_UPDATE_MSG=success')
 }
 
 function checkJava() {
@@ -119,8 +130,40 @@ function checkJava() {
     fi
 }
 
+function stop() {
+    # Check if JATOS is running
+    if [[ ! -f "$pidfile" ]] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null; then
+        echo "This JATOS was not running"
+        if [[ -f "$pidfile" ]]; then
+            echo "Remove old $pidfile file"
+            rm -f $pidfile
+        fi
+        exit 1
+    fi
+
+    # Kill JATOS
+    local pid=$(cat "$pidfile")
+    kill -SIGTERM $pid
+    wait $pid 2>/dev/null # suppress output of kill
+
+    # Wait max 10s for JATOS to be fully stopped
+    while $(kill -0 $pid 2>/dev/null); do
+        if [[ $i -gt 10 ]]; then
+            echo "`date` Could not stop JATOS. Exit."
+            exit 1
+        fi
+        sleep 1
+        let "i++"
+    done
+}
+
 case "$1" in
     start)
+        start
+        ;;
+    update)
+        # 'update' is supposed to be run from within JATOS
+        update
         start
         ;;
     stop)
@@ -128,11 +171,6 @@ case "$1" in
         ;;
     restart)
         stop
-        # Check that JATOS' port is free
-        while lsof -Pi :$port -sTCP:LISTEN -t >/dev/null
-        do
-            sleep 1
-        done
         start
         ;;
     *)

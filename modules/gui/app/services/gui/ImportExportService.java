@@ -32,6 +32,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -357,7 +358,7 @@ public class ImportExportService {
         if (tempComponentFileName == null || tempComponentFileName.trim().isEmpty()) {
             return null;
         }
-        return new File(System.getProperty("java.io.tmpdir"), tempComponentFileName);
+        return new File(IOUtils.TMP_DIR, tempComponentFileName);
     }
 
     /**
@@ -369,20 +370,20 @@ public class ImportExportService {
         if (unzippedStudyDirName == null || unzippedStudyDirName.trim().isEmpty()) {
             return null;
         }
-        File unzippedStudyDir =
-                new File(System.getProperty("java.io.tmpdir"), unzippedStudyDirName);
+        File unzippedStudyDir = new File(IOUtils.TMP_DIR, unzippedStudyDirName);
         return unzippedStudyDir;
     }
 
     private File unzipUploadedFile(File file) throws IOException {
-        File tempDir;
+        File destDir;
         try {
-            tempDir = ZipUtil.unzip(file);
+            destDir = new File(IOUtils.TMP_DIR, "JatosImport_" + UUID.randomUUID().toString());
+            ZipUtil.unzip(file, destDir);
         } catch (IOException e) {
             LOGGER.warn(".unzipUploadedFile: unzipping failed", e);
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
-        return tempDir;
+        return destDir;
     }
 
     private Component unmarshalComponent(File file) throws IOException {
