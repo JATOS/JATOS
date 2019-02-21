@@ -6,11 +6,13 @@ import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import org.apache.commons.io.FileUtils;
+import play.Environment;
 import play.Logger;
 import play.api.Play;
 import play.inject.ApplicationLifecycle;
+import play.libs.Json;
 import play.libs.ws.WSClient;
 import scala.compat.java8.FutureConverters;
 import scala.concurrent.ExecutionContext;
@@ -21,6 +23,7 @@ import utils.common.ZipUtil;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
@@ -47,12 +50,12 @@ import java.util.stream.Stream;
  * @author Kristian Lange (2019)
  */
 @Singleton
-public class UpdateJatos {
+public class JatosUpdater {
 
-    private static final Logger.ALogger LOGGER = Logger.of(UpdateJatos.class);
+    private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
 
     private enum UpdateState {
-        SLEEPING, DOWNLOADING, DOWNLOADED, MOVING, MOVED, RESTARTING
+        SLEEPING, DOWNLOADING, DOWNLOADED, MOVING, RESTARTING
     }
 
     /**
@@ -61,15 +64,22 @@ public class UpdateJatos {
     private UpdateState state = UpdateState.SLEEPING;
 
     /**
-     * Latest version (no draft, no prerelease) of JATOS in format x.x.x
+     * Latest version of JATOS like in GitHub
+     */
+    private String latestJatosVersionFull;
+
+    /**
+     * Latest version of JATOS in format x.x.x
      */
     private String latestJatosVersion;
+
+    private boolean isPrerelease;
 
     /**
      * Determine the path and name of the directory where the update files will be stored.
      */
     private Supplier<File> tmpJatosDir =
-            () -> new File(IOUtils.TMP_DIR, "jatos-" + latestJatosVersion);
+            () -> new File(IOUtils.TMP_DIR, "jatos-" + latestJatosVersionFull);
 
     /**
      * Last time the latest version info was requested from GitHub
@@ -86,48 +96,77 @@ public class UpdateJatos {
 
     private final ApplicationLifecycle applicationLifecycle;
 
+    private final Environment environment;
+
     @Inject
-    UpdateJatos(WSClient ws, Materializer materializer, ActorSystem actorSystem,
-            ExecutionContext executionContext, ApplicationLifecycle applicationLifecycle) {
+    JatosUpdater(WSClient ws, Materializer materializer, ActorSystem actorSystem,
+            ExecutionContext executionContext, ApplicationLifecycle applicationLifecycle,
+            Environment environment) {
         this.ws = ws;
         this.materializer = materializer;
         this.actorSystem = actorSystem;
         this.executionContext = executionContext;
         this.applicationLifecycle = applicationLifecycle;
+        this.environment = environment;
     }
 
     public UpdateState getState() {
         return state;
     }
 
-    public CompletionStage<String> checkUpdatable() {
-        return getLatestVersion().thenApply(version -> {
-            boolean isUpdatable =
+    public CompletionStage<JsonNode> updateInfo(boolean allowPreUpdates) {
+        return getLatestVersion(allowPreUpdates).thenApply(f -> {
+            boolean isNewerVersion =
                     (compareVersions(latestJatosVersion, Common.getJatosVersion()) == 1);
-            return isUpdatable ? latestJatosVersion : "none";
+            boolean isAllowedToUpdate = !latestJatosVersionFull.contains("n");
+            return Json.newObject()
+                    .put("isNewerVersion", isNewerVersion)
+                    .put("isAllowedToUpdate", isAllowedToUpdate)
+                    .put("latestJatosVersionFull", latestJatosVersionFull)
+                    .put("latestJatosVersion", latestJatosVersion)
+                    .put("isPrerelease", isPrerelease)
+                    .put("currentJatosVersion", Common.getJatosVersion());
         });
     }
 
     /**
-     * Gets the latest JATOS version information from GitHub (no draft, no prerelease) and returns
-     * it as a String in format x.x.x. To prevent high load on GitHub it stores it locally and newly
-     * requests it only once per hour.
+     * Gets the latest JATOS version information from GitHub and returns it as a String in format
+     * x.x.x. To prevent high load on GitHub it stores it locally and newly requests it only once per hour.
+     *
+     * @param allowPreUpdates If true it includes pre-releases.
      */
-    private CompletionStage<String> getLatestVersion() {
+    private CompletionStage<?> getLatestVersion(boolean allowPreUpdates) {
         boolean notOlderThanAnHour = lastTimeAskedVersion != null &&
                 LocalTime.now().minusHours(1).isBefore(lastTimeAskedVersion);
-        if (!Strings.isNullOrEmpty(latestJatosVersion) && notOlderThanAnHour) {
-            return CompletableFuture.completedFuture(latestJatosVersion);
+        if (!Strings.isNullOrEmpty(latestJatosVersionFull) && notOlderThanAnHour) {
+            return CompletableFuture.completedFuture(null);
         }
 
-        // GitHub API endpoint to get info about the latest release. Draft releases and prereleases
-        // are not returned by this endpoint.
+        return allowPreUpdates ? requestLatestVersionInclPre() : requestLatestVersion();
+    }
+
+    private CompletionStage<?> requestLatestVersion() {
         String url = "https://api.github.com/repos/JATOS/JATOS/releases/latest";
-        return ws.url(url).setRequestTimeout(60000).get().thenApply(res -> {
-            latestJatosVersion = res.asJson().findPath("tag_name").asText().replace("v", "");
+        return ws.url(url).setRequestTimeout(60000).get().thenAccept(res -> {
+            latestJatosVersionFull = res.asJson().findPath("tag_name").asText();
+            latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
             lastTimeAskedVersion = LocalTime.now();
-            Logger.info("Checked GitHub for latest version of JATOS: " + latestJatosVersion);
-            return latestJatosVersion;
+            isPrerelease = false;
+            Logger.info("Checked GitHub for latest version of JATOS: " + latestJatosVersionFull);
+        });
+    }
+
+    private CompletionStage<?> requestLatestVersionInclPre() {
+        String url = "https://api.github.com/repos/JATOS/JATOS/releases";
+        return ws.url(url).setRequestTimeout(60000).get().thenAccept(res -> {
+            JsonNode first = res.asJson().get(0);
+            latestJatosVersionFull = first.findPath("tag_name").asText();
+            latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
+            lastTimeAskedVersion = LocalTime.now();
+            isPrerelease = first.findPath("prerelease").asBoolean();
+            String msg = "Checked GitHub for latest version of JATOS: " + latestJatosVersionFull;
+            if (isPrerelease) msg += ". It's a prerelease.";
+            Logger.info(msg);
         });
     }
 
@@ -178,16 +217,16 @@ public class UpdateJatos {
         }
 
         try {
-            String url =
-                    "https://github.com/JATOS/JATOS_examples/raw/master/examples/simple_example_jatos_v3.3.1.zip";
-//        String url = "https://github.com/JATOS/JATOS/releases/download/v" + latestJatosVersion
-//                + "/jatos-" + latestJatosVersion + ".zip";
-            String jatosZipFilename = "jatos-" + latestJatosVersion + ".zip";
+//            String url =
+//                    "https://github.com/JATOS/JATOS_examples/raw/master/examples/simple_example_jatos_v3.3.1.zip";
+            String url = "https://github.com/JATOS/JATOS/releases/download/v" + latestJatosVersion
+                    + "/jatos-" + latestJatosVersion + ".zip";
+            String jatosZipFilename = "jatos-" + latestJatosVersionFull + ".zip";
             state = UpdateState.DOWNLOADING;
             CompletionStage<File> future = downloadAsync(url, jatosZipFilename);
-            future.thenAccept(zipFile -> Errors.rethrow().wrap(() -> {
-                ZipUtil.unzip(zipFile, tmpJatosDir.get());
-            }));
+            future.thenAccept(zipFile -> Errors.rethrow().get(() ->
+                    ZipUtil.unzip(zipFile, tmpJatosDir.get()))
+            );
             state = UpdateState.DOWNLOADED;
             scheduleUpdateStateReset();
             return future;
@@ -227,7 +266,7 @@ public class UpdateJatos {
     }
 
     public void updateAndRestart(boolean dry) throws IOException {
-        if (state == UpdateState.MOVING || state == UpdateState.MOVED || state == UpdateState.RESTARTING) {
+        if (state == UpdateState.MOVING || state == UpdateState.RESTARTING) {
             return;
         }
         if (state != UpdateState.DOWNLOADED) {
@@ -240,28 +279,27 @@ public class UpdateJatos {
         }
 
         state = UpdateState.MOVING;
-        if (!dry) updateFiles();
-        state = UpdateState.MOVED;
+        if (!dry && environment.isProd()) updateFiles();
 
-        // Todo find a way to restart under Windows
-        if (UpdateJatos.isOsUx()) {
-            Logger.info("Restart JATOS to finish update to version " + latestJatosVersion);
-            state = UpdateState.RESTARTING;
-            restartJatos();
-        }
+        Logger.info("Restart JATOS to finish update to version " + latestJatosVersionFull);
+        state = UpdateState.RESTARTING;
+        if (environment.isProd()) restartJatos();
     }
 
     private void updateFiles() throws IOException {
-        Path backupDir = backupCurrentJatosFiles();
-        updateLoaderScripts(backupDir);
-        Path updateDir = Paths.get(Common.getBasepath(), "update-" + latestJatosVersion);
-        copyDirContent(tmpJatosDir.get().toPath(), updateDir);
+        backupCurrentJatosFiles();
+        Path srcUpdateDir = Files.list(tmpJatosDir.get().toPath()).findFirst()
+                .orElseThrow(() -> new FileNotFoundException(
+                        "JATOS update directory seems to be corrupted."));
+        Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + latestJatosVersionFull);
+        copyDirContent(srcUpdateDir, dstUpdateDir);
+        updateLoaderScripts(dstUpdateDir);
     }
 
     /**
      * Copies conf directory and loader scripts into a backup directory.
      */
-    private static Path backupCurrentJatosFiles() throws IOException {
+    private static void backupCurrentJatosFiles() throws IOException {
         String bkpDirName = "backup_" + Common.getJatosVersion();
         Path bkpDir = Paths.get(Common.getBasepath(), bkpDirName);
         int i = 2;
@@ -271,10 +309,9 @@ public class UpdateJatos {
         }
         Files.createDirectories(bkpDir);
 
-        FileUtils.copyDirectoryToDirectory(new File(Common.getBasepath(), "conf"), bkpDir.toFile());
-        Files.copy(Paths.get(Common.getBasepath(), "loader.sh"), bkpDir);
-        Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir);
-        return bkpDir;
+        Files.copy(Paths.get(Common.getBasepath(), "conf"), bkpDir.resolve("conf"));
+        Files.copy(Paths.get(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
+        Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
     }
 
     /**
@@ -294,12 +331,13 @@ public class UpdateJatos {
         }
     }
 
-    private static void updateLoaderScripts(Path bkpDir) throws IOException {
-        // todo make executable
-        Files.move(bkpDir.resolve("loader.sh"),
-                Paths.get(Common.getBasepath()), StandardCopyOption.REPLACE_EXISTING);
-        Files.move(bkpDir.resolve("loader.bat"),
-                Paths.get(Common.getBasepath()), StandardCopyOption.REPLACE_EXISTING);
+    private static void updateLoaderScripts(Path srcDir) throws IOException {
+        Files.move(srcDir.resolve("loader.sh"),
+                Paths.get(Common.getBasepath(), "loader.sh"), StandardCopyOption.REPLACE_EXISTING);
+        Files.move(srcDir.resolve("loader.bat"),
+                Paths.get(Common.getBasepath(), "loader.bat"), StandardCopyOption.REPLACE_EXISTING);
+        Paths.get(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
+        Paths.get(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
     }
 
     /**
@@ -353,6 +391,7 @@ public class UpdateJatos {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         List<String> args = runtimeMxBean.getInputArguments();
         cmd.addAll(args);
+        // Remove arguments that are set anew with each start
         cmd.removeIf(a -> a.startsWith("-agentlib"));
         cmd.removeIf(a -> a.startsWith("-Dplay.crypto.secret"));
         cmd.removeIf(a -> a.startsWith("-Duser.dir"));

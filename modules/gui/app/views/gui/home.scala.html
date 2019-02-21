@@ -55,9 +55,9 @@
 checkJatosUpdateAvailable();
 
 function checkJatosUpdateAvailable() {
-    $.ajax({
-        type: 'GET',
-        url: '@controllers.gui.routes.Home.checkUpdatable()',
+    var allowPreUpdates = new URLSearchParams(window.location.search).has('allowPreUpdates')
+    $.getJSON({
+        url: '@{playHttpContext}jatos/updateInfo?allowPreUpdates=' + allowPreUpdates,
         success: showJatosUpdate,
         error: function () {
             console.warn("Couldn't check for a JATOS update.");
@@ -65,16 +65,18 @@ function checkJatosUpdateAvailable() {
     });
 }
 
-function showJatosUpdate(latestVersion) {
-    if (latestVersion != "none") {
-        var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+function showJatosUpdate(updateInfo) {
+    if (updateInfo.isNewerVersion) {
         var text;
-        // Only show update button if user is admin and JATOS server's OS is Linux or MacOS
-        if (loggedInUserIsAdmin) {
-            text = "There is an update of JATOS available. Do you want to update to version " + latestVersion + "?";
+        var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+        var versionInfo = updateInfo.isPrerelease ? updateInfo.latestJatosVersion + " (pre-release)"
+            : updateInfo.latestJatosVersion;
+        if (updateInfo.isAllowedToUpdate && loggedInUserIsAdmin) {
+            text = "There is an update of JATOS available. Do you want to update to version "
+                    + versionInfo + "?";
             $("#updateJatos button").show();
         } else {
-            text = "There is an update of JATOS to version " + latestVersion + " available.";
+            text = "There is an update of JATOS to version " + versionInfo + " available.";
         }
         $("#updateJatosMsg").text(text);
         $("#updateJatos").show();
@@ -125,7 +127,7 @@ function downloadLatestJatos() {
 function updateJatosFiles() {
     $("#updateJatosModal .waiting").show();
     $.ajax({
-        url: '@controllers.gui.routes.Home.updateAndRestart(true)',
+        url: '@controllers.gui.routes.Home.updateAndRestart()',
         timeout: 0, // Do not timeout
         success: function() {
             $("#updateJatosModal .waiting").hide();

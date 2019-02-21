@@ -3,7 +3,7 @@ package controllers.gui;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
-import general.common.UpdateJatos;
+import general.common.JatosUpdater;
 import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
@@ -41,18 +41,18 @@ public class Home extends Controller {
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final LogFileReader logFileReader;
-    private final UpdateJatos updateJatos;
+    private final JatosUpdater jatosUpdater;
 
     @Inject
     Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            LogFileReader logFileReader, UpdateJatos updateJatos) {
+            LogFileReader logFileReader, JatosUpdater jatosUpdater) {
         this.jsonUtils = jsonUtils;
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.logFileReader = logFileReader;
-        this.updateJatos = updateJatos;
+        this.jatosUpdater = jatosUpdater;
     }
 
     /**
@@ -107,17 +107,19 @@ public class Home extends Controller {
 
     /**
      * Checks whether there is an JATOS update available and if yes returns the version name.
+     *
+     * @param allowPreUpdates If true, allows requesting of pre-releases too
      */
     @Transactional
     @Authenticated
-    public CompletionStage<Result> checkUpdatable() {
-        LOGGER.debug(".checkUpdatable");
-        return updateJatos.checkUpdatable().handle((latestJatosVersion, error) -> {
+    public CompletionStage<Result> updateInfo(Boolean allowPreUpdates) {
+        LOGGER.debug(".updateInfo");
+        return jatosUpdater.updateInfo(allowPreUpdates).handle((result, error) -> {
             if (error != null) {
-                LOGGER.error("Couldn't request latest JATOS info.");
-                return status(503, "Couldn't request latest JATOS info.");
+                LOGGER.error("Couldn't request latest JATOS update info.");
+                return badRequest("Couldn't request latest JATOS update info.");
             } else {
-                return ok(latestJatosVersion);
+                return ok(result);
             }
         });
     }
@@ -131,11 +133,11 @@ public class Home extends Controller {
     @Authenticated(Role.ADMIN)
     public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
         LOGGER.debug(".downloadLatestJatos");
-        return updateJatos.downloadFromGitHubAndUnzip(dry).handle((jatosDir, error) -> {
+        return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
             if (error != null) {
-                LOGGER.error("An error occurred while downloading a new JATOS version.", error);
-                return internalServerError(
-                        "An error occurred while downloading a new JATOS version.");
+                LOGGER.error("A problem occurred while downloading a new JATOS version.", error);
+                return badRequest(
+                        "A problem occurred while downloading a new JATOS version.");
             } else {
                 return ok(" "); // jQuery can't deal with empty POST response
             }
@@ -154,10 +156,10 @@ public class Home extends Controller {
     public Result updateAndRestart(Boolean dry) {
         LOGGER.debug(".updateAndRestart");
         try {
-            updateJatos.updateAndRestart(dry);
+            jatosUpdater.updateAndRestart(dry);
         } catch (IOException e) {
             LOGGER.error("An error occurred while updating to the new JATOS version.", e);
-            return internalServerError(
+            return badRequest(
                     "An error occurred while updating to the new JATOS version.");
         }
         return ok(" "); // jQuery can't deal with empty POST response
