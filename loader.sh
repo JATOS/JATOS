@@ -21,6 +21,10 @@ function start() {
         echo "There seems to be a running JATOS."
         exit 1
     fi
+    if [[ -f "$pidfile" ]]; then
+        echo "Removing old RUNNING_PID file"
+        rm -f $pidfile
+    fi
 
     checkJava
 
@@ -83,14 +87,14 @@ function update() {
     # Remove update dir
     rm -rf ${updateDir}
 
-    # Recover conf/production.conf
+    # Compare new and old production.conf and recover it
     if cmp -s ${dir}/conf/production.conf ${dir}/conf/production.bkp; then
+        echo "`date` New and old conf/production.conf are identical." | tee -a ${dir}/update.log
+        rm ${dir}/conf/production.bkp
+    else
         mv ${dir}/conf/production.conf ${dir}/conf/production.new
         mv ${dir}/conf/production.bkp ${dir}/conf/production.conf
-        echo "`date` Recovered conf/production.conf but there is a new version stored in conf/production.new." | tee -a ${dir}/update.log
-    else
-        echo "`date` Recovered conf/production.conf." | tee -a ${dir}/update.log
-        rm ${dir}/conf/production.bkp
+        echo "`date` Recovered old conf/production.conf but there is a newer version stored in conf/production.new." | tee -a ${dir}/update.log
     fi
 
     echo "`date` Update successfully finished." | tee -a ${dir}/update.log
@@ -135,7 +139,7 @@ function stop() {
     if [[ ! -f "$pidfile" ]] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null; then
         echo "This JATOS was not running"
         if [[ -f "$pidfile" ]]; then
-            echo "Remove old $pidfile file"
+            echo "Removing old RUNNING_PID file"
             rm -f $pidfile
         fi
         exit 1
