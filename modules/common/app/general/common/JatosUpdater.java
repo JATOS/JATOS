@@ -8,6 +8,7 @@ import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import org.apache.commons.io.FileUtils;
 import play.Environment;
 import play.Logger;
 import play.api.Play;
@@ -39,13 +40,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
- * This class handles JATOS updates. JATOS update is initiated by the GUI. First it checks whether
- * there is a new version available, then it downloads it (if the user is admin), then it moves
- * the update files into the JATOS folder, and finally does a restart. JATOS releases are stored at
- * GitHub. The current state of the update progress is stored in a 'state' variable.
+ * This class handles JATOS updates (JATOS releases are stored at GitHub).
+ * It provides:
+ * 1) to check whether there is a new version available
+ * 2) to download it (if the user is admin)
+ * 3) to move the update files into the JATOS folder
+ * 4) to restart JATOS (call the loader script with the 'update' parameter)
+ * The current state of the update progress is stored in a 'state' variable. An update is an
+ * combined effort of this class and the loader script.
  *
  * @author Kristian Lange (2019)
  */
@@ -82,6 +86,12 @@ public class JatosUpdater {
             () -> new File(IOUtils.TMP_DIR, "jatos-" + latestJatosVersionFull);
 
     /**
+     * Versions with an 'n' in the name are not allowed to be updated automatically. This is a
+     * safety switch if an future update isn't compatible with this way of update.
+     */
+    private Supplier<Boolean> isAllowedToUpdate = () -> !latestJatosVersionFull.contains("n");
+
+    /**
      * Last time the latest version info was requested from GitHub
      */
     private LocalTime lastTimeAskedVersion;
@@ -114,14 +124,13 @@ public class JatosUpdater {
         return state;
     }
 
-    public CompletionStage<JsonNode> updateInfo(boolean allowPreUpdates) {
+    public CompletionStage<JsonNode> getUpdateInfo(boolean allowPreUpdates) {
         return getLatestVersion(allowPreUpdates).thenApply(f -> {
             boolean isNewerVersion =
                     (compareVersions(latestJatosVersion, Common.getJatosVersion()) == 1);
-            boolean isAllowedToUpdate = !latestJatosVersionFull.contains("n");
             return Json.newObject()
                     .put("isNewerVersion", isNewerVersion)
-                    .put("isAllowedToUpdate", isAllowedToUpdate)
+                    .put("isAllowedToUpdate", isAllowedToUpdate.get())
                     .put("latestJatosVersionFull", latestJatosVersionFull)
                     .put("latestJatosVersion", latestJatosVersion)
                     .put("isPrerelease", isPrerelease)
@@ -131,14 +140,16 @@ public class JatosUpdater {
 
     /**
      * Gets the latest JATOS version information from GitHub and returns it as a String in format
-     * x.x.x. To prevent high load on GitHub it stores it locally and newly requests it only once per hour.
+     * x.x.x. To prevent high load on GitHub it stores it locally and newly requests it only once
+     * per hour (only if allowPreUpdates is false).
      *
      * @param allowPreUpdates If true it includes pre-releases.
      */
     private CompletionStage<?> getLatestVersion(boolean allowPreUpdates) {
         boolean notOlderThanAnHour = lastTimeAskedVersion != null &&
                 LocalTime.now().minusHours(1).isBefore(lastTimeAskedVersion);
-        if (!Strings.isNullOrEmpty(latestJatosVersionFull) && notOlderThanAnHour) {
+        if (!Strings.isNullOrEmpty(latestJatosVersionFull) && notOlderThanAnHour &&
+                !allowPreUpdates) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -152,7 +163,7 @@ public class JatosUpdater {
             latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
             lastTimeAskedVersion = LocalTime.now();
             isPrerelease = false;
-            Logger.info("Checked GitHub for latest version of JATOS: " + latestJatosVersionFull);
+            LOGGER.info("Checked GitHub for latest version of JATOS: " + latestJatosVersionFull);
         });
     }
 
@@ -164,9 +175,10 @@ public class JatosUpdater {
             latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
             lastTimeAskedVersion = LocalTime.now();
             isPrerelease = first.findPath("prerelease").asBoolean();
-            String msg = "Checked GitHub for latest version of JATOS: " + latestJatosVersionFull;
-            if (isPrerelease) msg += ". It's a prerelease.";
-            Logger.info(msg);
+            String msg = "Checked GitHub for latest version of JATOS (including pre-release): " +
+                    latestJatosVersionFull;
+            if (isPrerelease) msg += " (pre-release)";
+            LOGGER.info(msg);
         });
     }
 
@@ -194,6 +206,13 @@ public class JatosUpdater {
     }
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
+        if (!isAllowedToUpdate.get()) {
+            CompletableFuture future = new CompletableFuture<>();
+            future.completeExceptionally(new IllegalStateException(
+                    "Can't update to version " + latestJatosVersionFull +
+                            " automatically. This version has to be updated manually."));
+            return future;
+        }
         if (state != UpdateState.SLEEPING) {
             String errMsg;
             switch (state) {
@@ -213,22 +232,23 @@ public class JatosUpdater {
 
         if (dry) {
             state = UpdateState.DOWNLOADED;
+            LOGGER.info("Dry download");
             return CompletableFuture.completedFuture(null);
         }
 
         try {
-//            String url =
-//                    "https://github.com/JATOS/JATOS_examples/raw/master/examples/simple_example_jatos_v3.3.1.zip";
             String url = "https://github.com/JATOS/JATOS/releases/download/v" + latestJatosVersion
                     + "/jatos-" + latestJatosVersion + ".zip";
             String jatosZipFilename = "jatos-" + latestJatosVersionFull + ".zip";
             state = UpdateState.DOWNLOADING;
             CompletionStage<File> future = downloadAsync(url, jatosZipFilename);
-            future.thenAccept(zipFile -> Errors.rethrow().get(() ->
-                    ZipUtil.unzip(zipFile, tmpJatosDir.get()))
-            );
-            state = UpdateState.DOWNLOADED;
-            scheduleUpdateStateReset();
+            future.thenAccept(zipFile -> Errors.rethrow().get(() -> {
+                File file = ZipUtil.unzip(zipFile, tmpJatosDir.get());
+                state = UpdateState.DOWNLOADED;
+                scheduleStateReset();
+                LOGGER.info("Downloaded and unzipped new JATOS " + jatosZipFilename);
+                return file;
+            }));
             return future;
         } catch (Exception e) {
             state = UpdateState.SLEEPING;
@@ -259,18 +279,26 @@ public class JatosUpdater {
      * One update once initialized (left state SLEEPING) can last max 1 hour. Then state is reset
      * back to SLEEPING.
      */
-    private void scheduleUpdateStateReset() {
+    private void scheduleStateReset() {
         actorSystem.scheduler().scheduleOnce(Duration.create(1, TimeUnit.HOURS),
-                () -> state = UpdateState.SLEEPING,
-                this.executionContext);
+                this::resetState, this.executionContext);
+    }
+
+    private void resetState() {
+        state = UpdateState.SLEEPING;
+        LOGGER.info("Reset JATOS update after one hour of waiting");
     }
 
     public void updateAndRestart(boolean dry) throws IOException {
         if (state == UpdateState.MOVING || state == UpdateState.RESTARTING) {
             return;
         }
+        if (!isAllowedToUpdate.get()) {
+            throw new IllegalStateException("Can't update to version " + latestJatosVersionFull +
+                    " automatically. This version has to be updated manually.");
+        }
         if (state != UpdateState.DOWNLOADED) {
-            throw new IllegalStateException("Wrong update state");
+            throw new IllegalStateException("Wrong update state (" + state + ")");
         }
         if (!tmpJatosDir.get().isDirectory()) {
             state = UpdateState.SLEEPING;
@@ -281,19 +309,29 @@ public class JatosUpdater {
         state = UpdateState.MOVING;
         if (!dry && environment.isProd()) updateFiles();
 
-        Logger.info("Restart JATOS to finish update to version " + latestJatosVersionFull);
+        LOGGER.info("Restart JATOS to finish update to version " + latestJatosVersionFull);
         state = UpdateState.RESTARTING;
         if (environment.isProd()) restartJatos();
     }
 
     private void updateFiles() throws IOException {
         backupCurrentJatosFiles();
+
         Path srcUpdateDir = Files.list(tmpJatosDir.get().toPath()).findFirst()
                 .orElseThrow(() -> new FileNotFoundException(
                         "JATOS update directory seems to be corrupted."));
         Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + latestJatosVersionFull);
-        copyDirContent(srcUpdateDir, dstUpdateDir);
+        if (Files.exists(dstUpdateDir)) {
+            Files.delete(dstUpdateDir);
+            LOGGER.info("Deleted old update directory " + dstUpdateDir);
+        }
+        FileUtils.copyDirectory(srcUpdateDir.toFile(), dstUpdateDir.toFile());
+        LOGGER.info("Copied JATOS update files into JATOS installation folder under " +
+                dstUpdateDir);
+
         updateLoaderScripts(dstUpdateDir);
+
+        FileUtils.deleteDirectory(tmpJatosDir.get());
     }
 
     /**
@@ -308,27 +346,11 @@ public class JatosUpdater {
             i++;
         }
         Files.createDirectories(bkpDir);
-
-        Files.copy(Paths.get(Common.getBasepath(), "conf"), bkpDir.resolve("conf"));
+        FileUtils.copyDirectory(FileUtils.getFile(Common.getBasepath(), "conf"),
+                bkpDir.resolve("conf").toFile());
         Files.copy(Paths.get(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
         Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
-    }
-
-    /**
-     * Copies the contents of srcDir into the destDir directory. It does not overwrite existing
-     * directories. It overwrites existing files. It copies file attributes.
-     */
-    private static void copyDirContent(Path srcDir, Path destDir) throws IOException {
-        try (Stream<Path> stream = Files.walk(srcDir)) {
-            // Use filter to not overwrite existing directories
-            stream.filter(file -> !Files.isDirectory(file) ||
-                    Files.notExists(destDir.resolve(srcDir.relativize(file))))
-                    .forEach(sourcePath -> Errors.rethrow().get(() ->
-                            Files.copy(sourcePath,
-                                    destDir.resolve(srcDir.relativize(sourcePath)),
-                                    StandardCopyOption.REPLACE_EXISTING,
-                                    StandardCopyOption.COPY_ATTRIBUTES)));
-        }
+        LOGGER.info("Backuped current JATOS files: loader scripts and conf directory");
     }
 
     private static void updateLoaderScripts(Path srcDir) throws IOException {
@@ -338,6 +360,8 @@ public class JatosUpdater {
                 Paths.get(Common.getBasepath(), "loader.bat"), StandardCopyOption.REPLACE_EXISTING);
         Paths.get(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
         Paths.get(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
+        LOGGER.info("Replaced loader scripts with newer version.");
+
     }
 
     /**
@@ -357,7 +381,7 @@ public class JatosUpdater {
                 ProcessBuilder pb = new ProcessBuilder(cmd);
                 pb.inheritIO().start();
             } catch (IOException e) {
-                Logger.error("Couldn't restart JATOS", e);
+                LOGGER.error("Couldn't restart JATOS", e);
             }
             return CompletableFuture.completedFuture(null);
         });

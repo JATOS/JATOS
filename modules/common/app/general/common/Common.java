@@ -186,7 +186,7 @@ public class Common {
      * JATOS version
      */
     public static String getJatosVersion() {
-        return "3.3.3";//jatosVersion;
+        return "3.3.4";//jatosVersion;
     }
 
     /**

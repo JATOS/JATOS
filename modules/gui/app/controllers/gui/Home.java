@@ -112,9 +112,9 @@ public class Home extends Controller {
      */
     @Transactional
     @Authenticated
-    public CompletionStage<Result> updateInfo(Boolean allowPreUpdates) {
-        LOGGER.debug(".updateInfo");
-        return jatosUpdater.updateInfo(allowPreUpdates).handle((result, error) -> {
+    public CompletionStage<Result> getUpdateInfo(Boolean allowPreUpdates) {
+        LOGGER.debug(".getUpdateInfo");
+        return jatosUpdater.getUpdateInfo(allowPreUpdates).handle((result, error) -> {
             if (error != null) {
                 LOGGER.error("Couldn't request latest JATOS update info.");
                 return badRequest("Couldn't request latest JATOS update info.");

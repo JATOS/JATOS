@@ -105,6 +105,7 @@ $("#updateJatosModal button.confirmed").click(function() {
 
 function downloadLatestJatos() {
     $("#updateJatosModal .waiting").show();
+    $('#updateJatosModal button').prop('disabled', true);
     $.ajax({
         url: '@controllers.gui.routes.Home.downloadLatestJatos()',
         timeout: 0, // Do not timeout
@@ -112,12 +113,14 @@ function downloadLatestJatos() {
             $("#updateJatosModal").removeClass("downloading");
             $("#updateJatosModal").addClass("downloaded");
             $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal button').prop('disabled', false);
             $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update?");
             showInfo("Downloaded.");
         },
         error: function (err) {
             $("#updateJatosModal").removeClass("downloading");
             $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             showError(err.responseText)
         }
@@ -126,17 +129,20 @@ function downloadLatestJatos() {
 
 function updateJatosFiles() {
     $("#updateJatosModal .waiting").show();
+    $('#updateJatosModal button').prop('disabled', true);
     $.ajax({
         url: '@controllers.gui.routes.Home.updateAndRestart()',
         timeout: 0, // Do not timeout
         success: function() {
             $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             $("#updateJatosModal .confirmationText").text("Files updated. Restarting now.");
             showInfo("Files updated. Restarting now.");
         },
         error: function (err) {
             $("#updateJatosModal .waiting").hide();
+            $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             showError(err.responseText)
         }
