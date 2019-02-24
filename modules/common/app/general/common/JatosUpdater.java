@@ -12,6 +12,8 @@ import org.apache.commons.io.FileUtils;
 import play.Environment;
 import play.Logger;
 import play.api.Play;
+import play.cache.CacheApi;
+import play.cache.NamedCache;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import play.libs.ws.WSClient;
@@ -108,16 +110,19 @@ public class JatosUpdater {
 
     private final Environment environment;
 
+    private final CacheApi commonCache;
+
     @Inject
     JatosUpdater(WSClient ws, Materializer materializer, ActorSystem actorSystem,
             ExecutionContext executionContext, ApplicationLifecycle applicationLifecycle,
-            Environment environment) {
+            Environment environment, @NamedCache("common-cache") CacheApi commonCache) {
         this.ws = ws;
         this.materializer = materializer;
         this.actorSystem = actorSystem;
         this.executionContext = executionContext;
         this.applicationLifecycle = applicationLifecycle;
         this.environment = environment;
+        this.commonCache = commonCache;
     }
 
     public UpdateState getState() {
@@ -134,7 +139,8 @@ public class JatosUpdater {
                     .put("latestJatosVersionFull", latestJatosVersionFull)
                     .put("latestJatosVersion", latestJatosVersion)
                     .put("isPrerelease", isPrerelease)
-                    .put("currentJatosVersion", Common.getJatosVersion());
+                    .put("currentJatosVersion", Common.getJatosVersion())
+                    .put("updateMsg", getUpdateMsg());
         });
     }
 
@@ -203,6 +209,20 @@ public class JatosUpdater {
         int patch1 = Integer.parseInt(p1[2]);
         int patch2 = Integer.parseInt(p2[2]);
         return Integer.compare(patch1, patch2);
+    }
+
+    /**
+     * Returns the update msg that is passed from the loader script when it did an update. But since
+     * the GUI should show an update message only once, it stores this event in a cache and
+     * subsequent calls return only null.
+     */
+    private String getUpdateMsg() {
+        if (commonCache.get("jatosUpdateMsgShown") != null) return null;
+        String updateMsg = Common.getJatosUpdateMsg();
+        if (Strings.isNullOrEmpty(updateMsg)) return null;
+
+        commonCache.set("jatosUpdateMsgShown", true);
+        return updateMsg;
     }
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {

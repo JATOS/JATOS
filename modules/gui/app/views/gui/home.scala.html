@@ -52,20 +52,30 @@
 
 <script type="text/javascript">
 
-checkJatosUpdateAvailable();
+checkJatosUpdateInfo();
 
-function checkJatosUpdateAvailable() {
+function checkJatosUpdateInfo() {
     var allowPreUpdates = new URLSearchParams(window.location.search).has('allowPreUpdates')
     $.getJSON({
         url: '@{playHttpContext}jatos/updateInfo?allowPreUpdates=' + allowPreUpdates,
-        success: showJatosUpdate,
+        success: showJatosUpdateInfo,
         error: function () {
             console.warn("Couldn't check for a JATOS update.");
         }
     });
 }
 
-function showJatosUpdate(updateInfo) {
+function showJatosUpdateInfo(updateInfo) {
+    if (updateInfo.updateMsg) {
+        if (updateInfo.updateMsg == "success") {
+            showInfo("JATOS was successfully updated to " + updateInfo.currentJatosVersion);
+        } else {
+            showError("Something went wrong in an JATOS update. More information can be found in"
+                + " the logs, logs/application.log and update.log.")
+        }
+        return
+    }
+
     if (updateInfo.isNewerVersion) {
         var text;
         var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);

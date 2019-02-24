@@ -8,6 +8,7 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaJpa,
   javaWs,
+  cache,
   evolutions,
   "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.8.7",

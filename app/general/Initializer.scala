@@ -1,10 +1,10 @@
 package general
 
 import java.io.File
-import javax.inject.Inject
 
 import daos.common.UserDao
 import general.common.Common
+import javax.inject.Inject
 import models.common.User.Role
 import play.api.Logger
 import play.db.jpa.JPAApi
@@ -60,8 +60,10 @@ class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserServ
   private def checkStudyAssetsRootDir() {
     val studyAssetsRoot = new File(Common.getStudyAssetsRootPath)
     val success = studyAssetsRoot.mkdirs
-    if (success) logger.info(".checkStudyAssetsRootDir: Created study assets root directory " + Common.getStudyAssetsRootPath)
-    if (!studyAssetsRoot.isDirectory) logger.error(".checkStudyAssetsRootDir: Study assets root directory " + Common.getStudyAssetsRootPath + " couldn't be created.")
+    if (success) logger.info(".checkStudyAssetsRootDir: Created study assets root directory " +
+        Common.getStudyAssetsRootPath)
+    if (!studyAssetsRoot.isDirectory) logger.error(".checkStudyAssetsRootDir: Study assets root " +
+        "directory " + Common.getStudyAssetsRootPath + " couldn't be created.")
   }
 
 }

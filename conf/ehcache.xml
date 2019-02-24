@@ -14,7 +14,19 @@
 
 	<cache
 			name="user-session-cache"
-			maxBytesLocalHeap="25M"
+			maxBytesLocalHeap="10M"
+			eternal="false"
+			timeToIdleSeconds="0"
+			timeToLiveSeconds="0"
+			overflowToDisk="false"
+			maxElementsOnDisk="1000"
+			diskPersistent="false"
+			diskExpiryThreadIntervalSeconds="120"
+			memoryStoreEvictionPolicy="LRU" />
+
+	<cache
+			name="common-cache"
+			maxBytesLocalHeap="1M"
 			eternal="false"
 			timeToIdleSeconds="0"
 			timeToLiveSeconds="0"
