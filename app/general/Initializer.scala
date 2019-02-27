@@ -27,11 +27,14 @@ class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserServ
   checkStudyAssetsRootDir()
   logger.info("JATOS initialized")
 
+  /**
+    * Logs eventual update messages from the loader script
+    */
   private def checkUpdate() {
     if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
       case "success" => logger.info("JATOS was successfully updated")
       case "update_folder_not_found" => logger.error("JATOS update failed: update folder not found")
-      case "more_than_one_update_folder" => logger.error("JATOS update: there is more than one " +
+      case "more_than_one_update_folder" => logger.error("JATOS update stopped: there is more than one " +
           "update folder")
       case msg => logger.error(msg)
     }
