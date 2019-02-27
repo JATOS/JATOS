@@ -23,10 +23,11 @@ dockerCommands := Seq(
   Cmd("RUN", "apt update -y && apt install vim -y"),
   ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
   ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
+  ExecCmd("RUN", "chmod", "u+x", "loader.sh"),
   Cmd("VOLUME", "/opt/docker/logs"),
   Cmd("RUN", "bash -l -c 'echo export JATOS_SECRET=$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1) >> /etc/bash.bashrc'"),
   Cmd("USER", "daemon"),
-  ExecCmd("ENTRYPOINT", "bin/jatos", "-Dconfig.file=conf/production.conf", "-Dpidfile.path=/dev/null", "-J-server")
+  ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
@@ -81,7 +82,7 @@ sources in(Compile, doc) := Seq.empty
 publishArtifact in(Compile, packageDoc) := false
 
 // Add loader.sh to distribution
-mappings in Universal in packageBin += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
+mappings in Universal += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
 
 // Add loader.sh to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
