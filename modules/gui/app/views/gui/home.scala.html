@@ -66,51 +66,55 @@ function checkJatosUpdateInfo() {
 }
 
 function showJatosUpdateInfo(updateInfo) {
-    if (updateInfo.updateMsg) {
-        if (updateInfo.updateMsg == "success") {
+    switch (updateInfo.currentUpdateState) {
+        case "SLEEPING":
+            if (updateInfo.isNewerVersion) showUpdateAvailable(updateInfo);
+            break;
+        case "DOWNLOADING":
+            showInfo("JATOS is currently downloading an update.");
+            break;
+        case "DOWNLOADED":
+            showUpdateJatosModalDownloaded();
+            break;
+        case "MOVING":
+        case "RESTARTING":
+            showWarning("JATOS is currently restarting to finish an update. Please wait.");
+            break;
+        case "SUCCESS":
             showInfo("JATOS was successfully updated to " + updateInfo.currentJatosVersion);
-        } else {
+            break;
+        case "FAILED":
             showError("Something went wrong in an JATOS update. More information can be found in"
-                + " the logs, logs/application.log and update.log.")
-        }
-        return
+                    + " the logs, logs/application.log and update.log.");
+            break;
+        default:
+            showError("Unknown UpdateState " + updateInfo.currentUpdateState);
     }
+}
 
-    if (updateInfo.isNewerVersion) {
-        var text;
-        var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
-        var versionInfo = updateInfo.isPrerelease ? updateInfo.latestJatosVersion + " (pre-release)"
-            : updateInfo.latestJatosVersion;
-        if (updateInfo.isAllowedToUpdate && loggedInUserIsAdmin) {
-            text = "There is an update of JATOS available. Do you want to update to version "
-                    + versionInfo + "?";
-            $("#updateJatos button").show();
-        } else {
-            text = "There is an update of JATOS to version " + versionInfo + " available.";
-        }
-        $("#updateJatosMsg").text(text);
-        $("#updateJatos").show();
+function showUpdateAvailable(updateInfo) {
+    var text;
+    var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+    var versionInfo = updateInfo.isPrerelease ? updateInfo.latestJatosVersion + " (pre-release)"
+        : updateInfo.latestJatosVersion;
+    if (updateInfo.isAllowedToUpdate && loggedInUserIsAdmin) {
+        var fileSizeInMb = Math.round(updateInfo.latestJatosFileSize / 1024 / 1024);
+        text = "There is an update of JATOS available. Do you want to update to version "
+                + versionInfo + "? It is " + fileSizeInMb + " MB";
+        $("#updateJatos button").show();
+    } else {
+        text = "There is an update of JATOS to version " + versionInfo + " available.";
     }
+    $("#updateJatosMsg").text(text);
+    $("#updateJatos").show();
 }
 
 $("#updateJatos button").click(function() {
     removeAlerts("#updateJatosModal");
     $("#updateJatosModal .confirmationText").text("Do you really want to update JATOS? You might destroy everything! First we download the new version.");
-    $("#updateJatosModal").addClass("shown");
+    $("#updateJatosModal button.confirmed").unbind();
+    $("#updateJatosModal button.confirmed").click(downloadLatestJatos);
     $("#updateJatosModal").modal('show');
-});
-
-// States shown, downloading, downloaded, updatingAndRestarting
-$("#updateJatosModal button.confirmed").click(function() {
-    if ($("#updateJatosModal").hasClass("shown")) {
-        $("#updateJatosModal").removeClass("shown");
-        $("#updateJatosModal").addClass("downloading");
-        downloadLatestJatos();
-    } else if ($("#updateJatosModal").hasClass("downloaded")) {
-        $("#updateJatosModal").removeClass("downloaded");
-        $("#updateJatosModal").addClass("updatingAndRestarting");
-        updateJatosFiles();
-    }
 });
 
 function downloadLatestJatos() {
@@ -120,21 +124,24 @@ function downloadLatestJatos() {
         url: '@controllers.gui.routes.Home.downloadLatestJatos()',
         timeout: 0, // Do not timeout
         success: function() {
-            $("#updateJatosModal").removeClass("downloading");
-            $("#updateJatosModal").addClass("downloaded");
-            $("#updateJatosModal .waiting").hide();
-            $('#updateJatosModal button').prop('disabled', false);
-            $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update?");
-            showInfo("Downloaded.");
+            showUpdateJatosModalDownloaded();
         },
         error: function (err) {
-            $("#updateJatosModal").removeClass("downloading");
             $("#updateJatosModal .waiting").hide();
             $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             showError(err.responseText)
         }
     });
+}
+
+function showUpdateJatosModalDownloaded() {
+    $("#updateJatosModal .waiting").hide();
+    $('#updateJatosModal button').prop('disabled', false);
+    $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update?");
+    $("#updateJatosModal button.confirmed").unbind();
+    $("#updateJatosModal button.confirmed").click(updateJatosFiles);
+    $("#updateJatosModal").modal('show');
 }
 
 function updateJatosFiles() {

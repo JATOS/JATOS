@@ -61,7 +61,7 @@ public class JatosUpdater {
     private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
 
     private enum UpdateState {
-        SLEEPING, DOWNLOADING, DOWNLOADED, MOVING, RESTARTING
+        SLEEPING, DOWNLOADING, DOWNLOADED, MOVING, RESTARTING, SUCCESS, FAILED
     }
 
     /**
@@ -80,6 +80,11 @@ public class JatosUpdater {
     private String latestJatosVersion;
 
     private boolean isPrerelease;
+
+    /**
+     * Size in byte of the JATOS zip file
+     */
+    private int latestJatosFileSize;
 
     /**
      * Determine the path and name of the directory where the update files will be stored.
@@ -129,6 +134,14 @@ public class JatosUpdater {
         return state;
     }
 
+    public void setUpdateStateSuccess() {
+        this.state = UpdateState.SUCCESS;
+    }
+
+    public void setUpdateStateFailed() {
+        this.state = UpdateState.FAILED;
+    }
+
     public CompletionStage<JsonNode> getUpdateInfo(boolean allowPreUpdates) {
         return getLatestVersion(allowPreUpdates).thenApply(f -> {
             boolean isNewerVersion =
@@ -139,8 +152,10 @@ public class JatosUpdater {
                     .put("latestJatosVersionFull", latestJatosVersionFull)
                     .put("latestJatosVersion", latestJatosVersion)
                     .put("isPrerelease", isPrerelease)
+                    .put("latestJatosFileSize", latestJatosFileSize)
                     .put("currentJatosVersion", Common.getJatosVersion())
-                    .put("updateMsg", getUpdateMsg());
+                    .put("currentUpdateState", state.toString())
+                    .put("updateMsg", checkUpdateMsg());
         });
     }
 
@@ -155,7 +170,7 @@ public class JatosUpdater {
         boolean notOlderThanAnHour = lastTimeAskedVersion != null &&
                 LocalTime.now().minusHours(1).isBefore(lastTimeAskedVersion);
         if (!Strings.isNullOrEmpty(latestJatosVersionFull) && notOlderThanAnHour &&
-                !allowPreUpdates) {
+                !allowPreUpdates && !isPrerelease) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -169,6 +184,7 @@ public class JatosUpdater {
             latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
             lastTimeAskedVersion = LocalTime.now();
             isPrerelease = false;
+            latestJatosFileSize = res.asJson().findPath("assets").get(0).findPath("size").asInt(65 * 1024 * 1024);
             LOGGER.info("Checked GitHub for latest version of JATOS: " + latestJatosVersionFull);
         });
     }
@@ -181,6 +197,7 @@ public class JatosUpdater {
             latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
             lastTimeAskedVersion = LocalTime.now();
             isPrerelease = first.findPath("prerelease").asBoolean();
+            latestJatosFileSize = first.findPath("assets").get(0).findPath("size").asInt(65 * 1024 * 1024);
             String msg = "Checked GitHub for latest version of JATOS (including pre-release): " +
                     latestJatosVersionFull;
             if (isPrerelease) msg += " (pre-release)";
@@ -212,17 +229,19 @@ public class JatosUpdater {
     }
 
     /**
-     * Returns the update msg that is passed from the loader script when it did an update. But since
-     * the GUI should show an update message only once, it stores this event in a cache and
-     * subsequent calls return only null.
+     * Returns the update msg that is passed from the loader script when it did an update. It also returns the
+     * UpdateState to SLEEPING. This also ensures that the GUI shows an update message only once - subsequent calls
+     * return only null.
      */
-    private String getUpdateMsg() {
-        if (commonCache.get("jatosUpdateMsgShown") != null) return null;
-        String updateMsg = Common.getJatosUpdateMsg();
-        if (Strings.isNullOrEmpty(updateMsg)) return null;
-
-        commonCache.set("jatosUpdateMsgShown", true);
-        return updateMsg;
+    private String checkUpdateMsg() {
+        switch (state) {
+            case SUCCESS:
+            case FAILED:
+                state = UpdateState.SLEEPING;
+                return Common.getJatosUpdateMsg();
+            default:
+                return null;
+        }
     }
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
@@ -257,7 +276,7 @@ public class JatosUpdater {
         }
 
         try {
-            String url = "https://github.com/JATOS/JATOS/releases/download/v" + latestJatosVersion
+            String url = "https://github.com/JATOS/JATOS/releases/download/" + latestJatosVersionFull
                     + "/jatos-" + latestJatosVersion + ".zip";
             String jatosZipFilename = "jatos-" + latestJatosVersionFull + ".zip";
             state = UpdateState.DOWNLOADING;
@@ -369,7 +388,10 @@ public class JatosUpdater {
         FileUtils.copyDirectory(FileUtils.getFile(Common.getBasepath(), "conf"),
                 bkpDir.resolve("conf").toFile());
         Files.copy(Paths.get(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
-        Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
+        // JATOS Docker has no loader.bat
+        if (Files.exists(Paths.get(Common.getBasepath(), "loader.bat"))) {
+            Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
+        }
         LOGGER.info("Backuped current JATOS files: loader scripts and conf directory");
     }
 

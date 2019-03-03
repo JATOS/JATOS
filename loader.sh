@@ -50,6 +50,8 @@ function start() {
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
     "$dir/bin/jatos" ${args[*]} -J-server
+    # Let Docker not exit in case of update restart: sleep infinity
+    sleep infinity
 }
 
 function update() {
