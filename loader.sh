@@ -84,7 +84,7 @@ function update() {
     mv -f ${dir}/conf/production.conf ${dir}/conf/production.bkp
 
     # Move everything from the update folder into the current JATOS folder
-    cp -a -v ${updateDir}/* ${dir} | tee -a ${dir}/update.log
+    cp -a -v ${updateDir}/* ${dir} >> ${dir}/update.log
 
     # Remove update dir
     rm -rf ${updateDir}
