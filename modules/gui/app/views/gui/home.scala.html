@@ -41,6 +41,10 @@
                 <div class="messages"></div>
                 <img class="waiting" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")" style="display: none">
                 <p class="confirmationText"></p>
+                <div class="checkbox" style="display: none">
+                    <label><input type="checkbox" class="backupAll" checked> Backup current version</label>
+                    <span class="help-block">Backups all files (including study assets, logs, study logs, local database) of the current JATOS into a folder named 'backup'. This will use up disk space.</span>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">No, this is too risky</button>
@@ -112,6 +116,8 @@ function showUpdateAvailable(updateInfo) {
 $("#updateJatos button").click(function() {
     removeAlerts("#updateJatosModal");
     $("#updateJatosModal .confirmationText").text("Do you really want to update JATOS? You might destroy everything! First we download the new version.");
+    $("#updateJatosModal .waiting").hide();
+    $("#updateJatosModal .checkbox").hide();
     $("#updateJatosModal button.confirmed").unbind();
     $("#updateJatosModal button.confirmed").click(downloadLatestJatos);
     $("#updateJatosModal").modal('show');
@@ -128,6 +134,7 @@ function downloadLatestJatos() {
         },
         error: function (err) {
             $("#updateJatosModal .waiting").hide();
+            $("#updateJatosModal .checkbox").hide();
             $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             showError(err.responseText)
@@ -137,6 +144,7 @@ function downloadLatestJatos() {
 
 function showUpdateJatosModalDownloaded() {
     $("#updateJatosModal .waiting").hide();
+    $("#updateJatosModal .checkbox").show();
     $('#updateJatosModal button').prop('disabled', false);
     $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update?");
     $("#updateJatosModal button.confirmed").unbind();
@@ -147,11 +155,13 @@ function showUpdateJatosModalDownloaded() {
 function updateJatosFiles() {
     $("#updateJatosModal .waiting").show();
     $('#updateJatosModal button').prop('disabled', true);
+    var backupAll = $('#updateJatosModal .backupAll').is(':checked');
     $.ajax({
-        url: '@controllers.gui.routes.Home.updateAndRestart()',
+        url: "@{playHttpContext}jatos/updateAndRestart?backupAll=" + backupAll,
         timeout: 0, // Do not timeout
         success: function() {
             $("#updateJatosModal .waiting").hide();
+            $("#updateJatosModal .checkbox").hide();
             $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             $("#updateJatosModal .confirmationText").text("Files updated. Restarting now.");
@@ -159,6 +169,7 @@ function updateJatosFiles() {
         },
         error: function (err) {
             $("#updateJatosModal .waiting").hide();
+            $("#updateJatosModal .checkbox").hide();
             $('#updateJatosModal button').prop('disabled', false);
             $('#updateJatosModal').modal('hide');
             showError(err.responseText)

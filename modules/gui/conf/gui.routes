@@ -26,7 +26,7 @@ GET      /jatos/admin/log                                                   @con
 GET      /jatos/log                                                         @controllers.gui.Home.log(limit: Integer ?= 1000)
 GET      /jatos/updateInfo                                                  @controllers.gui.Home.getUpdateInfo(allowPreUpdates:Boolean ?= false)
 GET      /jatos/downloadLatestJatos                                         @controllers.gui.Home.downloadLatestJatos(dry:Boolean ?= false)
-GET      /jatos/updateAndRestart                                            @controllers.gui.Home.updateAndRestart(dry:Boolean ?= false)
+GET      /jatos/updateAndRestart                                            @controllers.gui.Home.updateAndRestart(backupAll:Boolean)
 
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager()

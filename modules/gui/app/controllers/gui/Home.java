@@ -30,139 +30,118 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
-@Singleton
-public class Home extends Controller {
+@GuiAccessLogging @Singleton public class Home extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(Home.class);
+	private static final ALogger LOGGER = Logger.of(Home.class);
 
-    private final JsonUtils jsonUtils;
-    private final AuthenticationService authenticationService;
-    private final BreadcrumbsService breadcrumbsService;
-    private final StudyDao studyDao;
-    private final LogFileReader logFileReader;
-    private final JatosUpdater jatosUpdater;
+	private final JsonUtils             jsonUtils;
+	private final AuthenticationService authenticationService;
+	private final BreadcrumbsService    breadcrumbsService;
+	private final StudyDao              studyDao;
+	private final LogFileReader         logFileReader;
+	private final JatosUpdater          jatosUpdater;
 
-    @Inject
-    Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
-            BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            LogFileReader logFileReader, JatosUpdater jatosUpdater) {
-        this.jsonUtils = jsonUtils;
-        this.authenticationService = authenticationService;
-        this.breadcrumbsService = breadcrumbsService;
-        this.studyDao = studyDao;
-        this.logFileReader = logFileReader;
-        this.jatosUpdater = jatosUpdater;
-    }
+	@Inject Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
+			BreadcrumbsService breadcrumbsService, StudyDao studyDao, LogFileReader logFileReader,
+			JatosUpdater jatosUpdater) {
+		this.jsonUtils = jsonUtils;
+		this.authenticationService = authenticationService;
+		this.breadcrumbsService = breadcrumbsService;
+		this.studyDao = studyDao;
+		this.logFileReader = logFileReader;
+		this.jatosUpdater = jatosUpdater;
+	}
 
-    /**
-     * Shows home view
-     */
-    @Transactional
-    @Authenticated
-    public Result home(int httpStatus) {
-        LOGGER.debug(".home");
-        User loggedInUser = authenticationService.getLoggedInUser();
-        List<Study> studyList = studyDao.findAllByUser(loggedInUser);
-        String breadcrumbs = breadcrumbsService.generateForHome();
-        return status(httpStatus, views.html.gui.home.render(studyList,
-                loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
-    }
+	/**
+	 * Shows home view
+	 */
+	@Transactional @Authenticated public Result home(int httpStatus) {
+		LOGGER.debug(".home");
+		User loggedInUser = authenticationService.getLoggedInUser();
+		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
+		String breadcrumbs = breadcrumbsService.generateForHome();
+		return status(httpStatus,
+				views.html.gui.home.render(studyList, loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
+	}
 
-    @Transactional
-    @Authenticated
-    public Result home() {
-        return home(Http.Status.OK);
-    }
+	@Transactional @Authenticated public Result home() {
+		return home(Http.Status.OK);
+	}
 
-    /**
-     * Ajax request
-     * <p>
-     * Returns a list of all studies and their components belonging to the
-     * logged-in user for use in the GUI's sidebar.
-     */
-    @Transactional
-    @Authenticated
-    public Result sidebarStudyList() {
-        LOGGER.debug(".sidebarStudyList");
-        User loggedInUser = authenticationService.getLoggedInUser();
-        List<Study> studyList = studyDao.findAllByUser(loggedInUser);
-        return ok(jsonUtils.sidebarStudyList(studyList));
-    }
+	/**
+	 * Ajax request
+	 * <p>
+	 * Returns a list of all studies and their components belonging to the
+	 * logged-in user for use in the GUI's sidebar.
+	 */
+	@Transactional @Authenticated public Result sidebarStudyList() {
+		LOGGER.debug(".sidebarStudyList");
+		User loggedInUser = authenticationService.getLoggedInUser();
+		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
+		return ok(jsonUtils.sidebarStudyList(studyList));
+	}
 
-    /**
-     * Returns the content of the log file in reverse order and as
-     * 'Transfer-Encoding:chunked'. It does so only if an user with Role ADMIN
-     * is logged in. It limits the number of lines to the given lineLimit. If
-     * the log file can't be read it still returns with OK but instead of the
-     * file content with an error message.
-     */
-    @Transactional
-    @Authenticated(Role.ADMIN)
-    public Result log(Integer lineLimit) {
-        LOGGER.debug(".log: " + "lineLimit " + lineLimit);
-        return ok().chunked(logFileReader.read("application.log", lineLimit))
-                .as("text/plain; charset=utf-8");
-    }
+	/**
+	 * Returns the content of the log file in reverse order and as
+	 * 'Transfer-Encoding:chunked'. It does so only if an user with Role ADMIN
+	 * is logged in. It limits the number of lines to the given lineLimit. If
+	 * the log file can't be read it still returns with OK but instead of the
+	 * file content with an error message.
+	 */
+	@Transactional @Authenticated(Role.ADMIN) public Result log(Integer lineLimit) {
+		LOGGER.debug(".log: " + "lineLimit " + lineLimit);
+		return ok().chunked(logFileReader.read("application.log", lineLimit)).as("text/plain; charset=utf-8");
+	}
 
-    /**
-     * Checks whether there is an JATOS update available and if yes returns the version name.
-     *
-     * @param allowPreUpdates If true, allows requesting of pre-releases too
-     */
-    @Transactional
-    @Authenticated
-    public CompletionStage<Result> getUpdateInfo(Boolean allowPreUpdates) {
-        LOGGER.debug(".getUpdateInfo");
-        return jatosUpdater.getUpdateInfo(allowPreUpdates).handle((result, error) -> {
-            if (error != null) {
-                LOGGER.error("Couldn't request latest JATOS update info.");
-                return badRequest("Couldn't request latest JATOS update info.");
-            } else {
-                return ok(result);
-            }
-        });
-    }
+	/**
+	 * Checks whether there is an JATOS update available and if yes returns the version name.
+	 *
+	 * @param allowPreUpdates If true, allows requesting of pre-releases too
+	 */
+	@Transactional @Authenticated public CompletionStage<Result> getUpdateInfo(Boolean allowPreUpdates) {
+		LOGGER.debug(".getUpdateInfo");
+		return jatosUpdater.getUpdateInfo(allowPreUpdates).handle((result, error) -> {
+			if (error != null) {
+				LOGGER.error("Couldn't request latest JATOS update info.");
+				return badRequest("Couldn't request latest JATOS update info.");
+			} else {
+				return ok(result);
+			}
+		});
+	}
 
-    /**
-     * Downloads the latest JATOS release into the system's tmp directory without installing it.
-     *
-     * @param dry Allows testing the endpoint without actually downloading anything
-     */
-    @Transactional
-    @Authenticated(Role.ADMIN)
-    public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
-        LOGGER.debug(".downloadLatestJatos");
-        return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
-            if (error != null) {
-                LOGGER.error("A problem occurred while downloading a new JATOS version.", error);
-                return badRequest(
-                        "A problem occurred while downloading a new JATOS version.");
-            } else {
-                return ok(" "); // jQuery can't deal with empty POST response
-            }
-        });
-    }
+	/**
+	 * Downloads the latest JATOS release into the system's tmp directory without installing it.
+	 *
+	 * @param dry Allows testing the endpoint without actually downloading anything
+	 */
+	@Transactional @Authenticated(Role.ADMIN) public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
+		LOGGER.debug(".downloadLatestJatos");
+		return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
+			if (error != null) {
+				LOGGER.error("A problem occurred while downloading a new JATOS version.", error);
+				return badRequest("A problem occurred while downloading a new JATOS version.");
+			} else {
+				return ok(" "); // jQuery can't deal with empty POST response
+			}
+		});
+	}
 
-    /**
-     * Moves JATOS update files from tmp directory into the current JATOS working dir into a
-     * separate folder. It does not overwrite any files. Then it restarts using the laoder script
-     * with the 'update' argument. The actual update of files is done in the loader script.
-     *
-     * @param dry Allows testing the endpoint without actually updating. Restarts happens anyway.
-     */
-    @Transactional
-    @Authenticated(Role.ADMIN)
-    public Result updateAndRestart(Boolean dry) {
-        LOGGER.debug(".updateAndRestart");
-        try {
-            jatosUpdater.updateAndRestart(dry);
-        } catch (IOException e) {
-            LOGGER.error("An error occurred while updating to the new JATOS version.", e);
-            return badRequest(
-                    "An error occurred while updating to the new JATOS version.");
-        }
-        return ok(" "); // jQuery can't deal with empty POST response
-    }
+	/**
+	 * Initializes the actual JATOS update and subsequent restart.
+	 *
+	 * @param backupAll If true, everything in the JATOS directory will be copied into a backup folder.
+	 *                  If false, only the conf directory and the loader scripts.
+	 */
+	@Transactional @Authenticated(Role.ADMIN) public Result updateAndRestart(Boolean backupAll) {
+		LOGGER.debug(".updateAndRestart");
+		try {
+			jatosUpdater.updateAndRestart(backupAll);
+		} catch (IOException e) {
+			LOGGER.error("An error occurred while updating to the new JATOS version.", e);
+			return badRequest("An error occurred while updating to the new JATOS version.");
+		}
+		return ok(" "); // jQuery can't deal with empty POST response
+	}
 
 }
