@@ -319,7 +319,6 @@ import java.util.function.Supplier;
 
 	private void resetState() {
 		state = UpdateState.SLEEPING;
-		LOGGER.info("Reset JATOS update after one hour of waiting");
 	}
 
 	/**
@@ -464,7 +463,8 @@ import java.util.function.Supplier;
 		cmd.removeIf(a -> a.startsWith("-agentlib"));
 		cmd.removeIf(a -> a.startsWith("-Dplay.crypto.secret"));
 		cmd.removeIf(a -> a.startsWith("-Duser.dir"));
-		cmd.removeIf(a -> a.startsWith("-Dconfig.file"));
+		cmd.removeIf(a -> a.startsWith("-Dconfig.file")); // JATOS config file (will be added again by loader script)
+		cmd.removeIf(a -> a.startsWith("-DJATOS_UPDATE_MSG")); // Msgs from a prior update
 
 		return cmd.toArray(new String[0]);
 	}
