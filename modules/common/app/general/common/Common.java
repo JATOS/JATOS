@@ -41,7 +41,6 @@ public class Common {
     private static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
 
     private static String jatosVersion;
-    private static String osName = System.getProperty("os.name");
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
@@ -187,13 +186,6 @@ public class Common {
      */
     public static String getJatosVersion() {
         return "3.3.4";//jatosVersion;
-    }
-
-    /**
-     * OS name
-     */
-    public static String getOsName() {
-        return osName;
     }
 
     /**

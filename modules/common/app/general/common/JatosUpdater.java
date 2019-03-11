@@ -7,10 +7,11 @@ import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.lang3.SystemUtils;
 import play.Environment;
 import play.Logger;
 import play.api.Play;
@@ -42,19 +43,42 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * This class handles JATOS updates (JATOS releases are stored at GitHub).
- * It provides:
- * 1) to check whether there is a new version available
- * 2) to download it (if the user is admin)
- * 3) to move the update files into the JATOS folder
- * 4) to restart JATOS (call the loader script with the 'update' parameter)
- * The current state of the update progress is stored in a 'state' variable. An update is an
- * combined effort of this class and the loader script.
+ * This class handles JATOS updates
+ * <p>
+ * Some hints:
+ * - JATOS releases are currently stored at GitHub
+ * - The data requested from GitHub are stored in UpdateInfo
+ * - If there is an 'n' in the release's version an update is forbidden. This is safety feature in case an future update
+ * is not compatible with this update process.
+ * - The new release might need a new Java version. The release's Java version is determined by the asset's filename
+ * (see newJavaVersion).
+ * - The current state of the update process (UpdateState) is stored in 'state'.
+ * - The update process is finished in the loader script
+ * - In the GUI the update is handled in the home view
+ * <p>
+ * Update process:
+ * 1. check GitHub for a new releases and put release data into UpdateInfo
+ * 2. ask user (GUI home view)
+ * 3. download and unzip new release into system's tmp folder
+ * 4. ask user (GUI home view)
+ * 5. move new release into a separate folder within the current JATOS installation folder
+ * 6. exchange loader scripts and config folder
+ * 7. restart JATOS: finish process with an stop hook that runs the new loader script with an 'update' parameter
+ * 8. The loader script moves everything in the new release folder into the JATOS installation folder (eventual
+ * overwriting existing files)
+ * 9. The loader script starts JATOS again
+ * 10. JATOS shows a success msg (or a failure msg)
  *
  * @author Kristian Lange (2019)
  */
+
+// todo GUI tell how to restore old JATOS
+// todo GUI optional not Java bundle
+
 @Singleton public class JatosUpdater {
 
 	private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
@@ -62,48 +86,166 @@ import java.util.function.Supplier;
 
 
 	private enum UpdateState {
-		SLEEPING, DOWNLOADING, DOWNLOADED, MOVING, RESTARTING, SUCCESS, FAILED
+		SLEEPING, // most of the time
+		DOWNLOADING, // Currently downloading new release
+		DOWNLOADED, // Finished downloading and unzipping successfully
+		MOVING, // In the process of moving files into the current JATOS installation folder
+		RESTARTING, // Stopping the JATOS process and restarting the loader script with 'update' parameter
+		SUCCESS, // Finished restart (with 'update') successfully
+		FAILED // Something gone wrong during restart with 'update'
 	}
 
 
 
 	/**
-	 * Initial state after every JATOS start is SLEEPING
+	 * Initial state after every JATOS start is SLEEPING, unless Initializer sets it to SUCCESS or FAILED
 	 */
 	private UpdateState state = UpdateState.SLEEPING;
 
 	/**
-	 * Latest version of JATOS like in GitHub
+	 * Last time the latest release info was requested from GitHub
 	 */
-	private String latestJatosVersionFull;
+	private LocalTime lastTimeAskedReleaseInfo;
+
+	private ReleaseInfo currentReleaseInfo;
+
+
 
 	/**
-	 * Latest version of JATOS in format x.x.x
+	 * Contains all info about an JATOS update. It's also send as JSON to the GUI.
 	 */
-	private String latestJatosVersion;
+	@SuppressWarnings("WeakerAccess") // Fields have to be public for JSON serialization.
+	class ReleaseInfo {
 
-	private boolean isPrerelease;
+		/**
+		 * Version of the currently installed one in format x.x.x
+		 */
+		public String currentVersion;
 
-	/**
-	 * Size in byte of the JATOS zip file
-	 */
-	private int latestJatosFileSize;
+		/**
+		 * Latest version of JATOS like in GitHub
+		 */
+		public String latestVersionFull;
+
+		/**
+		 * Latest version of JATOS in format x.x.x
+		 */
+		public String latestVersion;
+
+		/**
+		 * Is it a pre-release
+		 */
+		public boolean isPrerelease;
+
+		/**
+		 * Download URLs to zip files
+		 */
+		public String zipUrl;
+		public String zipJavaUrl;
+
+		/**
+		 * Size in byte of the JATOS zip files
+		 */
+		public int zipSize;
+		public int zipJavaSize;
+
+		/**
+		 * Description of the release in Markup
+		 */
+		public String releaseNotes;
+
+		/**
+		 * Is the version of the latest release a newer one than the currently installed
+		 */
+		public boolean isNewerVersion;
+
+		/**
+		 * Versions with an 'n' in the name are not allowed to be updated automatically. This is a
+		 * safety switch if an future update isn't compatible with this way of update.
+		 */
+		public boolean isUpdateForbidden;
+
+		/**
+		 * Java version needed for the release. It's determined from the asset's filename: everything between 'java'
+		 * and
+		 * '.zip', e.g. 'jatos-3.3.5_linux_java1.8.zip' -> '1.8'
+		 */
+		public String newJavaVersion;
+
+		/**
+		 * If newJavaVersion is a different from the currently installed one, it's automatically a newer Java version.
+		 */
+		public boolean isNewerJava;
+
+		ReleaseInfo(JsonNode jsonNode) {
+			latestVersionFull = jsonNode.get("tag_name").asText();
+			latestVersion = latestVersionFull.replaceAll("[^\\d.]", "");
+			isPrerelease = jsonNode.get("prerelease").asBoolean();
+			releaseNotes = jsonNode.get("body").asText();
+			isNewerVersion = compareVersions(latestVersion, Common.getJatosVersion()) == 1;
+			isUpdateForbidden = latestVersionFull.contains("n");
+			currentVersion = Common.getJatosVersion();
+			jsonNode.get("assets").forEach(this::getFieldsFromAsset);
+		}
+
+		/**
+		 * Compare two JATOS versions (major.minor.patch)
+		 * <p>
+		 * Returns -1 if version1 is older than version2
+		 * Returns 0 if version1 is equal to version2
+		 * Returns 1 if version1 is newer than version2
+		 */
+		private int compareVersions(String version1, String version2) {
+			String[] p1 = version1.split("\\.");
+			String[] p2 = version2.split("\\.");
+			int major1 = Integer.parseInt(p1[0]);
+			int major2 = Integer.parseInt(p2[0]);
+			if (major1 < major2) return -1;
+			if (major1 > major2) return 1;
+			int minor1 = Integer.parseInt(p1[1]);
+			int minor2 = Integer.parseInt(p2[1]);
+			if (minor1 < minor2) return -1;
+			if (minor1 > minor2) return 1;
+			int patch1 = Integer.parseInt(p1[2]);
+			int patch2 = Integer.parseInt(p2[2]);
+			return Integer.compare(patch1, patch2);
+		}
+
+		/**
+		 * Gets zip files' download URLs and sizes, and Java version of the release. Per release there are usually two
+		 * kinds of zips, one without Java and one with.
+		 */
+		private void getFieldsFromAsset(JsonNode asset) {
+			String filename = asset.get("name").asText();
+			if (!filename.contains(".zip")) return;
+
+			if ((SystemUtils.IS_OS_LINUX && filename.contains("linux")) ||
+					(SystemUtils.IS_OS_MAC && filename.contains("mac")) ||
+					(SystemUtils.IS_OS_WINDOWS && filename.contains("win"))) {
+				zipJavaUrl = asset.get("browser_download_url").asText();
+				zipJavaSize = asset.get("size").asInt();
+				newJavaVersion = getAssetsJavaVersion(filename);
+				isNewerJava = !newJavaVersion.equals(System.getProperty("java.specification.version"));
+			} else {
+				zipUrl = asset.get("browser_download_url").asText();
+				zipSize = asset.get("size").asInt();
+			}
+		}
+
+		private String getAssetsJavaVersion(String filename) {
+			Pattern p = Pattern.compile("java(.+).zip"); // Everything between 'java' and '.zip' is Java version
+			Matcher m = p.matcher(filename);
+			return m.find() ? m.group(1) : "1.8"; // Default Java is 1.8
+		}
+	}
+
+
 
 	/**
 	 * Determine the path and name of the directory where the update files will be stored.
 	 */
-	private Supplier<File> tmpJatosDir = () -> new File(IOUtils.TMP_DIR, "jatos-" + latestJatosVersionFull);
-
-	/**
-	 * Versions with an 'n' in the name are not allowed to be updated automatically. This is a
-	 * safety switch if an future update isn't compatible with this way of update.
-	 */
-	private Supplier<Boolean> isAllowedToUpdate = () -> !latestJatosVersionFull.contains("n");
-
-	/**
-	 * Last time the latest version info was requested from GitHub
-	 */
-	private LocalTime lastTimeAskedVersion;
+	private Supplier<File> tmpJatosDir = () -> new File(IOUtils.TMP_DIR,
+			"jatos-" + currentReleaseInfo.latestVersionFull);
 
 	private final WSClient ws;
 
@@ -139,112 +281,69 @@ import java.util.function.Supplier;
 		this.state = UpdateState.FAILED;
 	}
 
-	public CompletionStage<JsonNode> getUpdateInfo(boolean allowPreUpdates) {
-		return getLatestVersion(allowPreUpdates).thenApply(f -> {
-			boolean isNewerVersion = (compareVersions(latestJatosVersion, Common.getJatosVersion()) == 1);
-			return Json.newObject().put("isNewerVersion", isNewerVersion)
-					.put("isAllowedToUpdate", isAllowedToUpdate.get())
-					.put("latestJatosVersionFull", latestJatosVersionFull).put("latestJatosVersion", latestJatosVersion)
-					.put("isPrerelease", isPrerelease).put("latestJatosFileSize", latestJatosFileSize)
-					.put("currentJatosVersion", Common.getJatosVersion()).put("currentUpdateState", state.toString())
-					.put("updateMsg", checkUpdateMsg());
+	private void resetUpdateState() {
+		if (state == UpdateState.SUCCESS || state == UpdateState.FAILED) {
+			state = UpdateState.SLEEPING;
+		}
+	}
+
+	public CompletionStage<JsonNode> getReleaseInfo(boolean allowPreUpdates) {
+		return getLatestReleaseInfo(allowPreUpdates).thenApply(releaseInfo -> {
+			currentReleaseInfo = releaseInfo;
+			ObjectNode json = (ObjectNode) Json.toJson(currentReleaseInfo);
+			json.put("currentUpdateState", state.toString());
+			resetUpdateState();
+			return json;
 		});
 	}
 
 	/**
-	 * Gets the latest JATOS version information from GitHub and returns it as a String in format
+	 * Gets the latest JATOS release information from GitHub and returns it as a String in format
 	 * x.x.x. To prevent high load on GitHub it stores it locally and newly requests it only once
 	 * per hour (only if allowPreUpdates is false).
 	 *
 	 * @param allowPreUpdates If true it includes pre-releases.
 	 */
-	private CompletionStage<?> getLatestVersion(boolean allowPreUpdates) {
+	private CompletionStage<ReleaseInfo> getLatestReleaseInfo(boolean allowPreUpdates) {
 		boolean notOlderThanAnHour =
-				lastTimeAskedVersion != null && LocalTime.now().minusHours(1).isBefore(lastTimeAskedVersion);
-		if (!Strings.isNullOrEmpty(latestJatosVersionFull) && notOlderThanAnHour && !allowPreUpdates && !isPrerelease) {
-			return CompletableFuture.completedFuture(null);
+				lastTimeAskedReleaseInfo != null && LocalTime.now().minusHours(1).isBefore(lastTimeAskedReleaseInfo);
+		if (currentReleaseInfo != null && notOlderThanAnHour && !allowPreUpdates && !currentReleaseInfo.isPrerelease) {
+			return CompletableFuture.completedFuture(currentReleaseInfo);
 		}
-
-		return allowPreUpdates ? requestLatestVersionInclPre() : requestLatestVersion();
+		return allowPreUpdates ? requestLatestReleaseInfoInclPre() : requestLatestReleaseInfo();
 	}
 
-	private CompletionStage<?> requestLatestVersion() {
+	private CompletionStage<ReleaseInfo> requestLatestReleaseInfo() {
 		String url = "https://api.github.com/repos/JATOS/JATOS/releases/latest";
-		return ws.url(url).setRequestTimeout(60000).get().thenAccept(res -> {
-			latestJatosVersionFull = res.asJson().findPath("tag_name").asText();
-			latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
-			lastTimeAskedVersion = LocalTime.now();
-			isPrerelease = false;
-			latestJatosFileSize = res.asJson().findPath("assets").get(0).findPath("size").asInt(65 * 1024 * 1024);
-			LOGGER.info("Checked GitHub for latest version of JATOS: " + latestJatosVersionFull);
+		return ws.url(url).setRequestTimeout(60000).get().thenApply(res -> {
+			JsonNode json = res.asJson();
+			ReleaseInfo releaseInfo = new ReleaseInfo(json);
+			LOGGER.info("Checked GitHub for latest release of JATOS: " + releaseInfo.latestVersionFull);
+			lastTimeAskedReleaseInfo = LocalTime.now();
+			return releaseInfo;
 		});
 	}
 
-	private CompletionStage<?> requestLatestVersionInclPre() {
+	private CompletionStage<ReleaseInfo> requestLatestReleaseInfoInclPre() {
 		String url = "https://api.github.com/repos/JATOS/JATOS/releases";
-		return ws.url(url).setRequestTimeout(60000).get().thenAccept(res -> {
+		return ws.url(url).setRequestTimeout(60000).get().thenApply(res -> {
 			JsonNode first = res.asJson().get(0);
-			latestJatosVersionFull = first.findPath("tag_name").asText();
-			latestJatosVersion = latestJatosVersionFull.replaceAll("[^\\d.]", "");
-			lastTimeAskedVersion = LocalTime.now();
-			isPrerelease = first.findPath("prerelease").asBoolean();
-			latestJatosFileSize = first.findPath("assets").get(0).findPath("size").asInt(65 * 1024 * 1024);
-			String msg =
-					"Checked GitHub for latest version of JATOS (including pre-release): " + latestJatosVersionFull;
-			if (isPrerelease)
-				msg += " (pre-release)";
+			ReleaseInfo releaseInfo = new ReleaseInfo(first);
+			String msg = "Checked GitHub for latest release of JATOS (allowing pre-release): "
+					+ releaseInfo.latestVersionFull;
+			if (releaseInfo.isPrerelease) msg += " (pre-release)";
 			LOGGER.info(msg);
+			lastTimeAskedReleaseInfo = LocalTime.now();
+			return releaseInfo;
 		});
-	}
-
-	/**
-	 * Compare two JATOS versions (major.minor.patch)
-	 * <p>
-	 * Returns -1 if version1 is older than version2
-	 * Returns 0 if version1 is equal to version2
-	 * Returns 1 if version1 is newer than version2
-	 */
-	private static int compareVersions(String version1, String version2) {
-		String[] p1 = version1.split("\\.");
-		String[] p2 = version2.split("\\.");
-		int major1 = Integer.parseInt(p1[0]);
-		int major2 = Integer.parseInt(p2[0]);
-		if (major1 < major2)
-			return -1;
-		if (major1 > major2)
-			return 1;
-		int minor1 = Integer.parseInt(p1[1]);
-		int minor2 = Integer.parseInt(p2[1]);
-		if (minor1 < minor2)
-			return -1;
-		if (minor1 > minor2)
-			return 1;
-		int patch1 = Integer.parseInt(p1[2]);
-		int patch2 = Integer.parseInt(p2[2]);
-		return Integer.compare(patch1, patch2);
-	}
-
-	/**
-	 * Returns the update msg that is passed from the loader script when it did an update. It also returns the
-	 * UpdateState to SLEEPING. This also ensures that the GUI shows an update message only once - subsequent calls
-	 * return only null.
-	 */
-	private String checkUpdateMsg() {
-		switch (state) {
-			case SUCCESS:
-			case FAILED:
-				state = UpdateState.SLEEPING;
-				return Common.getJatosUpdateMsg();
-			default:
-				return null;
-		}
 	}
 
 	public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
-		if (!isAllowedToUpdate.get()) {
+		if (currentReleaseInfo.isUpdateForbidden) {
 			CompletableFuture future = new CompletableFuture<>();
-			future.completeExceptionally(new IllegalStateException("Can't update to version " + latestJatosVersionFull
-					+ " automatically. This version has to be updated manually."));
+			future.completeExceptionally(new IllegalStateException("Can't update to version "
+					+ currentReleaseInfo.latestVersionFull
+					+ " automatically. This JATOS release has to be updated manually."));
 			return future;
 		}
 		if (state != UpdateState.SLEEPING) {
@@ -271,16 +370,15 @@ import java.util.function.Supplier;
 		}
 
 		try {
-			String url = "https://github.com/JATOS/JATOS/releases/download/" + latestJatosVersionFull + "/jatos-"
-					+ latestJatosVersion + ".zip";
-			String jatosZipFilename = "jatos-" + latestJatosVersionFull + ".zip";
 			state = UpdateState.DOWNLOADING;
-			CompletionStage<File> future = downloadAsync(url, jatosZipFilename);
+			String url = currentReleaseInfo.isNewerJava ? currentReleaseInfo.zipJavaUrl : currentReleaseInfo.zipUrl;
+			String downloadFilename = "jatos-" + currentReleaseInfo.latestVersionFull + ".zip";
+			CompletionStage<File> future = downloadAsync(url, downloadFilename);
 			future.thenAccept(zipFile -> Errors.rethrow().get(() -> {
 				File file = ZipUtil.unzip(zipFile, tmpJatosDir.get());
 				state = UpdateState.DOWNLOADED;
 				scheduleStateReset();
-				LOGGER.info("Downloaded and unzipped new JATOS " + jatosZipFilename);
+				LOGGER.info("Downloaded and unzipped new JATOS " + downloadFilename);
 				return file;
 			}));
 			return future;
@@ -295,6 +393,7 @@ import java.util.function.Supplier;
 	private CompletionStage<File> downloadAsync(String url, String filename) throws IOException {
 		File file = new File(IOUtils.TMP_DIR, filename);
 		OutputStream outputStream = Files.newOutputStream(file.toPath());
+		LOGGER.info("Download " + url);
 		return ws.url(url).setMethod("GET").stream().thenCompose(res -> {
 			Sink<ByteString, CompletionStage<Done>> outputWriter = Sink
 					.foreach(bytes -> outputStream.write(bytes.toArray()));
@@ -331,9 +430,9 @@ import java.util.function.Supplier;
 		if (state == UpdateState.MOVING || state == UpdateState.RESTARTING) {
 			return;
 		}
-		if (!isAllowedToUpdate.get()) {
-			throw new IllegalStateException("Can't update to version " + latestJatosVersionFull
-					+ " automatically. This version has to be updated manually.");
+		if (currentReleaseInfo.isUpdateForbidden) {
+			throw new IllegalStateException("Can't update to version " + currentReleaseInfo.latestVersionFull
+					+ " automatically. This JATOS release has to be updated manually.");
 		}
 		if (state != UpdateState.DOWNLOADED) {
 			throw new IllegalStateException("Wrong update state (" + state + ")");
@@ -371,7 +470,7 @@ import java.util.function.Supplier;
 			return CompletableFuture.completedFuture(null);
 		});
 
-		LOGGER.info("Restart JATOS to finish update to version " + latestJatosVersionFull);
+		LOGGER.info("Restart JATOS to finish update to version " + currentReleaseInfo.latestVersionFull);
 		// First stop Play and then, to be sure, System.exit
 		FutureConverters.toJava(Play.current().stop()).thenAccept((a) -> System.exit(0));
 	}
@@ -410,7 +509,7 @@ import java.util.function.Supplier;
 	private void updateFiles() throws IOException {
 		Path srcUpdateDir = Files.list(tmpJatosDir.get().toPath()).findFirst()
 				.orElseThrow(() -> new FileNotFoundException("JATOS update directory seems to be corrupted."));
-		Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + latestJatosVersionFull);
+		Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + currentReleaseInfo.latestVersionFull);
 		if (Files.exists(dstUpdateDir)) {
 			Files.delete(dstUpdateDir);
 			LOGGER.info("Deleted old update directory " + dstUpdateDir);
@@ -423,6 +522,7 @@ import java.util.function.Supplier;
 		FileUtils.deleteDirectory(tmpJatosDir.get());
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private static void updateLoaderScripts(Path srcDir) throws IOException {
 		Files.move(srcDir.resolve("loader.sh"), Paths.get(Common.getBasepath(), "loader.sh"),
 				StandardCopyOption.REPLACE_EXISTING);
@@ -438,8 +538,7 @@ import java.util.function.Supplier;
 	 * false otherwise.
 	 */
 	private static boolean isOsUx() {
-		String osName = Common.getOsName().toLowerCase();
-		return osName.contains("linux") || osName.contains("mac") || osName.contains("unix");
+		return SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_UNIX;
 	}
 
 	/**

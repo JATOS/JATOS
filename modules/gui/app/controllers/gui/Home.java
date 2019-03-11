@@ -94,18 +94,18 @@ import java.util.concurrent.CompletionStage;
 	}
 
 	/**
-	 * Checks whether there is an JATOS update available and if yes returns the version name.
+	 * Checks whether there is an JATOS update available and if yes returns ReleaseInfo as JSON.
 	 *
 	 * @param allowPreUpdates If true, allows requesting of pre-releases too
 	 */
-	@Transactional @Authenticated public CompletionStage<Result> getUpdateInfo(Boolean allowPreUpdates) {
-		LOGGER.debug(".getUpdateInfo");
-		return jatosUpdater.getUpdateInfo(allowPreUpdates).handle((result, error) -> {
+	@Transactional @Authenticated public CompletionStage<Result> getReleaseInfo(Boolean allowPreUpdates) {
+		LOGGER.debug(".getReleaseInfo");
+		return jatosUpdater.getReleaseInfo(allowPreUpdates).handle((updateInfo, error) -> {
 			if (error != null) {
 				LOGGER.error("Couldn't request latest JATOS update info.");
-				return badRequest("Couldn't request latest JATOS update info.");
+				return status(503, "Couldn't request latest JATOS update info. Is internet connection okay?");
 			} else {
-				return ok(result);
+				return ok(updateInfo);
 			}
 		});
 	}
@@ -119,8 +119,8 @@ import java.util.concurrent.CompletionStage;
 		LOGGER.debug(".downloadLatestJatos");
 		return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
 			if (error != null) {
-				LOGGER.error("A problem occurred while downloading a new JATOS version.", error);
-				return badRequest("A problem occurred while downloading a new JATOS version.");
+				LOGGER.error("A problem occurred while downloading a new JATOS release.", error);
+				return badRequest("A problem occurred while downloading a new JATOS release.");
 			} else {
 				return ok(" "); // jQuery can't deal with empty POST response
 			}
@@ -138,8 +138,8 @@ import java.util.concurrent.CompletionStage;
 		try {
 			jatosUpdater.updateAndRestart(backupAll);
 		} catch (IOException e) {
-			LOGGER.error("An error occurred while updating to the new JATOS version.", e);
-			return badRequest("An error occurred while updating to the new JATOS version.");
+			LOGGER.error("An error occurred while updating to the new JATOS release.", e);
+			return badRequest("An error occurred while updating to the new JATOS release.");
 		}
 		return ok(" "); // jQuery can't deal with empty POST response
 	}
