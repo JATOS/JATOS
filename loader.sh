@@ -50,6 +50,7 @@ function start() {
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
     "$dir/bin/jatos" ${args[*]} -J-server
+
     # Let Docker not exit in case of update restart: sleep infinity
     sleep infinity
 }
@@ -105,14 +106,16 @@ function update() {
 
 function checkJava() {
     # Check local Java
-    if [[ -n "$dir/jre/linux_x64_jre" ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
+    if [[ -n "$dir/jre/linux_x64_jre" ]] && [[ -e "$dir/jre/linux_x64_jre/bin/java" ]]
     then
         echo "JATOS uses local Java"
+        chmod u+x "$dir/jre/linux_x64_jre/bin/java" # Packing might remove execution permission
         JAVA_HOME="$dir/jre/linux_x64_jre"
         return
-    elif [[ -n "$dir/jre/mac_x64_jre" ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
+    elif [[ -n "$dir/jre/mac_x64_jre" ]] && [[ -e "$dir/jre/mac_x64_jre/bin/java" ]]
     then
         echo "JATOS uses local Java"
+        chmod u+x "$dir/jre/mac_x64_jre/bin/java" # Packing might remove execution permission
         JAVA_HOME="$dir/jre/mac_x64_jre"
         return
     fi
