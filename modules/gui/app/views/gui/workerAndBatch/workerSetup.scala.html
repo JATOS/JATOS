@@ -605,7 +605,7 @@ function fillMtRow(worker, mtWorkerTable) {
 }
 
 $('#batchList').on('click', '.collapseWorkerTable', function() {
-    var collapse = $(this).closest('.panel').find('.collapse').toggle();
+    var collapse = $(this).closest('.panel').find('.panel-collapse:first').collapse('toggle');
     $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
         .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });

@@ -214,14 +214,14 @@ function fillBatch(batchItem, batch) {
 
 $('#batchList').on('click', '.collapseWorkerSetup, .batchTitle, .batchWorkersBadge', function() {
     var batchItem = $(this).closest('.batchItem');
-    var collapse = $(batchItem).find(".collapse")
+    var collapse = $(batchItem).find(".panel-collapse:first");
     if($(collapse).children().length == 0) {
         var batch = getBatchData(this);
         if (!batch) {return} // should never happen
         var workerSetupDiv = generateWorkerSetupDiv(batch);
-        $(collapse).append(workerSetupDiv)
+        $(collapse).append(workerSetupDiv);
     }
-    $(collapse).toggle();
+    $(collapse).collapse('toggle');
     $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
                     .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 });
