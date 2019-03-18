@@ -30,7 +30,9 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging @Singleton public class Home extends Controller {
+@GuiAccessLogging
+@Singleton
+public class Home extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(Home.class);
 
@@ -41,7 +43,8 @@ import java.util.concurrent.CompletionStage;
 	private final LogFileReader         logFileReader;
 	private final JatosUpdater          jatosUpdater;
 
-	@Inject Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
+	@Inject
+	Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao, LogFileReader logFileReader,
 			JatosUpdater jatosUpdater) {
 		this.jsonUtils = jsonUtils;
@@ -55,7 +58,9 @@ import java.util.concurrent.CompletionStage;
 	/**
 	 * Shows home view
 	 */
-	@Transactional @Authenticated public Result home(int httpStatus) {
+	@Transactional
+	@Authenticated
+	public Result home(int httpStatus) {
 		LOGGER.debug(".home");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
@@ -64,7 +69,9 @@ import java.util.concurrent.CompletionStage;
 				views.html.gui.home.render(studyList, loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
 	}
 
-	@Transactional @Authenticated public Result home() {
+	@Transactional
+	@Authenticated
+	public Result home() {
 		return home(Http.Status.OK);
 	}
 
@@ -74,7 +81,9 @@ import java.util.concurrent.CompletionStage;
 	 * Returns a list of all studies and their components belonging to the
 	 * logged-in user for use in the GUI's sidebar.
 	 */
-	@Transactional @Authenticated public Result sidebarStudyList() {
+	@Transactional
+	@Authenticated
+	public Result sidebarStudyList() {
 		LOGGER.debug(".sidebarStudyList");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
@@ -88,7 +97,9 @@ import java.util.concurrent.CompletionStage;
 	 * the log file can't be read it still returns with OK but instead of the
 	 * file content with an error message.
 	 */
-	@Transactional @Authenticated(Role.ADMIN) public Result log(Integer lineLimit) {
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result log(Integer lineLimit) {
 		LOGGER.debug(".log: " + "lineLimit " + lineLimit);
 		return ok().chunked(logFileReader.read("application.log", lineLimit)).as("text/plain; charset=utf-8");
 	}
@@ -96,16 +107,18 @@ import java.util.concurrent.CompletionStage;
 	/**
 	 * Checks whether there is an JATOS update available and if yes returns ReleaseInfo as JSON.
 	 *
-	 * @param allowPreUpdates If true, allows requesting of pre-releases too
+	 * @param allowPreReleases If true, allows requesting of pre-releases too
 	 */
-	@Transactional @Authenticated public CompletionStage<Result> getReleaseInfo(Boolean allowPreUpdates) {
+	@Transactional
+	@Authenticated
+	public CompletionStage<Result> getReleaseInfo(Boolean allowPreReleases) {
 		LOGGER.debug(".getReleaseInfo");
-		return jatosUpdater.getReleaseInfo(allowPreUpdates).handle((updateInfo, error) -> {
+		return jatosUpdater.getReleaseInfo(allowPreReleases).handle((releaseInfo, error) -> {
 			if (error != null) {
 				LOGGER.error("Couldn't request latest JATOS update info.");
 				return status(503, "Couldn't request latest JATOS update info. Is internet connection okay?");
 			} else {
-				return ok(updateInfo);
+				return ok(releaseInfo);
 			}
 		});
 	}
@@ -115,7 +128,9 @@ import java.util.concurrent.CompletionStage;
 	 *
 	 * @param dry Allows testing the endpoint without actually downloading anything
 	 */
-	@Transactional @Authenticated(Role.ADMIN) public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
 		LOGGER.debug(".downloadLatestJatos");
 		return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
 			if (error != null) {
@@ -133,7 +148,9 @@ import java.util.concurrent.CompletionStage;
 	 * @param backupAll If true, everything in the JATOS directory will be copied into a backup folder.
 	 *                  If false, only the conf directory and the loader scripts.
 	 */
-	@Transactional @Authenticated(Role.ADMIN) public Result updateAndRestart(Boolean backupAll) {
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result updateAndRestart(Boolean backupAll) {
 		LOGGER.debug(".updateAndRestart");
 		try {
 			jatosUpdater.updateAndRestart(backupAll);

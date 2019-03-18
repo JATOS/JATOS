@@ -75,15 +75,10 @@ import java.util.regex.Pattern;
  *
  * @author Kristian Lange (2019)
  */
-
-// todo GUI tell how to restore old JATOS
-// todo GUI optional not Java bundle
-
-@Singleton public class JatosUpdater {
+@Singleton
+public class JatosUpdater {
 
 	private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
-
-
 
 	private enum UpdateState {
 		SLEEPING, // most of the time
@@ -94,8 +89,6 @@ import java.util.regex.Pattern;
 		SUCCESS, // Finished restart (with 'update') successfully
 		FAILED // Something gone wrong during restart with 'update'
 	}
-
-
 
 	/**
 	 * Initial state after every JATOS start is SLEEPING, unless Initializer sets it to SUCCESS or FAILED
@@ -109,12 +102,11 @@ import java.util.regex.Pattern;
 
 	private ReleaseInfo currentReleaseInfo;
 
-
-
 	/**
 	 * Contains all info about an JATOS update. It's also send as JSON to the GUI.
 	 */
-	@SuppressWarnings("WeakerAccess") // Fields have to be public for JSON serialization.
+	@SuppressWarnings("WeakerAccess")
+			// Fields have to be public for JSON serialization.
 	class ReleaseInfo {
 
 		/**
@@ -162,13 +154,13 @@ import java.util.regex.Pattern;
 		/**
 		 * Versions with an 'n' in the name are not allowed to be updated automatically. This is a
 		 * safety switch if an future update isn't compatible with this way of update.
+		 * Additionally JATOS on Windows doesn't allow automatic updates.
 		 */
-		public boolean isUpdateForbidden;
+		public boolean isUpdateAllowed;
 
 		/**
 		 * Java version needed for the release. It's determined from the asset's filename: everything between 'java'
-		 * and
-		 * '.zip', e.g. 'jatos-3.3.5_linux_java1.8.zip' -> '1.8'
+		 * and '.zip', e.g. 'jatos-3.3.5_linux_java1.8.zip' -> '1.8'
 		 */
 		public String newJavaVersion;
 
@@ -183,7 +175,7 @@ import java.util.regex.Pattern;
 			isPrerelease = jsonNode.get("prerelease").asBoolean();
 			releaseNotes = jsonNode.get("body").asText();
 			isNewerVersion = compareVersions(latestVersion, Common.getJatosVersion()) == 1;
-			isUpdateForbidden = latestVersionFull.contains("n");
+			isUpdateAllowed = !latestVersionFull.contains("n") && isOsUx();
 			currentVersion = Common.getJatosVersion();
 			jsonNode.get("assets").forEach(this::getFieldsFromAsset);
 		}
@@ -239,8 +231,6 @@ import java.util.regex.Pattern;
 		}
 	}
 
-
-
 	/**
 	 * Determine the path and name of the directory where the update files will be stored.
 	 */
@@ -259,7 +249,8 @@ import java.util.regex.Pattern;
 
 	private final Environment environment;
 
-	@Inject JatosUpdater(WSClient ws, Materializer materializer, ActorSystem actorSystem,
+	@Inject
+	JatosUpdater(WSClient ws, Materializer materializer, ActorSystem actorSystem,
 			ExecutionContext executionContext, ApplicationLifecycle applicationLifecycle, Environment environment) {
 		this.ws = ws;
 		this.materializer = materializer;
@@ -287,8 +278,8 @@ import java.util.regex.Pattern;
 		}
 	}
 
-	public CompletionStage<JsonNode> getReleaseInfo(boolean allowPreUpdates) {
-		return getLatestReleaseInfo(allowPreUpdates).thenApply(releaseInfo -> {
+	public CompletionStage<JsonNode> getReleaseInfo(boolean allowPreReleases) {
+		return getLatestReleaseInfo(allowPreReleases).thenApply(releaseInfo -> {
 			currentReleaseInfo = releaseInfo;
 			ObjectNode json = (ObjectNode) Json.toJson(currentReleaseInfo);
 			json.put("currentUpdateState", state.toString());
@@ -300,17 +291,17 @@ import java.util.regex.Pattern;
 	/**
 	 * Gets the latest JATOS release information from GitHub and returns it as a String in format
 	 * x.x.x. To prevent high load on GitHub it stores it locally and newly requests it only once
-	 * per hour (only if allowPreUpdates is false).
+	 * per hour (only if allowPreReleases is false).
 	 *
-	 * @param allowPreUpdates If true it includes pre-releases.
+	 * @param allowPreReleases If true it includes pre-releases.
 	 */
-	private CompletionStage<ReleaseInfo> getLatestReleaseInfo(boolean allowPreUpdates) {
+	private CompletionStage<ReleaseInfo> getLatestReleaseInfo(boolean allowPreReleases) {
 		boolean notOlderThanAnHour =
 				lastTimeAskedReleaseInfo != null && LocalTime.now().minusHours(1).isBefore(lastTimeAskedReleaseInfo);
-		if (currentReleaseInfo != null && notOlderThanAnHour && !allowPreUpdates && !currentReleaseInfo.isPrerelease) {
+		if (currentReleaseInfo != null && notOlderThanAnHour && !allowPreReleases && !currentReleaseInfo.isPrerelease) {
 			return CompletableFuture.completedFuture(currentReleaseInfo);
 		}
-		return allowPreUpdates ? requestLatestReleaseInfoInclPre() : requestLatestReleaseInfo();
+		return allowPreReleases ? requestLatestReleaseInfoInclPre() : requestLatestReleaseInfo();
 	}
 
 	private CompletionStage<ReleaseInfo> requestLatestReleaseInfo() {
@@ -339,7 +330,7 @@ import java.util.regex.Pattern;
 	}
 
 	public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
-		if (currentReleaseInfo.isUpdateForbidden) {
+		if (!currentReleaseInfo.isUpdateAllowed) {
 			CompletableFuture future = new CompletableFuture<>();
 			future.completeExceptionally(new IllegalStateException("Can't update to version "
 					+ currentReleaseInfo.latestVersionFull
@@ -430,7 +421,7 @@ import java.util.regex.Pattern;
 		if (state == UpdateState.MOVING || state == UpdateState.RESTARTING) {
 			return;
 		}
-		if (currentReleaseInfo.isUpdateForbidden) {
+		if (!currentReleaseInfo.isUpdateAllowed) {
 			throw new IllegalStateException("Can't update to version " + currentReleaseInfo.latestVersionFull
 					+ " automatically. This JATOS release has to be updated manually.");
 		}

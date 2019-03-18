@@ -81,9 +81,9 @@
 checkJatosReleaseInfo();
 
 function checkJatosReleaseInfo() {
-    var allowPreUpdates = new URLSearchParams(window.location.search).has('allowPreUpdates')
+    var allowPreReleases = new URLSearchParams(window.location.search).has('allowPreReleases')
     $.getJSON({
-        url: '@{playHttpContext}jatos/releaseInfo?allowPreUpdates=' + allowPreUpdates,
+        url: '@{playHttpContext}jatos/releaseInfo?allowPreReleases=' + allowPreReleases,
         success: function(releaseInfo) {
             $("#updateJatos").data("releaseInfo", releaseInfo);
             showJatosReleaseInfo(releaseInfo);
@@ -114,7 +114,7 @@ function showJatosReleaseInfo(releaseInfo) {
             break;
         case "FAILED":
             showError("Something went wrong in an JATOS update. More information can be found in"
-                    + " the logs, logs/application.log and update.log.");
+                    + " the logs (<i>update.log</i> and <i>logs/application.log</i>).");
             break;
         default:
             showError("Unknown UpdateState " + releaseInfo.currentUpdateState);
@@ -125,11 +125,11 @@ function showUpdateAvailable(releaseInfo) {
     var text;
     var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
     var latestVersion = getLatestVersionName(releaseInfo);
-    if (!releaseInfo.isUpdateForbidden && ! releaseInfo.isNewerJava && loggedInUserIsAdmin) {
-        text = "You're not using the latest JATOS version. Do you want to automatically update to version&nbsp;"
+    if (releaseInfo.isUpdateAllowed && ! releaseInfo.isNewerJava && loggedInUserIsAdmin) {
+        text = "You're not using the latest JATOS version.<br>Do you want to automatically update to version&nbsp;"
                 + latestVersion + "?";
         $("#updateJatos button").show();
-    } else if (!releaseInfo.isUpdateForbidden && releaseInfo.isNewerJava && loggedInUserIsAdmin) {
+    } else if (releaseInfo.isUpdateAllowed && releaseInfo.isNewerJava && loggedInUserIsAdmin) {
         text = "You're not using the latest JATOS version. Do you want to automatically update to version&nbsp;"
                 + latestVersion + "? The new JATOS needs a newer version of Java than yours. So you'll need JATOS"
                 + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
@@ -158,7 +158,8 @@ function getLatestVersionName(releaseInfo) {
 }
 
 function getFileSizeInMb(releaseInfo) {
-    return  Math.round(releaseInfo.isNewerJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize / 1024 / 1024);
+    var sizeInByte = releaseInfo.isNewerJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
+    return  Math.round(sizeInByte / 1024 / 1024);
 }
 
 $(".updateJatosButton").click(function() {
