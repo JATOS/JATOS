@@ -218,7 +218,7 @@ public class JatosUpdater {
 				zipJavaSize = asset.get("size").asInt();
 				newJavaVersion = getAssetsJavaVersion(filename);
 				isNewerJava = !newJavaVersion.equals(System.getProperty("java.specification.version"));
-			} else {
+			} else if (!filename.contains("linux") && !filename.contains("mac") && !filename.contains("win")) {
 				zipUrl = asset.get("browser_download_url").asText();
 				zipSize = asset.get("size").asInt();
 			}
