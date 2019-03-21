@@ -136,6 +136,9 @@ function checkJava() {
     fi
 }
 
+# Necessary to stop with ctrl-c running in Docker
+trap exit INT
+
 function stop() {
     # Check if JATOS is running
     if [[ ! -f "$pidfile" ]] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null; then
