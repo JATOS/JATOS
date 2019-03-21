@@ -114,7 +114,7 @@ function showJatosReleaseInfo(releaseInfo) {
             break;
         case "FAILED":
             showError("Something went wrong in an JATOS update. More information can be found in"
-                    + " the logs (<i>update.log</i> and <i>logs/application.log</i>).");
+                    + " the logs (<i>logs/update.log</i> and <i>logs/application.log</i>).");
             break;
         default:
             showError("Unknown UpdateState " + releaseInfo.currentUpdateState);

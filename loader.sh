@@ -56,10 +56,12 @@ function start() {
 }
 
 function update() {
+    updateLog=${dir}/logs/update.log
+
     # Wait max 10s for JATOS to be fully stopped
     while [[ -f "$pidfile" ]] && kill -0 $(cat "$pidfile") 2>&1 >/dev/null; do
         if [[ $i -gt 10 ]]; then
-            echo "`date` JATOS didn't shut down. Cannot update. Exit." | tee ${dir}/update.log
+            echo "`date` JATOS didn't shut down. Cannot update. Exit." | tee ${updateLog}
             exit 1
         fi
         sleep 1
@@ -69,38 +71,38 @@ function update() {
     # Check that we have exactly one update folder
     updateDirsCount=$(find ${dir} -maxdepth 1 -type d -name "update-*" | wc -l)
     if [[ $updateDirsCount < 1 ]]; then
-        echo "`date` No update folder found. Start JATOS without update." | tee ${dir}/update.log
+        echo "`date` No update folder found. Start JATOS without update." | tee $updateLog
         args+=('-DJATOS_UPDATE_MSG="update_folder_not_found"')
         return
     fi
     if [[ $updateDirsCount > 1 ]]; then
-        echo "`date` There is more than one folder with a JATOS update. Remove the undesirable ones and start JATOS again. Start JATOS without update." | tee ${dir}/update.log
+        echo "`date` There is more than one folder with a JATOS update. Remove the undesirable ones and start JATOS again. Start JATOS without update." | tee $updateLog
         args+=('-DJATOS_UPDATE_MSG="more_than_one_update_folder"')
         return
     fi
     updateDir=(${dir}/update-*)
-    echo "`date` Start update of JATOS from folder ${updateDir}." | tee ${dir}/update.log
+    echo "`date` Start update of JATOS from folder ${updateDir}." | tee $updateLog
 
     # Backup conf/production.conf
     mv -f ${dir}/conf/production.conf ${dir}/conf/production.bkp
 
     # Move everything from the update folder into the current JATOS folder
-    cp -a -v ${updateDir}/* ${dir} >> ${dir}/update.log
+    cp -a -v ${updateDir}/* ${dir} >> $updateLog
 
     # Remove update dir
     rm -rf ${updateDir}
 
     # Compare new and old production.conf and recover it
     if cmp -s ${dir}/conf/production.conf ${dir}/conf/production.bkp; then
-        echo "`date` New and old conf/production.conf are identical." | tee -a ${dir}/update.log
+        echo "`date` New and old conf/production.conf are identical." | tee -a $updateLog
         rm ${dir}/conf/production.bkp
     else
         mv ${dir}/conf/production.conf ${dir}/conf/production.new
         mv ${dir}/conf/production.bkp ${dir}/conf/production.conf
-        echo "`date` Recovered old conf/production.conf but there is a newer version stored in conf/production.new." | tee -a ${dir}/update.log
+        echo "`date` Recovered old conf/production.conf but there is a newer version stored in conf/production.new." | tee -a $updateLog
     fi
 
-    echo "`date` Update successfully finished." | tee -a ${dir}/update.log
+    echo "`date` Update successfully finished." | tee -a $updateLog
     args+=('-DJATOS_UPDATE_MSG=success')
 }
 
