@@ -70,12 +70,12 @@ function update() {
 
     # Check that we have exactly one update folder
     updateDirsCount=$(find ${dir} -maxdepth 1 -type d -name "update-*" | wc -l)
-    if [[ $updateDirsCount < 1 ]]; then
+    if [[ $updateDirsCount -lt 1 ]]; then
         echo "`date` No update folder found. Start JATOS without update." | tee $updateLog
         args+=('-DJATOS_UPDATE_MSG="update_folder_not_found"')
         return
     fi
-    if [[ $updateDirsCount > 1 ]]; then
+    if [[ $updateDirsCount -gt 1 ]]; then
         echo "`date` There is more than one folder with a JATOS update. Remove the undesirable ones and start JATOS again. Start JATOS without update." | tee $updateLog
         args+=('-DJATOS_UPDATE_MSG="more_than_one_update_folder"')
         return
