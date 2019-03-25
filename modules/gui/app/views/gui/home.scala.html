@@ -125,11 +125,11 @@ function showUpdateAvailable(releaseInfo) {
     var text;
     var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
     var latestVersion = getLatestVersionName(releaseInfo);
-    if (releaseInfo.isUpdateAllowed && ! releaseInfo.isNewerJava && loggedInUserIsAdmin) {
+    if (releaseInfo.isUpdateAllowed && ! releaseInfo.isNewerJava && releaseInfo.zipUrl && loggedInUserIsAdmin) {
         text = "You're not using the latest JATOS version.<br>Do you want to automatically update to version&nbsp;"
                 + latestVersion + "?";
         $("#updateJatos button").show();
-    } else if (releaseInfo.isUpdateAllowed && releaseInfo.isNewerJava && loggedInUserIsAdmin) {
+    } else if (releaseInfo.isUpdateAllowed && releaseInfo.isNewerJava && releaseInfo.zipJavaUrl && loggedInUserIsAdmin) {
         text = "You're not using the latest JATOS version. Do you want to automatically update to version&nbsp;"
                 + latestVersion + "? The new JATOS needs a newer version of Java than yours. So you'll need JATOS"
                 + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
