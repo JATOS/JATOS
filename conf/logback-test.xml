@@ -41,7 +41,7 @@
     <logger name="group" level="INFO"/>
 
     <root level="INFO">
-        <appender-ref ref="ASYNCFILE"/>
+        <appender-ref ref="ASYNCSTDOUT"/>
     </root>
 
 </configuration>

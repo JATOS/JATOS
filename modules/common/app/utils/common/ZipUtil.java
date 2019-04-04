@@ -1,18 +1,13 @@
 package utils.common;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import org.apache.commons.io.FileUtils;
+
+import javax.inject.Singleton;
+import java.io.*;
 import java.util.Enumeration;
-import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-
-import javax.inject.Singleton;
 
 /**
  * Utility class that does zipping and unzipping.
@@ -30,20 +25,21 @@ public class ZipUtil {
     private static final String ZIP_FILE_SEPARATOR = "/";
 
     /**
-     * Unzips the given File. Creates a new File object with the prefix
-     * 'JatosImport_' within the systems temp directory. The method can handle
-     * recursive unzipping of sub-directories.
+     * Unzips the given File. Creates a new directory in the system's temp directory and writes the
+     * zip's content in there. The method can handle recursive unzipping of sub-directories.
      */
-    public static File unzip(File file) throws IOException {
-        ZipFile zipFile = new ZipFile(file);
-        Enumeration<?> enumeration = zipFile.entries();
-        File tempDir = Files.createTempDirectory(
-                "JatosImport_" + UUID.randomUUID().toString()).toFile();
-        tempDir.deleteOnExit();
-        while (enumeration.hasMoreElements()) {
-            ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
+    public static File unzip(File fileToUnzip, File destDir) throws IOException {
+        FileUtils.deleteQuietly(destDir);
+        IOUtils.createDir(destDir);
+        destDir.deleteOnExit();
+
+        File file;
+        ZipFile zipFile = new ZipFile(fileToUnzip);
+        Enumeration<?> zipEnumeration = zipFile.entries();
+        while (zipEnumeration.hasMoreElements()) {
+            ZipEntry zipEntry = (ZipEntry) zipEnumeration.nextElement();
             String fileName = zipEntry.getName();
-            file = new File(tempDir, fileName);
+            file = new File(destDir, fileName);
             if (fileName.endsWith(ZIP_FILE_SEPARATOR)) {
                 file.mkdirs();
                 continue;
@@ -65,7 +61,7 @@ public class ZipUtil {
             fileOutputStream.close();
         }
         zipFile.close();
-        return tempDir;
+        return destDir;
     }
 
     /**
@@ -73,18 +69,15 @@ public class ZipUtil {
      * the system's temp directory. The zip file will contain the study assets'
      * directory and the study's JSON data (a .jas file).
      */
-    static public File zipStudy(String studyAssetsDirPath,
-            String studyAssetsDirNameInZip, String studyAsJsonPath)
-            throws IOException {
-        File zipFile = File.createTempFile("study",
-                "." + IOUtils.ZIP_FILE_SUFFIX);
+    static public File zipStudy(String studyAssetsDirPath, String studyAssetsDirNameInZip,
+            String studyAsJsonPath) throws IOException {
+        File zipFile = File.createTempFile("study", "." + IOUtils.ZIP_FILE_SUFFIX);
         zipFile.deleteOnExit();
         FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
         ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
         // Add the study assets' directory to zip
-        addDirectoryToZip("", studyAssetsDirNameInZip, studyAssetsDirPath,
-                zipOutputStream);
+        addDirectoryToZip("", studyAssetsDirNameInZip, studyAssetsDirPath, zipOutputStream);
 
         // Add study as JSON file to zip
         addFileToZip("", studyAsJsonPath, zipOutputStream);
@@ -94,8 +87,7 @@ public class ZipUtil {
         return zipFile;
     }
 
-    static private void addDirectoryToZip(String dirPathInZip,
-            String dirNameInZip, String dirPath,
+    static private void addDirectoryToZip(String dirPathInZip, String dirNameInZip, String dirPath,
             ZipOutputStream zipOutputStream) throws IOException {
         File dir = new File(dirPath);
         if (!dir.isDirectory()) {
@@ -118,16 +110,15 @@ public class ZipUtil {
 
         File file = new File(filePath);
         if (file.isDirectory()) {
-            addDirectoryToZip(filePathInZip, "", file.getAbsolutePath(),
-                    zipOutputStream);
+            addDirectoryToZip(filePathInZip, "", file.getAbsolutePath(), zipOutputStream);
         } else {
             FileInputStream fileInputStream = null;
             try {
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int length;
                 fileInputStream = new FileInputStream(file);
-                zipOutputStream.putNextEntry(new ZipEntry(
-                        filePathInZip + ZIP_FILE_SEPARATOR + file.getName()));
+                zipOutputStream.putNextEntry(
+                        new ZipEntry(filePathInZip + ZIP_FILE_SEPARATOR + file.getName()));
                 while ((length = fileInputStream.read(buffer)) > 0) {
                     zipOutputStream.write(buffer, 0, length);
                 }

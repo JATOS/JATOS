@@ -6,9 +6,8 @@ study: common.Study, studyResultsCount: Integer)
 
 <div id="studyDescription" class="panel panel-default" hidden>
     <div class="panel-body">
-        <span class="full" hidden>@study.getDescription()</span>
-        <span class="short"></span>
-        <button type="button" class="btn btn-default btn-xs pull-right">Show more</button>
+        <div class="text">@study.getDescription()</div>
+        <p class="showAll gradient"><a href="#" class="button">Show all</a></p>
     </div>
 </div>
 
@@ -596,39 +595,62 @@ function postComponentImportConfirm() {
 showStudyDescription();
 
 function showStudyDescription() {
-    var fullDescription = $('#studyDescription .full').text();
+    var studyDescription = $('#studyDescription .text').text();
     // If empty hide
-    if (!/\S/.test(fullDescription)) {
+    if (!/\S/.test(studyDescription)) {
         $('#studyDescription').hide();
         return
     }
 
-    var maxChars = 500;
-    if (fullDescription.length > maxChars) {
-        var shortDescription = fullDescription.substring(0, maxChars) + " ... ";
-        $('#studyDescription .short').text(shortDescription);
-        $('#studyDescription .short').show();
-        $('#studyDescription .full').hide();
-        $('#studyDescription button').text("Show more");
-        $('#studyDescription button').show();
-     } else {
-        $('#studyDescription .full').show();
-        $('#studyDescription .short').hide();
-        $('#studyDescription button').hide();
-    }
+    var studyDescriptionHtml = new showdown.Converter().makeHtml(studyDescription);
+    $('#studyDescription .text').html(studyDescriptionHtml);
     $('#studyDescription').show();
+
+    var longDescription = $('#studyDescription .panel-body').innerHeight() > $('#studyDescription').height()
+    if (longDescription) {
+        $('#studyDescription .showAll').show();
+        $('#studyDescription .showAll').addClass("gradient");
+    } else {
+        $('#studyDescription .showAll').hide();
+    }
 }
 
-$("#studyDescription button").on("click", function() {
-    if ($('#studyDescription .full').is(":visible")) {
-        $('#studyDescription .full').hide();
-        $('#studyDescription .short').show();
-        $('#studyDescription button').text("Show more");
+// Toggle study description with animation (https://css-tricks.com/text-fade-read-more/)
+$("#studyDescription .showAll .button").on("click", function() {
+    var button = $('#studyDescription .showAll .button');
+
+    var expanded = $('#studyDescription').hasClass("expanded");
+    if ($('#studyDescription').hasClass("expanded")) {
+        $('#studyDescription').animate({
+            "height": 120 // Same height in CSS
+        });
+        $('#studyDescription .showAll').addClass("gradient");
+        button.text("Show more");
+
     } else {
-        $('#studyDescription .full').show();
-        $('#studyDescription .short').hide();
-        $('#studyDescription button').text("Show less");
+        // Measure how tall inside should be by adding together heights of all inside paragraphs
+        totalHeight = 0
+        $('#studyDescription .text').each(function() {
+            totalHeight += $(this).outerHeight();
+        });
+
+        $('#studyDescription').css({
+            // Set height to prevent instant jumpdown when max height is removed
+            "height": $('#studyDescription').height(),
+            "max-height": 9999
+        }).animate({
+            "height": totalHeight + 70
+        });
+
+        // fade out read-more
+        button.text("Show less");
+        $('#studyDescription .showAll').removeClass("gradient");
     }
+
+    $('#studyDescription').toggleClass("expanded")
+
+    // Prevent jump-down
+    return false;
 });
 
 

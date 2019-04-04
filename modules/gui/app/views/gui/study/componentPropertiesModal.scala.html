@@ -87,6 +87,7 @@ $('#studyToolbar').on('click', '#createComponentLink', function() {
     $('#componentPropertiesModal .modal-title').text("Create Component");
     $('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').hide();
     $('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').hide();
+    if (!componentJsonDataEditor) setupComponentJsonDataEditor();
     $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
     $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Create & Run");
     $('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
@@ -198,6 +199,9 @@ $("#componentPropertiesForm").submit(function(event) {
 });
 
 $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_RUN', function() {
+    // Put JSON from editor into textarea to let it be picked up by form.serialize
+    var jsonData = componentJsonDataEditor.getSession().getValue();
+    $("#componentPropertiesModal textarea.@models.gui.ComponentProperties.JSON_DATA").val(jsonData);
     $.ajax({
         type : 'POST',
         url : $("#componentPropertiesForm").attr("action"),

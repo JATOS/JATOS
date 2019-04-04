@@ -573,8 +573,7 @@ public class ImportExportServiceTest {
      */
     private File getExampleComponentFile() throws IOException {
         File componentFile = new File("test/resources/quit_button.jac");
-        File componentFileCopy = new File(System.getProperty("java.io.tmpdir"),
-                "quit_button_copy.jac");
+        File componentFileCopy = new File(IOUtils.TMP_DIR, "quit_button_copy.jac");
         FileUtils.copyFile(componentFile, componentFileCopy);
         return componentFileCopy;
     }
@@ -588,8 +587,7 @@ public class ImportExportServiceTest {
     private File getExampleStudyFile() throws IOException {
         final String basicExampleStudyZip = "test/resources/basic_example_study.zip";
         File studyFile = new File(basicExampleStudyZip);
-        File studyFileCopy = new File(System.getProperty("java.io.tmpdir"),
-                "basic_example_study_copy.zip");
+        File studyFileCopy = new File(IOUtils.TMP_DIR, "basic_example_study_copy.zip");
         FileUtils.copyFile(studyFile, studyFileCopy);
         return studyFileCopy;
     }

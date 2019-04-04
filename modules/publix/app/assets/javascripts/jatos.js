@@ -30,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.3.3";
+	jatos.version = "3.3.5";
 	/**
 	 * How long should JATOS wait until to retry the HTTP call. Warning: There is a
 	 * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
@@ -1073,8 +1073,17 @@ var jatos = {};
 	 * @param {optional Function} onError - callback if fail
 	 */
 	jatos.startNextComponent = function (resultData, onError) {
+		// If last component end study
 		if (jatos.componentPos >= jatos.componentList.length) {
-			jatos.endStudy(true);
+			if (resultData) {
+				var onComplete = function () {
+					jatos.endStudy(true);
+				};
+				jatos.appendResultData(resultData).done(onComplete).fail(onError);
+			} else {
+				jatos.endStudy(true);
+			}
+			return;
 		}
 		for (var i = jatos.componentPos; i < jatos.componentList.length; i++) {
 			if (jatos.componentList[i].active) {
@@ -2068,7 +2077,7 @@ var jatos = {};
 	jatos.endStudy = function (successful, errorMsg) {
 		if (isDeferredPending(endingDeferred)) {
 			callingOnError(null, "Can end only once");
-			return rejectedPromise();
+			return;
 		}
 
 		function end() {

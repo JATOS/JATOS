@@ -100,7 +100,7 @@ function importStudyConfirm(response) {
                 response.uploadedDirName, response.newDirName);
     } else if (!response.studyExists && !response.uploadedDirExists) {
         // 5) !study exists - !udir exists : write both
-        askConfirmationForStudyNotExistsDirNotExists(response.studyTitle, response.uploadedDirName);
+        askConfirmationForStudyNotExistsDirNotExists(response.uploadedStudyTitle, response.uploadedDirName);
     }
 }
 

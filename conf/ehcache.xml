@@ -14,7 +14,7 @@
 
 	<cache
 			name="user-session-cache"
-			maxBytesLocalHeap="25M"
+			maxBytesLocalHeap="10M"
 			eternal="false"
 			timeToIdleSeconds="0"
 			timeToLiveSeconds="0"
@@ -23,5 +23,4 @@
 			diskPersistent="false"
 			diskExpiryThreadIntervalSeconds="120"
 			memoryStoreEvictionPolicy="LRU" />
-
 </ehcache>

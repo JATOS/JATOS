@@ -25,7 +25,6 @@ public class IOUtils {
     public static final String STUDY_FILE_SUFFIX = "jas";
     public static final String COMPONENT_FILE_SUFFIX = "jac";
     public static final String ZIP_FILE_SUFFIX = "zip";
-    public static final String TXT_FILE_SUFFIX = "txt";
 
     /**
      * Regular expression of illegal characters or strings in file or directory
@@ -36,6 +35,8 @@ public class IOUtils {
             "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&^°]";
 
     private static final int MAX_FILENAME_LENGTH = 100;
+
+    public static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
 
     /**
      * Reads the given file and returns the content as String.
@@ -394,4 +395,19 @@ public class IOUtils {
         }
     }
 
+    public static String readFirstLine(final String filename) throws IOException {
+        try (final BufferedReader in = new BufferedReader(new FileReader(filename))) {
+            return in.readLine();
+        }
+    }
+
+    /**
+     * Creates the given File as a directory, including necessary and non-existent parent directories.
+     * If the file already exists it will be deleted before.
+     */
+    public static void createDir(File file) throws IOException {
+        if (!file.mkdirs()) {
+            throw new IOException("Couldn't create directory " + file.getPath());
+        }
+    }
 }

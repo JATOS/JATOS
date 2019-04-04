@@ -11,7 +11,9 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
@@ -28,91 +30,35 @@ public class Common {
     private static final ALogger LOGGER = Logger.of(Common.class);
 
     /**
-     * JATOS version
-     */
-    public static final String JATOS_VERSION = Common.class.getPackage().getImplementationVersion();
-
-    /**
-     * Property name in application config for the path in the file system to
-     * the study assets root directory, the directory where all study assets are
-     * located
+     * Property name in application config - path (file system) of study assets root directory
+     * (directory where all study assets are located)
      */
     private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";
+
+    /**
+     * Property name in application config - path (file system) to study logs
+     */
     private static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
 
-    /**
-     * JATOS' absolute base path without trailing '/.'
-     */
+    private static String jatosVersion;
     private static String basepath;
-
-    /**
-     * Path in the file system to the study assets root directory. If the
-     * property is defined in the configuration file then use it as the base
-     * path. If property isn't defined, try in default study path instead.
-     */
     private static String studyAssetsRootPath;
-
-    /**
-     * Is study logging enabled
-     */
     private static boolean studyLogsEnabled;
-
-    /**
-     * Path in the file system where JATOS stores its logs for each study
-     */
     private static String studyLogsPath;
-
-    /**
-     * Is true if an in-memory database is used.
-     */
     private static boolean inMemoryDb;
-
-    /**
-     * Time in minutes when the Play session will timeout (defined in
-     * application.conf)
-     */
     private static int userSessionTimeout;
-
-    /**
-     * Time in minutes a user can be inactive before he will be logged-out
-     * (defined in application.conf)
-     */
     private static int userSessionInactivity;
-
-    /**
-     * Toggle for user session validation (not the Play session validation which is done by Play).
-     */
     private static boolean userSessionValidation;
-
-    /**
-     * Database URL as defined in application.conf
-     */
     private static String dbDefaultUrl;
-
-    /**
-     * Database driver as defined in application.conf
-     */
     private static String dbDefaultDriver;
-
-    /**
-     * JPA persistence unit as defined in application.conf
-     */
     private static String jpaDefault;
-
-    /**
-     * MAC address of the network interface
-     */
     private static String mac;
-
-    /**
-     * Message that will be displayed during user creation that describes password requirements
-     */
     private static int userPasswordLength;
-
-    /**
-     * Regex that will be used to check the password during user creation
-     */
     private static int userPasswordStrength;
+    private static String playHttpContext;
+    private static String jatosUpdateMsg;
+    private static String jatosHttpAddress;
+    private static int jatosHttpPort;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -127,13 +73,9 @@ public class Common {
             Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special character (#?!@$%^&*-).",
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
-    /**
-     * HTTP URL base path: will be the prefix for each URL, e.g. /jatos/test -> /myBasePath/jatos/test
-     */
-    private static String playHttpContext;
-
     @Inject
     Common(Application application, Configuration configuration) {
+        jatosVersion = BuildInfo.version();
         basepath = fillBasePath(application);
         studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
         studyLogsEnabled = configuration.getBoolean("jatos.studyLogs.enabled");
@@ -156,6 +98,9 @@ public class Common {
             userPasswordStrength = 0;
         }
         playHttpContext = configuration.getString("play.http.context");
+        jatosUpdateMsg = configuration.getString("jatos.update.msg");
+        jatosHttpAddress = configuration.getString("play.server.http.address");
+        jatosHttpPort = configuration.getInt("play.server.http.port");
     }
 
     private String fillBasePath(Application application) {
@@ -236,67 +181,140 @@ public class Common {
         return macStr;
     }
 
+    /**
+     * JATOS version
+     */
     public static String getJatosVersion() {
-        return JATOS_VERSION;
+        return jatosVersion;
     }
 
+    /**
+     * JATOS' absolute base path without trailing '/.'
+     */
     public static String getBasepath() {
         return basepath;
     }
 
+    /**
+     * Path in the file system to the study assets root directory. If the
+     * property is defined in the configuration file then use it as the base
+     * path. If property isn't defined, try in default study path instead.
+     */
     public static String getStudyAssetsRootPath() {
         return studyAssetsRootPath;
     }
 
+    /**
+     * Is study logging enabled
+     */
     public static boolean isStudyLogsEnabled() {
         return studyLogsEnabled;
     }
 
+    /**
+     * Path in the file system where JATOS stores its logs for each study
+     */
     public static String getStudyLogsPath() {
         return studyLogsPath;
     }
 
+    /**
+     * Is true if an in-memory database is used.
+     */
     public static boolean isInMemoryDb() {
         return inMemoryDb;
     }
 
+    /**
+     * Time in minutes when the Play session will timeout (defined in
+     * application.conf)
+     */
     public static int getUserSessionTimeout() {
         return userSessionTimeout;
     }
 
+    /**
+     * Time in minutes a user can be inactive before he will be logged-out
+     * (defined in application.conf)
+     */
     public static int getUserSessionInactivity() {
         return userSessionInactivity;
     }
 
+    /**
+     * Toggle for user session validation (not the Play session validation which is done by Play).
+     */
     public static boolean getUserSessionValidation() {
         return userSessionValidation;
     }
 
+    /**
+     * Database URL as defined in application.conf
+     */
     public static String getDbDefaultUrl() {
         return dbDefaultUrl;
     }
 
+    /**
+     * Database driver as defined in application.conf
+     */
     public static String getDbDefaultDriver() {
         return dbDefaultDriver;
     }
 
+    /**
+     * JPA persistence unit as defined in application.conf
+     */
     public static String getJpaDefault() {
         return jpaDefault;
     }
 
+    /**
+     * MAC address of the network interface
+     */
     public static String getMac() {
         return mac;
     }
 
+    /**
+     * Message that will be displayed during user creation that describes password requirements
+     */
     public static int getUserPasswordMinLength() {
         return userPasswordLength;
     }
 
+    /**
+     * Regex that will be used to check the password during user creation
+     */
     public static Pair<String, String> getUserPasswordStrengthRegex() {
         return userPasswordStrengthRegexList.get(userPasswordStrength);
     }
 
+    /**
+     * HTTP URL base path: will be the prefix for each URL, e.g. /jatos/test -> /myBasePath/jatos/test
+     */
     public static String getPlayHttpContext() {
         return playHttpContext;
+    }
+
+    /**
+     * If in update happened during last startup a message might be stored here
+     */
+    public static String getJatosUpdateMsg() {
+        return jatosUpdateMsg;
+    }
+
+    /**
+     * JATOS HTTP host address without protocol or port (e.g. 192.168.0.1)
+     */
+    public static String getJatosHttpAddress() {
+        return jatosHttpAddress;
+    }
+
+    /**
+     * Port JATOS is running on
+     */
+    public static int getJatosHttpPort() {
+        return jatosHttpPort;
     }
 }

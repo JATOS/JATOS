@@ -1,10 +1,10 @@
 package general
 
 import java.io.File
-import javax.inject.Inject
 
 import daos.common.UserDao
-import general.common.Common
+import general.common.{Common, JatosUpdater}
+import javax.inject.Inject
 import models.common.User.Role
 import play.api.Logger
 import play.db.jpa.JPAApi
@@ -18,13 +18,38 @@ import scala.compat.java8.FunctionConverters._
   *
   * @author Kristian Lange
   */
-class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserService) {
+class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserService, jatosUpdater: JatosUpdater) {
 
   private val logger: Logger = Logger(this.getClass)
 
+  checkUpdate()
   checkAdmin()
   checkStudyAssetsRootDir()
   logger.info("JATOS initialized")
+
+  /**
+    * Logs eventual update messages from the loader script and notify JatosUpdater
+    */
+  private def checkUpdate() {
+    if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
+      case "success" => {
+        jatosUpdater.setUpdateStateSuccess()
+        logger.info("JATOS was successfully updated")
+      }
+      case "update_folder_not_found" => {
+        jatosUpdater.setUpdateStateFailed()
+        logger.error("JATOS update failed: update folder not found")
+      }
+      case "more_than_one_update_folder" => {
+        jatosUpdater.setUpdateStateFailed()
+        logger.error("JATOS update stopped: there is more than one update folder")
+      }
+      case msg => {
+        jatosUpdater.setUpdateStateFailed()
+        logger.error(msg)
+      }
+    }
+  }
 
   /**
     * Check for user admin: In case the application is started the first time
@@ -49,8 +74,10 @@ class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserServ
   private def checkStudyAssetsRootDir() {
     val studyAssetsRoot = new File(Common.getStudyAssetsRootPath)
     val success = studyAssetsRoot.mkdirs
-    if (success) logger.info(".checkStudyAssetsRootDir: Created study assets root directory " + Common.getStudyAssetsRootPath)
-    if (!studyAssetsRoot.isDirectory) logger.error(".checkStudyAssetsRootDir: Study assets root directory " + Common.getStudyAssetsRootPath + " couldn't be created.")
+    if (success) logger.info(".checkStudyAssetsRootDir: Created study assets root directory " +
+        Common.getStudyAssetsRootPath)
+    if (!studyAssetsRoot.isDirectory) logger.error(".checkStudyAssetsRootDir: Study assets root " +
+        "directory " + Common.getStudyAssetsRootPath + " couldn't be created.")
   }
 
 }
