@@ -1,7 +1,7 @@
 name := "jatos-gui"
 version := "3.3.5"
 organization := "org.jatos"
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.12"
 
 includeFilter in(Assets, LessKeys.less) := "*.less"
 
@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   javaWs,
   ehcache,
   guice,
-  "org.webjars" % "bootstrap" % "3.3.4"
+  "org.webjars" % "bootstrap" % "3.4.1"
 )
 
 // Routes from submodules

@@ -2,6 +2,7 @@ package models.gui;
 
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
+import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
@@ -11,7 +12,8 @@ import java.util.List;
 /**
  * @author Kristian Lange (2017)
  */
-public class GroupSession {
+@Constraints.Validate
+public class GroupSession implements Constraints.Validatable<List<ValidationError>> {
 
     public static final String VERSION = "version";
     public static final String DATA = "data";
@@ -36,6 +38,7 @@ public class GroupSession {
         this.data = data;
     }
 
+    @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (!Strings.isNullOrEmpty(data) && !JsonUtils.isValid(data)) {

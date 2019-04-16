@@ -1392,7 +1392,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     private Study createClone(Study study) {
-        Study clone = jpaApi.withTransaction(() -> {
+        return jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             try {
                 Study c = studyService.clone(study);
@@ -1402,7 +1402,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 throw new RuntimeException(e);
             }
         });
-        return clone;
     }
 
 }

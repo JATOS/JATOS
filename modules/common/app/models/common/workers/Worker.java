@@ -155,7 +155,7 @@ public abstract class Worker {
 
     @Override
     public String toString() {
-        return getWorkerType() + ":" + String.valueOf(id);
+        return getWorkerType() + ":" + id;
     }
 
     @Override
@@ -179,13 +179,8 @@ public abstract class Worker {
         }
         Worker other = (Worker) obj;
         if (id == null) {
-            if (other.getId() != null) {
-                return false;
-            }
-        } else if (!id.equals(other.getId())) {
-            return false;
-        }
-        return true;
+            return other.getId() == null;
+        } else return id.equals(other.getId());
     }
 
 }

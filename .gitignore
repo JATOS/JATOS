@@ -1,13 +1,9 @@
 logs
 study_logs
 project/project
-project/target
 target
 /.target
-bin
-tmp
-.history
-dist
+/play.http.secret.key
 /play.crypto.secret
 /.idea
 /*.iml

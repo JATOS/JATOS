@@ -26,9 +26,10 @@ import scala.concurrent.duration._
   * Abstract class that handles opening of the group channel. It has concrete implementations for
   * each worker type.
   */
-abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
+abstract class GroupChannel[A <: Worker](components: ControllerComponents,
+                                         publixUtils: PublixUtils[A],
                                          studyAuthorisation:
-                                         StudyAuthorisation[A]) extends Controller {
+                                         StudyAuthorisation[A]) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -268,39 +269,39 @@ abstract class GroupChannel[A <: Worker](publixUtils: PublixUtils[A],
 
 
 @Singleton
-class JatosGroupChannel @Inject()(publixUtils: JatosPublixUtils,
+class JatosGroupChannel @Inject()(components: ControllerComponents,
+                                  publixUtils: JatosPublixUtils,
                                   studyAuthorisation: JatosStudyAuthorisation)
-    extends GroupChannel[JatosWorker](publixUtils, studyAuthorisation)
+    extends GroupChannel[JatosWorker](components, publixUtils, studyAuthorisation)
 
 @Singleton
-class PersonalSingleGroupChannel @Inject()(publixUtils:
-                                           PersonalSinglePublixUtils,
-                                           studyAuthorisation:
-                                           PersonalSingleStudyAuthorisation)
-    extends GroupChannel[PersonalSingleWorker](publixUtils, studyAuthorisation)
+class PersonalSingleGroupChannel @Inject()(components: ControllerComponents,
+                                           publixUtils: PersonalSinglePublixUtils,
+                                           studyAuthorisation: PersonalSingleStudyAuthorisation)
+    extends GroupChannel[PersonalSingleWorker](components, publixUtils, studyAuthorisation)
 
 
 @Singleton
-class PersonalMultipleGroupChannel @Inject()(publixUtils:
-                                             PersonalMultiplePublixUtils,
-                                             studyAuthorisation:
-                                             PersonalMultipleStudyAuthorisation)
-    extends GroupChannel[PersonalMultipleWorker](publixUtils, studyAuthorisation)
+class PersonalMultipleGroupChannel @Inject()(components: ControllerComponents,
+                                             publixUtils: PersonalMultiplePublixUtils,
+                                             studyAuthorisation: PersonalMultipleStudyAuthorisation)
+    extends GroupChannel[PersonalMultipleWorker](components, publixUtils, studyAuthorisation)
 
 @Singleton
-class GeneralSingleGroupChannel @Inject()(publixUtils: GeneralSinglePublixUtils,
-                                          studyAuthorisation:
-                                          GeneralSingleStudyAuthorisation)
-    extends GroupChannel[GeneralSingleWorker](publixUtils, studyAuthorisation)
+class GeneralSingleGroupChannel @Inject()(components: ControllerComponents,
+                                          publixUtils: GeneralSinglePublixUtils,
+                                          studyAuthorisation: GeneralSingleStudyAuthorisation)
+    extends GroupChannel[GeneralSingleWorker](components, publixUtils, studyAuthorisation)
 
 @Singleton
-class GeneralMultipleGroupChannel @Inject()(publixUtils: GeneralMultiplePublixUtils,
-                                            studyAuthorisation:
-                                            GeneralMultipleStudyAuthorisation)
-    extends GroupChannel[GeneralMultipleWorker](publixUtils, studyAuthorisation)
+class GeneralMultipleGroupChannel @Inject()(components: ControllerComponents,
+                                            publixUtils: GeneralMultiplePublixUtils,
+                                            studyAuthorisation: GeneralMultipleStudyAuthorisation)
+    extends GroupChannel[GeneralMultipleWorker](components, publixUtils, studyAuthorisation)
 
 // Handles both MTWorker and MTSandboxWorker
 @Singleton
-class MTGroupChannel @Inject()(publixUtils: MTPublixUtils,
+class MTGroupChannel @Inject()(components: ControllerComponents,
+                               publixUtils: MTPublixUtils,
                                studyAuthorisation: MTStudyAuthorisation)
-    extends GroupChannel[MTWorker](publixUtils, studyAuthorisation)
+    extends GroupChannel[MTWorker](components, publixUtils, studyAuthorisation)

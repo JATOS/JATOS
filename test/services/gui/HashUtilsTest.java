@@ -4,8 +4,6 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 import utils.common.HashUtils;
 
-import java.security.NoSuchAlgorithmException;
-
 import static org.fest.assertions.Assertions.assertThat;
 
 /**

@@ -9,16 +9,25 @@ import static play.test.Helpers.route;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.google.inject.Guice;
 import daos.common.StudyDao;
 import general.TestHelper;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
+import org.junit.After;
+import org.junit.Before;
+import play.Application;
+import play.ApplicationLoader;
+import play.Environment;
 import play.api.mvc.Call;
 import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.gui.AuthenticationService;
 
 /**
@@ -28,6 +37,9 @@ import services.gui.AuthenticationService;
  */
 @Singleton
 public class UserAccessTestHelpers {
+
+    @Inject
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -44,7 +56,7 @@ public class UserAccessTestHelpers {
      * status 303 (See Other).
      */
     public void checkDeniedAccessAndRedirectToLogin(Call call) {
-        Result result = route(call);
+        Result result = route(fakeApplication, call);
         assertThat(result.status()).isEqualTo(SEE_OTHER);
         assertThat(result.redirectLocation().get())
                 .contains(Common.getPlayHttpContext() + "jatos/login");
@@ -56,7 +68,7 @@ public class UserAccessTestHelpers {
         RequestBuilder request = new RequestBuilder().method(method)
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(call.url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
     }
@@ -75,7 +87,7 @@ public class UserAccessTestHelpers {
         RequestBuilder request = new RequestBuilder().method(method)
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(call.url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
     }

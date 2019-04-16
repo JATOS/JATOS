@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Optional;
 
 import play.Logger;
 import play.Logger.ALogger;
@@ -27,19 +28,14 @@ public class HttpUtils {
      */
     public static boolean isAjax(RequestHeader request) {
         Option<String> headerOption = request.headers().get("X-Requested-With");
-        return headerOption.isDefined() && headerOption.get().length() > 0 &&
-                headerOption.get().equals("XMLHttpRequest");
+        return headerOption.isDefined() && headerOption.get().equals("XMLHttpRequest");
     }
 
     /**
      * Check if the request was made via Ajax or not.
      */
     public static Boolean isAjax() {
-        String requestWithHeader = "X-Requested-With";
-        String requestWithHeaderValueForAjax = "XMLHttpRequest";
-        String[] value = Controller.request().headers().get(requestWithHeader);
-        return value != null && value.length > 0
-                && value[0].equals(requestWithHeaderValueForAjax);
+        return Controller.request().header("X-Requested-With").map(v -> v.equals("XMLHttpRequest")).orElse(false);
     }
 
     /**
@@ -59,11 +55,10 @@ public class HttpUtils {
 
     public static boolean isLocalhost() {
         String host = Controller.request().host();
-        String referer = Controller.request().getHeader("referer");
-        return (host != null
-                && (host.contains("localhost") || host.contains("127.0.0.1")))
-                || (referer != null && (referer.contains("localhost")
-                || referer.contains("127.0.0.1")));
+        Optional<String> referer = Controller.request().header("referer");
+        boolean isHostLocalhost = host != null && (host.contains("localhost") || host.contains("127.0.0.1"));
+        boolean isRefererLocalhost = referer.map(r -> r.contains("localhost") || r.contains("127.0.0.1")).orElse(false);
+        return isHostLocalhost || isRefererLocalhost;
     }
 
     /**
@@ -77,15 +72,9 @@ public class HttpUtils {
      * determine the right protocol we use the Referer as last option.
      */
     private static String getRequestsProtocol() {
-        boolean isXForwardedProtoHttps = Controller.request()
-                .hasHeader("X-Forwarded-Proto")
-                && Controller.request().headers().get("X-Forwarded-Proto")[0]
-                .equals("https");
-        boolean isRefererProtoHttps = Controller.request().hasHeader("Referer")
-                && Controller.request().headers().get("Referer")[0]
-                .startsWith("https");
-        return isXForwardedProtoHttps || isRefererProtoHttps
-                || Controller.request().secure() ? "https" : "http";
+        boolean isXForwardedProtoHttps = Controller.request().header("X-Forwarded-Proto").map(h -> h.equals("https")).orElse(false);
+        boolean isRefererProtoHttps = Controller.request().header("Referer").map(h -> h.startsWith("https")).orElse(false);
+        return isXForwardedProtoHttps || isRefererProtoHttps || Controller.request().secure() ? "https" : "http";
     }
 
     public static String urlEncode(String str) {

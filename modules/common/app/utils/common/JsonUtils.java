@@ -320,16 +320,6 @@ public class JsonUtils {
     }
 
     /**
-     * Returns JSON string of the given study. This JSON is intended for JATOS'
-     * GUI.
-     */
-    public JsonNode studyForUI(Study study, int resultCount) {
-        ObjectNode studyNode = Json.mapper().valueToTree(study);
-        studyNode.put("resultCount", resultCount);
-        return studyNode;
-    }
-
-    /**
      * Returns JsonNode with all users of this study. This JSON is intended for
      * JATOS' GUI / in the change user modal.
      */
@@ -526,7 +516,7 @@ public class JsonUtils {
             workerNode.set("batchList", Json.mapper().valueToTree(batchList));
 
             Optional<StudyResult> last = worker.getLastStudyResult();
-            String lastStudyState = last.isPresent() ? last.get().getStudyState().name() : null;
+            String lastStudyState = last.map(studyResult -> studyResult.getStudyState().name()).orElse(null);
             workerNode.put("lastStudyState", lastStudyState);
 
             addUserEmailForJatosWorker(worker, workerNode);
@@ -623,17 +613,6 @@ public class JsonUtils {
      */
     public JsonNode asJsonNode(Object obj) {
         return Json.mapper().valueToTree(obj);
-    }
-
-    /**
-     * Generic JSON marshaling but wraps the resulting node in an 'data' object
-     * like it is needed for DataTables.
-     */
-    public JsonNode asJsonNodeWithinData(Object obj) {
-        ObjectNode dataKeyNode = Json.mapper().createObjectNode();
-        JsonNode valueNode = Json.mapper().valueToTree(obj);
-        dataKeyNode.set(DATA, valueNode);
-        return dataKeyNode;
     }
 
     /**

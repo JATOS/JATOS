@@ -5,13 +5,15 @@ import java.util.List;
 
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
+import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
 /**
  * @author Kristian Lange (2017)
  */
-public class BatchSession {
+@Constraints.Validate
+public class BatchSession implements Constraints.Validatable<List<ValidationError>> {
 
     public static final String VERSION = "version";
     public static final String DATA = "data";
@@ -36,6 +38,7 @@ public class BatchSession {
         this.data = data;
     }
 
+    @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (!Strings.isNullOrEmpty(data) && !JsonUtils.isValid(data)) {

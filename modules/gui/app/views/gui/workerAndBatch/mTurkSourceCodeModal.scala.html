@@ -1,5 +1,4 @@
 @(study: common.Study, jatosUrl: java.net.URL)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Mechanical Turk Source Code Modal Template -->
 <div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
@@ -60,7 +59,7 @@
   } else {
   var host = &quot;@jatosUrl.getProtocol()://@jatosUrl.getHost()&quot;;
   }
-  var studyPath = &quot;@{playHttpContext}publix/@study.getId()/start&quot;;
+  var studyPath = &quot;@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start&quot;;
   var query = document.URL.split(&#39;?&#39;)[1];
 
   window.onload = function() {

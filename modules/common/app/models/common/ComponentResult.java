@@ -191,7 +191,7 @@ public class ComponentResult {
 
     @Override
     public String toString() {
-        return String.valueOf(id) + ", " + startDate + ", " + component.getId();
+        return id + ", " + startDate + ", " + component.getId();
     }
 
     @Override
@@ -215,13 +215,8 @@ public class ComponentResult {
         }
         ComponentResult other = (ComponentResult) obj;
         if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.getId())) {
-            return false;
-        }
-        return true;
+            return other.id == null;
+        } else return id.equals(other.getId());
     }
 
 }

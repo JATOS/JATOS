@@ -1,5 +1,4 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -32,7 +31,7 @@
 
 <!-- Template for button toolbar in User's row -->
 <div id="userToolbarDiv" style="display: none">
-    <div class="userBtnGroup btn-group" role="group" role="group">
+    <div class="userBtnGroup btn-group" role="group">
         <div class="userChangePasswordTooltip btn-group" data-title="">
             <button type="button" class="userChangePasswordButton btn btn-user">
                 Change Password <span class="glyphicon glyphicon-lock"></span>
@@ -309,7 +308,7 @@ $('#userTable tbody').on('click', '.adminButton', function() {
     var user = userTable.row(tr).data();
     var adminRole = $(this).hasClass('adminRole');
     $.ajax({
-        url : "@{playHttpContext}jatos/user/" + user.email + "/admin?admin=" + !adminRole,
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.email + "/admin?admin=" + !adminRole,
         type : "POST",
         success: function(adminRole) {
             setAdminButton($(button).parent(), adminRole);
@@ -340,7 +339,7 @@ $("#changePasswordForm").submit(function(event) {
     var user = $(this).data(user);
     $.ajax({
         type: 'POST',
-        url: '@{playHttpContext}jatos/user/' + user.email + '/password',
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/user/' + user.email + '/password',
         data: $('#changePasswordForm').serialize(),
         success: function(response) {
             removeAlerts("#changePasswordModal");
@@ -396,7 +395,7 @@ $('#deleteUserForm').submit(function(event) {
     event.preventDefault();
     var user = $('#deleteUserForm').data(user);
     $.ajax({
-        url : "@{playHttpContext}jatos/user/" + user.email + "/delete",
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.email + "/delete",
         type : 'POST',
         data: $('#deleteUserForm').serialize(),
         success : function(result) {

@@ -330,13 +330,12 @@ public class MessagesStrings {
     }
 
     public static String htmlFilePathEmpty(Long componentId) {
-        return "Component " + componentId
-                + "'s HTML file path is empty.";
+        return "Component " + componentId + "'s HTML file path is empty.";
     }
 
     public static String htmlFilePathNotExist(String studyDirName, String htmlFilePath) {
-        return "HTML file " + htmlFilePath + " in study assets "
-                + studyDirName + " couldn't be found.";
+        return "HTML file '" + htmlFilePath + "' in study assets '" + studyDirName + "' couldn't be found. "
+                + "Please change this in the component's properties.";
     }
 
     public static String studyExportFailure(Long studyId, String studyTitle) {

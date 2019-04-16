@@ -1,5 +1,3 @@
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -128,7 +126,7 @@ function testJsonSerialization() {
 function testJatosJsViaStudyPath() {
 	$.ajax({
 		type: 'GET',
-		url: "@{playHttpContext}publix/1/1/jatos.js",
+		url: "@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos.js",
 		dataType: "text",
 		success: function(result) {
 			$('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
@@ -142,7 +140,7 @@ function testJatosJsViaStudyPath() {
 function testJatosJsViaAssetsPath() {
 	$.ajax({
 		type: 'GET',
-		url: "@{playHttpContext}assets/javascripts/jatos.js",
+		url: "@{general.common.Common.getPlayHttpContext()}assets/javascripts/jatos.js",
 		dataType: "text",
 		success: function(result) {
 			$('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
@@ -156,7 +154,7 @@ function testJatosJsViaAssetsPath() {
 function testHeartbeatJs() {
 	$.ajax({
 		type: 'GET',
-		url: "@{playHttpContext}publix/1/1/jatos-publix/javascripts/heartbeat.js",
+		url: "@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos-publix/javascripts/heartbeat.js",
 		dataType: "text",
 		success: function(result) {
 			$('#testHeartbeatJsResult').html('<font color="green">OK</font>');

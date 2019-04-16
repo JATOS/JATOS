@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
  * <p>
  * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If
  * it exports files a SHA-256 hash of the content of the file is included in the log.
+ * <p>
+ * The log uses charset ISO_8859_1.
  *
  * @author Kristian Lange 2018
  */
@@ -339,7 +341,7 @@ public class StudyLogger {
     private Object fillSourceWithLogFile(ActorRef sourceActor, String filePath, int lineLimit) {
         File logFile = new File(filePath);
         sourceActor.tell(ByteString.fromString("["), null);
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile)) {
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.ISO_8859_1)) {
             String nextLine = reader.readLine();
             int lineNumber = 1;
             while (hasNextLine(nextLine, lineLimit, lineNumber)) {

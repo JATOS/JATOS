@@ -54,7 +54,7 @@ public class PublixJatosWholeRunIntegrationTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -238,7 +238,7 @@ public class PublixJatosWholeRunIntegrationTest {
         idCookie = result.cookie("JATOS_IDS_0");
 
         studyResult = retrieveStudyResult(studyResult.getId());
-        firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
+        retrieveComponentResult(studyResult.getId(), 0);
 
         // Check response
         assertThat(result.status()).isEqualTo(SEE_OTHER);
@@ -304,7 +304,7 @@ public class PublixJatosWholeRunIntegrationTest {
         result = initData(studyResult, study.getComponent(3), admin, idCookie);
 
         studyResult = retrieveStudyResult(studyResult.getId());
-        firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
+        retrieveComponentResult(studyResult.getId(), 0);
 
         // Check InitData in response: is session data still there?
         assertThat(result.status()).isEqualTo(OK);
@@ -406,7 +406,7 @@ public class PublixJatosWholeRunIntegrationTest {
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .session(JatosPublix.SESSION_JATOS_RUN, JatosRun.RUN_STUDY.name());
-        return route(request);
+        return route(fakeApplication, request);
     }
 
     private Result startComponentByPosition(StudyResult studyResult, User admin, int position,
@@ -418,7 +418,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort());
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -431,7 +431,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort());
-        return route(request, 10000);
+        return route(fakeApplication, request, 10000);
     }
 
     private Result startNextComponent(StudyResult studyResult, User admin, Cookie idCookie) {
@@ -444,7 +444,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .bodyText("That's session data.");
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -457,7 +457,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort());
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -471,7 +471,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .bodyText(msg);
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -484,7 +484,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .bodyText("That's our session data.");
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -499,7 +499,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .bodyText("That's a test result data.");
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -514,7 +514,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .cookie(idCookie)
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .bodyText(" And here are appended data.");
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -528,7 +528,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .cookie(idCookie);
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -541,7 +541,7 @@ public class PublixJatosWholeRunIntegrationTest {
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
                 .cookie(idCookie);
-        result = route(request, 10000);
+        result = route(fakeApplication, request, 10000);
         return result;
     }
 
@@ -604,7 +604,7 @@ public class PublixJatosWholeRunIntegrationTest {
         });
     }
 
-    public StudyResult getLastStudyResult(List<StudyResult> studyResultList) {
+    private StudyResult getLastStudyResult(List<StudyResult> studyResultList) {
         if (!studyResultList.isEmpty()) {
             StudyResult unfetchedStudyResult = studyResultList.get(studyResultList.size() - 1);
             return retrieveStudyResult(unfetchedStudyResult.getId());

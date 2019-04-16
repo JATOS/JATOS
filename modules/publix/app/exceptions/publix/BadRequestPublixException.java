@@ -1,6 +1,6 @@
 package exceptions.publix;
 
-import org.apache.http.HttpStatus;
+import play.mvc.Http;
 
 /**
  * It causes the request to return with an HTTP status 400 (Bad Request).
@@ -11,7 +11,7 @@ import org.apache.http.HttpStatus;
 public class BadRequestPublixException extends PublixException {
 
 	public BadRequestPublixException(String message) {
-		super(message, HttpStatus.SC_BAD_REQUEST);
+		super(message, Http.Status.BAD_REQUEST);
 	}
 
 }

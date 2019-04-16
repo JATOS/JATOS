@@ -1,5 +1,4 @@
 @(loggedInUser: common.User, study: common.Study, jatosUrl: java.net.URL)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Template worker setup -->
 <div id="workerSetupTemplate" class="panel-group workerSetupItem" role="tablist" style="display: none">
@@ -365,7 +364,7 @@ function initWorkerTable(workerSetupDiv, workerSetupClass) {
                 "searchable": false,
                 "orderable": false,
                 "render": function( data, type, row ) {
-                    return '<a href="@{playHttpContext}jatos/worker/' + data + '/results">' + data + '</a>';
+                    return '<a href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             }
         ],
@@ -383,7 +382,7 @@ function initWorkerTable(workerSetupDiv, workerSetupClass) {
 function loadWorkers(batchId, workerSetupDiv) {
     $.ajax({
         type: 'GET',
-        url: "@{playHttpContext}jatos/@study.getId()/batch/" + batchId + "/workerSetupData",
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batchId + "/workerSetupData",
         success: function(workerSetupData) {
             fillWorkerSetup(workerSetupData, workerSetupDiv);
         },
@@ -616,7 +615,7 @@ $('#batchList').on('click', '.activeWorkerButton', function() {
     var batch = getBatchData(this);
     var workerSetupDiv = $(this).closest('.workerSetupItem');
     $.ajax({
-        url : "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id
                 + "/properties/workerType/" + workerType + "?allow=" + !allow,
         type : "POST",
         success: function(allowedWorkerTypes) {
@@ -648,7 +647,7 @@ $('#batchList').on('click', '.workerResultsButton', function() {
     var workerType = getWorkerTypeFromPanel(this);
     var batch = getBatchData(this);
     if (workerType) {
-        window.location.href =  "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id
+        window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id
             + "/results?workerType=" + workerType;
     }
 });
@@ -665,7 +664,7 @@ function showGetWorkerLinksPersonalSingleModal(batch, workerSetupDiv) {
     showGetWorkerLinksModal(title, text);
     $('#getWorkerLinksModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
         $('#getWorkerLinksModal').modal('hide');
-        var url = "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/personalSingleRun";
+        var url = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/personalSingleRun";
         postGetWorkerLinksPersonal(url, showShowWorkerLinksPersonalSingleModal, batch, workerSetupDiv);
     });
 }
@@ -682,7 +681,7 @@ function showGetWorkerLinksPersonalMultipleModal(batch, workerSetupDiv) {
     showGetWorkerLinksModal(title, text);
     $('#getWorkerLinksModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
         $('#getWorkerLinksModal').modal('hide');
-        var url = "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/personalMultipleRun";
+        var url = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/personalMultipleRun";
         postGetWorkerLinksPersonal(url, showShowWorkerLinksPersonalMultipleModal, batch, workerSetupDiv);
     });
 }
@@ -734,7 +733,7 @@ function showShowWorkerLinksPersonalSingleModal(workerIds, batch) {
     var title = "Links for Personal Single workers in batch '" + batch.title + "'";
     var urls = [];
     $.each(workerIds, function(i, workerId) {
-        urls.push("@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?"
+        urls.push("@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?"
             + "batchId=" + batch.id + "&personalSingleWorkerId=" + workerId);
     });
     var showRunButton = (urls.length == 1
@@ -765,7 +764,7 @@ function showShowWorkerLinksPersonalMultipleModal(workerIds, batch) {
     var title = "Links for Personal Multiple workers in batch '" + batch.title + "'";
     var urls = [];
     $.each(workerIds, function(i, workerId) {
-        urls.push("@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?"
+        urls.push("@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?"
             + "batchId=" + batch.id + "&personalMultipleWorkerId=" + workerId);
     });
     var showRunButton = (urls.length == 1
@@ -793,7 +792,7 @@ $('#batchList').on('click', '.generalMultipleWorkerSetup .linkButton', function(
 
 function showShowWorkerLinksGeneralSingleModal(batch) {
     var title = "Link for General Single workers in batch '" + batch.title + "'";
-    var url = "@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?" +
+    var url = "@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalSingle";
     var preText = "This URL will start the run.";
     var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE");
@@ -808,7 +807,7 @@ function showShowWorkerLinksGeneralSingleModal(batch) {
 
 function showShowWorkerLinksGeneralMultipleModal(batch) {
     var title = "Link for General Multiple workers in batch '" + batch.title + "'";
-    var url = "@jatosUrl.toString()" + "@{playHttpContext}publix/@study.getId()/start?" +
+    var url = "@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalMultiple";
     var preText = "This URL will start the run.";
     var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE");
@@ -876,7 +875,7 @@ $('#showWorkerLinksModal').on('click', '.preCheckbox', function(e) {
 
 $('#batchList').on('click', '.jatosWorkerSetup .runButton', function() {
     var batch = getBatchData(this);
-    window.open("@{playHttpContext}jatos/@study.getId()/run?batchId=" + batch.id);
+    window.open("@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/run?batchId=" + batch.id);
 });
 
 </script>

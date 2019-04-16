@@ -2,6 +2,7 @@ package services.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import javax.inject.Singleton;
 
@@ -32,9 +33,8 @@ public class LogFileReader {
     public Source<ByteString, ?> read(String filename, int lineLimit) {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
+        return Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
                 .mapMaterializedValue(sourceActor -> fillSource(sourceActor, filename, lineLimit));
-        return source;
     }
 
     /**
@@ -42,7 +42,7 @@ public class LogFileReader {
      */
     private Object fillSource(ActorRef sourceActor, String filename, int lineLimit) {
         File logFile = new File(Common.getBasepath() + "/logs/" + filename);
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile)) {
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, Charset.defaultCharset())) {
             String oneLine = reader.readLine();
             int lineNumber = 1;
             while (oneLine != null && (lineLimit == -1 || lineNumber <= lineLimit)) {

@@ -8,12 +8,15 @@ import general.common.{Common, MessagesStrings}
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.mvc._
+import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
 import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
 import utils.common.{HttpUtils, IOUtils}
 
 import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.matching.Regex
 
 /**
   * Manages web-access to files in the external study assets directories (outside of JATOS'
@@ -23,7 +26,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   */
 @Singleton
 class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, idCookieService: IdCookieService, jpa: JPAApi,
-                            studyDao: StudyDao, componentDao: ComponentDao) extends AbstractController(components) {
+                            studyDao: StudyDao, componentDao: ComponentDao, assets: Assets) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -34,7 +37,7 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
     */
   val URL_STUDY_ASSETS = "study_assets"
 
-  val jatosPublixPattern = "(.*)(jatos-publix/javascripts/)(.*)".r
+  val jatosPublixPattern: Regex = "(.*)(jatos-publix/javascripts/)(.*)".r
 
   /**
     * Returns the study asset file that belongs to the study with the given study ID
@@ -43,18 +46,16 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
     * assets folder name (because it's retrieved from the DB).
     * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
     */
-  def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String) =
+  def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String): Action[AnyContent] =
     urlPath match {
-      case "jatos.js" => controllers.Assets.at(path =
-        "/public/lib/jatos-publix/javascripts", file = "jatos.js")
-      case jatosPublixPattern(pathPrefix, identifier, file) => controllers.Assets.at(path =
-        "/public/lib/jatos-publix/javascripts", file)
+      case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
+      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix/javascripts", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
         val study = studyDao.findById(studyId)
         if (study == null) {
           BadRequest(MessagesStrings.studyNotExist(studyId))
         }
-        viaAssetsPath(study.getDirName() + URL_PATH_SEPARATOR + urlPath)
+        viaAssetsPath(study.getDirName + URL_PATH_SEPARATOR + urlPath)
       }))
     }
 
@@ -62,9 +63,9 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
     * Action called while routing. Translates the given file path from the URL into a file path
     * of the OS's file system and returns the file.
     */
-  def viaAssetsPath(urlPath: String) = Action { request =>
+  def viaAssetsPath(urlPath: String): Action[AnyContent] = Action { request =>
     // Set Http.Context used in Play with Java. Needed by IdCookieService
-    play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+    play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
     try {
       checkProperAssets(urlPath)
@@ -78,7 +79,7 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
         logger.info(".viaAssetsPath: " + errorMsg)
         if (HttpUtils.isAjax) Forbidden(errorMsg)
         else Forbidden(views.html.publix.error.render(errorMsg))
-      case e: IOException =>
+      case _: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
           s"${File.separator}$urlPath")
         val errorMsg = s"Resource '$urlPath' couldn't be found."
@@ -117,10 +118,10 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
   def retrieveComponentHtmlFile(studyDirName: String, componentHtmlFilePath: String): Result = {
     try {
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
-      Ok.sendFile(file, true).as("text/html; charset=utf-8")
+      Ok.sendFile(file).as("text/html; charset=utf-8")
         .withHeaders("Cache-Control" -> "no-cache, no-store")
     } catch {
-      case e: IOException =>
+      case _: IOException =>
         throw new NotFoundPublixException(
           MessagesStrings.htmlFilePathNotExist(studyDirName, componentHtmlFilePath))
     }

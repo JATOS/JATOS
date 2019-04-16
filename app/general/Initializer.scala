@@ -32,22 +32,18 @@ class Initializer @Inject()(jpa: JPAApi, userDao: UserDao, userService: UserServ
     */
   private def checkUpdate() {
     if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
-      case "success" => {
+      case "success" =>
         jatosUpdater.setUpdateStateSuccess()
         logger.info("JATOS was successfully updated")
-      }
-      case "update_folder_not_found" => {
+      case "update_folder_not_found" =>
         jatosUpdater.setUpdateStateFailed()
         logger.error("JATOS update failed: update folder not found")
-      }
-      case "more_than_one_update_folder" => {
+      case "more_than_one_update_folder" =>
         jatosUpdater.setUpdateStateFailed()
         logger.error("JATOS update stopped: there is more than one update folder")
-      }
-      case msg => {
+      case msg =>
         jatosUpdater.setUpdateStateFailed()
         logger.error(msg)
-      }
     }
   }
 

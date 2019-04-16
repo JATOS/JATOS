@@ -39,7 +39,7 @@ import services.gui.UserService;
 public class AuthenticationControllerTest {
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -67,12 +67,13 @@ public class AuthenticationControllerTest {
      */
     @Test
     public void callLogin() {
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder()
+                .method("GET")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(controllers.gui.routes.Authentication.login().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualTo("utf-8");
@@ -84,19 +85,19 @@ public class AuthenticationControllerTest {
      * Test Authentication.logout()
      */
     @Test
-    public void callLogout() throws Exception {
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+    public void callLogout() {
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder()
+                .method("GET")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(controllers.gui.routes.Authentication.logout().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         // Check that it redirects to the login page
         assertThat(result.status()).isEqualTo(SEE_OTHER);
         assertThat(result.redirectLocation().get()).contains("login");
-        assertThat(!result.session()
-                .containsKey(AuthenticationService.SESSION_USER_EMAIL));
+        assertThat(!result.session().containsKey(AuthenticationService.SESSION_USER_EMAIL));
     }
 
     /**
@@ -104,19 +105,17 @@ public class AuthenticationControllerTest {
      */
     @Test
     public void authenticateSuccess() {
-        RequestBuilder request = new RequestBuilder().method("POST")
+        RequestBuilder request = new RequestBuilder()
+                .method("POST")
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
-                        Login.PASSWORD, UserService.ADMIN_PASSWORD))
-                .uri(controllers.gui.routes.Authentication.authenticate()
-                        .url());
-        Result result = route(request);
+                .bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL, Login.PASSWORD, UserService.ADMIN_PASSWORD))
+                .uri(controllers.gui.routes.Authentication.authenticate().url());
+        Result result = route(fakeApplication, request);
 
         // Successful login leads to a redirect and the user's email is in the
         // session
         assertEquals(303, result.status());
-        assertEquals(UserService.ADMIN_EMAIL,
-                result.session().get(AuthenticationService.SESSION_USER_EMAIL));
+        assertEquals(UserService.ADMIN_EMAIL, result.session().get(AuthenticationService.SESSION_USER_EMAIL));
     }
 
     /**
@@ -124,18 +123,16 @@ public class AuthenticationControllerTest {
      */
     @Test
     public void authenticateFailure() {
-        RequestBuilder request = new RequestBuilder().method("POST")
+        RequestBuilder request = new RequestBuilder()
+                .method("POST")
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
-                        Login.PASSWORD, "bla"))
-                .uri(controllers.gui.routes.Authentication.authenticate()
-                        .url());
-        Result result = route(request);
+                .bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL, Login.PASSWORD, "bla"))
+                .uri(controllers.gui.routes.Authentication.authenticate().url());
+        Result result = route(fakeApplication, request);
 
         // Fail to login leads to a Bad Request (400)
         assertEquals(400, result.status());
-        assertNull(
-                result.session().get(AuthenticationService.SESSION_USER_EMAIL));
+        assertNull(result.session());
     }
 
 }

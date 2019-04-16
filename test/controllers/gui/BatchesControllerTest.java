@@ -36,7 +36,7 @@ public class BatchesControllerTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -76,7 +76,7 @@ public class BatchesControllerTest {
                 .bodyJson(jsonNode)
                 .uri(routes.Batches.createPersonalSingleRun(
                         study.getId(), study.getDefaultBatch().getId()).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.contentType().get()).isEqualTo("application/json");
@@ -98,7 +98,7 @@ public class BatchesControllerTest {
                 .bodyJson(jsonNode)
                 .uri(routes.Batches.createPersonalMultipleRun(
                         study.getId(), study.getDefaultBatch().getId()).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.contentType().get()).isEqualTo("application/json");

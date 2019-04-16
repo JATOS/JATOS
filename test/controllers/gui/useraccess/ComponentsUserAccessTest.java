@@ -37,7 +37,7 @@ public class ComponentsUserAccessTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -68,7 +68,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsRunComponent() throws Exception {
+    public void callComponentsRunComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components.runComponent(
                 study.getId(), study.getComponent(1).getId(), -1L);
@@ -78,7 +78,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsSubmitCreated() throws Exception {
+    public void callComponentsSubmitCreated() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components
                 .submitCreated(study.getId());
@@ -88,7 +88,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsProperties() throws IOException {
+    public void callComponentsProperties() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components.properties(study.getId(),
                 study.getComponent(1).getId());
@@ -100,7 +100,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsSubmitEdited() throws Exception {
+    public void callComponentsSubmitEdited() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components
                 .submitEdited(study.getId(), study.getComponent(1).getId());
@@ -110,7 +110,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsToggleActive() throws Exception {
+    public void callComponentsToggleActive() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components.toggleActive(
                 study.getId(), study.getComponent(1).getId(), true);
@@ -120,7 +120,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsCloneComponent() throws Exception {
+    public void callComponentsCloneComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components
                 .cloneComponent(study.getId(), study.getComponent(1).getId());
@@ -130,7 +130,7 @@ public class ComponentsUserAccessTest {
     }
 
     @Test
-    public void callComponentsRemove() throws Exception {
+    public void callComponentsRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = controllers.gui.routes.Components.remove(study.getId(),
                 study.getComponent(1).getId());

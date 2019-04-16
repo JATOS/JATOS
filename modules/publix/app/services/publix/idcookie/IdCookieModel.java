@@ -2,6 +2,8 @@ package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
 
+import java.util.Objects;
+
 /**
  * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
  * study run, e.g. study result ID, worker ID, worker type.
@@ -214,44 +216,21 @@ public class IdCookieModel {
             return false;
         }
         IdCookieModel otherIdCookie = (IdCookieModel) other;
-        return ((name == otherIdCookie.name
-                || (name != null && name.equals(otherIdCookie.name)))
+        return ((Objects.equals(name, otherIdCookie.name))
                 && index == otherIdCookie.index
-                && (creationTime == otherIdCookie.creationTime
-                || (creationTime != null && creationTime
-                .equals(otherIdCookie.creationTime)))
-                && (studyAssets == otherIdCookie.studyAssets
-                || (studyAssets != null && studyAssets
-                .equals(otherIdCookie.studyAssets)))
-                && (urlBasePath == otherIdCookie.urlBasePath
-                || (urlBasePath != null && urlBasePath
-                .equals(otherIdCookie.urlBasePath)))
-                && (jatosRun == otherIdCookie.jatosRun || (jatosRun != null
-                && jatosRun.equals(otherIdCookie.jatosRun)))
-                && (workerId == otherIdCookie.workerId || (workerId != null
-                && workerId.equals(otherIdCookie.workerId)))
-                && (workerType == otherIdCookie.workerType
-                || (workerType != null
-                && workerType.equals(otherIdCookie.workerType)))
-                && (batchId == otherIdCookie.batchId || (batchId != null
-                && batchId.equals(otherIdCookie.batchId)))
-                && (groupResultId == otherIdCookie.groupResultId
-                || (groupResultId != null && groupResultId
-                .equals(otherIdCookie.groupResultId)))
-                && (studyId == otherIdCookie.studyId || (studyId != null
-                && studyId.equals(otherIdCookie.studyId)))
-                && (studyResultId == otherIdCookie.studyResultId
-                || (studyResultId != null && studyResultId
-                .equals(otherIdCookie.studyResultId)))
-                && (componentId == otherIdCookie.componentId
-                || (componentId != null && componentId
-                .equals(otherIdCookie.componentId)))
-                && (componentResultId == otherIdCookie.componentResultId
-                || (componentResultId != null && componentResultId
-                .equals(otherIdCookie.componentResultId)))
-                && (componentPosition == otherIdCookie.componentPosition
-                || (componentPosition != null && componentPosition
-                .equals(otherIdCookie.componentPosition))));
+                && (Objects.equals(creationTime, otherIdCookie.creationTime))
+                && (Objects.equals(studyAssets, otherIdCookie.studyAssets))
+                && (Objects.equals(urlBasePath, otherIdCookie.urlBasePath))
+                && (Objects.equals(jatosRun, otherIdCookie.jatosRun))
+                && (Objects.equals(workerId, otherIdCookie.workerId))
+                && (Objects.equals(workerType, otherIdCookie.workerType))
+                && (Objects.equals(batchId, otherIdCookie.batchId))
+                && (Objects.equals(groupResultId, otherIdCookie.groupResultId))
+                && (Objects.equals(studyId, otherIdCookie.studyId))
+                && (Objects.equals(studyResultId, otherIdCookie.studyResultId))
+                && (Objects.equals(componentId, otherIdCookie.componentId))
+                && (Objects.equals(componentResultId, otherIdCookie.componentResultId))
+                && (Objects.equals(componentPosition, otherIdCookie.componentPosition)));
     }
 
 }

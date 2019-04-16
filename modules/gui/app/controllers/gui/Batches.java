@@ -93,7 +93,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result workerAndBatchManager(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".workerAndBatchManager: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -118,7 +117,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result batchById(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".batchById: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -142,7 +140,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result batchesByStudy(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".batchesByStudy: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -165,7 +162,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result groupsByBatch(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".groupsByBatch: studyId " + studyId + ", " + "batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
@@ -187,7 +183,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result submitCreated(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".submitCreated: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -215,7 +210,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result batchSessionData(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".batchSessionData: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -236,7 +230,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result groupSessionData(Long studyId, Long groupResultId) throws JatosGuiException {
-        LOGGER.debug(".groupSessionData: studyId " + studyId + ", groupResultId " + groupResultId);
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -258,7 +251,6 @@ public class Batches extends Controller {
     @Authenticated
     public Result submitEditedBatchSessionData(Long studyId, Long batchId)
             throws JatosGuiException {
-        LOGGER.debug(".submitEditedBatchSessionData: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
@@ -291,8 +283,6 @@ public class Batches extends Controller {
     @Authenticated
     public Result submitEditedGroupSessionData(Long studyId, Long groupResultId)
             throws JatosGuiException {
-        LOGGER.debug(".submitEditedGroupSessionData: studyId " + studyId
-                + ", groupResultId " + groupResultId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         GroupResult groupResult = groupResultDao.findById(groupResultId);
@@ -325,7 +315,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result properties(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".properties: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -346,7 +335,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result submitEditedProperties(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".submitEditedProperties: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch currentBatch = batchDao.findById(batchId);
@@ -381,8 +369,6 @@ public class Batches extends Controller {
     @Authenticated
     public Result toggleActive(Long studyId, Long batchId, Boolean active)
             throws JatosGuiException {
-        LOGGER.debug(".toggleActive: studyId " + studyId + ", " + "batchId "
-                + batchId + ", " + "active " + active + ", ");
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
@@ -408,9 +394,6 @@ public class Batches extends Controller {
     @Authenticated
     public Result toggleAllowedWorkerType(Long studyId, Long batchId,
             String workerType, Boolean allow) throws JatosGuiException {
-        LOGGER.debug(".toggleAllowedWorkerType: studyId " + studyId + ", "
-                + "batchId " + batchId + ", " + "workerType " + workerType
-                + ", " + "allow " + allow);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
@@ -441,7 +424,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result remove(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".remove: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
@@ -464,7 +446,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result createPersonalSingleRun(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".createPersonalSingleRun: studyId " + studyId + ", " + "batchId " + batchId);
         Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker =
                 workerService::createAndPersistPersonalSingleWorker;
         return createPersonalRun(studyId, batchId, createAndPersistWorker);
@@ -477,8 +458,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result createPersonalMultipleRun(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(
-                ".createPersonalMultipleRun: studyId " + studyId + ", " + "batchId " + batchId);
         Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker =
                 workerService::createAndPersistPersonalMultipleWorker;
         return createPersonalRun(studyId, batchId, createAndPersistWorker);
@@ -527,7 +506,6 @@ public class Batches extends Controller {
     @Transactional
     @Authenticated
     public Result workerSetupData(Long studyId, Long batchId) throws JatosGuiException {
-        LOGGER.debug(".workerSetupData: studyId " + studyId + ", " + "batchId " + batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);

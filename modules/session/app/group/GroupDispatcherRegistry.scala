@@ -9,6 +9,7 @@ import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.collection.mutable
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * A GroupDispatcherRegistry is an Akka Actor keeps track of all
@@ -58,7 +59,7 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
     * stopping. This means that even if a GroupDispatcher throws an Exceptions it continues
     * running and keeps its internal state (incl registered channels).
     */
-  override val supervisorStrategy =
+  override val supervisorStrategy: OneForOneStrategy =
     OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, true) {
       case _: Exception => Resume
     }
@@ -68,7 +69,7 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
     */
   private val dispatcherMap = mutable.HashMap[Long, ActorRef]()
 
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case Get(groupResultId: Long) =>
       // Someone wants to know the Dispatcher to a certain ID
       sender ! ItsThisOne(dispatcherMap.get(groupResultId))

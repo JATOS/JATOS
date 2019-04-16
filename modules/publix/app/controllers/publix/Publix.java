@@ -174,8 +174,6 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
     @Override
     public Result heartbeat(Long studyId, Long studyResultId) throws PublixException {
-        LOGGER.debug(".heartbeat: studyId " + studyId + ", " + "studyResultId "
-                + studyResultId);
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());

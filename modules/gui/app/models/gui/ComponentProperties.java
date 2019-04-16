@@ -1,20 +1,17 @@
 package models.gui;
 
+import com.google.common.base.Strings;
+import general.common.MessagesStrings;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+import play.data.validation.Constraints;
+import play.data.validation.ValidationError;
+import utils.common.JsonUtils;
+
 import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-
-import com.google.common.base.Strings;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
-import general.common.MessagesStrings;
-import play.data.validation.ValidationError;
-import utils.common.JsonUtils;
 
 /**
  * Model of component properties for UI (not persisted in DB). Only used
@@ -23,9 +20,8 @@ import utils.common.JsonUtils;
  *
  * @author Kristian Lange
  */
-@Entity
-@Table(name = "Component")
-public class ComponentProperties {
+@Constraints.Validate
+public class ComponentProperties implements Constraints.Validatable<List<ValidationError>> {
 
     /**
      * Version of this model used for serialisation (e.g. JSON marshaling)
@@ -173,6 +169,7 @@ public class ComponentProperties {
         this.active = active;
     }
 
+    @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (title == null || title.trim().isEmpty()) {
@@ -191,7 +188,7 @@ public class ComponentProperties {
                 errorList.add(new ValidationError(HTML_FILE_PATH, MessagesStrings.PATH_TOO_LONG));
             }
             // This regular expression defines how a file path should look like
-            String pathRegEx = "^[\\w\\d_-][\\w\\d\\/_-]*\\.[\\w\\d_-]+$";
+            String pathRegEx = "^[\\w\\d_-][\\w\\d/_-]*\\.[\\w\\d_-]+$";
             if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim().isEmpty())) {
                 errorList.add(new ValidationError(HTML_FILE_PATH,
                         MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
@@ -208,7 +205,7 @@ public class ComponentProperties {
 
     @Override
     public String toString() {
-        return String.valueOf(id) + " " + title;
+        return id + " " + title;
     }
 
 }

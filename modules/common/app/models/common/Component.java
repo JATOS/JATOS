@@ -188,7 +188,7 @@ public class Component {
 
 	@Override
 	public String toString() {
-		return String.valueOf(id) + " " + title;
+		return id + " " + title;
 	}
 
 	@Override
@@ -212,13 +212,8 @@ public class Component {
 		}
 		Component other = (Component) obj;
 		if (id == null) {
-			if (other.getId() != null) {
-				return false;
-			}
-		} else if (!id.equals(other.getId())) {
-			return false;
-		}
-		return true;
+			return other.getId() == null;
+		} else return id.equals(other.getId());
 	}
 
 }

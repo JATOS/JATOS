@@ -1,7 +1,7 @@
 name := "jatos-publix"
 version := "3.3.5"
 organization := "org.jatos"
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
   javaCore,
@@ -9,7 +9,7 @@ libraryDependencies ++= Seq(
   javaJpa,
   javaWs,
   guice,
-  "org.apache.commons" % "commons-collections4" % "4.0"
+  "org.apache.commons" % "commons-collections4" % "4.3"
 )
 
 // Routes from submodules

@@ -1,5 +1,4 @@
 @(study: common.Study)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Show all groups Modal -->
 <div class="modal fade" id="groupsModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
@@ -63,7 +62,7 @@ function showGroupsModal(batch) {
 }
 
 function generateGroupsTable(batch) {
-    var dataUrl = "@{playHttpContext}jatos/" + @study.getId() +"/batch/" + batch.id + "/groups";
+    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id + "/groups";
 
     if (groupsTable) {
         groupsTable.ajax.url(dataUrl).load();
@@ -130,7 +129,7 @@ function generateGroupsTable(batch) {
         data.forEach(function(workerId) {
             workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
             'data-placement="bottom" title="Click to get to this worker\'s results page" ' +
-            'href="@{playHttpContext}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
+            'href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
         });
         return workerLinks.join(' ');
     }
@@ -159,7 +158,7 @@ function generateGroupsTable(batch) {
 $('#groupsModal').on('click', '.groupResultsButton', function() {
     var tr = $(this).closest('tr');
     var groupId = groupsTable.row(tr).data().id;
-    window.location.href =  "@{playHttpContext}jatos/@study.getId()/group/" + groupId + "/results";
+    window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + groupId + "/results";
 });
 
 </script>

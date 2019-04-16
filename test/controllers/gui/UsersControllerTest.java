@@ -44,7 +44,7 @@ import services.gui.UserService;
 public class UsersControllerTest {
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -86,7 +86,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Users.userManager().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("utf-8");
@@ -105,7 +105,7 @@ public class UsersControllerTest {
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Users.allUserData().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("utf-8");
@@ -124,7 +124,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Users
                         .toggleAdmin(TestHelper.BLA_EMAIL, true).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("UTF-8");
@@ -145,7 +145,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Users
                         .profile(UserService.ADMIN_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("UTF-8");
@@ -164,7 +164,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Users
                         .singleUserData(UserService.ADMIN_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("UTF-8");
@@ -190,9 +190,12 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
                 .uri(routes.Users.submitCreated().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
+
+        // Clean-up
+        testHelper.removeUser("foo@foo.org");
     }
 
     /**
@@ -211,7 +214,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap).uri(routes.Users
                         .submitEditedProfile(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -242,7 +245,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -274,7 +277,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -306,7 +309,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -338,7 +341,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap).uri(routes.Users
                         .submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -365,7 +368,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
                 .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -392,7 +395,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
                 .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -421,7 +424,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
                 .uri(routes.Users.remove("foo@foo.org").url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -446,7 +449,7 @@ public class UsersControllerTest {
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(formMap)
                 .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 

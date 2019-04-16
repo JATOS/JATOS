@@ -546,8 +546,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No lower case
@@ -559,8 +558,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No number
@@ -572,8 +570,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No special character
@@ -585,8 +582,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
     }
 
@@ -597,8 +593,7 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordViaLoggedInUser() {
         testHelper.mockContext();
 
-        User loggedInUser = testHelper.createAndPersistUser(
-                "tester.test@test.com", "Test Tester", "password");
+        User loggedInUser = testHelper.createAndPersistUser("tester.test@test.com", "Test Tester", "password");
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
         ChangePasswordModel model = new ChangePasswordModel();
@@ -620,8 +615,7 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordViaUnauthorizedUser() {
         testHelper.mockContext();
 
-        User loggedInUser = testHelper.createAndPersistUser(
-                "tester.test@test.com", "Test Tester", "password");
+        User loggedInUser = testHelper.createAndPersistUser("tester.test@test.com", "Test Tester", "password");
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
         ChangePasswordModel model = new ChangePasswordModel();

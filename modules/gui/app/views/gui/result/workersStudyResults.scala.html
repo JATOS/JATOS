@@ -1,6 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-    worker: common.workers.Worker)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, worker: common.workers.Worker)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -160,7 +158,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                 return '<a type="button" class="btn btn-study btn-xs" data-toggle="tooltip" ' +
                     'data-placement="bottom" title="Opens this study" ' +
-                    'href="@{playHttpContext}jatos/' + data + '">' + data + '</a>';
+                    'href="@{general.common.Common.getPlayHttpContext()}jatos/' + data + '">' + data + '</a>';
                 }
             },
             { "data": "studyTitle" },
@@ -174,7 +172,7 @@ $(document).ready(function() {
                     if (!data) return "none";
                     return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Click to get this group\'s results" ' +
-                        'href="@{playHttpContext}jatos/' + full.studyId + '/group/' + data + '/results">' + data + '</a>';
+                        'href="@{general.common.Common.getPlayHttpContext()}jatos/' + full.studyId + '/group/' + data + '/results">' + data + '</a>';
                 }
             },
             { "data": "studyState" },
@@ -448,7 +446,7 @@ $(document).ready(function() {
             + "<b>with all their component results</b>.</p>"
             + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-            var url = '@{playHttpContext}jatos/studyResult?studyResultIds=' + ids.toString();
+            var url = '@{general.common.Common.getPlayHttpContext()}jatos/studyResult?studyResultIds=' + ids.toString();
             $.ajax({
                 url : url,
                 type : 'DELETE',

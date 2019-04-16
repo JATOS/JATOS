@@ -31,7 +31,7 @@ import javax.inject.Inject;
 public class AuthenticationUserAccessTest {
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -62,7 +62,7 @@ public class AuthenticationUserAccessTest {
     }
 
     @Test
-    public void callLogout() throws Exception {
+    public void callLogout() {
         Call call = routes.Authentication.logout();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }

@@ -1,10 +1,5 @@
 package controllers.gui;
 
-import java.io.IOException;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
@@ -23,7 +18,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -33,6 +27,10 @@ import services.gui.Checker;
 import services.gui.ComponentService;
 import services.gui.JatosGuiExceptionThrower;
 import utils.common.JsonUtils;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.io.IOException;
 
 /**
  * Controller that deals with all requests regarding Components within the JATOS
@@ -82,8 +80,6 @@ public class Components extends Controller {
 	@Authenticated
 	public Result runComponent(Long studyId, Long componentId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.debug(".runComponent: studyId " + studyId + ", " + "componentId "
-				+ componentId + ", " + "batch " + batchId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Study study = studyDao.findById(studyId);
 		Component component = componentDao.findById(componentId);
@@ -121,7 +117,6 @@ public class Components extends Controller {
 	@Transactional
 	@Authenticated
 	public Result submitCreated(Long studyId) throws JatosGuiException {
-		LOGGER.debug(".submitCreated: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStudyAndLocked(studyId, study, loggedInUser);
@@ -145,8 +140,6 @@ public class Components extends Controller {
 	@Authenticated
 	public Result properties(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.debug(".properties: studyId " + studyId + ", " + "componentId "
-				+ componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
@@ -168,8 +161,6 @@ public class Components extends Controller {
 	@Authenticated
 	public Result submitEdited(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.debug(".submitEdited: studyId " + studyId + ", " + "componentId "
-				+ componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
@@ -188,9 +179,7 @@ public class Components extends Controller {
 			componentService.renameHtmlFilePath(component,
 					componentProperties.getHtmlFilePath());
 		} catch (IOException e) {
-			form.reject(new ValidationError(ComponentProperties.HTML_FILE_PATH,
-					e.getMessage()));
-			return badRequest(form.errorsAsJson());
+			return badRequest(form.withError(ComponentProperties.HTML_FILE_PATH, e.getMessage()).errorsAsJson());
 		}
 		return ok(component.getId().toString());
 	}
@@ -204,8 +193,6 @@ public class Components extends Controller {
 	@Authenticated
 	public Result toggleActive(Long studyId, Long componentId, Boolean active)
 			throws JatosGuiException {
-		LOGGER.debug(".toggleActive: studyId " + studyId + ", " + "componentId "
-				+ componentId + ", " + "active " + active);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
@@ -227,8 +214,6 @@ public class Components extends Controller {
 	@Authenticated
 	public Result cloneComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.debug(".cloneComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
@@ -249,8 +234,6 @@ public class Components extends Controller {
 	@Authenticated
 	public Result remove(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.debug(".remove: studyId " + studyId + ", " + "componentId "
-				+ componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);

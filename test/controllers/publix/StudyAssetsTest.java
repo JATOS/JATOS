@@ -37,9 +37,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.FORBIDDEN;
-import static play.mvc.Http.Status.NOT_FOUND;
-import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.*;
 import static play.test.Helpers.*;
 
 /**
@@ -52,7 +50,7 @@ public class StudyAssetsTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -118,7 +116,7 @@ public class StudyAssetsTest {
                 study.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(OK);
     }
 
@@ -132,7 +130,7 @@ public class StudyAssetsTest {
                 .viaStudyPath(study.getId(), "bla", "non_existend_file");
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(NOT_FOUND);
     }
 
@@ -147,7 +145,7 @@ public class StudyAssetsTest {
                 + study.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(OK);
     }
 
@@ -161,7 +159,7 @@ public class StudyAssetsTest {
                 .viaAssetsPath(study.getDirName() + "/non_existend_file");
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(NOT_FOUND);
     }
 
@@ -175,7 +173,7 @@ public class StudyAssetsTest {
                 + study.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request = new RequestBuilder().method(Helpers.GET)
                 .uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(FORBIDDEN);
     }
 
@@ -191,7 +189,7 @@ public class StudyAssetsTest {
                 + "/" + otherStudy.getFirstComponent().get().getHtmlFilePath());
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(FORBIDDEN);
     }
 
@@ -219,7 +217,7 @@ public class StudyAssetsTest {
                 .viaAssetsPath(study.getDirName() + "/../../conf/application.conf");
         RequestBuilder request =
                 new RequestBuilder().method(Helpers.GET).uri(call.url()).cookie(idCookie);
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
         assertThat(result.status()).isEqualTo(NOT_FOUND);
     }
 
@@ -260,7 +258,7 @@ public class StudyAssetsTest {
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .session(JatosPublix.SESSION_JATOS_RUN, JatosRun.RUN_STUDY.name());
-        return route(request);
+        return route(fakeApplication, request);
     }
 
 }

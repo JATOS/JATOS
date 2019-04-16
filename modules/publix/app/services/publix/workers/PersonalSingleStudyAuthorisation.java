@@ -1,18 +1,16 @@
 package services.publix.workers;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.StudyAuthorisation;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Optional;
 
 /**

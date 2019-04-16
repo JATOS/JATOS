@@ -69,7 +69,7 @@ public class GroupResult {
      * data.
      */
     @Column(nullable = false)
-    private Long groupSessionVersion = 1l;
+    private Long groupSessionVersion = 1L;
 
     @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
@@ -231,13 +231,8 @@ public class GroupResult {
         }
         GroupResult other = (GroupResult) obj;
         if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.getId())) {
-            return false;
-        }
-        return true;
+            return other.id == null;
+        } else return id.equals(other.getId());
     }
 
 }

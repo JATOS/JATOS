@@ -37,7 +37,7 @@ public class StudyResultsUserAccessTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -68,7 +68,7 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callStudysStudyResults() throws Exception {
+    public void callStudysStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = routes.StudyResults.studysStudyResults(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
@@ -77,7 +77,7 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callBatchesStudyResults() throws Exception {
+    public void callBatchesStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         Call call = routes.StudyResults.batchesStudyResults(
@@ -88,7 +88,7 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callWorkersStudyResults() throws Exception {
+    public void callWorkersStudyResults() {
         User admin = testHelper.getAdmin();
         Call call = routes.StudyResults.workersStudyResults(admin.getWorker().getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
@@ -96,13 +96,13 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callRemove() throws Exception {
+    public void callRemove() {
         Call call = routes.StudyResults.remove("1");
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callRemoveAllOfStudy() throws Exception {
+    public void callRemoveAllOfStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = routes.StudyResults.removeAllOfStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
@@ -110,14 +110,14 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callRemoveAllOfWorker() throws Exception {
+    public void callRemoveAllOfWorker() {
         User admin = testHelper.getAdmin();
         Call call = routes.StudyResults.removeAllOfWorker(admin.getWorker().getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callTableDataByStudy() throws Exception {
+    public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = routes.StudyResults.tableDataByStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
@@ -126,7 +126,7 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callTableDataByBatch() throws Exception {
+    public void callTableDataByBatch() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         Call call = routes.StudyResults
@@ -137,8 +137,8 @@ public class StudyResultsUserAccessTest {
     }
 
     @Test
-    public void callTableDataByWorker() throws Exception {
-        Call call = routes.StudyResults.tableDataByWorker(1l);
+    public void callTableDataByWorker() {
+        Call call = routes.StudyResults.tableDataByWorker(1L);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }

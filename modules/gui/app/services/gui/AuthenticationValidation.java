@@ -175,14 +175,14 @@ public class AuthenticationValidation {
         }
 
         // Check length as specified in conf
-        if (newPassword != null && newPassword.length() < Common.getUserPasswordMinLength()) {
+        if (newPassword.length() < Common.getUserPasswordMinLength()) {
             errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD,
                     MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
         }
 
         // Check strength as specified in conf
         Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
-        if (newPassword != null && !newPassword.matches(regex.getRight())) {
+        if (!newPassword.matches(regex.getRight())) {
             errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD, regex.getLeft()));
         }
 

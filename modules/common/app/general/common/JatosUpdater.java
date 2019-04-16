@@ -4,6 +4,7 @@ import akka.Done;
 import akka.actor.ActorSystem;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
+import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,9 +19,9 @@ import play.api.Play;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import play.libs.ws.WSClient;
+import play.libs.ws.WSResponse;
 import scala.compat.java8.FutureConverters;
 import scala.concurrent.ExecutionContext;
-import scala.concurrent.duration.Duration;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
 
@@ -36,12 +37,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -106,28 +107,28 @@ public class JatosUpdater {
 	 * Contains all info about an JATOS update. It's also send as JSON to the GUI.
 	 */
 	@SuppressWarnings("WeakerAccess")
-			// Fields have to be public for JSON serialization.
+	// Fields have to be public for JSON serialization.
 	class ReleaseInfo {
 
 		/**
 		 * Version of the currently installed one in format x.x.x
 		 */
-		public String currentVersion;
+		public final String currentVersion;
 
 		/**
 		 * Latest version of JATOS like in GitHub
 		 */
-		public String latestVersionFull;
+		public final String latestVersionFull;
 
 		/**
 		 * Latest version of JATOS in format x.x.x
 		 */
-		public String latestVersion;
+		public final String latestVersion;
 
 		/**
 		 * Is it a pre-release
 		 */
-		public boolean isPrerelease;
+		public final boolean isPrerelease;
 
 		/**
 		 * Download URLs to zip files
@@ -144,12 +145,12 @@ public class JatosUpdater {
 		/**
 		 * Description of the release in Markup
 		 */
-		public String releaseNotes;
+		public final String releaseNotes;
 
 		/**
 		 * Is the version of the latest release a newer one than the currently installed
 		 */
-		public boolean isNewerVersion;
+		public final boolean isNewerVersion;
 
 		/**
 		 * Versions with an 'n' in the name are not allowed to be updated automatically. This is a
@@ -234,7 +235,7 @@ public class JatosUpdater {
 	/**
 	 * Determine the path and name of the directory where the update files will be stored.
 	 */
-	private Supplier<File> tmpJatosDir = () -> new File(IOUtils.TMP_DIR,
+	private final Supplier<File> tmpJatosDir = () -> new File(IOUtils.TMP_DIR,
 			"jatos-" + currentReleaseInfo.latestVersionFull);
 
 	private final WSClient ws;
@@ -258,10 +259,6 @@ public class JatosUpdater {
 		this.executionContext = executionContext;
 		this.applicationLifecycle = applicationLifecycle;
 		this.environment = environment;
-	}
-
-	public UpdateState getState() {
-		return state;
 	}
 
 	public void setUpdateStateSuccess() {
@@ -306,7 +303,7 @@ public class JatosUpdater {
 
 	private CompletionStage<ReleaseInfo> requestLatestReleaseInfo() {
 		String url = "https://api.github.com/repos/JATOS/JATOS/releases/latest";
-		return ws.url(url).setRequestTimeout(60000).get().thenApply(res -> {
+		return ws.url(url).setRequestTimeout(Duration.ofHours(1)).get().thenApply(res -> {
 			JsonNode json = res.asJson();
 			ReleaseInfo releaseInfo = new ReleaseInfo(json);
 			LOGGER.info("Checked GitHub for latest release of JATOS: " + releaseInfo.latestVersionFull);
@@ -317,7 +314,7 @@ public class JatosUpdater {
 
 	private CompletionStage<ReleaseInfo> requestLatestReleaseInfoInclPre() {
 		String url = "https://api.github.com/repos/JATOS/JATOS/releases";
-		return ws.url(url).setRequestTimeout(60000).get().thenApply(res -> {
+		return ws.url(url).setRequestTimeout(Duration.ofHours(1)).get().thenApply(res -> {
 			JsonNode first = res.asJson().get(0);
 			ReleaseInfo releaseInfo = new ReleaseInfo(first);
 			String msg = "Checked GitHub for latest release of JATOS (allowing pre-release): "
@@ -385,10 +382,12 @@ public class JatosUpdater {
 		File file = new File(IOUtils.TMP_DIR, filename);
 		OutputStream outputStream = Files.newOutputStream(file.toPath());
 		LOGGER.info("Download " + url);
-		return ws.url(url).setMethod("GET").stream().thenCompose(res -> {
-			Sink<ByteString, CompletionStage<Done>> outputWriter = Sink
-					.foreach(bytes -> outputStream.write(bytes.toArray()));
-			return res.getBody().runWith(outputWriter, materializer).whenComplete((value, error) -> {
+		CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET").stream();
+		return futureResponse.thenCompose(res -> {
+			Source<ByteString, ?> responseBody = res.getBodyAsSource();
+			Sink<ByteString, CompletionStage<Done>> outputWriter =
+					Sink.foreach(bytes -> outputStream.write(bytes.toArray()));
+			return responseBody.runWith(outputWriter, materializer).whenComplete((value, error) -> {
 				try {
 					outputStream.close();
 				} catch (IOException e) {
@@ -404,7 +403,7 @@ public class JatosUpdater {
 	 */
 	private void scheduleStateReset() {
 		actorSystem.scheduler()
-				.scheduleOnce(Duration.create(1, TimeUnit.HOURS), this::resetState, this.executionContext);
+				.scheduleOnce(Duration.ofHours(1), this::resetState, this.executionContext);
 	}
 
 	private void resetState() {
@@ -551,7 +550,8 @@ public class JatosUpdater {
 		cmd.addAll(args);
 		// Remove arguments that are set anew with each start
 		cmd.removeIf(a -> a.startsWith("-agentlib"));
-		cmd.removeIf(a -> a.startsWith("-Dplay.crypto.secret"));
+		cmd.removeIf(a -> a.startsWith("-Dplay.crypto.secret")); // old secret config key
+		cmd.removeIf(a -> a.startsWith("-Dplay.http.secret.key")); // new secret config key
 		cmd.removeIf(a -> a.startsWith("-Duser.dir"));
 		cmd.removeIf(a -> a.startsWith("-Dconfig.file")); // JATOS config file (will be added again by loader script)
 		cmd.removeIf(a -> a.startsWith("-DJATOS_UPDATE_MSG")); // Msgs from a prior update

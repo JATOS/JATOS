@@ -1,5 +1,4 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -135,7 +134,7 @@ function fillStudyList(studyList) {
     }
     $.each(studyList, function(index, study) {
         html += '<li class="list-group-item">'
-                + '<a href="@{playHttpContext}jatos/' + study.id + '">' + study.title + ' (ID: ' + study.id + ')</a>'
+                + '<a href="@{general.common.Common.getPlayHttpContext()}jatos/' + study.id + '">' + study.title + ' (ID: ' + study.id + ')</a>'
                 + '</li>';
     });
     $("#usersStudyList").html(html);

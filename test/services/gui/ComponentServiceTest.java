@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.security.NoSuchAlgorithmException;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -89,8 +88,8 @@ public class ComponentServiceTest {
         updatedProps.setReloadable(false);
         updatedProps.setTitle("Changed title");
         updatedProps.setUuid("UUID should never be changed");
-        updatedProps.setStudyId(1234l);
-        updatedProps.setId(4321l);
+        updatedProps.setStudyId(1234L);
+        updatedProps.setId(4321L);
 
         // Use ComponentService.updateComponentAfterEdit()
         Component updatedComponent = jpaApi.withTransaction(() -> {

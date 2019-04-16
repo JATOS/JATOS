@@ -122,9 +122,8 @@ public abstract class PublixUtils<T extends Worker> {
      */
     public void abortStudy(String message, StudyResult studyResult) {
         // Put current ComponentResult into state ABORTED
-        retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
-            finishComponentResult(currentComponentResult, ComponentState.ABORTED);
-        });
+        retrieveCurrentComponentResult(studyResult).ifPresent(
+                currentComponentResult -> finishComponentResult(currentComponentResult, ComponentState.ABORTED));
         // Finish the other ComponentResults
         finishAllComponentResults(studyResult);
 

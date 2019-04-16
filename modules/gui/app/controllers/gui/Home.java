@@ -61,7 +61,6 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated
 	public Result home(int httpStatus) {
-		LOGGER.debug(".home");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForHome();
@@ -84,7 +83,6 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated
 	public Result sidebarStudyList() {
-		LOGGER.debug(".sidebarStudyList");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		return ok(jsonUtils.sidebarStudyList(studyList));
@@ -100,7 +98,6 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public Result log(Integer lineLimit) {
-		LOGGER.debug(".log: " + "lineLimit " + lineLimit);
 		return ok().chunked(logFileReader.read("application.log", lineLimit)).as("text/plain; charset=utf-8");
 	}
 
@@ -112,7 +109,6 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated
 	public CompletionStage<Result> getReleaseInfo(Boolean allowPreReleases) {
-		LOGGER.debug(".getReleaseInfo");
 		return jatosUpdater.getReleaseInfo(allowPreReleases).handle((releaseInfo, error) -> {
 			if (error != null) {
 				LOGGER.error("Couldn't request latest JATOS update info.");
@@ -131,7 +127,6 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
-		LOGGER.debug(".downloadLatestJatos");
 		return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
 			if (error != null) {
 				LOGGER.error("A problem occurred while downloading a new JATOS release.", error);
@@ -151,7 +146,6 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public Result updateAndRestart(Boolean backupAll) {
-		LOGGER.debug(".updateAndRestart");
 		try {
 			jatosUpdater.updateAndRestart(backupAll);
 		} catch (IOException e) {

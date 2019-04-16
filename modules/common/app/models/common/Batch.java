@@ -138,7 +138,7 @@ public class Batch {
      */
     @JsonIgnore
     @Column(nullable = false)
-    private Long batchSessionVersion = 1l;
+    private Long batchSessionVersion = 1L;
 
     public Batch() {
     }
@@ -292,7 +292,7 @@ public class Batch {
 
     @Override
     public String toString() {
-        return String.valueOf(id) + " " + title;
+        return id + " " + title;
     }
 
     @Override
@@ -316,13 +316,8 @@ public class Batch {
         }
         Batch other = (Batch) obj;
         if (id == null) {
-            if (other.getId() != null) {
-                return false;
-            }
-        } else if (!id.equals(other.getId())) {
-            return false;
-        }
-        return true;
+            return other.getId() == null;
+        } else return id.equals(other.getId());
     }
 
 }

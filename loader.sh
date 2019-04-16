@@ -46,7 +46,7 @@ function start() {
     [[ -z ${port+x} ]] || args+=(-Dhttp.port=$port)
 
     args+=(-Dconfig.file="$dir/conf/production.conf")
-    args+=(-Dplay.crypto.secret=$secret)
+    args+=(-Dplay.http.secret.key=$secret)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
     "$dir/bin/jatos" ${args[*]} -J-server

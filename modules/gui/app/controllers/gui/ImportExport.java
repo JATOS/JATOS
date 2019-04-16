@@ -86,7 +86,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result importStudy() throws JatosGuiException {
-        LOGGER.debug(".importStudy");
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Get file from request
@@ -122,7 +121,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result importStudyConfirmed() throws JatosGuiException {
-        LOGGER.debug(".importStudyConfirmed");
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Get confirmation: overwrite study's properties and/or study assets
@@ -146,7 +144,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result exportStudy(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".exportStudy: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -177,8 +174,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result exportComponent(Long studyId, Long componentId) throws JatosGuiException {
-        LOGGER.debug(".exportComponent: studyId " + studyId + ", "
-                + "componentId " + componentId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -213,7 +208,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result importComponent(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".importComponent: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         ObjectNode json = null;
@@ -239,7 +233,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result importComponentConfirmed(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".importComponentConfirmed: " + "studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
 
@@ -266,7 +259,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result exportDataOfStudyResults() throws JatosGuiException {
-        LOGGER.debug(".exportDataOfStudyResults");
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> studyResultIdList = new ArrayList<>();
         request().body().asJson().get("resultIds")
@@ -290,7 +282,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result exportDataOfAllStudyResults(Long studyId) throws JatosGuiException {
-        LOGGER.debug(".exportDataOfAllStudyResults: studyId " + studyId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -316,7 +307,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result exportDataOfComponentResults() throws JatosGuiException {
-        LOGGER.debug(".exportDataOfComponentResults");
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
         request().body().asJson().get("resultIds")
@@ -341,8 +331,6 @@ public class ImportExport extends Controller {
     @Authenticated
     public Result exportDataOfAllComponentResults(Long studyId, Long componentId)
             throws JatosGuiException {
-        LOGGER.debug(".exportDataOfAllComponentResults: studyId " + studyId
-                + ", " + "componentId " + componentId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Study study = studyDao.findById(studyId);
         Component component = componentDao.findById(componentId);
@@ -372,7 +360,6 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result exportAllResultDataOfWorker(Long workerId) throws JatosGuiException {
-        LOGGER.debug(".exportAllResultDataOfWorker: workerId " + workerId);
         Worker worker = workerDao.findById(workerId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {

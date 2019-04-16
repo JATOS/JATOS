@@ -72,6 +72,7 @@ public class UserServiceTest {
         testHelper.removeStudyAssetsRootDir();
         testHelper.removeAllStudyLogs();
         testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("foo@foo.org");
     }
 
     @Test
@@ -170,12 +171,11 @@ public class UserServiceTest {
      */
     @Test
     public void checkCreateAndPersistUser() {
+        // Set first user
         User userBla = new User();
         userBla.setEmail(TestHelper.BLA_EMAIL);
         userBla.setName("Bla Bla");
-
-        jpaApi.withTransaction(
-                () -> userService.createAndPersistUser(userBla, "blaPassword", true));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true));
 
         // Check that the user is stored in the DB properly
         jpaApi.withTransaction(() -> {
@@ -192,8 +192,7 @@ public class UserServiceTest {
         User userFoo = new User();
         userFoo.setEmail("foo@foo.org");
         userFoo.setName("Foo Foo");
-        jpaApi.withTransaction(
-                () -> userService.createAndPersistUser(userFoo, "fooPassword", false));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false));
         jpaApi.withTransaction(() -> {
             User u = userDao.findByEmail(userFoo.getEmail());
             // It only has the USER role

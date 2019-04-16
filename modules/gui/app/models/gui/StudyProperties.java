@@ -12,6 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import general.common.MessagesStrings;
+import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -23,7 +24,8 @@ import utils.common.JsonUtils;
  *
  * @author Kristian Lange
  */
-public class StudyProperties {
+@Constraints.Validate
+public class StudyProperties implements Constraints.Validatable<List<ValidationError>> {
 
     public static final String STUDY_ID = "studyId";
     public static final String UUID = "uuid";
@@ -163,6 +165,7 @@ public class StudyProperties {
         this.jsonData = jsonData;
     }
 
+    @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (title == null || title.trim().isEmpty()) {
@@ -205,7 +208,7 @@ public class StudyProperties {
 
     @Override
     public String toString() {
-        return String.valueOf(studyId) + " " + title;
+        return studyId + " " + title;
     }
 
 }

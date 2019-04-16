@@ -34,7 +34,7 @@ import services.gui.BreadcrumbsService;
 public class HomeControllerTest {
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -61,13 +61,13 @@ public class HomeControllerTest {
     }
 
     @Test
-    public void callHome() throws Exception {
+    public void callHome() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Home.home().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualTo("utf-8");
@@ -76,13 +76,13 @@ public class HomeControllerTest {
     }
 
     @Test
-    public void callLog() throws Exception {
+    public void callLog() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("GET")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Home.log(1000).url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualTo("utf-8");
@@ -91,7 +91,7 @@ public class HomeControllerTest {
     }
 
     @Test
-    public void callLogNotAsAdmin() throws Exception {
+    public void callLogNotAsAdmin() {
         User notAdminUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
                 "Bla", "bla");
 

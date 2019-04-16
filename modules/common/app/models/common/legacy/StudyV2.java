@@ -390,13 +390,8 @@ public class StudyV2 {
         }
         StudyV2 other = (StudyV2) obj;
         if (id == null) {
-            if (other.getId() != null) {
-                return false;
-            }
-        } else if (!id.equals(other.getId())) {
-            return false;
-        }
-        return true;
+            return other.getId() == null;
+        } else return id.equals(other.getId());
     }
 
 }

@@ -180,13 +180,8 @@ public class User {
         }
         User other = (User) obj;
         if (this.getEmail() == null) {
-            if (other.getEmail() != null) {
-                return false;
-            }
-        } else if (!this.getEmail().equals(other.getEmail())) {
-            return false;
-        }
-        return true;
+            return other.getEmail() == null;
+        } else return this.getEmail().equals(other.getEmail());
     }
 
 }

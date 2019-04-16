@@ -1,19 +1,13 @@
 package services.publix;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import models.common.Batch;
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.GroupResult;
-import models.common.Study;
-import models.common.StudyResult;
+import models.common.*;
 import models.common.workers.Worker;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Service class that creates ComponentResults and StudyResults and GroupResults
@@ -25,15 +19,12 @@ public class ResultCreator {
 
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
-    private final GroupResultDao groupResultDao;
     private final WorkerDao workerDao;
 
     @Inject
-    ResultCreator(ComponentResultDao componentResultDao, StudyResultDao studyResultDao,
-            GroupResultDao groupResultDao, WorkerDao workerDao) {
+    ResultCreator(ComponentResultDao componentResultDao, StudyResultDao studyResultDao, WorkerDao workerDao) {
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
-        this.groupResultDao = groupResultDao;
         this.workerDao = workerDao;
     }
 

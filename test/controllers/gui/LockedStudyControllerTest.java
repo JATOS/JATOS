@@ -50,7 +50,7 @@ public class LockedStudyControllerTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -357,7 +357,7 @@ public class LockedStudyControllerTest {
                 .bodyJson(Json.parse("{\"resultIds\": [" + firstComponentResultId + "]}"))
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.ImportExport.exportDataOfComponentResults().url());
-        Result result = route(request);
+        Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(Http.Status.OK);
     }

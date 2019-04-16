@@ -219,7 +219,7 @@ public class BatchProperties {
 
 	@Override
 	public String toString() {
-		return String.valueOf(id) + " " + title;
+		return id + " " + title;
 	}
 
 	public List<ValidationError> validate() {

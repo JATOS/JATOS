@@ -4,7 +4,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import controllers.gui.routes;
 import general.TestHelper;
-import models.common.Batch;
 import models.common.Study;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +34,7 @@ public class StudiesUserAccessTest {
     private Injector injector;
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;

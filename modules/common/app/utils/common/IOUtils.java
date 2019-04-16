@@ -22,17 +22,16 @@ import java.nio.file.Paths;
 @Singleton
 public class IOUtils {
 
-    public static final String STUDY_FILE_SUFFIX = "jas";
+    public static final String STUDY_FILE_SUFFIX     = "jas";
     public static final String COMPONENT_FILE_SUFFIX = "jac";
-    public static final String ZIP_FILE_SUFFIX = "zip";
+    public static final String ZIP_FILE_SUFFIX       = "zip";
 
     /**
      * Regular expression of illegal characters or strings in file or directory
      * names '/', '\n', '\r', * '//', '\t', '\0', '\f', '`', '?', '*', '\\',
      * '<', '>', '|', '\"', ':', '~', '!', '§', '$', '%', '&'
      */
-    public static final String REGEX_ILLEGAL_IN_FILENAME =
-            "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&^°]";
+    public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
@@ -308,13 +307,11 @@ public class IOUtils {
     public void createStudyAssetsDir(String dirName) throws IOException {
         File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
         if (dir.exists()) {
-            throw new IOException(MessagesStrings
-                    .studyAssetsDirNotCreatedBecauseExists(dir.getName()));
+            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir.getName()));
         }
         boolean result = dir.mkdirs();
         if (!result) {
-            throw new IOException(
-                    MessagesStrings.studyAssetsDirNotCreated(dir.getName()));
+            throw new IOException(MessagesStrings.studyAssetsDirNotCreated(dir.getName()));
         }
     }
 
@@ -392,12 +389,6 @@ public class IOUtils {
         if (!result) {
             throw new IOException(MessagesStrings
                     .htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
-        }
-    }
-
-    public static String readFirstLine(final String filename) throws IOException {
-        try (final BufferedReader in = new BufferedReader(new FileReader(filename))) {
-            return in.readLine();
         }
     }
 

@@ -1,5 +1,4 @@
 @(study: common.Study)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Show all workers Modal -->
 <div class="modal fade" id="workersModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
@@ -87,7 +86,7 @@ function generateWorkersTable() {
                 "render": function (data, type, full, meta) {
                     return '<a type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip"' +
                         'data-placement="bottom" title="Shows study results of this worker"' +
-                        'href="@{playHttpContext}jatos/worker/' + data + '/results">Results</a>';
+                        'href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + data + '/results">Results</a>';
                 }
             }
         ],

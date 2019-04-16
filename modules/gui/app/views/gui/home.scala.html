@@ -1,5 +1,4 @@
 @(studyList: List[common.Study], loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -83,7 +82,7 @@ checkJatosReleaseInfo();
 function checkJatosReleaseInfo() {
     var allowPreReleases = new URLSearchParams(window.location.search).has('allowPreReleases')
     $.getJSON({
-        url: '@{playHttpContext}jatos/releaseInfo?allowPreReleases=' + allowPreReleases,
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?allowPreReleases=' + allowPreReleases,
         success: function(releaseInfo) {
             $("#updateJatos").data("releaseInfo", releaseInfo);
             showJatosReleaseInfo(releaseInfo);
@@ -226,7 +225,7 @@ function updateAndRestart() {
     $("#updateJatosModal .modal-footer").hide();
     var backupAll = $('#updateJatosModal .backupAll').is(':checked');
     $.ajax({
-        url: "@{playHttpContext}jatos/updateAndRestart?backupAll=" + backupAll,
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/updateAndRestart?backupAll=" + backupAll,
         timeout: 0, // Do not timeout
         success: function() {
             $('#updateJatosModal').modal('hide');

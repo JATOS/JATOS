@@ -13,6 +13,7 @@ import models.common.User;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
+import play.Application;
 import play.Logger;
 import play.api.mvc.RequestHeader;
 import play.db.jpa.JPAApi;
@@ -20,6 +21,7 @@ import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import play.mvc.Http.RequestBuilder;
+import play.test.Helpers;
 import services.gui.*;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
@@ -52,6 +54,9 @@ public class TestHelper {
     public static final String BLA_UPPER_CASE_EMAIL = "BLA@BLA.ORG";
 
     @Inject
+    private Application fakeApplication;
+
+    @Inject
     private JPAApi jpaApi;
 
     @Inject
@@ -77,7 +82,7 @@ public class TestHelper {
 
     public void removeStudyAssetsRootDir() throws IOException {
         File assetsRoot = new File(Common.getStudyAssetsRootPath());
-        if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
+        if (Objects.requireNonNull(assetsRoot.list()).length > 0) {
             Logger.warn(TestHelper.class.getSimpleName()
                     + ".removeStudyAssetsRootDir: Study assets root directory "
                     + Common.getStudyAssetsRootPath()
@@ -129,8 +134,7 @@ public class TestHelper {
         return createAndPersistExampleStudy(injector, UserService.ADMIN_EMAIL);
     }
 
-    public Study createAndPersistExampleStudy(Injector injector,
-            String userEmail) {
+    public Study createAndPersistExampleStudy(Injector injector, String userEmail) {
         return jpaApi.withTransaction(() -> {
             User user = userDao.findByEmail(userEmail);
             try {
@@ -199,7 +203,7 @@ public class TestHelper {
     public void assertJatosGuiException(RequestBuilder request,
             int httpStatus, String errorMsg) {
         try {
-            route(request);
+            route(fakeApplication, request);
         } catch (RuntimeException e) {
             assertThat(e.getCause()).isInstanceOf(JatosGuiException.class);
             JatosGuiException jatosGuiException = (JatosGuiException) e
@@ -264,8 +268,8 @@ public class TestHelper {
         Http.Request request = mock(Http.Request.class);
         when(request.cookies()).thenReturn(cookies);
         when(request.queryString()).thenReturn(queryString);
-        Http.Context context = new Http.Context(id, header, request, flashData,
-                flashData, argData);
+        Http.Context context = new Http.Context(id, header, request, flashData, flashData, argData,
+                Helpers.contextComponents());
         Http.Context.current.set(context);
     }
 

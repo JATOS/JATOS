@@ -15,6 +15,8 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
 
 import javax.inject.Inject;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -54,7 +56,7 @@ public class GeneralSingleCookieServiceTest {
         putCookieInContext(study.getUuid() + "=10");
 
         Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
-        assertThat(workerId).isEqualTo(10l);
+        assertThat(workerId).isEqualTo(10L);
     }
 
     @Test
@@ -117,7 +119,7 @@ public class GeneralSingleCookieServiceTest {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
         GeneralSingleWorker worker = mock(GeneralSingleWorker.class);
-        when(worker.getId()).thenReturn(1l);
+        when(worker.getId()).thenReturn(1L);
         Cookie cookie = mock(Cookie.class);
         when(cookie.value()).thenReturn(DUMMY_COOKIE);
 
@@ -131,7 +133,7 @@ public class GeneralSingleCookieServiceTest {
         Study study = mock(Study.class);
         when(study.getUuid()).thenReturn(UUID.randomUUID().toString());
         GeneralSingleWorker worker = mock(GeneralSingleWorker.class);
-        when(worker.getId()).thenReturn(1l);
+        when(worker.getId()).thenReturn(1L);
 
         // No cookie
         String cookieValue = generalSingleCookieService.addStudy(study, worker, null);
@@ -139,8 +141,13 @@ public class GeneralSingleCookieServiceTest {
     }
 
     private void putCookieInContext(String cookieValue) {
-        Cookie cookie = new Cookie(GeneralSingleCookieService.COOKIE_NAME,
-                cookieValue, Integer.MAX_VALUE, Common.getPlayHttpContext(), "", false, true);
+        Cookie cookie = Cookie.builder(GeneralSingleCookieService.COOKIE_NAME, cookieValue)
+                .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
+                .withSecure(false)
+                .withHttpOnly(true)
+                .withPath(Common.getPlayHttpContext())
+                .withDomain("")
+                .build();
         testHelper.mockContext(cookie);
     }
 

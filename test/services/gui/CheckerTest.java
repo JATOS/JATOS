@@ -19,8 +19,6 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -75,7 +73,7 @@ public class CheckerTest {
             Fail.fail();
         }
 
-        long nonExistentStudyId = 11111l;
+        long nonExistentStudyId = 11111L;
         try {
             checker.checkStandardForComponents(nonExistentStudyId, component.getId(), component);
             Fail.fail();
@@ -127,12 +125,12 @@ public class CheckerTest {
         User admin = testHelper.getAdmin();
 
         try {
-            checker.checkStandardForStudy(null, 1l, admin);
+            checker.checkStandardForStudy(null, 1L, admin);
             Fail.fail();
         } catch (ForbiddenException e) {
             Fail.fail();
         } catch (BadRequestException e) {
-            assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotExist(1l));
+            assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotExist(1L));
         }
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);

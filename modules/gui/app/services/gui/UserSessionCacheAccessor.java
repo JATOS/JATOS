@@ -1,8 +1,8 @@
 package services.gui;
 
 import models.gui.UserSession;
-import play.cache.CacheApi;
 import play.cache.NamedCache;
+import play.cache.SyncCacheApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -17,10 +17,10 @@ import java.time.temporal.ChronoUnit;
 @Singleton
 public class UserSessionCacheAccessor {
 
-    private final CacheApi cache;
+    private final SyncCacheApi cache;
 
     @Inject
-    UserSessionCacheAccessor(@NamedCache("user-session-cache") CacheApi cache) {
+    UserSessionCacheAccessor(@NamedCache("user-session-cache") SyncCacheApi cache) {
         this.cache = cache;
     }
 

@@ -1,6 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-study: common.Study, studyResultsCount: Integer)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study, studyResultsCount: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -74,11 +72,6 @@ study: common.Study, studyResultsCount: Integer)
             </ul>
         </div>
     </div>
-    <button id="workerAndBatchManagerButton" type="button" class="btn btn-batch"
-            data-toggle="tooltip" data-placement="bottom"
-            title="Open Worker & Batch Manager to manage your batches and get links for workers">
-        Worker & Batch Manager
-    </button>
     <!-- Content and tooltip of lock button is set later in JS -->
     <div class="btn-group">
         <button id="lockStudy" type="button" class="btn btn-study"
@@ -110,6 +103,11 @@ study: common.Study, studyResultsCount: Integer)
             </li>
         </ul>
     </div>
+    <button id="workerAndBatchManagerButton" type="button" class="btn btn-batch"
+            data-toggle="tooltip" data-placement="bottom"
+            title="Open Worker & Batch Manager to manage your batches and get links for workers">
+        Worker & Batch Manager
+    </button>
 </div>
 
 <!-- Components Table -->
@@ -291,24 +289,24 @@ $(document).ready(function() {
     });
 
     $('#componentsTable tbody').on('click', '.runComponent', function() {
-        window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
+        window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/"
             + getComponentId(this) + "/run";
     });
 
     $('#componentsTable tbody').on('click', '.componentResults', function() {
-        window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
+        window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/"
             + getComponentId(this) + "/results";
     });
 
     $('#componentsTable tbody').on('click', '.exportComponent', function() {
-        window.location.href = "@{playHttpContext}jatos/" + @study.getId() +"/"
+        window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/"
             + getComponentId(this) + "/export";
     });
 
     $('#componentsTable tbody').on('click', '.cloneComponent', function() {
         $.ajax({
             type: 'GET',
-            url: "@{playHttpContext}jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
+            url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
             success: function(result) {
                 showMessages(JSON.parse(result));
                 componentsTable.ajax.reload();
@@ -331,7 +329,7 @@ $(document).ready(function() {
             + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
             $.ajax({
-                url : "@{playHttpContext}jatos/" + @study.getId() +"/" + componentId,
+                url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + componentId,
                 type : 'DELETE',
                 success : function(result) {
                     showMessages(JSON.parse(result));
@@ -351,7 +349,7 @@ $(document).ready(function() {
         var componentId = getComponentId(this);
         var active = $(this).hasClass('activeComponent');
         $.ajax({
-            url : "@{playHttpContext}jatos/" + @study.getId() +"/" + componentId
+            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + componentId
                     + "/properties/active?active=" + !active,
             type : "POST",
             success: function(active) {
@@ -415,9 +413,8 @@ $("tbody.sortable").on("sortstop", function(event, ui) {
     var componentId = getComponentId(ui.item);
     var newPosition = ui.item.index() + 1;
     $.ajax({
-        url : "@{playHttpContext}jatos/" + @study.getId() + "/componentOrder"
-                + "?componentId=" + componentId + "&newPosition="
-                + newPosition,
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() + "/componentOrder"
+                + "?componentId=" + componentId + "&newPosition=" + newPosition,
         type : "POST",
         success : function(response) {
             componentsTable.ajax.reload();
@@ -443,9 +440,8 @@ function getComponentTitle(element) {
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
     $.ajax({
-        url : "@{playHttpContext}jatos/" + @study.getId() + "/changeComponentOrder"
-                + "?componentId=" + componentId + "&direction="
-                + direction,
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() + "/changeComponentOrder"
+                + "?componentId=" + componentId + "&direction=" + direction,
         type : "POST",
         success : function(response) {
             componentsTable.ajax.reload();

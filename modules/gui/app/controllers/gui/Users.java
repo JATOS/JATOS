@@ -67,7 +67,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result userManager() {
-        LOGGER.debug(".userManager");
         User loggedInUser = authenticationService.getLoggedInUser();
         String breadcrumbs = breadcrumbsService
                 .generateForHome(BreadcrumbsService.USER_MANAGER);
@@ -81,7 +80,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result allUserData() {
-        LOGGER.debug(".allUserData");
         List<User> userList = userService.retrieveAllUsers();
         return ok(jsonUtils.userData(userList));
     }
@@ -94,8 +92,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole) {
-        LOGGER.debug(".toggleAdmin: emailOfUserToChange " + emailOfUserToChange
-                + ", " + "adminRole " + adminRole);
         boolean hasAdminRole;
         try {
             hasAdminRole = userService.changeAdminRole(emailOfUserToChange, adminRole);
@@ -113,7 +109,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated
     public Result profile(String email) throws JatosGuiException {
-        LOGGER.debug(".profile: " + "email " + email);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkEmailIsOfLoggedInUser(email, loggedInUser);
 
@@ -129,7 +124,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated
     public Result singleUserData(String email) throws JatosGuiException {
-        LOGGER.debug(".singleUserData: " + "email " + email);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkEmailIsOfLoggedInUser(email, loggedInUser);
         return ok(jsonUtils.userData(loggedInUser));
@@ -142,7 +136,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result submitCreated() {
-        LOGGER.debug(".submitCreated");
         User loggedInUser = authenticationService.getLoggedInUser();
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest();
 
@@ -151,7 +144,7 @@ public class Users extends Controller {
         List<ValidationError> errorList = authenticationValidation
                 .validateNewUser(newUser, loggedInUser.getEmail());
         if (!errorList.isEmpty()) {
-            errorList.forEach(form::reject);
+            errorList.forEach(form::withError);
             return badRequest(form.errorsAsJson());
         }
 
@@ -166,7 +159,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated
     public Result submitEditedProfile(String email) throws JatosGuiException {
-        LOGGER.debug(".submitEditedProfile: " + "email " + email);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkEmailIsOfLoggedInUser(email, loggedInUser);
 
@@ -189,7 +181,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated
     public Result submitChangedPassword(String emailOfUserToChange) {
-        LOGGER.debug(".submitChangedPassword: " + "email " + emailOfUserToChange);
         Form<ChangePasswordModel> form =
                 formFactory.form(ChangePasswordModel.class).bindFromRequest();
 
@@ -198,7 +189,7 @@ public class Users extends Controller {
         List<ValidationError> errorList = authenticationValidation
                 .validateChangePassword(emailOfUserToChange, changePasswordModel);
         if (!errorList.isEmpty()) {
-            errorList.forEach(form::reject);
+            errorList.forEach(form::withError);
             return forbidden(form.errorsAsJson());
         }
 
@@ -222,9 +213,6 @@ public class Users extends Controller {
     @Transactional
     @Authenticated
     public Result remove(String emailOfUserToRemove) {
-        LOGGER.debug(".remove: " + "emailOfUserToRemove "
-                + emailOfUserToRemove);
-
         User loggedInUser = authenticationService.getLoggedInUser();
         String loggedInUserEmail = loggedInUser.getEmail();
         if (!loggedInUser.hasRole(Role.ADMIN) && !emailOfUserToRemove.equals(loggedInUserEmail)) {

@@ -7,12 +7,10 @@ organization := "org.jatos"
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
-  "org.mockito" % "mockito-core" % "1.9.5" % "test",
-  "org.easytesting" % "fest-assert" % "1.4" % Test,
-  "com.h2database" % "h2" % "1.4.193",
-  "com.typesafe.play" %% "play-json" % "2.6.13",
-  "com.typesafe.play" %% "play-iteratees" % "2.6.1",
-  "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
+  "org.mockito" % "mockito-core" % "2.26.0" % "test",
+  "org.easytesting" % "fest-assert" % "1.4" % "test",
+  "com.h2database" % "h2" % "1.4.192",
+  "com.typesafe.play" %% "play-json" % "2.7.2",
   guice,
   filters
 )

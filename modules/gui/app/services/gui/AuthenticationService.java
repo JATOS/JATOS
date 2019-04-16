@@ -180,8 +180,7 @@ public class AuthenticationService {
         email = email.toLowerCase();
         String cookieSessionId = session.get(SESSION_ID);
         String cachedSessionId = userSessionCacheAccessor.getUserSessionId(email, remoteAddress);
-        return cookieSessionId != null && cachedSessionId != null
-                && cookieSessionId.equals(cachedSessionId);
+        return cookieSessionId != null && cookieSessionId.equals(cachedSessionId);
     }
 
     /**

@@ -31,7 +31,7 @@ import javax.inject.Inject;
 public class HomeUserAccessTest {
 
     @Inject
-    private static Application fakeApplication;
+    private Application fakeApplication;
 
     @Inject
     private TestHelper testHelper;
@@ -62,21 +62,21 @@ public class HomeUserAccessTest {
     }
 
     @Test
-    public void callHome() throws Exception {
+    public void callHome() {
         Call call = routes.Home.home();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
-    public void callSidebarStudyList() throws Exception {
+    public void callSidebarStudyList() {
         Call call = routes.Home.sidebarStudyList();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
-    public void callLog() throws Exception {
+    public void callLog() {
         Call call = routes.Home.log(1000);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.GET);

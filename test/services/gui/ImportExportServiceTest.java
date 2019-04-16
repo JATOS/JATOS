@@ -542,7 +542,7 @@ public class ImportExportServiceTest {
      * Actually calls ImportExportService.importStudy()
      */
     private ObjectNode importStudy(File studyFile) {
-        ObjectNode jsonNode = jpaApi.withTransaction(() -> {
+        return jpaApi.withTransaction(() -> {
             try {
                 User admin = testHelper.getAdmin();
                 return importExportService.importStudy(admin, studyFile);
@@ -550,7 +550,6 @@ public class ImportExportServiceTest {
                 throw new RuntimeException(e);
             }
         });
-        return jsonNode;
     }
 
     /**

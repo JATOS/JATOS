@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import general.common.MessagesStrings;
+import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 
 /**
@@ -15,7 +16,8 @@ import play.data.validation.ValidationError;
  * 
  * @author Kristian Lange (2017)
  */
-public class ChangeUserProfileModel {
+@Constraints.Validate
+public class ChangeUserProfileModel implements Constraints.Validatable<List<ValidationError>> {
 
 	public static final String NAME = "name";
 
@@ -32,6 +34,7 @@ public class ChangeUserProfileModel {
 		this.name = name;
 	}
 
+	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
 		if (name == null || name.trim().isEmpty()) {

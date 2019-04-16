@@ -1,13 +1,5 @@
 package services.publix.idcookie;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import general.common.Common;
@@ -22,6 +14,13 @@ import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
 import services.publix.idcookie.exception.IdCookieMalformedException;
 import utils.common.HttpUtils;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class offers a simple interface to extract, log and discard IdCookies.
@@ -44,8 +43,8 @@ public class IdCookieAccessor {
 
     private static final ALogger LOGGER = Logger.of(IdCookieAccessor.class);
 
-    protected static final String COOKIE_EQUALS = "=";
-    protected static final String COOKIE_AND = "&";
+    private static final String COOKIE_EQUALS = "=";
+    private static final String COOKIE_AND    = "&";
 
     private final IdCookieSerialiser idCookieSerialiser;
 
@@ -235,8 +234,8 @@ public class IdCookieAccessor {
      * @throws IdCookieMalformedException Throws a MalformedIdCookieException if the a cookie value is
      *                                    malformed.
      */
-    private Long getValueAsLong(Map<String, String> cookieMap, String key, boolean strict,
-            String cookieName) throws IdCookieMalformedException {
+    private Long getValueAsLong(Map<String, String> cookieMap, String key, boolean strict, String cookieName)
+            throws IdCookieMalformedException {
         String valueStr = cookieMap.get(key);
         if ((valueStr == null || valueStr.equals("null")) && !strict) {
             return null;
@@ -244,8 +243,7 @@ public class IdCookieAccessor {
         try {
             return Long.valueOf(valueStr);
         } catch (Exception e) {
-            throw new IdCookieMalformedException(PublixErrorMessages
-                    .couldntExtractFromIdCookie(cookieName, key));
+            throw new IdCookieMalformedException(PublixErrorMessages.couldntExtractFromIdCookie(cookieName, key));
         }
     }
 
@@ -262,8 +260,7 @@ public class IdCookieAccessor {
      * @throws IdCookieMalformedException Throws a MalformedIdCookieException if the cookie value is
      *                                    malformed.
      */
-    private Integer getValueAsInt(Map<String, String> cookieMap, String key,
-            boolean strict, String cookieName)
+    private Integer getValueAsInt(Map<String, String> cookieMap, String key, boolean strict, String cookieName)
             throws IdCookieMalformedException {
         String valueStr = cookieMap.get(key);
         if ((valueStr == null || valueStr.equals("null")) && !strict) {
@@ -272,8 +269,7 @@ public class IdCookieAccessor {
         try {
             return Integer.valueOf(valueStr);
         } catch (Exception e) {
-            throw new IdCookieMalformedException(PublixErrorMessages
-                    .couldntExtractFromIdCookie(cookieName, key));
+            throw new IdCookieMalformedException(PublixErrorMessages.couldntExtractFromIdCookie(cookieName, key));
         }
     }
 
@@ -281,15 +277,12 @@ public class IdCookieAccessor {
      * Discards the ID cookie that corresponds to the given study result ID. If
      * there is no such ID cookie it does nothing.
      */
-    protected void discard(long studyResultId)
-            throws IdCookieAlreadyExistsException {
+    protected void discard(long studyResultId) throws IdCookieAlreadyExistsException {
         IdCookieCollection idCookieCollection = extract();
-        IdCookieModel idCookie = idCookieCollection
-                .findWithStudyResultId(studyResultId);
+        IdCookieModel idCookie = idCookieCollection.findWithStudyResultId(studyResultId);
         if (idCookie != null) {
             idCookieCollection.remove(idCookie);
-            RequestScope.put(IdCookieCollection.class.getSimpleName(),
-                    idCookieCollection);
+            RequestScope.put(IdCookieCollection.class.getSimpleName(), idCookieCollection);
             Publix.response().discardCookie(idCookie.getName());
         }
     }
@@ -299,25 +292,23 @@ public class IdCookieAccessor {
      * IdCookie in the RequestScope. Uses Integer.MAX_VALUE as Max-Age for the
      * cookie so it never expires.
      */
-    protected void write(IdCookieModel newIdCookie)
-            throws IdCookieAlreadyExistsException,
-            IdCookieCollectionFullException {
+    void write(IdCookieModel newIdCookie) throws IdCookieAlreadyExistsException, IdCookieCollectionFullException {
         IdCookieCollection idCookieCollection = extract();
 
         // Put new IdCookie into Response
-        String cookieValue = idCookieSerialiser
-                .asCookieValueString(newIdCookie);
-        Cookie cookie2 = new Cookie(newIdCookie.getName(), cookieValue,
-                Integer.MAX_VALUE, Common.getPlayHttpContext(), null, false, false);
-        Cookie cookie = Cookie.builder(newIdCookie.getName(), cookieValue).withMaxAge(Duration.of(1, ChronoUnit.CENTURIES))
-                .withSecure(false).withHttpOnly(true).withPath(Common.getPlayHttpContext()).build();
+        String cookieValue = idCookieSerialiser.asCookieValueString(newIdCookie);
+        Http.Cookie cookie = Cookie.builder(newIdCookie.getName(), cookieValue)
+                .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
+                .withSecure(false)
+                .withHttpOnly(false)
+                .withPath(Common.getPlayHttpContext())
+                .build();
         Publix.response().setCookie(cookie);
 
         idCookieCollection.put(newIdCookie);
 
         // Put changed idCookieCollection into RequestScope
-        RequestScope.put(IdCookieCollection.class.getSimpleName(),
-                idCookieCollection);
+        RequestScope.put(IdCookieCollection.class.getSimpleName(), idCookieCollection);
     }
 
 }

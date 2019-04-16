@@ -7,7 +7,9 @@ import models.common.workers._
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc._
+import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
+import play.libs.concurrent.HttpExecutionContext
 import services.publix.idcookie.IdCookieService
 
 import scala.compat.java8.FunctionConverters.asJavaSupplier
@@ -23,6 +25,7 @@ import scala.concurrent.Future
 class ChannelInterceptor @Inject()(components: ControllerComponents,
                                    idCookieService: IdCookieService,
                                    jpa: JPAApi,
+                                   httpExecutionContext: HttpExecutionContext,
                                    jatosBatchChannel: JatosBatchChannel,
                                    personalSingleBatchChannel: PersonalSingleBatchChannel,
                                    personalMultipleBatchChannel: PersonalMultipleBatchChannel,
@@ -55,7 +58,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
 
       Future.successful({
         // Set Http.Context used in Play with Java. Needed by IdCookieService
-        play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+        play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
         val idCookie = idCookieService.getIdCookie(studyResultId)
 
         jpa.withTransaction(asJavaSupplier(() =>
@@ -115,7 +118,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
 
         Future.successful({
           // Set Http.Context used in Play with Java. Needed by IdCookieService
-          play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+          play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
           val idCookie = idCookieService.getIdCookie(studyResultId)
 
           try {
@@ -190,10 +193,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     * @throws PublixException will be handled in the global ErrorHandler
     */
   @throws(classOf[PublixException])
-  def reassignGroup(studyId: Long, studyResultId: Long) = Action {
+  def reassignGroup(studyId: Long, studyResultId: Long): Action[AnyContent] = Action {
     request =>
       // Set Http.Context used in Play with Java. Needed by IdCookieService
-      play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+      play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
       val idCookie = idCookieService.getIdCookie(studyResultId)
 
       jpa.withTransaction(asJavaSupplier(() => {
@@ -230,10 +233,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     * @throws PublixException will be handled in the global ErrorHandler
     */
   @throws(classOf[PublixException])
-  def leaveGroup(studyId: Long, studyResultId: Long) = Action {
+  def leaveGroup(studyId: Long, studyResultId: Long): Action[AnyContent] = Action {
     request =>
       // Set Http.Context used in Play with Java. Needed by IdCookieService
-      play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+      play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
       val idCookie = idCookieService.getIdCookie(studyResultId)
 
       jpa.withTransaction(asJavaSupplier(() => {

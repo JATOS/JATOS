@@ -33,13 +33,13 @@ import java.time.temporal.ChronoUnit;
 	/**
 	 * Delimiter in cookie's string used to separate study's UUID from worker ID
 	 */
-	public static final String COOKIE_TUPLE_DELIMITER = "=";
+	private static final String COOKIE_TUPLE_DELIMITER = "=";
 
 	/**
 	 * Delimiter in cookie's string used to separate entries (tuples of study
 	 * UUID and worker ID)
 	 */
-	public static final String COOKIE_LIST_DELIMITER = "&";
+	private static final String COOKIE_LIST_DELIMITER = "&";
 
 	/**
 	 * Returns the GeneralSingleWorker that belongs to the given study - or
@@ -90,8 +90,12 @@ import java.time.temporal.ChronoUnit;
 	public void set(Study study, Worker worker) {
 		Cookie oldCookie = GeneralSinglePublix.request().cookie(COOKIE_NAME);
 		String newCookieValue = addStudy(study, worker, oldCookie);
-		Cookie newCookie = Cookie.builder(COOKIE_NAME, newCookieValue).withMaxAge(Duration.of(1, ChronoUnit.CENTURIES))
-				.withSecure(false).withHttpOnly(true).withPath(Common.getPlayHttpContext()).build();
+		Cookie newCookie = Cookie.builder(COOKIE_NAME, newCookieValue)
+				.withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
+				.withSecure(false)
+				.withHttpOnly(true)
+				.withPath(Common.getPlayHttpContext())
+				.build();
 		Publix.response().setCookie(newCookie);
 	}
 

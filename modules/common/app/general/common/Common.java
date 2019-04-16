@@ -1,7 +1,7 @@
 package general.common;
 
+import com.typesafe.config.Config;
 import org.apache.commons.lang3.tuple.Pair;
-import play.Configuration;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.Application;
@@ -64,7 +64,7 @@ public class Common {
      * List of regular expressions and their description as Pairs that define password restrictions
      * (the regexes are from https://stackoverflow.com/questions/19605150)
      */
-    private static List<Pair<String, String>> userPasswordStrengthRegexList = Arrays.asList(
+    private static final List<Pair<String, String>> userPasswordStrengthRegexList = Arrays.asList(
             Pair.of("No restrictions on characters.", "^.*$"),
             Pair.of("At least one Latin letter and one number.",
                     "^(?=.*?[A-Za-z])(?=.*?[0-9]).{2,}$"),
@@ -74,33 +74,33 @@ public class Common {
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
     @Inject
-    Common(Application application, Configuration configuration) {
+    Common(Application application, Config config) {
         jatosVersion = BuildInfo.version();
         basepath = fillBasePath(application);
-        studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
-        studyLogsEnabled = configuration.getBoolean("jatos.studyLogs.enabled");
-        studyLogsPath = fillStudyLogsPath(configuration);
-        inMemoryDb = configuration.getString("db.default.url").contains("jdbc:h2:mem:");
-        userSessionTimeout = configuration.getInt("jatos.userSession.timeout");
-        userSessionInactivity = configuration.getInt("jatos.userSession.inactivity");
-        userSessionValidation = configuration.getBoolean("jatos.userSession.validation");
+        studyAssetsRootPath = fillStudyAssetsRootPath(config);
+        studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
+        studyLogsPath = fillStudyLogsPath(config);
+        inMemoryDb = config.getString("db.default.url").contains("jdbc:h2:mem:");
+        userSessionTimeout = config.getInt("jatos.userSession.timeout");
+        userSessionInactivity = config.getInt("jatos.userSession.inactivity");
+        userSessionValidation = config.getBoolean("jatos.userSession.validation");
         if (!userSessionValidation) {
             LOGGER.warn("WARNING - User session validation is switched off. " +
                     "This decreases security. Proceed only if you know what you are doing.");
         }
-        dbDefaultUrl = configuration.getString("db.default.url");
-        dbDefaultDriver = configuration.getString("db.default.driver");
-        jpaDefault = configuration.getString("jpa.default");
+        dbDefaultUrl = config.getString("db.default.url");
+        dbDefaultDriver = config.getString("db.default.driver");
+        jpaDefault = config.getString("jpa.default");
         mac = fillMac();
-        userPasswordLength = configuration.getInt("jatos.user.password.length");
-        userPasswordStrength = configuration.getInt("jatos.user.password.strength");
+        userPasswordLength = config.getInt("jatos.user.password.length");
+        userPasswordStrength = config.getInt("jatos.user.password.strength");
         if (userPasswordStrength > userPasswordStrengthRegexList.size()) {
             userPasswordStrength = 0;
         }
-        playHttpContext = configuration.getString("play.http.context");
-        jatosUpdateMsg = configuration.getString("jatos.update.msg");
-        jatosHttpAddress = configuration.getString("play.server.http.address");
-        jatosHttpPort = configuration.getInt("play.server.http.port");
+        playHttpContext = config.getString("play.http.context");
+        jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
+        jatosHttpAddress = config.getString("play.server.http.address");
+        jatosHttpPort = config.getInt("play.server.http.port");
     }
 
     private String fillBasePath(Application application) {
@@ -114,8 +114,8 @@ public class Common {
         return tempBasePath;
     }
 
-    private String fillStudyAssetsRootPath(Configuration configuration) {
-        String tempStudyAssetsRootPath = configuration.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
+    private String fillStudyAssetsRootPath(Config config) {
+        String tempStudyAssetsRootPath = config.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
         if (tempStudyAssetsRootPath == null || tempStudyAssetsRootPath.trim().isEmpty()) {
             LOGGER.error("Missing configuration of path to study assets directory: "
                     + "It must be set in application.conf under "
@@ -137,8 +137,8 @@ public class Common {
         return tempStudyAssetsRootPath;
     }
 
-    private String fillStudyLogsPath(Configuration configuration) {
-        String tmpStudyLogPath = configuration.getString(PROPERTY_JATOS_STUDY_LOGS_PATH);
+    private String fillStudyLogsPath(Config config) {
+        String tmpStudyLogPath = config.getString(PROPERTY_JATOS_STUDY_LOGS_PATH);
         if (tmpStudyLogPath == null || tmpStudyLogPath.trim().isEmpty()) {
             LOGGER.error("Missing configuration of path to study logs directory: "
                     + "It must be set in application.conf under "

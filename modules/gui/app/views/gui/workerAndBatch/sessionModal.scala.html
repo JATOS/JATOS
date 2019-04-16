@@ -1,5 +1,4 @@
 @(study: common.Study)
-@playHttpContext = @{play.Play.application.configuration.getString("play.http.context")}
 
 <!-- Show Batch or Group Session Data Modal -->
 <div class="modal fade" id="sessionModal" data-backdrop="static"
@@ -43,7 +42,7 @@ var sessionDataEditor;
 $('#batchList').on('click', '.batchSessionButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
-    var dataUrl = "@{playHttpContext}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
+    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
     $('#sessionModal').data('id', batch.id);
     $('#sessionModal').data('type', 'batch');
     getSession(dataUrl);
@@ -53,7 +52,7 @@ $('#groupsModal').on('click', '.groupSessionButton', function() {
     var tr = $(this).closest('tr');
     var groupId = groupsTable.row(tr).data().id;
     if (!groupId) {return} // should never happen
-    var dataUrl = "@{playHttpContext}jatos/@study.getId()/group/" + groupId + "/groupSessionData";
+    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + groupId + "/groupSessionData";
     $('#sessionModal').data('id', groupId);
     $('#sessionModal').data('type', 'group');
     getSession(dataUrl);
@@ -133,10 +132,10 @@ $("#sessionForm").submit(function(event) {
     if (!id || !type) {return} // should never happen
 
     if (type == 'batch') {
-        var postUrl = "@{playHttpContext}jatos/@study.getId()/batch/" + id + "/batchSessionData";
+        var postUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + id + "/batchSessionData";
         postSession(postUrl);
     } else if (type == 'group') {
-        var postUrl = "@{playHttpContext}jatos/@study.getId()/group/" + id + "/groupSessionData";
+        var postUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + id + "/groupSessionData";
         postSession(postUrl);
     }
 });
