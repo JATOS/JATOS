@@ -95,8 +95,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.MISSING_EMAIL);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.MISSING_EMAIL);
         });
     }
 
@@ -115,8 +114,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.EMAIL_TOO_LONG);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.EMAIL_TOO_LONG);
         });
     }
 
@@ -134,8 +132,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
         });
     }
 
@@ -153,8 +150,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.MISSING_NAME);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.MISSING_NAME);
         });
     }
 
@@ -173,8 +169,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NAME_TOO_LONG);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.NAME_TOO_LONG);
         });
     }
 
@@ -192,8 +187,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
         });
     }
 
@@ -211,8 +205,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -230,8 +223,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -243,8 +235,7 @@ public class AuthenticationValidationTest {
         testHelper.mockContext();
 
         NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel
-                .setPassword(StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a'));
+        newUserModel.setPassword(StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a'));
         newUserModel.setPasswordRepeat(newUserModel.getPassword());
 
         jpaApi.withTransaction(() -> {
@@ -262,8 +253,7 @@ public class AuthenticationValidationTest {
         testHelper.mockContext();
 
         NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setPassword(
-                StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a'));
+        newUserModel.setPassword(StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a'));
         newUserModel.setPasswordRepeat(newUserModel.getPassword());
 
         jpaApi.withTransaction(() -> {
@@ -271,8 +261,7 @@ public class AuthenticationValidationTest {
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
             assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings
-                            .userPasswordMinLength(Common.getUserPasswordMinLength()));
+                    .isEqualTo(MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength()));
         });
     }
 
@@ -309,8 +298,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No lower case
@@ -321,8 +309,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No number
@@ -333,8 +320,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No special character
@@ -345,14 +331,12 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
         });
     }
 
     /**
-     * Test AuthenticationService.validateNewUser(): users passwords are
-     * different
+     * Test AuthenticationService.validateNewUser(): users passwords are different
      */
     @Test
     public void checkValidateNewUserPasswordsNotEqual() {
@@ -365,8 +349,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
         });
     }
 
@@ -384,8 +367,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).hasSize(1);
-            assertThat(errorList.get(0).message()).isEqualTo(
-                    MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED);
         });
     }
 
@@ -403,14 +385,13 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
             assertThat(errorList).hasSize(1);
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.WRONG_PASSWORD);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.WRONG_PASSWORD);
         });
     }
 
     /**
-     * AuthenticationService.validateChangePassword(): change password of an
-     * user via user manager and an admin user must be logged-in
+     * AuthenticationService.validateChangePassword(): change password of an user via user manager and an admin user
+     * must be logged-in
      */
     @Test
     public void checkValidateChangePasswordViaAdmin() {
@@ -443,8 +424,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -464,8 +444,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -485,8 +464,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
         });
     }
 
@@ -518,15 +496,14 @@ public class AuthenticationValidationTest {
 
         ChangePasswordModel model = new ChangePasswordModel();
         model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword(
-                StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a'));
+        model.setNewPassword(StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a'));
         model.setNewPasswordRepeat(model.getNewPassword());
 
         jpaApi.withTransaction(() -> {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings
-                    .userPasswordMinLength(Common.getUserPasswordMinLength()));
+            assertThat(errorList.get(0).message())
+                    .isEqualTo(MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength()));
         });
     }
 
@@ -627,8 +604,7 @@ public class AuthenticationValidationTest {
             List<ValidationError> errorList = authenticationValidation
                     .validateChangePassword("different.test@test.com", model);
             assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS);
+            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS);
         });
     }
 

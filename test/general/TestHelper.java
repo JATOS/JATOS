@@ -275,7 +275,7 @@ public class TestHelper {
 
     public Http.Session mockSessionCookieandCache(User user) {
         Http.Session session = new Http.Session(new HashMap<>());
-        authenticationService.writeSessionCookieAndSessionCache(session,
+        authenticationService.writeSessionCookieAndUserSessionCache(session,
                 user.getEmail(), WWW_EXAMPLE_COM);
         return session;
     }

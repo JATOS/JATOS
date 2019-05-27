@@ -19,17 +19,14 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Service class around authentication, session cookie and session cache
- * handling. It works together with the {@link Authentication} controller and
- * the @Authenticated annotation defined in {@link AuthenticationAction}.
+ * Service class around authentication, Play session cookies and user session cache handling. It works together with the
+ * {@link Authentication} controller and the @Authenticated annotation defined in {@link AuthenticationAction}.
  * <p>
- * If a user is authenticated (same password as stored in the database) a user
- * session ID is generated and stored in Play's session cookie and in the the
- * cache. With each subsequent request this session is checked in the
- * AuthenticationAction. For authentication the user's email is turned into
- * lower case.
+ * If a user is authenticated (same password as stored in the database) a user session ID is generated and stored in
+ * Play's session cookie and in the the user session cache. With each subsequent request this session is checked in the
+ * AuthenticationAction. For authentication the user's email is turned into lower case.
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange (2017, 2019)
  */
 @Singleton
 public class AuthenticationService {
@@ -37,26 +34,23 @@ public class AuthenticationService {
     private static final ALogger LOGGER = Logger.of(AuthenticationService.class);
 
     /**
-     * Parameter name in Play's session cookie: It contains the email of the
-     * logged in user
+     * Parameter name in Play's session cookie: It contains the email of the logged in user
      */
     public static final String SESSION_ID = "sessionID";
 
     /**
-     * Parameter name in Play's session cookie: It contains the email of the
-     * logged in user
+     * Parameter name in Play's session cookie: It contains the email of the logged in user
      */
     public static final String SESSION_USER_EMAIL = "userEmail";
 
     /**
-     * Parameter name in Play's session cookie: It contains the timestamp of the
-     * login time
+     * Parameter name in Play's session cookie: It contains the timestamp of the login time
      */
     public static final String SESSION_LOGIN_TIME = "loginTime";
 
     /**
-     * Parameter name in Play's session cookie: It contains a timestamp of the
-     * time of the last HTTP request done by the browser with this cookie
+     * Parameter name in Play's session cookie: It contains a timestamp of the time of the last HTTP request done by the
+     * browser with this cookie
      */
     public static final String SESSION_LAST_ACTIVITY_TIME = "lastActivityTime";
 
@@ -95,16 +89,14 @@ public class AuthenticationService {
     }
 
     /**
-     * Retrieves the logged-in user from Play's session. If a user is logged-in
-     * his email is stored in the Play's session cookie. With the email a user
-     * can be retrieved from the database. Returns null if the session doesn't
+     * Retrieves the logged-in user from Play's session. If a user is logged-in his email is stored in the Play's
+     * session cookie. With the email a user can be retrieved from the database. Returns null if the session doesn't
      * contains an email or if the user doesn't exists in the database.
      * <p>
-     * In most cases getLoggedInUser() is faster since it doesn't has to query
-     * the database.
+     * In most cases getLoggedInUser() is faster since it doesn't has to query the database.
      */
-    public User getLoggedInUserBySessionCookie(Http.Session session) {
-        String email = session.get(AuthenticationService.SESSION_USER_EMAIL);
+    public User getLoggedInUserBySessionCookie(Http.Session sessionCookie) {
+        String email = sessionCookie.get(AuthenticationService.SESSION_USER_EMAIL);
         User loggedInUser = null;
         if (email != null) {
             loggedInUser = userDao.findByEmail(email.toLowerCase());
@@ -113,42 +105,38 @@ public class AuthenticationService {
     }
 
     /**
-     * Gets the logged-in user from the RequestScope. It was put into the
-     * RequestScope by the AuthenticationAction. Therefore this method works
-     * only if you use the @Authenticated annotation at your action.
+     * Gets the logged-in user from the RequestScope. It was put into the RequestScope by the AuthenticationAction.
+     * Therefore this method works only if you use the @Authenticated annotation at your action.
      */
     public User getLoggedInUser() {
         return (User) RequestScope.get(LOGGED_IN_USER);
     }
 
     /**
-     * Prepares Play's session cookie and the user session cache for the user
-     * with the given email to be logged-in. Does not authenticate the user (use
-     * authenticate() for this).
+     * Prepares Play's session cookie and the user session cache for the user with the given email to be logged-in. Does
+     * not authenticate the user (use authenticate() for this).
      */
-    public void writeSessionCookieAndSessionCache(Http.Session session,
-            String email, String remoteAddress) {
+    public void writeSessionCookieAndUserSessionCache(Http.Session sessionCookie, String email, String remoteAddress) {
         email = email.toLowerCase();
         String sessionId = generateSessionId();
         userSessionCacheAccessor.setUserSessionId(email, remoteAddress, sessionId);
-        session.put(SESSION_ID, sessionId);
-        session.put(SESSION_USER_EMAIL, email);
-        session.put(SESSION_LOGIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
-        session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
+        sessionCookie.put(SESSION_ID, sessionId);
+        sessionCookie.put(SESSION_USER_EMAIL, email);
+        sessionCookie.put(SESSION_LOGIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
+        sessionCookie.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
     }
 
     /**
-     * Used StackOverflow for this session ID generator: "This works by choosing
-     * 130 bits from a cryptographically secure random bit generator, and
-     * encoding them in base-32" (http://stackoverflow.com/questions/41107)
+     * Used StackOverflow for this session ID generator: "This works by choosing 130 bits from a cryptographically
+     * secure random bit generator, and encoding them in base-32" (http://stackoverflow.com/questions/41107)
      */
     private String generateSessionId() {
         return new BigInteger(130, random).toString(32);
     }
 
     /**
-     * Refreshes the last activity timestamp in Play's session cookie. This is
-     * usually done with each HTTP call of the user.
+     * Refreshes the last activity timestamp in Play's session cookie. This is usually done with each HTTP call of the
+     * user.
      */
     public void refreshSessionCookie(Http.Session session) {
         session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
@@ -162,38 +150,33 @@ public class AuthenticationService {
     }
 
     /**
-     * Deletes the session cookie and removes the cache entry. This is usual
-     * done during a user logout.
+     * Deletes the session cookie and removes the cache entry. This is usual done during a user logout.
      */
-    public void clearSessionCookieAndSessionCache(Http.Session session,
-            String email, String remoteAddress) {
+    public void clearSessionCookieAndUserSessionCache(Http.Session sessionCookie, String email, String remoteAddress) {
         email = email.toLowerCase();
         userSessionCacheAccessor.removeUserSessionId(email, remoteAddress);
-        session.clear();
+        sessionCookie.clear();
     }
 
     /**
-     * Checks the session ID stored in Play's session cookie whether it is the
-     * same as stored in the cache during the last login.
+     * Checks the session ID stored in Play's session cookie whether it is the same as stored in the cache during the
+     * last login.
      */
-    public boolean isValidSessionId(Http.Session session, String email, String remoteAddress) {
+    public boolean isValidSessionId(Http.Session sessionCookie, String email, String remoteAddress) {
         email = email.toLowerCase();
-        String cookieSessionId = session.get(SESSION_ID);
-        String cachedSessionId = userSessionCacheAccessor.getUserSessionId(email, remoteAddress);
-        return cookieSessionId != null && cookieSessionId.equals(cachedSessionId);
+        String cookieUserSessionId = sessionCookie.get(SESSION_ID);
+        String cachedUserSessionId = userSessionCacheAccessor.getUserSessionId(email, remoteAddress);
+        return cookieUserSessionId != null && cookieUserSessionId.equals(cachedUserSessionId);
     }
 
     /**
-     * Returns true if the session login time as saved in Play's session cookie
-     * is older than allowed.
+     * Returns true if the session login time as saved in Play's session cookie is older than allowed.
      */
-    public boolean isSessionTimeout(Http.Session session) {
+    public boolean isSessionTimeout(Http.Session sessionCookie) {
         try {
-            Instant loginTime =
-                    Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_LOGIN_TIME)));
+            Instant loginTime = Instant.ofEpochMilli(Long.parseLong(sessionCookie.get(SESSION_LOGIN_TIME)));
             Instant now = Instant.now();
-            Instant allowedUntil =
-                    loginTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
+            Instant allowedUntil = loginTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
@@ -203,16 +186,14 @@ public class AuthenticationService {
     }
 
     /**
-     * Returns true if the session inactivity time as saved in Play's session
-     * cookie is older than allowed.
+     * Returns true if the session inactivity time as saved in Play's session cookie is older than allowed.
      */
-    public boolean isInactivityTimeout(Http.Session session) {
+    public boolean isInactivityTimeout(Http.Session sessionCookie) {
         try {
-            Instant lastActivityTime = Instant.ofEpochMilli(
-                    Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
+            Instant lastActivityTime = Instant
+                    .ofEpochMilli(Long.parseLong(sessionCookie.get(SESSION_LAST_ACTIVITY_TIME)));
             Instant now = Instant.now();
-            Instant allowedUntil = lastActivityTime.plus(
-                    Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
+            Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());

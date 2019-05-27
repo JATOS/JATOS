@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * This class stores and retrieves user session data from a cache. It uses the email in lower case.
+ * This class stores and retrieves UserSessions from a cache (in memory). It uses the user's email as key.
  *
  * @author Kristian Lange (2017)
  */
@@ -40,11 +40,15 @@ public class UserSessionCacheAccessor {
         userSession.addSessionId(remoteAddress, sessionId);
     }
 
+    /**
+     * Removes the session ID belonging to the given remoteAddress from the UserSession belonging to the given email
+     *
+     */
     public boolean removeUserSessionId(String email, String remoteAddress) {
         email = email.toLowerCase();
         UserSession userSession = cache.get(email);
         if (userSession != null) {
-            // Only remove the session ID - leave the UserSession in the Cache
+            // Only remove the session ID belonging to this remoteAddress - leave the UserSession in the Cache
             String sessionId = userSession.removeSessionId(remoteAddress);
             return sessionId != null;
         } else {
@@ -56,8 +60,7 @@ public class UserSessionCacheAccessor {
         email = email.toLowerCase();
         UserSession userSession = findOrCreateByEmail(email);
         Instant oldest = userSession.getOldestLoginTime();
-        return !oldest.equals(Instant.MIN)
-                && oldest.plus(1, ChronoUnit.MINUTES).isAfter(Instant.now());
+        return !oldest.equals(Instant.MIN) && oldest.plus(1, ChronoUnit.MINUTES).isAfter(Instant.now());
     }
 
     public void addLoginAttempt(String email) {
@@ -70,14 +73,10 @@ public class UserSessionCacheAccessor {
         email = email.toLowerCase();
         UserSession userSession = cache.get(email);
         if (userSession == null) {
-            userSession = new UserSession(email);
-            save(userSession);
+            userSession = new UserSession();
+            cache.set(email, userSession);
         }
         return userSession;
-    }
-
-    private void save(UserSession userSession) {
-        cache.set(userSession.getEmail(), userSession);
     }
 
 }

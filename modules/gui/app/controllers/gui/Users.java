@@ -236,7 +236,7 @@ public class Users extends Controller {
         }
         // If the user removes himself: logout
         if (emailOfUserToRemove.equals(loggedInUserEmail)) {
-            authenticationService.clearSessionCookieAndSessionCache(session(),
+            authenticationService.clearSessionCookieAndUserSessionCache(session(),
                     loggedInUser.getEmail(), request().host());
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
