@@ -32,8 +32,7 @@
 
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
     <!-- https://hibernate.atlassian.net/browse/HV-1323 -->
-    <logger name="org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator"
-            level="ERROR"/>
+    <logger name="org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator" level="ERROR"/>
 
     <logger name="play" level="INFO"/>
     <logger name="services" level="INFO"/>
