@@ -161,7 +161,7 @@ public class JatosUpdater {
 
 		/**
 		 * Java version needed for the release. It's determined from the asset's filename: everything between 'java'
-		 * and '.zip', e.g. 'jatos-3.3.5_linux_java1.8.zip' -> '1.8'
+		 * and '.zip', e.g. 'jatos-3.3.6_linux_java1.8.zip' -> '1.8'
 		 */
 		public String newJavaVersion;
 
