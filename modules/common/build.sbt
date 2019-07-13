@@ -11,12 +11,13 @@ libraryDependencies ++= Seq(
   ehcache,
   evolutions,
   guice,
-  "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.8.7",
-  "mysql" % "mysql-connector-java" % "5.1.40",
+  "org.hibernate" % "hibernate-core" % "5.4.0.Final",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.9.8",
+  "mysql" % "mysql-connector-java" % "8.0.16",
   "org.jsoup" % "jsoup" % "1.11.3",
   "commons-io" % "commons-io" % "2.6",
-  "com.diffplug.durian" % "durian" % "3.4.0"
+  "com.diffplug.durian" % "durian" % "3.4.0",
+  "org.apache.commons" % "commons-lang3" % "3.9"
 )
 
 // No source docs in distribution
