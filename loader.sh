@@ -49,7 +49,7 @@ function start() {
     args+=(-Dplay.http.secret.key=$secret)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
-    "$dir/bin/jatos" ${args[*]} -J-server
+    "$dir/bin/jatos" ${args[*]} -J-server -J--add-opens=java.base/java.lang=ALL-UNNAMED
 
     # Let Docker not exit in case of update restart: sleep infinity
     sleep infinity
@@ -118,21 +118,6 @@ function checkJava() {
         chmod u+x "$dir/jre/mac_x64_jre/bin/java" # Packing might remove execution permission
         export JAVA_HOME="$dir/jre/mac_x64_jre"
         return
-    fi
-
-    # Check installed Java
-    if type -p java > /dev/null; then
-        echo "Found Java"
-        java_version=$(java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
-    elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]]; then
-        echo "Found Java in JAVA_HOME"
-        java_version=$($JAVA_HOME/bin/java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
-    fi
-
-    # If we don't have a version or if the version is not a number or if the version is smaller 18 (Java 8) try to find a local Java installation
-    if [[ -z "$java_version" ]] || [[ ! "$java_version" =~ ^[0-9]+$ ]] || [[ "$java_version" -ne 18 ]]; then
-        echo "No Java with version 8 found - exit"
-        exit 1
     fi
 }
 
