@@ -53,9 +53,7 @@ public class LogFileReader {
             }
         } catch (IOException e) {
             sourceActor.tell(ByteString.fromString(MessagesStrings.COULDNT_OPEN_LOG), null);
-        } finally {
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
         }
-        return null;
+        return NotUsed.getInstance();
     }
 }
