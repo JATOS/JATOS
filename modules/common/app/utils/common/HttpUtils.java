@@ -39,8 +39,8 @@ public class HttpUtils {
     }
 
     /**
-     * Returns the request's host URL without path (including the 'play.http.context')
-     * or query string. It returns the URL with the proper protocol http or https.
+     * Returns the request's host URL without path (including the 'play.http.context') or query string. It returns the
+     * URL with the proper protocol http or https.
      */
     public static URL getHostUrl() {
         try {
@@ -56,24 +56,26 @@ public class HttpUtils {
     public static boolean isLocalhost() {
         String host = Controller.request().host();
         Optional<String> referer = Controller.request().header("referer");
-        boolean isHostLocalhost = host != null && (host.contains("localhost") || host.contains("127.0.0.1"));
-        boolean isRefererLocalhost = referer.map(r -> r.contains("localhost") || r.contains("127.0.0.1")).orElse(false);
+        boolean isHostLocalhost = host != null && (host.contains("localhost") || host.contains("127.0.0.1") || host
+                .contains("0.0.0.0") || host.equals("::1"));
+        boolean isRefererLocalhost = referer.map(
+                r -> r.contains("localhost") || r.contains("127.0.0.1") || r.contains("0.0.0.0") || r.equals("::1"))
+                .orElse(false);
         return isHostLocalhost || isRefererLocalhost;
     }
 
     /**
-     * Returns the request's protocol, either 'http' or 'https'. It determines
-     * the protocol by looking at three things: 1) it checks if the HTTP header
-     * 'X-Forwarded-Proto' is set and equals 'https', 2) it checks if the HTTP
-     * header 'Referer' starts with https, 3) it uses Play's
-     * RequestHeader.secure() method. The 'X-Forwarded-Proto' header may be set
-     * by proxies/load balancers in front of JATOS. On Amazon's AWS load
-     * balancer with HTTPS/SSL the 'X-Forwarded-Proto' is not set and to still
-     * determine the right protocol we use the Referer as last option.
+     * Returns the request's protocol, either 'http' or 'https'. It determines the protocol by looking at three things:
+     * 1) it checks if the HTTP header 'X-Forwarded-Proto' is set and equals 'https', 2) it checks if the HTTP header
+     * 'Referer' starts with https, 3) it uses Play's RequestHeader.secure() method. The 'X-Forwarded-Proto' header may
+     * be set by proxies/load balancers in front of JATOS. On Amazon's AWS load balancer with HTTPS/SSL the
+     * 'X-Forwarded-Proto' is not set and to still determine the right protocol we use the Referer as last option.
      */
     private static String getRequestsProtocol() {
-        boolean isXForwardedProtoHttps = Controller.request().header("X-Forwarded-Proto").map(h -> h.equals("https")).orElse(false);
-        boolean isRefererProtoHttps = Controller.request().header("Referer").map(h -> h.startsWith("https")).orElse(false);
+        boolean isXForwardedProtoHttps = Controller.request().header("X-Forwarded-Proto").map(h -> h.equals("https"))
+                .orElse(false);
+        boolean isRefererProtoHttps = Controller.request().header("Referer").map(h -> h.startsWith("https")).orElse(
+                false);
         return isXForwardedProtoHttps || isRefererProtoHttps || Controller.request().secure() ? "https" : "http";
     }
 
@@ -98,8 +100,7 @@ public class HttpUtils {
     }
 
     /**
-     * Gets the value of to the given key in request's query string and trims
-     * whitespace.
+     * Gets the value of to the given key in request's query string and trims whitespace.
      */
     public static String getQueryString(String key) {
         String value = Http.Context.current().request().getQueryString(key);
