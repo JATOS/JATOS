@@ -1,7 +1,6 @@
 <configuration>
 
-    <conversionRule conversionWord="coloredLevel"
-                    converterClass="play.api.libs.logback.ColoredLevel"/>
+    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${application.home:-.}/logs/application.log</file>
@@ -22,18 +21,9 @@
         </encoder>
     </appender>
 
-    <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="FILE"/>
-    </appender>
-
-    <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="STDOUT"/>
-    </appender>
-
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
     <!-- https://hibernate.atlassian.net/browse/HV-1323 -->
-    <logger name="org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator"
-            level="ERROR"/>
+    <logger name="org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator" level="ERROR"/>
 
     <logger name="play" level="INFO"/>
     <logger name="services" level="INFO"/>
@@ -41,7 +31,8 @@
     <logger name="group" level="INFO"/>
 
     <root level="INFO">
-        <appender-ref ref="ASYNCSTDOUT"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
     </root>
 
 </configuration>
