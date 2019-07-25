@@ -11,16 +11,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Model and DB entity of a group result. A group result defines some properties
- * and who's member in a group of a group study.
+ * Model and DB entity of a group result. A group result defines some properties and who's member in a group of a group
+ * study.
  * <p>
- * Members of a GroupResult (or just group) are the StudyResults and not the
- * workers. But a studyResult is always associated with a Worker.
+ * Members of a GroupResult (or just group) are the StudyResults and not the workers. But a studyResult is always
+ * associated with a Worker.
  * <p>
  * A member (StudyResult) can join a group (GroupResult) or leave a group.
  * <p>
- * An active member is a StudyResult who joined a group and is in the
- * activeMemberList. A past member is in the historyMemberList.
+ * An active member is a StudyResult who joined a group and is in the activeMemberList. A past member is in the
+ * historyMemberList.
  * <p>
  * 'Group result' and 'group' are used interchangeably.
  *
@@ -46,27 +46,23 @@ public class GroupResult {
     }
 
     /**
-     * Current group result state (Yes, it should be named groupResultState -
-     * but hey, it's so much nicer this way.)
+     * Current group result state (Yes, it should be named groupResultState - but hey, it's so much nicer this way.)
      */
     private GroupState groupState;
 
     /**
-     * Temporary, global data storage that can be accessed via jatos.js to
-     * exchange data in between a group while the study is running. All members
-     * of this group share the same groupSessionData. It will be deleted after
-     * the group is finished. It's stored as a normal string but jatos.js
-     * converts it into JSON. We use versioning to prevent concurrent changes of
-     * the data. It's initialised with an empty JSON object.
+     * Temporary, global data storage that can be accessed via jatos.js to exchange data in between a group while the
+     * study is running. All members of this group share the same groupSessionData. It will be deleted after the group
+     * is finished. It's stored as a normal string but jatos.js converts it into JSON. We use versioning to prevent
+     * concurrent changes of the data. It's initialised with an empty JSON object.
      */
     @JsonIgnore
     @Lob
     private String groupSessionData = "{}";
 
     /**
-     * Current version of the groupSessionData. With each change of the data it
-     * is increased by 1. We use versioning to prevent concurrent changes of the
-     * data.
+     * Current version of the groupSessionData. With each change of the data it is increased by 1. We use versioning to
+     * prevent concurrent changes of the data.
      */
     @Column(nullable = false)
     private Long groupSessionVersion = 1L;
@@ -77,16 +73,16 @@ public class GroupResult {
     private Batch batch;
 
     /**
-     * Contains all currently active members of this group. Members are
-     * StudyResults. This relationship is bidirectional.
+     * Contains all currently active members of this group. Members are StudyResults. This relationship is
+     * bidirectional.
      */
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "activeGroupResult")
     private Set<StudyResult> activeMemberList = new HashSet<>();
 
     /**
-     * Contains all past members of this group (not active any more) that
-     * somehow finished this study. This relationship is bidirectional.
+     * Contains all past members of this group (not active any more) that somehow finished this study. This relationship
+     * is bidirectional.
      */
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "historyGroupResult")
@@ -108,8 +104,7 @@ public class GroupResult {
     }
 
     /**
-     * Creates a new GroupResult and adds the given StudyResult as the first
-     * group member.
+     * Creates a new GroupResult and adds the given StudyResult as the first group member.
      */
     public GroupResult(Batch batch) {
         this.batch = batch;
@@ -214,25 +209,20 @@ public class GroupResult {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof GroupResult)) {
-            return false;
-        }
+        if (this == obj) return true;
+
+        if (obj == null) return false;
+
+        if (!(obj instanceof GroupResult)) return false;
+
         GroupResult other = (GroupResult) obj;
-        if (id == null) {
-            return other.id == null;
-        } else return id.equals(other.getId());
+        return getId().equals(other.getId());
     }
 
 }

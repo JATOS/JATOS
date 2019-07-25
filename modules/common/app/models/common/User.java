@@ -169,19 +169,14 @@ public class User {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof User)) {
-            return false;
-        }
+        if (this == obj) return true;
+
+        if (obj == null) return false;
+
+        if (!(obj instanceof User)) return false;
+
         User other = (User) obj;
-        if (this.getEmail() == null) {
-            return other.getEmail() == null;
-        } else return this.getEmail().equals(other.getEmail());
+        return getEmail().equals(other.getEmail());
     }
 
 }

@@ -12,12 +12,10 @@ import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * Domain model / entity of a study. Used for JSON marshalling and JPA
- * persistance.
+ * Domain model / entity of a study. Used for JSON marshalling and JPA persistance.
  * <p>
- * This entity has all properties of a study but not the results of a study. The
- * results of a study are stored in StudyResults and ComponentResult. A study
- * consists of a list components and their model is Component. It can have
+ * This entity has all properties of a study but not the results of a study. The results of a study are stored in
+ * StudyResults and ComponentResult. A study consists of a list components and their model is Component. It can have
  * several Batches.
  * <p>
  * Default values, where necessary, are at the fields or in the constructor.
@@ -44,19 +42,18 @@ public class Study {
     private Long id;
 
     /**
-     * Universally (world-wide) unique ID. Used for import/export between
-     * different JATOS instances. On one JATOS instance it is only allowed to
-     * have one study with the same UUID.
+     * Universally (world-wide) unique ID. Used for import/export between different JATOS instances. On one JATOS
+     * instance it is only allowed to have one study with the same UUID.
      */
     @Column(unique = true, nullable = false)
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String uuid;
 
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String title;
 
     @Lob
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String description;
 
     /**
@@ -72,49 +69,44 @@ public class Study {
     private boolean locked = false;
 
     /**
-     * Is this study a group study (e.g. group members can send messages to each
-     * other)
+     * Is this study a group study (e.g. group members can send messages to each other)
      */
-    @JsonView({JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class})
+    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
     private boolean groupStudy = false;
 
     /**
      * Study assets directory name
      */
-    @JsonView({JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class})
+    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
     private String dirName;
 
     /**
-     * User comments, reminders, something to share with others. They have no
-     * further meaning.
+     * User comments, reminders, something to share with others. They have no further meaning.
      */
     @Lob
-    @JsonView({JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForIO.class })
     private String comments;
 
     /**
-     * Data in JSON format: every study run of this Study gets access to them.
-     * They can be changed in the GUI but not via jatos.js. Can be used for
-     * initial data and configuration.
+     * Data in JSON format: every study run of this Study gets access to them. They can be changed in the GUI but not
+     * via jatos.js. Can be used for initial data and configuration.
      */
     @Lob
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String jsonData;
 
     /**
-     * List of users that are users of this study (have access rights). The
-     * relationship is bidirectional.
+     * List of users that are users of this study (have access rights). The relationship is bidirectional.
      */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "StudyUserMap", joinColumns = {
-            @JoinColumn(name = "study_id", referencedColumnName = "id")}, inverseJoinColumns = {
-            @JoinColumn(name = "user_email", referencedColumnName = "email")})
+            @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = {
+            @JoinColumn(name = "user_email", referencedColumnName = "email") })
     private Set<User> userList = new HashSet<>();
 
     /**
-     * Ordered list of component of this study. The relationship is
-     * bidirectional.
+     * Ordered list of component of this study. The relationship is bidirectional.
      */
     @JsonView(JsonUtils.JsonForIO.class)
     @OneToMany(fetch = FetchType.LAZY)
@@ -172,8 +164,7 @@ public class Study {
 
     @JsonView(JsonUtils.JsonForPublix.class)
     public String getDescriptionHash() {
-        return !Strings.isNullOrEmpty(getDescription()) ?
-                HashUtils.getHash(getDescription(), HashUtils.SHA_256) : null;
+        return !Strings.isNullOrEmpty(getDescription()) ? HashUtils.getHash(getDescription(), HashUtils.SHA_256) : null;
     }
 
     public void setDirName(String dirName) {
@@ -253,16 +244,15 @@ public class Study {
     }
 
     /**
-     * Gets the component of this study at the given position. The smallest
-     * position is 1 (and not 0 as in an array).
+     * Gets the component of this study at the given position. The smallest position is 1 (and not 0 as in an array).
      */
     public Component getComponent(int position) {
         return componentList.get(position - 1);
     }
 
     /**
-     * Returns the position (index+1) of the component in the list of components
-     * of this study or null if it doesn't exist.
+     * Returns the position (index+1) of the component in the list of components of this study or null if it doesn't
+     * exist.
      */
     public Integer getComponentPosition(Component component) {
         int index = componentList.indexOf(component);
@@ -348,25 +338,20 @@ public class Study {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof Study)) {
-            return false;
-        }
+        if (this == obj) return true;
+
+        if (obj == null) return false;
+
+        if (!(obj instanceof Study)) return false;
+
         Study other = (Study) obj;
-        if (id == null) {
-            return other.getId() == null;
-        } else return id.equals(other.getId());
+        return getId().equals(other.getId());
     }
 
 }

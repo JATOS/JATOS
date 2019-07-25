@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   ehcache,
   evolutions,
   guice,
-  "org.hibernate" % "hibernate-core" % "5.4.0.Final",
+  "org.hibernate" % "hibernate-core" % "5.4.2.Final",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.9.8",
   "mysql" % "mysql-connector-java" % "8.0.16",
   "org.jsoup" % "jsoup" % "1.11.3",
@@ -25,3 +25,5 @@ sources in(Compile, doc) := Seq.empty
 
 // No source docs in distribution 
 publishArtifact in(Compile, packageDoc) := false
+
+PlayKeys.externalizeResourcesExcludes += baseDirectory.value / "conf" / "META-INF" / "persistence.xml"

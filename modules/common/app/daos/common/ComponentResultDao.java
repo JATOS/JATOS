@@ -2,6 +2,8 @@ package daos.common;
 
 import models.common.Component;
 import models.common.ComponentResult;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -57,6 +59,13 @@ public class ComponentResultDao extends AbstractDao {
         String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.component=:component";
         TypedQuery<ComponentResult> query = jpa.em().createQuery(queryStr, ComponentResult.class);
         return query.setParameter("component", component).getResultList();
+    }
+
+    public ScrollableResults findAllByComponentScrollable(Component component) {
+        String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.component=:component";
+        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr,
+                ComponentResult.class);
+        return query.setParameter("component", component).scroll(ScrollMode.FORWARD_ONLY);
     }
 
 }

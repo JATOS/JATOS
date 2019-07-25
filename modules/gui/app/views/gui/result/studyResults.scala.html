@@ -221,7 +221,7 @@ $(document).ready(function() {
                     },
                     {
                         "text": "All",
-                        "action": exportAllSelectedResultData,
+                        "action": exportAllResultData,
                         "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
                     }
                 ]
@@ -402,7 +402,7 @@ $(document).ready(function() {
         });
     }
 
-    function exportAllSelectedResultData(e, dt, node, config) {
+    function exportAllResultData(e, dt, node, config) {
         // Use download.js (http://danml.com/download.html) to get the result data and offer them
         // as download to the user. download.js allows to use an Ajax call and error handling.
         $.ajax({

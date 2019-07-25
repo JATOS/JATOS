@@ -12,16 +12,14 @@ import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * Domain model /entity of a study result. It's used for JSON marshalling and
- * JPA persistance. A study result essentially stores the state and the result
- * of a study run.
+ * Domain model /entity of a study result. It's used for JSON marshalling and JPA persistance. A study result
+ * essentially stores the state and the result of a study run.
  *
  * @author Kristian Lange
  */
 @Entity
 @Table(name = "StudyResult")
-@JsonPropertyOrder(value = {"id", "startDate", "worker", "confirmationCode",
-        "studyState", "errorMsg", "abortMsg"})
+@JsonPropertyOrder(value = { "id", "startDate", "worker", "confirmationCode", "studyState", "errorMsg", "abortMsg" })
 public class StudyResult {
 
     @Id
@@ -41,8 +39,8 @@ public class StudyResult {
     private Timestamp endDate;
 
     /**
-     * Time and date when the study was last seen (server time). jatos.js sends
-     * a periodic heart beat and the time of the last one is saved here.
+     * Time and date when the study was last seen (server time). jatos.js sends a periodic heart beat and the time of
+     * the last one is saved here.
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp lastSeenDate;
@@ -65,16 +63,15 @@ public class StudyResult {
     }
 
     /**
-     * State in the progress of a study. (Yes, it should be named
-     * studyResultState - but hey, it's so much nice this way.)
+     * State in the progress of a study. (Yes, it should be named studyResultState - but hey, it's so much nice this
+     * way.)
      */
     private StudyState studyState;
 
     /**
-     * Temporary, global data storage that can be used by components to exchange
-     * data while the study is running. It will be deleted after the study is
-     * finished. It's stored as a normal string but jatos.js is converting it
-     * into JSON. It's initialised with an empty JSON object.
+     * Temporary, global data storage that can be used by components to exchange data while the study is running. It
+     * will be deleted after the study is finished. It's stored as a normal string but jatos.js is converting it into
+     * JSON. It's initialised with an empty JSON object.
      */
     @Lob
     private String studySessionData = "{}";
@@ -96,8 +93,7 @@ public class StudyResult {
     private Batch batch;
 
     /**
-     * List of ComponentResults that belongs to this StudyResult. This
-     * relationship is bidirectional.
+     * List of ComponentResults that belongs to this StudyResult. This relationship is bidirectional.
      */
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY)
@@ -113,8 +109,8 @@ public class StudyResult {
     private Worker worker;
 
     /**
-     * GroupResult this StudyResult belongs to if the corresponding study is a
-     * group study. This relationship is bidirectional.
+     * GroupResult this StudyResult belongs to if the corresponding study is a group study. This relationship is
+     * bidirectional.
      */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -122,8 +118,8 @@ public class StudyResult {
     private GroupResult activeGroupResult;
 
     /**
-     * After the group study is finished the active GroupResult moves here.
-     * Before this field is null. This relationship is bidirectional.
+     * After the group study is finished the active GroupResult moves here. Before this field is null. This relationship
+     * is bidirectional.
      */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -133,22 +129,19 @@ public class StudyResult {
     private String confirmationCode;
 
     /**
-     * Error message in case something went wrong with the study (state is
-     * FAIL). Can be left null.
+     * Error message in case something went wrong with the study (state is FAIL). Can be left null.
      */
     private String errorMsg;
 
     /**
-     * Message in case the study was aborted (state is ABORTED). Can be left
-     * null.
+     * Message in case the study was aborted (state is ABORTED). Can be left null.
      */
     private String abortMsg;
 
     /**
-     * Query string parameters of the URL that starts the study stored in JSON format. JATOS
-     * specific parameters are removed.
-     * E.g. the URL http://localhost/start?generalsingle=123&more=foo&another=bar resolves to the
-     * parameters {"more":"foo","another":"bar"}
+     * Query string parameters of the URL that starts the study stored in JSON format. JATOS specific parameters are
+     * removed. E.g. the URL http://localhost/start?generalsingle=123&more=foo&another=bar resolves to the parameters
+     * {"more":"foo","another":"bar"}
      */
     private String urlQueryParameters;
 
@@ -261,8 +254,7 @@ public class StudyResult {
         return this.confirmationCode;
     }
 
-    public void setComponentResultList(
-            List<ComponentResult> componentResultList) {
+    public void setComponentResultList(List<ComponentResult> componentResultList) {
         this.componentResultList = componentResultList;
     }
 
@@ -337,25 +329,20 @@ public class StudyResult {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof StudyResult)) {
-            return false;
-        }
+        if (this == obj) return true;
+
+        if (obj == null) return false;
+
+        if (!(obj instanceof StudyResult)) return false;
+
         StudyResult other = (StudyResult) obj;
-        if (id == null) {
-            return other.id == null;
-        } else return id.equals(other.getId());
+        return getId().equals(other.getId());
     }
 
 }

@@ -18,8 +18,7 @@ import java.util.List;
 public class Checker {
 
     /**
-     * Checks the component of this study and throws an Exception in case of a
-     * problem.
+     * Checks the component of this study and throws an Exception in case of a problem.
      */
     public void checkStandardForComponents(Long studyId, Long componentId, Component component)
             throws BadRequestException {
@@ -31,8 +30,7 @@ public class Checker {
         }
         // Check component belongs to the study
         if (!component.getStudy().getId().equals(studyId)) {
-            throw new BadRequestException(
-                    MessagesStrings.componentNotBelongToStudy(studyId, componentId));
+            throw new BadRequestException(MessagesStrings.componentNotBelongToStudy(studyId, componentId));
         }
     }
 
@@ -69,8 +67,7 @@ public class Checker {
     }
 
     /**
-     * Throws an ForbiddenException if this batch is the default batch of it's
-     * study.
+     * Throws an ForbiddenException if this batch is the default batch of it's study.
      */
     public void checkDefaultBatch(Batch batch) throws ForbiddenException {
         if (batch.equals(batch.getStudy().getDefaultBatch())) {
@@ -100,61 +97,87 @@ public class Checker {
         }
         // Check that the user is a user of the study
         if (!study.hasUser(user)) {
-            String errorMsg = MessagesStrings
-                    .studyNotUser(user.getName(), user.getEmail(), studyId, study.getTitle());
+            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getEmail(), studyId, study.getTitle());
             throw new ForbiddenException(errorMsg);
         }
     }
 
     /**
-     * Checks a list of ComponentResult. Checks each ComponentResult whether the
-     * belonging Study and Component are fine (checkStandard). It also checks
-     * whether the study is locked.
+     * Checks a list of ComponentResult. Checks each ComponentResult whether the belonging Study and Component are fine
+     * (checkStandard). It also checks whether the study is locked.
      *
      * @param componentResultList  A list of ComponentResults
-     * @param user                 The study that corresponds to the results must have this user
-     *                             otherwise ForbiddenException will be thrown.
-     * @param studyMustNotBeLocked If true the study that corresponds to the results must not be
-     *                             locked and it will throw an ForbiddenException.
+     * @param user                 The study that corresponds to the results must have this user otherwise
+     *                             ForbiddenException will be thrown.
+     * @param studyMustNotBeLocked If true the study that corresponds to the results must not be locked and it will
+     *                             throw an ForbiddenException.
      */
     public void checkComponentResults(List<ComponentResult> componentResultList, User user,
             boolean studyMustNotBeLocked) throws ForbiddenException, BadRequestException {
         for (ComponentResult componentResult : componentResultList) {
-            Component component = componentResult.getComponent();
-            Study study = component.getStudy();
-            checkStandardForStudy(study, study.getId(), user);
-            checkStandardForComponents(study.getId(), component.getId(), component);
-            if (studyMustNotBeLocked) {
-                checkStudyLocked(study);
-            }
+            checkComponentResult(componentResult, user, studyMustNotBeLocked);
         }
     }
 
     /**
-     * Checks a list of StudyResult. Checks each StudyResult whether the belonging Study is fine,
-     * especially that the StudyResult belongs to this user. It also checks whether the study
-     * is locked.
+     * Checks a ComponentResult whether the belonging Study and Component are fine (checkStandard). It also checks
+     * whether the study is locked.
+     *
+     * @param componentResult      A ComponentResults
+     * @param user                 The study that corresponds to the results must have this user otherwise
+     *                             ForbiddenException will be thrown.
+     * @param studyMustNotBeLocked If true the study that corresponds to the results must not be locked and it will
+     *                             throw an ForbiddenException.
+     */
+    public void checkComponentResult(ComponentResult componentResult, User user, boolean studyMustNotBeLocked)
+            throws ForbiddenException, BadRequestException {
+        Component component = componentResult.getComponent();
+        Study study = component.getStudy();
+        checkStandardForStudy(study, study.getId(), user);
+        checkStandardForComponents(study.getId(), component.getId(), component);
+        if (studyMustNotBeLocked) {
+            checkStudyLocked(study);
+        }
+    }
+
+    /**
+     * Checks a StudyResult whether the belonging Study is fine, especially that the StudyResult belongs to this user.
+     * It also checks whether the study is locked.
+     *
+     * @param studyResult          A StudyResults
+     * @param user                 The study that corresponds to the results must have this user otherwise
+     *                             ForbiddenException will be thrown.
+     * @param studyMustNotBeLocked If true the study that corresponds to the results must not be locked and it will
+     *                             throw an ForbiddenException.
+     */
+    public void checkStudyResult(StudyResult studyResult, User user, boolean studyMustNotBeLocked)
+            throws ForbiddenException, BadRequestException {
+        Study study = studyResult.getStudy();
+        checkStandardForStudy(study, study.getId(), user);
+        if (studyMustNotBeLocked) {
+            checkStudyLocked(study);
+        }
+    }
+
+    /**
+     * Checks a list of StudyResult. Checks each StudyResult whether the belonging Study is fine, especially that the
+     * StudyResult belongs to this user. It also checks whether the study is locked.
      *
      * @param studyResultList      A list of StudyResults
-     * @param user                 The study that corresponds to the results must have this user
-     *                             otherwise ForbiddenException will be thrown.
-     * @param studyMustNotBeLocked If true the study that corresponds to the results must not be
-     *                             locked and it will throw an ForbiddenException.
+     * @param user                 The study that corresponds to the results must have this user otherwise
+     *                             ForbiddenException will be thrown.
+     * @param studyMustNotBeLocked If true the study that corresponds to the results must not be locked and it will
+     *                             throw an ForbiddenException.
      */
-    public void checkStudyResults(List<StudyResult> studyResultList, User user,
-            boolean studyMustNotBeLocked) throws ForbiddenException, BadRequestException {
+    public void checkStudyResults(List<StudyResult> studyResultList, User user, boolean studyMustNotBeLocked)
+            throws ForbiddenException, BadRequestException {
         for (StudyResult studyResult : studyResultList) {
-            Study study = studyResult.getStudy();
-            checkStandardForStudy(study, study.getId(), user);
-            if (studyMustNotBeLocked) {
-                checkStudyLocked(study);
-            }
+            checkStudyResult(studyResult, user, studyMustNotBeLocked);
         }
     }
 
     /**
-     * Throws a Exception in case the worker doesn't exist. Distinguishes
-     * between normal and Ajax request.
+     * Throws a Exception in case the worker doesn't exist. Distinguishes between normal and Ajax request.
      */
     public void checkWorker(Worker worker, Long workerId) throws BadRequestException {
         if (worker == null) {

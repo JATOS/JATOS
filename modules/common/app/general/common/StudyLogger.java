@@ -32,23 +32,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created
- * while the study is created.
+ * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created while the study is
+ * created.
  * <p>
- * Major events are written into this log:
- * - study creation/deletion/recreation
- * - batch creation/deletion
- * - study run start/stops/aborts
- * - result data storing/deletion
- * - result data export
- * - NOT logging any user adding/removing
+ * Major events are written into this log: - study creation/deletion/recreation - batch creation/deletion - study run
+ * start/stops/aborts - result data storing/deletion - result data export - NOT logging any user adding/removing
  * <p>
- * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If
- * it exports files a SHA-256 hash of the content of the file is included in the log.
+ * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If it exports files a
+ * SHA-256 hash of the content of the file is included in the log.
  * <p>
  * The log uses charset ISO_8859_1.
  *
- * @author Kristian Lange 2018
+ * @author Kristian Lange
  */
 @Singleton
 public class StudyLogger {
@@ -71,7 +66,6 @@ public class StudyLogger {
     public static final String DATA_HASH = "dataHash";
     public static final String DATA_HASHES = "dataHashes";
     public static final String NO_DATA = "no data";
-    public static final String FILE_HASH = "fileHash";
     public static final String COMPONENT_UUID = "componentUuid";
     public static final String COMPONENT_UUIDS = "componentUuids";
 
@@ -99,8 +93,7 @@ public class StudyLogger {
 
     private void recreate(Study study) {
         if (!Common.isStudyLogsEnabled()) return;
-        String initialMsg = "Could not find a study log although the study already exists. " +
-                "Create a new one.";
+        String initialMsg = "Could not find a study log although the study already exists. Create a new one.";
         create(study, initialMsg);
     }
 
@@ -141,8 +134,7 @@ public class StudyLogger {
             try {
                 Files.move(logPath, retiredLogPath);
             } catch (IOException e) {
-                LOGGER.error("Study log couldn't be moved from " + logPath + " to " +
-                        retiredLogPath, e);
+                LOGGER.error("Study log couldn't be moved from " + logPath + " to " + retiredLogPath, e);
             }
         }
     }
@@ -188,78 +180,43 @@ public class StudyLogger {
     }
 
     /**
-     * Adds an entry to the study log: exporting of several StudyResults. Adds the hashes of
-     * all result data, the file hash ( hash of the whole string that is to be exported), and
-     * all worker IDs.
+     * Adds an entry to the study log: exporting of a ComponentResult. Adds the hash of the result data, the component
+     * UUID, and the worker IDs.
      *
-     * @param studyResultList list of StudyResults that will be exported
+     * @param componentResult ComponentResult that will be exported
      */
-    public void logStudyResultDataExporting(List<StudyResult> studyResultList,
-            String exportedResultDataStr) {
-        if (!Common.isStudyLogsEnabled()) return;
-        List<ComponentResult> componentResultList = studyResultList.stream()
-                .map(StudyResult::getComponentResultList).flatMap(List::stream)
-                .collect(Collectors.toList());
-        logComponentResultDataExporting(componentResultList, exportedResultDataStr);
+    public void logResultDataExporting(ComponentResult componentResult) {
+        logResultData(componentResult, "Exported result data to file");
     }
 
     /**
-     * Adds an entry to the study log: exporting of several ComponentResults. Adds the hashes of
-     * all result data, the file hash (hash of the whole file text that is to be exported), and
-     * all worker IDs.
-     *
-     * @param componentResultList list of ComponentResults that will be exported
-     */
-    public void logComponentResultDataExporting(List<ComponentResult> componentResultList,
-            String exportedResultDataStr) {
-        if (!Common.isStudyLogsEnabled()) return;
-        if (componentResultList.isEmpty()) return;
-
-        StudyResult studyResult = componentResultList.get(0).getStudyResult();
-        ArrayNode dataHashesArray = Json.newArray();
-        ArrayNode componentUuidArray = Json.newArray();
-        ArrayNode workerIdArray = Json.newArray();
-        for (ComponentResult cr : componentResultList) {
-            String resultDataHash = (cr.getData() != null) ?
-                    HashUtils.getHash(cr.getData(), HashUtils.SHA_256) : NO_DATA;
-            dataHashesArray.add(resultDataHash);
-            componentUuidArray.add(cr.getComponent().getUuid());
-            workerIdArray.add(cr.getWorkerId());
-        }
-        ObjectNode jsonObj = Json.newObject();
-        jsonObj.put(MSG, "Exported result data to a file. Hashes of each result data and the " +
-                "hash of the whole file content are logged here.");
-        jsonObj.put(FILE_HASH, HashUtils.getHash(exportedResultDataStr, HashUtils.SHA_256));
-        jsonObj.set(DATA_HASHES, dataHashesArray);
-        jsonObj.set(WORKER_IDS, workerIdArray);
-        log(studyResult.getStudy(), jsonObj);
-    }
-
-    /**
-     * Adds an entry to the study log: adds the hash of the result data, component UUID, and the
-     * worker ID
+     * Adds an entry to the study log: adds the hash of the result data, component UUID, and the worker ID
      *
      * @param componentResult ComponentResults that will be stored
      */
     public void logResultDataStoring(ComponentResult componentResult) {
+        logResultData(componentResult, "Stored component result data");
+    }
+
+    private void logResultData(ComponentResult componentResult, String msg) {
         if (!Common.isStudyLogsEnabled()) return;
-        String resultDataHash = (componentResult.getData() != null) ?
-                HashUtils.getHash(componentResult.getData(), HashUtils.SHA_256) : NO_DATA;
-        Study study = componentResult.getStudyResult().getStudy();
-        String componentUuid = componentResult.getComponent().getUuid();
-        Long workerId = componentResult.getWorkerId();
+        if (componentResult == null) return;
+
+        StudyResult studyResult = componentResult.getStudyResult();
+        String resultDataHash = (componentResult.getData() != null) ? HashUtils.getHash(componentResult.getData(),
+                HashUtils.SHA_256) : NO_DATA;
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put(MSG, "Stored component result data");
-        jsonObj.put(COMPONENT_UUID, componentUuid);
-        jsonObj.put(WORKER_ID, workerId);
+        jsonObj.put(MSG, msg);
+        jsonObj.put(COMPONENT_UUID, componentResult.getComponent().getUuid());
+        jsonObj.put(WORKER_ID, componentResult.getWorkerId());
         jsonObj.put(DATA_HASH, resultDataHash);
-        log(study, jsonObj);
+        log(studyResult.getStudy(), jsonObj);
     }
 
     /**
-     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs,
-     * and all worker IDs of the worker who run this component. All component results must come
-     * from the same study but not necessarily from the same study result.
+     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs, and all worker IDs
+     * of the worker who run this component. All component results must come from the same study but not necessarily
+     * from the same study result.
      *
      * @param componentResultList list of ComponentResults that will be removed
      */
@@ -272,8 +229,7 @@ public class StudyLogger {
         ArrayNode componentUuidArray = Json.newArray();
         ArrayNode workerIdArray = Json.newArray();
         for (ComponentResult cr : componentResultList) {
-            dataHashesArray.add((cr.getData() != null) ?
-                    HashUtils.getHash(cr.getData(), HashUtils.SHA_256) : NO_DATA);
+            dataHashesArray.add((cr.getData() != null) ? HashUtils.getHash(cr.getData(), HashUtils.SHA_256) : NO_DATA);
             componentUuidArray.add(cr.getComponent().getUuid());
             workerIdArray.add(cr.getWorkerId());
         }
@@ -286,22 +242,20 @@ public class StudyLogger {
     }
 
     /**
-     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs,
-     * and all worker IDs of the worker who run this study.
+     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs, and all worker IDs
+     * of the worker who run this study.
      *
      * @param studyResultList List of StudyResults which will be removed
      */
     public void logStudyResultDataRemoving(List<StudyResult> studyResultList) {
         if (!Common.isStudyLogsEnabled()) return;
-        List<ComponentResult> componentResultList = studyResultList.stream()
-                .map(StudyResult::getComponentResultList).flatMap(List::stream)
-                .collect(Collectors.toList());
+        List<ComponentResult> componentResultList = studyResultList.stream().map(StudyResult::getComponentResultList)
+                .flatMap(List::stream).collect(Collectors.toList());
         logResultDataRemoving(componentResultList);
     }
 
     public void logStudyDescriptionHash(Study study) {
-        log(study, "Study description changed",
-                Pair.of(STUDY_DESCRIPTION_HASH, study.getDescriptionHash()));
+        log(study, "Study description changed", Pair.of(STUDY_DESCRIPTION_HASH, study.getDescriptionHash()));
     }
 
     /**
@@ -311,8 +265,8 @@ public class StudyLogger {
         if (!Common.isStudyLogsEnabled()) return;
         Path studyLogPath = Paths.get(getPath(study));
         if (Files.notExists(studyLogPath)) {
-            LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " +
-                    studyLogPath + ". Create new log file.");
+            LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " + studyLogPath
+                    + ". Create new log file.");
             recreate(study);
         }
         try {
@@ -333,9 +287,8 @@ public class StudyLogger {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
         int bufferSize = entryLimit > 256 ? entryLimit : 256; // ensure min buffer size
-        return Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor ->
-                        fillSourceWithLogFile(sourceActor, getPath(study), entryLimit));
+        return Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail()).mapMaterializedValue(
+                sourceActor -> fillSourceWithLogFile(sourceActor, getPath(study), entryLimit));
     }
 
     private Object fillSourceWithLogFile(ActorRef sourceActor, String filePath, int lineLimit) {
@@ -358,12 +311,10 @@ public class StudyLogger {
                 sourceActor.tell(ByteString.fromString(currentLine), null);
             }
             if (nextLine != null) {
-                sourceActor.tell(
-                        ByteString.fromString(",\"" + MessagesStrings.LOG_CUT + "\""), null);
+                sourceActor.tell(ByteString.fromString(",\"" + MessagesStrings.LOG_CUT + "\""), null);
             }
         } catch (Exception e) {
-            sourceActor.tell(
-                    ByteString.fromString("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\""), null);
+            sourceActor.tell(ByteString.fromString("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\""), null);
             LOGGER.error("Couldn't open study log " + filePath);
         } finally {
             sourceActor.tell(ByteString.fromString("]"), null);

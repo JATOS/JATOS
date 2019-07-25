@@ -44,7 +44,7 @@ public class ResultDataStringGeneratorTests {
     private JPAApi jpaApi;
 
     @Inject
-    private ResultDataExportService resultDataExportService;
+    private ResultDataExporter resultDataExporter;
 
     @Inject
     private JatosPublixUtils jatosPublixUtils;
@@ -84,7 +84,7 @@ public class ResultDataStringGeneratorTests {
     }
 
     /**
-     * Test ResultDataStringGenerator.forWorker()
+     * Test ResultDataStringGenerator.getResultDataByWorker()
      */
     @Test
     public void checkForWorker() {
@@ -94,7 +94,7 @@ public class ResultDataStringGeneratorTests {
             try {
                 createTwoStudyResults(study.getId());
                 User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                return resultDataExportService.forWorker(admin, admin.getWorker());
+                return resultDataExporter.getResultDataByWorker(admin, admin.getWorker());
             } catch (ForbiddenException | BadRequestException | ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -109,7 +109,7 @@ public class ResultDataStringGeneratorTests {
     }
 
     /**
-     * Test ResultDataStringGenerator.forStudy()
+     * Test ResultDataStringGenerator.getResultDataByStudy()
      */
     @Test
     public void checkForStudy() {
@@ -119,7 +119,7 @@ public class ResultDataStringGeneratorTests {
             try {
                 createTwoStudyResults(study.getId());
                 User admin = testHelper.getAdmin();
-                return resultDataExportService.forStudy(admin, study);
+                return resultDataExporter.getResultDataByStudy(admin, study);
             } catch (ForbiddenException | BadRequestException | ForbiddenReloadException e) {
                 throw new RuntimeException(e);
             }
@@ -144,7 +144,7 @@ public class ResultDataStringGeneratorTests {
             try {
                 createTwoStudyResults(study.getId());
                 User admin = testHelper.getAdmin();
-                return resultDataExportService
+                return resultDataExporter
                         .forComponent(admin, study.getFirstComponent().get());
             } catch (ForbiddenException | BadRequestException | ForbiddenReloadException e) {
                 throw new RuntimeException(e);

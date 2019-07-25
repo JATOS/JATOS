@@ -3,6 +3,8 @@ package daos.common;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -82,6 +84,12 @@ public class StudyResultDao extends AbstractDao {
         String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
         TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
         return query.setParameter("study", study).getResultList();
+    }
+
+    public ScrollableResults findAllByStudyScrollable(Study study) {
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
+        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("study", study).scroll(ScrollMode.FORWARD_ONLY);
     }
 
     public List<StudyResult> findAllByBatch(Batch batch) {

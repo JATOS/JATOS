@@ -19,8 +19,7 @@ import models.common.User;
 import models.common.workers.Worker;
 
 /**
- * Service class around ComponentResults and StudyResults. It's used by
- * controllers or other services.
+ * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
  *
  * @author Kristian Lange
  */
@@ -31,19 +30,16 @@ public class ResultService {
     private final StudyResultDao studyResultDao;
 
     @Inject
-    ResultService(ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao) {
+    ResultService(ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
     }
 
     /**
-     * Parses a String with result IDs and returns them in a List<Long>. Throws
-     * an BadRequestException if an ID is not a number or if the original String
-     * doesn't contain any ID.
+     * Parses a String with result IDs and returns them in a List<Long>. Throws an BadRequestException if an ID is not a
+     * number or if the original String doesn't contain any ID.
      */
-    public List<Long> extractResultIds(String resultIds)
-            throws BadRequestException {
+    public List<Long> extractResultIds(String resultIds) throws BadRequestException {
         String[] resultIdStrArray = resultIds.split(",");
         List<Long> resultIdList = new ArrayList<>();
         for (String idStr : resultIdStrArray) {
@@ -63,17 +59,15 @@ public class ResultService {
     }
 
     /**
-     * Gets the corresponding ComponentResult for a list of IDs. Throws an
-     * exception if the ComponentResult doesn't exist.
+     * Gets the corresponding ComponentResult for a list of IDs. Throws an exception if the ComponentResult doesn't
+     * exist.
      */
-    public List<ComponentResult> getComponentResults(
-            List<Long> componentResultIdList) throws NotFoundException {
+    public List<ComponentResult> getComponentResults(List<Long> componentResultIdList) throws NotFoundException {
         List<ComponentResult> componentResultList = new ArrayList<>();
         for (Long componentResultId : componentResultIdList) {
             ComponentResult componentResult = componentResultDao.findById(componentResultId);
             if (componentResult == null) {
-                throw new NotFoundException(MessagesStrings
-                        .componentResultNotExist(componentResultId));
+                throw new NotFoundException(MessagesStrings.componentResultNotExist(componentResultId));
             }
             componentResultList.add(componentResult);
         }
@@ -81,17 +75,15 @@ public class ResultService {
     }
 
     /**
-     * Get all StudyResults or throw an Exception if one doesn't exist. Throws
-     * an exception if the StudyResult doesn't exist.
+     * Get all StudyResults or throw an Exception if one doesn't exist. Throws an exception if the StudyResult doesn't
+     * exist.
      */
-    public List<StudyResult> getStudyResults(List<Long> studyResultIdList)
-            throws NotFoundException {
+    public List<StudyResult> getStudyResults(List<Long> studyResultIdList) throws NotFoundException {
         List<StudyResult> studyResultList = new ArrayList<>();
         for (Long studyResultId : studyResultIdList) {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             if (studyResult == null) {
-                throw new NotFoundException(
-                        MessagesStrings.studyResultNotExist(studyResultId));
+                throw new NotFoundException(MessagesStrings.studyResultNotExist(studyResultId));
             }
             studyResultList.add(studyResult);
         }
@@ -99,54 +91,14 @@ public class ResultService {
     }
 
     /**
-     * Generate the list of StudyResults that belong to the given Worker and
-     * that the given user is allowed to see. A user is allowed if the study
-     * that the StudyResult belongs too has this user.
+     * Generate the list of StudyResults that belong to the given Worker and that the given user is allowed to see. A
+     * user is allowed if the study that the StudyResult belongs too has this user.
      */
-    public List<StudyResult> getAllowedStudyResultList(User user,
-            Worker worker) {
+    public List<StudyResult> getAllowedStudyResultList(User user, Worker worker) {
         // Check for studyResult != null should not be necessary but it lead to an NPE at least once
-        return worker.getStudyResultList().stream()
-                .filter(studyResult -> studyResult != null && studyResult.getStudy().hasUser(user))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Put all StudyResult's result data into a String each in a separate line.
-     */
-    public String studyResultDataToString(List<StudyResult> studyResultList) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<StudyResult> iterator = studyResultList.iterator();
-        while (iterator.hasNext()) {
-            StudyResult studyResult = iterator.next();
-            String componentResultData = componentResultDataToString(
-                    studyResult.getComponentResultList());
-            sb.append(componentResultData);
-            if (iterator.hasNext()) {
-                sb.append("\n");
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Put all ComponentResult's data into a String each in a separate line.
-     */
-    public String componentResultDataToString(
-            List<ComponentResult> componentResultList) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<ComponentResult> iterator = componentResultList.iterator();
-        while (iterator.hasNext()) {
-            ComponentResult componentResult = iterator.next();
-            String data = componentResult.getData();
-            if (data != null) {
-                sb.append(data);
-                if (iterator.hasNext()) {
-                    sb.append("\n");
-                }
-            }
-        }
-        return sb.toString();
+        return worker.getStudyResultList().stream().filter(
+                studyResult -> studyResult != null && studyResult.getStudy().hasUser(user)).collect(
+                Collectors.toList());
     }
 
 }

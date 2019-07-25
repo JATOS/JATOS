@@ -1,22 +1,22 @@
 package controllers.gui;
 
+import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
@@ -50,38 +50,32 @@ public class ImportExport extends Controller {
     private final Checker checker;
     private final AuthenticationService authenticationService;
     private final ImportExportService importExportService;
-    private final ResultDataExportService resultDataExportService;
+    private final ResultDataExporter resultDataExporter;
     private final IOUtils ioUtils;
     private final JsonUtils jsonUtils;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
-    private final WorkerDao workerDao;
 
     @Inject
-    ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            Checker checker, IOUtils ioUtils, JsonUtils jsonUtils,
-            AuthenticationService authenticationService,
-            ImportExportService importExportService,
-            ResultDataExportService resultDataStringGenerator,
-            StudyDao studyDao, ComponentDao componentDao, WorkerDao workerDao) {
+    ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
+            JsonUtils jsonUtils, AuthenticationService authenticationService, ImportExportService importExportService,
+            ResultDataExporter resultDataStringGenerator, StudyDao studyDao, ComponentDao componentDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.jsonUtils = jsonUtils;
         this.ioUtils = ioUtils;
         this.authenticationService = authenticationService;
         this.importExportService = importExportService;
-        this.resultDataExportService = resultDataStringGenerator;
+        this.resultDataExporter = resultDataStringGenerator;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
-        this.workerDao = workerDao;
     }
 
     /**
      * Ajax request
      * <p>
-     * Checks whether this is a legitimate study import, whether the study or
-     * its directory already exists. The actual import happens in
-     * importStudyConfirmed(). Returns JSON.
+     * Checks whether this is a legitimate study import, whether the study or its directory already exists. The actual
+     * import happens in importStudyConfirmed(). Returns JSON.
      */
     @Transactional
     @Authenticated
@@ -92,13 +86,11 @@ public class ImportExport extends Controller {
         FilePart<Object> filePart = request().body().asMultipartFormData().getFile(Study.STUDY);
 
         if (filePart == null) {
-            jatosGuiExceptionThrower
-                    .throwAjax(MessagesStrings.FILE_MISSING, Http.Status.BAD_REQUEST);
+            jatosGuiExceptionThrower.throwAjax(MessagesStrings.FILE_MISSING, Http.Status.BAD_REQUEST);
         }
         if (!Study.STUDY.equals(filePart.getKey())) {
             // If wrong key the upload comes from wrong form
-            jatosGuiExceptionThrower
-                    .throwAjax(MessagesStrings.NO_STUDY_UPLOAD, Http.Status.BAD_REQUEST);
+            jatosGuiExceptionThrower.throwAjax(MessagesStrings.NO_STUDY_UPLOAD, Http.Status.BAD_REQUEST);
         }
 
         JsonNode responseJson = null;
@@ -115,8 +107,7 @@ public class ImportExport extends Controller {
     /**
      * Ajax request
      * <p>
-     * Actual import of study and its study assets directory. Always subsequent
-     * of an importStudy() call.
+     * Actual import of study and its study assets directory. Always subsequent of an importStudy() call.
      */
     @Transactional
     @Authenticated
@@ -138,8 +129,8 @@ public class ImportExport extends Controller {
     /**
      * Ajax request
      * <p>
-     * Export a study. Returns a .zip file that contains the study asset
-     * directory and the study as JSON as a .jas file.
+     * Export a study. Returns a .zip file that contains the study asset directory and the study as JSON as a .jas
+     * file.
      */
     @Transactional
     @Authenticated
@@ -188,13 +179,11 @@ public class ImportExport extends Controller {
         try {
             componentAsJson = jsonUtils.componentAsJsonForIO(component);
         } catch (IOException e) {
-            String errorMsg =
-                    MessagesStrings.componentExportFailure(componentId, component.getTitle());
+            String errorMsg = MessagesStrings.componentExportFailure(componentId, component.getTitle());
             jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
         }
 
-        String filename =
-                ioUtils.generateFileName(component.getTitle(), IOUtils.COMPONENT_FILE_SUFFIX);
+        String filename = ioUtils.generateFileName(component.getTitle(), IOUtils.COMPONENT_FILE_SUFFIX);
         response().setHeader("Content-disposition", "attachment; filename=" + filename);
         return ok(componentAsJson).as("application/x-download");
     }
@@ -202,8 +191,8 @@ public class ImportExport extends Controller {
     /**
      * Ajax request
      * <p>
-     * Checks whether this is a legitimate component import. The actual import
-     * happens in importComponentConfirmed(). Returns JSON with the results.
+     * Checks whether this is a legitimate component import. The actual import happens in importComponentConfirmed().
+     * Returns JSON with the results.
      */
     @Transactional
     @Authenticated
@@ -215,8 +204,7 @@ public class ImportExport extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
 
-            FilePart<Object> filePart =
-                    request().body().asMultipartFormData().getFile(Component.COMPONENT);
+            FilePart<Object> filePart = request().body().asMultipartFormData().getFile(Component.COMPONENT);
             json = importExportService.importComponent(study, filePart);
         } catch (ForbiddenException | BadRequestException | IOException e) {
             importExportService.cleanupAfterComponentImport();
@@ -252,129 +240,89 @@ public class ImportExport extends Controller {
     /**
      * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to the given StudyResults. The
-     * StudyResults are specified by their IDs in the request's body. Returns the result data as
-     * text, each line a result data.
+     * Returns all result data of ComponentResults belonging to the given StudyResults. The StudyResults are specified
+     * by their IDs in the request's body. Returns the result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfStudyResults() throws JatosGuiException {
+    public Result exportDataOfStudyResults() {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> studyResultIdList = new ArrayList<>();
-        request().body().asJson().get("resultIds")
-                .forEach(node -> studyResultIdList.add(node.asLong()));
-        String resultData = "";
-        try {
-            resultData = resultDataExportService
-                    .fromStudyResultIdList(studyResultIdList, loggedInUser);
-        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(resultData);
+        request().body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
+
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
+                .mapMaterializedValue(sourceActor -> resultDataExporter
+                        .getResultDataByStudyResultIds(sourceActor, studyResultIdList, loggedInUser));
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
      * Ajax request  (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to StudyResults belonging to the
-     * given study. Returns the result data as text, each line a result data.
+     * Returns all result data of ComponentResults belonging to StudyResults belonging to the given study. Returns the
+     * result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfAllStudyResults(Long studyId) throws JatosGuiException {
+    public Result exportDataOfAllStudyResults(Long studyId) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        String resultData = "";
-        try {
-            resultData = resultDataExportService.forStudy(loggedInUser, study);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(resultData);
+
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
+                .mapMaterializedValue(sourceActor -> resultDataExporter
+                        .getResultDataByStudy(sourceActor, study, loggedInUser));
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
      * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults. The ComponentResults are specified by their IDs
-     * in the request's body. Returns the result data as text, each line a result data.
+     * Returns all result data of ComponentResults. The ComponentResults are specified by their IDs in the request's
+     * body. Returns the result data as text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfComponentResults() throws JatosGuiException {
+    public Result exportDataOfComponentResults() {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
-        request().body().asJson().get("resultIds")
-                .forEach(node -> componentResultIdList.add(node.asLong()));
-        String resultData = "";
-        try {
-            resultData = resultDataExportService
-                    .fromComponentResultIdList(componentResultIdList, loggedInUser);
-        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(resultData);
+        request().body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
+                .mapMaterializedValue(sourceActor -> resultDataExporter
+                        .getResultDataByComponentResultIds(sourceActor, componentResultIdList, loggedInUser));
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
      * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to the given component and study.
-     * Returns the result data as text, each line a result data.
+     * Returns all result data of ComponentResults belonging to the given component and study. Returns the result data
+     * as text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfAllComponentResults(Long studyId, Long componentId)
-            throws JatosGuiException {
+    public Result exportDataOfAllComponentResults(Long componentId) {
         User loggedInUser = authenticationService.getLoggedInUser();
-        Study study = studyDao.findById(studyId);
-        Component component = componentDao.findById(componentId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-
-        String resultData = "";
-        try {
-            resultData = resultDataExportService.forComponent(loggedInUser, component);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-
-        return ok(resultData);
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
+                .mapMaterializedValue(sourceActor -> resultDataExporter
+                        .getResultDataByComponent(sourceActor, componentId, loggedInUser));
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
      * Ajax request (uses download.js on the client side)
      * <p>
-     * Returns all result data of ComponentResults belonging to the given worker's StudyResults.
-     * Returns the result data as text, each line a result data.
+     * Returns all result data of ComponentResults belonging to the given worker's StudyResults. Returns the result data
+     * as text, each line a result data.
      */
     @Transactional
     @Authenticated
-    public Result exportAllResultDataOfWorker(Long workerId) throws JatosGuiException {
-        Worker worker = workerDao.findById(workerId);
+    public Result exportAllResultDataOfWorker(Long workerId) {
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkWorker(worker, workerId);
-        } catch (BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-
-        String resultData = "";
-        try {
-            resultData = resultDataExportService.forWorker(loggedInUser, worker);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(resultData);
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
+                .mapMaterializedValue(sourceActor -> resultDataExporter
+                        .getResultDataByWorker(sourceActor, workerId, loggedInUser));
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
 }

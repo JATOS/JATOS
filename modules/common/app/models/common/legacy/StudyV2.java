@@ -40,11 +40,10 @@ import utils.common.JsonUtils;
 /**
  * Old model kept for unmarshaling JSON of old versions!
  * <p>
- * Model for a DB entity of a study with all properties of a study but not the
- * results of a study. The results of a study are stored in StudyResults and
- * ComponentResult. A study consists of a list components and their model is
- * Component. Default values, where necessary, are at the fields or in the
- * constructor. For the GUI model StudyProperties is used.
+ * Model for a DB entity of a study with all properties of a study but not the results of a study. The results of a
+ * study are stored in StudyResults and ComponentResult. A study consists of a list components and their model is
+ * Component. Default values, where necessary, are at the fields or in the constructor. For the GUI model
+ * StudyProperties is used.
  *
  * @author Kristian Lange (2014)
  */
@@ -72,19 +71,18 @@ public class StudyV2 {
     private Long id;
 
     /**
-     * Universally (world-wide) unique ID. Used for import/export between
-     * different JATOS instances. On one JATOS instance it is only allowed to
-     * have one study with the same UUID.
+     * Universally (world-wide) unique ID. Used for import/export between different JATOS instances. On one JATOS
+     * instance it is only allowed to have one study with the same UUID.
      */
     @Column(unique = true, nullable = false)
     @JsonView(JsonUtils.JsonForIO.class)
     private String uuid;
 
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String title;
 
     @Lob
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String description;
 
     /**
@@ -100,8 +98,8 @@ public class StudyV2 {
     private boolean locked = false;
 
     /**
-     * List of worker types that are allowed to run this study. If the worker
-     * type is not in this list, it has no permission to run this study.
+     * List of worker types that are allowed to run this study. If the worker type is not in this list, it has no
+     * permission to run this study.
      */
     @JsonView(JsonUtils.JsonForIO.class)
     @ElementCollection
@@ -110,22 +108,21 @@ public class StudyV2 {
     /**
      * Study assets directory name
      */
-    @JsonView({JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class})
+    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
     private String dirName;
 
     /**
-     * User comments, reminders, something to share with others. They have no
-     * further meaning.
+     * User comments, reminders, something to share with others. They have no further meaning.
      */
     @Lob
-    @JsonView({JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForIO.class })
     private String comments;
 
     /**
      * Data in JSON format that are responded after public APIs 'getData' call.
      */
     @Lob
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
     private String jsonData;
 
     /**
@@ -133,10 +130,9 @@ public class StudyV2 {
      */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "StudyMemberMap",
-            joinColumns = {@JoinColumn(name = "study_id", referencedColumnName = "id")},
-            inverseJoinColumns = {
-                    @JoinColumn(name = "member_email", referencedColumnName = "email")})
+    @JoinTable(name = "StudyMemberMap", joinColumns = {
+            @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = {
+            @JoinColumn(name = "member_email", referencedColumnName = "email") })
     private Set<User> memberList = new HashSet<>();
 
     /**
@@ -278,16 +274,15 @@ public class StudyV2 {
     }
 
     /**
-     * Gets the component of this study at the given position. The smallest
-     * position is 1 (and not 0 as in an array).
+     * Gets the component of this study at the given position. The smallest position is 1 (and not 0 as in an array).
      */
     public Component getComponent(int position) {
         return componentList.get(position - 1);
     }
 
     /**
-     * Returns the position (index+1) of the component in the list of components
-     * of this study or null if it doesn't exist.
+     * Returns the position (index+1) of the component in the list of components of this study or null if it doesn't
+     * exist.
      */
     public Integer getComponentPosition(Component component) {
         int index = componentList.indexOf(component);
@@ -343,8 +338,7 @@ public class StudyV2 {
         if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (description != null
-                && !Jsoup.isValid(description, Whitelist.none())) {
+        if (description != null && !Jsoup.isValid(description, Whitelist.none())) {
             errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (dirName == null || dirName.trim().isEmpty()) {
@@ -373,25 +367,20 @@ public class StudyV2 {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof StudyV2)) {
-            return false;
-        }
+        if (this == obj) return true;
+        
+        if (obj == null) return false;
+
+        if (!(obj instanceof StudyV2)) return false;
+
         StudyV2 other = (StudyV2) obj;
-        if (id == null) {
-            return other.getId() == null;
-        } else return id.equals(other.getId());
+        return getId().equals(other.getId());
     }
 
 }
