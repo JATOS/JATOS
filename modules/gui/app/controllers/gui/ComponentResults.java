@@ -38,8 +38,6 @@ import java.util.List;
 @Singleton
 public class ComponentResults extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(ComponentResults.class);
-
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
     private final AuthenticationService authenticationService;
