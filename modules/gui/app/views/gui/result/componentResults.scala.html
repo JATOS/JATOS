@@ -337,6 +337,7 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
+         $('#waitingModal').modal('show');
         // Use download.js (http://danml.com/download.html) to get the result data and offer them
         // as download to the user. download.js allows to use an Ajax call and error handling.
         $.ajax({
@@ -347,11 +348,15 @@ $(document).ready(function() {
             success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
             error : function(err) {
                 showError(err.responseText);
+            },
+            complete: function() {
+                $('#waitingModal').modal('hide');
             }
         });
     }
 
     function exportAllSelectedResultData(e, dt, node, config) {
+        $('#waitingModal').modal('show');
         // Use download.js (http://danml.com/download.html) to get the result data and offer them
         // as download to the user. download.js allows to use an Ajax call and error handling.
         $.ajax({
@@ -360,6 +365,9 @@ $(document).ready(function() {
             success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
             error : function(err) {
                 showError(err.responseText);
+            },
+            complete: function() {
+                $('#waitingModal').modal('hide');
             }
         });
     }
@@ -380,6 +388,7 @@ $(document).ready(function() {
             + "(ID " + ids.join(", ") + ").</p>"
             + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+            $('#waitingModal').modal('show');
             var url = '@{general.common.Common.getPlayHttpContext()}jatos/componentResult?componentResultIds=' + ids.toString();
             $.ajax({
                 url: url,
@@ -391,6 +400,9 @@ $(document).ready(function() {
                 },
                 error: function(err) {
                     showError(err.responseText);
+                },
+                complete: function() {
+                    $('#waitingModal').modal('hide');
                 }
             });
         });
@@ -401,6 +413,7 @@ $(document).ready(function() {
         var htmlText = "<p>You are about to delete <b>ALL</b> component results.</p>"
             + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+            $('#waitingModal').modal('show');
             var url = "@controllers.gui.routes.ComponentResults.removeAllOfComponent(study.getId(), component.getId())";
             $.ajax({
                 url: url,
@@ -410,6 +423,9 @@ $(document).ready(function() {
                 },
                 error: function(err) {
                     showError(err.responseText);
+                },
+                complete: function() {
+                    $('#waitingModal').modal('hide');
                 }
             });
         });

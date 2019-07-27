@@ -315,6 +315,20 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 	</div>
 </div>
 
+<!-- Waiting modal -->
+<div class="modal fade" id="waitingModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><img src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")">Working</h4>
+			</div>
+			<div class="modal-body">
+				... might take a while depending on your internet connection and the JATOS server ... please be patient.
+			</div>
+		</div>
+	</div>
+</div>
+
 @views.html.gui.auth.loginModal(loggedInUser)
 @views.html.gui.study.studyImportModal()
 @views.html.gui.study.studyPropertiesModal()

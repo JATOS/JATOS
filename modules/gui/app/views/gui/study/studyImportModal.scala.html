@@ -29,20 +29,6 @@
     </div>
 </div>
 
-<!-- Uploading waiting Modal -->
-<div class="modal fade" id="uploadingModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title"><img src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")">Uploading</h4>
-            </div>
-            <div class="modal-body">
-                 ... might take a while depending on your internet connection ... please be patient.
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 
 $('#jatosHeader').on('click', '#importStudyLink', function() {
@@ -55,7 +41,7 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
     $.each(files , function(index, value){
         data.append('@common.Study.STUDY', value);
     });
-    $('#uploadingModal').modal('show');
+    $('#waitingModal').modal('show');
     $.ajax({
         url: '@controllers.gui.routes.ImportExport.importStudy()',
         data: data,
@@ -64,11 +50,11 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
         processData: false,
         type: 'POST',
         success: function(response) {
-            $('#uploadingModal').modal('hide');
+            $('#waitingModal').modal('hide');
             importStudyConfirm(response);
         },
         error : function(err) {
-            $('#uploadingModal').modal('hide');
+            $('#waitingModal').modal('hide');
             showError(err.responseText);
         }
     });

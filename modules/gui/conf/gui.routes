@@ -114,7 +114,7 @@ GET      /jatos/:studyId/export                                             @con
 GET      /jatos/:studyId/export/allResultData                               @controllers.gui.ImportExport.exportDataOfAllStudyResults(studyId: Long)
 POST     /jatos/:studyId/import/component                                   @controllers.gui.ImportExport.importComponent(studyId: Long)
 POST     /jatos/:studyId/import/componentConfirmed                          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
-GET      /jatos/:studyId/:componentId/export/allResultData                  @controllers.gui.ImportExport.exportDataOfAllComponentResults(componentId: Long)
+GET      /jatos/:studyId/:componentId/export/allResultData                  @controllers.gui.ImportExport.exportDataOfAllComponentResults(studyId: Long, componentId: Long)
 GET      /jatos/:studyId/:componentId/export                                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 

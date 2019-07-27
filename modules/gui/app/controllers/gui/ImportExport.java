@@ -301,7 +301,7 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfAllComponentResults(Long componentId) {
+    public Result exportDataOfAllComponentResults(Long studyId, Long componentId) {
         User loggedInUser = authenticationService.getLoggedInUser();
         Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
                 .mapMaterializedValue(sourceActor -> resultDataExporter
