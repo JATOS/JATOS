@@ -12,8 +12,6 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.4.193",
   "com.typesafe.play" %% "play-json" % "2.7.2",
   "org.apache.commons" % "commons-lang3" % "3.9",
-  "org.hibernate" % "hibernate-core" % "5.4.0.Final",
-  "mysql" % "mysql-connector-java" % "8.0.16",
   guice,
   filters
 )

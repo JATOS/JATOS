@@ -25,5 +25,3 @@ sources in(Compile, doc) := Seq.empty
 
 // No source docs in distribution 
 publishArtifact in(Compile, packageDoc) := false
-
-PlayKeys.externalizeResourcesExcludes += baseDirectory.value / "conf" / "META-INF" / "persistence.xml"

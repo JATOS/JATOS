@@ -8,31 +8,7 @@
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 		<non-jta-data-source>DefaultDS</non-jta-data-source>
 		<properties>
-			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-			<property name="hibernate.show_sql" value="false" />
-			<property name="hibernate.id.new_generator_mappings" value="false" />
-		</properties>
-	</persistence-unit>
-
-	<persistence-unit name="h2AutoUpdatePersistenceUnit"
-		transaction-type="RESOURCE_LOCAL">
-		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-		<non-jta-data-source>DefaultDS</non-jta-data-source>
-		<properties>
-			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-			<property name="hibernate.hbm2ddl.auto" value="update" />
-			<property name="hibernate.show_sql" value="false" />
-			<property name="hibernate.id.new_generator_mappings" value="false" />
-		</properties>
-	</persistence-unit>
-	
-	<persistence-unit name="h2TestPersistenceUnit"
-		transaction-type="RESOURCE_LOCAL">
-		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-		<non-jta-data-source>DefaultDS</non-jta-data-source>
-		<properties>
-			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-			<property name="hibernate.hbm2ddl.auto" value="create-drop" />
+			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL57Dialect" />
 			<property name="hibernate.show_sql" value="false" />
 			<property name="hibernate.id.new_generator_mappings" value="false" />
 		</properties>

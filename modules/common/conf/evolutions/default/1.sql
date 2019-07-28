@@ -162,6 +162,7 @@ ALTER TABLE `StudyUserMap` ADD CONSTRAINT `FK_d3uknug3vjrsetf527b7uplcd` FOREIGN
 ALTER TABLE `Worker` ADD KEY `FK_rvmm2rl58o8ui2tsq774o8rij` (`user_email`);
 ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
 
+INSERT INTO `User` VALUES ('admin', 'Admin', '21232f297a57a5a743894a0e4a801fc3');
 
 # --- !Downs
  

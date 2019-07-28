@@ -10,7 +10,8 @@ CREATE TABLE `User_roleList` (
 ALTER TABLE `User_roleList` ADD KEY `FK9q91gwu0njssl15fn116efivn` (`User_email`);
 ALTER TABLE `User_roleList` ADD CONSTRAINT `FK9q91gwu0njssl15fn116efivn` FOREIGN KEY (`User_email`) REFERENCES `User` (`email`);
 
-INSERT INTO User_roleList (User_email, roleList) SELECT email, 'USER' FROM User;
+INSERT INTO `User_roleList` (`User_email`, `roleList`) SELECT `email`, 'USER' FROM `User`;
+INSERT INTO `User_roleList` (`User_email`, `roleList`) VALUES ('admin', 'ADMIN');
 
 # --- !Downs
 
