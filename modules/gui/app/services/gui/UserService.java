@@ -12,6 +12,8 @@ import models.common.User;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
 import models.gui.NewUserModel;
+import play.Logger;
+import play.db.jpa.JPAApi;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
@@ -20,27 +22,29 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Service class mostly for Users controller. Handles everything around User. For retrieval of users
- * from the database emails are turned into their lower case version.
+ * Service class mostly for Users controller. Handles everything around User. For retrieval of users from the database
+ * emails are turned into their lower case version.
  *
  * @author Kristian Lange
  */
 @Singleton
 public class UserService {
 
+    private static final Logger.ALogger LOGGER = Logger.of(UserService.class);
+
     /**
-     * Default admin email; the admin user is created during first
-     * initialization of JATOS; don't confuse admin user with the Role ADMIN
+     * Default admin email; the admin user is created during first initialization of JATOS; don't confuse admin user
+     * with the Role ADMIN
      */
     public static final String ADMIN_EMAIL = "admin";
     /**
-     * Default admin password; the admin user is created during first
-     * initialization of JATOS; don't confuse admin user with the Role ADMIN
+     * Default admin password; the admin user is created during first initialization of JATOS; don't confuse admin user
+     * with the Role ADMIN
      */
     public static final String ADMIN_PASSWORD = "admin";
     /**
-     * Default admin name; the admin user is created during first initialization
-     * of JATOS; don't confuse admin user with the Role ADMIN
+     * Default admin name; the admin user is created during first initialization of JATOS; don't confuse admin user with
+     * the Role ADMIN
      */
     public static final String ADMIN_NAME = "Admin";
 
@@ -49,16 +53,17 @@ public class UserService {
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
+    private final JPAApi jpa;
 
     @Inject
-    UserService(StudyService studyService,
-            AuthenticationService authenticationService, UserDao userDao,
-            StudyDao studyDao, WorkerDao workerDao) {
+    UserService(StudyService studyService, AuthenticationService authenticationService, UserDao userDao,
+            StudyDao studyDao, WorkerDao workerDao, JPAApi jpa) {
         this.studyService = studyService;
         this.authenticationService = authenticationService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
+        this.jpa = jpa;
     }
 
     /**
@@ -69,8 +74,7 @@ public class UserService {
     }
 
     /**
-     * Retrieves the user with the given email from the DB. Throws an Exception
-     * if it doesn't exist.
+     * Retrieves the user with the given email from the DB. Throws an Exception if it doesn't exist.
      */
     public User retrieveUser(String email) throws NotFoundException {
         email = email.toLowerCase();
@@ -81,15 +85,29 @@ public class UserService {
         return user;
     }
 
-    public User createAndPersistAdmin() {
-        User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME);
-        createAndPersistUser(adminUser, ADMIN_PASSWORD, true);
-        return adminUser;
+    /**
+     * Check for user admin: In case the application is started the first time we need an initial user: admin. If admin
+     * can't be found, create one.
+     */
+    public void createAdminIfNotExists() {
+        jpa.withTransaction(() -> {
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            if (admin == null) {
+                admin = new User(ADMIN_EMAIL, ADMIN_NAME);
+                createAndPersistUser(admin, ADMIN_PASSWORD, true);
+                LOGGER.info("Created Admin user");
+            }
+
+            // Some older JATOS versions miss the ADMIN role
+            if (!admin.hasRole(Role.ADMIN)) {
+                admin.addRole(Role.ADMIN);
+                userDao.update(admin);
+            }
+        });
     }
 
     /**
-     * Creates a user, sets password hash and persists him. Creates and persists
-     * an JatosWorker for the user.
+     * Creates a user, sets password hash and persists him. Creates and persists an JatosWorker for the user.
      */
     public void bindToUserAndPersist(NewUserModel newUserModel) {
         User user = new User(newUserModel.getEmail(), newUserModel.getName());
@@ -99,8 +117,7 @@ public class UserService {
     }
 
     /**
-     * Creates a user, sets password hash and persists him. Creates and persists
-     * an JatosWorker for the user.
+     * Creates a user, sets password hash and persists him. Creates and persists an JatosWorker for the user.
      */
     public void createAndPersistUser(User user, String password, boolean adminRole) {
         String passwordHash = HashUtils.getHashMD5(password);
@@ -119,8 +136,7 @@ public class UserService {
     /**
      * Change password and persist user.
      */
-    public void updatePassword(String emailOfUserToChange, String newPassword)
-            throws NotFoundException {
+    public void updatePassword(String emailOfUserToChange, String newPassword) throws NotFoundException {
         User user = retrieveUser(emailOfUserToChange);
         String newPasswordHash = HashUtils.getHashMD5(newPassword);
         user.setPasswordHash(newPasswordHash);
@@ -136,18 +152,15 @@ public class UserService {
     }
 
     /**
-     * Adds or removes the ADMIN role of the user with the given email and
-     * persists the change. It the parameter admin is true the ADMIN role will
-     * be set and if it's false it will be removed. Returns true if the user has
-     * the role in the end - or false if he hasn't.
+     * Adds or removes the ADMIN role of the user with the given email and persists the change. It the parameter admin
+     * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
+     * the end - or false if he hasn't.
      */
-    public boolean changeAdminRole(String email, boolean adminRole)
-            throws NotFoundException, ForbiddenException {
+    public boolean changeAdminRole(String email, boolean adminRole) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(email);
         User loggedInUser = authenticationService.getLoggedInUser();
         if (user.equals(loggedInUser)) {
-            throw new ForbiddenException(
-                    MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
+            throw new ForbiddenException(MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
         }
         if (user.getEmail().equals(ADMIN_EMAIL)) {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS);
@@ -163,12 +176,10 @@ public class UserService {
     }
 
     /**
-     * Removes the User belonging to the given email from the database. It also
-     * removes all studies where this user is the last member (which
-     * subsequently removes all components, results and the study assets too).
+     * Removes the User belonging to the given email from the database. It also removes all studies where this user is
+     * the last member (which subsequently removes all components, results and the study assets too).
      */
-    public void removeUser(String email)
-            throws NotFoundException, ForbiddenException, IOException {
+    public void removeUser(String email) throws NotFoundException, ForbiddenException, IOException {
         User user = retrieveUser(email);
         if (user.getEmail().equals(ADMIN_EMAIL)) {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_DELETE_ADMIN);
