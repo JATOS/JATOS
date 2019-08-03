@@ -108,7 +108,6 @@ public class UsersControllerTest {
         Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
-        assertThat(result.charset().get()).isEqualToIgnoringCase("utf-8");
         assertThat(result.contentType().get()).isEqualTo("application/json");
     }
 
@@ -127,7 +126,6 @@ public class UsersControllerTest {
         Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
-        assertThat(result.charset().get()).isEqualToIgnoringCase("UTF-8");
         assertThat(result.contentType().get()).isEqualTo("application/json");
 
         // Clean-up
@@ -167,7 +165,6 @@ public class UsersControllerTest {
         Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
-        assertThat(result.charset().get()).isEqualToIgnoringCase("UTF-8");
         assertThat(result.contentType().get()).isEqualTo("application/json");
     }
 

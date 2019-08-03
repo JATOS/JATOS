@@ -342,6 +342,7 @@ public class StudyResult {
         if (!(obj instanceof StudyResult)) return false;
 
         StudyResult other = (StudyResult) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 

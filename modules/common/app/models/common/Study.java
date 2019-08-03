@@ -351,6 +351,7 @@ public class Study {
         if (!(obj instanceof Study)) return false;
 
         Study other = (Study) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 

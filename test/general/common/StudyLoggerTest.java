@@ -21,6 +21,7 @@ import play.libs.Json;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -106,10 +107,10 @@ public class StudyLoggerTest {
         Path logPath = Paths.get(studyLogger.getPath(study));
         assertThat(Files.isReadable(logPath)).isTrue();
 
-        studyLogger.retire(study);
+        String retiredLogFilename = studyLogger.retire(study);
 
         // Check that the log is renamed
-        Path retiredLogPath = Paths.get(studyLogger.getRetiredPath(study));
+        Path retiredLogPath = Paths.get(Common.getStudyLogsPath() + File.separator + retiredLogFilename);
         assertThat(Files.notExists(logPath)).isTrue();
         assertThat(Files.exists(retiredLogPath)).isTrue();
 
@@ -153,45 +154,17 @@ public class StudyLoggerTest {
     }
 
     @Test
-    public void checkLogStudyResultDataExporting() throws IOException {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Worker worker = testHelper.getAdmin().getWorker();
-        Batch batch = study.getDefaultBatch();
-
-        List<StudyResult> studyResultList = get2StudyResults(study, worker, batch);
-
-        String exportedResultDataStr = "whole exported result data";
-        studyLogger.logStudyResultDataExporting(studyResultList, exportedResultDataStr);
-
-        Path logPath = Paths.get(studyLogger.getPath(study));
-        List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
-
-        assertThat(json.has("msg")).isTrue();
-        assertThat(json.has("timestamp")).isTrue();
-
-        // Check file hash
-        assertThat(json.has("fileHash")).isTrue();
-        assertThat(json.get("fileHash").asText()).isEqualTo(
-                HashUtils.getHash(exportedResultDataStr, HashUtils.SHA_256));
-
-        check4ResultDataHashes(json);
-
-        // Check worker IDs
-        assertThat(json.has("workerIds")).isTrue();
-        json.get("workerIds").forEach(node -> assertThat(node.asLong()).isEqualTo(worker.getId()));
-    }
-
-    @Test
     public void checkLogComponentResultDataExporting() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Worker worker = testHelper.getAdmin().getWorker();
         Batch batch = study.getDefaultBatch();
 
-        List<ComponentResult> componentResultList = get4ComponentResults(study, worker, batch);
+        StudyResult studyResult = new StudyResult(study, batch, worker);
+        ComponentResult componentResult = new ComponentResult(study.getFirstComponent().get());
+        componentResult.setData("result data 1");
+        componentResult.setStudyResult(studyResult);
 
-        String exportedResultDataStr = "whole exported result data";
-        studyLogger.logComponentResultDataExporting(componentResultList, exportedResultDataStr);
+        studyLogger.logResultDataExporting(componentResult);
 
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
@@ -199,16 +172,13 @@ public class StudyLoggerTest {
 
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("msg")).isTrue();
-
-        // Check file hash
-        assertThat(json.has("fileHash")).isTrue();
-        assertThat(json.get("fileHash").asText()).isEqualTo(
-                HashUtils.getHash(exportedResultDataStr, HashUtils.SHA_256));
-        check4ResultDataHashes(json);
-
-        // Check worker IDs
-        assertThat(json.has("workerIds")).isTrue();
-        json.get("workerIds").forEach(node -> assertThat(node.asLong()).isEqualTo(worker.getId()));
+        assertThat(json.has("componentUuid")).isTrue();
+        assertThat(json.get("componentUuid").asText()).isEqualTo(componentResult.getComponent().getUuid());
+        assertThat(json.has("workerId")).isTrue();
+        assertThat(json.get("workerId").asLong()).isEqualTo(componentResult.getWorkerId());
+        assertThat(json.has("dataHash")).isTrue();
+        String hash1 = HashUtils.getHash("result data 1", HashUtils.SHA_256);
+        assertThat(json.get("dataHash").asText()).isEqualTo(hash1);
     }
 
     @Test

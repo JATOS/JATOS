@@ -125,8 +125,8 @@ public class StudyLogger {
         }
     }
 
-    public void retire(Study study) {
-        if (!Common.isStudyLogsEnabled()) return;
+    public String retire(Study study) {
+        if (!Common.isStudyLogsEnabled()) return null;
         log(study, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
         Path logPath = Paths.get(getPath(study));
         Path retiredLogPath = Paths.get(getRetiredPath(study));
@@ -137,6 +137,7 @@ public class StudyLogger {
                 LOGGER.error("Study log couldn't be moved from " + logPath + " to " + retiredLogPath, e);
             }
         }
+        return retiredLogPath.getFileName().toString();
     }
 
     public void log(Study study, String msg) {

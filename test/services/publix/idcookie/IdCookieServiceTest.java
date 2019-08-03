@@ -56,8 +56,8 @@ public class IdCookieServiceTest {
 
     @Before
     public void startApp() throws Exception {
-        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-                .builder(new ApplicationLoader.Context(Environment.simple()));
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader().builder(
+                new ApplicationLoader.Context(Environment.simple()));
         injector = Guice.createInjector(builder.applicationModule());
         injector.injectMembers(this);
     }
@@ -70,12 +70,11 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getIdCookie(): Check normal functioning - it should
-     * return the IdCookies specified by the study result ID
+     * IdCookieService.getIdCookie(): Check normal functioning - it should return the IdCookies specified by the study
+     * result ID
      */
     @Test
-    public void checkGetIdCookie() throws BadRequestPublixException,
-            InternalServerErrorPublixException {
+    public void checkGetIdCookie() throws BadRequestPublixException, InternalServerErrorPublixException {
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1L);
         IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2L);
         List<Cookie> cookieList = new ArrayList<>();
@@ -95,8 +94,8 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getIdCookie(): if an IdCookie for the given study result
-     * ID doesn't exist an BadRequestPublixException should be thrown
+     * IdCookieService.getIdCookie(): if an IdCookie for the given study result ID doesn't exist an
+     * BadRequestPublixException should be thrown
      */
     @Test
     public void checkGetIdCookieNotFound() throws InternalServerErrorPublixException {
@@ -114,8 +113,8 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getIdCookie(): it should return true if at least one
-     * IdCookie has study assets that equal the given one and false otherwise
+     * IdCookieService.getIdCookie(): it should return true if at least one IdCookie has study assets that equal the
+     * given one and false otherwise
      */
     @Test
     public void checkOneIdCookieHasThisStudyAssets() throws InternalServerErrorPublixException {
@@ -134,12 +133,10 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getIdCookie(): in case there are no cookies it should
-     * return false
+     * IdCookieService.getIdCookie(): in case there are no cookies it should return false
      */
     @Test
-    public void checkOneIdCookieHasThisStudyAssetsEmptyList()
-            throws InternalServerErrorPublixException {
+    public void checkOneIdCookieHasThisStudyAssetsEmptyList() throws InternalServerErrorPublixException {
         List<Cookie> cookieList = new ArrayList<>();
         testHelper.mockContext(cookieList);
 
@@ -147,12 +144,10 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.writeIdCookie(): Check for proper IdCookie name and
-     * values.
+     * IdCookieService.writeIdCookie(): Check for proper IdCookie name and values.
      */
     @Test
-    public void checkWriteIdCookie()
-            throws InternalServerErrorPublixException, BadRequestPublixException {
+    public void checkWriteIdCookie() throws InternalServerErrorPublixException, BadRequestPublixException {
         List<Cookie> cookieList = new ArrayList<>();
         testHelper.mockContext(cookieList);
 
@@ -185,9 +180,8 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.writeIdCookie(): If the new IdCookie has the same ID as
-     * an existing one it should be overwritten. Additionally check for proper
-     * IdCookie name and values.
+     * IdCookieService.writeIdCookie(): If the new IdCookie has the same ID as an existing one it should be overwritten.
+     * Additionally check for proper IdCookie name and values.
      */
     @Test
     public void checkWriteIdCookieOverwriteWithSameId()
@@ -213,9 +207,8 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.writeIdCookie(): If none of the existing IdCookies has
-     * the ID of the new one and the max cookie number is not yet reached log
-     * a new IdCookie.
+     * IdCookieService.writeIdCookie(): If none of the existing IdCookies has the ID of the new one and the max cookie
+     * number is not yet reached log a new IdCookie.
      */
     @Test
     public void checkWriteIdCookieWriteNewCookie()
@@ -240,16 +233,14 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.writeIdCookie(): If none of the existing IdCookies has
-     * the ID of the new one and the max cookie number is already reached an
-     * InternalServerErrorPublixException should be thrown.
+     * IdCookieService.writeIdCookie(): If none of the existing IdCookies has the ID of the new one and the max cookie
+     * number is already reached an InternalServerErrorPublixException should be thrown.
      */
     @Test
     public void checkWriteIdCookieOverwriteOldest() {
         List<Cookie> cookieList = new ArrayList<>();
         // Create max IdCookies with study result IDs starting from 100l
-        for (long i = 100L; i < (100L
-                + IdCookieCollection.MAX_ID_COOKIES); i++) {
+        for (long i = 1000L; i < (1000L + IdCookieCollection.MAX_ID_COOKIES); i++) {
             IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
             cookieList.add(idCookieTestHelper.buildCookie(idCookie));
         }
@@ -268,8 +259,8 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.discardIdCookie(): just check removal of the IdCookie
-     * (this method is just a wrapper and the actual method is tested elsewhere)
+     * IdCookieService.discardIdCookie(): just check removal of the IdCookie (this method is just a wrapper and the
+     * actual method is tested elsewhere)
      */
     @Test
     public void checkDiscardIdCookie() throws InternalServerErrorPublixException {
@@ -320,8 +311,7 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getOldestIdCookie(): check that the oldest IdCookie is
-     * retrieved
+     * IdCookieService.getOldestIdCookie(): check that the oldest IdCookie is retrieved
      */
     @Test
     public void checkGetOldestIdCookie() throws InternalServerErrorPublixException {
@@ -341,8 +331,7 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getOldestIdCookie(): if there is no IdCookie it should
-     * return null
+     * IdCookieService.getOldestIdCookie(): if there is no IdCookie it should return null
      */
     @Test
     public void checkGetOldestIdCookieEmpty() throws InternalServerErrorPublixException {
@@ -354,12 +343,10 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getStudyResultIdFromOldestIdCookie(): return study result
-     * Id
+     * IdCookieService.getStudyResultIdFromOldestIdCookie(): return study result Id
      */
     @Test
-    public void checkGetStudyResultIdFromOldestIdCookie()
-            throws InternalServerErrorPublixException {
+    public void checkGetStudyResultIdFromOldestIdCookie() throws InternalServerErrorPublixException {
         // Create a couple of IdCookie: the oldest will be the one that was
         // first added to the list
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1L);
@@ -376,12 +363,10 @@ public class IdCookieServiceTest {
     }
 
     /**
-     * IdCookieService.getStudyResultIdFromOldestIdCookie(): if there is no
-     * IdCookie it should return null
+     * IdCookieService.getStudyResultIdFromOldestIdCookie(): if there is no IdCookie it should return null
      */
     @Test
-    public void checkGetStudyResultIdFromOldestIdCookieEmpty()
-            throws InternalServerErrorPublixException {
+    public void checkGetStudyResultIdFromOldestIdCookieEmpty() throws InternalServerErrorPublixException {
         List<Cookie> cookieList = new ArrayList<>();
         testHelper.mockContext(cookieList);
 

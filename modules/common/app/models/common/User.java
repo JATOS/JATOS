@@ -176,6 +176,7 @@ public class User {
         if (!(obj instanceof User)) return false;
 
         User other = (User) obj;
+        if (getEmail() == null) return other.getEmail() == null;
         return getEmail().equals(other.getEmail());
     }
 

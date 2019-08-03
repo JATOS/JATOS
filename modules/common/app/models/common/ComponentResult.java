@@ -211,6 +211,7 @@ public class ComponentResult {
         if (!(obj instanceof ComponentResult)) return false;
 
         ComponentResult other = (ComponentResult) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 

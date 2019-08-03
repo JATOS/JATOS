@@ -208,6 +208,7 @@ public class Component {
 		if (!(obj instanceof Component)) return false;
 
 		Component other = (Component) obj;
+		if (getId() == null) return other.getId() == null;
 		return getId().equals(other.getId());
 	}
 

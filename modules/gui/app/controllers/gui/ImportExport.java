@@ -252,7 +252,7 @@ public class ImportExport extends Controller {
 
         Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
                 .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .getResultDataByStudyResultIds(sourceActor, studyResultIdList, loggedInUser));
+                        .byStudyResultIds(sourceActor, studyResultIdList, loggedInUser));
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -269,8 +269,7 @@ public class ImportExport extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .getResultDataByStudy(sourceActor, study, loggedInUser));
+                .mapMaterializedValue(sourceActor -> resultDataExporter.byStudy(sourceActor, study, loggedInUser));
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -289,7 +288,7 @@ public class ImportExport extends Controller {
 
         Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
                 .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .getResultDataByComponentResultIds(sourceActor, componentResultIdList, loggedInUser));
+                        .byComponentResultIds(sourceActor, componentResultIdList, loggedInUser));
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -304,8 +303,8 @@ public class ImportExport extends Controller {
     public Result exportDataOfAllComponentResults(Long studyId, Long componentId) {
         User loggedInUser = authenticationService.getLoggedInUser();
         Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .getResultDataByComponent(sourceActor, componentId, loggedInUser));
+                .mapMaterializedValue(
+                        sourceActor -> resultDataExporter.byComponent(sourceActor, componentId, loggedInUser));
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -320,8 +319,7 @@ public class ImportExport extends Controller {
     public Result exportAllResultDataOfWorker(Long workerId) {
         User loggedInUser = authenticationService.getLoggedInUser();
         Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .getResultDataByWorker(sourceActor, workerId, loggedInUser));
+                .mapMaterializedValue(sourceActor -> resultDataExporter.byWorker(sourceActor, workerId, loggedInUser));
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 

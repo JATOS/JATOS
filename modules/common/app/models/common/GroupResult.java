@@ -222,6 +222,7 @@ public class GroupResult {
         if (!(obj instanceof GroupResult)) return false;
 
         GroupResult other = (GroupResult) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 

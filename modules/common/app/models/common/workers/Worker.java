@@ -175,6 +175,7 @@ public abstract class Worker {
         if (!(obj instanceof Worker)) return false;
 
         Worker other = (Worker) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 

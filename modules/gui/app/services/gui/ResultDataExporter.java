@@ -58,7 +58,7 @@ public class ResultDataExporter {
      * Retrieves all StudyResults that belong to the given worker and that the given user is allowed to see (means
      * StudyResults from studies he is a user of), checks them and returns all their result data.
      */
-    public Object getResultDataByWorker(ActorRef sourceActor, Long workerId, User user) {
+    public Object byWorker(ActorRef sourceActor, Long workerId, User user) {
         return jpaApi.withTransaction(entityManager -> {
             Worker worker = workerDao.findById(workerId);
 
@@ -79,7 +79,7 @@ public class ResultDataExporter {
     /**
      * Retrieves all StudyResults of the given study, checks them and returns all their result data.
      */
-    public Object getResultDataByStudy(ActorRef sourceActor, Study study, User user) {
+    public Object byStudy(ActorRef sourceActor, Study study, User user) {
         return jpaApi.withTransaction(entityManager -> {
             ScrollableResults results = studyResultDao.findAllByStudyScrollable(study);
             while (results.next()) {
@@ -99,7 +99,7 @@ public class ResultDataExporter {
     /**
      * Retrieves all ComponentResults of the given component, checks them and returns all their result data.
      */
-    public Object getResultDataByComponent(ActorRef sourceActor, Long componentId, User user) {
+    public Object byComponent(ActorRef sourceActor, Long componentId, User user) {
         return jpaApi.withTransaction(entityManager -> {
             Component component = componentDao.findById(componentId);
             ScrollableResults results = componentResultDao.findAllByComponentScrollable(component);
@@ -120,7 +120,7 @@ public class ResultDataExporter {
     /**
      * Retrieves the StudyResults that correspond to the IDs, checks them and returns all their result data.
      */
-    public Object getResultDataByStudyResultIds(ActorRef sourceActor, List<Long> studyResultIdList, User user) {
+    public Object byStudyResultIds(ActorRef sourceActor, List<Long> studyResultIdList, User user) {
         return jpaApi.withTransaction(entityManager -> {
             for (Long studyResultId : studyResultIdList) {
                 try {
@@ -143,7 +143,7 @@ public class ResultDataExporter {
     /**
      * Retrieves the ComponentResults that correspond to the IDs, checks them and returns all their result data.
      */
-    public Object getResultDataByComponentResultIds(ActorRef sourceActor, List<Long> componentResultIdList, User user) {
+    public Object byComponentResultIds(ActorRef sourceActor, List<Long> componentResultIdList, User user) {
         return jpaApi.withTransaction(entityManager -> {
             for (Long componentResultId : componentResultIdList) {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);

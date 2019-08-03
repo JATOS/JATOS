@@ -380,6 +380,7 @@ public class StudyV2 {
         if (!(obj instanceof StudyV2)) return false;
 
         StudyV2 other = (StudyV2) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 

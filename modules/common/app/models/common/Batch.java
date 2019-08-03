@@ -312,6 +312,7 @@ public class Batch {
         if (!(obj instanceof Batch)) return false;
 
         Batch other = (Batch) obj;
+        if (getId() == null) return other.getId() == null;
         return getId().equals(other.getId());
     }
 
