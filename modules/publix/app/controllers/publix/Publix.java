@@ -303,10 +303,10 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
     @Override
     public Result finishStudy(Long studyId, Long studyResultId,
-            Boolean successful, String errorMsg) throws PublixException {
+            Boolean successful, String message) throws PublixException {
         LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
                 + studyResultId + ", " + "successful " + successful + ", "
-                + "errorMsg \"" + errorMsg + "\"");
+                + "message \"" + message + "\"");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -315,7 +315,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
         if (!PublixHelpers.studyDone(studyResult)) {
-            publixUtils.finishStudyResult(successful, errorMsg, studyResult);
+            publixUtils.finishStudyResult(successful, message, studyResult);
             publixUtils.finishMemberInGroup(studyResult);
             groupChannel.closeGroupChannel(studyResult);
         }
@@ -326,7 +326,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (!successful) {
-                return ok(views.html.publix.error.render(errorMsg));
+                return ok(views.html.publix.error.render(message));
             } else {
                 return ok(views.html.publix.finishedAndThanks.render());
             }

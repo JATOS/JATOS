@@ -468,35 +468,35 @@ public class PublixInterceptor extends Controller implements IPublix {
 
     @Override
     @Transactional
-    public Result finishStudy(Long studyId, Long studyResultId, Boolean successful, String errorMsg)
+    public Result finishStudy(Long studyId, Long studyResultId, Boolean successful, String message)
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case JatosWorker.WORKER_TYPE:
                 result = instanceOfPublix(JatosPublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                        .finishStudy(studyId, studyResultId, successful, message);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalSinglePublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                        .finishStudy(studyId, studyResultId, successful, message);
                 break;
             case PersonalMultipleWorker.WORKER_TYPE:
                 result = instanceOfPublix(PersonalMultiplePublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                        .finishStudy(studyId, studyResultId, successful, message);
                 break;
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                        .finishStudy(studyId, studyResultId, successful, message);
                 break;
             case GeneralMultipleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralMultiplePublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                        .finishStudy(studyId, studyResultId, successful, message);
                 break;
             // Handle MTWorker like MTSandboxWorker
             case MTSandboxWorker.WORKER_TYPE:
             case MTWorker.WORKER_TYPE:
                 result = instanceOfPublix(MTPublix.class)
-                        .finishStudy(studyId, studyResultId, successful, errorMsg);
+                        .finishStudy(studyId, studyResultId, successful, message);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);

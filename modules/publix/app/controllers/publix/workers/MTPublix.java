@@ -136,10 +136,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
     @Override
     public Result finishStudy(Long studyId, Long studyResultId,
-            Boolean successful, String errorMsg) throws PublixException {
+            Boolean successful, String message) throws PublixException {
         LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
                 + studyResultId + ", " + "successful " + successful + ", "
-                + "errorMsg \"" + errorMsg + "\"");
+                + "message \"" + message + "\"");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -151,8 +151,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
                 studyResultId);
         String confirmationCode;
         if (!PublixHelpers.studyDone(studyResult)) {
-            confirmationCode = publixUtils.finishStudyResult(successful,
-                    errorMsg, studyResult);
+            confirmationCode = publixUtils.finishStudyResult(successful, message, studyResult);
             publixUtils.finishMemberInGroup(studyResult);
             groupChannel.closeGroupChannel(studyResult);
         } else {
@@ -165,7 +164,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             return ok(confirmationCode);
         } else {
             if (!successful) {
-                return ok(views.html.publix.error.render(errorMsg));
+                return ok(views.html.publix.error.render(message));
             } else {
                 return ok(views.html.publix.confirmationCode
                         .render(confirmationCode));

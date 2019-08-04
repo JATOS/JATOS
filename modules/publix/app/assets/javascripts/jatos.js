@@ -1,7 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2018
+ * Author Kristian Lange 2014 - 2019
  * Licensed under Apache License 2.0
  * 
  * Uses plugin jquery.ajax-retry:
@@ -1978,15 +1978,21 @@ var jatos = {};
 			return abortingDeferred.promise();
 		}
 
-		return jatos.setStudySessionData(jatos.studySessionData).always(abort);
+		return jatos.setStudySessionData(jatos.studySessionData).always(abort).promise();
 	};
 
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
 	 * 
 	 * @param {optional String} message - Message that should be logged
+	 * @param {optional Boolean} showEndPage - If true an end page is shown - if false it
+	 *				behaves like jatos.abortStudyAjax
 	 */
-	jatos.abortStudy = function (message) {
+	jatos.abortStudy = function (message, showEndPage) {
+		if (!showEndPage) {
+			return jatos.abortStudyAjax(message);
+		}
+
 		if (isDeferredPending(abortingDeferred)) {
 			callingOnError(null, "Can abort only once");
 			return rejectedPromise();
@@ -2002,7 +2008,7 @@ var jatos = {};
 				window.location.href = url + "&message=" + message;
 			}
 		}
-		jatos.setStudySessionData(jatos.studySessionData).always(abort);
+		return jatos.setStudySessionData(jatos.studySessionData).always(abort).promise();
 	};
 
 	/**
@@ -2011,13 +2017,13 @@ var jatos = {};
 	 * @param {optional Boolean} successful - 'true' if study should finish
 	 *				successful and the participant should get the confirmation
 	 *				code - 'false' otherwise.
-	 * @param {optional String} errorMsg - Error message that should be logged.
+	 * @param {optional String} message - A message that should be logged.
 	 * @param {optional Function} onSuccess - Function to be called in case of
 	 *				successful submit
 	 * @param {optional Function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
-	jatos.endStudyAjax = function (successful, errorMsg, onSuccess, onError) {
+	jatos.endStudyAjax = function (successful, message, onSuccess, onError) {
 		if (isDeferredPending(endingDeferred)) {
 			callingOnError(onError, "Can end only once");
 			return rejectedPromise();
@@ -2027,18 +2033,18 @@ var jatos = {};
 			endingDeferred = jatos.jQuery.Deferred();
 			var url = "../end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
-			if (typeof successful == 'boolean' && typeof errorMsg == 'string') {
+			if (typeof successful == 'boolean' && typeof message == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful,
-					"errorMsg": errorMsg
+					"message": message
 				});
-			} else if (typeof successful == 'boolean' && typeof errorMsg != 'string') {
+			} else if (typeof successful == 'boolean' && typeof message != 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful
 				});
-			} else if (typeof successful != 'boolean' && typeof errorMsg == 'string') {
+			} else if (typeof successful != 'boolean' && typeof message == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
-					"errorMsg": errorMsg
+					"message": message
 				});
 			} else {
 				fullUrl = url;
@@ -2063,7 +2069,7 @@ var jatos = {};
 			});
 			return endingDeferred.promise();
 		}
-		return jatos.setStudySessionData(jatos.studySessionData).always(end);
+		return jatos.setStudySessionData(jatos.studySessionData).always(end).promise();
 	};
 
 	/**
@@ -2072,9 +2078,15 @@ var jatos = {};
 	 * @param {optional Boolean} successful - 'true' if study should finish
 	 *			successful and the participant should get the confirmation code
 	 *			- 'false' otherwise.
-	 * @param {optional String} errorMsg - Error message that should be logged.
+	 * @param {optional String} message - A message that should be logged.
+	 * @param {optional Boolean} showEndPage - If true an end page is shown - if false it
+	 *			behaves like jatos.endStudyAjax
 	 */
-	jatos.endStudy = function (successful, errorMsg) {
+	jatos.endStudy = function (successful, message, showEndPage) {
+		if (!showEndPage) {
+			return jatos.endStudyAjax(successful, message);
+		}
+
 		if (isDeferredPending(endingDeferred)) {
 			callingOnError(null, "Can end only once");
 			return;
@@ -2084,18 +2096,18 @@ var jatos = {};
 			endingDeferred = jatos.jQuery.Deferred();
 			var url = "../end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
-			if (typeof successful == 'boolean' && typeof errorMsg == 'string') {
+			if (typeof successful == 'boolean' && typeof message == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful,
-					"errorMsg": errorMsg
+					"message": message
 				});
-			} else if (typeof successful == 'boolean' && typeof errorMsg != 'string') {
+			} else if (typeof successful == 'boolean' && typeof message != 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful
 				});
-			} else if (typeof successful != 'boolean' && typeof errorMsg == 'string') {
+			} else if (typeof successful != 'boolean' && typeof message == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
-					"errorMsg": errorMsg
+					"message": message
 				});
 			} else {
 				fullUrl = url;
@@ -2103,7 +2115,7 @@ var jatos = {};
 			window.location.href = fullUrl;
 		}
 
-		jatos.setStudySessionData(jatos.studySessionData).always(end);
+		return jatos.setStudySessionData(jatos.studySessionData).always(end).promise();
 	};
 
 	/**

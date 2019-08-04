@@ -269,12 +269,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     }
 
     @Override
-    public Result finishStudy(Long studyId, Long studyResultId, Boolean successful, String errorMsg)
+    public Result finishStudy(Long studyId, Long studyResultId, Boolean successful, String message)
             throws PublixException {
         LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
                 + studyResultId + ", " + "logged-in user email "
                 + session(SESSION_USER_EMAIL) + ", " + "successful "
-                + successful + ", " + "errorMsg \"" + errorMsg + "\"");
+                + successful + ", " + "message \"" + message + "\"");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -283,7 +283,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
         if (!PublixHelpers.studyDone(studyResult)) {
-            publixUtils.finishStudyResult(successful, errorMsg, studyResult);
+            publixUtils.finishStudyResult(successful, message, studyResult);
             publixUtils.finishMemberInGroup(studyResult);
             groupChannel.closeGroupChannel(studyResult);
         }
@@ -293,8 +293,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         if (HttpUtils.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
-            if (errorMsg != null) {
-                Controller.flash("info", PublixErrorMessages.studyFinishedWithMessage(errorMsg));
+            if (message != null) {
+                Controller.flash("info", PublixErrorMessages.studyFinishedWithMessage(message));
             }
             return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId());
         }
