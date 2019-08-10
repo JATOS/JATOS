@@ -1989,7 +1989,7 @@ var jatos = {};
 	 *				behaves like jatos.abortStudyAjax
 	 */
 	jatos.abortStudy = function (message, showEndPage) {
-		if (!showEndPage) {
+		if (typeof showEndPage !== "undefined" && !showEndPage) {
 			return jatos.abortStudyAjax(message);
 		}
 
@@ -2083,7 +2083,7 @@ var jatos = {};
 	 *			behaves like jatos.endStudyAjax
 	 */
 	jatos.endStudy = function (successful, message, showEndPage) {
-		if (!showEndPage) {
+		if (typeof showEndPage !== "undefined" && !showEndPage) {
 			return jatos.endStudyAjax(successful, message);
 		}
 
