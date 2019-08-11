@@ -18,8 +18,6 @@ import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
-import play.Logger;
-import play.Logger.ALogger;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
@@ -68,13 +66,10 @@ public class Studies extends Controller {
     private final StudyLogger studyLogger;
 
     @Inject
-    Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-            StudyService studyService, UserService userService,
-            AuthenticationService authenticationService,
-            WorkerService workerService, BreadcrumbsService breadcrumbsService,
-            StudyDao studyDao, ComponentDao componentDao,
-            StudyResultDao studyResultDao, UserDao userDao,
-            ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+    Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, StudyService studyService,
+            UserService userService, AuthenticationService authenticationService, WorkerService workerService,
+            BreadcrumbsService breadcrumbsService, StudyDao studyDao, ComponentDao componentDao,
+            StudyResultDao studyResultDao, UserDao userDao, ComponentResultDao componentResultDao, JsonUtils jsonUtils,
             IOUtils ioUtils, FormFactory formFactory, StudyLogger studyLogger) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -106,9 +101,8 @@ public class Studies extends Controller {
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
-        return status(httpStatus,
-                views.html.gui.study.study.render(loggedInUser, breadcrumbs,
-                        HttpUtils.isLocalhost(), study, studyResultCount));
+        return status(httpStatus, views.html.gui.study.study
+                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study, studyResultCount));
     }
 
     @Transactional
@@ -134,11 +128,10 @@ public class Studies extends Controller {
         try {
             ioUtils.createStudyAssetsDir(studyProperties.getDirName());
         } catch (IOException e) {
-            return badRequest(form.withError(StudyProperties.DIRNAME, e.getMessage()).errorsAsJson());
+            return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
 
-        Study study = studyService.createAndPersistStudy(loggedInUser,
-                studyProperties);
+        Study study = studyService.createAndPersistStudy(loggedInUser, studyProperties);
         return ok(study.getId().toString());
     }
 
@@ -171,17 +164,15 @@ public class Studies extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Form<StudyProperties> form = formFactory.form(StudyProperties.class)
-                .bindFromRequest();
+        Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
         if (form.hasErrors()) {
             return badRequest(form.errorsAsJson());
         }
         StudyProperties studyProperties = form.get();
         try {
-            studyService.renameStudyAssetsDir(study,
-                    studyProperties.getDirName());
+            studyService.renameStudyAssetsDir(study, studyProperties.getDirName(), studyProperties.isDirRename());
         } catch (IOException e) {
-            return badRequest(form.withError(StudyProperties.DIRNAME, e.getMessage()).errorsAsJson());
+            return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
 
         studyService.updateStudy(study, studyProperties);
@@ -263,8 +254,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax GET request that gets all users and whether they are admin of this
-     * study as a JSON array.
+     * Ajax GET request that gets all users and whether they are admin of this study as a JSON array.
      */
     @Transactional
     @Authenticated
@@ -285,8 +275,7 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result toggleMemberUser(Long studyId, String email, boolean isMember)
-            throws JatosGuiException {
+    public Result toggleMemberUser(Long studyId, String email, boolean isMember) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         User userToChange = null;
@@ -343,8 +332,7 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result changeComponentOrder(Long studyId, Long componentId,
-            String newPosition) throws JatosGuiException {
+    public Result changeComponentOrder(Long studyId, Long componentId, String newPosition) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -360,9 +348,8 @@ public class Studies extends Controller {
     }
 
     /**
-     * Actually runs the study with the given study ID, in the batch with the
-     * given batch ID while using a JatosWorker. It redirects to
-     * Publix.startStudy() action.
+     * Actually runs the study with the given study ID, in the batch with the given batch ID while using a JatosWorker.
+     * It redirects to Publix.startStudy() action.
      */
     @Transactional
     @Authenticated
@@ -372,10 +359,9 @@ public class Studies extends Controller {
         checkStandardForStudy(studyId, study, loggedInUser);
 
         session("jatos_run", "RUN_STUDY");
-        String startStudyUrl = Common.getPlayHttpContext()
-                + "publix/" + study.getId() + "/start?"
-                + "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
-                + loggedInUser.getWorker().getId();
+        String startStudyUrl =
+                Common.getPlayHttpContext() + "publix/" + study.getId() + "/start?" + "batchId" + "=" + batchId + "&"
+                        + "jatosWorkerId" + "=" + loggedInUser.getWorker().getId();
         return redirect(startStudyUrl);
     }
 
@@ -393,10 +379,8 @@ public class Studies extends Controller {
 
         List<Component> componentList = study.getComponentList();
         List<Integer> resultCountList = new ArrayList<>();
-        componentList.forEach(component -> resultCountList
-                .add(componentResultDao.countByComponent(component)));
-        JsonNode dataAsJson = jsonUtils
-                .allComponentsForUI(study.getComponentList(), resultCountList);
+        componentList.forEach(component -> resultCountList.add(componentResultDao.countByComponent(component)));
+        JsonNode dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList(), resultCountList);
         return ok(dataAsJson);
     }
 
@@ -406,13 +390,12 @@ public class Studies extends Controller {
      * @param studyId    study's ID
      * @param entryLimit It cuts the log after the number of lines given in entryLimit
      * @param download   If true streams the whole study log file - if not only until entryLimit
-     * @return Depending on 'download' flag returns the whole study log file - or only part of it
-     * (until entryLimit) in reverse order and 'Transfer-Encoding:chunked'
+     * @return Depending on 'download' flag returns the whole study log file - or only part of it (until entryLimit) in
+     * reverse order and 'Transfer-Encoding:chunked'
      */
     @Transactional
     @Authenticated
-    public Result studyLog(Long studyId, int entryLimit, boolean download)
-            throws JatosGuiException {
+    public Result studyLog(Long studyId, int entryLimit, boolean download) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
@@ -423,10 +406,8 @@ public class Studies extends Controller {
                 return notFound();
             }
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
-            return new Result(
-                    new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, Optional.empty(), Optional.of("text/plain"))
-            );
+            return new Result(new ResponseHeader(200, Collections.emptyMap()),
+                    new HttpEntity.Streamed(source, Optional.empty(), Optional.of("text/plain")));
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }
@@ -455,8 +436,7 @@ public class Studies extends Controller {
         return ok(dataAsJson);
     }
 
-    private void checkStandardForStudy(Long studyId, Study study,
-            User loggedInUser) throws JatosGuiException {
+    private void checkStandardForStudy(Long studyId, Study study, User loggedInUser) throws JatosGuiException {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
         } catch (ForbiddenException | BadRequestException e) {

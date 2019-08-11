@@ -60,7 +60,7 @@ public class StudyV2 {
     public static final String TITLE = "title";
     public static final String JSON_DATA = "jsonData";
     public static final String DESCRIPTION = "description";
-    public static final String DIRNAME = "dirName";
+    public static final String DIR_NAME = "dirName";
     public static final String COMMENTS = "comments";
     public static final String STUDY = "study";
     public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
@@ -342,12 +342,12 @@ public class StudyV2 {
             errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (dirName == null || dirName.trim().isEmpty()) {
-            errorList.add(new ValidationError(DIRNAME, MessagesStrings.MISSING_DIRNAME));
+            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.MISSING_DIR_NAME));
         }
         Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
         Matcher matcher = pattern.matcher(dirName);
         if (dirName != null && matcher.find()) {
-            errorList.add(new ValidationError(DIRNAME, MessagesStrings.INVALID_DIR_NAME));
+            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
         }
         if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));

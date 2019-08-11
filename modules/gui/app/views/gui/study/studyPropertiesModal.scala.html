@@ -39,9 +39,11 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="@models.gui.StudyProperties.DIRNAME">Study assets' directory name&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of the directory of your study assets in the file system of the JATOS server. All HTML, JavaScript, CSS, and images goes in there."></span></label>
+                        <label class="control-label col-xs-2" for="@models.gui.StudyProperties.DIR_NAME">Study assets' directory name&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."></span></label>
                         <div class="col-xs-10">
-                            <input type="text" class="form-control @models.gui.StudyProperties.DIRNAME" id="@models.gui.StudyProperties.DIRNAME" name="@models.gui.StudyProperties.DIRNAME" placeholder="Study assets' directory name">
+                            <input type="text" class="form-control @models.gui.StudyProperties.DIR_NAME" id="@models.gui.StudyProperties.DIR_NAME" name="@models.gui.StudyProperties.DIR_NAME" placeholder="Study assets' directory name">
+                            <input type="checkbox" class="@models.gui.StudyProperties.DIR_RENAME" name="@models.gui.StudyProperties.DIR_RENAME" value="true" hidden>
+                            <input type="hidden" name="@models.gui.StudyProperties.DIR_RENAME" value="false" />
                         </div>
                     </div>
 
@@ -85,6 +87,29 @@
     </div>
 </div>
 
+<!-- Rename study dir name confirmation  Modal -->
+<div class="modal fade" id="studyDirNameConfirmationModal" data-backdrop="static" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Study assets directory name changed</h4>
+            </div>
+            <div class="modal-body">
+                <div class="modalText"></div>
+                <div class="checkbox">
+                    <label><input type="checkbox" class="keepAssetsDirName"> Link to a different study assets directory</label>
+                    <span class="help-block">Check this box to link this study to a different directory. This will not rename any directory on the disk.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="confirmed btn btn-study">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 
 var studyJsonDataEditor;
@@ -121,6 +146,8 @@ $('#studyToolbar').on('click', '#studyPropertiesButton', function() {
 });
 
 function fillStudyPropertiesForm(properties) {
+    $('#studyPropertiesModal').data(properties);
+
     $('#studyPropertiesModal .modal-title').text("Edit Study Properties");
     $('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').text(studyId);
     $('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').closest('.form-group').show();
@@ -130,7 +157,7 @@ function fillStudyPropertiesForm(properties) {
     $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val(properties['@models.gui.StudyProperties.TITLE']);
     var description = (properties['@models.gui.StudyProperties.DESCRIPTION']) ? properties['@models.gui.StudyProperties.DESCRIPTION'] : "";
     $('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').val(description);
-    $('#studyPropertiesModal .@models.gui.StudyProperties.DIRNAME').val(properties['@models.gui.StudyProperties.DIRNAME']);
+    $('#studyPropertiesModal .@models.gui.StudyProperties.DIR_NAME').val(properties['@models.gui.StudyProperties.DIR_NAME']);
     var comments = (properties['@models.gui.StudyProperties.COMMENTS']) ? properties['@models.gui.StudyProperties.COMMENTS'] : "";
     $('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').val(comments);
     if (!studyJsonDataEditor) setupStudyJsonDataEditor();
@@ -176,6 +203,27 @@ $("#studyPropertiesForm .prettyButton").click(function(event) {
 
 $("#studyPropertiesForm").submit(function(event) {
     event.preventDefault();
+
+    var oldDirName = $('#studyPropertiesModal').data()['@models.gui.StudyProperties.DIR_NAME'];
+    var newDirName = $('#studyPropertiesModal .@models.gui.StudyProperties.DIR_NAME').val().trim();
+    if (oldDirName == newDirName) {
+        submitStudyPropertiesForm();
+    } else {
+        var htmlText = "<p>The Study assets directory name linked to this study changed from <b>" + oldDirName + "</b> to <b>" + newDirName + "</b>.</p>";
+        $('#studyDirNameConfirmationModal .modal-body .modalText').html(htmlText);
+        $('#studyDirNameConfirmationModal .keepAssetsDirName').prop('checked', false);
+        $('#studyDirNameConfirmationModal').modal('show');
+        $('#studyDirNameConfirmationModal').off('click.confirmed').on('click.confirmed', '.confirmed', () => {
+            $('#studyDirNameConfirmationModal').modal('hide');
+            // Put the checkbox result into the properties form
+            var keepAssetsDirName = $('#studyDirNameConfirmationModal .keepAssetsDirName').prop('checked');
+            $('#studyPropertiesModal .@models.gui.StudyProperties.DIR_RENAME').prop('checked', !keepAssetsDirName);
+            submitStudyPropertiesForm();
+        });
+    }
+});
+
+function submitStudyPropertiesForm() {
     // Put JSON from editor into textarea to let it be picked up by form.serialize
     var jsonData = studyJsonDataEditor.getSession().getValue();
     $("#studyPropertiesModal textarea.@models.gui.StudyProperties.JSON_DATA").val(jsonData);
@@ -211,6 +259,6 @@ $("#studyPropertiesForm").submit(function(event) {
             }
         }
     });
-});
+}
 </script>
 

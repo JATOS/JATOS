@@ -25,8 +25,8 @@ public class MessagesStrings {
     public static final String MISSING_EMAIL = "Missing email";
     public static final String EMAIL_TOO_LONG = "Email too long";
     public static final String NO_USER_LOGGED_IN = "No user logged in";
-    public static final String MISSING_DIRNAME = "Missing directory name";
-    public static final String DIRNAME_TOO_LONG = "Directory name too long";
+    public static final String MISSING_DIR_NAME = "Missing directory name";
+    public static final String DIR_NAME_TOO_LONG = "Directory name too long";
     public static final String INVALID_DIR_NAME = "Invalid directory name";
     public static final String COMPONENT_INVALID = "Component is invalid";
     public static final String STUDY_INVALID = "Study is invalid";

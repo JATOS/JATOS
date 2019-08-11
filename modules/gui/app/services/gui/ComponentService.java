@@ -36,8 +36,7 @@ public class ComponentService {
     private final IOUtils ioUtils;
 
     @Inject
-    ComponentService(ResultRemover resultRemover, StudyDao studyDao,
-            ComponentDao componentDao, IOUtils ioUtils) {
+    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils) {
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
@@ -45,8 +44,8 @@ public class ComponentService {
     }
 
     /**
-     * Clones a Component entity. Does not clone id, uuid, or date. Does not
-     * persist the clone. Does not clone the HTML file.
+     * Clones a Component entity. Does not clone id, uuid, or date. Does not persist the clone. Does not clone the HTML
+     * file.
      */
     public Component clone(Component componentToBeCloned) {
         Component clone = new Component();
@@ -76,8 +75,7 @@ public class ComponentService {
     /**
      * Update component's properties with the ones from updatedComponent.
      */
-    void updateProperties(Component component,
-            Component updatedComponent) {
+    void updateProperties(Component component, Component updatedComponent) {
         component.setTitle(updatedComponent.getTitle());
         component.setReloadable(updatedComponent.isReloadable());
         component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
@@ -88,11 +86,9 @@ public class ComponentService {
     }
 
     /**
-     * Update component's properties with the ones from updatedComponent, but
-     * not htmlFilePath and not active.
+     * Update component's properties with the ones from updatedComponent, but not htmlFilePath and not active.
      */
-    public void updateComponentAfterEdit(Component component,
-            ComponentProperties updatedProps) {
+    public void updateComponentAfterEdit(Component component, ComponentProperties updatedProps) {
         component.setTitle(updatedProps.getTitle());
         component.setReloadable(updatedProps.isReloadable());
         component.setComments(updatedProps.getComments());
@@ -101,22 +97,20 @@ public class ComponentService {
     }
 
     /**
-     * Does the same as {@link #clone(Component) cloneComponent} and
-     * additionally clones the HTML file and changes the title.
+     * Does the same as {@link #clone(Component) cloneComponent} and additionally clones the HTML file and changes the
+     * title.
      */
     public Component cloneWholeComponent(Component component) {
         Component clone = clone(component);
         clone.setTitle(cloneTitle(component.getTitle()));
         try {
-            String clonedHtmlFileName = ioUtils.cloneComponentHtmlFile(
-                    component.getStudy().getDirName(),
+            String clonedHtmlFileName = ioUtils.cloneComponentHtmlFile(component.getStudy().getDirName(),
                     component.getHtmlFilePath());
             clone.setHtmlFilePath(clonedHtmlFileName);
         } catch (IOException e) {
             // Just log it and give a warning - a component is allowed to have
             // no HTML file
-            RequestScopeMessaging.warning(MessagesStrings
-                    .componentCloneHtmlNotCloned(component.getHtmlFilePath()));
+            RequestScopeMessaging.warning(MessagesStrings.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
             LOGGER.info(".cloneWholeComponent: " + e.getMessage());
         }
         return clone;
@@ -151,11 +145,9 @@ public class ComponentService {
     }
 
     /**
-     * Initialise and persist the given Component. Generates UUID. Updates its
-     * study.
+     * Initialise and persist the given Component. Generates UUID. Updates its study.
      */
-    public Component createAndPersistComponent(Study study,
-            Component component) {
+    public Component createAndPersistComponent(Study study, Component component) {
         createComponent(study, component);
         if (!study.hasComponent(component)) {
             study.addComponent(component);
@@ -166,18 +158,16 @@ public class ComponentService {
     }
 
     /**
-     * Create and persist a Component with given properties. Generates UUID.
-     * Updates its study.
+     * Create and persist a Component with given properties. Generates UUID. Updates its study.
      */
-    public Component createAndPersistComponent(Study study,
-            ComponentProperties componentProperties) {
+    public Component createAndPersistComponent(Study study, ComponentProperties componentProperties) {
         Component component = bindToComponent(componentProperties);
         return createAndPersistComponent(study, component);
     }
 
     /**
-     * Binds component data from a edit/create component request onto a
-     * Component. Play's default form binder doesn't work here.
+     * Binds component data from a edit/create component request onto a Component. Play's default form binder doesn't
+     * work here.
      */
     private Component bindToComponent(ComponentProperties props) {
         Component component = new Component();
@@ -190,10 +180,9 @@ public class ComponentService {
     }
 
     /**
-     * Renames the path to the HTML file in the file system and persists the
-     * component's property.
+     * Renames the path to the HTML file in the file system and persists the component's property.
      */
-    public void renameHtmlFilePath(Component component, String newHtmlFilePath)
+    public void renameHtmlFilePath(Component component, String newHtmlFilePath, boolean htmlFileRename)
             throws IOException {
 
         // If the new HTML file name is empty persist an empty string
@@ -206,8 +195,7 @@ public class ComponentService {
         // What if current HTML file doesn't exist
         File currentFile = null;
         if (!component.getHtmlFilePath().trim().isEmpty()) {
-            currentFile = ioUtils.getFileInStudyAssetsDir(
-                    component.getStudy().getDirName(),
+            currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
                     component.getHtmlFilePath());
         }
         if (currentFile == null || !currentFile.exists()) {
@@ -217,29 +205,28 @@ public class ComponentService {
         }
 
         // Rename HTML file
-        ioUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
+        if (htmlFileRename) ioUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
                 component.getStudy().getDirName());
         component.setHtmlFilePath(newHtmlFilePath);
         componentDao.update(component);
     }
 
     /**
-     * Validates the component by using the Component's model validation method.
-     * Throws ValidationException in case of an error.
+     * Validates the component by using the Component's model validation method. Throws ValidationException in case of
+     * an error.
      */
     public void validate(Component component) throws ValidationException {
         ComponentProperties props = bindToProperties(component);
         if (props.validate() != null) {
-            LOGGER.warn(".validate: "
-                    + props.validate().stream().map(ValidationError::message)
+            LOGGER.warn(".validate: " + props.validate().stream().map(ValidationError::message)
                     .collect(Collectors.joining(", ")));
             throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
         }
     }
 
     /**
-     * Remove Component: Remove it from the given study, remove all its
-     * ComponentResults, and remove the component itself.
+     * Remove Component: Remove it from the given study, remove all its ComponentResults, and remove the component
+     * itself.
      */
     public void remove(Component component) {
         Study study = component.getStudy();

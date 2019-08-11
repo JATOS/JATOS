@@ -298,7 +298,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 </div>
 
 <!-- Confirmation  Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="confirmationModal" data-backdrop="static" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -345,26 +345,10 @@ fillSidebar();
 
 function showMessages(messages) {
 	if (messages != null) {
-		if (messages.successList != null) {
-			messages.successList.forEach(function(success) {
-				showSuccess(success);
-			});
-		}
-		if (messages.infoList != null) {
-			messages.infoList.forEach(function(info) {
-				showInfo(info);
-			});
-		}
-		if (messages.warningList != null) {
-			messages.warningList.forEach(function(warning) {
-				showWarning(warning);
-			});
-		}
-		if (messages.errorList != null) {
-			messages.errorList.forEach(function(error) {
-				showError(error);
-			});
-		}
+		if (messages.successList != null) messages.successList.forEach(showSuccess);
+		if (messages.infoList != null) messages.infoList.forEach(showInfo);
+		if (messages.warningList != null) messages.warningList.forEach(showWarning);
+		if (messages.errorList != null) messages.errorList.forEach(showError);
 	}
 }
 
@@ -430,7 +414,7 @@ function fillSidebarStudyList(studyArray) {
 	$('#sidebarStudyList').empty();
 	$.each(studyArray, function(index, study) {
 		// Add study
-		var listItem = '<li id="sidebarStudy' + study.id + '" class="studyListItem' 
+		var listItem = '<li id="sidebarStudy' + study.id + '" class="studyListItem'
 		if (typeof studyId !== 'undefined' && study.id == studyId) {
 			listItem += ' currentStudy';
 		}
@@ -457,6 +441,14 @@ function fillSidebarStudyList(studyArray) {
 		$('#sidebarStudyList').append(listItem);
 	});
 }
+
+$(document).on('show.bs.modal', '.modal', function() {
+	var zIndex = 1040 + (10 * $('.modal:visible').length);
+	$(this).css('z-index', zIndex);
+	setTimeout(function() {
+		$('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+	}, 0);
+});
 
 </script>
 

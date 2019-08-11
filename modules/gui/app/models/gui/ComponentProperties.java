@@ -14,9 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model of component properties for UI (not persisted in DB). Only used
- * together with an HTML form that creates a new Component or updates one. The
- * corresponding database entity is {@link models.common.Component}.
+ * Model of component properties for UI (not persisted in DB). Only used together with an HTML form that creates a new
+ * Component or updates one. The corresponding database entity is {@link models.common.Component}.
  *
  * @author Kristian Lange
  */
@@ -32,9 +31,8 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String HTML_FILE_PATH = "htmlFilePath";
+    public static final String HTML_FILE_RENAME = "htmlFileRename";
     public static final String JSON_DATA = "jsonData";
-    public static final String RESULT = "result";
-    public static final String POSITION = "";
     public static final String RELOADABLE = "reloadable";
     public static final String ACTIVE = "active";
     public static final String COMMENTS = "comments";
@@ -43,10 +41,9 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     private Long id;
 
     /**
-     * Universally, (world-wide) unique ID. Used for import/export between
-     * different JATOS instances. A study can have only one component with the
-     * same UUID, although it is allowed to have other studies that have this
-     * component with this UUID.
+     * Universally, (world-wide) unique ID. Used for import/export between different JATOS instances. A study can have
+     * only one component with the same UUID, although it is allowed to have other studies that have this component with
+     * this UUID.
      */
     private String uuid;
 
@@ -60,30 +57,34 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     private Timestamp date;
 
     /**
-     * Local path to component's HTML file in the study assets' dir. File
-     * separators are persisted as '/'.
+     * Local path to component's HTML file in the study assets' dir. File separators are persisted as '/'.
      */
     private String htmlFilePath;
 
+    /**
+     * Should the actual HTML file on the disk be renamed - or just the value in the DB?
+     */
+    private boolean htmlFileRename;
+
+    /**
+     * Is the webpage of this component reloadable in the browser?
+     */
     private boolean reloadable = false;
 
     /**
-     * An inactive component can't be used within a study - it generates an
-     * error message if one try. Further it's skipped if one uses
-     * startNextComponent from the public API.
+     * An inactive component can't be used within a study - it generates an error message if one try. Further it's
+     * skipped if one uses startNextComponent from the public API.
      */
     private boolean active = true;
 
     /**
-     * User comments, reminders, something to share with others. They have no
-     * further meaning.
+     * User comments, reminders, something to share with others. They have no further meaning.
      */
     private String comments;
 
     private String jsonData;
 
-    public ComponentProperties() {
-    }
+    public ComponentProperties() {}
 
     public void setId(Long id) {
         this.id = id;
@@ -137,6 +138,14 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
         }
     }
 
+    public boolean isHtmlFileRename() {
+        return htmlFileRename;
+    }
+
+    public void setHtmlFileRename(boolean htmlFileRename) {
+        this.htmlFileRename = htmlFileRename;
+    }
+
     public void setComments(String comments) {
         this.comments = comments;
     }
@@ -173,12 +182,10 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (title == null || title.trim().isEmpty()) {
-            errorList.add(
-                    new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
         }
         if (title != null && title.length() > 255) {
-            errorList.add(
-                    new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
         }
         if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
@@ -190,8 +197,8 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
             // This regular expression defines how a file path should look like
             String pathRegEx = "^[\\w\\d_-][\\w\\d/_-]*\\.[\\w\\d_-]+$";
             if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim().isEmpty())) {
-                errorList.add(new ValidationError(HTML_FILE_PATH,
-                        MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+                errorList.add(
+                        new ValidationError(HTML_FILE_PATH, MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
             }
         }
         if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {

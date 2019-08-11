@@ -156,9 +156,9 @@ $(document).ready(function() {
                 "width": "1%",
                 "visible": false,
                 "render": function (data, type, full, meta) {
-                return '<a type="button" class="btn btn-study btn-xs" data-toggle="tooltip" ' +
-                    'data-placement="bottom" title="Opens this study" ' +
-                    'href="@{general.common.Common.getPlayHttpContext()}jatos/' + data + '">' + data + '</a>';
+                    return '<a type="button" class="btn btn-study btn-xs" data-toggle="tooltip" ' +
+                        'data-placement="bottom" title="Opens this study" ' +
+                        'href="@{general.common.Common.getPlayHttpContext()}jatos/' + data + '">' + data + '</a>';
                 }
             },
             { "data": "studyTitle" },

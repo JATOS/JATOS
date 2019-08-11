@@ -45,6 +45,8 @@
                             <div class="input-group" id="htmlFilePath">
                                 <span class="input-group-addon">/@study.getDirName()/</span>
                                 <input type="text" class="form-control @models.gui.ComponentProperties.HTML_FILE_PATH" id="@models.gui.ComponentProperties.HTML_FILE_PATH" name="@models.gui.ComponentProperties.HTML_FILE_PATH" placeholder="Path to the actual HTML file">
+                                <input type="checkbox" class="@models.gui.ComponentProperties.HTML_FILE_RENAME" name="@models.gui.ComponentProperties.HTML_FILE_RENAME" value="true" hidden>
+                                <input type="hidden" name="@models.gui.ComponentProperties.HTML_FILE_RENAME" value="false" />
                             </div>
                         </div>
                     </div>
@@ -75,6 +77,29 @@
     </div>
 </div>
 
+<!-- Rename HTML filename confirmation  Modal -->
+<div class="modal fade" id="htmlFileNameConfirmationModal" data-backdrop="static"  tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">HTML filename changed</h4>
+            </div>
+            <div class="modal-body">
+                <div class="modalText"></div>
+                <div class="checkbox">
+                    <label><input type="checkbox" class="keepHtmlFileName"> Link to a different HTML file</label>
+                    <span class="help-block">Check this box to link this component to a different HTML file. This will not rename any files on the disk.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="confirmed btn btn-component">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 
 var componentJsonDataEditor;
@@ -95,6 +120,8 @@ $('#studyToolbar').on('click', '#createComponentLink', function() {
 });
 
 function fillComponentPropertiesForm(properties) {
+    $('#componentPropertiesModal').data(properties);
+
     $('#componentPropertiesModal .modal-title').text("Edit Component Properties");
     var id = (properties['@models.gui.ComponentProperties.ID']) ? properties['@models.gui.ComponentProperties.ID'] : "-";
     $('#componentPropertiesModal .@models.gui.ComponentProperties.ID').text(id);
@@ -169,8 +196,30 @@ $("#componentPropertiesForm .prettyButton").click(function(event) {
     }
 });
 
-$("#componentPropertiesForm").submit(function(event) {
+$("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_RUN, .@controllers.gui.Components.EDIT_SAVE', function(event) {
     event.preventDefault();
+
+    var oldFileName = $('#componentPropertiesModal').data()['@models.gui.ComponentProperties.HTML_FILE_PATH'];
+    var newFileName = $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val().trim();
+    var saveAndRun = $(event.target).hasClass("@controllers.gui.Components.EDIT_SAVE_AND_RUN");
+    if (oldFileName == newFileName) {
+        submitComponentPropertiesForm(saveAndRun);
+    } else {
+        var htmlText = "<p>The HTML file linked to this component will be renamed from <b>" + oldFileName + "</b> to <b>" + newFileName + "</b>.</p>";
+        $('#htmlFileNameConfirmationModal .modal-body .modalText').html(htmlText);
+        $('#htmlFileNameConfirmationModal .keepHtmlFileName').prop('checked', false);
+        $('#htmlFileNameConfirmationModal').modal('show');
+        $('#htmlFileNameConfirmationModal').off('click.confirmed').on('click.confirmed', '.confirmed', function() {
+            $('#htmlFileNameConfirmationModal').modal('hide');
+            // Put the checkbox result into the properties form
+            var keepHtmlFileName = $('#htmlFileNameConfirmationModal .keepHtmlFileName').prop('checked');
+            $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_RENAME').prop('checked', !keepHtmlFileName);
+            submitComponentPropertiesForm(saveAndRun);
+        });
+    }
+});
+
+function submitComponentPropertiesForm(saveAndRun) {
     // Put JSON from editor into textarea to let it be picked up by form.serialize
     var jsonData = componentJsonDataEditor.getSession().getValue();
     $("#componentPropertiesModal textarea.@models.gui.ComponentProperties.JSON_DATA").val(jsonData);
@@ -179,11 +228,15 @@ $("#componentPropertiesForm").submit(function(event) {
         url : $("#componentPropertiesForm").attr("action"),
         data : $('#componentPropertiesForm').serialize(),
         success : function(response) {
-            removeAlerts("#componentPropertiesModal");
-            removeFormErrors("#componentPropertiesModal");
-            $('#componentPropertiesModal').modal('hide');
-            fillSidebar();
-            componentsTable.ajax.reload();
+            if (saveAndRun) {
+                window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/" + response + "/run";
+            } else {
+                removeAlerts("#componentPropertiesModal");
+                removeFormErrors("#componentPropertiesModal");
+                $('#componentPropertiesModal').modal('hide');
+                fillSidebar();
+                componentsTable.ajax.reload();
+            }
         },
         error : function(response) {
             removeAlerts("#componentPropertiesModal");
@@ -196,30 +249,6 @@ $("#componentPropertiesForm").submit(function(event) {
             }
         }
     });
-});
-
-$("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_RUN', function() {
-    // Put JSON from editor into textarea to let it be picked up by form.serialize
-    var jsonData = componentJsonDataEditor.getSession().getValue();
-    $("#componentPropertiesModal textarea.@models.gui.ComponentProperties.JSON_DATA").val(jsonData);
-    $.ajax({
-        type : 'POST',
-        url : $("#componentPropertiesForm").attr("action"),
-        data : $('#componentPropertiesForm').serialize(),
-        success : function(componentId) {
-            window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/" + componentId + "/run";
-        },
-        error : function(response) {
-            removeAlerts("#componentPropertiesModal");
-            removeFormErrors("#componentPropertiesModal");
-            showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .messages");
-            if (isJson(response.responseText)) {
-                showFormErrors("#componentPropertiesModal", response);
-            } else {
-                showModalError("#componentPropertiesModal .messages", response);
-            }
-        }
-    });
-});
+}
 
 </script>
