@@ -43,7 +43,7 @@
 		@helper.form(action = controllers.gui.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
 		<h2 class="form-login-heading">Please log in</h2>
 		<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
-		<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").getValue" required autofocus>
+		<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").value().orElse("")" required autofocus>
 		<input type="password" name="password" id="password" class="form-control" placeholder="Password" autocomplete="off" required>
 		<button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
 		}
