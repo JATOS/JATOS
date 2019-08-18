@@ -56,7 +56,7 @@ public class HttpUtils {
     public static boolean isLocalhost() {
         String host = Controller.request().host();
         Optional<String> referer = Controller.request().header("referer");
-        boolean isHostLocalhost = host != null && (host.contains("localhost") || host.contains("127.0.0.1") || host
+        boolean isHostLocalhost = host != null && (host.matches("localhost:?\\d*") || host.contains("127.0.0.1") || host
                 .contains("0.0.0.0") || host.equals("::1"));
         boolean isRefererLocalhost = referer.map(
                 r -> r.contains("localhost") || r.contains("127.0.0.1") || r.contains("0.0.0.0") || r.equals("::1"))
