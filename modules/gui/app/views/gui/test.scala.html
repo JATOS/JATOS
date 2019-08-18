@@ -66,6 +66,8 @@ function testHostUrl() {
 	var browserUrl = window.location.origin;
 	if (jatosHostUrl == browserUrl) {
 		$('#testHostUrlResult').html('<font color="green">OK</font>');
+	} else if (jatosHostUrl.replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
+	    $('#testHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
 	} else {
 		$('#testHostUrlResult').html('<font color="red">FAIL</font>');
 	}
