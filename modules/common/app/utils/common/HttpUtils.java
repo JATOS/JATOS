@@ -59,7 +59,7 @@ public class HttpUtils {
         boolean isHostLocalhost = host != null && (host.matches("localhost:?\\d*") || host.contains("127.0.0.1") || host
                 .contains("0.0.0.0") || host.equals("::1"));
         boolean isRefererLocalhost = referer.map(
-                r -> r.contains("localhost") || r.contains("127.0.0.1") || r.contains("0.0.0.0") || r.equals("::1"))
+                r -> r.matches("localhost:?\\d*") || r.contains("127.0.0.1") || r.contains("0.0.0.0") || r.equals("::1"))
                 .orElse(false);
         return isHostLocalhost || isRefererLocalhost;
     }
