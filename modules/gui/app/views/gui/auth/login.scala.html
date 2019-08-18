@@ -55,18 +55,17 @@
 setBrand();
 
 function setBrand() {
-	if (window.location.href.indexOf("localhost") == -1
-			&& window.location.href.indexOf("127.0.0.1") == -1) {
-		$(".navbar-brand img").attr("src", "@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")");
-		$("#jatosBrandName").html("JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-		$("#jatosHeader").removeClass('navbar-inverse');
-		$("#jatosHeader").addClass('navbar-default');
-	} else {
+	@if(utils.common.HttpUtils.isLocalhost()) {
 		$(".navbar-brand img").attr("src", "@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
 		$("#jatosBrandName").text("JATOS local");
 		$("#jatosHeader").removeClass('navbar-default');
 		$("#jatosHeader").addClass('navbar-inverse');
-	};
+	} else {
+		$(".navbar-brand img").attr("src", "@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")");
+		$("#jatosBrandName").html("JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
+		$("#jatosHeader").removeClass('navbar-inverse');
+		$("#jatosHeader").addClass('navbar-default');
+	}
 }
 
 @for(error <- form.globalErrors) {
