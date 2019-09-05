@@ -49,7 +49,7 @@ function start() {
     args+=(-Dplay.http.secret.key=$secret)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
-    "$dir/bin/jatos" ${args[*]} -J-server -J--add-opens=java.base/java.lang=ALL-UNNAMED
+    "$dir/bin/jatos" ${args[*]} -J-server
 
     # Let Docker not exit in case of update restart: sleep infinity
     sleep infinity
@@ -82,6 +82,11 @@ function update() {
     fi
     updateDir=(${dir}/update-*)
     echo "`date` Start update of JATOS from folder ${updateDir}." | tee $updateLog
+
+    if [[ -d "${dir}/jre" ]] && [[ -d "${updateDir}/jre" ]]; then
+      echo "`date` Remove old Java version" | tee $updateLog
+      rm -rf ${dir}/jre
+    fi
 
     # Backup conf/production.conf
     mv -f ${dir}/conf/production.conf ${dir}/conf/production.bkp
