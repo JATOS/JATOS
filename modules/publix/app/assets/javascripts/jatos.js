@@ -30,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.3.6";
+	jatos.version = "3.4.1";
 	/**
 	 * How long should JATOS wait until to retry the HTTP call. Warning: There is a
 	 * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
@@ -972,9 +972,14 @@ var jatos = {};
 	}
 
 	/**
-	 * Posts study session data back to the JATOS server. This function is called by
-	 * all functions that start a new component, so it shouldn't be necessary to
-	 * call it manually.
+	 * If you want to just write into the study session, this function is
+	 * probably not what you want. This function sets the study session data and
+	 * sends it back to the JATOS server. If you want to write something
+	 * into the study session, just write into the 'jatos.studySessionData'
+	 * object.
+	 *
+	 * This function is automatically called by all functions that start a new
+	 * component, so it is usually not necessary to call it manually.
 	 * 
 	 * @param {Object} studySessionData - Object to be submitted
 	 * @param {optional Function} onSuccess - Function to be called after this
@@ -984,6 +989,7 @@ var jatos = {};
 	 */
 	jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
 		var deferred = jatos.jQuery.Deferred();
+		jatos.studySessionData = studySessionData;
 		var studySessionDataStr;
 		try {
 			studySessionDataStr = JSON.stringify(studySessionData);
