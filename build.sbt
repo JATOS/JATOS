@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
 
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
-  Cmd("FROM", "openjdk:8-jre"),
+  Cmd("FROM", "openjdk:11-jre"),
   Cmd("MAINTAINER", "Kristian Lange"),
   Cmd("WORKDIR", "/opt/docker"),
   Cmd("ADD", "opt /opt"),
