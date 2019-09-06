@@ -2,6 +2,7 @@ name := "jatos-common"
 version := "3.4.1"
 organization := "org.jatos"
 scalaVersion := "2.11.12"
+maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(
   javaCore,

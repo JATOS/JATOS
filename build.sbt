@@ -5,6 +5,8 @@ name := "JATOS"
 version := "3.4.1"
 organization := "org.jatos"
 scalaVersion := "2.11.12"
+maintainer := "lange.kristian@gmail.com"
+packageName in Universal := "jatos"
 
 libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "2.26.0" % "test",
@@ -83,6 +85,9 @@ mappings in Universal += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
 
 // Add loader.sh to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
+
+// Add loader.sh to distribution
+mappings in Universal in packageBin += file(baseDirectory.value + "/VERSION") -> "VERSION"
 
 // Add conf/production.conf to distribution
 mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> "conf/production.conf"
