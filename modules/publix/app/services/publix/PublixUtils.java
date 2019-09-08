@@ -121,9 +121,12 @@ public abstract class PublixUtils<T extends Worker> {
      * message as an abort message.
      */
     public void abortStudy(String message, StudyResult studyResult) {
-        // Put current ComponentResult into state ABORTED
-        retrieveCurrentComponentResult(studyResult).ifPresent(
-                currentComponentResult -> finishComponentResult(currentComponentResult, ComponentState.ABORTED));
+        // Put current ComponentResult into state ABORTED and set end date
+        Timestamp endDate = new Timestamp(new Date().getTime());
+        retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
+            finishComponentResult(currentComponentResult, ComponentState.ABORTED);
+            currentComponentResult.setEndDate(endDate);
+        });
         // Finish the other ComponentResults
         finishAllComponentResults(studyResult);
 
@@ -137,7 +140,7 @@ public abstract class PublixUtils<T extends Worker> {
         // Set StudyResult to state ABORTED and set message
         studyResult.setStudyState(StudyState.ABORTED);
         studyResult.setAbortMsg(message);
-        studyResult.setEndDate(new Timestamp(new Date().getTime()));
+        studyResult.setEndDate(endDate);
         studyResult.setStudySessionData(null);
         studyResultDao.update(studyResult);
     }
@@ -168,14 +171,17 @@ public abstract class PublixUtils<T extends Worker> {
             componentState = ComponentState.FAIL;
             studyState = StudyState.FAIL;
         }
-        retrieveCurrentComponentResult(studyResult)
-                .ifPresent(componentResult -> componentResult.setComponentState(componentState));
+        Timestamp endDate = new Timestamp(new Date().getTime());
+        retrieveCurrentComponentResult(studyResult).ifPresent(componentResult -> {
+            componentResult.setComponentState(componentState);
+            componentResult.setEndDate(endDate);
+        });
         studyResult.setStudyState(studyState);
 
         finishAllComponentResults(studyResult);
         studyResult.setConfirmationCode(confirmationCode);
         studyResult.setErrorMsg(errorMsg);
-        studyResult.setEndDate(new Timestamp(new Date().getTime()));
+        studyResult.setEndDate(endDate);
         // Clear study session data before finishing
         studyResult.setStudySessionData(null);
         studyResultDao.update(studyResult);
