@@ -32,6 +32,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     public static final String TITLE = "title";
     public static final String HTML_FILE_PATH = "htmlFilePath";
     public static final String HTML_FILE_RENAME = "htmlFileRename";
+    public static final String HTML_FILE_EXISTS = "htmlFileExists";
     public static final String JSON_DATA = "jsonData";
     public static final String RELOADABLE = "reloadable";
     public static final String ACTIVE = "active";
@@ -65,6 +66,11 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
      * Should the actual HTML file on the disk be renamed - or just the value in the DB?
      */
     private boolean htmlFileRename;
+
+    /**
+     * Does the html file exists in the file system?
+     */
+    private boolean htmlFileExists = false;
 
     /**
      * Is the webpage of this component reloadable in the browser?
@@ -144,6 +150,14 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
 
     public void setHtmlFileRename(boolean htmlFileRename) {
         this.htmlFileRename = htmlFileRename;
+    }
+
+    public boolean isHtmlFileExists() {
+        return htmlFileExists;
+    }
+
+    public void setHtmlFileExists(boolean htmlFileExists) {
+        this.htmlFileExists = htmlFileExists;
     }
 
     public void setComments(String comments) {

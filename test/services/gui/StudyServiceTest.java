@@ -448,7 +448,7 @@ public class StudyServiceTest {
 
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "changed_dirname");
+                studyService.renameStudyAssetsDir(study, "changed_dirname", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

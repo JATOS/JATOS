@@ -108,8 +108,8 @@ public class Home extends Controller {
 	 */
 	@Transactional
 	@Authenticated
-	public CompletionStage<Result> getReleaseInfo(Boolean allowPreReleases) {
-		return jatosUpdater.getReleaseInfo(allowPreReleases).handle((releaseInfo, error) -> {
+	public CompletionStage<Result> getReleaseInfo(String version, Boolean allowPreReleases) {
+		return jatosUpdater.getReleaseInfo(version, allowPreReleases).handle((releaseInfo, error) -> {
 			if (error != null) {
 				LOGGER.error("Couldn't request latest JATOS update info.");
 				return status(503, "Couldn't request latest JATOS update info. Is internet connection okay?");
@@ -119,6 +119,13 @@ public class Home extends Controller {
 		});
 	}
 
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result cancelUpdate() {
+		jatosUpdater.cancelUpdate();
+		return ok();
+	}
+
 	/**
 	 * Downloads the latest JATOS release into the system's tmp directory without installing it.
 	 *
@@ -126,7 +133,7 @@ public class Home extends Controller {
 	 */
 	@Transactional
 	@Authenticated(Role.ADMIN)
-	public CompletionStage<Result> downloadLatestJatos(Boolean dry) {
+	public CompletionStage<Result> downloadJatos(Boolean dry) {
 		return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
 			if (error != null) {
 				LOGGER.error("A problem occurred while downloading a new JATOS release.", error);

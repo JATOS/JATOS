@@ -25,6 +25,7 @@ import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.UserService;
+import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -59,6 +60,9 @@ public class StudiesControllerTest {
 
     @Inject
     private StudyDao studyDao;
+
+    @Inject
+    private IOUtils ioUtils;
 
     @Before
     public void startApp() throws Exception {
@@ -111,7 +115,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.TITLE, "Title Test");
         formMap.put(StudyProperties.DESCRIPTION, "Description test.");
         formMap.put(StudyProperties.COMMENTS, "Comments test.");
-        formMap.put(StudyProperties.DIRNAME, "dirName_submit");
+        formMap.put(StudyProperties.DIR_NAME, "dirName_submit");
         formMap.put(StudyProperties.JSON_DATA, "{}");
 
         User admin = testHelper.getAdmin();
@@ -139,9 +143,9 @@ public class StudiesControllerTest {
             assertEquals("Description test.", study.getDescription());
             assertEquals("dirName_submit", study.getDirName());
             assertEquals("{}", study.getJsonData());
-            assertThat((study.getComponentList().isEmpty()));
-            assertThat((study.getUserList().contains(admin)));
-            assertThat((!study.isLocked()));
+            assertThat(study.getComponentList()).isEmpty();
+            assertThat(study.getUserList()).contains(admin);
+            assertThat(study.isLocked()).isFalse();
         });
     }
 
@@ -156,7 +160,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.TITLE, " ");
         formMap.put(StudyProperties.DESCRIPTION, "Description test <b>.");
         formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
-        formMap.put(StudyProperties.DIRNAME, "%.test");
+        formMap.put(StudyProperties.DIR_NAME, "%.test");
         formMap.put(StudyProperties.JSON_DATA, "{");
 
         User admin = testHelper.getAdmin();
@@ -177,7 +181,7 @@ public class StudiesControllerTest {
                 .isEqualTo("[\"" + MessagesStrings.NO_HTML_ALLOWED + "\"]");
         assertThat(node.get(StudyProperties.COMMENTS).toString())
                 .isEqualTo("[\"" + MessagesStrings.NO_HTML_ALLOWED + "\"]");
-        assertThat(node.get(StudyProperties.DIRNAME).toString())
+        assertThat(node.get(StudyProperties.DIR_NAME).toString())
                 .isEqualTo("[\"" + MessagesStrings.INVALID_DIR_NAME + "\"]");
         assertThat(node.get(StudyProperties.JSON_DATA).toString())
                 .isEqualTo("[\"" + MessagesStrings.INVALID_JSON_FORMAT + "\"]");
@@ -193,7 +197,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.TITLE, "Title Test");
         formMap.put(StudyProperties.DESCRIPTION, "Description test.");
         formMap.put(StudyProperties.COMMENTS, "Comments test.");
-        formMap.put(StudyProperties.DIRNAME, study.getDirName());
+        formMap.put(StudyProperties.DIR_NAME, study.getDirName());
         formMap.put(StudyProperties.JSON_DATA, "{}");
 
         Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
@@ -237,7 +241,7 @@ public class StudiesControllerTest {
                 .isEqualTo("null");
         assertThat(node.get(StudyProperties.DESCRIPTION).toString())
                 .isEqualTo("\"" + study.getDescription() + "\"");
-        assertThat(node.get(StudyProperties.DIRNAME).toString())
+        assertThat(node.get(StudyProperties.DIR_NAME).toString())
                 .isEqualTo("\"" + study.getDirName() + "\"");
         assertThat(node.get(StudyProperties.UUID).toString())
                 .isEqualTo("\"" + study.getUuid() + "\"");
@@ -260,7 +264,8 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.TITLE, "Title Test");
         formMap.put(StudyProperties.DESCRIPTION, "Description test.");
         formMap.put(StudyProperties.COMMENTS, "Comments test.");
-        formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
+        formMap.put(StudyProperties.DIR_NAME, "dirName_submitEdited");
+        formMap.put(StudyProperties.DIR_RENAME, "true");
         formMap.put(StudyProperties.JSON_DATA, "{}");
 
         Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
@@ -281,7 +286,42 @@ public class StudiesControllerTest {
         assertEquals("Comments test.", editedStudy.getComments());
         assertEquals("dirName_submitEdited", editedStudy.getDirName());
         assertEquals("{}", editedStudy.getJsonData());
-        assertThat((!editedStudy.isLocked()));
+        assertThat(editedStudy.isLocked()).isFalse();
+        assertThat(ioUtils.checkStudyAssetsDirExists(editedStudy.getDirName())).isTrue();
+    }
+
+    @Test
+    public void callSubmitEditedNoDirRename() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(StudyProperties.TITLE, "Title Test");
+        formMap.put(StudyProperties.DESCRIPTION, "Description test.");
+        formMap.put(StudyProperties.COMMENTS, "Comments test.");
+        formMap.put(StudyProperties.DIR_NAME, "dirName_submitEdited");
+        formMap.put(StudyProperties.DIR_RENAME, "false");
+        formMap.put(StudyProperties.JSON_DATA, "{}");
+
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder()
+                .method("POST")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(formMap)
+                .uri(routes.Studies.submitEdited(study.getId()).url());
+        Result result = route(fakeApplication, request);
+
+        assertEquals(OK, result.status());
+
+        // Check that edited properties are stored
+        Study editedStudy = jpaApi.withTransaction(() -> studyDao.findById(study.getId()));
+        assertEquals("Title Test", editedStudy.getTitle());
+        assertEquals("Description test.", editedStudy.getDescription());
+        assertEquals("Comments test.", editedStudy.getComments());
+        assertEquals("dirName_submitEdited", editedStudy.getDirName());
+        assertEquals("{}", editedStudy.getJsonData());
+        assertThat(editedStudy.isLocked()).isFalse();
+        assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName())).isTrue();
     }
 
     /**

@@ -130,7 +130,7 @@ public class ComponentServiceTest {
         // Call ComponentService.renameHtmlFilePath
         jpaApi.withTransaction(() -> {
             try {
-                componentService.renameHtmlFilePath(component, "foo.html");
+                componentService.renameHtmlFilePath(component, "foo.html", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -161,7 +161,7 @@ public class ComponentServiceTest {
         jpaApi.withTransaction(() -> {
             try {
                 componentService.renameHtmlFilePath(component,
-                        study.getLastComponent().get().getHtmlFilePath());
+                        study.getLastComponent().get().getHtmlFilePath(), true);
                 Fail.fail();
             } catch (IOException e) {
                 assertThat(e.getMessage()).isEqualTo(MessagesStrings
@@ -198,7 +198,7 @@ public class ComponentServiceTest {
         // Check renaming into a subfolder
         jpaApi.withTransaction(() -> {
             try {
-                componentService.renameHtmlFilePath(component, "subfolder/foo.html");
+                componentService.renameHtmlFilePath(component, "subfolder/foo.html", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -211,7 +211,7 @@ public class ComponentServiceTest {
         // Check renaming back into study assets
         jpaApi.withTransaction(() -> {
             try {
-                componentService.renameHtmlFilePath(component, "foo.html");
+                componentService.renameHtmlFilePath(component, "foo.html", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -239,7 +239,7 @@ public class ComponentServiceTest {
         // If new filename is empty leave the file alone and put "" into the db
         jpaApi.withTransaction(() -> {
             try {
-                componentService.renameHtmlFilePath(component, "");
+                componentService.renameHtmlFilePath(component, "", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -271,7 +271,7 @@ public class ComponentServiceTest {
         // name must be set and file still not existing
         jpaApi.withTransaction(() -> {
             try {
-                componentService.renameHtmlFilePath(component, "foo.html");
+                componentService.renameHtmlFilePath(component, "foo.html", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -308,7 +308,7 @@ public class ComponentServiceTest {
         jpaApi.withTransaction(() -> {
             try {
                 componentService.renameHtmlFilePath(component,
-                        study.getLastComponent().get().getHtmlFilePath());
+                        study.getLastComponent().get().getHtmlFilePath(), true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

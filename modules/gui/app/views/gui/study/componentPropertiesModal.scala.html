@@ -200,9 +200,10 @@ $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAV
     event.preventDefault();
 
     var oldFileName = $('#componentPropertiesModal').data()['@models.gui.ComponentProperties.HTML_FILE_PATH'];
+    var oldFileExists = $('#componentPropertiesModal').data()['@models.gui.ComponentProperties.HTML_FILE_EXISTS'];
     var newFileName = $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val().trim();
     var saveAndRun = $(event.target).hasClass("@controllers.gui.Components.EDIT_SAVE_AND_RUN");
-    if (oldFileName == newFileName) {
+    if (oldFileName === undefined || !oldFileExists || oldFileName == newFileName) {
         submitComponentPropertiesForm(saveAndRun);
     } else {
         var htmlText = "<p>The HTML file linked to this component will be renamed from <b>" + oldFileName + "</b> to <b>" + newFileName + "</b>.</p>";

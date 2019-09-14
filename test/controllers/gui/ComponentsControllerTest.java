@@ -95,11 +95,11 @@ public class ComponentsControllerTest {
         Result result = route(fakeApplication, request);
 
         assertEquals(SEE_OTHER, result.status());
-        assertThat(result.session().containsKey("jatos_run"));
-        assertThat(result.session().containsValue("single_component_start"));
-        assertThat(result.session().containsKey("run_component_id"));
-        assertThat(result.session().containsValue(study.getId().toString()));
-        assertThat(result.headers().get(HttpHeaders.LOCATION).contains("jatosWorkerId"));
+        assertThat(result.session().getOptional("jatos_run").isPresent()).isTrue();
+        assertThat(result.session().getOptional("jatos_run").get()).isEqualTo("RUN_COMPONENT_START");
+        assertThat(result.session().getOptional("run_component_id").isPresent()).isTrue();
+        assertThat(result.session().getOptional("run_component_id").get()).isEqualTo(study.getComponent(1).getId().toString());
+        assertThat(result.headers().get(HttpHeaders.LOCATION).contains("jatosWorkerId")).isTrue();
     }
 
     /**
@@ -153,6 +153,8 @@ public class ComponentsControllerTest {
                 .isEqualTo("\"" + study.getFirstComponent().get().getComments() + "\"");
         assertThat(node.get(ComponentProperties.HTML_FILE_PATH).toString())
                 .isEqualTo("\"" + study.getFirstComponent().get().getHtmlFilePath() + "\"");
+        assertThat(node.get(ComponentProperties.HTML_FILE_RENAME).toString()).isEqualTo("false");
+        assertThat(node.get(ComponentProperties.HTML_FILE_EXISTS).toString()).isEqualTo("true");
         assertThat(node.get(ComponentProperties.JSON_DATA).toString())
                 .contains("This component displays text and reacts to key presses.");
         assertThat(node.get(ComponentProperties.RELOADABLE).toString())
@@ -205,6 +207,7 @@ public class ComponentsControllerTest {
         form.put(ComponentProperties.TITLE, "Title Test");
         form.put(ComponentProperties.RELOADABLE, "true");
         form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
+        form.put(ComponentProperties.HTML_FILE_RENAME, "true");
         form.put(ComponentProperties.COMMENTS, "Comments test test.");
         form.put(ComponentProperties.JSON_DATA, "{}");
 
@@ -214,7 +217,7 @@ public class ComponentsControllerTest {
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyForm(form)
-                .uri(routes.Components.submitEdited(study.getId(), study.getFirstComponent().get().getId()).url());
+                .uri(routes.Components.submitEdited(study.getId(), study.getComponent(1).getId()).url());
         Result result = route(fakeApplication, request);
 
         assertEquals(OK, result.status());
@@ -231,6 +234,7 @@ public class ComponentsControllerTest {
         form.put(ComponentProperties.TITLE, "");
         form.put(ComponentProperties.RELOADABLE, "true");
         form.put(ComponentProperties.HTML_FILE_PATH, "%.test");
+        form.put(ComponentProperties.HTML_FILE_RENAME, "true");
         form.put(ComponentProperties.COMMENTS, "Comments test <i>.");
         form.put(ComponentProperties.JSON_DATA, "{");
         form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);

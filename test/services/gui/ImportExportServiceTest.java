@@ -279,7 +279,7 @@ public class ImportExportServiceTest {
 
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "another_example_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -330,7 +330,7 @@ public class ImportExportServiceTest {
 
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "another_example_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -376,7 +376,7 @@ public class ImportExportServiceTest {
 
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "another_example_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -464,7 +464,7 @@ public class ImportExportServiceTest {
         Study study = getAlteredStudy();
         jpaApi.withTransaction(() -> {
             try {
-                studyService.renameStudyAssetsDir(study, "another_example_dirname");
+                studyService.renameStudyAssetsDir(study, "another_example_dirname", true);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

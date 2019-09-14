@@ -55,7 +55,6 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
                 <h4 class="modal-title">Update JATOS</h4>
             </div>
             <div class="modal-body">
@@ -68,7 +67,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">No, this is too risky</button>
+                <button type="button" class="canceled btn btn-default" data-dismiss="modal">No, this is too risky</button>
                 <button type="button" class="confirmed btn btn-default">I understand the risks, go on</button>
             </div>
         </div>
@@ -80,9 +79,9 @@
 checkJatosReleaseInfo();
 
 function checkJatosReleaseInfo() {
-    var allowPreReleases = new URLSearchParams(window.location.search).has('allowPreReleases')
+    var urlQueryParams = new URLSearchParams(window.location.search).toString()
     $.getJSON({
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?allowPreReleases=' + allowPreReleases,
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?' + urlQueryParams,
         success: function(releaseInfo) {
             $("#updateJatos").data("releaseInfo", releaseInfo);
             showJatosReleaseInfo(releaseInfo);
@@ -96,7 +95,7 @@ function checkJatosReleaseInfo() {
 function showJatosReleaseInfo(releaseInfo) {
     switch (releaseInfo.currentUpdateState) {
         case "SLEEPING":
-            if (releaseInfo.isNewerVersion) showUpdateAvailable(releaseInfo);
+            if (releaseInfo.isNewerVersion || !releaseInfo.isLatest) showUpdateAvailable(releaseInfo);
             break;
         case "DOWNLOADING":
             showInfo("JATOS is currently downloading an update.");
@@ -123,19 +122,20 @@ function showJatosReleaseInfo(releaseInfo) {
 function showUpdateAvailable(releaseInfo) {
     var text;
     var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
-    var latestVersion = getLatestVersionName(releaseInfo);
-    if (releaseInfo.isUpdateAllowed && ! releaseInfo.isNewerJava && releaseInfo.zipUrl && loggedInUserIsAdmin) {
-        text = "You're not using the latest JATOS version.<br>Do you want to automatically update to version&nbsp;"
-                + latestVersion + "?";
+    var version = getVersionName(releaseInfo);
+    if (releaseInfo.isUpdateAllowed && ! releaseInfo.isDifferentJava && releaseInfo.zipUrl && loggedInUserIsAdmin) {
+        text = "Do you want to automatically update to version&nbsp;" + version + "?";
+        if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
         $("#updateJatos button").show();
-    } else if (releaseInfo.isUpdateAllowed && releaseInfo.isNewerJava && releaseInfo.zipJavaUrl && loggedInUserIsAdmin) {
-        text = "You're not using the latest JATOS version. Do you want to automatically update to version&nbsp;"
-                + latestVersion + "? The new JATOS needs a newer version of Java than yours. So you'll need JATOS"
+    } else if (releaseInfo.isUpdateAllowed && releaseInfo.isDifferentJava && releaseInfo.zipJavaUrl && loggedInUserIsAdmin) {
+        text = "Do you want to automatically update to version&nbsp;" + version + "?"
+                + " The new JATOS needs a different version of Java than yours. So you'll need JATOS"
                 + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
+        if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
         $("#updateJatos button").show();
     } else {
-        text = "You're not using the latest JATOS version. Talk to your admin if you want to update to version&nbsp;"
-                + latestVersion + ".";
+        text = "Talk to your admin if you want to update to version&nbsp;" + version + ".";
+        if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
         $("#updateJatos .updateJatosButton").hide();
         $("#updateJatos .releaseNotesButton").show();
     }
@@ -145,29 +145,30 @@ function showUpdateAvailable(releaseInfo) {
 
 $("#updateJatos .releaseNotesButton").click(function() {
     var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var latestVersion = getLatestVersionName(releaseInfo);
-    $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + latestVersion);
+    var version = getVersionName(releaseInfo);
+    $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
     var releaseNotesHtml = new showdown.Converter().makeHtml(releaseInfo.releaseNotes);
     $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
     $("#releaseNotesModal").modal('show');
 });
 
-function getLatestVersionName(releaseInfo) {
-    return releaseInfo.isPrerelease ? releaseInfo.latestVersion + " (pre-release)" : releaseInfo.latestVersion;
+function getVersionName(releaseInfo) {
+    return releaseInfo.isPrerelease ? releaseInfo.version + " (pre-release)" : releaseInfo.version;
 }
 
 function getFileSizeInMb(releaseInfo) {
-    var sizeInByte = releaseInfo.isNewerJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
+    var sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
     return  Math.round(sizeInByte / 1024 / 1024);
 }
 
-$(".updateJatosButton").click(function() {
+$("#updateJatos .updateJatosButton, #releaseNotesModal .updateJatosButton").click(function() {
+    $("#updateJatos").hide();
     var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var latestVersion = getLatestVersionName(releaseInfo);
+    var version = getVersionName(releaseInfo);
     var fileSizeInMb = getFileSizeInMb(releaseInfo);
     $("#releaseNotesModal").modal('hide');
     removeAlerts("#updateJatosModal");
-    $("#updateJatosModal .modal-title").text("Update JATOS to " + latestVersion);
+    $("#updateJatosModal .modal-title").text("Update JATOS to " + version);
     $("#updateJatosModal .confirmationText").html("First we are going to download the new release (it's " + fileSizeInMb
             + "&nbsp;MB). Make sure you back up your data for the (unlikely) case that something goes wrong."
             + " After the download is done you'll be asked again for confirmation.");
@@ -175,21 +176,32 @@ $(".updateJatosButton").click(function() {
     $("#updateJatosModal .waiting").hide();
     $("#updateJatosModal .checkbox").hide();
     $("#updateJatosModal .modal-footer").show();
+    $("#updateJatosModal button.canceled").unbind();
+    $("#updateJatosModal button.canceled").click(cancelUpdate);
     $("#updateJatosModal button.confirmed").unbind();
-    $("#updateJatosModal button.confirmed").click(downloadLatestJatos);
+    $("#updateJatosModal button.confirmed").click(downloadJatos);
     $("#updateJatosModal").modal('show');
 });
 
-function downloadLatestJatos() {
+function cancelUpdate() {
+    $.ajax({
+        url: '@controllers.gui.routes.Home.cancelUpdate()',
+        error: function (err) {
+            showError(err.responseText)
+        }
+    });
+}
+
+function downloadJatos() {
     var releaseInfo = $("#updateJatos").data("releaseInfo");
     var fileSizeInMb = getFileSizeInMb(releaseInfo);
-    var latestVersion = getLatestVersionName(releaseInfo);
+    var version = getVersionName(releaseInfo);
     $("#updateJatosModal .waiting").show();
-    $("#updateJatosModal .modal-title").text("Downloading " + latestVersion + " (" + fileSizeInMb + " MB)");
+    $("#updateJatosModal .modal-title").text("Downloading " + version + " (" + fileSizeInMb + " MB)");
     $("#updateJatosModal .confirmationText").hide();
     $("#updateJatosModal .modal-footer").hide();
     $.ajax({
-        url: '@controllers.gui.routes.Home.downloadLatestJatos()',
+        url: '@controllers.gui.routes.Home.downloadJatos()',
         timeout: 0, // Do not timeout
         success: function() {
             showUpdateJatosModalDownloaded();
@@ -203,14 +215,16 @@ function downloadLatestJatos() {
 
 function showUpdateJatosModalDownloaded() {
     var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var latestVersion = getLatestVersionName(releaseInfo);
+    var version = getVersionName(releaseInfo);
     $("#updateJatosModal .waiting").hide();
     $("#updateJatosModal .checkbox").show();
     $("#updateJatosModal .modal-title").text("Update & Restart");
     $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update to version "
-            + latestVersion + " and restart?");
+            + version + " and restart?");
     $("#updateJatosModal .confirmationText").show();
     $("#updateJatosModal .modal-footer").show();
+    $("#updateJatosModal button.canceled").unbind();
+    $("#updateJatosModal button.canceled").click(cancelUpdate);
     $("#updateJatosModal button.confirmed").unbind();
     $("#updateJatosModal button.confirmed").click(updateAndRestart);
     $("#updateJatosModal").modal('show');
@@ -218,7 +232,7 @@ function showUpdateJatosModalDownloaded() {
 
 function updateAndRestart() {
     var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var latestVersion = getLatestVersionName(releaseInfo);
+    var version = getVersionName(releaseInfo);
     $("#updateJatosModal .waiting").show();
     $("#updateJatosModal .confirmationText").hide();
     $("#updateJatosModal .checkbox").hide();
@@ -229,7 +243,7 @@ function updateAndRestart() {
         timeout: 0, // Do not timeout
         success: function() {
             $('#updateJatosModal').modal('hide');
-            showInfo("Restarting now to finish update to version " + latestVersion
+            showInfo("Restarting now to finish update to version " + version
                     + ". It should take under a minute. Refresh this page every now and then.");
         },
         error: function (err) {
