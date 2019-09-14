@@ -41,6 +41,9 @@ function start() {
     # In case './bin/jatos' isn't executable set the x bit
     chmod u+x "$dir/bin/jatos"
 
+    # Create log directory if not exist
+    mkdir -p "$dir/logs"
+
     # Add address and port to arguments if set
     [[ -z ${address+x} ]] || args+=(-Dhttp.address=$address)
     [[ -z ${port+x} ]] || args+=(-Dhttp.port=$port)
