@@ -134,12 +134,13 @@ public class JsonUtils {
      */
     private ArrayNode getComponentListForInitData(Study study) {
         ArrayNode componentList = Json.mapper().createArrayNode();
-        for (Component tempComponent : study.getComponentList()) {
+        for (Component component : study.getComponentList()) {
             ObjectNode componentNode = Json.mapper().createObjectNode();
-            componentNode.put("id", tempComponent.getId());
-            componentNode.put("title", tempComponent.getTitle());
-            componentNode.put("active", tempComponent.isActive());
-            componentNode.put("reloadable", tempComponent.isReloadable());
+            componentNode.put("id", component.getId());
+            componentNode.put("title", component.getTitle());
+            componentNode.put("active", component.isActive());
+            componentNode.put("reloadable", component.isReloadable());
+            componentNode.put("position", study.getComponentPosition(component));
             componentList.add(componentNode);
         }
         return componentList;
