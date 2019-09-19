@@ -106,9 +106,11 @@ public class MessagesStrings {
     public static final String RESULTS_SELECT_FILTERED = "Select only the filtered results (including the ones on "
             + "different table pages)";
     public static final String RESULTS_DESELECT_ALL = "Deselect all results";
-    public static final String RESULTS_EXPORT_DATA = "Export selected results as a text file to your local file system";
+    public static final String RESULTS_EXPORT_DATA = "Result data are the actual data that are saved during a study run - "
+            + "but does not include any metadata";
+    public static final String RESULTS_EXPORT_SELECTED_DATA = "Export selected results as a text file to your local file system";
     public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
-    public static final String RESULTS_METADATA = "Metadata are all data that are not result data, e.g. Result ID, "
+    public static final String RESULTS_EXPORT_METADATA = "Metadata are all data that are not result data, e.g. Result ID, "
             + "Start Time, State";
     public static final String RESULTS_EXPORT_ALL_METADATA = "Export all metadata as a CSV file to your local file "
             + "system";

@@ -185,12 +185,12 @@ $(document).ready(function() {
                 "extend": 'collection',
                 "text": 'Export Results <span class="caret"></span>',
                 "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA',
                 "buttons": [
                     {
                         "text": "Selected",
                         "action": exportSelectedResultData,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_DATA'
                     },
                     {
                         "text": "All",
@@ -203,11 +203,12 @@ $(document).ready(function() {
                 "extend": 'collection',
                 "text": 'Export Metadata <span class="caret"></span>',
                 "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
                 "buttons": [
                     {
                         "extend": 'csv',
                         "text": "Selected",
+                        "filename": function() { return "jatos_meta_" + moment().format("YYYYMMDDHHmmss") },
                         "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
                         "exportOptions": {
                             "columns": ':nth-child(n+3):visible',
@@ -219,6 +220,7 @@ $(document).ready(function() {
                     {
                         "extend": 'csv',
                         "text": "All",
+                        "filename": function() { return "jatos_meta_" + moment().format("YYYYMMDDHHmmss") },
                         "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
                         "exportOptions": {
                             "columns": ':nth-child(n+3):visible'
@@ -230,7 +232,6 @@ $(document).ready(function() {
                 "extend": 'collection',
                 "text": 'Delete <span class="caret"></span>',
                 "className": "btn btn-danger",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_METADATA',
                 "buttons": [
                     {
                         "text": "Selected",
