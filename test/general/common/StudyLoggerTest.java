@@ -340,7 +340,7 @@ public class StudyLoggerTest {
         String hash1 = HashUtils.getHash("result data 1", HashUtils.SHA_256);
         String hash2 = HashUtils.getHash("result data 2", HashUtils.SHA_256);
         String hash3 = HashUtils.getHash("result data 3", HashUtils.SHA_256);
-        assertThat(json.has("dataHashes"));
+        assertThat(json.has("dataHashes")).isTrue();
         json.get("dataHashes").forEach(node -> assertThat(node.asText())
                 .isIn(hash1, hash2, hash3, "no data"));
     }

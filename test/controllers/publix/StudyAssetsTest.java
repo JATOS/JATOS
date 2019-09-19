@@ -100,9 +100,9 @@ public class StudyAssetsTest {
     @Test
     public void testStudyAssetsRootPath() {
         File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
-        assertThat(studyAssetsRoot.exists());
-        assertThat(studyAssetsRoot.isDirectory());
-        assertThat(studyAssetsRoot.isAbsolute());
+        assertThat(studyAssetsRoot.exists()).isTrue();
+        assertThat(studyAssetsRoot.isDirectory()).isTrue();
+        assertThat(studyAssetsRoot.isAbsolute()).isTrue();
     }
 
     @Test
