@@ -83,10 +83,10 @@ publishArtifact in(Compile, packageDoc) := false
 // Add loader.sh to distribution
 mappings in Universal += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
 
-// Add loader.sh to distribution
+// Add loader.bat to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
 
-// Add loader.sh to distribution
+// Add VERSION to distribution
 mappings in Universal in packageBin += file(baseDirectory.value + "/VERSION") -> "VERSION"
 
 // Add conf/production.conf to distribution
