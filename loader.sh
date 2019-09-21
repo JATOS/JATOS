@@ -1,8 +1,7 @@
 #!/bin/bash
 # JATOS loader for Linux and MacOS X
 
-# Change IP address and port
-# (DEPRECATED - use 'production.conf' instead)
+# IP address and port (DEPRECATED - use 'conf/production.conf' instead)
 #address="1.2.3.4"
 #port="80"
 
