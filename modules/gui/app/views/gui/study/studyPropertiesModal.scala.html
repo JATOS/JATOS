@@ -99,7 +99,7 @@
                 <div class="modalText"></div>
                 <div class="checkbox">
                     <label><input type="checkbox" class="keepAssetsDirName"> Link to a different study assets directory</label>
-                    <span class="help-block">Check this box to link this study to a different directory. This will not rename any directory on the disk.</span>
+                    <span class="help-block"></span>
                 </div>
             </div>
             <div class="modal-footer">
@@ -206,12 +206,17 @@ $("#studyPropertiesForm").submit(function(event) {
 
     var oldDirName = $('#studyPropertiesModal').data()['@models.gui.StudyProperties.DIR_NAME'];
     var newDirName = $('#studyPropertiesModal .@models.gui.StudyProperties.DIR_NAME').val().trim();
-    if (oldDirName == newDirName) {
+    var newStudyCreation = $("#studyPropertiesForm").attr("action") == "@controllers.gui.routes.Studies.submitCreated()"
+    if (oldDirName == newDirName || newStudyCreation) {
         submitStudyPropertiesForm();
     } else {
-        var htmlText = "<p>The Study assets directory name linked to this study changed from <b>" + oldDirName + "</b> to <b>" + newDirName + "</b>.</p>";
-        $('#studyDirNameConfirmationModal .modal-body .modalText').html(htmlText);
+        var descriptionText = "<p>The name of the study assets' directory linked to this study changed from <b>"
+                + oldDirName + "</b> to <b>" + newDirName + "</b>.</p>";
+        $('#studyDirNameConfirmationModal .modal-body .modalText').html(descriptionText);
         $('#studyDirNameConfirmationModal .keepAssetsDirName').prop('checked', false);
+        var explanationText = "If you check this box the directory on the disk will not be renamed and therefore "
+                + "link this study to the different directory '" + newDirName + "'.";
+        $('#studyDirNameConfirmationModal .modal-body .help-block').html(explanationText);
         $('#studyDirNameConfirmationModal').modal('show');
         $('#studyDirNameConfirmationModal').off('click.confirmed').on('click.confirmed', '.confirmed', () => {
             $('#studyDirNameConfirmationModal').modal('hide');
@@ -235,8 +240,9 @@ function submitStudyPropertiesForm() {
             removeAlerts("#studyPropertiesModal");
             removeFormErrors("#studyPropertiesModal");
             $('#studyPropertiesModal').modal('hide');
-            // Destinguish between newly created study und edited properties
-            if ($("#studyPropertiesForm").attr("action") === "@controllers.gui.routes.Studies.submitCreated()") {
+            // Distinguish between newly created study und edited properties
+            var newStudyCreation = $("#studyPropertiesForm").attr("action") == "@controllers.gui.routes.Studies.submitCreated()"
+            if (newStudyCreation) {
                 // New study's ID is in the response
                 window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + response;
             } else {

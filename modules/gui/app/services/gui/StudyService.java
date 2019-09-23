@@ -319,7 +319,13 @@ public class StudyService {
      * Renames the directory in the file system and persists the study's property.
      */
     public void renameStudyAssetsDir(Study study, String newDirName, boolean dirRename) throws IOException {
-        if (dirRename) ioUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
+        if (dirRename) {
+            ioUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
+        } else {
+            if (!ioUtils.checkStudyAssetsDirExists(newDirName)) {
+                throw new IOException("Study asset directory " + newDirName + " does not exist.");
+            }
+        }
         study.setDirName(newDirName);
         studyDao.update(study);
     }
