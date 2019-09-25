@@ -100,10 +100,6 @@ var jatos = {};
 	 */
 	jatos.groupResultId = null;
 	/**
-	 * Represents the state of the group in JATOS; only set if group channel is open
-	 */
-	jatos.groupState = null;
-	/**
 	 * Member IDs of the current members of the group result
 	 */
 	jatos.groupMembers = [];
@@ -1353,7 +1349,6 @@ var jatos = {};
 	function clearGroupChannel() {
 		jatos.groupMemberId = null;
 		jatos.groupResultId = null;
-		jatos.groupState = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
 		groupSessionData = {};
@@ -1400,9 +1395,6 @@ var jatos = {};
 			jatos.groupResultId = groupMsg.groupResultId.toString();
 			// Group member ID is equal to study result ID
 			jatos.groupMemberId = jatos.studyResultId;
-		}
-		if (typeof groupMsg.groupState != 'undefined') {
-			jatos.groupState = groupMsg.groupState;
 		}
 		if (typeof groupMsg.members != 'undefined') {
 			jatos.groupMembers = groupMsg.members;
@@ -2061,6 +2053,9 @@ var jatos = {};
 				type: "GET",
 				timeout: jatos.httpTimeout,
 				success: function (response) {
+					heartbeatWorker.terminate();
+					clearInterval(batchChannelClosedCheckTimer);
+					clearInterval(groupChannelClosedCheckTimer);
 					callFunctionIfExist(onSuccess, response);
 					endingDeferred.resolve(response);
 				},
