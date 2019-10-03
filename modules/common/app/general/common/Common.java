@@ -85,8 +85,7 @@ public class Common {
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
         userSessionValidation = config.getBoolean("jatos.userSession.validation");
         if (!userSessionValidation) {
-            LOGGER.warn("WARNING - User session validation is switched off. " +
-                    "This decreases security. Proceed only if you know what you are doing.");
+            LOGGER.warn("User session validation is switched off. This decreases security.");
         }
         dbDefaultUrl = config.getString("db.default.url");
         dbDefaultDriver = config.getString("db.default.driver");
