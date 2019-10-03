@@ -160,21 +160,21 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
       return Ok(" ") // jQuery.ajax cannot handle empty responses
     }
 
-    groupAdministration.leave(studyResult)
-    closeGroupChannel(studyResult, groupResult)
-    logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} " +
-        s"left group result ${groupResult.getId}")
+    closeGroupChannelAndLeaveGroup(studyResult)
+    logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} left group result ${groupResult.getId}")
     Ok(" ") // jQuery.ajax cannot handle empty responses
   }
 
   /**
-    * Closes the group channel which includes sending a left message to all group members.
+    * Closes the group channel which includes sending a left message to all group members and leaves the GroupResult.
     */
-  def closeGroupChannel(studyResult: StudyResult): Unit = {
+  def closeGroupChannelAndLeaveGroup(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
     val study = studyResult.getStudy
-    if (study.isGroupStudy && groupResult != null)
+    if (study.isGroupStudy && groupResult != null) {
+      groupAdministration.leave(studyResult)
       closeGroupChannel(studyResult, groupResult)
+    }
   }
 
   /**

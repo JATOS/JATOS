@@ -13,6 +13,7 @@ import exceptions.gui.JatosGuiException;
 import general.gui.RequestScopeMessaging;
 import models.common.Batch;
 import models.common.GroupResult;
+import models.common.GroupResult.GroupState;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
@@ -308,6 +309,25 @@ public class Batches extends Controller {
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
+    /**
+     * Ajax GET request to toggle the group state FIXED / STARTED
+     */
+    @Transactional
+    @Authenticated
+    public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) throws JatosGuiException {
+        Study study = studyDao.findById(studyId);
+        GroupResult groupResult = groupResultDao.findById(groupResultId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForGroup(groupResult, study, groupResultId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        GroupState result = groupService.toggleGroupFixed(groupResult, fixed);
+        return ok(jsonUtils.asJsonNode(result));
+    }
 
     /**
      * Ajax GET request to get BatchProperties as JSON

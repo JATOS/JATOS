@@ -152,8 +152,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         String confirmationCode;
         if (!PublixHelpers.studyDone(studyResult)) {
             confirmationCode = publixUtils.finishStudyResult(successful, message, studyResult);
-            publixUtils.finishMemberInGroup(studyResult);
-            groupChannel.closeGroupChannel(studyResult);
+            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
         } else {
             confirmationCode = studyResult.getConfirmationCode();
         }

@@ -17,6 +17,7 @@
                     <thead>
                         <tr>
                             <th>Group ID</th>
+                            <th data-toggle="tooltip" data-placement="top" title="A fixed group can't have new members join">Fixed</th>
                             <th data-toggle="tooltip" data-placement="top" title="All currently active workers (click on the workers to get to their results page)">Active Workers</th>
                             <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group (click on the workers to get to their results page)">Past Workers</th>
                             <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server)</th>
@@ -33,6 +34,22 @@
             </div>
         </div>
     </div>
+</div>
+
+<div id="groupsTableSearchAndRefresh" style="display: none">
+    <label for="groupsTableSearchAndRefresh">Filter Groups <span class="glyphicon glyphicon-info-sign gray-light"
+        data-toggle="tooltip" title="You can filter for table's content"></span>:</label>
+    <input type="search" class="form-control" placeholder="" autofocus>
+    <button type="button" class="btn btn-batch refreshButton" data-toggle="tooltip" data-placement="bottom" title="Refresh groups">
+        <span class="glyphicon glyphicon-refresh"></span></button>
+</div>
+
+<!-- Template for fixed button in Group's row -->
+<div id="groupFixedButtonDiv" style="display: none">
+    <button type="button" class="btn btn-batch fixButton" data-toggle="tooltip" data-placement="bottom"
+            title="Fix/unfix group (a fixed group can't have new members join)">
+        <span class="glyphicon glyphicon-plus-sign"></span>
+    </button>
 </div>
 
 <!-- Template groups button bar -->
@@ -77,15 +94,24 @@ function generateGroupsTable(batch) {
                 showError("Couldn't read group data.", "#groupsModal .messages")
             }
         },
-        "dom": 'ftip',
-        "order": [[ 0, "desc" ]],
+        "dom": '<"pull-left"l>ftip',
+        "order": [[ 6, "desc" ]],
         "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "pageLength": 10,
+        "stateSave": true,
         "pagingType": "simple_numbers",
         "columns": [
             {
                 "data": "id",
                 "width": "1%"
+            },
+            {
+                "data": "groupState",
+                "render": function (data, type, full, meta) {
+                    var button = $('#groupFixedButtonDiv button:first-child').clone();
+                    setFixedGroupButton(button, data);
+                    return button.prop('outerHTML');
+                }
             },
             {
                 "data": "activeWorkerList",
@@ -122,6 +148,51 @@ function generateGroupsTable(batch) {
         }
     });
 
+    // Swap dataTables filter field with our own
+    $("#groupsModal .dataTables_filter").empty();
+    $("#groupsModal .dataTables_filter").append($("#groupsTableSearchAndRefresh"));
+    $("#groupsTableSearchAndRefresh").show();
+    $('#groupsTableSearchAndRefresh .refreshButton').on('click', () => {
+        groupsTable.ajax.reload();
+    });
+    $('#groupsTableSearchAndRefresh input').on('keyup click', () => {
+        groupsTable.search($('#groupsTableSearchAndRefresh input').val()).draw();
+    });
+
+    function setFixedGroupButton(button, groupState) {
+        switch(groupState) {
+        case "FIXED":
+            button.addClass('fixedGroup');
+            button.addClass("grayout");
+            button.attr('title', "Currently fixed (no new members can join). Click to unfix this group.");
+            button.html($(button.html())
+                    .removeClass('glyphicon-plus-sign')
+                    .addClass('glyphicon-minus-sign').prop('outerHTML'));
+            break;
+        case "STARTED":
+            button.removeClass('fixedGroup');
+            button.removeClass("grayout");
+            button.attr('title', "Currently unfixed (new members can join). Click to fix this group.");
+            button.html($(button.html())
+                    .removeClass('glyphicon-minus-sign')
+                    .addClass('glyphicon-plus-sign').prop('outerHTML'));
+            break;
+        case "FINISHED":
+            button.removeClass('fixedGroup');
+            button.removeClass('btn-batch');
+            button.addClass('btn-default');
+            button.prop('disabled', true);
+            button.attr('title', "A finished group can't be fixed");
+            button.html($(button.html())
+                    .removeClass('glyphicon-plus-sign')
+                    .removeClass('glyphicon-minus-sign')
+                    .addClass("grayout")
+                    .addClass('glyphicon-remove-sign')
+                    .addClass('disabled', true).prop('outerHTML'));
+            break;
+        }
+    }
+
     function renderWorkerColumn(data, type, dataToSet) {
         if (data.length == 0) return "none";
 
@@ -153,12 +224,32 @@ function generateGroupsTable(batch) {
             groupsTable.columns.adjust();
         }
     };
+
+    $('#groupsModal').on('click', '.fixButton', function() {
+        var button = this;
+        var tr = $(this).closest('tr');
+        var groupId = groupsTable.row(tr).data().id;
+        var fixed = $(this).hasClass('fixedGroup');
+        $.ajax({
+            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/group/" + groupId
+                    + "/fixed?fixed=" + !fixed,
+            type : "POST",
+            success: function(groupState) {
+                setFixedGroupButton($(button), groupState);
+                groupsTable.cell(tr, 6).data(groupState);
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
+    });
+
+    $('#groupsModal').on('click', '.groupResultsButton', function() {
+        var tr = $(this).closest('tr');
+        var groupId = groupsTable.row(tr).data().id;
+        window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + groupId + "/results";
+    });
 }
 
-$('#groupsModal').on('click', '.groupResultsButton', function() {
-    var tr = $(this).closest('tr');
-    var groupId = groupsTable.row(tr).data().id;
-    window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + groupId + "/results";
-});
 
 </script>

@@ -81,12 +81,28 @@ public class GroupResult {
     private Set<StudyResult> activeMemberList = new HashSet<>();
 
     /**
+     * Size of activeMemberList - We need this in this JPA entity because the information for the activeMemberList is
+     * stored with the StudyResult entity and not here. We need to be able to block (in a concurrent situation - two
+     * workers want to join/leave at the same time) a GroupResult and prevent it from getting members added or removed
+     * we need this information here too.
+     */
+    private Integer activeMemberCount = 0;
+
+    /**
      * Contains all past members of this group (not active any more) that somehow finished this study. This relationship
      * is bidirectional.
      */
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "historyGroupResult")
     private Set<StudyResult> historyMemberList = new HashSet<>();
+
+    /**
+     * Size of historyMemberList - We need this in this JPA entity because the information for the historyMemberList is
+     * stored with the StudyResult entity and not here. We need to be able to block (in a concurrent situation - two
+     * workers want to join/leave at the same time) a GroupResult and prevent it from getting members added or removed
+     * we need this information here too.
+     */
+    private Integer historyMemberCount = 0;
 
     /**
      * Time and date when the study was started on the server.
@@ -170,6 +186,7 @@ public class GroupResult {
 
     public void setActiveMemberList(Set<StudyResult> activeMemberList) {
         this.activeMemberList = activeMemberList;
+        this.activeMemberCount = activeMemberList.size();
     }
 
     public Set<StudyResult> getActiveMemberList() {
@@ -177,27 +194,43 @@ public class GroupResult {
     }
 
     public void removeActiveMember(StudyResult studyResult) {
-        activeMemberList.remove(studyResult);
+        this.activeMemberList.remove(studyResult);
+        this.activeMemberCount = this.activeMemberList.size();
     }
 
     public void addActiveMember(StudyResult studyResult) {
-        activeMemberList.add(studyResult);
+        this.activeMemberList.add(studyResult);
+        this.activeMemberCount = this.activeMemberList.size();
+    }
+
+    public Integer getActiveMemberCount() {
+        return this.activeMemberCount;
+    }
+
+    public void setActiveMemberCount(Integer activeMemberCount) {
+        this.activeMemberCount = activeMemberCount;
     }
 
     public void setHistoryMemberList(Set<StudyResult> historyMemberList) {
         this.historyMemberList = historyMemberList;
+        this.historyMemberCount = historyMemberList.size();
     }
 
     public Set<StudyResult> getHistoryMemberList() {
         return this.historyMemberList;
     }
 
-    public void removeHistoryMember(StudyResult studyResult) {
-        historyMemberList.remove(studyResult);
+    public void addHistoryMember(StudyResult studyResult) {
+        this.historyMemberList.add(studyResult);
+        this.historyMemberCount = this.historyMemberList.size();
     }
 
-    public void addHistoryMember(StudyResult studyResult) {
-        historyMemberList.add(studyResult);
+    public Integer getHistoryMemberCount() {
+        return this.historyMemberCount;
+    }
+
+    public void setHistoryMemberCount(Integer historyMemberCount) {
+        this.historyMemberCount = historyMemberCount;
     }
 
     @Override

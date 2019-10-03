@@ -3,6 +3,7 @@ package services.gui;
 import com.google.common.base.Strings;
 import daos.common.GroupResultDao;
 import models.common.GroupResult;
+import models.common.GroupResult.GroupState;
 import models.gui.GroupSession;
 
 import javax.inject.Inject;
@@ -45,6 +46,16 @@ public class GroupService {
         }
         groupResultDao.update(currentGroupResult);
         return true;
+    }
+
+    public GroupState toggleGroupFixed(GroupResult groupResult, boolean fixed) {
+        if (fixed && groupResult.getGroupState() == GroupState.STARTED) {
+            groupResult.setGroupState(GroupState.FIXED);
+        } else if (!fixed && groupResult.getGroupState() == GroupState.FIXED) {
+            groupResult.setGroupState(GroupState.STARTED);
+        }
+        groupResultDao.update(groupResult);
+        return groupResult.getGroupState();
     }
 
 }

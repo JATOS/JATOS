@@ -288,8 +288,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
-            publixUtils.finishMemberInGroup(studyResult);
-            groupChannel.closeGroupChannel(studyResult);
+            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
@@ -316,8 +315,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
-            publixUtils.finishMemberInGroup(studyResult);
-            groupChannel.closeGroupChannel(studyResult);
+            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);

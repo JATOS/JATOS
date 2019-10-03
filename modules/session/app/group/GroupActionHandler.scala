@@ -132,9 +132,8 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)
         groupResultDao.update(groupResult)
-        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, TellWhom.All))
-      }
-      else {
+        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, TellWhom.SenderOnly))
+      } else {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
         List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
       }

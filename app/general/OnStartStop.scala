@@ -2,10 +2,12 @@ package general
 
 import java.io.File
 
+import daos.common.GroupResultDao
 import general.common.{Common, JatosUpdater}
 import javax.inject.Inject
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+import play.db.jpa.JPAApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,7 +17,8 @@ import scala.concurrent.Future
   *
   * @author Kristian Lange
   */
-class OnStartStop @Inject()(lifecycle: ApplicationLifecycle, environment: play.Environment, jatosUpdater: JatosUpdater) {
+class OnStartStop @Inject()(lifecycle: ApplicationLifecycle, environment: play.Environment, jatosUpdater: JatosUpdater,
+                            jpa: JPAApi, groupResultDao: GroupResultDao) {
 
   private val logger = Logger(this.getClass)
 

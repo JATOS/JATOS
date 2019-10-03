@@ -7,6 +7,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -67,19 +68,25 @@ public class GroupResultDao extends AbstractDao {
     }
 
     /**
-     * Searches the database for all GroupResults of this batch where the
-     * maxActiveMembers size and maxTotalMembers size are not reached yet and
-     * that ate in state STARTED.
+     * Searches the database for GroupResults that fit the criteria: 1) are in the given batch, 2) are in state STARTED,
+     * 3) where the activeMemberCount < Batch's maxActiveMembers, 3) activeMemberCount + historyMemberCount < Batch's
+     * maxTotalMembers. Additionally the results are ordered by the activeMemberCount (highest first) and as a secondary
+     * sorting criteria it orders by historyMemberCount (highest first).
+     *
+     * We use a PESSIMISTIC_WRITE lock to let GroupResults always have the current activeMemberCount and
+     * historyMemberCount.
      */
     public List<GroupResult> findAllMaxNotReached(Batch batch) {
         String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
                 + "WHERE gr.batch=:batch AND b.id=:batch "
                 + "AND gr.groupState=:groupState "
-                + "AND (b.maxActiveMembers is null OR size(gr.activeMemberList) < b.maxActiveMembers) "
-                + "AND (b.maxTotalMembers is null OR ((size(gr.activeMemberList) + size(gr.historyMemberList)) < b.maxTotalMembers))";
+                + "AND (b.maxActiveMembers is null OR gr.activeMemberCount < b.maxActiveMembers) "
+                + "AND (b.maxTotalMembers is null OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
+                + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
         TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr, GroupResult.class);
         query.setParameter("batch", batch);
         query.setParameter("groupState", GroupState.STARTED);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         return query.getResultList();
     }
 

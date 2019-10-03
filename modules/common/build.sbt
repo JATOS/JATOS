@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   javaWs,
   ehcache,
   evolutions,
+  jdbc,
   guice,
   "org.hibernate" % "hibernate-core" % "5.4.2.Final",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.9.8",

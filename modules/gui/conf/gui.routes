@@ -93,6 +93,7 @@ DELETE   /jatos/:studyId/batch/:batchId                                     @con
 GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.Batches.batchesByStudy(studyId: Long)
 GET      /jatos/:studyId/batch/:batchId/groups                              @controllers.gui.Batches.groupsByBatch(studyId: Long, batchId: Long)
+POST     /jatos/:studyId/group/:groupId/fixed                               @controllers.gui.Batches.toggleGroupFixed(studyId: Long, groupId: Long, fixed: Boolean)
 GET      /jatos/:studyId/group/:groupId/groupSessionData                    @controllers.gui.Batches.groupSessionData(studyId: Long, groupId: Long)
 POST     /jatos/:studyId/group/:groupId/groupSessionData                    @controllers.gui.Batches.submitEditedGroupSessionData(studyId: Long, groupId: Long)
 
