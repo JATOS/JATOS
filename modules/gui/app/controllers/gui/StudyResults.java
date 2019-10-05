@@ -27,6 +27,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -300,9 +301,10 @@ public class StudyResults extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForGroup(groupResult, study, groupResultId);
-            Set<StudyResult> studyResultList = groupResult.getActiveMemberList();
-            studyResultList.addAll(groupResult.getHistoryMemberList());
-            dataAsJson = jsonUtils.allStudyResultsForUI(studyResultList);
+            Set<StudyResult> allStudyResults = new HashSet<>();
+            allStudyResults.addAll(groupResult.getActiveMemberList());
+            allStudyResults.addAll(groupResult.getHistoryMemberList());
+            dataAsJson = jsonUtils.allStudyResultsForUI(allStudyResults);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }

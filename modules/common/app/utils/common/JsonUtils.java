@@ -157,19 +157,16 @@ public class JsonUtils {
 
             // Add active workers
             ArrayNode activeWorkerIdListNode = groupResultNode.arrayNode();
-            groupResult.getActiveMemberList()
-                    .forEach(sr -> activeWorkerIdListNode.add(sr.getWorkerId()));
+            groupResult.getActiveMemberList().forEach(sr -> activeWorkerIdListNode.add(sr.getWorkerId()));
             groupResultNode.set("activeWorkerList", activeWorkerIdListNode);
 
             // Add history workers
             ArrayNode historyWorkerIdListNode = groupResultNode.arrayNode();
-            groupResult.getHistoryMemberList()
-                    .forEach(sr -> historyWorkerIdListNode.add(sr.getWorkerId()));
+            groupResult.getHistoryMemberList().forEach(sr -> historyWorkerIdListNode.add(sr.getWorkerId()));
             groupResultNode.set("historyWorkerList", historyWorkerIdListNode);
 
             // Add study result count
-            int resultCount = groupResult.getActiveMemberList().size() +
-                    groupResult.getHistoryMemberList().size();
+            int resultCount = groupResult.getActiveMemberCount() + groupResult.getHistoryMemberCount();
             groupResultNode.put("resultCount", resultCount);
 
             arrayNode.add(groupResultNode);

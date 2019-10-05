@@ -54,11 +54,8 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null || !studyResult.getStudy.isGroupStudy) return
 
-    // We need this transaction here because later on in the GroupDispatcher the updated data are needed
-    jpa.withTransaction(asJavaSupplier(() => {
-      moveActiveMemberToHistory(studyResult)
-      checkAndFinishGroup(groupResult)
-    }))
+    moveActiveMemberToHistory(studyResult)
+    checkAndFinishGroup(groupResult)
   }
 
   /**
@@ -66,13 +63,15 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     * (StudyResult's state is in FINISHED, FAILED, ABORTED).
     */
   private def moveActiveMemberToHistory(studyResult: StudyResult): Unit = {
-    val groupResult = studyResult.getActiveGroupResult
-    groupResult.removeActiveMember(studyResult)
-    groupResult.addHistoryMember(studyResult)
-    studyResult.setActiveGroupResult(null)
-    studyResult.setHistoryGroupResult(groupResult)
-    groupResultDao.update(groupResult)
-    studyResultDao.update(studyResult)
+    jpa.withTransaction(asJavaSupplier(() => {
+      val groupResult = studyResult.getActiveGroupResult
+      groupResult.removeActiveMember(studyResult)
+      groupResult.addHistoryMember(studyResult)
+      studyResult.setActiveGroupResult(null)
+      studyResult.setHistoryGroupResult(groupResult)
+      groupResultDao.update(groupResult)
+      studyResultDao.update(studyResult)
+    }))
   }
 
   /**
@@ -90,7 +89,7 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     }
 
     // We need this transaction here because later on in the GroupDispatcher the updated data are needed
-    jpa.withTransaction(asJavaSupplier(() => {
+    val differentGroupResult = jpa.withTransaction(asJavaSupplier(() => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch).asScala
       // Don't reassign to the same group again
       allGroupMaxNotReached -= currentGroupResult
@@ -99,18 +98,20 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
         return Left(s"Couldn't reassign the study result with ID ${studyResult.getId} to any other group.")
       }
 
-      // Found another possible group
+      // Found a possible group: put into active members of new group - do not put into history members of old group
       val differentGroupResult = allGroupMaxNotReached.head
       currentGroupResult.removeActiveMember(studyResult)
       differentGroupResult.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(differentGroupResult)
-      checkAndFinishGroup(currentGroupResult)
 
       groupResultDao.update(currentGroupResult)
       groupResultDao.update(differentGroupResult)
       studyResultDao.update(studyResult)
-      Right(differentGroupResult)
+      differentGroupResult
     }))
+
+    checkAndFinishGroup(currentGroupResult)
+    Right(differentGroupResult)
   }
 
   /**
@@ -122,7 +123,7 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     * makes assembling new groups difficult)
     */
   private def checkAndFinishGroup(groupResult: GroupResult): Unit = {
-    if (!groupResult.getActiveMemberList.isEmpty) return
+    if (groupResult.getActiveMemberCount > 0) return
 
     // 1. Group empty && group is in state FIXED (no new members are allowed to join)
     if (GroupState.FIXED == groupResult.getGroupState) {
@@ -132,18 +133,20 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
 
     // 2. Group empty && max number of members is reached in the group
     val batch = groupResult.getBatch
-    if (batch.getMaxTotalMembers != null && groupResult.getHistoryMemberList.size() >= batch.getMaxTotalMembers) {
+    if (batch.getMaxTotalMembers != null && groupResult.getHistoryMemberCount >= batch.getMaxTotalMembers) {
       finishGroupResult(groupResult)
       return
     }
   }
 
   private def finishGroupResult(groupResult: GroupResult): Unit = {
-    groupResult.setGroupState(GroupState.FINISHED)
-    groupResult.setEndDate(new Timestamp(new Date().getTime))
-    // All session data are temporarily and have to be deleted when the group is finished
-    groupResult.setGroupSessionData(null)
-    groupResultDao.update(groupResult)
+    jpa.withTransaction(asJavaSupplier(() => {
+      groupResult.setGroupState(GroupState.FINISHED)
+      groupResult.setEndDate(new Timestamp(new Date().getTime))
+      // All session data are temporarily and have to be deleted when the group is finished
+      groupResult.setGroupSessionData(null)
+      groupResultDao.update(groupResult)
+    }))
   }
 
 }

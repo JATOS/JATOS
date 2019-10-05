@@ -55,11 +55,11 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   implicit val timeout: Timeout = 5.seconds
 
   /**
-    * Joins a group but doesn't open the group channel. In case of an error/problem an
-    * PublixException is thrown.
+    * Joins a group but doesn't open the group channel. In case of an error/problem an PublixException is thrown.
+    * Synchronized to prevent race conditions with group members joining, leaving, reassigning.
     */
   @throws(classOf[PublixException])
-  def join(studyId: Long, studyResultId: Long): StudyResult = {
+  def join(studyId: Long, studyResultId: Long): StudyResult = synchronized {
     logger.info(s".join: studyId $studyId, studyResultId $studyResultId")
     val idCookie = idCookieService.getIdCookie(studyResultId)
     val worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId)
@@ -78,12 +78,11 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
 
     if (studyResult.getActiveGroupResult != null)
       logger.info(s".join: studyId $studyId, workerId ${idCookie.getWorkerId}" +
-          s" already member of group result ${studyResult.getActiveGroupResult.getId}")
+          s" already member of group ${studyResult.getActiveGroupResult.getId}")
     else {
       val groupResult = groupAdministration.join(studyResult, batch)
       sendJoinedMsg(studyResult)
-      logger.info(s".join: studyId $studyId, workerId ${idCookie.getWorkerId}" +
-          s" joined group result ${groupResult.getId}")
+      logger.info(s".join: studyId $studyId, workerId ${idCookie.getWorkerId} joined group ${groupResult.getId}")
     }
 
     studyResult
@@ -108,10 +107,11 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   /**
     * Tries to reassign this study run (specified by study result ID) to a different group. If the
     * reassignment was successful an Ok is returned. If it was unsuccessful a Forbidden is returned.
-    * In case of an error/problem an PublixException is thrown.
+    * In case of an error/problem an PublixException is thrown. Synchronized to prevent race conditions with group
+    * members joining, leaving, reassigning.
     */
   @throws(classOf[PublixException])
-  def reassign(studyId: Long, studyResultId: Long): Result = {
+  def reassign(studyId: Long, studyResultId: Long): Result = synchronized {
     logger.info(s".reassign: studyId $studyId, studyResultId $studyResultId")
     val idCookie = idCookieService.getIdCookie(studyResultId)
     val worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId)
@@ -134,17 +134,18 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
         return Forbidden(msg)
       case Right(differentGroupResult) =>
         reassignGroupChannel(studyResult, currentGroupResult, differentGroupResult)
-        logger.info(s".reassign: studyId $studyId, workerId ${idCookie.getWorkerId} reassigned to" +
-            s" group result ${differentGroupResult.getId}")
+        logger.info(s".reassign: studyId $studyId, workerId ${idCookie.getWorkerId} reassigned from group" +
+          s" ${currentGroupResult.getId} to group ${differentGroupResult.getId}")
     }
     Ok(" ") // jQuery.ajax cannot handle empty responses
   }
 
   /**
-    * Let this study run (specified by the study result ID) leave the group that it joined before
+    * Let this study run (specified by the study result ID) leave the group that it joined before. Synchronized to
+    * prevent race conditions with group members joining, leaving, reassigning.
     */
   @throws(classOf[PublixException])
-  def leave(studyId: Long, studyResultId: Long): Result = {
+  def leave(studyId: Long, studyResultId: Long): Result = synchronized {
     logger.info(s".leave: studyId $studyId, studyResultId $studyResultId")
     val idCookie = idCookieService.getIdCookie(studyResultId)
     val worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId)
@@ -155,13 +156,12 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     publixUtils.checkStudyIsGroupStudy(study)
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null) {
-      logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} isn't member of a " +
-          s"group result - can't leave.")
+      logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} isn't member of a group - can't leave.")
       return Ok(" ") // jQuery.ajax cannot handle empty responses
     }
 
     closeGroupChannelAndLeaveGroup(studyResult)
-    logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} left group result ${groupResult.getId}")
+    logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} left group ${groupResult.getId}")
     Ok(" ") // jQuery.ajax cannot handle empty responses
   }
 
@@ -249,16 +249,14 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   }
 
   /**
-    * Reassigns the given group channel that is associated with the given StudyResult. It moves the
-    * group channel from the current GroupDispatcher to a different one that is associated with the
-    * given GroupResult.
+    * Reassigns the given group channel that is associated with the given StudyResult. It moves the group channel from
+    * the current GroupDispatcher to a different one that is associated with the given GroupResult.
     */
   def reassignGroupChannel(studyResult: StudyResult,
                            currentGroupResult: GroupResult,
                            differentGroupResult: GroupResult): Unit = {
     val currentDispatcher = getDispatcher(currentGroupResult.getId).get
-    // Get or create, because if the dispatcher was empty it was shutdown
-    // and has to be recreated
+    // Get or create, because if the dispatcher was empty it was shutdown and has to be recreated
     val differentDispatcher = getOrCreateDispatcher(differentGroupResult.getId)
     currentDispatcher ! ReassignChannel(studyResult.getId, differentDispatcher)
     currentDispatcher ! GroupDispatcher.LeftGroup(studyResult.getId())
