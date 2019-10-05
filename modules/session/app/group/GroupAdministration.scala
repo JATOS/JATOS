@@ -115,27 +115,15 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
   }
 
   /**
-    * Checks if a GroupResult should be put in state FINISHED and does it.
-    * There are three reasons to do this and all three have in common that the group does have no
-    * more active members:
-    * 1. Group empty && group is in state FIXED (no new members are allowed to join)
-    * 2. Group empty && max number of members is reached in the group
-    * makes assembling new groups difficult)
+    * Checks if a GroupResult should be put in state FINISHED and does it. A group is finished if it has no
+    * more active members and the max number of members is reached.
     */
   private def checkAndFinishGroup(groupResult: GroupResult): Unit = {
     if (groupResult.getActiveMemberCount > 0) return
 
-    // 1. Group empty && group is in state FIXED (no new members are allowed to join)
-    if (GroupState.FIXED == groupResult.getGroupState) {
-      finishGroupResult(groupResult)
-      return
-    }
-
-    // 2. Group empty && max number of members is reached in the group
     val batch = groupResult.getBatch
     if (batch.getMaxTotalMembers != null && groupResult.getHistoryMemberCount >= batch.getMaxTotalMembers) {
       finishGroupResult(groupResult)
-      return
     }
   }
 
