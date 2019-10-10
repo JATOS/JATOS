@@ -564,11 +564,6 @@ public class PublixInterceptor extends Controller implements IPublix {
         if (jatosWorkerId != null) {
             return JatosWorker.WORKER_TYPE;
         }
-        // Check for MT worker and MT Sandbox worker
-        String mtWorkerId = HttpUtils.getQueryString(MTPublix.MT_WORKER_ID);
-        if (mtWorkerId != null) {
-            return instanceOfPublix(MTPublix.class).retrieveWorkerType();
-        }
         // Check for Personal Single Worker
         String personalSingleWorkerId = HttpUtils
                 .getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
@@ -592,6 +587,12 @@ public class PublixInterceptor extends Controller implements IPublix {
                 .getQueryString(GeneralMultiplePublix.GENERALMULTIPLE);
         if (generalMultiple != null) {
             return GeneralMultipleWorker.WORKER_TYPE;
+        }
+        // Check for MT worker and MT Sandbox worker
+        String mtWorkerId = HttpUtils.getQueryString(MTPublix.MT_WORKER_ID);
+        String mtAssignmentId = HttpUtils.getQueryString(MTPublix.MT_ASSIGNMENT_ID);
+        if (mtWorkerId != null && mtAssignmentId != null) {
+            return instanceOfPublix(MTPublix.class).retrieveWorkerType();
         }
         throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
     }

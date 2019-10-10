@@ -84,7 +84,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
         queryString.put("para2", new String[]{"1234567890"});
         queryString.put("para3", new String[]{"i%20like%20gizmodo"});
         queryString.put(MTPublix.MT_WORKER_ID, new String[]{"123"});
-        queryString.put(MTPublix.ASSIGNMENT_ID, new String[]{"123"});
+        queryString.put(MTPublix.MT_ASSIGNMENT_ID, new String[]{"123"});
         queryString.put("hitId", new String[]{"4"});
         queryString.put("turkSubmitTo", new String[]{"sandbox"});
         queryString.put("batchId", new String[]{"3"});

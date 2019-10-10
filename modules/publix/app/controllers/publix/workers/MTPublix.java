@@ -50,7 +50,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
     /**
      * URL query parameter used by MT
      */
-    public static final String ASSIGNMENT_ID = "assignmentId";
+    public static final String MT_ASSIGNMENT_ID = "assignmentId";
 
     /**
      * Hint: Don't confuse MTurk's workerId with JATOS' workerId. They aren't
@@ -93,7 +93,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
     public Result startStudy(Long studyId, Long batchId) throws PublixException {
         // Get MTurk query parameters
         String mtWorkerId = HttpUtils.getQueryString(MT_WORKER_ID);
-        String mtAssignmentId = HttpUtils.getQueryString(ASSIGNMENT_ID);
+        String mtAssignmentId = HttpUtils.getQueryString(MT_ASSIGNMENT_ID);
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId);
 
