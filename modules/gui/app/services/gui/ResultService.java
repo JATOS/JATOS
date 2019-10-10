@@ -1,22 +1,19 @@
 package services.gui;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.ComponentResult;
 import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.Worker;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
@@ -33,29 +30,6 @@ public class ResultService {
     ResultService(ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
-    }
-
-    /**
-     * Parses a String with result IDs and returns them in a List<Long>. Throws an BadRequestException if an ID is not a
-     * number or if the original String doesn't contain any ID.
-     */
-    public List<Long> extractResultIds(String resultIds) throws BadRequestException {
-        String[] resultIdStrArray = resultIds.split(",");
-        List<Long> resultIdList = new ArrayList<>();
-        for (String idStr : resultIdStrArray) {
-            try {
-                if (idStr.trim().isEmpty()) {
-                    continue;
-                }
-                resultIdList.add(Long.parseLong(idStr.trim()));
-            } catch (NumberFormatException e) {
-                throw new BadRequestException(MessagesStrings.resultIdMalformed(idStr));
-            }
-        }
-        if (resultIdList.size() < 1) {
-            throw new BadRequestException(MessagesStrings.NO_RESULTS_SELECTED);
-        }
-        return resultIdList;
     }
 
     /**

@@ -27,6 +27,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -171,7 +172,7 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax request
+     * Ajax POST request
      * <p>
      * Removes all StudyResults specified in the parameter. The parameter is a
      * comma separated list of of StudyResults IDs as a String. Removing a
@@ -179,60 +180,13 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(String studyResultIds) throws JatosGuiException {
+    public Result remove() throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
+        List<Long> studyResultIdList = new ArrayList<>();
+        request().body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
         try {
-            resultRemover.removeStudyResults(studyResultIds, loggedInUser);
+            resultRemover.removeStudyResults(studyResultIdList, loggedInUser);
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
-    }
-
-    /**
-     * Ajax request
-     * <p>
-     * Removes all StudyResults of the given study.
-     */
-    @Transactional
-    @Authenticated
-    public Result removeAllOfStudy(Long studyId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwStudy(e, study.getId());
-        }
-
-        try {
-            resultRemover.removeAllStudyResults(study, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
-    }
-
-    /**
-     * Ajax request
-     * <p>
-     * Removes all StudyResults that belong to the given worker and the
-     * logged-in user is allowed to delete (only if he's a user of the study).
-     */
-    @Transactional
-    @Authenticated
-    public Result removeAllOfWorker(Long workerId) throws JatosGuiException {
-        Worker worker = workerDao.findById(workerId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkWorker(worker, workerId);
-        } catch (BadRequestException e) {
-            jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
-        }
-
-        try {
-            resultRemover.removeAllStudyResults(worker, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses

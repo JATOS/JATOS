@@ -27,6 +27,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -106,45 +107,21 @@ public class ComponentResults extends Controller {
     }
 
     /**
-     * Ajax DELETE request
+     * Ajax POST request
      * <p>
      * Removes all ComponentResults specified in the parameter. The parameter is
      * a comma separated list of of ComponentResult IDs as a String.
      */
     @Transactional
     @Authenticated
-    public Result remove(String componentResultIds) throws JatosGuiException {
+    public Result remove() throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
+        List<Long> componentResultIdList = new ArrayList<>();
+        request().body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
         try {
             // Permission check is done in service for each result individually
-            resultRemover.removeComponentResults(componentResultIds, loggedInUser);
+            resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
         } catch (ForbiddenException | BadRequestException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
-    }
-
-    /**
-     * Ajax request
-     * <p>
-     * Removes all ComponentResults of the given component and study.
-     */
-    @Transactional
-    @Authenticated
-    public Result removeAllOfComponent(Long studyId, Long componentId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Component component = componentDao.findById(componentId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwHome(e);
-        }
-
-        try {
-            resultRemover.removeAllComponentResults(component, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses

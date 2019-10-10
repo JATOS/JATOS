@@ -86,13 +86,6 @@ public class StudyService {
         clone.setLocked(false);
         clone.setGroupStudy(study.isGroupStudy());
 
-        // Clone each batch
-        for (Batch batch : study.getBatchList()) {
-            Batch batchClone = batchService.clone(batch);
-            batchClone.setStudy(clone);
-            clone.addBatch(batchClone);
-        }
-
         // Clone each component
         for (Component component : study.getComponentList()) {
             Component componentClone = componentService.clone(component);

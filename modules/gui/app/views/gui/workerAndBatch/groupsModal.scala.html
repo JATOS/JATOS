@@ -36,14 +36,6 @@
     </div>
 </div>
 
-<div id="groupsTableSearchAndRefresh" style="display: none">
-    <label for="groupsTableSearchAndRefresh">Filter Groups <span class="glyphicon glyphicon-info-sign gray-light"
-        data-toggle="tooltip" title="You can filter for table's content"></span>:</label>
-    <input type="search" class="form-control" placeholder="" autofocus>
-    <button type="button" class="btn btn-batch refreshButton" data-toggle="tooltip" data-placement="bottom" title="Refresh groups">
-        <span class="glyphicon glyphicon-refresh"></span></button>
-</div>
-
 <!-- Template for fixed button in Group's row -->
 <div id="groupFixedButtonDiv" style="display: none">
     <button type="button" class="btn btn-batch fixButton" data-toggle="tooltip" data-placement="bottom"
@@ -94,12 +86,22 @@ function generateGroupsTable(batch) {
                 showError("Couldn't read group data.", "#groupsModal .messages")
             }
         },
-        "dom": '<"pull-left"l>ftip',
+        "dom": "<'row'<'col-sm-1'B><'col-sm-5'l><'col-sm-6'f>>" + "<'row'<'col-sm-12't>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         "order": [[ 6, "desc" ]],
         "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "pageLength": 10,
         "stateSave": true,
         "pagingType": "simple_numbers",
+        buttons: [
+            {
+                text: "<span class='glyphicon glyphicon-refresh'></span>",
+                "className": "btn btn-batch",
+                "titleAttr": 'Refresh groups',
+                action: function ( e, dt, node, config ) {
+                    groupsTable.ajax.reload();
+                }
+            }
+        ],
         "columns": [
             {
                 "data": "id",
@@ -146,17 +148,6 @@ function generateGroupsTable(batch) {
             $('th.groupSessionDataColumn').removeClass('sorting');
             setGroupResultsButtonWidthToMax();
         }
-    });
-
-    // Swap dataTables filter field with our own
-    $("#groupsModal .dataTables_filter").empty();
-    $("#groupsModal .dataTables_filter").append($("#groupsTableSearchAndRefresh"));
-    $("#groupsTableSearchAndRefresh").show();
-    $('#groupsTableSearchAndRefresh .refreshButton').on('click', () => {
-        groupsTable.ajax.reload();
-    });
-    $('#groupsTableSearchAndRefresh input').on('keyup click', () => {
-        groupsTable.search($('#groupsTableSearchAndRefresh input').val()).draw();
     });
 
     function setFixedGroupButton(button, groupState) {

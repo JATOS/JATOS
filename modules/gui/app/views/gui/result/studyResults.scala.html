@@ -179,6 +179,14 @@ $(document).ready(function() {
         },
         buttons: [
             {
+                text: "<span class='glyphicon glyphicon-refresh'></span>",
+                "className": "btn btn-study",
+                "titleAttr": 'Refresh results',
+                action: function ( e, dt, node, config ) {
+                    resultsTable.ajax.reload();
+                }
+            },
+            {
                 "extend": "colvis",
                 "text": "Show/Hide Columns <span class='caret'></span>",
                 "className": "btn btn-study",
@@ -379,8 +387,8 @@ $(document).ready(function() {
                 .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
     });
 
-    function exportSelectedResultData(e, dt, node, config) {
-        var selectedTrs = resultsTable.rows('.selected').nodes();
+    function exportSelectedResultData(e, dt, node, config, exportAll) {
+        var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
             var rowData = resultsTable.row(selectedTr).data();
@@ -408,25 +416,12 @@ $(document).ready(function() {
         });
     }
 
-    function exportAllResultData(e, dt, node, config) {
-        $('#waitingModal').modal('show');
-        // Use download.js (http://danml.com/download.html) to get the result data and offer them
-        // as download to the user. download.js allows to use an Ajax call and error handling.
-        $.ajax({
-            url: '@controllers.gui.routes.ImportExport.exportDataOfAllStudyResults(study.getId())',
-            type: 'GET',
-            success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
-            error: function(err) {
-                showError(err.responseText);
-            },
-            complete: function() {
-                $('#waitingModal').modal('hide');
-            }
-        });
+    function exportAllResultData(e, dt, node, config, ) {
+        exportSelectedResultData(e, dt, node, config, true);
     }
 
-    function deleteSelectedResults(e, dt, node, config) {
-        var selectedTrs = resultsTable.rows('.selected').nodes();
+    function deleteSelectedResults(e, dt, node, config, deleteAll) {
+        var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
             var rowData = resultsTable.row(selectedTr).data();
@@ -436,17 +431,24 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
+
+        var htmlText;
+        if (deleteAll) {
+            htmlText = "<p>You are about to delete <b>ALL</b> study results <b>with all their component results</b>.</p>"
+                + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        } else {
+            htmlText = "<p>You are about to delete the study results (ID " + ids.join(", ") + ") "
+                + "<b>with all their component results</b>.</p>"
+                + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+        }
         var title = "Confirm Delete";
-        var htmlText = "<p>You are about to delete the study results "
-            + "(ID " + ids.join(", ") + ") "
-            + "<b>with all their component results</b>.</p>"
-            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
             $('#waitingModal').modal('show');
-            var url = '@{general.common.Common.getPlayHttpContext()}jatos/studyResult?studyResultIds=' + ids.toString();
             $.ajax({
-                url : url,
-                type : 'DELETE',
+                url : '@controllers.gui.routes.StudyResults.remove()',
+                type : 'POST',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({resultIds: ids}),
                 success : function(result) {
                     $.each(selectedTrs, function(index, selectedTr) {
                         resultsTable.row(selectedTr).remove().draw();
@@ -463,27 +465,7 @@ $(document).ready(function() {
     }
 
     function deleteAllResults(e, dt, node, config) {
-        var title = "Confirm Delete";
-        var htmlText = "<p>You are about to delete <b>ALL</b> study results "
-            + "<b>with all their component results</b>.</p>"
-            + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
-        askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-            $('#waitingModal').modal('show');
-            var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
-            $.ajax({
-                url : url,
-                type : 'DELETE',
-                success : function(result) {
-                    resultsTable.ajax.reload();
-                },
-                error : function(err) {
-                    showError(err.responseText);
-                },
-                complete: function() {
-                    $('#waitingModal').modal('hide');
-                }
-            });
-        });
+        deleteSelectedResults(e, dt, node, config, true);
     }
 
     function childRowFormat(data) {

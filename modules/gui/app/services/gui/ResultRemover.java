@@ -54,16 +54,14 @@ public class ResultRemover {
      * Retrieves all ComponentResults that correspond to the IDs in the given
      * String, checks them and if yes, removes them.
      *
-     * @param componentResultIds Takes a comma separated list of IDs of ComponentResults.
+     * @param componentResultIdList List of IDs of ComponentResults
      * @param user               For each ComponentResult it will be checked that the given
      *                           user is a user of the study that the ComponentResult belongs
      *                           too.
      */
-    public void removeComponentResults(String componentResultIds, User user)
+    public void removeComponentResults(List<Long> componentResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
-        List<Long> componentResultIdList = resultService.extractResultIds(componentResultIds);
-        List<ComponentResult> componentResultList =
-                resultService.getComponentResults(componentResultIdList);
+        List<ComponentResult> componentResultList = resultService.getComponentResults(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, true);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
         studyLogger.logResultDataRemoving(componentResultList);
@@ -75,13 +73,12 @@ public class ResultRemover {
      * String, checks if the given user is allowed to remove them and if yes,
      * removes them.
      *
-     * @param studyResultIds Takes a comma separated list of IDs of StudyResults.
+     * @param studyResultIdList List of IDs of StudyResults.
      * @param user           For each StudyResult it will be checked that the given user is
      *                       a user of the study that the StudyResult belongs too.
      */
-    public void removeStudyResults(String studyResultIds, User user)
+    public void removeStudyResults(List<Long> studyResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
-        List<Long> studyResultIdList = resultService.extractResultIds(studyResultIds);
         List<StudyResult> studyResultList = resultService.getStudyResults(studyResultIdList);
         checker.checkStudyResults(studyResultList, user, true);
         studyResultList.forEach(this::removeStudyResult);
@@ -194,14 +191,31 @@ public class ResultRemover {
         workerDao.update(worker);
 
         // Remove studyResult as member from group result
-        GroupResult groupResult = studyResult.getActiveGroupResult();
-        if (groupResult != null) {
-            groupResult.removeActiveMember(studyResult);
-            groupResultDao.update(groupResult);
+        GroupResult activeGroupResult = studyResult.getActiveGroupResult();
+        if (activeGroupResult != null) {
+            activeGroupResult.removeActiveMember(studyResult);
+            updateOrRemoveGroupResult(activeGroupResult);
+        }
+        GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
+        if (historyGroupResult != null) {
+            historyGroupResult.removeHistoryMember(studyResult);
+            updateOrRemoveGroupResult(historyGroupResult);
         }
 
         // Remove studyResult
         studyResultDao.remove(studyResult);
+    }
+
+    /**
+     * If the group has no more members remove it.
+     */
+    private void updateOrRemoveGroupResult(GroupResult groupResult) {
+        if (groupResult.getGroupState() == GroupResult.GroupState.FINISHED &&
+                groupResult.getActiveMemberCount() == 0 && groupResult.getHistoryMemberCount() == 0) {
+            groupResultDao.remove(groupResult);
+        } else {
+            groupResultDao.update(groupResult);
+        }
     }
 
 }

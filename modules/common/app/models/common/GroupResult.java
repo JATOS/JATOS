@@ -220,6 +220,11 @@ public class GroupResult {
         return this.historyMemberList;
     }
 
+    public void removeHistoryMember(StudyResult studyResult) {
+        this.historyMemberList.remove(studyResult);
+        this.historyMemberCount = this.historyMemberList.size();
+    }
+
     public void addHistoryMember(StudyResult studyResult) {
         this.historyMemberList.add(studyResult);
         this.historyMemberCount = this.historyMemberList.size();
