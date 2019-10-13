@@ -80,7 +80,7 @@ public abstract class PublixUtils<T extends Worker> {
      * Start or restart a component. It either returns a newly started component
      * or an exception but never null.
      */
-    public ComponentResult startComponent(Component component, StudyResult studyResult)
+    public ComponentResult startComponent(Component component, StudyResult studyResult, String message)
             throws ForbiddenReloadException {
         // Deal with the last component
         Optional<ComponentResult> lastComponentResultOpt = studyResult.getLastComponentResult();
@@ -90,11 +90,11 @@ public abstract class PublixUtils<T extends Worker> {
                 // The component to be started is the same as the last one
                 if (component.isReloadable()) {
                     // Reload is allowed
-                    finishComponentResult(lastComponentResult, ComponentState.RELOADED);
+                    finishComponentResult(lastComponentResult, ComponentState.RELOADED, message);
                 } else {
                     // Worker tried to reload a non-reloadable component -> end
                     // component and study with FAIL
-                    finishComponentResult(lastComponentResult, ComponentState.FAIL);
+                    finishComponentResult(lastComponentResult, ComponentState.FAIL, message);
                     String errorMsg = PublixErrorMessages.componentNotAllowedToReload(
                             studyResult.getStudy().getId(), component.getId());
                     throw new ForbiddenReloadException(errorMsg);
@@ -102,15 +102,16 @@ public abstract class PublixUtils<T extends Worker> {
             } else {
                 // The prior component is a different one than the one to be
                 // started: just finish it
-                finishComponentResult(lastComponentResult, ComponentState.FINISHED);
+                finishComponentResult(lastComponentResult, ComponentState.FINISHED, message);
             }
         }
         return resultCreator.createComponentResult(studyResult, component);
     }
 
-    private void finishComponentResult(ComponentResult componentResult, ComponentState state) {
+    private void finishComponentResult(ComponentResult componentResult, ComponentState state, String message) {
         componentResult.setComponentState(state);
         componentResult.setEndDate(new Timestamp(new Date().getTime()));
+        componentResult.setMessage(message);
         componentResultDao.update(componentResult);
     }
 
@@ -118,13 +119,13 @@ public abstract class PublixUtils<T extends Worker> {
      * Does everything to abort a study: ends the current component with state
      * ABORTED, finishes all other Components that might still be open, deletes
      * all result data and ends the study with state ABORTED and sets the given
-     * message as an abort message.
+     * message.
      */
     public void abortStudy(String message, StudyResult studyResult) {
         // Put current ComponentResult into state ABORTED and set end date
         Timestamp endDate = new Timestamp(new Date().getTime());
         retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
-            finishComponentResult(currentComponentResult, ComponentState.ABORTED);
+            finishComponentResult(currentComponentResult, ComponentState.ABORTED, null);
             currentComponentResult.setEndDate(endDate);
         });
         // Finish the other ComponentResults
@@ -139,7 +140,7 @@ public abstract class PublixUtils<T extends Worker> {
 
         // Set StudyResult to state ABORTED and set message
         studyResult.setStudyState(StudyState.ABORTED);
-        studyResult.setAbortMsg(message);
+        studyResult.setMessage(message);
         studyResult.setEndDate(endDate);
         studyResult.setStudySessionData(null);
         studyResultDao.update(studyResult);
@@ -153,12 +154,11 @@ public abstract class PublixUtils<T extends Worker> {
      *                    confirmation code and set the StudyResult's and current ComponentResult's
      *                    state to FINISHED. If false it sets both states to FAIL and doesn't
      *                    generate a confirmation code.
-     * @param errorMsg    Will be set in the StudyResult. Can be null if no error
-     *                    happened.
+     * @param message    Will be set in the StudyResult. Can be null.
      * @param studyResult A StudyResult
      * @return The confirmation code or null if it was unsuccessful
      */
-    public String finishStudyResult(Boolean successful, String errorMsg, StudyResult studyResult) {
+    public String finishStudyResult(Boolean successful, String message, StudyResult studyResult) {
         String confirmationCode;
         StudyState studyState;
         ComponentState componentState;
@@ -180,7 +180,7 @@ public abstract class PublixUtils<T extends Worker> {
 
         finishAllComponentResults(studyResult);
         studyResult.setConfirmationCode(confirmationCode);
-        studyResult.setErrorMsg(errorMsg);
+        studyResult.setMessage(message);
         studyResult.setEndDate(endDate);
         // Clear study session data before finishing
         studyResult.setStudySessionData(null);
@@ -191,8 +191,7 @@ public abstract class PublixUtils<T extends Worker> {
     private void finishAllComponentResults(StudyResult studyResult) {
         studyResult.getComponentResultList().stream()
                 .filter(componentResult -> !PublixHelpers.componentDone(componentResult))
-                .forEach(componentResult -> finishComponentResult(componentResult,
-                        ComponentState.FINISHED));
+                .forEach(componentResult -> finishComponentResult(componentResult, ComponentState.FINISHED, null));
     }
 
     /**
@@ -278,7 +277,7 @@ public abstract class PublixUtils<T extends Worker> {
             StudyResult studyResult) throws ForbiddenReloadException {
         Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
         // Start the component if it was never started or if it's a reload of the component
-        return current.isPresent() ? current.get() : startComponent(component, studyResult);
+        return current.isPresent() ? current.get() : startComponent(component, studyResult, null);
     }
 
     /**

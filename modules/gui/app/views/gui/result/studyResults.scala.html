@@ -20,7 +20,7 @@
             <th>MTurk Worker ID (Confirmation Code)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
-            <th>Messages&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
+            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
         </tr>
     </thead>
@@ -40,7 +40,7 @@
             <th>MTurk Worker ID (Confirmation Code)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
-            <th>Messages&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
+            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
         </tr>
     </tfoot>
@@ -159,7 +159,7 @@ $(document).ready(function() {
             },
             { "data": "studyState" },
             {
-                "data": getMessages,
+                "data": "message",
                 "width": "20%"
             },
             {
@@ -357,18 +357,6 @@ $(document).ready(function() {
         return "none";
     }
 
-    function getMessages(data, type, dataToSet) {
-        var messages = [];
-        if (data.errorMsg != null) {
-            messages.push(data.errorMsg);
-            messages.push("<br>");
-        }
-        if (data.abortMsg != null) {
-            messages.push(data.abortMsg);
-        }
-        return messages.join("");
-    }
-
     $('#resultsTable tbody').on('click', 'td.details-control', function() {
         var tr = $(this).closest('tr');
         var row = resultsTable.row(tr);
@@ -480,10 +468,12 @@ $(document).ready(function() {
             '<td><b>Start Time (Server)</b></td>',
             '<td><b>Duration</b></td>',
             '<td><b>State</b></td>',
+            '<td><b>Message</b></td>',
             '</tr>');
             if (data.componentResults.length > 0) {
                 data.componentResults.forEach(function(componentResult) {
                     var duration = (componentResult.duration) ? componentResult.duration : "not yet";
+                    var message = (componentResult.message) ? componentResult.message : "";
                     html.push('<tr class="info">',
                         '<td>' + componentResult.id + '</td>',
                         '<td>' + componentResult.componentId + '</td>',
@@ -491,13 +481,14 @@ $(document).ready(function() {
                         '<td>' + componentResult.startDate + '</td>',
                         '<td>' + duration + '</td>',
                         '<td>' + componentResult.componentState + '</td>',
+                        '<td>' + message + '</td>',
                         '</tr><tr class="info">',
-                        '<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
+                        '<td colspan="7"><pre class="details-data">' + componentResult.data + '</pre></td>',
                         '</tr>');
                 });
             } else {
                 html.push('<tr class="info">',
-                    '<td colspan="6">empty</td>',
+                    '<td colspan="7">empty</td>',
                     '</tr>');
             }
             html.push('</table>', '</div>');

@@ -101,10 +101,9 @@ public class ComponentResult {
     private String data;
 
     /**
-     * Error message in case something went wrong with the component (state is
-     * FAIL). Can be left null.
+     * Some message usually set via jatos.startComponent. Max 255 characters. Can be left null.
      */
-    private String errorMsg;
+    private String message;
 
     public ComponentResult() {
     }
@@ -173,12 +172,12 @@ public class ComponentResult {
         return this.data;
     }
 
-    public void setErrorMsg(String errorMsg) {
-        this.errorMsg = StringUtils.substring(errorMsg, 0, 255);
+    public void setMessage(String message) {
+        this.message = StringUtils.substring(message, 0, 255);
     }
 
-    public String getErrorMsg() {
-        return this.errorMsg;
+    public String getMessage() {
+        return this.message;
     }
 
     public void setStudyResult(StudyResult studyResult) {

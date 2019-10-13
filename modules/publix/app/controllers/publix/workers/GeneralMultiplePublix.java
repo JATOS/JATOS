@@ -86,7 +86,7 @@ public class GeneralMultiplePublix extends Publix<GeneralMultipleWorker> impleme
         studyLogger.log(study, "Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE
                 + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, firstComponent.getId(), studyResult.getId()));
+                studyId, firstComponent.getId(), studyResult.getId(), null));
     }
 
 }

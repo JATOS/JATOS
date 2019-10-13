@@ -413,7 +413,7 @@ var jatos = {};
 
 	/**
 	 * Defines callback function that is to be called when jatos.js finished its initialisation.
-	 * @param {Function} callback - Function that is to be called when jatos.js is done initializing
+	 * @param {function} callback - Function that is to be called when jatos.js is done initializing
 	 */
 	jatos.onLoad = function (callback) {
 		onLoadCallback = callback;
@@ -875,7 +875,7 @@ var jatos = {};
 	 * JATOS server. With this function one can set the period with which the
 	 * heartbeat is send.
 	 * 
-	 * @param {Number} heartbeatPeriod - in milliseconds (Integer)
+	 * @param {number} heartbeatPeriod - in milliseconds (Integer)
 	 */
 	jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
 		if (typeof heartbeatPeriod == 'number' && heartbeatWorker) {
@@ -905,9 +905,9 @@ var jatos = {};
 	 * It offers callbacks, either as parameter or via jQuery.deferred.promise,
 	 * to signal success or failure in the transfer.
 	 * 
-	 * @param {Object} resultData - String or Object to be submitted
-	 * @param {optional Function} onSuccess - Function to be called in case of success
-	 * @param {optional Function} onError - Function to be called in case of error
+	 * @param {object} resultData - String or object to be submitted
+	 * @param {optional function} onSuccess - Function to be called in case of success
+	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
@@ -920,9 +920,9 @@ var jatos = {};
 	 * data. It offers callbacks, either as parameter or via jQuery.deferred.promise,
 	 * to signal success or failure in the transfer.
 	 *
-	 * @param {Object} resultData - String or Object to be appended
-	 * @param {optional Function} onSuccess - Function to be called in case of success
-	 * @param {optional Function} onError - Function to be called in case of error
+	 * @param {object or string} resultData - String or object to be appended
+	 * @param {optional function} onSuccess - Function to be called in case of success
+	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.appendResultData = function (resultData, onSuccess, onError) {
@@ -977,10 +977,10 @@ var jatos = {};
 	 * This function is automatically called by all functions that start a new
 	 * component, so it is usually not necessary to call it manually.
 	 * 
-	 * @param {Object} studySessionData - Object to be submitted
-	 * @param {optional Function} onSuccess - Function to be called after this
+	 * @param {object} studySessionData - Object to be submitted
+	 * @param {optional function} onSuccess - Function to be called after this
 	 *				function is finished
-	 * @param {optional Function} onFail - Callback if fail
+	 * @param {optional function} onFail - Callback if fail
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
@@ -1023,27 +1023,45 @@ var jatos = {};
 	 * appends them to the already existing ones for this component) and 
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
-	 * @param {Object} componentId - ID of the component to start
-	 * @param {optional Object} resultData - String or Object be sent as result data
-	 * @param {optional Function} onError - callback if fail
+	 * Either without message:
+	 * @param {number} componentId - ID of the component to start
+	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
+	 * @param {optional function} onError - Callback function if fail
+	 * 
+	 * Or with message:
+	 * @param {number} componentId - ID of the component to start
+	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
+	 * @param {optional string} message - Message that should be logged (max 255 chars)
+	 * @param {optional function} onError - Callback function if fail
 	 */
-	jatos.startComponent = function (componentId, resultData, onError) {
+	jatos.startComponent = function (componentId, resultData, param3, param4) {
+		var message, onError;
+		if (typeof param3 === 'string') {
+			message = param3;
+			onError = param4;
+		} else if (typeof param3 === 'function') {
+			onError = param3;
+		}
+
 		if (startingComponent) {
-			callingOnError(null, "Can start only one component at the same time");
+			callingOnError(onError, "Can start only one component at the same time");
 			return;
 		}
 		startingComponent = true;
 		var onComplete = function () {
-			window.location.href = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
+			var url = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
+			if (message) url = url + "&" + jatos.jQuery.param({ "message": message });
+			window.location.href = url;
 		};
 		if (resultData) {
 			jatos.jQuery.when(
-					jatos.appendResultData(resultData),
-					jatos.setStudySessionData(jatos.studySessionData))
-				.then(onComplete, onError);
+				jatos.appendResultData(resultData),
+				jatos.setStudySessionData(jatos.studySessionData)
+			).then(onComplete, onError);
 		} else {
-			jatos.jQuery.when(jatos.setStudySessionData(jatos.studySessionData))
-				.then(onComplete, onError);
+			jatos.jQuery.when(
+				jatos.setStudySessionData(jatos.studySessionData)
+			).then(onComplete, onError);
 		}
 	};
 
@@ -1054,13 +1072,20 @@ var jatos = {};
 	 * appends them to the already existing ones for this component) and 
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
-	 * @param {Object} componentPos - Position of the component to start
-	 * @param {optional Object} resultData - String or Object be sent as result data
-	 * @param {optional Function} onError - callback if fail
+	 * Either without message:
+	 * @param {number} componentPos - Position of the component to start
+	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
+	 * @param {optional function} onError - Callback function if fail
+	 * 
+	 * Or with message:
+	 * @param {number} componentPos - Position of the component to start
+	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
+	 * @param {optional string} message - Message that should be logged (max 255 chars)
+	 * @param {optional function} onError - Callback function if fail
 	 */
-	jatos.startComponentByPos = function (componentPos, resultData, onError) {
+	jatos.startComponentByPos = function (componentPos, resultData, param3, param4) {
 		var componentId = jatos.componentList[componentPos - 1].id;
-		jatos.startComponent(componentId, resultData, onError);
+		jatos.startComponent(componentId, resultData, param3, param4);
 	};
 
 	/**
@@ -1071,26 +1096,37 @@ var jatos = {};
 	 * appends them to the already existing ones for this component) and 
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
-	 * @param {optional Object} resultData - String or Object be sent as result data
-	 * @param {optional Function} onError - callback if fail
+	 * Either without message:
+	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
+	 * @param {optional function} onError - Callback function if fail
+	 * 
+	 * Or with message:
+	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
+	 * @param {optional string} message - Message that should be logged (max 255 chars)
+	 * @param {optional function} onError - Callback function if fail
 	 */
-	jatos.startNextComponent = function (resultData, onError) {
+	jatos.startNextComponent = function (resultData, param2, param3) {
+		var message;
+		if (typeof param2 === 'string') {
+			message = param2;
+		}
+
 		// If last component end study
 		if (jatos.componentPos >= jatos.componentList.length) {
 			if (resultData) {
 				var onComplete = function () {
-					jatos.endStudy(true);
+					jatos.endStudy(true, message);
 				};
 				jatos.appendResultData(resultData).done(onComplete).fail(onError);
 			} else {
-				jatos.endStudy(true);
+				jatos.endStudy(true, message);
 			}
 			return;
 		}
 		for (var i = jatos.componentPos; i < jatos.componentList.length; i++) {
 			if (jatos.componentList[i].active) {
 				var nextComponentId = jatos.componentList[i].id;
-				jatos.startComponent(nextComponentId, resultData, onError);
+				jatos.startComponent(nextComponentId, resultData, param2, param3);
 				break;
 			}
 		}
@@ -1098,85 +1134,35 @@ var jatos = {};
 
 	/**
 	 * Starts the last component of this study or if it's inactive the component
-	 * with the highest position that is active. Before this it calls 
-	 * jatos.appendResultData (sends result data to the JATOS server and 
-	 * appends them to the already existing ones for this component) and 
+	 * with the highest position that is active. Before this it calls
+	 * jatos.appendResultData (sends result data to the JATOS server and
+	 * appends them to the already existing ones for this component) and
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 *
+	 * Either without message:
+	 * @param {optional object or string} resultData - Result data be sent back
+	 * @param {optional function} onError - Callback function if fail
 	 * 
-	 * @param {optional Object} resultData - String or Object be sent as result data
-	 * @param {optional Function} onError - callback if fail
+	 * Or with message:
+	 * @param {optional object or string} resultData - Result data be sent back
+	 * @param {optional string} message - Message that should be logged (max 255 chars)
+	 * @param {optional function} onError - Callback function if fail
 	 */
-	jatos.startLastComponent = function (resultData, onError) {
+	jatos.startLastComponent = function (resultData, param2, param3) {
 		for (var i = jatos.componentList.length - 1; i >= 0; i--) {
 			if (jatos.componentList[i].active) {
 				var lastComponentId = jatos.componentList[i].id;
-				jatos.startComponent(lastComponentId, resultData, onError);
+				jatos.startComponent(lastComponentId, resultData, param2, param3);
 				break;
 			}
 		}
 	};
 
 	/**
-	 * @DEPRECATED since jatos.js 3.1.1
-	 * Finishes component. Usually this is not necessary because the last component
-	 * is automatically finished if the new component is started. Nevertheless it's
-	 * useful to explicitly tell about a FAIL and submit an error message. Finishing
-	 * the component doesn't finish the study.
-	 * 
-	 * @param {optional Boolean} successful - 'true' if study should finish
-	 *				successful and the participant should get the confirmation code
-	 *				- 'false' otherwise.
-	 * @param {optional String} errorMsg - Error message that should be logged.
-	 * @param {optional Function} onSuccess - Function to be called in case of
-	 *				successful submit
-	 * @param {optional Function} onError - Function to be called in case of error
-	 */
-	jatos.endComponent = function (successful, errorMsg, onSuccess, onError) {
-		if (isDeferredPending(endingDeferred)) {
-			callingOnError(onError, "Can end only once");
-			return rejectedPromise();
-		}
-
-		endingDeferred = jatos.jQuery.Deferred();
-		console.warn("Usage of jatos.endComponent is deprecated. " +
-			"Use jatos.startComponent, jatos.startComponentByPos, jatos.startNextComponent, " +
-			"jatos.startLastComponent instead. See http://www.jatos.org/jatos.js-Reference.html.");
-		var onComplete = function () {
-			var url = "end" + "?srid=" + jatos.studyResultId;
-			var fullUrl;
-			if (typeof successful != 'undefined' && typeof errorMsg != 'undefined') {
-				fullUrl = url + "&successful=" + successful + "&errorMsg=" + errorMsg;
-			} else if (typeof successful != 'undefined') {
-				fullUrl = url + "&successful=" + successful;
-			} else if (typeof errorMsg != 'undefined') {
-				fullUrl = url + "&errorMsg=" + errorMsg;
-			} else {
-				fullUrl = url;
-			}
-			jatos.jQuery.ajax({
-				url: fullUrl,
-				processData: false,
-				type: "GET",
-				timeout: jatos.httpTimeout,
-				success: function (response) {
-					callFunctionIfExist(onSuccess, response);
-				},
-				error: function (err) {
-					callingOnError(onError, getAjaxErrorMsg(err));
-				}
-			}).retry({
-				times: jatos.httpRetry,
-				timeout: jatos.httpRetryWait
-			});
-		};
-		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
-	};
-
-	/**
 	 * Tries to join a group (actually a GroupResult) in the JATOS server and if it
 	 * succeeds opens the group channel's WebSocket.
 	 * 
-	 * @param {Object} callbacks - Defining callback functions for group events. All
+	 * @param {object} callbacks - Defining callback functions for group events. All
 	 *		callbacks are optional. These callbacks functions can be:
 	 *		onOpen: to be called when the group channel is successfully opened
 	 *		onClose: to be called when the group channel is closed
@@ -1285,7 +1271,7 @@ var jatos = {};
 	 * Closes the group channel, cleans channel objects and timers and reopens
 	 * the channel.
 	 */
-	function reopenGroupChannel(backoffTime) {
+	function reopenGroupChannel() {
 		if (isDeferredPending(openingGroupChannelDeferred) ||
 			isDeferredPending(reassigningGroupDeferred) ||
 			isDeferredPending(leavingGroupDeferred)) {
@@ -1313,7 +1299,7 @@ var jatos = {};
 				var timeout = setTimeout(function () {
 					callingOnError(groupChannelCallbacks.onError,
 						"Group channel heartbeat fail");
-					reopenGroupChannel(jatos.channelOpeningBackoffTimeMin);
+					reopenGroupChannel();
 				}, jatos.channelHeartbeatTimeoutTime);
 				groupChannelHeartbeatTimeoutTimers.push(timeout);
 			}
@@ -1334,7 +1320,7 @@ var jatos = {};
 				callingOnError(groupChannelCallbacks.onError,
 					"Group channel closed unexpectedly");
 				clearInterval(groupChannelClosedCheckTimer);
-				reopenGroupChannel(jatos.channelOpeningBackoffTimeMin);
+				reopenGroupChannel();
 			}
 		}, jatos.channelClosedCheckInterval);
 	}
@@ -1761,7 +1747,7 @@ var jatos = {};
 	};
 
 	/**
-	 * @return {Boolean} True if the group has reached the maximum amount of active
+	 * @return {boolean} True if the group has reached the maximum amount of active
 	 *         members like specified in the batch properties. It's not necessary
 	 *         that each member has an open group channel.
 	 */
@@ -1774,7 +1760,7 @@ var jatos = {};
 	};
 
 	/**
-	 * @return {Boolean} True if the group has reached the maximum amount of active
+	 * @return {boolean} True if the group has reached the maximum amount of active
 	 *         members like specified in the batch properties and each member has an
 	 *         open group channel.
 	 */
@@ -1787,7 +1773,7 @@ var jatos = {};
 	};
 
 	/**
-	 * @return {Boolean} True if all active members of the group have an open group
+	 * @return {boolean} True if all active members of the group have an open group
 	 *         channel. It's not necessary that the group has reached its minimum
 	 *         or maximum active member size.
 	 */
@@ -1802,7 +1788,7 @@ var jatos = {};
 	/**
 	 * Sends a message to all group members if group channel is open.
 	 * 
-	 * @param {Object} msg - Any JavaScript object
+	 * @param {object} msg - Any JavaScript object
 	 */
 	jatos.sendGroupMsg = function (msg) {
 		if (groupChannel && groupChannel.readyState == groupChannel.OPEN) {
@@ -1816,8 +1802,8 @@ var jatos = {};
 	 * Sends a message to a single group member specified with the given member ID
 	 * (only if group channel is open).
 	 * 
-	 * @param {String} recipient - Recipient's group member ID
-	 * @param {Object} msg - Any JavaScript object
+	 * @param {string} recipient - Recipient's group member ID
+	 * @param {object} msg - Any JavaScript object
 	 */
 	jatos.sendGroupMsgTo = function (recipient, msg) {
 		if (groupChannel && groupChannel.readyState == groupChannel.OPEN) {
@@ -1833,9 +1819,9 @@ var jatos = {};
 	 * Successful reassigning reuses the current group channel (and WebSocket) -
 	 * it does not close the channel and opens a new one.
 	 * 
-	 * @param {optional Function} onSuccess - Function to be called if the
+	 * @param {optional function} onSuccess - Function to be called if the
 	 *            reassignment was successful
-	 * @param {optional Function} onFail - Function to be called if the
+	 * @param {optional function} onFail - Function to be called if the
 	 *            reassignment was unsuccessful. 
 	 * @return {jQuery.deferred.promise}
 	 */
@@ -1889,9 +1875,9 @@ var jatos = {};
 	 * The group channel WebSocket is not closed in this function - it's closed from
 	 * the JATOS' side.
 	 * 
-	 * @param {optional Function} onSuccess - Function to be called after the group
+	 * @param {optional function} onSuccess - Function to be called after the group
 	 *            is left.
-	 * @param {optional Function} onError - Function to be called in case of error.
+	 * @param {optional function} onError - Function to be called in case of error.
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
@@ -1934,10 +1920,10 @@ var jatos = {};
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
 	 * 
-	 * @param {optional String} message - Message that should be logged
-	 * @param {optional Function} onSuccess - Function to be called in case of
+	 * @param {optional string} message - Message that should be logged
+	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
-	 * @param {optional Function} onError - Function to be called in case of error
+	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
@@ -1982,8 +1968,8 @@ var jatos = {};
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
 	 * 
-	 * @param {optional String} message - Message that should be logged
-	 * @param {optional Boolean} showEndPage - If true an end page is shown - if false it
+	 * @param {optional string} message - Message that should be logged
+	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
 	 *				behaves like jatos.abortStudyAjax
 	 */
 	jatos.abortStudy = function (message, showEndPage) {
@@ -2012,16 +1998,43 @@ var jatos = {};
 	/**
 	 * Ends study with an Ajax call.
 	 * 
-	 * @param {optional Boolean} successful - 'true' if study should finish
+	 * Either without result data:
+	 * @param {optional boolean} successful - 'true' if study should finish
 	 *				successful and the participant should get the confirmation
 	 *				code - 'false' otherwise.
-	 * @param {optional String} message - A message that should be logged.
-	 * @param {optional Function} onSuccess - Function to be called in case of
+	 * @param {optional string} message - Message to be logged (max 255 chars)
+	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
-	 * @param {optional Function} onError - Function to be called in case of error
+	 * @param {optional function} onError - Function to be called in case of error
+	 * 
+	 * Or with result data:
+	 * @param {optional string or object} resultData- result data to be sent back
+	 * 				to JATOS server
+	 * @param {optional boolean} successful - 'true' if study should finish
+	 *				successful and the participant should get the confirmation
+	 *				code - 'false' otherwise
+	 * @param {optional string} message - Message to be logged (max 255 chars)
+	 * @param {optional function} onSuccess - Function to be called in case of
+	 *				successful submit
+	 * @param {optional function} onError - Function to be called in case of error
+	 * 
 	 * @return {jQuery.deferred.promise}
 	 */
-	jatos.endStudyAjax = function (successful, message, onSuccess, onError) {
+	jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
+		var resultData, successful, message, onSuccess, onError;
+		if (typeof param1 === 'string' || typeof param1 === 'object') {
+			resultData = param1;
+			successful = param2;
+			message = param3;
+			onSuccess = param4;
+			onError = param5;
+		} else if (typeof param1 === 'boolean') {
+			successful = param1;
+			message = param2;
+			onSuccess = param3;
+			onError = param4;
+		}
+
 		if (isDeferredPending(endingDeferred)) {
 			callingOnError(onError, "Can end only once");
 			return rejectedPromise();
@@ -2030,25 +2043,23 @@ var jatos = {};
 		function end() {
 			endingDeferred = jatos.jQuery.Deferred();
 			var url = "../end" + "?srid=" + jatos.studyResultId;
-			var fullUrl;
 			if (typeof successful == 'boolean' && typeof message == 'string') {
-				fullUrl = url + "&" + jatos.jQuery.param({
+				url = url + "&" + jatos.jQuery.param({
 					"successful": successful,
 					"message": message
 				});
 			} else if (typeof successful == 'boolean' && typeof message != 'string') {
-				fullUrl = url + "&" + jatos.jQuery.param({
+				url = url + "&" + jatos.jQuery.param({
 					"successful": successful
 				});
 			} else if (typeof successful != 'boolean' && typeof message == 'string') {
-				fullUrl = url + "&" + jatos.jQuery.param({
+				url = url + "&" + jatos.jQuery.param({
 					"message": message
 				});
-			} else {
-				fullUrl = url;
 			}
+
 			jatos.jQuery.ajax({
-				url: fullUrl,
+				url: url,
 				processData: false,
 				type: "GET",
 				timeout: jatos.httpTimeout,
@@ -2070,22 +2081,59 @@ var jatos = {};
 			});
 			return endingDeferred.promise();
 		}
-		return jatos.setStudySessionData(jatos.studySessionData).always(end).promise();
+
+		if (resultData) {
+			return jatos.jQuery.when(
+				jatos.appendResultData(resultData),
+				jatos.setStudySessionData(jatos.studySessionData)
+			).always(end).promise();
+		} else {
+			return jatos.jQuery.when(
+				jatos.setStudySessionData(jatos.studySessionData)
+			).always(end).promise();
+		}
 	};
 
 	/**
 	 * Ends study.
 	 * 
-	 * @param {optional Boolean} successful - 'true' if study should finish
+	 * Either without result data:
+	 * @param {optional boolean} successful - 'true' if study should finish
 	 *			successful and the participant should get the confirmation code
-	 *			- 'false' otherwise.
-	 * @param {optional String} message - A message that should be logged.
-	 * @param {optional Boolean} showEndPage - If true an end page is shown - if false it
+	 *			- 'false' otherwise
+	 * @param {optional string} message - Message to be logged (max 255 chars)
+	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
+	 *			behaves like jatos.endStudyAjax
+	 *
+	 * Or with result data:
+	 * @param {optional string or object} resultData- result data to be sent back
+	 * 				to JATOS server
+	 * @param {optional boolean} successful - 'true' if study should finish
+	 *			successful and the participant should get the confirmation code
+	 *			- 'false' otherwise
+	 * @param {optional string} message - Message to be logged (max 255 chars)
+	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
 	 *			behaves like jatos.endStudyAjax
 	 */
-	jatos.endStudy = function (successful, message, showEndPage) {
+	jatos.endStudy = function (param1, param2, param3, param4) {
+		var resultData, successful, message, showEndPage;
+		if (typeof param1 === 'string' || typeof param1 === 'object') {
+			resultData = param1;
+			successful = param2;
+			message = param3;
+			showEndPage = param4;
+		} else if (typeof param1 === 'boolean') {
+			successful = param1;
+			message = param2;
+			showEndPage = param3;
+		}
+
 		if (typeof showEndPage !== "undefined" && !showEndPage) {
-			return jatos.endStudyAjax(successful, message);
+			if (resultData) {
+				return jatos.endStudyAjax(resultData, successful, message);
+			} else {
+				return jatos.endStudyAjax(successful, message);
+			}
 		}
 
 		if (isDeferredPending(endingDeferred)) {
@@ -2096,27 +2144,33 @@ var jatos = {};
 		function end() {
 			endingDeferred = jatos.jQuery.Deferred();
 			var url = "../end" + "?srid=" + jatos.studyResultId;
-			var fullUrl;
 			if (typeof successful == 'boolean' && typeof message == 'string') {
-				fullUrl = url + "&" + jatos.jQuery.param({
+				url = url + "&" + jatos.jQuery.param({
 					"successful": successful,
 					"message": message
 				});
 			} else if (typeof successful == 'boolean' && typeof message != 'string') {
-				fullUrl = url + "&" + jatos.jQuery.param({
+				url = url + "&" + jatos.jQuery.param({
 					"successful": successful
 				});
 			} else if (typeof successful != 'boolean' && typeof message == 'string') {
-				fullUrl = url + "&" + jatos.jQuery.param({
+				url = url + "&" + jatos.jQuery.param({
 					"message": message
 				});
-			} else {
-				fullUrl = url;
 			}
-			window.location.href = fullUrl;
+			window.location.href = url;
 		}
 
-		return jatos.setStudySessionData(jatos.studySessionData).always(end).promise();
+		if (resultData) {
+			return jatos.jQuery.when(
+				jatos.appendResultData(resultData),
+				jatos.setStudySessionData(jatos.studySessionData)
+			).always(end).promise();
+		} else {
+			return jatos.jQuery.when(
+				jatos.setStudySessionData(jatos.studySessionData)
+			).always(end).promise();
+		}
 	};
 
 	/**
@@ -2153,7 +2207,7 @@ var jatos = {};
 	 * study result ID, component result ID, group result ID, group member ID)
 	 * to the given object.
 	 * 
-	 * @param {Object} obj - Object to which the IDs will be added
+	 * @param {object} obj - Object to which the IDs will be added
 	 */
 	jatos.addJatosIds = function (obj) {
 		obj.studyId = jatos.studyId;
@@ -2266,7 +2320,7 @@ var jatos = {};
 			return copy;
 		}
 
-		// Handle Object
+		// Handle object
 		if (obj instanceof Object) {
 			copy = {};
 			for (var attr in obj) {

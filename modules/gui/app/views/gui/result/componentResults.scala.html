@@ -18,7 +18,7 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
-            <th>Messages&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
+            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
         </tr>
     </thead>
@@ -36,7 +36,7 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
-            <th>Messages&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
+            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
         </tr>
     </tfoot>
@@ -137,7 +137,7 @@ $(document).ready(function() {
             },
             { "data": "componentState" },
             {
-                "data": "errorMsg",
+                "data": "message",
                 "width": "20%"
             },
             {

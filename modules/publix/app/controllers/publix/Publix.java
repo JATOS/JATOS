@@ -71,10 +71,10 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     }
 
     @Override
-    public Result startComponent(Long studyId, Long componentId, Long studyResultId)
+    public Result startComponent(Long studyId, Long componentId, Long studyResultId, String message)
             throws PublixException {
-        LOGGER.info(".startComponent: studyId " + studyId + ", "
-                + "componentId " + componentId + ", " + "studyResultId " + studyResultId);
+        LOGGER.info(".startComponent: studyId " + studyId + ", " + "componentId " + componentId + ", "
+                + "studyResultId " + studyResultId + ", " + "message '" + message + "'");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
         Study study = publixUtils.retrieveStudy(studyId);
@@ -85,7 +85,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
         ComponentResult componentResult;
         try {
-            componentResult = publixUtils.startComponent(component, studyResult);
+            componentResult = publixUtils.startComponent(component, studyResult, message);
         } catch (ForbiddenReloadException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
                     .finishStudy(studyId, studyResult.getId(), false, e.getMessage()));
@@ -94,36 +94,6 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         idCookieService.writeIdCookie(worker, batch, studyResult, componentResult);
         return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
                 component.getHtmlFilePath()).asJava();
-    }
-
-    @Override
-    public Result startComponentByPosition(Long studyId, Integer position,
-            Long studyResultId) throws PublixException {
-        LOGGER.info(".startComponentByPosition: studyId " + studyId + ", "
-                + "position " + position + ", " + "studyResultId " + studyResultId);
-        Component component = publixUtils.retrieveComponentByPosition(studyId, position);
-        return startComponent(studyId, component.getId(), studyResultId);
-    }
-
-    @Override
-    public Result startNextComponent(Long studyId, Long studyResultId)
-            throws PublixException {
-        LOGGER.info(".startNextComponent: studyId " + studyId + ", "
-                + "studyResultId " + studyResultId);
-        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-        Study study = publixUtils.retrieveStudy(studyId);
-        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
-
-        Optional<Component> nextComponent = publixUtils.retrieveNextActiveComponent(studyResult);
-        // Study has no more components -> finish it
-        if (!nextComponent.isPresent()) {
-            return redirect(controllers.publix.routes.PublixInterceptor.finishStudy(
-                    studyId, studyResult.getId(), true, null));
-        } else {
-            return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                    studyId, nextComponent.get().getId(), studyResult.getId()));
-        }
     }
 
     @Override
@@ -238,47 +208,11 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     }
 
     @Override
-    public Result finishComponent(Long studyId, Long componentId, Long studyResultId,
-            Boolean successful, String errorMsg) throws PublixException {
-        LOGGER.info(".finishComponent: studyId " + studyId + ", "
-                + "componentId " + componentId + ", " + "studyResultId "
-                + studyResultId + ", " + "successful " + successful + ", "
-                + "errorMsg \"" + errorMsg + "\"");
-        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-        Study study = publixUtils.retrieveStudy(studyId);
-        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-        Component component = publixUtils.retrieveComponent(study, componentId);
-        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-        publixUtils.checkComponentBelongsToStudy(study, component);
-
-        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
-        Optional<ComponentResult> componentResult =
-                publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) {
-            String error = PublixErrorMessages
-                    .componentNeverStarted(studyId, componentId, "submitResultData");
-            return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyId, studyResult.getId(), false, error));
-        }
-
-        if (successful) {
-            componentResult.get().setComponentState(ComponentState.FINISHED);
-            componentResult.get().setErrorMsg(errorMsg);
-        } else {
-            componentResult.get().setComponentState(ComponentState.FAIL);
-            componentResult.get().setErrorMsg(errorMsg);
-        }
-        componentResultDao.update(componentResult.get());
-        return ok(" "); // jQuery.ajax cannot handle empty responses
-    }
-
-    @Override
     public Result abortStudy(Long studyId, Long studyResultId, String message)
             throws PublixException {
         LOGGER.info(".abortStudy: studyId " + studyId + ", " + ", "
-                + "studyResultId " + studyResultId + ", " + "message \""
-                + message + "\"");
+                + "studyResultId " + studyResultId + ", " + "message '"
+                + message + "'");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -305,7 +239,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             Boolean successful, String message) throws PublixException {
         LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
                 + studyResultId + ", " + "successful " + successful + ", "
-                + "message \"" + message + "\"");
+                + "message '" + message + "'");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -342,7 +276,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         LOGGER.info("logging from client: study ID " + studyId
                 + ", component ID " + componentId + ", worker ID "
                 + worker.getId() + ", study result ID " + studyResultId
-                + ", message \"" + msg + "\".");
+                + ", message '" + msg + "'.");
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 

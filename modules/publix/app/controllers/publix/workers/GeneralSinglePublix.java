@@ -130,7 +130,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
 
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, firstComponent.getId(), studyResult.getId()));
+                studyId, firstComponent.getId(), studyResult.getId(), null));
     }
 
 }

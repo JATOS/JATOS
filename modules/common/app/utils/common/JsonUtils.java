@@ -291,8 +291,7 @@ public class JsonUtils {
                 componentResult.getStartDate(), componentResult.getEndDate()));
         String groupResultId = getGroupResultId(componentResult.getStudyResult());
         componentResultNode.put("groupResultId", groupResultId);
-        componentResultNode
-                .put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());
+        componentResultNode.put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
         componentResultNode.put(DATA, componentResultDataForUI(componentResult));

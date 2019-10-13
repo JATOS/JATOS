@@ -10,12 +10,7 @@ GET     /publix/:studyId/end                             @controllers.publix.Pub
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, srid: Long, message: String ?= null)
 POST    /publix/:studyId/heartbeat                       @controllers.publix.PublixInterceptor.heartbeat(studyId: Long, srid: Long)
 POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long, srid: Long)
-# Deprecated (June 2018)
-GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long, srid: Long)
-# Deprecated (June 2018): Start component by position
-GET     /publix/:studyId/component/start                 @controllers.publix.PublixInterceptor.startComponentByPosition(studyId: Long, position: Integer, srid: Long)
-GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long, srid: Long)
-GET     /publix/:studyId/:componentId/end                @controllers.publix.PublixInterceptor.finishComponent(studyId: Long, componentId: Long, srid: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long, srid: Long, message: String ?= null)
 GET     /publix/:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long, srid: Long)
 PUT     /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.appendResultData(studyId: Long, componentId: Long, srid: Long)

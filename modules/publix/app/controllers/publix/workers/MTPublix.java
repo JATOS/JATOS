@@ -131,7 +131,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         studyLogger.log(study, "Started study run with " + MTWorker.UI_WORKER_TYPE
                 + " worker", batch, worker.get());
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, firstComponent.getId(), studyResult.getId()));
+                studyId, firstComponent.getId(), studyResult.getId(), null));
     }
 
     @Override
@@ -139,7 +139,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             Boolean successful, String message) throws PublixException {
         LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
                 + studyResultId + ", " + "successful " + successful + ", "
-                + "message \"" + message + "\"");
+                + "message '" + message + "'");
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());

@@ -143,10 +143,10 @@ public class MessagesStrings {
     public static final String RESULTS_NUMBER_COMPONENT_RESULTS = "Current number of component results";
     public static final String RESULTS_STUDY_STATE =
             "Current state of this study's run, like " + StudyState.allStatesAsString();
-    public static final String RESULTS_STUDY_MESSAGES = "Messages that occured during the run of this study";
+    public static final String RESULTS_STUDY_MESSAGES = "Message that occured during the run of this study";
     public static final String RESULTS_COMPONENT_STATE =
             "Current state of this component's run, like " + ComponentState.allStatesAsString();
-    public static final String RESULTS_COMPONENT_MESSAGES = "Messages that occured during the run of this component";
+    public static final String RESULTS_COMPONENT_MESSAGES = "Message that occured during the run of this component";
 
     // Other
     public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to"

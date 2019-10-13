@@ -28,23 +28,7 @@ public interface IPublix {
      * <p>
      * Starts the component with the given componentId that belongs to the study with the studyId.
      */
-    Result startComponent(Long studyId, Long componentId, Long studyResultId) throws PublixException;
-
-    /**
-     * HTTP type: Normal GET request
-     * <p>
-     * Starts the component in the given position that belongs to the study with the studyId.
-     */
-    Result startComponentByPosition(Long studyId, Integer position, Long studyResultId) throws PublixException;
-
-    /**
-     * Deprecated! HTTP type: Normal GET request
-     * <p>
-     * Starts the next component of the study with the given ID. Components within a study are ordered. This method
-     * starts the component after the current one. If there are no more components in the study, the study will be
-     * finished successfully.
-     */
-    Result startNextComponent(Long studyId, Long studyResultId) throws PublixException;
+    Result startComponent(Long studyId, Long componentId, Long studyResultId, String message) throws PublixException;
 
     /**
      * HTTP type: Ajax GET request
@@ -88,15 +72,6 @@ public interface IPublix {
      * and component ID.
      */
     Result appendResultData(Long studyId, Long componentId, Long studyResultId) throws PublixException;
-
-    /**
-     * HTTP type: Ajax GET request
-     * <p>
-     * Finishes the component specified by the given study and component ID. Optionally it can be specified whether the
-     * component was successful and and error message.
-     */
-    Result finishComponent(Long studyId, Long componentId, Long studyResultId, Boolean successful, String errorMsg)
-            throws PublixException;
 
     /**
      * HTTP type: Normal or Ajax GET request

@@ -129,14 +129,9 @@ public class StudyResult {
     private String confirmationCode;
 
     /**
-     * Error message in case something went wrong with the study (state is FAIL). Can be left null.
+     * Some message usually set via jatos.finishStudy. Can be left null. Max 255 chars.
      */
-    private String errorMsg;
-
-    /**
-     * Message in case the study was aborted (state is ABORTED). Can be left null.
-     */
-    private String abortMsg;
+    private String message;
 
     /**
      * Query string parameters of the URL that starts the study stored in JSON format. JATOS specific parameters are
@@ -230,20 +225,12 @@ public class StudyResult {
         return this.batch;
     }
 
-    public void setErrorMsg(String errorMsg) {
-        this.errorMsg = StringUtils.substring(errorMsg, 0, 255);
+    public void setMessage(String message) {
+        this.message = StringUtils.substring(message, 0, 255);
     }
 
-    public String getErrorMsg() {
-        return this.errorMsg;
-    }
-
-    public void setAbortMsg(String abortMsg) {
-        this.abortMsg = StringUtils.substring(abortMsg, 0, 255);
-    }
-
-    public String getAbortMsg() {
-        return this.abortMsg;
+    public String getMessage() {
+        return this.message;
     }
 
     public void setConfirmationCode(String confirmationCode) {
