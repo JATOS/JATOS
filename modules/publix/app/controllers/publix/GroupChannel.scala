@@ -70,7 +70,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     val studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId)
 
     if (studyResult.getHistoryGroupResult != null) {
-      logger.info(s".join: It's not allowed to run a group study twice in the same study run " +
+      logger.info(s".join: It's not allowed to join a group after it was explicitly left " +
           s"(studyId $studyId, studyResultId $studyResultId)."
       )
       throw new ForbiddenPublixException(PublixErrorMessages.GROUP_STUDY_NOT_POSSIBLE_TWICE)
