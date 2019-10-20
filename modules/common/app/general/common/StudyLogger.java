@@ -6,12 +6,8 @@ import akka.actor.Status;
 import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import models.common.Batch;
-import models.common.ComponentResult;
-import models.common.Study;
-import models.common.StudyResult;
+import models.common.*;
 import models.common.workers.Worker;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,8 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created while the study is
@@ -53,21 +47,18 @@ public class StudyLogger {
     /**
      * JSON key names used in study log
      */
-    public static final String TIMESTAMP = "timestamp";
-    public static final String MSG = "msg";
-    public static final String STUDY_UUID = "studyUuid";
-    public static final String STUDY_DESCRIPTION_HASH = "studyDescriptionHash";
-    public static final String JATOS_VERSION = "jatosVersion";
-    public static final String SERVERS_MAC = "serversMac";
-    public static final String HASH_FUNCTION = "hashFunction";
-    public static final String WORKER_ID = "workerId";
-    public static final String WORKER_IDS = "workerIds";
-    public static final String BATCH_ID = "batchId";
-    public static final String DATA_HASH = "dataHash";
-    public static final String DATA_HASHES = "dataHashes";
-    public static final String NO_DATA = "no data";
-    public static final String COMPONENT_UUID = "componentUuid";
-    public static final String COMPONENT_UUIDS = "componentUuids";
+    private static final String TIMESTAMP = "timestamp";
+    private static final String MSG = "msg";
+    private static final String STUDY_UUID = "studyUuid";
+    private static final String STUDY_DESCRIPTION_HASH = "studyDescriptionHash";
+    private static final String SERVERS_MAC = "serversMac";
+    private static final String HASH_FUNCTION = "hashFunction";
+    private static final String USER_NAME = "userName";
+    private static final String WORKER_ID = "workerId";
+    private static final String BATCH_ID = "batchId";
+    private static final String DATA_HASH = "dataHash";
+    private static final String NO_DATA = "no data";
+    private static final String COMPONENT_UUID = "componentUuid";
 
     public String getFilename(Study study) {
         return study.getUuid() + ".log";
@@ -111,10 +102,9 @@ public class StudyLogger {
             }
 
             ObjectNode jsonObj = Json.newObject();
-            jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             jsonObj.put(MSG, msg);
+            jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             jsonObj.put(STUDY_UUID, study.getUuid());
-            jsonObj.put(JATOS_VERSION, Common.getJatosVersion());
             jsonObj.put(SERVERS_MAC, Common.getMac());
             jsonObj.put(HASH_FUNCTION, HashUtils.SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
@@ -127,7 +117,7 @@ public class StudyLogger {
 
     public String retire(Study study) {
         if (!Common.isStudyLogsEnabled()) return null;
-        log(study, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
+        log(study, null, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
         Path logPath = Paths.get(getPath(study));
         Path retiredLogPath = Paths.get(getRetiredPath(study));
         if (Files.exists(logPath)) {
@@ -140,19 +130,27 @@ public class StudyLogger {
         return retiredLogPath.getFileName().toString();
     }
 
-    public void log(Study study, String msg) {
+    public void log(Study study, User user, String msg) {
         if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
-        log(study, jsonObj);
+        log(study, user, jsonObj);
     }
 
-    public void log(Study study, String msg, Pair<String, Object> additionalInfo) {
+    public void log(Study study, User user, String msg, Batch batch) {
+        if (!Common.isStudyLogsEnabled()) return;
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put(MSG, msg);
+        jsonObj.put(BATCH_ID, batch.getId());
+        log(study, user, jsonObj);
+    }
+
+    public void log(Study study, User user, String msg, Pair<String, Object> additionalInfo) {
         if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(additionalInfo.getKey(), String.valueOf(additionalInfo.getValue()));
-        log(study, jsonObj);
+        log(study, user, jsonObj);
     }
 
     public void log(Study study, String msg, Worker worker) {
@@ -160,15 +158,7 @@ public class StudyLogger {
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(WORKER_ID, worker.getId());
-        log(study, jsonObj);
-    }
-
-    public void log(Study study, String msg, Batch batch) {
-        if (!Common.isStudyLogsEnabled()) return;
-        ObjectNode jsonObj = Json.newObject();
-        jsonObj.put(MSG, msg);
-        jsonObj.put(BATCH_ID, batch.getId());
-        log(study, jsonObj);
+        log(study, null, jsonObj);
     }
 
     public void log(Study study, String msg, Batch batch, Worker worker) {
@@ -177,17 +167,7 @@ public class StudyLogger {
         jsonObj.put(MSG, msg);
         jsonObj.put(BATCH_ID, batch.getId());
         jsonObj.put(WORKER_ID, worker.getId());
-        log(study, jsonObj);
-    }
-
-    /**
-     * Adds an entry to the study log: exporting of a ComponentResult. Adds the hash of the result data, the component
-     * UUID, and the worker IDs.
-     *
-     * @param componentResult ComponentResult that will be exported
-     */
-    public void logResultDataExporting(ComponentResult componentResult) {
-        logResultData(componentResult, "Exported result data to file");
+        log(study, null, jsonObj);
     }
 
     /**
@@ -196,10 +176,6 @@ public class StudyLogger {
      * @param componentResult ComponentResults that will be stored
      */
     public void logResultDataStoring(ComponentResult componentResult) {
-        logResultData(componentResult, "Stored component result data");
-    }
-
-    private void logResultData(ComponentResult componentResult, String msg) {
         if (!Common.isStudyLogsEnabled()) return;
         if (componentResult == null) return;
 
@@ -207,62 +183,21 @@ public class StudyLogger {
         String resultDataHash = (componentResult.getData() != null) ? HashUtils.getHash(componentResult.getData(),
                 HashUtils.SHA_256) : NO_DATA;
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put(MSG, msg);
+        jsonObj.put(MSG, "Stored component result data");
         jsonObj.put(COMPONENT_UUID, componentResult.getComponent().getUuid());
         jsonObj.put(WORKER_ID, componentResult.getWorkerId());
         jsonObj.put(DATA_HASH, resultDataHash);
-        log(studyResult.getStudy(), jsonObj);
+        log(studyResult.getStudy(), null, jsonObj);
     }
 
-    /**
-     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs, and all worker IDs
-     * of the worker who run this component. All component results must come from the same study but not necessarily
-     * from the same study result.
-     *
-     * @param componentResultList list of ComponentResults that will be removed
-     */
-    public void logResultDataRemoving(List<ComponentResult> componentResultList) {
-        if (!Common.isStudyLogsEnabled()) return;
-        if (componentResultList.size() == 0) return;
-
-        Study study = componentResultList.get(0).getStudyResult().getStudy();
-        ArrayNode dataHashesArray = Json.newArray();
-        ArrayNode componentUuidArray = Json.newArray();
-        ArrayNode workerIdArray = Json.newArray();
-        for (ComponentResult cr : componentResultList) {
-            dataHashesArray.add((cr.getData() != null) ? HashUtils.getHash(cr.getData(), HashUtils.SHA_256) : NO_DATA);
-            componentUuidArray.add(cr.getComponent().getUuid());
-            workerIdArray.add(cr.getWorkerId());
-        }
-        ObjectNode jsonObj = Json.newObject();
-        jsonObj.put(MSG, "Removed component result data");
-        jsonObj.set(COMPONENT_UUIDS, componentUuidArray);
-        jsonObj.set(WORKER_IDS, workerIdArray);
-        jsonObj.set(DATA_HASHES, dataHashesArray);
-        log(study, jsonObj);
-    }
-
-    /**
-     * Adds an entry to the study log: adds hashes of all component result data, all component UUIDs, and all worker IDs
-     * of the worker who run this study.
-     *
-     * @param studyResultList List of StudyResults which will be removed
-     */
-    public void logStudyResultDataRemoving(List<StudyResult> studyResultList) {
-        if (!Common.isStudyLogsEnabled()) return;
-        List<ComponentResult> componentResultList = studyResultList.stream().map(StudyResult::getComponentResultList)
-                .flatMap(List::stream).collect(Collectors.toList());
-        logResultDataRemoving(componentResultList);
-    }
-
-    public void logStudyDescriptionHash(Study study) {
-        log(study, "Study description changed", Pair.of(STUDY_DESCRIPTION_HASH, study.getDescriptionHash()));
+    public void logStudyDescriptionHash(Study study, User user) {
+        log(study, user, "Study description changed", Pair.of(STUDY_DESCRIPTION_HASH, study.getDescriptionHash()));
     }
 
     /**
      * Adds the given jsonObj as an entry to the study
      */
-    public void log(Study study, ObjectNode jsonObj) {
+    private void log(Study study, User user, ObjectNode jsonObj) {
         if (!Common.isStudyLogsEnabled()) return;
         Path studyLogPath = Paths.get(getPath(study));
         if (Files.notExists(studyLogPath)) {
@@ -271,6 +206,7 @@ public class StudyLogger {
             recreate(study);
         }
         try {
+            if (user != null) jsonObj.put(USER_NAME, user.getName());
             jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
             byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);

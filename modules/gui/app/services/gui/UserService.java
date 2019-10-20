@@ -190,7 +190,7 @@ public class UserService {
         for (Study study : Lists.newArrayList(user.getStudyList())) {
             // Only remove the study if no other users are member in this study
             if (study.getUserList().size() == 1) {
-                studyService.removeStudyInclAssets(study);
+                studyService.removeStudyInclAssets(study, user);
             } else {
                 study.removeUser(user);
                 studyDao.update(study);

@@ -15,7 +15,9 @@ import play.Logger.ALogger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service class that removes ComponentResults or StudyResults. It's used by
@@ -62,10 +64,12 @@ public class ResultRemover {
     public void removeComponentResults(List<Long> componentResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = resultService.getComponentResults(componentResultIdList);
+        Set<Study> studies = new HashSet<>();
         checker.checkComponentResults(componentResultList, user, true);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
-        studyLogger.logResultDataRemoving(componentResultList);
         componentResultList.forEach(this::removeComponentResult);
+        componentResultList.forEach(cr -> studies.add(cr.getStudyResult().getStudy()));
+        studies.forEach(study -> studyLogger.log(study, user, "Removed result data"));
     }
 
     /**
@@ -80,36 +84,23 @@ public class ResultRemover {
     public void removeStudyResults(List<Long> studyResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
         List<StudyResult> studyResultList = resultService.getStudyResults(studyResultIdList);
+        Set<Study> studies = new HashSet<>();
         checker.checkStudyResults(studyResultList, user, true);
         studyResultList.forEach(this::removeStudyResult);
-        studyLogger.logStudyResultDataRemoving(studyResultList);
-    }
-
-    /**
-     * Removes all ComponentResults that belong to the given component.
-     * Retrieves all ComponentResults of the given component, checks if the
-     * given user is allowed to remove them and if yes, removes them.
-     */
-    public void removeAllComponentResults(Component component, User user)
-            throws ForbiddenException, BadRequestException {
-        List<ComponentResult> componentResultList =
-                componentResultDao.findAllByComponent(component);
-        checker.checkComponentResults(componentResultList, user, true);
-        componentResultList.forEach(this::removeComponentResultFromStudyResult);
-        studyLogger.logResultDataRemoving(componentResultList);
-        componentResultList.forEach(this::removeComponentResult);
+        studyResultList.forEach(sr -> studies.add(sr.getStudy()));
+        studies.forEach(study -> studyLogger.log(study, user, "Removed result data"));
     }
 
     /**
      * Removes all ComponentResults that belong to the given component. Remove them from their
      * StudyResults.
      */
-    void removeAllComponentResults(Component component) {
+    void removeAllComponentResults(Component component, User user) {
         List<ComponentResult> componentResultList =
                 componentResultDao.findAllByComponent(component);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
-        studyLogger.logResultDataRemoving(componentResultList);
         componentResultList.forEach(this::removeComponentResult);
+        studyLogger.log(component.getStudy(), user, "Removed result data");
     }
 
     private void removeComponentResultFromStudyResult(ComponentResult componentResult) {
@@ -125,39 +116,12 @@ public class ResultRemover {
     }
 
     /**
-     * Removes all StudyResults that belong to the given study. Retrieves all
-     * StudyResults of the given study, checks if the given user is allowed to
-     * remove them and if yes, removes them.
-     */
-    public void removeAllStudyResults(Study study, User user)
-            throws ForbiddenException, BadRequestException {
-        List<StudyResult> studyResultList = studyResultDao.findAllByStudy(study);
-        checker.checkStudyResults(studyResultList, user, true);
-        studyLogger.logStudyResultDataRemoving(studyResultList);
-        studyResultList.forEach(this::removeStudyResult);
-    }
-
-    /**
-     * Removes all StudyResults that belong to the given worker. Retrieves all
-     * StudyResults that belong to the given worker, checks if the given user is
-     * allowed to remove them and if yes, removes them.
-     */
-    public void removeAllStudyResults(Worker worker, User user)
-            throws ForbiddenException, BadRequestException {
-        List<StudyResult> allowedStudyResultList =
-                resultService.getAllowedStudyResultList(user, worker);
-        checker.checkStudyResults(allowedStudyResultList, user, true);
-        studyLogger.logStudyResultDataRemoving(allowedStudyResultList);
-        allowedStudyResultList.forEach(this::removeStudyResult);
-    }
-
-    /**
      * Removes all StudyResults that belong to the given batch.
      */
-    void removeAllStudyResults(Batch batch) {
+    void removeAllStudyResults(Batch batch, User user) {
         List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
-        studyLogger.logStudyResultDataRemoving(studyResultList);
         studyResultList.forEach(this::removeStudyResult);
+        studyLogger.log(batch.getStudy(), user, "Removed result data");
     }
 
     /**

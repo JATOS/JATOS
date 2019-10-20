@@ -376,6 +376,7 @@ $(document).ready(function() {
     });
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
+        $('#waitingModal').modal('show');
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -383,10 +384,10 @@ $(document).ready(function() {
             ids.push(rowData.id);
         });
         if (ids.length == 0) {
+            $('#waitingModal').modal('hide');
             showError("No results selected");
             return;
         }
-        $('#waitingModal').modal('show');
         // Use download.js (http://danml.com/download.html) to get the result data and offer them
         // as download to the user. download.js allows to use an Ajax call and error handling.
         $.ajax({
@@ -409,6 +410,7 @@ $(document).ready(function() {
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
+        $('#waitingModal').modal('show');
         var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -416,6 +418,7 @@ $(document).ready(function() {
             ids.push(rowData.id);
         });
         if (ids.length <= 0) {
+            $('#waitingModal').modal('hide');
             showError("No results selected");
             return;
         }
@@ -430,6 +433,7 @@ $(document).ready(function() {
                 + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         }
         var title = "Confirm Delete";
+        $('#waitingModal').modal('hide');
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
             $('#waitingModal').modal('show');
             $.ajax({

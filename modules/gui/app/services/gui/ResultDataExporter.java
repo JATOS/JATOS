@@ -19,7 +19,9 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service class that streams result data to Actor sources.
@@ -61,16 +63,18 @@ public class ResultDataExporter {
     public Object byWorker(ActorRef sourceActor, Long workerId, User user) {
         return jpaApi.withTransaction(entityManager -> {
             Worker worker = workerDao.findById(workerId);
-
+            Set<Study> studies = new HashSet<>();
             List<StudyResult> allowedStudyResultList = resultService.getAllowedStudyResultList(user, worker);
             for (StudyResult studyResult : allowedStudyResultList) {
                 try {
                     checker.checkStudyResult(studyResult, user, false);
+                    studies.add(studyResult.getStudy());
                     studyResult.getComponentResultList().forEach(cr -> tellResultData(sourceActor, cr));
                 } catch (ForbiddenException | BadRequestException e) {
                     LOGGER.warn("Couldn't get result data", e);
                 }
             }
+            studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
@@ -91,6 +95,7 @@ public class ResultDataExporter {
                     LOGGER.warn("Couldn't get result data", e);
                 }
             }
+            studyLogger.log(study, user, "Exported result data to file");
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
@@ -112,6 +117,7 @@ public class ResultDataExporter {
                     LOGGER.warn("Couldn't get result data", e);
                 }
             }
+            studyLogger.log(component.getStudy(), user, "Exported result data to file");
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
@@ -122,6 +128,7 @@ public class ResultDataExporter {
      */
     public Object byStudyResultIds(ActorRef sourceActor, List<Long> studyResultIdList, User user) {
         return jpaApi.withTransaction(entityManager -> {
+            Set<Study> studies = new HashSet<>();
             for (Long studyResultId : studyResultIdList) {
                 try {
                     StudyResult studyResult = studyResultDao.findById(studyResultId);
@@ -130,11 +137,13 @@ public class ResultDataExporter {
                         continue;
                     }
                     checker.checkStudyResult(studyResult, user, false);
+                    studies.add(studyResult.getStudy());
                     studyResult.getComponentResultList().forEach(cr -> tellResultData(sourceActor, cr));
                 } catch (Exception e) {
                     LOGGER.warn("Couldn't get result data", e);
                 }
             }
+            studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
@@ -145,6 +154,7 @@ public class ResultDataExporter {
      */
     public Object byComponentResultIds(ActorRef sourceActor, List<Long> componentResultIdList, User user) {
         return jpaApi.withTransaction(entityManager -> {
+            Set<Study> studies = new HashSet<>();
             for (Long componentResultId : componentResultIdList) {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
                 if (componentResult == null) {
@@ -153,11 +163,13 @@ public class ResultDataExporter {
                 }
                 try {
                     checker.checkComponentResult(componentResult, user, false);
+                    studies.add(componentResult.getStudyResult().getStudy());
                     tellResultData(sourceActor, componentResult);
                 } catch (Exception e) {
                     LOGGER.warn("Couldn't get result data", e);
                 }
             }
+            studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
@@ -168,7 +180,6 @@ public class ResultDataExporter {
         if (resultDataStr == null) return;
         ByteString lineToSend = ByteString.fromString(resultDataStr + System.lineSeparator());
         sourceActor.tell(lineToSend, null);
-        studyLogger.logResultDataExporting(componentResult);
     }
 
 }

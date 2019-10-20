@@ -254,9 +254,9 @@ public class ImportExportService {
 
         if (overwriteStudysProperties) {
             if (keepCurrentDirName || !overwriteStudysDir) {
-                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy);
+                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy, loggedInUser);
             } else {
-                studyService.updateStudy(currentStudy, uploadedStudy);
+                studyService.updateStudy(currentStudy, uploadedStudy, loggedInUser);
             }
             updateStudysComponents(currentStudy, uploadedStudy);
             RequestScopeMessaging.success(MessagesStrings

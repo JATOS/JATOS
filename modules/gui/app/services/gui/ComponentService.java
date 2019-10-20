@@ -6,6 +6,7 @@ import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
+import models.common.User;
 import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
@@ -234,13 +235,13 @@ public class ComponentService {
      * Remove Component: Remove it from the given study, remove all its ComponentResults, and remove the component
      * itself.
      */
-    public void remove(Component component) {
+    public void remove(Component component, User loggedinUser) {
         Study study = component.getStudy();
         // Remove component from study
         study.removeComponent(component);
         studyDao.update(study);
         // Remove component's ComponentResults
-        resultRemover.removeAllComponentResults(component);
+        resultRemover.removeAllComponentResults(component, loggedinUser);
         componentDao.remove(component);
     }
 

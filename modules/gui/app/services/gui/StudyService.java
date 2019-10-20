@@ -235,9 +235,9 @@ public class StudyService {
 
         studyDao.update(study);
         studyLogger.create(study);
-        studyLogger.log(study, "Created study");
+        studyLogger.log(study, loggedInUser, "Created study");
         if (!Strings.isNullOrEmpty(study.getDescription())) {
-            studyLogger.logStudyDescriptionHash(study);
+            studyLogger.logStudyDescriptionHash(study, loggedInUser);
         }
         return study;
     }
@@ -260,24 +260,24 @@ public class StudyService {
     /**
      * Update properties of study with properties of updatedStudy.
      */
-    public void updateStudy(Study study, Study updatedStudy) {
+    public void updateStudy(Study study, Study updatedStudy, User loggedInUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
                 updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
         study.setDirName(updatedStudy.getDirName());
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, loggedInUser);
     }
 
     /**
      * Update properties of study with properties of updatedStudy but not Study's field dirName.
      */
-    public void updateStudyWithoutDirName(Study study, Study updatedStudy) {
+    public void updateStudyWithoutDirName(Study study, Study updatedStudy, User loggedInUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
                 updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, loggedInUser);
     }
 
     private void updateStudyCommon(Study study, Study updatedStudy) {
@@ -290,11 +290,11 @@ public class StudyService {
     /**
      * Update Study with given properties and persist. It doesn't update Study's dirName field.
      */
-    public void updateStudy(Study study, StudyProperties studyProperties) {
+    public void updateStudy(Study study, StudyProperties studyProperties, User loggedInUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), studyProperties.getDescription());
         bindToStudyWithoutDirName(study, studyProperties);
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, loggedInUser);
     }
 
     /**
@@ -358,12 +358,12 @@ public class StudyService {
      * Removes the given study, its components, component results, study results, group results and batches and persists
      * the changes to the database. It also deletes the study's assets from the disk.
      */
-    public void removeStudyInclAssets(Study study) throws IOException {
+    public void removeStudyInclAssets(Study study, User loggedInUser) throws IOException {
         // Remove all study's components and their ComponentResults
-        Lists.newArrayList(study.getComponentList()).forEach(componentService::remove);
+        Lists.newArrayList(study.getComponentList()).forEach(component -> componentService.remove(component, loggedInUser));
 
         // Remove all study's batches and their StudyResults and GroupResults
-        Lists.newArrayList(study.getBatchList()).forEach(batchService::remove);
+        Lists.newArrayList(study.getBatchList()).forEach(batch -> batchService.remove(batch, loggedInUser));
 
         // Remove this study from all member users
         for (User user : study.getUserList()) {
@@ -374,7 +374,7 @@ public class StudyService {
         studyDao.remove(study);
 
         ioUtils.removeStudyAssetsDir(study.getDirName());
-        studyLogger.log(study, "Removed study");
+        studyLogger.log(study, loggedInUser, "Removed study");
         studyLogger.retire(study);
     }
 

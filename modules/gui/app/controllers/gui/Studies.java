@@ -175,7 +175,7 @@ public class Studies extends Controller {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
 
-        studyService.updateStudy(study, studyProperties);
+        studyService.updateStudy(study, studyProperties, loggedInUser);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -194,9 +194,9 @@ public class Studies extends Controller {
         study.setLocked(!study.isLocked());
         studyDao.update(study);
         if (study.isLocked()) {
-            studyLogger.log(study, "Locked study");
+            studyLogger.log(study, loggedInUser, "Locked study");
         } else {
-            studyLogger.log(study, "Unlocked study");
+            studyLogger.log(study, loggedInUser, "Unlocked study");
         }
         return ok(String.valueOf(study.isLocked()));
     }
@@ -219,7 +219,7 @@ public class Studies extends Controller {
         }
 
         try {
-            studyService.removeStudyInclAssets(study);
+            studyService.removeStudyInclAssets(study, loggedInUser);
         } catch (IOException e) {
             String errorMsg = e.getMessage();
             return internalServerError(errorMsg);

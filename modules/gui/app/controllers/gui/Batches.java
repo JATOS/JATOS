@@ -201,7 +201,7 @@ public class Batches extends Controller {
         BatchProperties batchProperties = form.get();
         Batch batch = batchService.bindToBatch(batchProperties);
 
-        batchService.createAndPersistBatch(batch, study);
+        batchService.createAndPersistBatch(batch, study, loggedInUser);
         return ok(batch.getId().toString());
     }
 
@@ -456,7 +456,7 @@ public class Batches extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        batchService.remove(batch);
+        batchService.remove(batch, loggedInUser);
         return ok(RequestScopeMessaging.getAsJson());
     }
 

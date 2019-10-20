@@ -8,6 +8,7 @@ import daos.common.worker.WorkerDao;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Study;
+import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
@@ -90,7 +91,7 @@ public class BatchService {
      * Creates batch, initialises it and persists it. Updates study with new
      * batch.
      */
-    public void createAndPersistBatch(Batch batch, Study study) {
+    public void createAndPersistBatch(Batch batch, Study study, User loggedinUser) {
         initBatch(batch, study);
         batch.setStudy(study);
         if (!study.hasBatch(batch)) {
@@ -98,7 +99,7 @@ public class BatchService {
         }
         batchDao.create(batch);
         studyDao.update(study);
-        studyLogger.log(study, "Created batch", batch);
+        studyLogger.log(study, loggedinUser, "Created batch", batch);
     }
 
     /**
@@ -205,14 +206,14 @@ public class BatchService {
      * Workers (if they don't belong to an other batch) and persists the changes
      * to the database.
      */
-    public void remove(Batch batch) {
+    public void remove(Batch batch, User loggedinUser) {
         // Remove this Batch from its study
         Study study = batch.getStudy();
         study.removeBatch(batch);
         studyDao.update(study);
 
         // Delete all StudyResults and all ComponentResults
-        resultRemover.removeAllStudyResults(batch);
+        resultRemover.removeAllStudyResults(batch, loggedinUser);
 
         // Delete all GroupResults
         groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
@@ -224,7 +225,7 @@ public class BatchService {
         }
 
         batchDao.remove(batch);
-        studyLogger.log(study, "Removed batch", batch);
+        studyLogger.log(study, loggedinUser, "Removed batch", batch);
     }
 
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {

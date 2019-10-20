@@ -214,7 +214,7 @@ public class Components extends Controller {
         Component component = componentDao.findById(componentId);
         checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
 
-        componentService.remove(component);
+        componentService.remove(component, loggedInUser);
         RequestScopeMessaging.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
         return ok(RequestScopeMessaging.getAsJson());
     }
