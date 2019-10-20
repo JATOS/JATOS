@@ -5,6 +5,7 @@
 
 ### Static resources ###
 GET     /favicon.ico                       controllers.Assets.at(path="/public", file="favicon.ico")
+GET     /favicon.png                       controllers.Assets.at(path="/public", file="favicon.png")
 GET     /favicon-16x16.png                 controllers.Assets.at(path="/public", file="favicon-16x16.png")
 GET     /favicon-32x32.png                 controllers.Assets.at(path="/public", file="favicon-32x32.png")
 GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
