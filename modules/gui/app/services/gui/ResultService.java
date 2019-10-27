@@ -1,5 +1,8 @@
 package services.gui;
 
+import akka.actor.ActorRef;
+import akka.util.ByteString;
+import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.gui.NotFoundException;
@@ -8,11 +11,17 @@ import models.common.ComponentResult;
 import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.Worker;
+import org.hibernate.ScrollableResults;
+import play.Logger;
+import play.db.jpa.JPAApi;
+import scala.Option;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -23,13 +32,22 @@ import java.util.stream.Collectors;
 @Singleton
 public class ResultService {
 
+    private static final Logger.ALogger LOGGER = Logger.of(ResultService.class);
+
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
+    private final Checker checker;
+    private final JsonUtils jsonUtils;
+    private final JPAApi jpaApi;
 
     @Inject
-    ResultService(ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
+    ResultService(ComponentResultDao componentResultDao, StudyResultDao studyResultDao, Checker checker,
+            JsonUtils jsonUtils, JPAApi jpaApi) {
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
+        this.checker = checker;
+        this.jsonUtils = jsonUtils;
+        this.jpaApi = jpaApi;
     }
 
     /**
@@ -73,6 +91,58 @@ public class ResultService {
         return worker.getStudyResultList().stream().filter(
                 studyResult -> studyResult != null && studyResult.getStudy().hasUser(user)).collect(
                 Collectors.toList());
+    }
+
+    /**
+     * Retrieves StudyResults (including their result data) and uses the given Supplier function to fetches them from
+     * the database. It gets up to max results -  or if max is not defined it gets all. It also checks the StudyResult.
+     */
+    public void fetchStudyResultsAndWriteIntoActor(ActorRef sourceActor, User user, Option<Integer> max,
+            Supplier<ScrollableResults> resultFetcher) {
+        jpaApi.withTransaction(entityManager -> {
+            ScrollableResults results = resultFetcher.get();
+            int i = 0;
+            while (results.next() && (max.isEmpty() || i < max.get())) {
+                try {
+                    StudyResult result = (StudyResult) results.get(0);
+                    checker.checkStudyResult(result, user, false);
+                    JsonNode resultNode = jsonUtils.studyResultAsJsonNode(result);
+                    sourceActor.tell(ByteString.fromString(resultNode.toString()), ActorRef.noSender());
+                    i++;
+                    if (!results.isLast() && (max.isEmpty() || i < max.get())) {
+                        sourceActor.tell(ByteString.fromString(",\n"), ActorRef.noSender());
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Couldn't get result");
+                }
+            }
+        });
+    }
+
+    /**
+     * Retrieves ComponentResult (including their result data) and uses the given Supplier function to fetches them from
+     * the database. It gets up to max results - or if max is not defined it gets all. It also checks the ComponentResult.
+     */
+    public void fetchComponentResultsAndWriteIntoActor(ActorRef sourceActor, User user, Option<Integer> max,
+            Supplier<ScrollableResults> resultFetcher) {
+        jpaApi.withTransaction(entityManager -> {
+            ScrollableResults results = resultFetcher.get();
+            int i = 0;
+            while (results.next() && (max.isEmpty() || i < max.get())) {
+                try {
+                    ComponentResult result = (ComponentResult) results.get(0);
+                    checker.checkComponentResult(result, user, false);
+                    JsonNode resultNode = jsonUtils.componentResultAsJsonNode(result);
+                    sourceActor.tell(ByteString.fromString(resultNode.toString()), ActorRef.noSender());
+                    i++;
+                    if (!results.isLast() && (max.isEmpty() || i < max.get())) {
+                        sourceActor.tell(ByteString.fromString(",\n"), ActorRef.noSender());
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Couldn't get result");
+                }
+            }
+        });
     }
 
 }

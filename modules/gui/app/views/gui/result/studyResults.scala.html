@@ -65,10 +65,19 @@ var resultsTable;
 $(document).ready(function() {
     resultsTable = $('#resultsTable').DataTable({
         "ajax": {
-            "type": "GET",
-            "url" : "@dataUrl",
+            "url": "@Html(dataUrl)",
+            "dataType": "text",
+            "dataSrc": function(json) {
+                return JSON.parse("[" + json + "]");
+            },
+            "beforeSend": function() {
+                $('#waitingModal').modal('show');
+            },
             "error": function(reason) {
-                    showError("Couldn't read results data.")
+                showError("Couldn't read results data.")
+            },
+            "complete": function() {
+                $('#waitingModal').modal('hide');
             }
         },
         "dom": '<"pull-right"B>lfrtip',
@@ -179,10 +188,10 @@ $(document).ready(function() {
         },
         buttons: [
             {
-                text: "<span class='glyphicon glyphicon-refresh'></span>",
+                "text": "<span class='glyphicon glyphicon-refresh'></span>",
                 "className": "btn btn-study",
                 "titleAttr": 'Refresh results',
-                action: function ( e, dt, node, config ) {
+                "action": function ( e, dt, node, config ) {
                     resultsTable.ajax.reload();
                 }
             },

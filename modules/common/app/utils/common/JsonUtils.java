@@ -230,7 +230,7 @@ public class JsonUtils {
      * Returns ObjectNode of the given StudyResult. It contains the worker,
      * study's ID and title, and all ComponentResults.
      */
-    private JsonNode studyResultAsJsonNode(StudyResult studyResult) {
+    public JsonNode studyResultAsJsonNode(StudyResult studyResult) {
         ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
 
         // Add worker
@@ -280,7 +280,7 @@ public class JsonUtils {
     /**
      * Returns an ObjectNode of the given ComponentResult.
      */
-    private JsonNode componentResultAsJsonNode(ComponentResult componentResult) {
+    public JsonNode componentResultAsJsonNode(ComponentResult componentResult) {
         ObjectNode componentResultNode = Json.mapper().valueToTree(componentResult);
 
         // Add extra variables

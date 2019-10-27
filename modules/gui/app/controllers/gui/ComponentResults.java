@@ -1,6 +1,11 @@
 package controllers.gui;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import akka.NotUsed;
+import akka.actor.ActorRef;
+import akka.actor.Status;
+import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
@@ -10,17 +15,13 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
-import general.gui.RequestScopeMessaging;
 import models.common.Component;
-import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
-import play.Logger;
-import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
+import scala.Option;
 import services.gui.*;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
@@ -29,6 +30,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
@@ -44,22 +46,23 @@ public class ComponentResults extends Controller {
     private final AuthenticationService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
+    private final ResultService resultService;
     private final JsonUtils jsonUtils;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
 
     @Inject
-    ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            Checker checker, AuthenticationService authenticationService,
-            BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
-            JsonUtils jsonUtils, StudyDao studyDao, ComponentDao componentDao,
-            ComponentResultDao componentResultDao) {
+    ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
+            AuthenticationService authenticationService, BreadcrumbsService breadcrumbsService,
+            ResultRemover resultRemover, ResultService resultService, JsonUtils jsonUtils, StudyDao studyDao,
+            ComponentDao componentDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
+        this.resultService = resultService;
         this.jsonUtils = jsonUtils;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
@@ -71,8 +74,7 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result componentResults(Long studyId, Long componentId,
-            String errorMsg, int httpStatus) throws JatosGuiException {
+    public Result componentResults(Long studyId, Long componentId, Option<Integer> max) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -83,27 +85,9 @@ public class ComponentResults extends Controller {
             jatosGuiExceptionThrower.throwHome(e);
         }
 
-        RequestScopeMessaging.error(errorMsg);
-        String breadcrumbs = breadcrumbsService.generateForComponent(study,
-                component, BreadcrumbsService.RESULTS);
-        return status(httpStatus,
-                views.html.gui.result.componentResults.render(loggedInUser,
-                        breadcrumbs, HttpUtils.isLocalhost(), study,
-                        component));
-    }
-
-    @Transactional
-    @Authenticated
-    public Result componentResults(Long studyId, Long componentId,
-            String errorMsg) throws JatosGuiException {
-        return componentResults(studyId, componentId, errorMsg, Http.Status.OK);
-    }
-
-    @Transactional
-    @Authenticated
-    public Result componentResults(Long studyId, Long componentId)
-            throws JatosGuiException {
-        return componentResults(studyId, componentId, null, Http.Status.OK);
+        String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.RESULTS);
+        return ok(views.html.gui.result.componentResults
+                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study, component, max));
     }
 
     /**
@@ -128,13 +112,14 @@ public class ComponentResults extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Returns all ComponentResults as JSON for a given component.
+     * Ajax request with chunked streaming (reduces memory usage)
+     *
+     * Returns all ComponentResults as JSON for a given component. It gets up to 'max' results - or if 'max' is
+     * undefined it gets all. If their is a problem during retrieval it returns nothing.
      */
     @Transactional
     @Authenticated
-    public Result tableDataByComponent(Long studyId, Long componentId) throws JatosGuiException {
+    public Result tableDataByComponent(Long studyId, Long componentId, Option<Integer> max) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -145,11 +130,18 @@ public class ComponentResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        List<ComponentResult> componentResultList =
-                componentResultDao.findAllByComponent(component);
-        JsonNode dataAsJson =
-                jsonUtils.allComponentResultsForUI(componentResultList);
-        return ok(dataAsJson);
+        int resultCount = componentResultDao.countByComponent(component);
+        int bufferSize = max.isDefined() ? max.get() : resultCount;
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultService.fetchComponentResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                () -> componentResultDao.findAllByComponentScrollable(component));
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
+        return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
 }

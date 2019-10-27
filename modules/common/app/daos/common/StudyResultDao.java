@@ -1,8 +1,10 @@
 package daos.common;
 
 import models.common.Batch;
+import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
+import models.common.workers.Worker;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import play.db.jpa.JPAApi;
@@ -67,8 +69,28 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of StudyResults belonging to the given batch and given
-     * worker type.
+     * Returns the number of StudyResults belonging to the given worker.
+     */
+    public int countByWorker(Worker worker) {
+        String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.worker_id = :workerId";
+        Query query = jpa.em().createNativeQuery(queryStr).setParameter("workerId", worker.getId());
+        Number result = (Number) query.getSingleResult();
+        return result.intValue();
+    }
+
+    /**
+     * Returns the number of StudyResults belonging to the given group.
+     */
+    public int countByGroup(GroupResult groupResult) {
+        String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.activeGroupMember_id = :groupId "
+                + "OR sr.historyGroupMember_id = :groupId";
+        Query query = jpa.em().createNativeQuery(queryStr).setParameter("groupId", groupResult.getId());
+        Number result = (Number) query.getSingleResult();
+        return result.intValue();
+    }
+
+    /**
+     * Returns the number of StudyResults belonging to the given batch and given worker type.
      */
     public int countByBatchAndWorkerType(Batch batch, String workerType) {
         String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch_id = :batchId "
@@ -80,16 +102,16 @@ public class StudyResultDao extends AbstractDao {
         return result.intValue();
     }
 
-    public List<StudyResult> findAllByStudy(Study study) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("study", study).getResultList();
-    }
-
     public ScrollableResults findAllByStudyScrollable(Study study) {
         String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
         org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
         return query.setParameter("study", study).scroll(ScrollMode.FORWARD_ONLY);
+    }
+
+    public ScrollableResults findAllByBatchScrollable(Batch batch) {
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch";
+        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("batch", batch).scroll(ScrollMode.FORWARD_ONLY);
     }
 
     public List<StudyResult> findAllByBatch(Batch batch) {
@@ -99,15 +121,27 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns a list of all StudyResults that belongs to the given Batch and
-     * worker type.
+     * Returns a ScrollableResults of all StudyResults that belongs to the given Batch and worker type.
      */
-    public List<StudyResult> findAllByBatchAndWorkerType(Batch batch, String workerType) {
+    public ScrollableResults findAllByBatchAndWorkerTypeScrollable(Batch batch, String workerType) {
         String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
                 + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("batch", batch).setParameter("workerType", workerType)
-                .getResultList();
+        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("batch", batch).setParameter("workerType", workerType).scroll(
+                ScrollMode.FORWARD_ONLY);
+    }
+
+    public ScrollableResults findAllByWorkerScrollable(Worker worker) {
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.worker=:worker";
+        org.hibernate.query.Query query = (org.hibernate.query.Query)  jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("worker", worker).scroll(ScrollMode.FORWARD_ONLY);
+    }
+
+    public ScrollableResults findAllByGroupScrollable(GroupResult groupResult) {
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.activeGroupMember_id = :groupId "
+                + "OR sr.historyGroupMember_id = :groupId";
+        org.hibernate.query.Query query = (org.hibernate.query.Query)  jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("groupId", groupResult.getId()).scroll(ScrollMode.FORWARD_ONLY);
     }
 
 }

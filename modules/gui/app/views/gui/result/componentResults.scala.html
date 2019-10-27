@@ -1,5 +1,5 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
-    study: common.Study, component: common.Component)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study, component: common.Component,
+    max: scala.Option[Integer])
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -61,10 +61,19 @@ var resultsTable;
 $(document).ready(function() {
     resultsTable = $('#componentResultsTable').DataTable({
         "ajax": {
-            "type": "GET",
-            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
+            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId(), max)",
+            "dataType": "text",
+            "dataSrc": function(json) {
+                return JSON.parse("[" + json + "]");
+            },
+            "beforeSend": function() {
+                $('#waitingModal').modal('show');
+            },
             "error": function(reason) {
                     showError("Couldn't read results data.")
+            },
+            "complete": function() {
+                $('#waitingModal').modal('hide');
             }
         },
         "dom": '<"pull-right"B>lfrtip',

@@ -42,18 +42,18 @@ GET      /jatos/user/:email                                                 @con
 POST     /jatos/user/:email/delete                                          @controllers.gui.Users.remove(email: String)
 
 # ComponentResults & StudyResults controller
-GET      /jatos/worker/:workerId/tableData                                  @controllers.gui.StudyResults.tableDataByWorker(workerId: Long)
-GET      /jatos/worker/:workerId/results                                    @controllers.gui.StudyResults.workersStudyResults(workerId: Long)
-GET      /jatos/:studyId/batch/:batchId/results                             @controllers.gui.StudyResults.batchesStudyResults(studyId: Long, batchId: Long, workerType: String ?= null)
-GET      /jatos/:studyId/batch/:batchId/tableData                           @controllers.gui.StudyResults.tableDataByBatch(studyId: Long, batchId: Long, workerType: String ?= null)
-GET      /jatos/:studyId/group/:groupId/results                             @controllers.gui.StudyResults.groupsStudyResults(studyId: Long, groupId: Long)
-GET      /jatos/:studyId/group/:groupId/tableData                           @controllers.gui.StudyResults.tableDataByGroup(studyId: Long, groupId: Long)
+GET      /jatos/worker/:workerId/results                                    @controllers.gui.StudyResults.workersStudyResults(workerId: Long, max: Option[Integer])
+GET      /jatos/worker/:workerId/tableData                                  @controllers.gui.StudyResults.tableDataByWorker(workerId: Long, max: Option[Integer])
+GET      /jatos/:studyId/batch/:batchId/results                             @controllers.gui.StudyResults.batchesStudyResults(studyId: Long, batchId: Long, workerType: Option[String], max: Option[Integer])
+GET      /jatos/:studyId/batch/:batchId/tableData                           @controllers.gui.StudyResults.tableDataByBatch(studyId: Long, batchId: Long, workerType: Option[String], max: Option[Integer])
+GET      /jatos/:studyId/group/:groupId/results                             @controllers.gui.StudyResults.groupsStudyResults(studyId: Long, groupId: Long, max: Option[Integer])
+GET      /jatos/:studyId/group/:groupId/tableData                           @controllers.gui.StudyResults.tableDataByGroup(studyId: Long, groupId: Long, max: Option[Integer])
 POST     /jatos/componentResult/delete                                      @controllers.gui.ComponentResults.remove()
-GET      /jatos/:studyId/:componentId/results                               @controllers.gui.ComponentResults.componentResults(studyId: Long, componentId: Long)
-GET      /jatos/:studyId/:componentId/tableData                             @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
+GET      /jatos/:studyId/:componentId/results                               @controllers.gui.ComponentResults.componentResults(studyId: Long, componentId: Long, max: Option[Integer])
+GET      /jatos/:studyId/:componentId/tableData                             @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long, max: Option[Integer])
 POST     /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove()
-GET      /jatos/:studyId/results                                            @controllers.gui.StudyResults.studysStudyResults(studyId: Long)
-GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
+GET      /jatos/:studyId/results                                            @controllers.gui.StudyResults.studysStudyResults(studyId: Long, max: Option[Integer])
+GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long, max: Option[Integer])
 
 # Studies controller
 POST     /jatos/study                                                       @controllers.gui.Studies.submitCreated()

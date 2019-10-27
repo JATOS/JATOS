@@ -1,6 +1,11 @@
 package controllers.gui;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import akka.NotUsed;
+import akka.actor.ActorRef;
+import akka.actor.Status;
+import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
@@ -12,25 +17,25 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
-import models.common.*;
+import models.common.Batch;
+import models.common.GroupResult;
+import models.common.Study;
+import models.common.User;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
-import play.Logger;
-import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import scala.Option;
 import services.gui.*;
 import utils.common.HttpUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
@@ -41,11 +46,8 @@ import java.util.Set;
 @Singleton
 public class StudyResults extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(StudyResults.class);
-
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
-    private final JsonUtils jsonUtils;
     private final AuthenticationService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
@@ -61,8 +63,7 @@ public class StudyResults extends Controller {
             Checker checker, AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
             ResultService resultService, StudyDao studyDao, BatchDao batchDao,
-            GroupResultDao groupResultDao, JsonUtils jsonUtils, WorkerDao workerDao,
-            StudyResultDao studyResultDao) {
+            GroupResultDao groupResultDao, WorkerDao workerDao, StudyResultDao studyResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.authenticationService = authenticationService;
@@ -72,17 +73,16 @@ public class StudyResults extends Controller {
         this.studyDao = studyDao;
         this.batchDao = batchDao;
         this.groupResultDao = groupResultDao;
-        this.jsonUtils = jsonUtils;
         this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
     }
 
     /**
-     * Shows view with all StudyResults of a study.
+     * Shows view with all StudyResults of a study. Allows to specify the max number of results.
      */
     @Transactional
     @Authenticated
-    public Result studysStudyResults(Long studyId) throws JatosGuiException {
+    public Result studysStudyResults(Long studyId, Option<Integer> max) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -92,17 +92,17 @@ public class StudyResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
-        String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
-        return ok(views.html.gui.result.studyResults.render(loggedInUser,
-                breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
+        String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId(), max).url();
+        return ok(views.html.gui.result.studyResults
+                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
     }
 
     /**
-     * Shows view with all StudyResults of a batch.
+     * Shows view with all StudyResults of a batch. Allows to specify the max number of results.
      */
     @Transactional
     @Authenticated
-    public Result batchesStudyResults(Long studyId, Long batchId, String workerType)
+    public Result batchesStudyResults(Long studyId, Long batchId, Option<String> workerType, Option<Integer> max)
             throws JatosGuiException {
         Batch batch = batchDao.findById(batchId);
         Study study = studyDao.findById(studyId);
@@ -114,24 +114,21 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, study.getId());
         }
 
-        String breadcrumbsTitle = (workerType == null)
-                ? BreadcrumbsService.RESULTS
-                : BreadcrumbsService.RESULTS + " of "
-                + Worker.getUIWorkerType(workerType) + " workers";
+        String breadcrumbsTitle = workerType.isEmpty() ? BreadcrumbsService.RESULTS
+                : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType.get()) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
-        String dataUrl = controllers.gui.routes.StudyResults
-                .tableDataByBatch(study.getId(), batch.getId(), workerType)
-                .url();
+        String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(study.getId(), batch.getId(), workerType,
+                max).url();
         return ok(views.html.gui.result.studyResults.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
     }
 
     /**
-     * Shows view with all StudyResults of a group.
+     * Shows view with all StudyResults of a group. Allows to specify the max number of results.
      */
     @Transactional
     @Authenticated
-    public Result groupsStudyResults(Long studyId, Long groupId) throws JatosGuiException {
+    public Result groupsStudyResults(Long studyId, Long groupId, Option<Integer> max) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -143,20 +140,20 @@ public class StudyResults extends Controller {
         }
 
         String breadcrumbsTitle = BreadcrumbsService.RESULTS;
-        String breadcrumbs = breadcrumbsService
-                .generateForGroup(study, groupResult.getBatch(), groupResult, breadcrumbsTitle);
-        String dataUrl = controllers.gui.routes.StudyResults
-                .tableDataByGroup(study.getId(), groupResult.getId()).url();
+        String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
+                breadcrumbsTitle);
+        String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(study.getId(), groupResult.getId(), max)
+                .url();
         return ok(views.html.gui.result.studyResults.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
     }
 
     /**
-     * Shows view with all StudyResults of a worker.
+     * Shows view with all StudyResults of a worker. Allows to specify the max number of results.
      */
     @Transactional
     @Authenticated
-    public Result workersStudyResults(Long workerId) throws JatosGuiException {
+    public Result workersStudyResults(Long workerId, Option<Integer> max) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Worker worker = workerDao.findById(workerId);
         try {
@@ -165,18 +162,16 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
         }
 
-        String breadcrumbs =
-                breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
+        String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
         return ok(views.html.gui.result.workersStudyResults.render(loggedInUser,
-                breadcrumbs, HttpUtils.isLocalhost(), worker));
+                breadcrumbs, HttpUtils.isLocalhost(), worker, max));
     }
 
     /**
      * Ajax POST request
      * <p>
-     * Removes all StudyResults specified in the parameter. The parameter is a
-     * comma separated list of of StudyResults IDs as a String. Removing a
-     * StudyResult always removes it's ComponentResults.
+     * Removes all StudyResults specified in the parameter. The parameter is a comma separated list of of StudyResults
+     * IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Transactional
     @Authenticated
@@ -193,84 +188,138 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax request: Returns all StudyResults of a study in JSON format.
+     * Ajax request with chunked streaming (reduces memory usage)
+     *
+     * Returns StudyResults of a study in JSON format. It gets up to 'max' results - or if 'max' is undefined it
+     * gets all. If their is a problem during retrieval it returns nothing.
      */
     @Transactional
     @Authenticated
-    public Result tableDataByStudy(Long studyId) throws JatosGuiException {
+    public Result tableDataByStudy(Long studyId, Option<Integer> max) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        JsonNode dataAsJson = null;
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-            dataAsJson = jsonUtils.allStudyResultsForUI(studyResultDao.findAllByStudy(study));
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok(dataAsJson);
+
+        int resultCount = studyResultDao.countByStudy(study);
+        int bufferSize = max.isDefined() ? max.get() : resultCount;
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                () -> studyResultDao.findAllByStudyScrollable(study));
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
+        return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
     /**
-     * Ajax request: Returns all StudyResults of a batch in JSON format. As an
-     * additional parameter the worker type can be specified and the results
-     * will only be of this type.
+     * Ajax request with chunked streaming (reduces memory usage)
+     *
+     * Returns all StudyResults of a batch in JSON format. As an additional parameter the worker type can
+     * be specified and the results will only be of this type. It gets up to 'max' results - or if 'max' is undefined it
+     * gets all. If their is a problem during retrieval it returns nothing.
      */
     @Transactional
     @Authenticated
-    public Result tableDataByBatch(Long studyId, Long batchId, String workerType)
+    public Result tableDataByBatch(Long studyId, Long batchId, Option<String> workerType, Option<Integer> max)
             throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        JsonNode dataAsJson = null;
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-            List<StudyResult> studyResultList = (workerType == null)
-                    ? studyResultDao.findAllByBatch(batch)
-                    : studyResultDao.findAllByBatchAndWorkerType(batch,
-                    workerType);
-            // If worker type is MT then add MTSandbox on top
-            if (MTWorker.WORKER_TYPE.equals(workerType)) {
-                studyResultList.addAll(studyResultDao.findAllByBatchAndWorkerType(batch,
-                        MTSandboxWorker.WORKER_TYPE));
-            }
-            dataAsJson = jsonUtils.allStudyResultsForUI(studyResultList);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok(dataAsJson);
+
+        Source<ByteString, ?> source;
+        if (workerType.isEmpty()) {
+            int resultCount = studyResultDao.countByBatch(batch);
+            int bufferSize = max.isDefined() ? max.get() : resultCount;
+            source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                    .mapMaterializedValue(sourceActor -> {
+                        CompletableFuture.runAsync(() -> {
+                            resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                    () -> studyResultDao.findAllByBatchScrollable(batch));
+
+                            sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                        });
+                        return sourceActor;
+                    });
+        } else {
+            int resultCount = studyResultDao.countByBatchAndWorkerType(batch, workerType.get());
+            int bufferSize = max.isDefined() ? max.get() : resultCount;
+            source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                    .mapMaterializedValue(sourceActor -> {
+                        CompletableFuture.runAsync(() -> {
+                            resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                    () -> studyResultDao
+                                            .findAllByBatchAndWorkerTypeScrollable(batch, workerType.get()));
+                            // If worker type is MT then add MTSandbox on top
+                            if (MTWorker.WORKER_TYPE.equals(workerType.get())) {
+                                resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                        () -> studyResultDao.findAllByBatchAndWorkerTypeScrollable(batch,
+                                                MTSandboxWorker.WORKER_TYPE));
+                            }
+                            sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                        });
+                        return sourceActor;
+                    });
+        }
+
+        return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
     /**
-     * Ajax request: Returns all StudyResults of a group in JSON format.
+     * Ajax request with chunked streaming (reduces memory usage)
+     *
+     * Returns all StudyResults of a group in JSON format. It gets up to 'max' results - or if 'max' is undefined it
+     * gets all. If their is a problem during retrieval it returns nothing.
      */
     @Transactional
     @Authenticated
-    public Result tableDataByGroup(Long studyId, Long groupResultId) throws JatosGuiException {
+    public Result tableDataByGroup(Long studyId, Long groupResultId, Option<Integer> max) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        JsonNode dataAsJson = null;
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForGroup(groupResult, study, groupResultId);
-            Set<StudyResult> allStudyResults = new HashSet<>();
-            allStudyResults.addAll(groupResult.getActiveMemberList());
-            allStudyResults.addAll(groupResult.getHistoryMemberList());
-            dataAsJson = jsonUtils.allStudyResultsForUI(allStudyResults);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
-        return ok(dataAsJson);
+
+        int resultCount = studyResultDao.countByGroup(groupResult);
+        int bufferSize = max.isDefined() ? max.get() : resultCount;
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                () -> studyResultDao.findAllByGroupScrollable(groupResult));
+
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
+        return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
     /**
-     * Ajax request: Returns all StudyResults belonging to a worker as JSON.
+     * Ajax request with chunked streaming (reduces memory usage)
+     *
+     * Returns all StudyResults belonging to a worker as JSON. It gets up to 'max' results - or if 'max' is undefined it
+     * gets all. If their is a problem during retrieval it returns nothing.
      */
     @Transactional
     @Authenticated
-    public Result tableDataByWorker(Long workerId) throws JatosGuiException {
+    public Result tableDataByWorker(Long workerId, Option<Integer> max) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Worker worker = workerDao.findById(workerId);
         try {
@@ -279,10 +328,19 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        List<StudyResult> allowedStudyResultList =
-                resultService.getAllowedStudyResultList(loggedInUser, worker);
-        JsonNode dataAsJson = jsonUtils.allStudyResultsForUI(allowedStudyResultList);
-        return ok(dataAsJson);
+        int resultCount = studyResultDao.countByWorker(worker);
+        int bufferSize = max.isDefined() ? max.get() : resultCount;
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
+                                () -> studyResultDao.findAllByWorkerScrollable(worker));
+
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
+        return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
 }
