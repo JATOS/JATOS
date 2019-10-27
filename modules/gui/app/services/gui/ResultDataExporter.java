@@ -2,7 +2,6 @@ package services.gui;
 
 import akka.NotUsed;
 import akka.actor.ActorRef;
-import akka.actor.Status;
 import akka.util.ByteString;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -75,7 +74,6 @@ public class ResultDataExporter {
                 }
             }
             studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
     }
@@ -96,7 +94,6 @@ public class ResultDataExporter {
                 }
             }
             studyLogger.log(study, user, "Exported result data to file");
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
     }
@@ -118,7 +115,6 @@ public class ResultDataExporter {
                 }
             }
             studyLogger.log(component.getStudy(), user, "Exported result data to file");
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
     }
@@ -144,7 +140,6 @@ public class ResultDataExporter {
                 }
             }
             studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
     }
@@ -170,7 +165,6 @@ public class ResultDataExporter {
                 }
             }
             studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
             return NotUsed.getInstance();
         });
     }

@@ -1,5 +1,8 @@
 package controllers.gui;
 
+import akka.NotUsed;
+import akka.actor.ActorRef;
+import akka.actor.Status;
 import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -8,7 +11,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
+import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -34,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller that cares for import/export of components, studies and their result data.
@@ -55,11 +61,14 @@ public class ImportExport extends Controller {
     private final JsonUtils jsonUtils;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
+    private final StudyResultDao studyResultDao;
+    private final ComponentResultDao componentResultDao;
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
             JsonUtils jsonUtils, AuthenticationService authenticationService, ImportExportService importExportService,
-            ResultDataExporter resultDataStringGenerator, StudyDao studyDao, ComponentDao componentDao) {
+            ResultDataExporter resultDataStringGenerator, StudyDao studyDao, ComponentDao componentDao,
+            StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.jsonUtils = jsonUtils;
@@ -69,6 +78,8 @@ public class ImportExport extends Controller {
         this.resultDataExporter = resultDataStringGenerator;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
+        this.studyResultDao = studyResultDao;
+        this.componentResultDao = componentResultDao;
     }
 
     /**
@@ -238,7 +249,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request (uses download.js on the client side)
+     * Ajax request with chunked streaming (uses download.js on the client side)
      * <p>
      * Returns all result data of ComponentResults belonging to the given StudyResults. The StudyResults are specified
      * by their IDs in the request's body. Returns the result data as text, each line a result data.
@@ -250,14 +261,20 @@ public class ImportExport extends Controller {
         List<Long> studyResultIdList = new ArrayList<>();
         request().body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .byStudyResultIds(sourceActor, studyResultIdList, loggedInUser));
+        int bufferSize = studyResultIdList.size();
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultDataExporter.byStudyResultIds(sourceActor, studyResultIdList, loggedInUser);
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
-     * Ajax request  (uses download.js on the client side)
+     * Ajax request with chunked streaming (uses download.js on the client side)
      * <p>
      * Returns all result data of ComponentResults belonging to StudyResults belonging to the given study. Returns the
      * result data as text, each line a result data.
@@ -268,8 +285,15 @@ public class ImportExport extends Controller {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter.byStudy(sourceActor, study, loggedInUser));
+        int bufferSize = studyResultDao.countByStudy(study);
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultDataExporter.byStudy(sourceActor, study, loggedInUser);
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -286,9 +310,15 @@ public class ImportExport extends Controller {
         List<Long> componentResultIdList = new ArrayList<>();
         request().body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter
-                        .byComponentResultIds(sourceActor, componentResultIdList, loggedInUser));
+        int bufferSize = componentResultIdList.size();
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultDataExporter.byComponentResultIds(sourceActor, componentResultIdList, loggedInUser);
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -302,9 +332,17 @@ public class ImportExport extends Controller {
     @Authenticated
     public Result exportDataOfAllComponentResults(Long studyId, Long componentId) {
         User loggedInUser = authenticationService.getLoggedInUser();
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(
-                        sourceActor -> resultDataExporter.byComponent(sourceActor, componentId, loggedInUser));
+        Component component = componentDao.findById(componentId);
+
+        int bufferSize = componentResultDao.countByComponent(component);
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultDataExporter.byComponent(sourceActor, componentId, loggedInUser);
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -318,8 +356,15 @@ public class ImportExport extends Controller {
     @Authenticated
     public Result exportAllResultDataOfWorker(Long workerId) {
         User loggedInUser = authenticationService.getLoggedInUser();
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.dropNew())
-                .mapMaterializedValue(sourceActor -> resultDataExporter.byWorker(sourceActor, workerId, loggedInUser));
+
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.fail())
+                .mapMaterializedValue(sourceActor -> {
+                    CompletableFuture.runAsync(() -> {
+                        resultDataExporter.byWorker(sourceActor, workerId, loggedInUser);
+                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
+                    });
+                    return sourceActor;
+                });
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
