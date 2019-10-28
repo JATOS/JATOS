@@ -138,10 +138,10 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public ScrollableResults findAllByGroupScrollable(GroupResult groupResult) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.activeGroupMember_id = :groupId "
-                + "OR sr.historyGroupMember_id = :groupId";
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.activeGroupResult = :group "
+                + "OR sr.historyGroupResult = :group";
         org.hibernate.query.Query query = (org.hibernate.query.Query)  jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("groupId", groupResult.getId()).scroll(ScrollMode.FORWARD_ONLY);
+        return query.setParameter("group", groupResult).scroll(ScrollMode.FORWARD_ONLY);
     }
 
 }

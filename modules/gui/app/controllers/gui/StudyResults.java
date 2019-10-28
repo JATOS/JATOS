@@ -303,7 +303,6 @@ public class StudyResults extends Controller {
                     CompletableFuture.runAsync(() -> {
                         resultService.fetchStudyResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
                                 () -> studyResultDao.findAllByGroupScrollable(groupResult));
-
                         sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
                     });
                     return sourceActor;
