@@ -11,7 +11,7 @@ networks:
 services:
 
   traefik:
-    image: traefik:latest
+    image: traefik:v1.7.18
     command: --docker
     ports:
       - 80:80
