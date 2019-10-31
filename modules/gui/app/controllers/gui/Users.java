@@ -11,12 +11,9 @@ import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
 import models.gui.NewUserModel;
-import play.Logger;
-import play.Logger.ALogger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -37,8 +34,6 @@ import java.util.List;
 @GuiAccessLogging
 @Singleton
 public class Users extends Controller {
-
-    private static final ALogger LOGGER = Logger.of(Users.class);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final UserService userService;
@@ -140,15 +135,10 @@ public class Users extends Controller {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest();
 
         // Validate via AuthenticationService
-        NewUserModel newUser = form.get();
-        List<ValidationError> errorList = authenticationValidation
-                .validateNewUser(newUser, loggedInUser.getEmail());
-        if (!errorList.isEmpty()) {
-            errorList.forEach(form::withError);
-            return badRequest(form.errorsAsJson());
-        }
+        form = authenticationValidation.validateNewUser(loggedInUser.getEmail(), form);
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        userService.bindToUserAndPersist(newUser);
+        userService.bindToUserAndPersist(form.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -181,21 +171,15 @@ public class Users extends Controller {
     @Transactional
     @Authenticated
     public Result submitChangedPassword(String emailOfUserToChange) {
-        Form<ChangePasswordModel> form =
-                formFactory.form(ChangePasswordModel.class).bindFromRequest();
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest();
 
         // Validate via AuthenticationValidation
-        ChangePasswordModel changePasswordModel = form.get();
-        List<ValidationError> errorList = authenticationValidation
-                .validateChangePassword(emailOfUserToChange, changePasswordModel);
-        if (!errorList.isEmpty()) {
-            errorList.forEach(form::withError);
-            return forbidden(form.errorsAsJson());
-        }
+        form = authenticationValidation.validateChangePassword(emailOfUserToChange, form);
+        if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
         // Change password
         try {
-            String newPassword = changePasswordModel.getNewPassword();
+            String newPassword = form.get().getNewPassword();
             userService.updatePassword(emailOfUserToChange, newPassword);
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
