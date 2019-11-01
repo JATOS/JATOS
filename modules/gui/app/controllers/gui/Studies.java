@@ -120,9 +120,8 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
         StudyProperties studyProperties = form.get();
 
         try {
@@ -165,9 +164,8 @@ public class Studies extends Controller {
         }
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
         StudyProperties studyProperties = form.get();
         try {
             studyService.renameStudyAssetsDir(study, studyProperties.getDirName(), studyProperties.isDirRename());

@@ -110,9 +110,8 @@ public class Components extends Controller {
         checkStudyAndLocked(studyId, study, loggedInUser);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
         ComponentProperties componentProperties = form.get();
 
         Component component = componentService.createAndPersistComponent(study, componentProperties);
@@ -151,9 +150,8 @@ public class Components extends Controller {
         checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
         ComponentProperties properties = form.get();
         componentService.updateComponentAfterEdit(component, properties);
         try {

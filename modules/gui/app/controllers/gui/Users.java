@@ -152,11 +152,8 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         checkEmailIsOfLoggedInUser(email, loggedInUser);
 
-        Form<ChangeUserProfileModel> form =
-                formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         // Update user in database: so far it's only the user's name
         String name = form.get().getName();

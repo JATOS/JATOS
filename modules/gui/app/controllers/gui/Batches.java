@@ -193,11 +193,9 @@ public class Batches extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Form<BatchProperties> form = formFactory.form(BatchProperties.class)
-                .bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest();
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
         BatchProperties batchProperties = form.get();
         Batch batch = batchService.bindToBatch(batchProperties);
 
@@ -264,9 +262,7 @@ public class Batches extends Controller {
         }
 
         Form<BatchSession> form = formFactory.form(BatchSession.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         BatchSession batchSession = form.get();
         boolean success = batchService.updateBatchSession(batch.getId(), batchSession);
@@ -296,9 +292,7 @@ public class Batches extends Controller {
         }
 
         Form<GroupSession> form = formFactory.form(GroupSession.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         GroupSession groupSession = form.get();
         boolean success = groupService.updateGroupSession(groupResult.getId(), groupSession);
@@ -367,9 +361,8 @@ public class Batches extends Controller {
         }
 
         Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest();
-        if (form.hasErrors()) {
-            return badRequest(form.errorsAsJson());
-        }
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
         BatchProperties batchProperties = form.get();
         // Have to bind ALLOWED_WORKER_TYPES from checkboxes by hand
         String[] allowedWorkerArray = Controller.request().body()
