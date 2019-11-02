@@ -35,6 +35,9 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -107,7 +110,7 @@ public class PublixJatosWholeRunIntegrationTest {
      * message, get init data, send session data, submit result data
      */
     @Test
-    public void runWholeStudy() throws IOException {
+    public void runWholeStudy() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
 
@@ -179,8 +182,7 @@ public class PublixJatosWholeRunIntegrationTest {
         assertThat(json.get("componentProperties")).isNotNull();
 
         // Check studyResult and componentResult
-        checkStates(studyResult, StudyState.DATA_RETRIEVED,
-                firstComponentResult, ComponentState.DATA_RETRIEVED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.DATA_RETRIEVED);
 
         // *************************************************************
         // Send request submitResultData:
@@ -192,8 +194,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check response
         assertThat(result.status()).isEqualTo(OK);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED,
-                firstComponentResult, ComponentState.RESULTDATA_POSTED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.RESULTDATA_POSTED);
 
         // Check componentResult
         assertThat(firstComponentResult.getData()).isEqualTo("That's a test result data.");
@@ -208,8 +209,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check response
         assertThat(result.status()).isEqualTo(OK);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED,
-                firstComponentResult, ComponentState.RESULTDATA_POSTED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.RESULTDATA_POSTED);
 
         // Check componentResult
         assertThat(firstComponentResult.getData()).isEqualTo(
@@ -225,38 +225,22 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check response
         assertThat(result.status()).isEqualTo(OK);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED,
-                firstComponentResult, ComponentState.RESULTDATA_POSTED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.RESULTDATA_POSTED);
 
         // Check componentResult
         assertThat(studyResult.getStudySessionData()).isEqualTo("That's our session data.");
 
         // *************************************************************
-        // Send request startNextComponent: studyResult -> DATA_RETRIEVED,
-        // old componentResult -> FINISHED, new componentResult -> STARTED
-        result = startNextComponent(studyResult, admin, idCookie);
-        idCookie = result.cookie("JATOS_IDS_0");
-
-        studyResult = retrieveStudyResult(studyResult.getId());
-        retrieveComponentResult(studyResult.getId(), 0);
-
-        // Check response
-        assertThat(result.status()).isEqualTo(SEE_OTHER);
-
-        // Check redirect URL
-        assertThat(result.header("Location").get()).endsWith(Common.getPlayHttpContext() +
-                "publix/" + study.getId() + "/" + study.getComponent(2).getId()
-                + "/start?srid=" + studyResult.getId());
-
-        // *************************************************************
-        // Start 2. component by ID, studyResult -> DATA_RETRIEVED
+        // Start 2nd startComponent: studyResult -> DATA_RETRIEVED,
         // old componentResult -> FINISHED, new componentResult -> STARTED
         result = startComponent(studyResult, study.getComponent(2), admin, idCookie);
         idCookie = result.cookie("JATOS_IDS_0");
 
         studyResult = retrieveStudyResult(studyResult.getId());
         firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
+        ComponentResult secondComponentResult = studyResult.getComponentResultList().get(1);
 
+        // Check response
         assertThat(result.status()).isEqualTo(OK);
 
         // And check a random line of the JS code
@@ -264,32 +248,53 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check old and new ComponentResult and StudyResult
         assertThat(studyResult.getComponentResultList().size()).isEqualTo(2);
-        ComponentResult secondComponentResult = studyResult.getComponentResultList().get(1);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED,
-                secondComponentResult, ComponentState.STARTED);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED,
-                firstComponentResult, ComponentState.FINISHED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.FINISHED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, secondComponentResult, ComponentState.STARTED);
         checkComponentResultAfterStart(study, studyResult, admin, 2, 2);
 
         // *************************************************************
-        // Start 3. component by position, studyResult -> DATA_RETRIEVED
+        // Start 3rd component, studyResult -> DATA_RETRIEVED
         // old componentResult -> FINISHED, new componentResult -> STARTED
-        result = startComponentByPosition(studyResult, admin, 3, idCookie);
+        result = startComponent(studyResult, study.getComponent(3), admin, idCookie);
         idCookie = result.cookie("JATOS_IDS_0");
 
         studyResult = retrieveStudyResult(studyResult.getId());
-        firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
+        secondComponentResult = retrieveComponentResult(studyResult.getId(), 1);
+        ComponentResult thirdComponentResult = studyResult.getComponentResultList().get(2);
 
+        // Check response
         assertThat(result.status()).isEqualTo(OK);
 
         // And check a random line of the JS code
         assertThat(contentAsString(result, materializer)).contains("jatos.onLoad(function() {");
 
         // Check old and new ComponentResult and StudyResult
-        assertThat(firstComponentResult.getEndDate()).isNotNull();
-        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult,
-                ComponentState.FINISHED);
+        assertThat(studyResult.getComponentResultList().size()).isEqualTo(3);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, secondComponentResult, ComponentState.FINISHED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, thirdComponentResult, ComponentState.STARTED);
         checkComponentResultAfterStart(study, studyResult, admin, 3, 3);
+
+        // *************************************************************
+        // Start 4th component, studyResult -> DATA_RETRIEVED
+        // old componentResult -> FINISHED, new componentResult -> STARTED
+        result = startComponent(studyResult, study.getComponent(4), admin, idCookie);
+        idCookie = result.cookie("JATOS_IDS_0");
+
+        studyResult = retrieveStudyResult(studyResult.getId());
+        thirdComponentResult = retrieveComponentResult(studyResult.getId(), 2);
+        ComponentResult forthComponentResult = studyResult.getComponentResultList().get(3);
+
+        // Check response
+        assertThat(result.status()).isEqualTo(OK);
+
+        // And check a random line of the JS code
+        assertThat(contentAsString(result, materializer)).contains("jatos.onLoad(function() {");
+
+        // Check old and new ComponentResult and StudyResult
+        assertThat(studyResult.getComponentResultList().size()).isEqualTo(4);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, thirdComponentResult, ComponentState.FINISHED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, forthComponentResult, ComponentState.STARTED);
+        checkComponentResultAfterStart(study, studyResult, admin, 4, 4);
 
         // *************************************************************
         // Log error
@@ -299,7 +304,7 @@ public class PublixJatosWholeRunIntegrationTest {
         // TODO check that error msg appears in log - how?
 
         // *************************************************************
-        // Send request to get InitData: prior session data should be there
+        // Get InitData: prior session data should be there
         // studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
         result = initData(studyResult, study.getComponent(3), admin, idCookie);
 
@@ -316,20 +321,19 @@ public class PublixJatosWholeRunIntegrationTest {
         assertThat(json.get("componentProperties")).isNotNull();
 
         // *************************************************************
-        // Send request to end study not successfully with error message
+        // End study not successfully with error message
         // studyResult -> FAIL, componentResult -> FINISHED
-        result = endStudy(studyResult, admin, idCookie, false, "This%20is%20an%20error%20message.");
+        result = endStudy(studyResult, admin, idCookie, false, "This is an error message.");
         idCookie = result.cookie("JATOS_IDS_0");
 
         studyResult = retrieveStudyResult(studyResult.getId());
         firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
-        // Check response: HTTP status is redirect (it's a JATOS worker run)
+        // Check response: HTTP status is redirect (to end page)
         assertThat(result.status()).isEqualTo(SEE_OTHER);
 
         // Check redirect URL
-        assertThat(result.header("Location").get())
-                .isEqualTo(Common.getPlayHttpContext() + "jatos/" + study.getId());
+        assertThat(result.header("Location").get()).isEqualTo(Common.getPlayHttpContext() + "jatos/" + study.getId());
 
         // Check that ID cookie is removed
         assertThat(idCookie.value()).isEmpty();
@@ -339,15 +343,14 @@ public class PublixJatosWholeRunIntegrationTest {
         assertThat(firstComponentResult.getComponentState()).isEqualTo(ComponentState.FINISHED);
 
         // Check the abort message is in flash storage
-        assertThat(result.flash().get("info")).isEqualTo(
-                "Study finished with message: This is an error message.");
+        assertThat(result.flash().get("info")).isEqualTo("Study finished with message: This is an error message.");
     }
 
     /**
      * Functional test: start a study and then abort it.
      */
     @Test
-    public void startAndAbortStudy() {
+    public void startAndAbortStudy() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
 
@@ -376,7 +379,7 @@ public class PublixJatosWholeRunIntegrationTest {
         // *************************************************************
         // Send request to end study
         // studyResult -> ABORTED, componentResult -> ABORTED
-        result = abortStudy(studyResult, admin, idCookie, "This%20is%20an%20abort%20message.");
+        result = abortStudy(studyResult, admin, idCookie, "This is an abort message.");
         idCookie = result.cookie("JATOS_IDS_0");
         studyResult = retrieveStudyResult(studyResult.getId());
         ComponentResult firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
@@ -385,8 +388,7 @@ public class PublixJatosWholeRunIntegrationTest {
         assertThat(result.status()).isEqualTo(SEE_OTHER);
 
         // Check redirect URL
-        assertThat(result.header("Location").get())
-                .isEqualTo(Common.getPlayHttpContext() + "jatos/" + study.getId());
+        assertThat(result.header("Location").get()).isEqualTo(Common.getPlayHttpContext() + "jatos/" + study.getId());
 
         // Check that ID cookie is removed
         assertThat(idCookie.value()).isEmpty();
@@ -409,19 +411,6 @@ public class PublixJatosWholeRunIntegrationTest {
         return route(fakeApplication, request);
     }
 
-    private Result startComponentByPosition(StudyResult studyResult, User admin, int position,
-            Cookie idCookie) {
-        Result result;
-        String url = Common.getPlayHttpContext() + "publix/" + studyResult.getStudy().getId()
-                + "/component/start?position=" + position + "&srid=" + studyResult.getId();
-        RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-                .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
-                .cookie(idCookie)
-                .header(HeaderNames.HOST, "localhost:" + testServerPort());
-        result = route(fakeApplication, request, 10000);
-        return result;
-    }
-
     private Result startComponent(StudyResult studyResult, Component component, User admin,
             Cookie idCookie) {
         String url = Common.getPlayHttpContext()
@@ -430,22 +419,9 @@ public class PublixJatosWholeRunIntegrationTest {
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .cookie(idCookie)
+                .bodyText("That's session data.")
                 .header(HeaderNames.HOST, "localhost:" + testServerPort());
         return route(fakeApplication, request, 10000);
-    }
-
-    private Result startNextComponent(StudyResult studyResult, User admin, Cookie idCookie) {
-        Result result;
-        String url = Common.getPlayHttpContext()
-                + "publix/" + studyResult.getStudy().getId()
-                + "/nextComponent/start?srid=" + studyResult.getId();
-        RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-                .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
-                .cookie(idCookie)
-                .header(HeaderNames.HOST, "localhost:" + testServerPort())
-                .bodyText("That's session data.");
-        result = route(fakeApplication, request, 10000);
-        return result;
     }
 
     private Result initData(StudyResult studyResult, Component component, User admin,
@@ -519,11 +495,11 @@ public class PublixJatosWholeRunIntegrationTest {
     }
 
     private Result endStudy(StudyResult studyResult, User admin, Cookie idCookie,
-            boolean successful, String errorMsg) {
+            boolean successful, String message) throws UnsupportedEncodingException {
         Result result;
-        String url = Common.getPlayHttpContext() + "publix/" + studyResult.getStudy().getId() +
-                "/end?srid=" + studyResult.getId() + "&successful=" + successful
-                + "&errorMsg=" + errorMsg;
+        String url = Common.getPlayHttpContext() + "publix/" + studyResult.getStudy().getId()
+                + "/end?srid=" + studyResult.getId() + "&successful=" + successful
+                + "&message=" + URLEncoder.encode(message, StandardCharsets.UTF_8.toString());
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
@@ -533,10 +509,11 @@ public class PublixJatosWholeRunIntegrationTest {
     }
 
     private Result abortStudy(StudyResult studyResult, User admin, Cookie idCookie,
-            String abortMsg) {
+            String message) throws UnsupportedEncodingException {
         Result result;
         String url = Common.getPlayHttpContext() + "publix/" + studyResult.getStudy().getId()
-                + "/abort?srid=" + studyResult.getId() + "&message=" + abortMsg;
+                + "/abort?srid=" + studyResult.getId()
+                + "&message=" + URLEncoder.encode(message, StandardCharsets.UTF_8.toString());
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
                 .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .header(HeaderNames.HOST, "localhost:" + testServerPort())
