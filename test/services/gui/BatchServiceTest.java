@@ -154,7 +154,7 @@ public class BatchServiceTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = createDummyBatch(study);
 
-        jpaApi.withTransaction(() -> batchService.createAndPersistBatch(batch, study));
+        jpaApi.withTransaction(() -> batchService.createAndPersistBatch(batch, study, testHelper.getAdmin()));
 
         // Check that's persisted and ID and UUID are set
         jpaApi.withTransaction(() -> {
@@ -193,13 +193,13 @@ public class BatchServiceTest {
             batch.addWorker(personalMultipleWorker);
             batch.addWorker(generalSingleWorker);
 
-            batchService.createAndPersistBatch(batch, study);
+            batchService.createAndPersistBatch(batch, study, testHelper.getAdmin());
         });
 
         // Remove the batch
         jpaApi.withTransaction(() -> {
             Batch b = batchDao.findById(batch.getId());
-            batchService.remove(b);
+            batchService.remove(b, testHelper.getAdmin());
         });
 
         // Check the removal

@@ -1,28 +1,15 @@
 package controllers.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.FORBIDDEN;
-import static play.mvc.Http.Status.OK;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.route;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.inject.Guice;
-
 import daos.common.UserDao;
 import general.TestHelper;
 import models.common.User;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
 import models.gui.NewUserModel;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -35,6 +22,16 @@ import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.BreadcrumbsService;
 import services.gui.UserService;
+
+import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.OK;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.route;
 
 /**
  * Testing actions of controller.gui.Users: basic integration tests

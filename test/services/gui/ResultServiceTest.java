@@ -23,8 +23,7 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -78,46 +77,6 @@ public class ResultServiceTest {
         assertThat(a).isEqualTo(2);
     }
 
-    @Test
-    public void checkExtractResultIds() {
-        List<Long> resultIdList = null;
-
-        // Valid ID string
-        try {
-            resultIdList = resultService.extractResultIds("1,2,3");
-        } catch (BadRequestException e) {
-            Fail.fail();
-        }
-        checkForProperResultIdList(resultIdList);
-
-        // Still valid, but with weird whitespaces and empty fields
-        try {
-            resultIdList = resultService
-                    .extractResultIds(" , ,, 1 ,2    ,  3    , ");
-        } catch (BadRequestException e) {
-            Fail.fail();
-        }
-        checkForProperResultIdList(resultIdList);
-
-        // Not valid due to letter instead of number
-        try {
-            resultService.extractResultIds("1,b,3");
-            Fail.fail();
-        } catch (BadRequestException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(MessagesStrings.resultIdMalformed("b"));
-        }
-
-        // Not valid due to empty
-        try {
-            resultService.extractResultIds("");
-            Fail.fail();
-        } catch (BadRequestException e) {
-            assertThat(e.getMessage())
-                    .isEqualTo(MessagesStrings.NO_RESULTS_SELECTED);
-        }
-    }
-
     private void checkForProperResultIdList(List<Long> resultIdList) {
         assertThat(resultIdList.size() == 3);
         assertThat(resultIdList.contains(1L));
@@ -129,19 +88,16 @@ public class ResultServiceTest {
     public void checkCheckComponentResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoComponentResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoComponentResults(study.getId());
 
         jpaApi.withTransaction(() -> {
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
-                List<ComponentResult> componentResultList = resultService
-                        .getComponentResults(idList);
+                List<ComponentResult> componentResultList = resultService.getComponentResults(ids);
 
                 // Must not throw an exception
                 User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
                 checker.checkComponentResults(componentResultList, admin, true);
-            } catch (NotFoundException | ForbiddenException
-                    | BadRequestException e) {
+            } catch (NotFoundException | ForbiddenException | BadRequestException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -151,23 +107,17 @@ public class ResultServiceTest {
     public void checkCheckComponentResultsWrongUser() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoComponentResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoComponentResults(study.getId());
 
         // Check results with wrong user
         jpaApi.withTransaction(() -> {
-            User testUser =
-                    testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                            "Bla", "bla");
+            User testUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
-                List<ComponentResult> componentResultList = resultService
-                        .getComponentResults(idList);
-                checker.checkComponentResults(componentResultList, testUser,
-                        true);
+                List<ComponentResult> componentResultList = resultService.getComponentResults(ids);
+                checker.checkComponentResults(componentResultList, testUser, true);
             } catch (ForbiddenException e) {
                 assertThat(e.getMessage()).isEqualTo(MessagesStrings
-                        .studyNotUser(testUser.getName(), testUser.getEmail(),
-                                study.getId(), study.getTitle()));
+                        .studyNotUser(testUser.getName(), testUser.getEmail(), study.getId(), study.getTitle()));
             } catch (BadRequestException | NotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -180,38 +130,32 @@ public class ResultServiceTest {
     public void checkCheckComponentResultsLocked() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoComponentResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoComponentResults(study.getId());
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             List<ComponentResult> componentResultList;
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
-                componentResultList = resultService.getComponentResults(idList);
+                componentResultList = resultService.getComponentResults(ids);
 
                 // Lock study
-                componentResultList.get(0).getComponent().getStudy()
-                        .setLocked(true);
-            } catch (BadRequestException | NotFoundException e) {
+                componentResultList.get(0).getComponent().getStudy().setLocked(true);
+            } catch (NotFoundException e) {
                 throw new RuntimeException(e);
             }
 
-            // Must not throw an exception since we tell it not to check for
-            // locked study
+            // Must not throw an exception since we tell it not to check for locked study
             try {
-                checker.checkComponentResults(componentResultList, admin,
-                        false);
+                checker.checkComponentResults(componentResultList, admin, false);
             } catch (ForbiddenException | BadRequestException e) {
                 throw new RuntimeException(e);
             }
 
-            // Must throw an exception since we told it to check for locked
-            // study
+            // Must throw an exception since we told it to check for locked study
             try {
                 checker.checkComponentResults(componentResultList, admin, true);
             } catch (ForbiddenException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
             } catch (BadRequestException e) {
                 throw new RuntimeException(e);
             }
@@ -219,65 +163,54 @@ public class ResultServiceTest {
     }
 
     @Test
-    public void checkCheckStudyResults()
-            throws NoSuchAlgorithmException, IOException, BadRequestException,
-            NotFoundException, ForbiddenException {
+    public void checkCheckStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoStudyResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoStudyResults(study.getId());
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
-                List<StudyResult> studyResultList = resultService
-                        .getStudyResults(idList);
+                List<StudyResult> studyResultList = resultService.getStudyResults(ids);
 
                 // Must not throw an exception
                 checker.checkStudyResults(studyResultList, admin, true);
-            } catch (NotFoundException | BadRequestException
-                    | ForbiddenException e) {
+            } catch (NotFoundException | BadRequestException | ForbiddenException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
     @Test
-    public void checkCheckStudyResultsLocked()
-            throws NoSuchAlgorithmException, IOException, BadRequestException,
-            NotFoundException, ForbiddenException {
+    public void checkCheckStudyResultsLocked() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoStudyResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoStudyResults(study.getId());
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             List<StudyResult> studyResultList;
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
-                studyResultList = resultService.getStudyResults(idList);
-            } catch (BadRequestException | NotFoundException e) {
+                studyResultList = resultService.getStudyResults(ids);
+            } catch (NotFoundException e) {
                 throw new RuntimeException(e);
             }
 
             // Lock study
             studyResultList.get(0).getStudy().setLocked(true);
 
-            // Must not throw an exception since we tell it not to check for
-            // locked study
+            // Must not throw an exception since we tell it not to check for locked study
             try {
                 checker.checkStudyResults(studyResultList, admin, false);
             } catch (ForbiddenException | BadRequestException e) {
                 throw new RuntimeException(e);
             }
 
-            // Must throw an exception since we told it to check for locked
-            // study
+            // Must throw an exception since we told it to check for locked study
             try {
                 checker.checkStudyResults(studyResultList, admin, true);
             } catch (ForbiddenException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyLocked(study.getId(), study.getTitle()));
             } catch (BadRequestException e) {
                 throw new RuntimeException(e);
             }
@@ -288,16 +221,14 @@ public class ResultServiceTest {
     public void checkGetComponentResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoComponentResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoComponentResults(study.getId());
 
         // Check that we can get ComponentResults
         jpaApi.withTransaction(() -> {
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
-                List<ComponentResult> componentResultList =
-                        resultService.getComponentResults(idList);
+                List<ComponentResult> componentResultList = resultService.getComponentResults(ids);
                 assertThat(componentResultList.size()).isEqualTo(2);
-            } catch (BadRequestException | NotFoundException e) {
+            } catch (NotFoundException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -307,21 +238,16 @@ public class ResultServiceTest {
     public void checkGetComponentResultsWrongId() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoComponentResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoComponentResults(study.getId());
 
         // If one of the IDs don't exist it throws an exception
         jpaApi.withTransaction(() -> {
-            long nonExistingId = 1111L;
             try {
-                List<Long> idList = resultService
-                        .extractResultIds(ids + ", " + nonExistingId);
-                resultService.getComponentResults(idList);
+                ids.add(1111L);
+                resultService.getComponentResults(ids);
                 Fail.fail();
             } catch (NotFoundException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        MessagesStrings.componentResultNotExist(nonExistingId));
-            } catch (BadRequestException e) {
-                throw new RuntimeException(e);
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.componentResultNotExist(1111L));
             }
         });
     }
@@ -330,78 +256,68 @@ public class ResultServiceTest {
     public void checkGetComponentResultsNotExist() {
         testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        // Check that a NotFoundException is thrown if ComponentResults with ID
-        // 1, 2 don't exist
+        // Check that a NotFoundException is thrown if ComponentResults with ID 1, 2 don't exist
         jpaApi.withTransaction(() -> {
             try {
-                List<Long> idList = resultService.extractResultIds("1, 2");
-                resultService.getComponentResults(idList);
+                List<Long> ids = new ArrayList<>();
+                ids.add(1L);
+                ids.add(2L);
+                resultService.getComponentResults(ids);
                 Fail.fail();
             } catch (NotFoundException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.componentResultNotExist(1L));
-            } catch (BadRequestException e) {
-                throw new RuntimeException(e);
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.componentResultNotExist(1L));
             }
         });
     }
 
     @Test
-    public void checkGetStudyResults() throws IOException,
-            NoSuchAlgorithmException, BadRequestException, NotFoundException {
+    public void checkGetStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoStudyResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoStudyResults(study.getId());
 
         jpaApi.withTransaction(() -> {
             try {
-                List<Long> idList = resultService.extractResultIds(ids);
                 List<StudyResult> studyResultList;
-                studyResultList = resultService.getStudyResults(idList);
+                studyResultList = resultService.getStudyResults(ids);
                 assertThat(studyResultList.size()).isEqualTo(2);
-            } catch (NotFoundException | BadRequestException e) {
+            } catch (NotFoundException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
     @Test
-    public void checkGetStudyResultsNotExist()
-            throws NoSuchAlgorithmException, IOException, BadRequestException {
+    public void checkGetStudyResultsNotExist() {
         testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // If no results were added an NotFoundException should be thrown
         jpaApi.withTransaction(() -> {
             try {
-                List<Long> idList = resultService.extractResultIds("1, 2");
-                resultService.getStudyResults(idList);
+                List<Long> ids = new ArrayList<>();
+                ids.add(1L);
+                ids.add(2L);
+                resultService.getStudyResults(ids);
                 Fail.fail();
             } catch (NotFoundException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(MessagesStrings.studyResultNotExist(1L));
-            } catch (BadRequestException e) {
-                throw new RuntimeException(e);
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyResultNotExist(1L));
             }
         });
     }
 
     @Test
-    public void checkGetAllowedStudyResultList()
-            throws NoSuchAlgorithmException, IOException, BadRequestException {
+    public void checkGetAllowedStudyResultList() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        String ids = resultTestHelper.createTwoStudyResults(study.getId());
+        List<Long> ids = resultTestHelper.createTwoStudyResults(study.getId());
 
-        // Leave the StudyResult but remove admin from the users of the
-        // corresponding studies
+        // Leave the StudyResult but remove admin from the users of the corresponding studies
         jpaApi.withTransaction(() -> {
             try {
                 User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-                List<Long> idList = resultService.extractResultIds(ids);
-                List<StudyResult> studyResultList = resultService
-                        .getStudyResults(idList);
+                List<StudyResult> studyResultList = resultService.getStudyResults(ids);
                 studyResultList.forEach(studyResult -> studyResult.getStudy().removeUser(admin));
-            } catch (BadRequestException | NotFoundException e) {
+            } catch (NotFoundException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -409,41 +325,34 @@ public class ResultServiceTest {
         // Must be empty
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            List<StudyResult> studyResultList = resultService
-                    .getAllowedStudyResultList(admin, admin.getWorker());
+            List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, admin.getWorker());
             assertThat(studyResultList.size()).isEqualTo(0);
         });
     }
 
     @Test
-    public void checkGetAllowedStudyResultListEmpty()
-            throws IOException, NoSuchAlgorithmException {
+    public void checkGetAllowedStudyResultListEmpty() {
         testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Don't add any results
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            List<StudyResult> studyResultList = resultService
-                    .getAllowedStudyResultList(admin, admin.getWorker());
+            List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, admin.getWorker());
             assertThat(studyResultList).isEmpty();
         });
     }
 
     @Test
-    public void checkGetAllowedStudyResultListWrongUser()
-            throws NoSuchAlgorithmException, IOException, BadRequestException {
+    public void checkGetAllowedStudyResultListWrongUser() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         resultTestHelper.createTwoStudyResults(study.getId());
 
         // Use wrong user to retrieve results
         jpaApi.withTransaction(() -> {
-            User testUser =
-                    testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                            "Bla", "bla");
+            User testUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            List<StudyResult> studyResultList = resultService
-                    .getAllowedStudyResultList(admin, testUser.getWorker());
+            List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, testUser.getWorker());
             assertThat(studyResultList).isEmpty();
         });
 

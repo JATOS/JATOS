@@ -15,13 +15,15 @@ import org.junit.Before;
 import org.junit.Test;
 import play.ApplicationLoader;
 import play.Environment;
-import play.data.validation.ValidationError;
+import play.data.Form;
+import play.data.FormFactory;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -40,6 +42,9 @@ public class AuthenticationValidationTest {
 
     @Inject
     private AuthenticationValidation authenticationValidation;
+
+    @Inject
+    private FormFactory formFactory;
 
     @Before
     public void startApp() throws Exception {
@@ -72,12 +77,11 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUser() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(createDummyUserData());
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isEmpty();
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isEmpty();
         });
     }
 
@@ -88,15 +92,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserEmailEmpty() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setEmail("");
+        Map<String, String> data = createDummyUserData();
+        data.put("email", "");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.MISSING_EMAIL);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.MISSING_EMAIL);
         });
     }
 
@@ -107,16 +110,15 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserEmailTooLong() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setEmail(
+        Map<String, String> data = createDummyUserData();
+        data.put("email",
                 "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.EMAIL_TOO_LONG);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.EMAIL_TOO_LONG);
         });
     }
 
@@ -127,15 +129,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserEmailNoHtml() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setEmail("<html><p></p></html>");
+        Map<String, String> data = createDummyUserData();
+        data.put("email", "<html><p></p></html>");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
         });
     }
 
@@ -146,15 +147,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserNameEmpty() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setName("");
+        Map<String, String> data = createDummyUserData();
+        data.put("name", "");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.MISSING_NAME);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.MISSING_NAME);
         });
     }
 
@@ -165,16 +165,15 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserNameTooLong() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setName(
+        Map<String, String> data = createDummyUserData();
+        data.put("name",
                 "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NAME_TOO_LONG);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.NAME_TOO_LONG);
         });
     }
 
@@ -185,15 +184,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserNameNoHtml() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setName("<html><p></p></html>");
+        Map<String, String> data = createDummyUserData();
+        data.put("name", "<html><p></p></html>");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
         });
     }
 
@@ -204,15 +202,15 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserPasswordEmpty() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setPassword("");
+        Map<String, String> data = createDummyUserData();
+        data.put("password", "");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -223,15 +221,15 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserRepeatedPasswordEmpty() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setPasswordRepeat("");
+        Map<String, String> data = createDummyUserData();
+        data.put("passwordRepeat", "");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -242,15 +240,15 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserPasswordMinLength() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel
-                .setPassword(StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a'));
-        newUserModel.setPasswordRepeat(newUserModel.getPassword());
+        Map<String, String> data = createDummyUserData();
+        String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a');
+        data.put("password", pw);
+        data.put("passwordRepeat", pw);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isEmpty();
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
         });
     }
 
@@ -261,18 +259,17 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserPasswordNotLongEnough() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setPassword(
-                StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a'));
-        newUserModel.setPasswordRepeat(newUserModel.getPassword());
+        Map<String, String> data = createDummyUserData();
+        String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
+        data.put("password", pw);
+        data.put("passwordRepeat", pw);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings
-                            .userPasswordMinLength(Common.getUserPasswordMinLength()));
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings
+                    .userPasswordMinLength(Common.getUserPasswordMinLength()));
         });
     }
 
@@ -283,14 +280,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserPasswordStrongEnough() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setPassword("abcABC1$");
-        newUserModel.setPasswordRepeat(newUserModel.getPassword());
+        Map<String, String> data = createDummyUserData();
+        data.put("password", "abcABC1$");
+        data.put("passwordRepeat", "abcABC1$");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isEmpty();
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
         });
     }
 
@@ -303,50 +300,54 @@ public class AuthenticationValidationTest {
 
         // No upper case
         jpaApi.withTransaction(() -> {
-            NewUserModel newUserModel = createDummyNewUserModel();
-            newUserModel.setPassword("abcabc1$");
-            newUserModel.setPasswordRepeat(newUserModel.getPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = createDummyUserData();
+            data.put("password", "abcabc1$");
+            data.put("passwordRepeat", "abcabc1$");
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No lower case
         jpaApi.withTransaction(() -> {
-            NewUserModel newUserModel = createDummyNewUserModel();
-            newUserModel.setPassword("ABCABC1$");
-            newUserModel.setPasswordRepeat(newUserModel.getPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = createDummyUserData();
+            data.put("password", "ABCABC1$");
+            data.put("passwordRepeat", "ABCABC1$");
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No number
         jpaApi.withTransaction(() -> {
-            NewUserModel newUserModel = createDummyNewUserModel();
-            newUserModel.setPassword("abcABC$$");
-            newUserModel.setPasswordRepeat(newUserModel.getPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = createDummyUserData();
+            data.put("password", "abcABC$$");
+            data.put("passwordRepeat", "abcABC$$");
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No special character
         jpaApi.withTransaction(() -> {
-            NewUserModel newUserModel = createDummyNewUserModel();
-            newUserModel.setPassword("abcABC11");
-            newUserModel.setPasswordRepeat(newUserModel.getPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = createDummyUserData();
+            data.put("password", "abcABC11");
+            data.put("passwordRepeat", "abcABC11");
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
     }
 
@@ -358,15 +359,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserPasswordsNotEqual() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setPasswordRepeat("different");
+        Map<String, String> data = createDummyUserData();
+        data.put("passwordRepeat", "different");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
         });
     }
 
@@ -377,14 +377,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserUserExistsAlready() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setEmail("admin");
+        Map<String, String> data = createDummyUserData();
+        data.put("email", "admin");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).hasSize(1);
-            assertThat(errorList.get(0).message()).isEqualTo(
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
                     MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED);
         });
     }
@@ -396,15 +396,14 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUserWrongAdminPassword() {
         testHelper.mockContext();
 
-        NewUserModel newUserModel = createDummyNewUserModel();
-        newUserModel.setAdminPassword("wrongPw");
+        Map<String, String> data = createDummyUserData();
+        data.put("adminPassword", "wrongPw");
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
-            assertThat(errorList).hasSize(1);
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.WRONG_PASSWORD);
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.WRONG_PASSWORD);
         });
     }
 
@@ -416,15 +415,16 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordViaAdmin() {
         prepareChangePasswordWithAdminTest();
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword("abc123A$");
-        model.setNewPasswordRepeat("abc123A$");
+        Map<String, String> data = new HashMap<>();
+        data.put("adminPassword", UserService.ADMIN_PASSWORD);
+        data.put("newPassword", "abc123A$");
+        data.put("newPasswordRepeat", "abc123A$");
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isEmpty();
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
         });
     }
 
@@ -435,16 +435,17 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordNotEmpty() {
         prepareChangePasswordWithAdminTest();
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword("");
+        Map<String, String> data = new HashMap<>();
+        data.put("adminPassword", UserService.ADMIN_PASSWORD);
+        data.put("newPassword", "");
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -455,17 +456,18 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordRepeatNotEmpty() {
         prepareChangePasswordWithAdminTest();
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword("abc");
-        model.setNewPasswordRepeat("");
+        Map<String, String> data = new HashMap<>();
+        data.put("adminPassword", UserService.ADMIN_PASSWORD);
+        data.put("newPassword", "abc");
+        data.put("newPasswordRepeat", "");
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
         });
     }
 
@@ -476,17 +478,17 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordViaAdminNotMatch() {
         prepareChangePasswordWithAdminTest();
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword("abc123A$");
-        model.setNewPasswordRepeat("wer345B$");
+        Map<String, String> data = new HashMap<>();
+        data.put("adminPassword", UserService.ADMIN_PASSWORD);
+        data.put("newPassword", "abc123A$");
+        data.put("newPasswordRepeat", "wer345B$");
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
         });
     }
 
@@ -497,15 +499,17 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordMinLength() {
         prepareChangePasswordWithAdminTest();
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword(StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a'));
-        model.setNewPasswordRepeat(model.getNewPassword());
+        Map<String, String> data = new HashMap<>();
+        data.put("adminPassword", UserService.ADMIN_PASSWORD);
+        String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a');
+        data.put("newPassword", pw);
+        data.put("newPasswordRepeat", pw);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isEmpty();
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
         });
     }
 
@@ -516,16 +520,18 @@ public class AuthenticationValidationTest {
     public void checkValidateChangePasswordNotLongEnough() {
         prepareChangePasswordWithAdminTest();
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setAdminPassword(UserService.ADMIN_PASSWORD);
-        model.setNewPassword(
-                StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a'));
-        model.setNewPasswordRepeat(model.getNewPassword());
+        Map<String, String> data = new HashMap<>();
+        data.put("adminPassword", UserService.ADMIN_PASSWORD);
+        String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
+        data.put("newPassword", pw);
+        data.put("newPasswordRepeat", pw);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList.get(0).message()).isEqualTo(MessagesStrings
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings
                     .userPasswordMinLength(Common.getUserPasswordMinLength()));
         });
     }
@@ -539,50 +545,62 @@ public class AuthenticationValidationTest {
 
         // No upper case
         jpaApi.withTransaction(() -> {
-            ChangePasswordModel model = new ChangePasswordModel();
-            model.setAdminPassword(UserService.ADMIN_PASSWORD);
-            model.setNewPassword("abcabc1$");
-            model.setNewPasswordRepeat(model.getNewPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = new HashMap<>();
+            data.put("adminPassword", UserService.ADMIN_PASSWORD);
+            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
+            data.put("newPassword", "abcabc1$");
+            data.put("newPasswordRepeat", "abcabc1$");
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No lower case
         jpaApi.withTransaction(() -> {
-            ChangePasswordModel model = new ChangePasswordModel();
-            model.setAdminPassword(UserService.ADMIN_PASSWORD);
-            model.setNewPassword("ABCABC1$");
-            model.setNewPasswordRepeat(model.getNewPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = new HashMap<>();
+            data.put("adminPassword", UserService.ADMIN_PASSWORD);
+            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
+            data.put("newPassword", "ABCABC1$");
+            data.put("newPasswordRepeat", "ABCABC1$");
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No number
         jpaApi.withTransaction(() -> {
-            ChangePasswordModel model = new ChangePasswordModel();
-            model.setAdminPassword(UserService.ADMIN_PASSWORD);
-            model.setNewPassword("abcABC$$");
-            model.setNewPasswordRepeat(model.getNewPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = new HashMap<>();
+            data.put("adminPassword", UserService.ADMIN_PASSWORD);
+            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
+            data.put("newPassword", "abcABC$$");
+            data.put("newPasswordRepeat", "abcABC$$");
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
 
         // No special character
         jpaApi.withTransaction(() -> {
-            ChangePasswordModel model = new ChangePasswordModel();
-            model.setAdminPassword(UserService.ADMIN_PASSWORD);
-            model.setNewPassword("abcABC11");
-            model.setNewPasswordRepeat(model.getNewPassword());
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message()).isEqualTo(Common.getUserPasswordStrengthRegex().getLeft());
+            Map<String, String> data = new HashMap<>();
+            data.put("adminPassword", UserService.ADMIN_PASSWORD);
+            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
+            data.put("newPassword", "abcABC11");
+            data.put("newPasswordRepeat", "abcABC11");
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    Common.getUserPasswordStrengthRegex().getLeft());
         });
     }
 
@@ -596,15 +614,16 @@ public class AuthenticationValidationTest {
         User loggedInUser = testHelper.createAndPersistUser("tester.test@test.com", "Test Tester", "password");
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setOldPassword("password");
-        model.setNewPassword("abc123A$");
-        model.setNewPasswordRepeat("abc123A$");
+        Map<String, String> data = new HashMap<>();
+        data.put("oldPassword", "password");
+        data.put("newPassword", "abc123A$");
+        data.put("newPasswordRepeat", "abc123A$");
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("tester.test@test.com", model);
-            assertThat(errorList).isEmpty();
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "tester.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
         });
     }
 
@@ -618,17 +637,18 @@ public class AuthenticationValidationTest {
         User loggedInUser = testHelper.createAndPersistUser("tester.test@test.com", "Test Tester", "password");
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
-        ChangePasswordModel model = new ChangePasswordModel();
-        model.setOldPassword("password");
-        model.setNewPassword("abc123A$");
-        model.setNewPasswordRepeat("abc123A$");
+        Map<String, String> data = new HashMap<>();
+        data.put("oldPassword", "password");
+        data.put("newPassword", "abc123A$");
+        data.put("newPasswordRepeat", "abc123A$");
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
 
         jpaApi.withTransaction(() -> {
-            List<ValidationError> errorList = authenticationValidation
-                    .validateChangePassword("different.test@test.com", model);
-            assertThat(errorList).isNotEmpty();
-            assertThat(errorList.get(0).message())
-                    .isEqualTo(MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS);
+            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
+                    "different.test@test.com", form);
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
+                    MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS);
         });
     }
 
@@ -640,15 +660,15 @@ public class AuthenticationValidationTest {
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, admin);
     }
 
-    private NewUserModel createDummyNewUserModel() {
-        NewUserModel newUserModel = new NewUserModel();
-        newUserModel.setEmail("george@bla.com");
-        newUserModel.setName("Georg Lange");
-        newUserModel.setPassword("123äbcA$"); // all UTF-8 allowed
-        newUserModel.setPasswordRepeat("123äbcA$");
-        newUserModel.setAdminRole(true);
-        newUserModel.setAdminPassword("admin");
-        return newUserModel;
+    private Map<String, String> createDummyUserData() {
+        Map<String, String> data = new HashMap<>();
+        data.put("email", "george@bla.com");
+        data.put("name", "Georg Lange");
+        data.put("password", "123äbcA$");
+        data.put("passwordRepeat", "123äbcA$");
+        data.put("adminRole", "true");
+        data.put("adminPassword", "admin");
+        return data;
     }
 
 }

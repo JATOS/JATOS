@@ -175,7 +175,7 @@ public class TestHelper {
             try {
                 Study study = studyDao.findById(studyId);
                 if (study != null) {
-                    studyService.removeStudyInclAssets(study);
+                    studyService.removeStudyInclAssets(study, getAdmin());
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -186,7 +186,7 @@ public class TestHelper {
     public void removeAllStudies() {
         jpaApi.withTransaction(() -> studyDao.findAll().forEach(study -> {
             try {
-                studyService.removeStudyInclAssets(study);
+                studyService.removeStudyInclAssets(study, getAdmin());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

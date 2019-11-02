@@ -18,6 +18,7 @@ import play.api.mvc.Call;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.test.Helpers;
+import scala.Option;
 
 import javax.inject.Inject;
 
@@ -70,7 +71,7 @@ public class StudyResultsUserAccessTest {
     @Test
     public void callStudysStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.StudyResults.studysStudyResults(study.getId());
+        Call call = routes.StudyResults.studysStudyResults(study.getId(), Option.empty());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -81,7 +82,7 @@ public class StudyResultsUserAccessTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         Call call = routes.StudyResults.batchesStudyResults(
-                study.getId(), batch.getId(), JatosWorker.WORKER_TYPE);
+                study.getId(), batch.getId(), Option.apply(JatosWorker.WORKER_TYPE), Option.empty());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -90,36 +91,21 @@ public class StudyResultsUserAccessTest {
     @Test
     public void callWorkersStudyResults() {
         User admin = testHelper.getAdmin();
-        Call call = routes.StudyResults.workersStudyResults(admin.getWorker().getId());
+        Call call = routes.StudyResults.workersStudyResults(admin.getWorker().getId(), Option.empty());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
     public void callRemove() {
-        Call call = routes.StudyResults.remove("1");
-        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-    }
-
-    @Test
-    public void callRemoveAllOfStudy() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.StudyResults.removeAllOfStudy(study.getId());
-        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.DELETE);
-    }
-
-    @Test
-    public void callRemoveAllOfWorker() {
-        User admin = testHelper.getAdmin();
-        Call call = routes.StudyResults.removeAllOfWorker(admin.getWorker().getId());
+        Call call = routes.StudyResults.remove();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
     public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.StudyResults.tableDataByStudy(study.getId());
+        Call call = routes.StudyResults.tableDataByStudy(study.getId(), Option.empty());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -130,7 +116,7 @@ public class StudyResultsUserAccessTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         Call call = routes.StudyResults
-                .tableDataByBatch(study.getId(), batch.getId(), JatosWorker.WORKER_TYPE);
+                .tableDataByBatch(study.getId(), batch.getId(), Option.apply(JatosWorker.WORKER_TYPE), Option.empty());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -138,7 +124,7 @@ public class StudyResultsUserAccessTest {
 
     @Test
     public void callTableDataByWorker() {
-        Call call = routes.StudyResults.tableDataByWorker(1L);
+        Call call = routes.StudyResults.tableDataByWorker(1L, Option.empty());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }

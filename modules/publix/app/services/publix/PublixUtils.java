@@ -76,6 +76,11 @@ public abstract class PublixUtils<T extends Worker> {
         return worker;
     }
 
+    public ComponentResult startComponent(Component component, StudyResult studyResult)
+            throws ForbiddenReloadException {
+        return startComponent(component, studyResult, null);
+    }
+
     /**
      * Start or restart a component. It either returns a newly started component
      * or an exception but never null.
@@ -277,7 +282,7 @@ public abstract class PublixUtils<T extends Worker> {
             StudyResult studyResult) throws ForbiddenReloadException {
         Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
         // Start the component if it was never started or if it's a reload of the component
-        return current.isPresent() ? current.get() : startComponent(component, studyResult, null);
+        return current.isPresent() ? current.get() : startComponent(component, studyResult);
     }
 
     /**

@@ -177,7 +177,7 @@ public class ImportExportServiceTest {
         // Remove the last component (so we can import it again later on)
         Study studyWithoutLast = jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            componentService.remove(s.getLastComponent().get());
+            componentService.remove(s.getLastComponent().get(), testHelper.getAdmin());
             return s;
         });
 

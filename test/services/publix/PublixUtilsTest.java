@@ -314,7 +314,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
             assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.ABORTED);
             assertThat(componentResult2.getData()).isNullOrEmpty();
             assertThat(studyResult.getStudyState()).isEqualTo(StudyResult.StudyState.ABORTED);
-            assertThat(studyResult.getAbortMsg()).isEqualTo("abort message");
+            assertThat(studyResult.getMessage()).isEqualTo("abort message");
             assertThat(studyResult.getEndDate()).isNotNull();
             assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
         });
@@ -355,7 +355,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
             assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FINISHED);
             // Not possible to check confirmation code because it depends on the
             // worker and can be null
-            assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
+            assertThat(studyResult.getMessage()).isEqualTo("error message");
             assertThat(studyResult.getEndDate()).isNotNull();
             assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
         });
@@ -397,7 +397,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
             // Check study result
             assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FAIL);
             assertThat(studyResult.getConfirmationCode()).isNull();
-            assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
+            assertThat(studyResult.getMessage()).isEqualTo("error message");
             assertThat(studyResult.getEndDate()).isNotNull();
             assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
         });
@@ -1220,7 +1220,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         long batchId = jpaApi.withTransaction(() -> {
             Batch batch2 = batchService.clone(study.getDefaultBatch());
             batch2.setTitle("Test Title");
-            batchService.createAndPersistBatch(batch2, study);
+            batchService.createAndPersistBatch(batch2, study, testHelper.getAdmin());
             return batch2.getId();
         });
 
@@ -1246,7 +1246,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         long batchId = jpaApi.withTransaction(() -> {
             Batch batch2 = batchService.clone(study.getDefaultBatch());
             batch2.setTitle("Test Title");
-            batchService.createAndPersistBatch(batch2, study);
+            batchService.createAndPersistBatch(batch2, study, testHelper.getAdmin());
             return batch2.getId();
         });
 

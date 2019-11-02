@@ -30,7 +30,7 @@ import java.time.Instant;
  * created.
  * <p>
  * Major events are written into this log: - study creation/deletion/recreation - batch creation/deletion - study run
- * start/stops/aborts - result data storing/deletion - result data export - NOT logging any user adding/removing
+ * start/stops/aborts - result data storing - NOT logging any user adding/removing
  * <p>
  * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If it exports files a
  * SHA-256 hash of the content of the file is included in the log.

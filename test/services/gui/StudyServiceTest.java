@@ -472,7 +472,7 @@ public class StudyServiceTest {
         jpaApi.withTransaction(() -> {
             try {
                 Study s = studyDao.findById(study.getId());
-                studyService.removeStudyInclAssets(s);
+                studyService.removeStudyInclAssets(s, testHelper.getAdmin());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

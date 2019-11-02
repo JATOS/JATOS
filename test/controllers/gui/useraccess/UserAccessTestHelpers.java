@@ -1,34 +1,24 @@
 package controllers.gui.useraccess;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.FORBIDDEN;
-import static play.mvc.Http.Status.OK;
-import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.route;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import com.google.inject.Guice;
 import daos.common.StudyDao;
 import general.TestHelper;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
-import org.junit.After;
-import org.junit.Before;
 import play.Application;
-import play.ApplicationLoader;
-import play.Environment;
 import play.api.mvc.Call;
 import play.db.jpa.JPAApi;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
-import play.test.Helpers;
 import services.gui.AuthenticationService;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.*;
+import static play.test.Helpers.route;
 
 /**
  * Helper methods for testing user access to controller actions
@@ -58,16 +48,24 @@ public class UserAccessTestHelpers {
     public void checkDeniedAccessAndRedirectToLogin(Call call) {
         Result result = route(fakeApplication, call);
         assertThat(result.status()).isEqualTo(SEE_OTHER);
-        assertThat(result.redirectLocation().get())
-                .contains(Common.getPlayHttpContext() + "jatos/login");
+        assertThat(result.redirectLocation().get()).contains(Common.getPlayHttpContext() + "jatos/login");
     }
 
     public void checkAccessGranted(Call call, String method, User user) {
-        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        checkAccessGranted(call, method, user, null);
+    }
 
-        RequestBuilder request = new RequestBuilder().method(method)
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+    public void checkAccessGranted(Call call, String method, User user, String bodyText) {
+        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        RequestBuilder request = new RequestBuilder()
+                .method(method)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(call.url());
+        if (bodyText != null) {
+            request = request.bodyText(bodyText)
+                    .header("Content-Type", "application/json");
+        }
         Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
@@ -80,12 +78,13 @@ public class UserAccessTestHelpers {
      */
     public void checkDeniedAccessDueToAuthorization(Call call, String method) {
         // Persist User without ADMIN role
-        User user = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
-                "bla");
+        User user = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
         Http.Session session = testHelper.mockSessionCookieandCache(user);
 
-        RequestBuilder request = new RequestBuilder().method(method)
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+        RequestBuilder request = new RequestBuilder()
+                .method(method)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(call.url());
         Result result = route(fakeApplication, request);
 
@@ -108,7 +107,7 @@ public class UserAccessTestHelpers {
             studyDao.update(study);
         });
 
-        checkThatCallIsForbidden(call, method, admin, "isn't user of study");
+        checkThatCallIsForbidden(call, method, admin, "", "isn't user of study");
 
         jpaApi.withTransaction(() -> {
             Study study = studyDao.findById(studyId);
@@ -124,9 +123,9 @@ public class UserAccessTestHelpers {
      */
     public void checkThatCallLeadsToRedirect(Call call, String method) {
         User admin = testHelper.getAdmin();
-        RequestBuilder request = new RequestBuilder().method(method)
-                .session(AuthenticationService.SESSION_USER_EMAIL,
-                        admin.getEmail())
+        RequestBuilder request = new RequestBuilder()
+                .method(method)
+                .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
                 .uri(call.url());
 
         testHelper.assertJatosGuiException(request, Http.Status.SEE_OTHER, "");
@@ -137,14 +136,18 @@ public class UserAccessTestHelpers {
      * JatosGuiException with a HTTP status code 403. Uses the given user in the
      * session for authentication.
      */
-    public void checkThatCallIsForbidden(Call call, String method, User user,
-            String errorMsg) {
+    public void checkThatCallIsForbidden(Call call, String method, User user, String bodyText, String errorMsg) {
         Http.Session session = testHelper.mockSessionCookieandCache(user);
-        RequestBuilder request = new RequestBuilder().method(method)
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+        RequestBuilder request = new RequestBuilder()
+                .method(method)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(call.url());
-        testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN,
-                errorMsg);
+        if (bodyText != null) {
+            request = request.bodyText(bodyText)
+                    .header("Content-Type", "application/json");
+        }
+        testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, errorMsg);
     }
 
 }

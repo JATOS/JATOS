@@ -108,6 +108,12 @@ public class StudyResultDao extends AbstractDao {
         return query.setParameter("study", study).scroll(ScrollMode.FORWARD_ONLY);
     }
 
+    public List<StudyResult> findAllByStudy(Study study) {
+        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
+        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
+        return query.setParameter("study", study).getResultList();
+    }
+
     public ScrollableResults findAllByBatchScrollable(Batch batch) {
         String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch";
         org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);

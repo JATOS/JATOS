@@ -291,7 +291,7 @@ public class StudiesControllerTest {
     }
 
     @Test
-    public void callSubmitEditedNoDirRename() {
+    public void callSubmitEditedNoDirRename() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         Map<String, String> formMap = new HashMap<>();
@@ -301,6 +301,9 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.DIR_NAME, "dirName_submitEdited");
         formMap.put(StudyProperties.DIR_RENAME, "false");
         formMap.put(StudyProperties.JSON_DATA, "{}");
+
+        // The dir we want to point DIR_NAME to has to exist
+        ioUtils.createStudyAssetsDir("dirName_submitEdited");
 
         Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
