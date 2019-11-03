@@ -123,11 +123,9 @@ public class ComponentService {
         props.setComments(component.getComments());
         props.setDate(component.getDate());
         props.setHtmlFilePath(component.getHtmlFilePath());
-        try {
-            props.setHtmlFileExists(ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
-                    component.getHtmlFilePath()).exists());
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (component.getStudy() != null) {
+            props.setHtmlFileExists(ioUtils.checkFileInStudyAssetsDirExists(component.getStudy().getDirName(),
+                    component.getHtmlFilePath()));
         }
         props.setId(component.getId());
         props.setJsonData(component.getJsonData());

@@ -108,6 +108,18 @@ public class IOUtils {
         return studyAssetsDir.exists();
     }
 
+    public boolean checkFileInStudyAssetsDirExists(String dirName, String filePath) {
+        if (filePath == null || filePath.trim().isEmpty()) {
+            return false;
+        }
+        String studyAssetsPath = generateStudyAssetsPath(dirName);
+        try {
+            return getFileSecurely(studyAssetsPath, filePath).exists();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     /**
      * Gets the File object while preventing a path traversal attack and checks whether the file exists and is no
      * directory.
