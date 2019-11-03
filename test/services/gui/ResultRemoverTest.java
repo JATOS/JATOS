@@ -106,7 +106,7 @@ public class ResultRemoverTest {
                 resultService.getComponentResults(ids);
                 Fail.fail();
             } catch (NotFoundException e) {
-                assertThat(e.getMessage()).isEqualTo(MessagesStrings.componentResultNotExist(1L));
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.componentResultNotExist(ids.get(0)));
             }
         });
     }
@@ -134,6 +134,7 @@ public class ResultRemoverTest {
         // Check that NO result is removed - not even the two existing ones
         jpaApi.withTransaction(() -> {
             try {
+                ids.remove(1111L);
                 List<ComponentResult> componentResultList = resultService.getComponentResults(ids);
                 assertThat(componentResultList.size()).isEqualTo(2);
             } catch (NotFoundException e) {
