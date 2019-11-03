@@ -18,8 +18,10 @@ import play.Environment;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.JPAApi;
+import play.i18n.Lang;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.libs.typedmap.TypedMap;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -33,6 +35,8 @@ import static org.fest.assertions.Assertions.assertThat;
  * @author Kristian Lange
  */
 public class AuthenticationValidationTest {
+
+    private static final Lang defaultLang = new Lang(java.util.Locale.getDefault());
 
     @Inject
     private TestHelper testHelper;
@@ -77,7 +81,8 @@ public class AuthenticationValidationTest {
     public void checkValidateNewUser() {
         testHelper.mockContext();
 
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(createDummyUserData());
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(),
+                createDummyUserData());
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -94,7 +99,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("email", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -113,7 +118,7 @@ public class AuthenticationValidationTest {
         Map<String, String> data = createDummyUserData();
         data.put("email",
                 "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -131,7 +136,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("email", "<html><p></p></html>");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -149,7 +154,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("name", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -168,7 +173,7 @@ public class AuthenticationValidationTest {
         Map<String, String> data = createDummyUserData();
         data.put("name",
                 "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -186,7 +191,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("name", "<html><p></p></html>");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -204,7 +209,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("password", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -223,7 +228,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("passwordRepeat", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -244,11 +249,11 @@ public class AuthenticationValidationTest {
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a');
         data.put("password", pw);
         data.put("passwordRepeat", pw);
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors()).isEmpty();
         });
     }
 
@@ -263,7 +268,7 @@ public class AuthenticationValidationTest {
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
         data.put("password", pw);
         data.put("passwordRepeat", pw);
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -283,11 +288,11 @@ public class AuthenticationValidationTest {
         Map<String, String> data = createDummyUserData();
         data.put("password", "abcABC1$");
         data.put("passwordRepeat", "abcABC1$");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors()).isEmpty();
         });
     }
 
@@ -303,7 +308,7 @@ public class AuthenticationValidationTest {
             Map<String, String> data = createDummyUserData();
             data.put("password", "abcabc1$");
             data.put("passwordRepeat", "abcabc1$");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -316,7 +321,7 @@ public class AuthenticationValidationTest {
             Map<String, String> data = createDummyUserData();
             data.put("password", "ABCABC1$");
             data.put("passwordRepeat", "ABCABC1$");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -329,7 +334,7 @@ public class AuthenticationValidationTest {
             Map<String, String> data = createDummyUserData();
             data.put("password", "abcABC$$");
             data.put("passwordRepeat", "abcABC$$");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -342,7 +347,7 @@ public class AuthenticationValidationTest {
             Map<String, String> data = createDummyUserData();
             data.put("password", "abcABC11");
             data.put("passwordRepeat", "abcABC11");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -361,7 +366,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("passwordRepeat", "different");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -379,7 +384,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("email", "admin");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -398,7 +403,7 @@ public class AuthenticationValidationTest {
 
         Map<String, String> data = createDummyUserData();
         data.put("adminPassword", "wrongPw");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(data);
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
             Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
@@ -419,12 +424,13 @@ public class AuthenticationValidationTest {
         data.put("adminPassword", UserService.ADMIN_PASSWORD);
         data.put("newPassword", "abc123A$");
         data.put("newPasswordRepeat", "abc123A$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors()).isEmpty();
         });
     }
 
@@ -438,7 +444,8 @@ public class AuthenticationValidationTest {
         Map<String, String> data = new HashMap<>();
         data.put("adminPassword", UserService.ADMIN_PASSWORD);
         data.put("newPassword", "");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
@@ -460,7 +467,8 @@ public class AuthenticationValidationTest {
         data.put("adminPassword", UserService.ADMIN_PASSWORD);
         data.put("newPassword", "abc");
         data.put("newPasswordRepeat", "");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
@@ -482,7 +490,8 @@ public class AuthenticationValidationTest {
         data.put("adminPassword", UserService.ADMIN_PASSWORD);
         data.put("newPassword", "abc123A$");
         data.put("newPasswordRepeat", "wer345B$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
@@ -504,12 +513,13 @@ public class AuthenticationValidationTest {
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a');
         data.put("newPassword", pw);
         data.put("newPasswordRepeat", pw);
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors()).isEmpty();
         });
     }
 
@@ -525,7 +535,8 @@ public class AuthenticationValidationTest {
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
         data.put("newPassword", pw);
         data.put("newPasswordRepeat", pw);
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
@@ -547,10 +558,10 @@ public class AuthenticationValidationTest {
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
             data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
             data.put("newPassword", "abcabc1$");
             data.put("newPasswordRepeat", "abcabc1$");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
+                    TypedMap.empty(), data);
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -562,10 +573,10 @@ public class AuthenticationValidationTest {
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
             data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
             data.put("newPassword", "ABCABC1$");
             data.put("newPasswordRepeat", "ABCABC1$");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
+                    TypedMap.empty(), data);
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -577,10 +588,10 @@ public class AuthenticationValidationTest {
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
             data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
             data.put("newPassword", "abcABC$$");
             data.put("newPasswordRepeat", "abcABC$$");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
+                    TypedMap.empty(), data);
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -592,10 +603,10 @@ public class AuthenticationValidationTest {
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
             data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
             data.put("newPassword", "abcABC11");
             data.put("newPasswordRepeat", "abcABC11");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
+                    TypedMap.empty(), data);
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
             assertThat(validatedForm.errors()).isNotEmpty();
@@ -618,12 +629,13 @@ public class AuthenticationValidationTest {
         data.put("oldPassword", "password");
         data.put("newPassword", "abc123A$");
         data.put("newPasswordRepeat", "abc123A$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
                     "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors()).isEmpty();
         });
     }
 
@@ -641,7 +653,8 @@ public class AuthenticationValidationTest {
         data.put("oldPassword", "password");
         data.put("newPassword", "abc123A$");
         data.put("newPasswordRepeat", "abc123A$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(data);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
 
         jpaApi.withTransaction(() -> {
             Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
