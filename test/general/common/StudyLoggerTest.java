@@ -127,8 +127,7 @@ public class StudyLoggerTest {
         studyLogger.log(study, user, "bla bla bla");
         studyLogger.log(study, user, "foo foo foo", study.getDefaultBatch());
         studyLogger.log(study, "bar bar bar", testHelper.getAdmin().getWorker());
-        studyLogger.log(study, "fuu fuu fuu", study.getDefaultBatch(),
-                testHelper.getAdmin().getWorker());
+        studyLogger.log(study, "fuu fuu fuu", study.getDefaultBatch(), testHelper.getAdmin().getWorker());
         studyLogger.log(study, user, "bir bir bir", Pair.of("birkey", "birvalue"));
 
         // Check they wrote something into the log
@@ -139,15 +138,12 @@ public class StudyLoggerTest {
         assertThat(content.get(5)).contains("foo foo foo");
         assertThat(content.get(5)).contains("\"batchId\":" + study.getDefaultBatch().getId());
         assertThat(content.get(6)).contains("bar bar bar");
-        assertThat(content.get(6))
-                .contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
+        assertThat(content.get(6)).contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
         assertThat(content.get(7)).contains("fuu fuu fuu");
         assertThat(content.get(7)).contains("\"batchId\":" + study.getDefaultBatch().getId());
-        assertThat(content.get(7))
-                .contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
+        assertThat(content.get(7)).contains("\"workerId\":" + testHelper.getAdmin().getWorker().getId());
         assertThat(content.get(8)).contains("bir bir bir");
         assertThat(content.get(8)).contains("\"birkey\":\"birvalue\"");
-        assertThat(content.get(9)).contains("\"burkey\":\"burvalue\"");
     }
 
     @Test
@@ -171,13 +167,11 @@ public class StudyLoggerTest {
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("componentUuid")).isTrue();
-        assertThat(json.get("componentUuid").asText())
-                .isEqualTo(study.getFirstComponent().get().getUuid());
+        assertThat(json.get("componentUuid").asText()).isEqualTo(study.getFirstComponent().get().getUuid());
         assertThat(json.has("workerId")).isTrue();
         assertThat(json.get("workerId").asLong()).isEqualTo(worker.getId());
         assertThat(json.has("dataHash")).isTrue();
-        assertThat(json.get("dataHash").asText()).isEqualTo(
-                HashUtils.getHash("result data 1", HashUtils.SHA_256));
+        assertThat(json.get("dataHash").asText()).isEqualTo(HashUtils.getHash("result data 1", HashUtils.SHA_256));
     }
 
     private void checkInitEntry(Study study) throws IOException {
@@ -188,7 +182,6 @@ public class StudyLoggerTest {
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("studyUuid")).isTrue();
         assertThat(json.get("studyUuid").asText()).isEqualTo(study.getUuid());
-        assertThat(json.has("jatosVersion")).isTrue();
         assertThat(json.has("serversMac")).isTrue();
         assertThat(json.get("serversMac").asText()).isEqualTo(Common.getMac());
         assertThat(json.has("hashFunction")).isTrue();
