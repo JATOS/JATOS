@@ -102,8 +102,10 @@ public class Home extends Controller {
 	}
 
 	/**
-	 * Checks whether there is an JATOS update available and if yes returns ReleaseInfo as JSON.
+	 * Checks whether there is an JATOS update available and if yes returns ReleaseInfo as JSON
+	 * Example URL to enforce update to a certain version: example.com/jatos?version=v3.4.1
 	 *
+	 * @param version Can be used to enforce a certain version. If not set the latest version is used.
 	 * @param allowPreReleases If true, allows requesting of pre-releases too
 	 */
 	@Transactional
