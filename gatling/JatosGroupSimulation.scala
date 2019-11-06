@@ -43,7 +43,7 @@ class JatosGroupSimulation extends Simulation {
 
   val scn = scenario("JatosGroupSimulation")
     .exec(
-      http("Start").get("/publix/7/start?batchId=40&generalMultiple").check(bodyString.saveAs("BODY")).headers(headers_0)
+      http("Start").get("/publix/7/start?batchId=49&generalMultiple").check(bodyString.saveAs("BODY")).headers(headers_0)
     ).exec(getCookieValue(CookieKey("JATOS_IDS_0"))
   ).exec(session => {
     val cookie = session("JATOS_IDS_0").as[String]
@@ -64,6 +64,8 @@ class JatosGroupSimulation extends Simulation {
   ).pause(5 seconds).exec(
     http("Post study session data").post("/publix/7/studySessionData?srid=${studyResultId}").headers(headers_10).body(StringBody("""{"foo":"bar"}"""))
   ).exec(
+    http("Post results").post("/publix/7/14/resultData?srid=${studyResultId}").headers(headers_10).body(StringBody("""{"foo":"bar"}"""))
+  ).exec(
     http("Finish study").get("/publix/7/end?srid=${studyResultId}").headers(headers_11)
   )
 
@@ -77,3 +79,4 @@ class JatosGroupSimulation extends Simulation {
   //	setUp(scn.inject(atOnceUsers(50))).protocols(httpProtocol)
   setUp(scn.inject(rampUsersPerSec(1) to (1) during (6000 seconds))).protocols(httpProtocol)
 }
+
