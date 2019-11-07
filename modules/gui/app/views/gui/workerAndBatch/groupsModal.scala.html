@@ -98,7 +98,9 @@ function generateGroupsTable(batch) {
                 "className": "btn btn-batch",
                 "titleAttr": 'Refresh groups',
                 action: function ( e, dt, node, config ) {
+                    this.disable();
                     groupsTable.ajax.reload();
+                    setTimeout(this.enable, 3000);
                 }
             }
         ],

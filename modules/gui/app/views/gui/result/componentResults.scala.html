@@ -164,7 +164,9 @@ $(document).ready(function() {
                 "className": "btn btn-component",
                 "titleAttr": 'Refresh results',
                 action: function ( e, dt, node, config ) {
+                    this.disable();
                     resultsTable.ajax.reload();
+                    setTimeout(this.enable, 3000);
                 }
             },
             {
