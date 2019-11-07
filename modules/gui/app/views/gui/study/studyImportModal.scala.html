@@ -41,7 +41,7 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
     $.each(files , function(index, value){
         data.append('@common.Study.STUDY', value);
     });
-    $('#waitingModal').modal('show');
+    showWaitingModal();
     $.ajax({
         url: '@controllers.gui.routes.ImportExport.importStudy()',
         data: data,
@@ -50,11 +50,11 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
         processData: false,
         type: 'POST',
         success: function(response) {
-            $('#waitingModal').modal('hide');
+            hideWaitingModal();
             importStudyConfirm(response);
         },
         error : function(err) {
-            $('#waitingModal').modal('hide');
+            hideWaitingModal();
             showError(err.responseText);
         }
     });

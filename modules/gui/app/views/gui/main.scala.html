@@ -334,6 +334,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 @views.html.gui.study.studyPropertiesModal()
 
 <script>
+var waitingModalTimeout;
 var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());
 showMessages(messagesRequestScope);
 var messagesFlashScope = @Html(general.gui.FlashScopeMessaging.getAsJson());
@@ -342,6 +343,16 @@ checkForIE();
 var breadcrumbs = @Html(breadcrumbs);
 showBreadcrumbs(breadcrumbs);
 fillSidebar();
+
+function showWaitingModal() {
+	clearTimeout(waitingModalTimeout);
+	waitingModalTimeout = setTimeout(function() { $('#waitingModal').modal('show') }, 2000);
+}
+
+function hideWaitingModal() {
+	clearTimeout(waitingModalTimeout);
+	$('#waitingModal').modal('hide');
+}
 
 function showMessages(messages) {
 	if (messages != null) {

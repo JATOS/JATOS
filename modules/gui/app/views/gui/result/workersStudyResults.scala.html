@@ -95,15 +95,11 @@ $(document).ready(function() {
             "dataSrc": function(json) {
                 return JSON.parse("[" + json + "]");
             },
-            "beforeSend": function() {
-                $('#waitingModal').modal('show');
-            },
+            "beforeSend": showWaitingModal,
             "error": function(reason) {
                     showError("Couldn't read results data.")
             },
-            "complete": function() {
-                $('#waitingModal').modal('hide');
-            }
+            "complete": hideWaitingModal
         },
         "dom": '<"pull-right"B>lfrtip',
         "order": [[ 2, "desc" ]],
@@ -417,7 +413,7 @@ $(document).ready(function() {
     });
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
-        $('#waitingModal').modal('show');
+        showWaitingModal();
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -425,7 +421,7 @@ $(document).ready(function() {
             ids.push(rowData.id);
         });
         if (ids.length == 0) {
-            $('#waitingModal').modal('hide');
+            hideWaitingModal();
             showError("No results selected");
             return;
         }
@@ -440,9 +436,7 @@ $(document).ready(function() {
             error : function(err) {
                 showError(err.responseText);
             },
-            complete: function() {
-                $('#waitingModal').modal('hide');
-            }
+            complete: hideWaitingModal
         });
     }
 
@@ -451,7 +445,7 @@ $(document).ready(function() {
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
-        $('#waitingModal').modal('show');
+        showWaitingModal();
         var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -459,7 +453,7 @@ $(document).ready(function() {
             ids.push(rowData.id);
         });
         if (ids.length <= 0) {
-            $('#waitingModal').modal('hide');
+            hideWaitingModal();
             showError("No results selected");
             return;
         }
@@ -475,9 +469,9 @@ $(document).ready(function() {
                 + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         }
         var title = "Confirm Delete";
-        $('#waitingModal').modal('hide');
+        hideWaitingModal();
         askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
-            $('#waitingModal').modal('show');
+            showWaitingModal();
             $.ajax({
                 url : '@controllers.gui.routes.StudyResults.remove()',
                 type : 'POST',
@@ -491,9 +485,7 @@ $(document).ready(function() {
                 error : function(err) {
                     showError(err.responseText);
                 },
-                complete: function() {
-                    $('#waitingModal').modal('hide');
-                }
+                complete: hideWaitingModal
             });
         });
     }

@@ -105,7 +105,7 @@ function showStudyLogRaw() {
 }
 
 $('#studyLogDownload').on('click', function() {
-    $('#waitingModal').modal('show');
+    showWaitingModal();
     // Use download.js (http://danml.com/download.html) to get the result data and offer them
     // as download to the user. download.js allows to use an Ajax call and error handling.
     $.ajax({
@@ -115,9 +115,7 @@ $('#studyLogDownload').on('click', function() {
         error : function(err) {
             showError("Download of study log failed", "#studyLogModal .messages");
         },
-        complete: function() {
-            $('#waitingModal').modal('hide');
-        }
+        complete: hideWaitingModal
     });
 });
 
