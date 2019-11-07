@@ -274,30 +274,6 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (uses download.js on the client side)
-     * <p>
-     * Returns all result data of ComponentResults belonging to StudyResults belonging to the given study. Returns the
-     * result data as text, each line a result data.
-     */
-    @Transactional
-    @Authenticated
-    public Result exportDataOfAllStudyResults(Long studyId) {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        int bufferSize = studyResultDao.countByStudy(study);
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultDataExporter.byStudy(sourceActor, study, loggedInUser);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
-        return ok().chunked(source).as("text/plain; charset=utf-8");
-    }
-
-    /**
      * Ajax request (uses download.js on the client side)
      * <p>
      * Returns all result data of ComponentResults. The ComponentResults are specified by their IDs in the request's
@@ -315,52 +291,6 @@ public class ImportExport extends Controller {
                 .mapMaterializedValue(sourceActor -> {
                     CompletableFuture.runAsync(() -> {
                         resultDataExporter.byComponentResultIds(sourceActor, componentResultIdList, loggedInUser);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
-        return ok().chunked(source).as("text/plain; charset=utf-8");
-    }
-
-    /**
-     * Ajax request (uses download.js on the client side)
-     * <p>
-     * Returns all result data of ComponentResults belonging to the given component and study. Returns the result data
-     * as text, each line a result data.
-     */
-    @Transactional
-    @Authenticated
-    public Result exportDataOfAllComponentResults(Long studyId, Long componentId) {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Component component = componentDao.findById(componentId);
-
-        int bufferSize = componentResultDao.countByComponent(component);
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultDataExporter.byComponent(sourceActor, componentId, loggedInUser);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
-        return ok().chunked(source).as("text/plain; charset=utf-8");
-    }
-
-    /**
-     * Ajax request (uses download.js on the client side)
-     * <p>
-     * Returns all result data of ComponentResults belonging to the given worker's StudyResults. Returns the result data
-     * as text, each line a result data.
-     */
-    @Transactional
-    @Authenticated
-    public Result exportAllResultDataOfWorker(Long workerId) {
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(1024, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultDataExporter.byWorker(sourceActor, workerId, loggedInUser);
                         sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
                     });
                     return sourceActor;

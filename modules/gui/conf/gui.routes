@@ -104,16 +104,13 @@ GET      /jatos/:studyId/:componentId/run                                   @con
 GET      /jatos/:studyId/:componentId/clone                                 @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
 
 # ImportExport controller
-GET      /jatos/worker/:workerId/export/allResultData                       @controllers.gui.ImportExport.exportAllResultDataOfWorker(workerId: Long)
 POST     /jatos/studyResult/export/resultData                               @controllers.gui.ImportExport.exportDataOfStudyResults()
 POST     /jatos/componentResult/export/resultData                           @controllers.gui.ImportExport.exportDataOfComponentResults()
 POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy()
 POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed()
 GET      /jatos/:studyId/export                                             @controllers.gui.ImportExport.exportStudy(studyId: Long)
-GET      /jatos/:studyId/export/allResultData                               @controllers.gui.ImportExport.exportDataOfAllStudyResults(studyId: Long)
 POST     /jatos/:studyId/import/component                                   @controllers.gui.ImportExport.importComponent(studyId: Long)
 POST     /jatos/:studyId/import/componentConfirmed                          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
-GET      /jatos/:studyId/:componentId/export/allResultData                  @controllers.gui.ImportExport.exportDataOfAllComponentResults(studyId: Long, componentId: Long)
 GET      /jatos/:studyId/:componentId/export                                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 

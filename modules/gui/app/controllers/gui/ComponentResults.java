@@ -24,7 +24,6 @@ import play.mvc.Result;
 import scala.Option;
 import services.gui.*;
 import utils.common.HttpUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -47,7 +46,6 @@ public class ComponentResults extends Controller {
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultService resultService;
-    private final JsonUtils jsonUtils;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
@@ -55,7 +53,7 @@ public class ComponentResults extends Controller {
     @Inject
     ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
             AuthenticationService authenticationService, BreadcrumbsService breadcrumbsService,
-            ResultRemover resultRemover, ResultService resultService, JsonUtils jsonUtils, StudyDao studyDao,
+            ResultRemover resultRemover, ResultService resultService, StudyDao studyDao,
             ComponentDao componentDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -63,7 +61,6 @@ public class ComponentResults extends Controller {
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
         this.resultService = resultService;
-        this.jsonUtils = jsonUtils;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
