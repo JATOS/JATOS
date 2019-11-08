@@ -134,7 +134,7 @@ function showUpdateAvailable(releaseInfo) {
         if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
         $("#updateJatos button").show();
     } else {
-        text = "Talk to your admin if you want to update to version&nbsp;" + version + ".";
+        text = "A new JATOS version is available. Talk to your admin if you want to update to version&nbsp;" + version + ".";
         if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
         $("#updateJatos .updateJatosButton").hide();
         $("#updateJatos .releaseNotesButton").show();
@@ -144,11 +144,15 @@ function showUpdateAvailable(releaseInfo) {
 }
 
 $("#updateJatos .releaseNotesButton").click(function() {
+    var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
     var releaseInfo = $("#updateJatos").data("releaseInfo");
     var version = getVersionName(releaseInfo);
     $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
     var releaseNotesHtml = new showdown.Converter().makeHtml(releaseInfo.releaseNotes);
     $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
+    if (!loggedInUserIsAdmin) {
+        $("#releaseNotesModal .updateJatosButton").hide();
+    }
     $("#releaseNotesModal").modal('show');
 });
 
