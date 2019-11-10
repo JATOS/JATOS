@@ -74,7 +74,7 @@ rem ### Functions ###
   rem # Generate application secret for the Play framework
   rem # If it's the first start, create a new secret, otherwise load it from the file.
   IF NOT EXIST "%JATOS_HOME%\play.http.secret.key" (
-    set rand=%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%
+    set rand=%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%
     echo !rand!>"%JATOS_HOME%\play.http.secret.key"
   )
   set /p SECRET=<"%JATOS_HOME%\play.http.secret.key"
