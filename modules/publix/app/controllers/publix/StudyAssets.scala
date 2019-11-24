@@ -72,7 +72,13 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
       val filePath = urlPath.replace(URL_PATH_SEPARATOR, File.separator)
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
       logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
-      Ok.sendFile(file, true).withHeaders("Cache-Control" -> "private")
+      if (request.headers.hasHeader(RANGE)) {
+        // Support range requests (needed for videos in Safari)
+        // https://www.playframework.com/documentation/2.7.x/AssetsOverview#Range-requests-support
+        RangeResult.ofFile(file, request.headers.get(RANGE), Option.empty)
+      } else {
+        Ok.sendFile(file, true).withHeaders("Cache-Control" -> "private")
+      }
     } catch {
       case e: PublixException =>
         val errorMsg = e.getMessage
