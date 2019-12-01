@@ -174,8 +174,12 @@ var userTable = $('#userTable').DataTable({
     "ajax": {
         "type": "GET",
         "url" : '@controllers.gui.routes.Users.allUserData()',
-        "error": function(reason) {
-            showError("Couldn't read user data.")
+        "error": function (err) {
+            if (err.responseText) {
+                showError(err.responseText);
+            } else {
+                showError("Cannot read users data.");
+            }
         }
     },
     "dom": 'ftip',

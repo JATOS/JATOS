@@ -95,8 +95,12 @@ function initMemberUserTable() {
         "ajax": {
             "type": "GET",
             "url" : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/memberUsers",
-            "error": function(reason) {
-                showError("Couldn't read member data.", "#changeMemberUsersModal .messages");
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText, "#changeMemberUsersModal .messages");
+                } else {
+                    showError("Cannot read members data.", "#changeMemberUsersModal .messages");
+                }
             }
         },
         "initComplete": toggleTablePagination,

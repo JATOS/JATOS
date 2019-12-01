@@ -92,8 +92,7 @@ public class AuthenticationAction extends Action<Authenticated> {
         User loggedInUser = authenticationService.getLoggedInUserBySessionCookie(ctx.session());
         if (loggedInUser == null) {
             authenticationService.clearSessionCookie(ctx.session());
-            return callForbiddenDueToAuthentication(ctx.request().remoteAddress(),
-                    ctx.request().path());
+            return callForbiddenDueToAuthentication(ctx.request().remoteAddress(), ctx.request().path());
         }
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
@@ -137,69 +136,61 @@ public class AuthenticationAction extends Action<Authenticated> {
         return loggedInUser.hasRole(neededRole);
     }
 
-    private CompletionStage<Result> callForbiddenDueToAuthentication(
-            String remoteAddress, String urlPath) {
-        LOGGER.warn("Authentication failed: remote address " + remoteAddress
-                + " tried to access page " + urlPath);
+    private CompletionStage<Result> callForbiddenDueToAuthentication(String remoteAddress, String urlPath) {
+        LOGGER.warn("Authentication failed: remote address " + remoteAddress + " tried to access page " + urlPath);
+        String msg = "You are not allowed to access this page. Please log in.";
         if (HttpUtils.isAjax()) {
-            return CompletableFuture.completedFuture(forbidden("Not logged in"));
+            return CompletableFuture.completedFuture(forbidden(msg));
         }
         if (!urlPath.isEmpty() && !urlPath.matches("(/|/jatos|/jatos/)")) {
-            FlashScopeMessaging.error("You are not allowed to access this page. Please log in.");
+            FlashScopeMessaging.error(msg);
         }
-        return CompletableFuture.completedFuture(
-                redirect(controllers.gui.routes.Authentication.login()));
+        return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
     }
 
-    private CompletionStage<Result> callForbiddenDueToInvalidSession(String userEmail,
-            String remoteAddress, String urlPath) {
-        LOGGER.warn("Invalid session: user " + userEmail
-                + " tried to access page " + urlPath + " from remote address "
+    private CompletionStage<Result> callForbiddenDueToInvalidSession(String userEmail, String remoteAddress,
+            String urlPath) {
+        LOGGER.warn("Invalid session: user " + userEmail + " tried to access page " + urlPath + " from remote address "
                 + remoteAddress + ".");
+        String msg = "You have been logged out.";
         if (HttpUtils.isAjax()) {
-            return CompletableFuture.completedFuture(forbidden("Invalid session"));
+            return CompletableFuture.completedFuture(forbidden(msg));
         } else {
-            FlashScopeMessaging.warning("You have been logged out.");
-            return CompletableFuture.completedFuture(
-                    redirect(controllers.gui.routes.Authentication.login()));
+            FlashScopeMessaging.warning(msg);
+            return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
         }
     }
 
     private CompletionStage<Result> callForbiddenDueToSessionTimeout(String userEmail) {
-        LOGGER.info("Session of user " + userEmail
-                + " has expired and the user has been logged out.");
+        LOGGER.info("Session of user " + userEmail + " has expired and the user has been logged out.");
+        String msg = "Your session has expired. You have been logged out.";
         if (HttpUtils.isAjax()) {
-            return CompletableFuture.completedFuture(forbidden("Session timeout"));
+            return CompletableFuture.completedFuture(forbidden(msg));
         } else {
-            FlashScopeMessaging.success("Your session has expired. You have been logged out.");
-            return CompletableFuture.completedFuture(
-                    redirect(controllers.gui.routes.Authentication.login()));
+            FlashScopeMessaging.success(msg);
+            return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
         }
     }
 
     private CompletionStage<Result> callForbiddenDueToInactivityTimeout(String userEmail) {
-        LOGGER.info("User " + userEmail
-                + " has been logged out due to inactivity.");
+        LOGGER.info("User " + userEmail + " has been logged out due to inactivity.");
+        String msg = "You have been logged out due to inactivity.";
         if (HttpUtils.isAjax()) {
-            return CompletableFuture.completedFuture(forbidden("Inactivity timeout"));
+            return CompletableFuture.completedFuture(forbidden(msg));
         } else {
-            FlashScopeMessaging.success("You have been logged out due to inactivity.");
-            return CompletableFuture.completedFuture(
-                    redirect(controllers.gui.routes.Authentication.login()));
+            FlashScopeMessaging.success(msg);
+            return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
         }
     }
 
-    private CompletionStage<Result> callForbiddenDueToAuthorization(String userEmail,
-            String urlPath) {
-        String message = "User " + userEmail + " isn't allowed to access page "
-                + urlPath + ".";
-        LOGGER.warn(message);
+    private CompletionStage<Result> callForbiddenDueToAuthorization(String userEmail, String urlPath) {
+        String msg = "User " + userEmail + " isn't allowed to access page " + urlPath + ".";
+        LOGGER.warn(msg);
         if (HttpUtils.isAjax()) {
-            return CompletableFuture.completedFuture(forbidden(message));
+            return CompletableFuture.completedFuture(forbidden(msg));
         } else {
-            RequestScopeMessaging.error(message);
-            return CompletableFuture.completedFuture(
-                    homeProvider.get().home(Http.Status.FORBIDDEN));
+            RequestScopeMessaging.error(msg);
+            return CompletableFuture.completedFuture(homeProvider.get().home(Http.Status.FORBIDDEN));
         }
     }
 

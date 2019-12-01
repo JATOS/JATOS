@@ -71,8 +71,12 @@ $(document).ready(function() {
                 return JSON.parse("[" + json + "]");
             },
             "beforeSend": showWaitingModal,
-            "error": function(reason) {
-                showError("Couldn't read results data.")
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText);
+                } else {
+                    showError("Cannot read results data.");
+                }
             },
             "complete": hideWaitingModal
         },

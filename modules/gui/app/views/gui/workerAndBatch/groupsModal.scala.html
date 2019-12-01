@@ -82,8 +82,12 @@ function generateGroupsTable(batch) {
         "ajax": {
             "type": "GET",
             "url" : dataUrl,
-            "error": function(reason) {
-                showError("Couldn't read group data.", "#groupsModal .messages")
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText, "#groupsModal .messages");
+                } else {
+                    showError("Cannot read groups data.", "#groupsModal .messages");
+                }
             }
         },
         "dom": "<'row'<'col-sm-1'B><'col-sm-5'l><'col-sm-6'f>>" + "<'row'<'col-sm-12't>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",

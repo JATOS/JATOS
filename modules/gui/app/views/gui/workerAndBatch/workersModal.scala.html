@@ -48,8 +48,12 @@ function generateWorkersTable() {
         "ajax": {
             "type": "GET",
             "url" : '@controllers.gui.routes.Studies.allWorkers(study.getId())',
-            "error": function(reason) {
-                    showError("Couldn't read worker data.", "#workersModal .messages")
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText, "#workersModal .messages");
+                } else {
+                    showError("Cannot read workers data.", "#workersModal .messages");
+                }
             }
         },
         "dom": 'ftip',

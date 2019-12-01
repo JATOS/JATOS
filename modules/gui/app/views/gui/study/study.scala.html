@@ -213,8 +213,12 @@ $(document).ready(function() {
         "ajax": {
             "type": "GET",
             "url" : '@controllers.gui.routes.Studies.tableDataByStudy(study.getId())',
-            "error": function(reason) {
-                    showError("Couldn't read components data.")
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText);
+                } else {
+                    showError("Cannot read components data.");
+                }
             }
         },
         "pageLength": 100,
