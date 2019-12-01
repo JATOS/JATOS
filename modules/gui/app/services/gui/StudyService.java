@@ -85,6 +85,7 @@ public class StudyService {
         clone.setJsonData(study.getJsonData());
         clone.setLocked(false);
         clone.setGroupStudy(study.isGroupStudy());
+        clone.setLinearStudy(study.isLinearStudy());
 
         // Clone each component
         for (Component component : study.getComponentList()) {
@@ -306,6 +307,7 @@ public class StudyService {
         study.setComments(studyProperties.getComments());
         study.setJsonData(studyProperties.getJsonData());
         study.setGroupStudy(studyProperties.isGroupStudy());
+        study.setLinearStudy(studyProperties.isLinearStudy());
     }
 
     /**
@@ -335,6 +337,7 @@ public class StudyService {
         studyProperties.setDate(study.getDate());
         studyProperties.setLocked(study.isLocked());
         studyProperties.setGroupStudy(study.isGroupStudy());
+        studyProperties.setLinearStudy(study.isLinearStudy());
         studyProperties.setDirName(study.getDirName());
         studyProperties.setComments(study.getComments());
         studyProperties.setJsonData(study.getJsonData());

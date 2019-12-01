@@ -2,6 +2,7 @@ package controllers.publix;
 
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
@@ -86,7 +87,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         ComponentResult componentResult;
         try {
             componentResult = publixUtils.startComponent(component, studyResult, message);
-        } catch (ForbiddenReloadException e) {
+        } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
                     .finishStudy(studyId, studyResult.getId(), false, e.getMessage()));
         }
@@ -112,7 +113,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         ComponentResult componentResult;
         try {
             componentResult = publixUtils.retrieveStartedComponentResult(component, studyResult);
-        } catch (ForbiddenReloadException e) {
+        } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
                     .finishStudy(studyId, studyResult.getId(), false, e.getMessage()));
         }

@@ -77,7 +77,7 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     public ComponentResult startComponent(Component component, StudyResult studyResult)
-            throws ForbiddenReloadException {
+            throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
         return startComponent(component, studyResult, null);
     }
 
@@ -86,28 +86,40 @@ public abstract class PublixUtils<T extends Worker> {
      * or an exception but never null.
      */
     public ComponentResult startComponent(Component component, StudyResult studyResult, String message)
-            throws ForbiddenReloadException {
+            throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
         // Deal with the last component
-        Optional<ComponentResult> lastComponentResultOpt = studyResult.getLastComponentResult();
-        if (lastComponentResultOpt.isPresent()) {
-            ComponentResult lastComponentResult = lastComponentResultOpt.get();
-            if (lastComponentResult.getComponent().equals(component)) {
+        Optional<ComponentResult> lastResultOpt = studyResult.getLastComponentResult();
+        if (lastResultOpt.isPresent()) {
+
+            ComponentResult lastResult = lastResultOpt.get();
+            Study study = component.getStudy();
+            Component lastComponent = lastResult.getComponent();
+            int lastPosition = study.getComponentPosition(lastComponent);
+            int position = study.getComponentPosition(component);
+
+            if (study.isLinearStudy() && lastPosition > position) {
+                // Only linear study flow is allowed - component to be started is before (by position) the current one
+                finishComponentResult(lastResult, ComponentState.FAIL, message);
+                throw new ForbiddenNonLinearFlowException(PublixErrorMessages.forbiddenNonLinearStudyFlow(
+                        study.getTitle(), study.getId(), lastComponent.getId(), component.getId()));
+            }
+
+            if (lastComponent.equals(component)) {
                 // The component to be started is the same as the last one
                 if (component.isReloadable()) {
                     // Reload is allowed
-                    finishComponentResult(lastComponentResult, ComponentState.RELOADED, message);
+                    finishComponentResult(lastResult, ComponentState.RELOADED, message);
                 } else {
                     // Worker tried to reload a non-reloadable component -> end
-                    // component and study with FAIL
-                    finishComponentResult(lastComponentResult, ComponentState.FAIL, message);
+                    finishComponentResult(lastResult, ComponentState.FAIL, message);
                     String errorMsg = PublixErrorMessages.componentNotAllowedToReload(
                             studyResult.getStudy().getId(), component.getId());
                     throw new ForbiddenReloadException(errorMsg);
                 }
+
             } else {
-                // The prior component is a different one than the one to be
-                // started: just finish it
-                finishComponentResult(lastComponentResult, ComponentState.FINISHED, message);
+                // The prior component is a different one than the one to be started: just finish it
+                finishComponentResult(lastResult, ComponentState.FINISHED, message);
             }
         }
         return resultCreator.createComponentResult(studyResult, component);
@@ -279,7 +291,7 @@ public abstract class PublixUtils<T extends Worker> {
      * doesn't have to be of the given Component.
      */
     public ComponentResult retrieveStartedComponentResult(Component component,
-            StudyResult studyResult) throws ForbiddenReloadException {
+            StudyResult studyResult) throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
         Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
         // Start the component if it was never started or if it's a reload of the component
         return current.isPresent() ? current.get() : startComponent(component, studyResult);

@@ -6,10 +6,7 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.InternalServerErrorPublixException;
-import exceptions.publix.PublixException;
+import exceptions.publix.*;
 import general.common.Common;
 import general.common.StudyLogger;
 import models.common.*;
@@ -183,7 +180,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         ComponentResult componentResult;
         try {
             componentResult = publixUtils.startComponent(component, studyResult, message);
-        } catch (ForbiddenReloadException e) {
+        } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
                     .finishStudy(studyId, studyResult.getId(), false, e.getMessage()));
         }

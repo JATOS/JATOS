@@ -68,11 +68,17 @@ public class PublixErrorMessages {
 		return "The batch (ID: " + batchId + ") is inactive.";
 	}
 
+	public static String forbiddenNonLinearStudyFlow(String studyTitle, Long studyId, Long lastComponentId,
+			Long componentId) {
+		return "Study '" + studyTitle + "' (ID: " + studyId + ") allows only linear study flow. "
+				+ "But component " + lastComponentId + " attempted to start component " + componentId
+				+ ". The study is finished.";
+	}
+
 	public static String componentNotAllowedToReload(Long studyId,
 			Long componentId) {
 		return "It's not allowed to reload this component (ID: " + componentId
-				+ "). Unfortunately it is neccessary to finish "
-				+ "this study (ID: " + studyId + ") at this point.";
+				+ "). Study (ID: " + studyId + ") is finished.";
 	}
 
 	public static String studyHasNoActiveComponents(Long studyId) {

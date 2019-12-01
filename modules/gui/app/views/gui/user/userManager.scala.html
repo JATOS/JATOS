@@ -80,13 +80,13 @@
                     </div>
 
                     <div class="form-group row">
-                        <div class="col-xs-offset-4 col-xs-8">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
-                                Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users."></span>
-                                <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-                                <input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
-                            </label>
+                        <label class="text-right col-xs-4">
+                            Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users."></span>
+                        </label>
+                        <div class="col-xs-8">
+                            <input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
                         </div>
                     </div>
 

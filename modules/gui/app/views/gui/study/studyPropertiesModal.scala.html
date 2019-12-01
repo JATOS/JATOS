@@ -66,15 +66,24 @@
                     </div>
 
                     <div class="form-group row">
-                        <div class="col-xs-offset-2 col-xs-10">
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY" value="true">
-                                    Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?"></span>
-                                    <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-                                    <input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
-                                </label>
-                            </div>
+                        <label class="text-right col-xs-2">
+                            Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?"></span>
+                        </label>
+                        <div class="col-xs-10">
+                            <input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="text-right col-xs-2">
+                            Linear study<br>flow <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should the study flow be linear only?&#10;This still allows reloading of components.&#10;Uncheck this box if you want to jump to an earlier component."></span>
+                        </label>
+                        <div class="col-xs-10">
+                            <input type="checkbox" class="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" name="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" value="false" />
                         </div>
                     </div>
                 </div>
@@ -169,6 +178,7 @@ function fillStudyPropertiesForm(properties) {
         studyJsonDataEditor.getSession().setValue("");
     }
     $('#studyPropertiesModal .@models.gui.StudyProperties.GROUP_STUDY').prop('checked', properties['@models.gui.StudyProperties.GROUP_STUDY']);
+    $('#studyPropertiesModal .@models.gui.StudyProperties.LINEAR_STUDY_FLOW').prop('checked', properties['@models.gui.StudyProperties.LINEAR_STUDY_FLOW']);
     $('#studyPropertiesModal .confirmed').val("Save");
     $('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", properties['@models.gui.StudyProperties.LOCKED']);
     if (properties['@models.gui.StudyProperties.LOCKED']) {

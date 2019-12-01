@@ -75,6 +75,13 @@ public class Study {
     private boolean groupStudy = false;
 
     /**
+     * A study with a linear study flow allows the component position to only increase or stay the same
+     * (no going back to earlier components).
+     */
+    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
+    private boolean linearStudy = false;
+
+    /**
      * Study assets directory name
      */
     @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
@@ -205,6 +212,14 @@ public class Study {
 
     public void setGroupStudy(boolean groupStudy) {
         this.groupStudy = groupStudy;
+    }
+
+    public boolean isLinearStudy() {
+        return linearStudy;
+    }
+
+    public void setLinearStudy(boolean linearStudy) {
+        this.linearStudy = linearStudy;
     }
 
     public String getJsonData() {

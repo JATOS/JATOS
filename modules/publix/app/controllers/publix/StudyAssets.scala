@@ -101,7 +101,7 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
     * study assets then the filePath is allowed. If not a ForbiddenPublixException is thrown.
     *
     * Drawback: It can't compare with the ID cookie that actually belongs to this study run since
-    * it has no way of find out which it is (we have no study result ID). But since all ID cookie
+    * it has no way of finding out which it is (we have no study result ID). But since all ID cookie
     * originate in the same browser one can assume this worker is allowed to access the study
     * assets.
     */

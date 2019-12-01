@@ -37,6 +37,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String COMMENTS = "comments";
     public static final String GROUP_STUDY = "groupStudy";
     public static final String LOCKED = "locked";
+    public static final String LINEAR_STUDY_FLOW = "linearStudy";
 
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
             "public", "assets", "study_assets_root", "study_assets"};
@@ -69,6 +70,12 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
      * between each other.
      */
     private boolean groupStudy = false;
+
+    /**
+     * A study with a linear study flow allows the component position to only increase (no going back to earlier
+     * components).
+     */
+    private boolean linearStudy = false;
 
     /**
      * Study assets directory name
@@ -169,6 +176,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
 
     public void setGroupStudy(boolean groupStudy) {
         this.groupStudy = groupStudy;
+    }
+
+    public boolean isLinearStudy() {
+        return linearStudy;
+    }
+
+    public void setLinearStudy(boolean linearStudy) {
+        this.linearStudy = linearStudy;
     }
 
     public String getJsonData() {
