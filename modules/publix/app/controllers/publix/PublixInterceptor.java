@@ -446,32 +446,31 @@ public class PublixInterceptor extends Controller implements IPublix {
      * started the worker type is specified via a parameter in the query string.
      */
     private String getWorkerTypeFromQuery() throws BadRequestPublixException {
+
+//        206.81.0.25/publix/3/start?batchId=4&mode=requester-preview&site=requester
+
         // Check for JATOS worker
         String jatosWorkerId = HttpUtils.getQueryString(JatosPublix.JATOS_WORKER_ID);
         if (jatosWorkerId != null) {
             return JatosWorker.WORKER_TYPE;
         }
         // Check for Personal Single Worker
-        String personalSingleWorkerId = HttpUtils
-                .getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
+        String personalSingleWorkerId = HttpUtils.getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
         if (personalSingleWorkerId != null) {
             return PersonalSingleWorker.WORKER_TYPE;
         }
         // Check for Personal Multiple Worker
-        String pmWorkerId = HttpUtils.getQueryString(
-                PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
+        String pmWorkerId = HttpUtils.getQueryString(PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
         if (pmWorkerId != null) {
             return PersonalMultipleWorker.WORKER_TYPE;
         }
         // Check for General Single Worker
-        String generalSingle = HttpUtils
-                .getQueryString(GeneralSinglePublix.GENERALSINGLE);
+        String generalSingle = HttpUtils.getQueryString(GeneralSinglePublix.GENERALSINGLE);
         if (generalSingle != null) {
             return GeneralSingleWorker.WORKER_TYPE;
         }
         // Check for General Multiple Worker
-        String generalMultiple = HttpUtils
-                .getQueryString(GeneralMultiplePublix.GENERALMULTIPLE);
+        String generalMultiple = HttpUtils.getQueryString(GeneralMultiplePublix.GENERALMULTIPLE);
         if (generalMultiple != null) {
             return GeneralMultipleWorker.WORKER_TYPE;
         }

@@ -75,8 +75,7 @@ public class PublixErrorMessages {
 				+ ". The study is finished.";
 	}
 
-	public static String componentNotAllowedToReload(Long studyId,
-			Long componentId) {
+	public static String componentNotAllowedToReload(Long studyId, Long componentId) {
 		return "It's not allowed to reload this component (ID: " + componentId
 				+ "). Study (ID: " + studyId + ") is finished.";
 	}

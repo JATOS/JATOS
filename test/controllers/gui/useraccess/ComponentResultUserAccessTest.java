@@ -6,6 +6,7 @@ import com.google.inject.Injector;
 import controllers.gui.Authentication;
 import controllers.gui.routes;
 import daos.common.UserDao;
+import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
 import models.common.ComponentResult;
@@ -133,7 +134,7 @@ public class ComponentResultUserAccessTest {
             try {
                 jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
                 jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 e.printStackTrace();
             }
             return studyResult;

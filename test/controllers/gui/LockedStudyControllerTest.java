@@ -4,6 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
 import models.common.Study;
@@ -343,7 +344,7 @@ public class LockedStudyControllerTest {
             try {
                 jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
                 jatosPublixUtils.startComponent(study.getFirstComponent().get(), studyResult);
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
             return studyResult.getComponentResultList().get(0).getId();

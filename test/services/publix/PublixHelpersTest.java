@@ -3,6 +3,7 @@ package services.publix;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import daos.common.UserDao;
+import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
 import models.common.ComponentResult;
@@ -164,9 +165,8 @@ public class PublixHelpersTest {
 
             ComponentResult componentResult;
             try {
-                componentResult =
-                        publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
-            } catch (ForbiddenReloadException e) {
+                componentResult = publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
 

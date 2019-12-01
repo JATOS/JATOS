@@ -226,23 +226,24 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Test PublixUtils.startComponent(): if one tries to reload a
-     * non-reloadable component, an ForbiddenReloadException should be thrown
-     * and the first component result should be finished
+     * Test PublixUtils.startComponent(): if the study is set to linear study flow only and one tries to go back to
+     * prior component (by position) then a ForbiddenNonLinearFlowException must be thrown and the study must be
+     * finished
      */
     @Test
-    public void checkStartComponentNotReloadable() {
+    public void checkStartComponentForbiddenLinearStudyFlow() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        // Create a StudyResult and set the first component as not reloadable
+        // Create a StudyResult and set the study to linear study flow only
+        // Start the first and second component
         long studyResultId = jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
-            study.getFirstComponent().get().setReloadable(false);
+            StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            study.setLinearStudy(true);
             try {
-                publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
-            } catch (ForbiddenReloadException e) {
+                publixUtils.startComponent(study.getComponent(1), studyResult);
+                publixUtils.startComponent(study.getComponent(2), studyResult);
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
             return studyResult.getId();
@@ -254,14 +255,61 @@ public abstract class PublixUtilsTest<T extends Worker> {
             try {
                 publixUtils.startComponent(study.getComponent(1), studyResult);
                 Fail.fail();
-            } catch (ForbiddenReloadException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        PublixErrorMessages.componentNotAllowedToReload(
-                                study.getId(), study.getComponent(1).getId()));
+            } catch (Exception e) {
+                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.forbiddenNonLinearStudyFlow(study.getTitle(),
+                        study.getId(), study.getComponent(2).getId(), study.getComponent(1).getId()));
             }
         });
 
-        // Check
+        // Check Study finished
+        jpaApi.withTransaction(() -> {
+            StudyResult studyResult = studyResultDao.findById(studyResultId);
+            ComponentResult componentResult2 = studyResult.getComponentResultList().get(1);
+
+            // No third ComponentResult created
+            assertThat(studyResult.getComponentResultList()).hasSize(2);
+
+            // Check that prior ComponentResult was finished properly
+            assertThat(componentResult2.getComponentState()).isEqualTo(ComponentState.FAIL);
+            assertThat(componentResult2.getEndDate()).isNotNull();
+        });
+    }
+
+    /**
+     * Test PublixUtils.startComponent(): if one tries to reload a non-reloadable component, an ForbiddenReloadException
+     * should be thrown and the study must be finished
+     */
+    @Test
+    public void checkStartComponentNotReloadable() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+        // Create a StudyResult and set the first component as not reloadable
+        // Start the first component
+        long studyResultId = jpaApi.withTransaction(() -> {
+            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            study.getFirstComponent().get().setReloadable(false);
+            try {
+                publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return studyResult.getId();
+        });
+
+        // Start the same component a second times, but first is not reloadable
+        jpaApi.withTransaction(() -> {
+            StudyResult studyResult = studyResultDao.findById(studyResultId);
+            try {
+                publixUtils.startComponent(study.getComponent(1), studyResult);
+                Fail.fail();
+            } catch (Exception e) {
+                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.componentNotAllowedToReload(
+                        study.getId(), study.getComponent(1).getId()));
+            }
+        });
+
+        // Check Study finished
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             ComponentResult componentResult1 = studyResult.getComponentResultList().get(0);
@@ -763,7 +811,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 ComponentResult retrievedComponentResult = publixUtils
                         .retrieveStartedComponentResult(study.getComponent(3), studyResult);
                 assertThat(retrievedComponentResult).isEqualTo(componentResult2);
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -800,7 +848,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 assertThat(retrievedComponentResult).isNotEqualTo(componentResult2);
                 assertThat(retrievedComponentResult.getComponent())
                         .isEqualTo(study.getComponent(2));
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -1330,7 +1378,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                     study.getDefaultBatch(), admin.getWorker());
             try {
                 publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
             return studyResult.getId();
@@ -1344,7 +1392,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                 ComponentResult componentResult = publixUtils.startComponent(
                         study.getComponent(position), studyResult);
                 return componentResult.getId();
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -1368,7 +1416,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
                         study.getComponent(position), studyResult);
                 componentResult.setData(data);
                 componentResultDao.update(componentResult);
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
         });

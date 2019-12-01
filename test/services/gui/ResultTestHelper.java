@@ -2,6 +2,7 @@ package services.gui;
 
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import models.common.ComponentResult;
 import models.common.Study;
@@ -56,7 +57,7 @@ public class ResultTestHelper {
 
                 // Check that we have 2 results
                 return idList;
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -91,7 +92,7 @@ public class ResultTestHelper {
                 idList.add(studyResult2.getId());
 
                 return idList;
-            } catch (ForbiddenReloadException e) {
+            } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
         });

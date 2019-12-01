@@ -117,6 +117,8 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.COMMENTS, "Comments test.");
         formMap.put(StudyProperties.DIR_NAME, "dirName_submit");
         formMap.put(StudyProperties.JSON_DATA, "{}");
+        formMap.put(StudyProperties.GROUP_STUDY, "true");
+        formMap.put(StudyProperties.LINEAR_STUDY_FLOW, "true");
 
         User admin = testHelper.getAdmin();
 
@@ -146,6 +148,8 @@ public class StudiesControllerTest {
             assertThat(study.getComponentList()).isEmpty();
             assertThat(study.getUserList()).contains(admin);
             assertThat(study.isLocked()).isFalse();
+            assertThat(study.isGroupStudy()).isTrue();
+            assertThat(study.isLinearStudy()).isTrue();
         });
     }
 
@@ -251,6 +255,8 @@ public class StudiesControllerTest {
                 .isEqualTo(String.valueOf(study.isLocked()));
         assertThat(node.get(StudyProperties.GROUP_STUDY).toString())
                 .isEqualTo(String.valueOf(study.isGroupStudy()));
+        assertThat(node.get(StudyProperties.LINEAR_STUDY_FLOW).toString())
+                .isEqualTo(String.valueOf(study.isLinearStudy()));
     }
 
     /**
@@ -267,6 +273,10 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.DIR_NAME, "dirName_submitEdited");
         formMap.put(StudyProperties.DIR_RENAME, "true");
         formMap.put(StudyProperties.JSON_DATA, "{}");
+        formMap.put(StudyProperties.GROUP_STUDY, "true");
+        formMap.put(StudyProperties.LINEAR_STUDY_FLOW, "true");
+
+
 
         Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
@@ -287,6 +297,8 @@ public class StudiesControllerTest {
         assertEquals("dirName_submitEdited", editedStudy.getDirName());
         assertEquals("{}", editedStudy.getJsonData());
         assertThat(editedStudy.isLocked()).isFalse();
+        assertThat(editedStudy.isGroupStudy()).isTrue();
+        assertThat(editedStudy.isLinearStudy()).isTrue();
         assertThat(ioUtils.checkStudyAssetsDirExists(editedStudy.getDirName())).isTrue();
     }
 
