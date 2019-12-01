@@ -32,8 +32,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType", "componentState" })
 public class ComponentResult {
 
-    public static final String COMPONENT_RESULTS = "componentResults";
-
     @Id
     @GeneratedValue
     private Long id;
