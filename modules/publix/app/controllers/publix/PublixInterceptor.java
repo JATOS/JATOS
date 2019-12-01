@@ -446,9 +446,6 @@ public class PublixInterceptor extends Controller implements IPublix {
      * started the worker type is specified via a parameter in the query string.
      */
     private String getWorkerTypeFromQuery() throws BadRequestPublixException {
-
-//        206.81.0.25/publix/3/start?batchId=4&mode=requester-preview&site=requester
-
         // Check for JATOS worker
         String jatosWorkerId = HttpUtils.getQueryString(JatosPublix.JATOS_WORKER_ID);
         if (jatosWorkerId != null) {
@@ -479,6 +476,11 @@ public class PublixInterceptor extends Controller implements IPublix {
         String mtAssignmentId = HttpUtils.getQueryString(MTPublix.MT_ASSIGNMENT_ID);
         if (mtWorkerId != null && mtAssignmentId != null) {
             return instanceOfPublix(MTPublix.class).retrieveWorkerType();
+        }
+        // Check for MT (sandbox) requester preview link
+        String mtMode = HttpUtils.getQueryString("mode");
+        if ("requester-preview".equals(mtMode)) {
+            throw new BadRequestPublixException(PublixErrorMessages.MT_PREVIEW_NOT_START);
         }
         throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
     }
