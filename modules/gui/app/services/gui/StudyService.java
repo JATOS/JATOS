@@ -363,10 +363,14 @@ public class StudyService {
      */
     public void removeStudyInclAssets(Study study, User loggedInUser) throws IOException {
         // Remove all study's components and their ComponentResults
-        Lists.newArrayList(study.getComponentList()).forEach(component -> componentService.remove(component, loggedInUser));
+        for (Component component : Lists.newArrayList(study.getComponentList())) {
+            componentService.remove(component, loggedInUser);
+        }
 
         // Remove all study's batches and their StudyResults and GroupResults
-        Lists.newArrayList(study.getBatchList()).forEach(batch -> batchService.remove(batch, loggedInUser));
+        for (Batch batch : Lists.newArrayList(study.getBatchList())) {
+            batchService.remove(batch, loggedInUser);
+        }
 
         // Remove this study from all member users
         for (User user : study.getUserList()) {

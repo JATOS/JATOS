@@ -8,6 +8,7 @@ import models.common.workers.*;
 import play.Application;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.IdCookieService;
@@ -308,6 +309,82 @@ public class PublixInterceptor extends Controller implements IPublix {
             case MTWorker.WORKER_TYPE:
                 result = instanceOfPublix(MTPublix.class)
                         .appendResultData(studyId, componentId, studyResultId);
+                break;
+            default:
+                throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+        }
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public Result uploadResultFile(Http.Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+            throws PublixException {
+        Result result;
+        switch (getWorkerTypeFromIdCookie(studyResultId)) {
+            case JatosWorker.WORKER_TYPE:
+                result = instanceOfPublix(JatosPublix.class).uploadResultFile(request, studyId, componentId, studyResultId,
+                        filename);
+                break;
+            case PersonalSingleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalSinglePublix.class).uploadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class).uploadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            case GeneralSingleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralSinglePublix.class).uploadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class).uploadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class).uploadResultFile(request, studyId, componentId, studyResultId,
+                        filename);
+                break;
+            default:
+                throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+        }
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public Result downloadResultFile(Http.Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+            throws PublixException {
+        Result result;
+        switch (getWorkerTypeFromIdCookie(studyResultId)) {
+            case JatosWorker.WORKER_TYPE:
+                result = instanceOfPublix(JatosPublix.class).downloadResultFile(request, studyId, componentId, studyResultId,
+                        filename);
+                break;
+            case PersonalSingleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalSinglePublix.class).downloadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            case PersonalMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(PersonalMultiplePublix.class).downloadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            case GeneralSingleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralSinglePublix.class).downloadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            case GeneralMultipleWorker.WORKER_TYPE:
+                result = instanceOfPublix(GeneralMultiplePublix.class).downloadResultFile(request, studyId, componentId,
+                        studyResultId, filename);
+                break;
+            // Handle MTWorker like MTSandboxWorker
+            case MTSandboxWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                result = instanceOfPublix(MTPublix.class).downloadResultFile(request, studyId, componentId, studyResultId,
+                        filename);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);

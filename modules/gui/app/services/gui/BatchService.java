@@ -18,6 +18,7 @@ import models.gui.BatchSession;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -206,7 +207,7 @@ public class BatchService {
      * Workers (if they don't belong to an other batch) and persists the changes
      * to the database.
      */
-    public void remove(Batch batch, User loggedinUser) {
+    public void remove(Batch batch, User loggedinUser) throws IOException {
         // Remove this Batch from its study
         Study study = batch.getStudy();
         study.removeBatch(batch);

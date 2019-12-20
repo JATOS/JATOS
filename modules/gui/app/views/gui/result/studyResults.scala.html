@@ -493,12 +493,18 @@ $(document).ready(function() {
             '<td><b>Start Time (Server)</b></td>',
             '<td><b>Duration</b></td>',
             '<td><b>State</b></td>',
+            '<td><b>Files</b></td>',
             '<td><b>Message</b></td>',
             '</tr>');
             if (data.componentResults.length > 0) {
                 data.componentResults.forEach(function(componentResult) {
                     var duration = (componentResult.duration) ? componentResult.duration : "not yet";
                     var message = (componentResult.message) ? componentResult.message : "";
+                    var resultFiles = componentResult.files.map(function(filename) {
+                        var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + data.studyId + "/resultFiles/"
+                            + data.id + "/" + componentResult.id + "/" + filename;
+                        return '<a href="' + url + '" download>' + filename + '</a>';
+                    });
                     html.push('<tr class="info">',
                         '<td>' + componentResult.id + '</td>',
                         '<td>' + componentResult.componentId + '</td>',
@@ -506,9 +512,10 @@ $(document).ready(function() {
                         '<td>' + componentResult.startDate + '</td>',
                         '<td>' + duration + '</td>',
                         '<td>' + componentResult.componentState + '</td>',
+                        '<td>' + resultFiles.join('<br>') + '</td>',
                         '<td>' + message + '</td>',
                         '</tr><tr class="info">',
-                        '<td colspan="7"><pre class="details-data">' + componentResult.data + '</pre></td>',
+                        '<td colspan="8"><pre class="details-data">' + componentResult.data + '</pre></td>',
                         '</tr>');
                 });
             } else {

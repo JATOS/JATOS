@@ -14,6 +14,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
+import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
@@ -22,13 +23,19 @@ import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import utils.common.HttpUtils;
+import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Singleton;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Optional;
+
+import static play.libs.Files.TemporaryFile;
+import static play.mvc.Http.Request;
 
 /**
  * Abstract controller class for all controllers that implement the IPublix
@@ -52,12 +59,13 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     protected final ComponentResultDao componentResultDao;
     protected final StudyResultDao studyResultDao;
     protected final StudyLogger studyLogger;
+    protected final IOUtils ioUtils;
 
     public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
             StudyAuthorisation<T> studyAuthorisation, GroupChannel<T> groupChannel,
             IdCookieService idCookieService, PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyLogger studyLogger) {
+            StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
         this.jpa = jpa;
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
@@ -69,6 +77,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyLogger = studyLogger;
+        this.ioUtils = ioUtils;
     }
 
     @Override
@@ -183,21 +192,17 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
-        Optional<ComponentResult> componentResult =
-                publixUtils.retrieveCurrentComponentResult(studyResult);
+        Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
         if (!componentResult.isPresent()) {
-            String error = PublixErrorMessages
-                    .componentNeverStarted(studyId, componentId, "submitResultData");
-            return redirect(routes.PublixInterceptor
-                    .finishStudy(studyId, studyResult.getId(), false, error));
+            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitResultData");
+            return redirect(routes.PublixInterceptor.finishStudy(studyId, studyResult.getId(), false, error));
         }
 
         String postedResultData = request().body().asText();
         String resultData;
         if (append) {
             String currentResultData = componentResult.get().getData();
-            resultData = currentResultData != null ?
-                    currentResultData + postedResultData : postedResultData;
+            resultData = currentResultData != null ? currentResultData + postedResultData : postedResultData;
         } else {
             resultData = postedResultData;
         }
@@ -206,6 +211,66 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         componentResultDao.update(componentResult.get());
         studyLogger.logResultDataStoring(componentResult.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
+    }
+
+    @Override
+    public Result uploadResultFile(Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+            throws PublixException {
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Component component = publixUtils.retrieveComponent(study, componentId);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkComponentBelongsToStudy(study, component);
+
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
+        Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
+        if (!componentResult.isPresent()) {
+            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitResultData");
+            return redirect(routes.PublixInterceptor.finishStudy(studyId, studyResult.getId(), false, error));
+        }
+
+        MultipartFormData<TemporaryFile> body = request.body().asMultipartFormData();
+        MultipartFormData.FilePart<TemporaryFile> filePart = body.getFile("file");
+        if (filePart == null) return badRequest("Missing file");
+
+        TemporaryFile tmpFile = filePart.getRef();
+        try {
+            Path destFile = ioUtils.getResultUploadFileSecurely(
+                    studyResultId, componentResult.get().getId(), filename).toPath();
+            tmpFile.copyTo(destFile, true);
+            studyLogger.logResultUploading(destFile, componentResult.get());
+        } catch (IOException e) {
+            return badRequest("File upload failed");
+        }
+        return ok("File uploaded");
+    }
+
+    @Override
+    public Result downloadResultFile(Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+            throws PublixException {
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Component component = publixUtils.retrieveComponent(study, componentId);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkComponentBelongsToStudy(study, component);
+
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
+        Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
+        if (!componentResult.isPresent()) {
+            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitResultData");
+            return redirect(routes.PublixInterceptor.finishStudy(studyId, studyResult.getId(), false, error));
+        }
+
+        try {
+            File file = ioUtils.getResultUploadFileSecurely(studyResultId, componentResult.get().getId(), filename);
+            return ok(file, false);
+        } catch (IOException e) {
+            return badRequest("File does not exist");
+        }
     }
 
     @Override

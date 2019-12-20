@@ -171,6 +171,25 @@ public class StudyLogger {
     }
 
     /**
+     * Adds an entry to the study log: adds the hash of the file, component UUID, and the worker ID
+     *
+     * @param file File that will be stored
+     */
+    public void logResultUploading(Path file, ComponentResult componentResult) throws IOException {
+        if (!Common.isStudyLogsEnabled()) return;
+        if (file == null) return;
+        StudyResult studyResult = componentResult.getStudyResult();
+        String fileHash = HashUtils.getHash(file, HashUtils.SHA_256);
+
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put(MSG, "Uploaded file");
+        jsonObj.put(COMPONENT_UUID, componentResult.getComponent().getUuid());
+        jsonObj.put(WORKER_ID, componentResult.getWorkerId());
+        jsonObj.put(DATA_HASH, fileHash);
+        log(studyResult.getStudy(), null, jsonObj);
+    }
+
+    /**
      * Adds an entry to the study log: adds the hash of the result data, component UUID, and the worker ID
      *
      * @param componentResult ComponentResults that will be stored

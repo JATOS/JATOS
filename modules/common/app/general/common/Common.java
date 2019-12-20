@@ -1,5 +1,6 @@
 package general.common;
 
+import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
@@ -14,6 +15,7 @@ import java.net.SocketException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
@@ -40,11 +42,17 @@ public class Common {
      */
     private static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
 
+    /**
+     * Property name in application config - path (file system) to result upload files
+     */
+    private static final String PROPERTY_JATOS_RESULT_UPLOADS_PATH = "jatos.resultUploads.path";
+
     private static String jatosVersion;
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
     private static String studyLogsPath;
+    private static String resultUploadsPath;
     private static boolean inMemoryDb;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
@@ -80,6 +88,7 @@ public class Common {
         studyAssetsRootPath = fillStudyAssetsRootPath(config);
         studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
         studyLogsPath = fillStudyLogsPath(config);
+        resultUploadsPath = fillResultUploadsPath(config);
         inMemoryDb = config.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
@@ -137,25 +146,34 @@ public class Common {
     }
 
     private String fillStudyLogsPath(Config config) {
-        String tmpStudyLogPath = config.getString(PROPERTY_JATOS_STUDY_LOGS_PATH);
-        if (tmpStudyLogPath == null || tmpStudyLogPath.trim().isEmpty()) {
-            LOGGER.error("Missing configuration of path to study logs directory: "
-                    + "It must be set in application.conf under "
-                    + PROPERTY_JATOS_STUDY_LOGS_PATH + ".");
-            System.exit(1);
-        }
-
-        // Replace ~ with actual home directory
-        tmpStudyLogPath = tmpStudyLogPath.replace("~", System.getProperty("user.home"));
-        // Replace Unix-like file separator with actual system's one
-        tmpStudyLogPath = tmpStudyLogPath.replace("/", File.separator);
-        // If relative path add JATOS' base path as prefix
-        if (!(new File(tmpStudyLogPath).isAbsolute())) {
-            tmpStudyLogPath = basepath + File.separator
-                    + tmpStudyLogPath;
-        }
+        String tmpStudyLogPath = obtainPath(config, PROPERTY_JATOS_STUDY_LOGS_PATH).orElseThrow(() ->
+                new RuntimeException("Missing configuration of path to study logs directory: "
+                        + "It must be set in application.conf under " + PROPERTY_JATOS_STUDY_LOGS_PATH + "."));
         LOGGER.info("Path to study logs directory is " + tmpStudyLogPath);
         return tmpStudyLogPath;
+    }
+
+    private String fillResultUploadsPath(Config config) {
+        String tmpResultUploadsPath = obtainPath(config, PROPERTY_JATOS_RESULT_UPLOADS_PATH).orElseThrow(() ->
+                new RuntimeException("Missing configuration of path to uploads directory: "
+                        + "It must be set in application.conf under " + PROPERTY_JATOS_RESULT_UPLOADS_PATH + "."));
+        LOGGER.info("Path to uploads directory is " + tmpResultUploadsPath);
+        return tmpResultUploadsPath;
+    }
+
+    private Optional<String> obtainPath(Config config, String property) {
+        String path = config.getString(property);
+        if (Strings.isNullOrEmpty(path)) return Optional.empty();
+
+        // Replace ~ with actual home directory
+        path = path.replace("~", System.getProperty("user.home"));
+        // Replace Unix-like file separator with actual system's one
+        path = path.replace("/", File.separator);
+        // If relative path add JATOS' base path as prefix
+        if (!(new File(path).isAbsolute())) {
+            path = basepath + File.separator + path;
+        }
+        return Optional.of(path);
     }
 
     private String fillMac() {
@@ -215,6 +233,13 @@ public class Common {
      */
     public static String getStudyLogsPath() {
         return studyLogsPath;
+    }
+
+    /**
+     * Path in the file system where JATOS stores uploaded result files
+     */
+    public static String getResultUploadsPath() {
+        return resultUploadsPath;
     }
 
     /**

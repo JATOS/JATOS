@@ -15,6 +15,8 @@ GET     /publix/:studyId/:componentId/initData           @controllers.publix.Pub
 PUT     /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.appendResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long, srid: Long)
+POST    /publix/:studyId/:componentId/files/:filename    @controllers.publix.PublixInterceptor.uploadResultFile(request: Request, studyId: Long, componentId: Long, srid: Long, filename: String)
+GET     /publix/:studyId/:componentId/files/:filename    @controllers.publix.PublixInterceptor.downloadResultFile(request: Request, studyId: Long, componentId: Long, srid: Long, filename: String)
 
 # Batch and group channel endpoints
 GET     /publix/:studyId/batch/open                      @controllers.publix.ChannelInterceptor.openBatch(studyId: Long, srid: Long)

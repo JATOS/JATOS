@@ -233,7 +233,7 @@ public class ComponentService {
      * Remove Component: Remove it from the given study, remove all its ComponentResults, and remove the component
      * itself.
      */
-    public void remove(Component component, User loggedinUser) {
+    public void remove(Component component, User loggedinUser) throws IOException {
         Study study = component.getStudy();
         // Remove component from study
         study.removeComponent(component);

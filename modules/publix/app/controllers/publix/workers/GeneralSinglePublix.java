@@ -26,6 +26,7 @@ import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
 import utils.common.HttpUtils;
+import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -60,10 +61,10 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
             GeneralSingleCookieService generalSingleCookieService,
             GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyLogger studyLogger) {
+            StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
         super(jpa, publixUtils, studyAuthorisation, groupChannel,
                 idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger);
+                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;

@@ -1,6 +1,7 @@
 package controllers.publix;
 
 import exceptions.publix.PublixException;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.io.IOException;
@@ -72,6 +73,22 @@ public interface IPublix {
      * and component ID.
      */
     Result appendResultData(Long studyId, Long componentId, Long studyResultId) throws PublixException;
+
+    /**
+     * HTTP type: POST request
+     * <p>
+     * Uploads a result file
+     */
+    Result uploadResultFile(Http.Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+            throws PublixException;
+
+    /**
+     * HTTP type: GET request
+     * <p>
+     * Downloads a result file
+     */
+    Result downloadResultFile(Http.Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+            throws PublixException;
 
     /**
      * HTTP type: Normal or Ajax GET request

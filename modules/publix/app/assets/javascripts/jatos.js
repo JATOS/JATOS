@@ -968,6 +968,92 @@ var jatos = {};
 	}
 
 	/**
+	 * Uploads a file that will be saved on the JATOS server. 
+	 *
+	 * @param {Blob, string or object} obj - Data to be uploaded as a file. A Blob
+	 * 										will be uploaded right away. A string
+	 * 										is turned into a Blob. An object is
+	 * 										first turned into a JSON string	and
+	 *										then into a Blob.
+	 * @param {string} filename - Name of the uploaded file
+	 * @param {optional function} onSuccess - Function to be called in case of success
+	 * @param {optional function} onError - Function to be called in case of error
+	 * @return {jQuery.deferred.promise}
+	 */
+	jatos.upload = function(obj, filename, onSuccess, onError) {
+		if (typeof filename !== "string" || 0 === filename.length) {
+			callingOnError(onError, "No filename specified");
+			return rejectedPromise();
+		}
+		var blob;
+		if (obj instanceof Blob) {
+			blob = obj;
+		} else if (typeof obj === "string") {
+			blob = new Blob([obj], {type : 'text/plain'});
+		} else if (obj === Object(obj)) {
+			blob = new Blob([JSON.stringify(obj, null, 2)], {type : 'application/json'});
+		} else {
+			callingOnError(onError, "Only string, Object or Blob allowed");
+			return rejectedPromise();
+		}
+		
+		var deferred = jatos.jQuery.Deferred();
+		var data = new FormData();
+		data.append("file", blob, filename);
+		jatos.jQuery.ajax({
+			url: "files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId,
+			data: data,
+			type: 'POST',
+			contentType: false,
+			processData: false,
+			success: function () {
+				callFunctionIfExist(onSuccess);
+				deferred.resolve();
+			},
+			error: function (err) {
+				var errMsg = getAjaxErrorMsg(err);
+				callingOnError(onError, errMsg);
+				deferred.reject(errMsg);
+			}
+		});
+		return deferred.promise();
+	};
+
+	/**
+	 * Downloads a file that was previously uploaded from the JATOS server. Only 
+	 * possible for files that were uploaded in the same study run.
+	 *
+	 * @param {string} filename - Name of the uploaded file
+	 * @param {optional function} onSuccess - Function to be called in case of success
+	 * @param {optional function} onError - Function to be called in case of error
+	 * @return {jQuery.deferred.promise}
+	 */
+	jatos.download = function (filename, onSuccess, onError) {
+		if (typeof filename !== "string" || 0 === filename.length) {
+			callingOnError(onError, "No filename specified");
+			return rejectedPromise();
+		}
+		var deferred = jatos.jQuery.Deferred();
+		jatos.jQuery.ajax({
+			url: "files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId,
+			type: 'GET',
+			xhrFields:{
+                responseType: 'blob'
+            },
+			success: function (data) {
+				callFunctionIfExist(onSuccess, data);
+				deferred.resolve(data);
+			},
+			error: function (err) {
+				var errMsg = getAjaxErrorMsg(err);
+				callingOnError(onError, errMsg);
+				deferred.reject(errMsg);
+			}
+		});
+		return deferred.promise();
+	};
+
+	/**
 	 * If you want to just write into the study session, this function is
 	 * probably not what you want. This function sets the study session data and
 	 * sends it back to the JATOS server. If you want to write something

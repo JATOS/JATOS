@@ -33,6 +33,7 @@ import utils.common.HttpUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -181,7 +182,7 @@ public class StudyResults extends Controller {
         request().body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
         try {
             resultRemover.removeStudyResults(studyResultIdList, loggedInUser);
-        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
+        } catch (ForbiddenException | BadRequestException | NotFoundException | IOException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses

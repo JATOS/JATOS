@@ -436,7 +436,7 @@ public class Batches extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(Long studyId, Long batchId) throws JatosGuiException {
+    public Result remove(Long studyId, Long batchId) throws Exception {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);

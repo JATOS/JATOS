@@ -23,6 +23,7 @@ import services.publix.workers.PersonalMultipleErrorMessages;
 import services.publix.workers.PersonalMultiplePublixUtils;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
 import utils.common.HttpUtils;
+import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -56,10 +57,10 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> imple
             PersonalMultipleErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyLogger studyLogger) {
+            StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
         super(jpa, publixUtils, studyAuthorisation,
                 groupChannel, idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger);
+                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;

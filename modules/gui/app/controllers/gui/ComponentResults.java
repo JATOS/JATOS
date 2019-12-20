@@ -24,9 +24,11 @@ import play.mvc.Result;
 import scala.Option;
 import services.gui.*;
 import utils.common.HttpUtils;
+import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,12 +51,13 @@ public class ComponentResults extends Controller {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
+    private final IOUtils ioUtils;
 
     @Inject
     ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
             AuthenticationService authenticationService, BreadcrumbsService breadcrumbsService,
             ResultRemover resultRemover, ResultService resultService, StudyDao studyDao,
-            ComponentDao componentDao, ComponentResultDao componentResultDao) {
+            ComponentDao componentDao, ComponentResultDao componentResultDao, IOUtils ioUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.authenticationService = authenticationService;
@@ -64,6 +67,7 @@ public class ComponentResults extends Controller {
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
+        this.ioUtils = ioUtils;
     }
 
     /**
@@ -102,7 +106,7 @@ public class ComponentResults extends Controller {
         try {
             // Permission check is done in service for each result individually
             resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
-        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
+        } catch (ForbiddenException | BadRequestException | NotFoundException | IOException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -139,6 +143,28 @@ public class ComponentResults extends Controller {
                     return sourceActor;
                 });
         return ok().chunked(source).as("text/html; charset=utf-8");
+    }
+
+    /**
+     * Download request of one result file
+     */
+    @Transactional
+    @Authenticated
+    public Result downloadResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename)
+            throws JatosGuiException {
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        try {
+            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename), false);
+        } catch (IOException e) {
+            return badRequest("File does not exist");
+        }
     }
 
 }

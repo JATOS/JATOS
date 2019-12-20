@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -370,6 +371,29 @@ public class IOUtils {
     public static void createDir(File file) throws IOException {
         if (!file.mkdirs()) {
             throw new IOException("Couldn't create directory " + file.getPath());
+        }
+    }
+
+    public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)
+            throws IOException {
+        String baseDirPath = Common.getResultUploadsPath() + File.separator + studyResultId
+                + File.separator + componentResultId;
+        Files.createDirectories(Paths.get(baseDirPath));
+        return getFileSecurely(baseDirPath, filename);
+    }
+
+    public void removeResultUploadsDir(Long studyResultId) throws IOException {
+        Path dir = Paths.get(Common.getResultUploadsPath() + File.separator + studyResultId);
+        if (Files.isDirectory(dir)) {
+            FileUtils.deleteDirectory(dir.toFile());
+        }
+    }
+
+    public void removeResultUploadsDir(Long studyResultId, Long componentResultId) throws IOException {
+        Path dir = Paths.get(Common.getResultUploadsPath() + File.separator + studyResultId
+                + File.separator + componentResultId);
+        if (Files.isDirectory(dir)) {
+            FileUtils.deleteDirectory(dir.toFile());
         }
     }
 }

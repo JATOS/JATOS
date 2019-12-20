@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import general.common.Common;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
@@ -19,6 +20,9 @@ import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -196,37 +200,6 @@ public class JsonUtils {
     }
 
     /**
-     * Returns all studyResults as a JSON string. It's including the
-     * studyResult's componentResults.
-     */
-    public JsonNode allStudyResultsForUI(Collection<StudyResult> studyResultList) {
-        ObjectNode allStudyResultsNode = Json.mapper().createObjectNode();
-        ArrayNode arrayNode = allStudyResultsNode.arrayNode();
-        for (StudyResult studyResult : studyResultList) {
-            JsonNode studyResultNode = studyResultAsJsonNode(studyResult);
-            arrayNode.add(studyResultNode);
-        }
-        allStudyResultsNode.set(DATA, arrayNode);
-        return allStudyResultsNode;
-    }
-
-    /**
-     * Returns JSON of all ComponentResuls of the specified component. The JSON
-     * string is intended for use in JATOS' GUI.
-     */
-    public JsonNode allComponentResultsForUI(
-            List<ComponentResult> componentResultList) {
-        ObjectNode allComponentResultsNode = Json.mapper().createObjectNode();
-        ArrayNode arrayNode = allComponentResultsNode.arrayNode();
-        for (ComponentResult componentResult : componentResultList) {
-            JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
-            arrayNode.add(componentResultNode);
-        }
-        allComponentResultsNode.set(DATA, arrayNode);
-        return allComponentResultsNode;
-    }
-
-    /**
      * Returns ObjectNode of the given StudyResult. It contains the worker,
      * study's ID and title, and all ComponentResults.
      */
@@ -253,12 +226,12 @@ public class JsonUtils {
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
 
         // Add all componentResults
-        ArrayNode arrayNode = studyResultNode.arrayNode();
+        ArrayNode componentResultsNode = studyResultNode.arrayNode();
         for (ComponentResult componentResult : studyResult.getComponentResultList()) {
             JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
-            arrayNode.add(componentResultNode);
+            componentResultsNode.add(componentResultNode);
         }
-        studyResultNode.set("componentResults", arrayNode);
+        studyResultNode.set("componentResults", componentResultsNode);
 
         return studyResultNode;
     }
@@ -296,7 +269,23 @@ public class JsonUtils {
         // Add componentResult's data
         componentResultNode.put(DATA, componentResultDataForUI(componentResult));
 
+        // Add uploaded result files
+        ArrayNode filesNode = componentResultNode.arrayNode();
+        getResultUploadFiles(componentResult).forEach(filesNode::add);
+        componentResultNode.set("files", filesNode);
+
         return componentResultNode;
+    }
+
+    private List<String> getResultUploadFiles(ComponentResult componentResult) {
+        Path dir = Paths.get(Common.getResultUploadsPath() + File.separator + componentResult.getStudyResult().getId()
+                + File.separator + componentResult.getId());
+        if (Files.isDirectory(dir)) {
+            try {
+                return Files.list(dir).map(filePath -> filePath.getFileName().toString()).collect(Collectors.toList());
+            } catch (IOException ignore) { }
+        }
+        return new ArrayList<>();
     }
 
     private static String getDurationPretty(Timestamp startDate, Timestamp endDate) {
@@ -410,7 +399,7 @@ public class JsonUtils {
     /**
      * Comparator that compares to study's titles.
      */
-    private class SidebarStudyComparator implements Comparator<SidebarStudy> {
+    private static class SidebarStudyComparator implements Comparator<SidebarStudy> {
         @Override
         public int compare(SidebarStudy ss1, SidebarStudy ss2) {
             return ss1.title.toLowerCase().compareTo(ss2.title.toLowerCase());

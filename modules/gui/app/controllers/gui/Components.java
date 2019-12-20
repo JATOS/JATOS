@@ -206,7 +206,7 @@ public class Components extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(Long studyId, Long componentId) throws JatosGuiException {
+    public Result remove(Long studyId, Long componentId) throws Exception {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
