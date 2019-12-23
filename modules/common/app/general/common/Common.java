@@ -123,24 +123,9 @@ public class Common {
     }
 
     private String fillStudyAssetsRootPath(Config config) {
-        String tempStudyAssetsRootPath = config.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
-        if (tempStudyAssetsRootPath == null || tempStudyAssetsRootPath.trim().isEmpty()) {
-            LOGGER.error("Missing configuration of path to study assets directory: "
-                    + "It must be set in application.conf under "
-                    + PROPERTY_STUDY_ASSETS_ROOT_PATH + ".");
-            System.exit(1);
-        }
-
-        // Replace ~ with actual home directory
-        tempStudyAssetsRootPath =
-                tempStudyAssetsRootPath.replace("~", System.getProperty("user.home"));
-        // Replace Unix-like file separator with actual system's one
-        tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("/", File.separator);
-        // If relative path add JATOS' base path as prefix
-        if (!(new File(tempStudyAssetsRootPath).isAbsolute())) {
-            tempStudyAssetsRootPath = basepath + File.separator
-                    + tempStudyAssetsRootPath;
-        }
+        String tempStudyAssetsRootPath = obtainPath(config, PROPERTY_STUDY_ASSETS_ROOT_PATH).orElseThrow(() ->
+                new RuntimeException("Missing configuration of path to study assets directory: "
+                        + "It must be set in application.conf under " + PROPERTY_STUDY_ASSETS_ROOT_PATH + "."));
         LOGGER.info("Path to study assets directory is " + tempStudyAssetsRootPath);
         return tempStudyAssetsRootPath;
     }
