@@ -145,26 +145,4 @@ public class ComponentResults extends Controller {
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
-    /**
-     * Download request of one result file
-     */
-    @Transactional
-    @Authenticated
-    public Result downloadResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename)
-            throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-
-        try {
-            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename), false);
-        } catch (IOException e) {
-            return badRequest("File does not exist");
-        }
-    }
-
 }

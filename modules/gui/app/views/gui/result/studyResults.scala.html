@@ -248,6 +248,24 @@ $(document).ready(function() {
             },
             {
                 "extend": 'collection',
+                "text": 'Export Files <span class="caret"></span>',
+                "className": "btn btn-study",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": exportSelectedResultFiles,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
+                    },
+                    {
+                        "text": "All",
+                        "action": exportAllResultFiles,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
+                    }
+                ]
+            },
+            {
+                "extend": 'collection',
                 "text": 'Export Metadata <span class="caret"></span>',
                 "className": "btn btn-study",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
@@ -413,19 +431,10 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
-        // Use download.js (http://danml.com/download.html) to get the result data and offer them
-        // as download to the user. download.js allows to use an Ajax call and error handling.
-        $.ajax({
-            url: '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()',
-            type : 'POST',
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({resultIds: ids}),
-            success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
-            error : function(err) {
-                showError(err.responseText);
-            },
-            complete: hideWaitingModal
-        });
+
+        var url = '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()';
+        var data = JSON.stringify({resultIds: ids});
+        downloadWithPost(url, data, "jatos_results");
     }
 
     function exportAllResultData(e, dt, node, config, ) {
@@ -479,6 +488,29 @@ $(document).ready(function() {
 
     function deleteAllResults(e, dt, node, config) {
         deleteSelectedResults(e, dt, node, config, true);
+    }
+
+    function exportAllResultFiles(e, dt, node, config) {
+        exportSelectedResultFiles(e, dt, node, config, true);
+    }
+
+    function exportSelectedResultFiles(e, dt, node, config, exportAll) {
+        showWaitingModal();
+        var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length == 0) {
+            hideWaitingModal();
+            showError("No results selected");
+            return;
+        }
+
+        var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfStudyResults()';
+        var data = JSON.stringify({resultIds: ids});
+        downloadWithPost(url, data, "jatos_resultfiles");
     }
 
     function childRowFormat(data) {

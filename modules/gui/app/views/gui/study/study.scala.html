@@ -28,12 +28,11 @@
                 title="Edit this study's properties">
             Properties <span class="glyphicon glyphicon-option-vertical"></span>
         </button>
-        <a type="button" class="btn btn-study"
+        <button id="exportStudy" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
-                title="Export this study to your local file system (including its components and study assets but without its results)"
-                href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
+                title="Export this study to your local file system (including its components and study assets but without its results)">
             Export <span class="glyphicon glyphicon-export"></span>
-        </a>
+        </button>
         <div class="btn-group">
             <button type="button" class="btn btn-study dropdown-toggle"
                     data-toggle="dropdown">
@@ -496,6 +495,14 @@ $('#studyToolbar').on('click', '#studyResults', function() {
 
 $('#studyToolbar').on('click', '#workerAndBatchManagerButton', function() {
     window.location.href = "@controllers.gui.routes.Batches.workerAndBatchManager(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#exportStudy', function() {
+    showWaitingModal();
+    var link = document.createElement("a");
+    link.href = '@controllers.gui.routes.ImportExport.exportStudy(study.getId())';
+    link.click();
+    hideWaitingModal();
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {

@@ -278,8 +278,8 @@ public class JsonUtils {
     }
 
     private List<String> getResultUploadFiles(ComponentResult componentResult) {
-        Path dir = Paths.get(Common.getResultUploadsPath() + File.separator + componentResult.getStudyResult().getId()
-                + File.separator + componentResult.getId());
+        Path dir = Paths.get(
+                IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId()));
         if (Files.isDirectory(dir)) {
             try {
                 return Files.list(dir).map(filePath -> filePath.getFileName().toString()).collect(Collectors.toList());

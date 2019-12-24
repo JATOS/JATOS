@@ -3,7 +3,9 @@ package controllers.gui;
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.Status;
+import akka.stream.IOResult;
 import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,7 +13,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
-import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
@@ -21,6 +22,7 @@ import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
+import models.common.StudyResult;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
@@ -32,14 +34,20 @@ import play.mvc.Result;
 import services.gui.*;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+import utils.common.ZipUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Controller that cares for import/export of components, studies and their result data.
@@ -62,13 +70,12 @@ public class ImportExport extends Controller {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final StudyResultDao studyResultDao;
-    private final ComponentResultDao componentResultDao;
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
             JsonUtils jsonUtils, AuthenticationService authenticationService, ImportExportService importExportService,
             ResultDataExporter resultDataStringGenerator, StudyDao studyDao, ComponentDao componentDao,
-            StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
+            StudyResultDao studyResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.jsonUtils = jsonUtils;
@@ -79,7 +86,6 @@ public class ImportExport extends Controller {
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.studyResultDao = studyResultDao;
-        this.componentResultDao = componentResultDao;
     }
 
     /**
@@ -90,11 +96,11 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result importStudy() throws JatosGuiException {
+    public Result importStudy(Http.Request request) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Get file from request
-        FilePart<Object> filePart = request().body().asMultipartFormData().getFile(Study.STUDY);
+        FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
 
         if (filePart == null) {
             jatosGuiExceptionThrower.throwAjax(MessagesStrings.FILE_MISSING, Http.Status.BAD_REQUEST);
@@ -122,11 +128,11 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result importStudyConfirmed() throws JatosGuiException {
+    public Result importStudyConfirmed(Http.Request request) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Get confirmation: overwrite study's properties and/or study assets
-        JsonNode json = request().body().asJson();
+        JsonNode json = request.body().asJson();
         try {
             importExportService.importStudyConfirmed(loggedInUser, json);
         } catch (Exception e) {
@@ -163,9 +169,9 @@ public class ImportExport extends Controller {
             jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
         }
 
-        String zipFileName = ioUtils.generateFileName(study.getTitle(), IOUtils.ZIP_FILE_SUFFIX);
-        response().setHeader("Content-disposition", "attachment; filename=" + zipFileName);
-        return ok(zipFile).as("application/x-download");
+        String zipFileName = ioUtils.generateFileName(study.getTitle(), "." + IOUtils.JZIP_FILE_SUFFIX);
+        return okFileStreamed(zipFile, zipFile::delete, "application/zip")
+                .withHeader("Content-disposition", "attachment; filename=" + zipFileName);
     }
 
     /**
@@ -195,8 +201,7 @@ public class ImportExport extends Controller {
         }
 
         String filename = ioUtils.generateFileName(component.getTitle(), IOUtils.COMPONENT_FILE_SUFFIX);
-        response().setHeader("Content-disposition", "attachment; filename=" + filename);
-        return ok(componentAsJson).as("application/x-download");
+        return ok(componentAsJson).withHeader("Content-disposition", "attachment; filename=" + filename);
     }
 
     /**
@@ -207,7 +212,7 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result importComponent(Long studyId) throws JatosGuiException {
+    public Result importComponent(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         ObjectNode json = null;
@@ -215,7 +220,7 @@ public class ImportExport extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
 
-            FilePart<Object> filePart = request().body().asMultipartFormData().getFile(Component.COMPONENT);
+            FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Component.COMPONENT);
             json = importExportService.importComponent(study, filePart);
         } catch (ForbiddenException | BadRequestException | IOException e) {
             importExportService.cleanupAfterComponentImport();
@@ -256,10 +261,10 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfStudyResults() {
+    public Result exportDataOfStudyResults(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> studyResultIdList = new ArrayList<>();
-        request().body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
+        request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
 
         int bufferSize = studyResultIdList.size();
         Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
@@ -281,10 +286,10 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfComponentResults() {
+    public Result exportDataOfComponentResults(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
-        request().body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+        request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
 
         int bufferSize = componentResultIdList.size();
         Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
@@ -296,6 +301,60 @@ public class ImportExport extends Controller {
                     return sourceActor;
                 });
         return ok().chunked(source).as("text/plain; charset=utf-8");
+    }
+
+    @Transactional
+    @Authenticated
+    public Result downloadSingleResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename)
+            throws JatosGuiException {
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        try {
+            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename));
+        } catch (IOException e) {
+            return badRequest("File does not exist");
+        }
+    }
+
+    @Transactional
+    @Authenticated
+    public Result exportResultFilesOfStudyResults(Http.Request request) throws IOException, JatosGuiException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+
+        List<Path> resultFileList = new ArrayList<>();
+        try {
+            for (JsonNode node : request.body().asJson().get("resultIds")) {
+                Long studyResultId = node.asLong();
+                StudyResult studyResult = studyResultDao.findById(studyResultId);
+                checker.checkStudyResult(studyResult, loggedInUser, false);
+                Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
+                if (Files.exists(path)) resultFileList.add(path);
+            }
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        if (resultFileList.isEmpty()) return notFound("No result files found");
+
+        File zipFile = File.createTempFile("resultFiles", "." + IOUtils.ZIP_FILE_SUFFIX);
+        zipFile.deleteOnExit();
+        ZipUtil.zipFiles(resultFileList, zipFile);
+        return okFileStreamed(zipFile, zipFile::delete, "application/zip");
+    }
+
+    /**
+     * Helper function to allow an action after a file was sent (e.g. delete the file)
+     */
+    private Result okFileStreamed(final File file, final Runnable handler, final String mimeType) {
+        final Source<ByteString, CompletionStage<IOResult>> fileSource = FileIO.fromFile(file);
+        Source<ByteString, CompletionStage<IOResult>> wrap = fileSource.mapMaterializedValue(
+                action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
+        return ok().streamed(wrap, Optional.of(file.length()), Optional.of(mimeType));
     }
 
 }

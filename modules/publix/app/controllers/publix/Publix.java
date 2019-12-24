@@ -266,10 +266,10 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         }
 
         try {
-            File file = ioUtils.getResultUploadFileSecurely(studyResultId, componentResult.get().getId(), filename);
+            File file = ioUtils.getExistingResultUploadFileSecurely(studyResultId, componentResult.get().getId(), filename);
             return ok(file, false);
         } catch (IOException e) {
-            return badRequest("File does not exist");
+            return notFound("Result file not found: " + filename);
         }
     }
 

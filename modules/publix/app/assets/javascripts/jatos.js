@@ -974,7 +974,7 @@ var jatos = {};
 	 * 										will be uploaded right away. A string
 	 * 										is turned into a Blob. An object is
 	 * 										first turned into a JSON string	and
-	 *										then into a Blob.
+	 * 										then into a Blob.
 	 * @param {string} filename - Name of the uploaded file
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
@@ -991,6 +991,7 @@ var jatos = {};
 		} else if (typeof obj === "string") {
 			blob = new Blob([obj], {type : 'text/plain'});
 		} else if (obj === Object(obj)) {
+			// Object can be stringified to JSON
 			blob = new Blob([JSON.stringify(obj, null, 2)], {type : 'application/json'});
 		} else {
 			callingOnError(onError, "Only string, Object or Blob allowed");
@@ -1038,11 +1039,11 @@ var jatos = {};
 			url: "files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId,
 			type: 'GET',
 			xhrFields:{
-                responseType: 'blob'
-            },
-			success: function (data) {
-				callFunctionIfExist(onSuccess, data);
-				deferred.resolve(data);
+				responseType: 'blob'
+			},
+			success: function (blob) {
+				callFunctionIfExist(onSuccess, blob);
+				deferred.resolve(blob);
 			},
 			error: function (err) {
 				var errMsg = getAjaxErrorMsg(err);

@@ -4,7 +4,12 @@ import org.apache.commons.io.FileUtils;
 
 import javax.inject.Singleton;
 import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -64,69 +69,53 @@ public class ZipUtil {
         return destDir;
     }
 
-    /**
-     * Zips a study. It returns a File object with the name 'study.zip' within
-     * the system's temp directory. The zip file will contain the study assets'
-     * directory and the study's JSON data (a .jas file).
-     */
-    static public File zipStudy(String studyAssetsDirPath, String studyAssetsDirNameInZip,
-            String studyAsJsonPath) throws IOException {
-        File zipFile = File.createTempFile("study", "." + IOUtils.ZIP_FILE_SUFFIX);
-        zipFile.deleteOnExit();
-        FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
-        ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
+    static public void zipFiles(List<Path> filesToZip, File zipFile) throws IOException {
+        BufferedOutputStream fileOutputStream = new BufferedOutputStream(new FileOutputStream(zipFile));
+        ZipOutputStream out = new ZipOutputStream(fileOutputStream);
 
-        // Add the study assets' directory to zip
-        addDirectoryToZip("", studyAssetsDirNameInZip, studyAssetsDirPath, zipOutputStream);
+        for (Path file : filesToZip) {
+            if (Files.exists(file)) addToZip(out, file.getFileName(), file);
+        }
 
-        // Add study as JSON file to zip
-        addFileToZip("", studyAsJsonPath, zipOutputStream);
-
-        zipOutputStream.flush();
-        zipOutputStream.close();
-        return zipFile;
+        out.flush();
+        out.close();
     }
 
-    static private void addDirectoryToZip(String dirPathInZip, String dirNameInZip, String dirPath,
-            ZipOutputStream zipOutputStream) throws IOException {
-        File dir = new File(dirPath);
-        if (!dir.isDirectory()) {
-            return;
-        }
-        for (String fileName : dir.list()) {
-            String filePathInZip;
-            if (dirPathInZip.equals("")) {
-                filePathInZip = dirNameInZip;
-            } else {
-                filePathInZip = dirPathInZip + ZIP_FILE_SEPARATOR + dir.getName();
-            }
-            String filePath = dir.getAbsolutePath() + ZIP_FILE_SEPARATOR + fileName;
-            addFileToZip(filePathInZip, filePath, zipOutputStream);
-        }
-    }
-
-    static private void addFileToZip(String filePathInZip, String filePath,
-            ZipOutputStream zipOutputStream) throws IOException {
-
-        File file = new File(filePath);
-        if (file.isDirectory()) {
-            addDirectoryToZip(filePathInZip, "", file.getAbsolutePath(), zipOutputStream);
+    private static void addToZip(final ZipOutputStream out, final Path root, final Path file) throws IOException {
+        if (Files.isDirectory(file)) {
+            addDirToZip(out, root, file);
         } else {
-            FileInputStream fileInputStream = null;
-            try {
-                byte[] buffer = new byte[BUFFER_SIZE];
-                int length;
-                fileInputStream = new FileInputStream(file);
-                zipOutputStream.putNextEntry(
-                        new ZipEntry(filePathInZip + ZIP_FILE_SEPARATOR + file.getName()));
-                while ((length = fileInputStream.read(buffer)) > 0) {
-                    zipOutputStream.write(buffer, 0, length);
-                }
-            } finally {
-                if (fileInputStream != null) {
-                    fileInputStream.close();
+            addFileToZip(out, Paths.get(""), file);
+        }
+    }
+
+    private static void addDirToZip(ZipOutputStream out, Path root, Path file) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(file)) {
+            for (Path child : stream) {
+                Path entry = buildPath(root, child.getFileName());
+                if (Files.isDirectory(child)) {
+                    addToZip(out, entry, child);
+                } else {
+                    out.putNextEntry(new ZipEntry(entry.toString()));
+                    Files.copy(child, out);
+                    out.closeEntry();
                 }
             }
+        }
+    }
+
+    static private void addFileToZip(ZipOutputStream out, Path root, Path file) throws IOException {
+        Path entry = buildPath(root, file.getFileName());
+        out.putNextEntry(new ZipEntry(entry.toString()));
+        Files.copy(file, out);
+        out.closeEntry();
+    }
+
+    private static Path buildPath(final Path root, final Path child) {
+        if (root == null) {
+            return child;
+        } else {
+            return Paths.get(root.toString(), child.toString());
         }
     }
 

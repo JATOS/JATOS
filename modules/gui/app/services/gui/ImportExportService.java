@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -272,15 +273,27 @@ public class ImportExportService {
                 importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
     }
 
+    /**
+     * Zips a study. It returns a File object with the name 'study.zip' within
+     * the system's temp directory. The zip file will contain the study assets'
+     * directory and the study's JSON data (a .jas file).
+     */
     public File createStudyExportZipFile(Study study) throws IOException {
         String studyFileName = ioUtils.generateFileName(study.getTitle());
         String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
         File studyAsJsonFile = File.createTempFile(studyFileName, studyFileSuffix);
         studyAsJsonFile.deleteOnExit();
         jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
-        String studyAssetsDirPath = ioUtils.generateStudyAssetsPath(study.getDirName());
-        File zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
-                studyAsJsonFile.getAbsolutePath());
+        Path studyAssetsDir = Paths.get(ioUtils.generateStudyAssetsPath(study.getDirName()));
+
+        List<Path> filesToZip = new ArrayList<>();
+        filesToZip.add(studyAssetsDir);
+        filesToZip.add(studyAsJsonFile.toPath());
+        String zipFileName = ioUtils.generateFileName(study.getTitle());
+        File zipFile = File.createTempFile(zipFileName, "." + IOUtils.JZIP_FILE_SUFFIX);
+        zipFile.deleteOnExit();
+        ZipUtil.zipFiles(filesToZip, zipFile);
+
         studyAsJsonFile.delete();
         return zipFile;
     }

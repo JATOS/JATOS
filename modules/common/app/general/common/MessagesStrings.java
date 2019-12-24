@@ -110,6 +110,9 @@ public class MessagesStrings {
             + "but does not include any metadata";
     public static final String RESULTS_EXPORT_SELECTED_DATA = "Export selected results as a text file to your local file system";
     public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
+    public static final String RESULTS_EXPORT_FILES = "Result files that were uploaded during a study run";
+    public static final String RESULTS_EXPORT_SELECTED_FILES = "Export selected result files as a .zip to your local file system";
+    public static final String RESULTS_EXPORT_ALL_FILES = "Export all result files as a .zip to your local file system";
     public static final String RESULTS_EXPORT_METADATA = "Metadata are all data that are not result data, e.g. Result ID, "
             + "Start Time, State";
     public static final String RESULTS_EXPORT_ALL_METADATA = "Export all metadata as a CSV file to your local file "

@@ -54,7 +54,6 @@ GET      /jatos/:studyId/:componentId/tableData                             @con
 POST     /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove()
 GET      /jatos/:studyId/results                                            @controllers.gui.StudyResults.studysStudyResults(studyId: Long, max: Option[Integer])
 GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long, max: Option[Integer])
-GET      /jatos/:studyId/resultFiles/:srid/:crid/:filename                  @controllers.gui.ComponentResults.downloadResultFile(studyId: Long, srid: Long, crid: Long, filename: String)
 
 # Studies controller
 POST     /jatos/study                                                       @controllers.gui.Studies.submitCreated()
@@ -105,14 +104,16 @@ GET      /jatos/:studyId/:componentId/run                                   @con
 GET      /jatos/:studyId/:componentId/clone                                 @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
 
 # ImportExport controller
-POST     /jatos/studyResult/export/resultData                               @controllers.gui.ImportExport.exportDataOfStudyResults()
-POST     /jatos/componentResult/export/resultData                           @controllers.gui.ImportExport.exportDataOfComponentResults()
-POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy()
-POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed()
+POST     /jatos/studyResult/export/resultData                               @controllers.gui.ImportExport.exportDataOfStudyResults(request: Request)
+POST     /jatos/studyResult/export/resultFiles                              @controllers.gui.ImportExport.exportResultFilesOfStudyResults(request: Request)
+POST     /jatos/componentResult/export/resultData                           @controllers.gui.ImportExport.exportDataOfComponentResults(request: Request)
+POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy(request: Request)
+POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed(request: Request)
 GET      /jatos/:studyId/export                                             @controllers.gui.ImportExport.exportStudy(studyId: Long)
-POST     /jatos/:studyId/import/component                                   @controllers.gui.ImportExport.importComponent(studyId: Long)
+POST     /jatos/:studyId/import/component                                   @controllers.gui.ImportExport.importComponent(request: Request, studyId: Long)
 POST     /jatos/:studyId/import/componentConfirmed                          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
 GET      /jatos/:studyId/:componentId/export                                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
+GET      /jatos/:studyId/resultFiles/:srid/:crid/:filename                  @controllers.gui.ImportExport.downloadSingleResultFile(studyId: Long, srid: Long, crid: Long, filename: String)
 
 
 ### Study uploads

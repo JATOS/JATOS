@@ -25,7 +25,8 @@ public class IOUtils {
 
     public static final String STUDY_FILE_SUFFIX = "jas";
     public static final String COMPONENT_FILE_SUFFIX = "jac";
-    public static final String ZIP_FILE_SUFFIX = "jzip";
+    public static final String JZIP_FILE_SUFFIX = "jzip";
+    public static final String ZIP_FILE_SUFFIX = "zip";
 
     /**
      * Regular expression of illegal characters or strings in file or directory names '/', '\n', '\r', * '//', '\t',
@@ -374,24 +375,37 @@ public class IOUtils {
         }
     }
 
+    public static String getResultUploadsDir(Long studyResultId) {
+        return Common.getResultUploadsPath() + File.separator + "sresult_" + studyResultId;
+    }
+
+    public static String getResultUploadsDir(Long studyResultId, Long componentResultId) {
+        return getResultUploadsDir(studyResultId) + File.separator + "cresult_" + componentResultId;
+    }
+
     public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)
             throws IOException {
-        String baseDirPath = Common.getResultUploadsPath() + File.separator + studyResultId
-                + File.separator + componentResultId;
+        String baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
         Files.createDirectories(Paths.get(baseDirPath));
         return getFileSecurely(baseDirPath, filename);
     }
 
+    public File getExistingResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)
+            throws IOException {
+        File file = getResultUploadFileSecurely(studyResultId, componentResultId, filename);
+        if (!file.exists()) throw new IOException("Result file doesn't exist: " + filename);
+        return file;
+    }
+
     public void removeResultUploadsDir(Long studyResultId) throws IOException {
-        Path dir = Paths.get(Common.getResultUploadsPath() + File.separator + studyResultId);
+        Path dir = Paths.get(getResultUploadsDir(studyResultId));
         if (Files.isDirectory(dir)) {
             FileUtils.deleteDirectory(dir.toFile());
         }
     }
 
     public void removeResultUploadsDir(Long studyResultId, Long componentResultId) throws IOException {
-        Path dir = Paths.get(Common.getResultUploadsPath() + File.separator + studyResultId
-                + File.separator + componentResultId);
+        Path dir = Paths.get(getResultUploadsDir(studyResultId, componentResultId));
         if (Files.isDirectory(dir)) {
             FileUtils.deleteDirectory(dir.toFile());
         }
