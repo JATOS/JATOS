@@ -189,7 +189,9 @@ $(document).ready(function() {
             },
             { "data": "studyState" },
             {
-                "data": "message",
+                "data": function(data, type, dataToSet) {
+                    return data.message ? data.message : "none";
+                },
                 "width": "20%"
             },
             {
@@ -264,6 +266,24 @@ $(document).ready(function() {
                         "text": "All",
                         "action": exportAllSelectedResultData,
                         "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                    }
+                ]
+            },
+            {
+                "extend": 'collection',
+                "text": 'Export Files <span class="caret"></span>',
+                "className": "btn btn-study",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": exportSelectedResultFiles,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
+                    },
+                    {
+                        "text": "All",
+                        "action": exportAllResultFiles,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
                     }
                 ]
             },
@@ -416,6 +436,10 @@ $(document).ready(function() {
                 .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
     });
 
+    function exportAllSelectedResultData(e, dt, node, config) {
+        exportSelectedResultData(e, dt, node, config, true);
+    }
+
     function exportSelectedResultData(e, dt, node, config, exportAll) {
         showWaitingModal();
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
@@ -429,23 +453,15 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
-        // Use download.js (http://danml.com/download.html) to get the result data and offer them
-        // as download to the user. download.js allows to use an Ajax call and error handling.
-        $.ajax({
-            url: '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()',
-            type : 'POST',
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({resultIds: ids}),
-            success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
-            error : function(err) {
-                showError(err.responseText);
-            },
-            complete: hideWaitingModal
-        });
+
+        var url = '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()';
+        var data = JSON.stringify({resultIds: ids});
+        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss");
+        downloadWithPost(url, data, filename);
     }
 
-    function exportAllSelectedResultData(e, dt, node, config) {
-        exportSelectedResultData(e, dt, node, config, true);
+    function deleteAllResults(e, dt, node, config) {
+        deleteSelectedResults(e, dt, node, config, true);
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
@@ -494,8 +510,28 @@ $(document).ready(function() {
         });
     }
 
-    function deleteAllResults(e, dt, node, config) {
-        deleteSelectedResults(e, dt, node, config, true);
+    function exportAllResultFiles(e, dt, node, config) {
+        exportSelectedResultFiles(e, dt, node, config, true);
+    }
+
+    function exportSelectedResultFiles(e, dt, node, config, exportAll) {
+        showWaitingModal();
+        var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length == 0) {
+            hideWaitingModal();
+            showError("No results selected");
+            return;
+        }
+
+        var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfStudyResults()';
+        var data = JSON.stringify({resultIds: ids});
+        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss");
+        downloadWithPost(url, data, filename);
     }
 
     function childRowFormat(data) {
@@ -510,12 +546,19 @@ $(document).ready(function() {
             '<td><b>Start Time (Server)</b></td>',
             '<td><b>Duration</b></td>',
             '<td><b>State</b></td>',
+            '<td><b>Files</b></td>',
             '<td><b>Message</b></td>',
             '</tr>');
             if (data.componentResults.length > 0) {
                 data.componentResults.forEach(function(componentResult) {
                     var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-                    var message = (componentResult.message) ? componentResult.message : "";
+                    var message = (componentResult.message) ? componentResult.message : "none";
+                    var resultFiles = componentResult.files.map(function(filename) {
+                        var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + data.studyId + "/resultFiles/"
+                            + data.id + "/" + componentResult.id + "/" + filename;
+                        return '<a href="' + url + '" download>' + filename + '</a>';
+                    });
+                    if (resultFiles.length === 0) resultFiles.push("none");
                     html.push('<tr class="info">',
                         '<td>' + componentResult.id + '</td>',
                         '<td>' + componentResult.componentId + '</td>',
@@ -523,14 +566,15 @@ $(document).ready(function() {
                         '<td>' + componentResult.startDate + '</td>',
                         '<td>' + duration + '</td>',
                         '<td>' + componentResult.componentState + '</td>',
+                        '<td>' + resultFiles.join('<br>') + '</td>',
                         '<td>' + message + '</td>',
                         '</tr><tr class="info">',
-                        '<td colspan="7"><pre class="details-data">' + componentResult.data + '</pre></td>',
+                        '<td colspan="8"><pre class="details-data">' + componentResult.data + '</pre></td>',
                         '</tr>');
                 });
             } else {
                 html.push('<tr class="info">',
-                    '<td colspan="7">empty</td>',
+                    '<td colspan="8">empty</td>',
                     '</tr>');
             }
             html.push('</table>', '</div>');

@@ -168,7 +168,9 @@ $(document).ready(function() {
             },
             { "data": "studyState" },
             {
-                "data": "message",
+                "data": function(data, type, dataToSet) {
+                    return data.message ? data.message : "none";
+                },
                 "width": "20%"
             },
             {
@@ -434,7 +436,8 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
-        downloadWithPost(url, data, "jatos_results");
+        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss");
+        downloadWithPost(url, data, filename);
     }
 
     function exportAllResultData(e, dt, node, config, ) {
@@ -510,7 +513,8 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
-        downloadWithPost(url, data, "jatos_resultfiles");
+        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss");
+        downloadWithPost(url, data, filename);
     }
 
     function childRowFormat(data) {
@@ -531,12 +535,13 @@ $(document).ready(function() {
             if (data.componentResults.length > 0) {
                 data.componentResults.forEach(function(componentResult) {
                     var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-                    var message = (componentResult.message) ? componentResult.message : "";
+                    var message = (componentResult.message) ? componentResult.message : "none";
                     var resultFiles = componentResult.files.map(function(filename) {
                         var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + data.studyId + "/resultFiles/"
                             + data.id + "/" + componentResult.id + "/" + filename;
                         return '<a href="' + url + '" download>' + filename + '</a>';
                     });
+                    if (resultFiles.length === 0) resultFiles.push("none");
                     html.push('<tr class="info">',
                         '<td>' + componentResult.id + '</td>',
                         '<td>' + componentResult.componentId + '</td>',
@@ -552,7 +557,7 @@ $(document).ready(function() {
                 });
             } else {
                 html.push('<tr class="info">',
-                    '<td colspan="7">empty</td>',
+                    '<td colspan="8">empty</td>',
                     '</tr>');
             }
             html.push('</table>', '</div>');

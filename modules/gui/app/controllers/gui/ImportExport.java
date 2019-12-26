@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
@@ -20,10 +21,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
-import models.common.Component;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.User;
+import models.common.*;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
@@ -70,12 +68,13 @@ public class ImportExport extends Controller {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final StudyResultDao studyResultDao;
+    private final ComponentResultDao componentResultDao;
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
             JsonUtils jsonUtils, AuthenticationService authenticationService, ImportExportService importExportService,
             ResultDataExporter resultDataStringGenerator, StudyDao studyDao, ComponentDao componentDao,
-            StudyResultDao studyResultDao) {
+            StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.jsonUtils = jsonUtils;
@@ -86,6 +85,7 @@ public class ImportExport extends Controller {
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.studyResultDao = studyResultDao;
+        this.componentResultDao = componentResultDao;
     }
 
     /**
@@ -254,7 +254,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (uses download.js on the client side)
+     * Ajax request with chunked streaming
      * <p>
      * Returns all result data of ComponentResults belonging to the given StudyResults. The StudyResults are specified
      * by their IDs in the request's body. Returns the result data as text, each line a result data.
@@ -279,7 +279,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request (uses download.js on the client side)
+     * Ajax request with chunked streaming
      * <p>
      * Returns all result data of ComponentResults. The ComponentResults are specified by their IDs in the request's
      * body. Returns the result data as text, each line a result data.
@@ -334,6 +334,32 @@ public class ImportExport extends Controller {
                 StudyResult studyResult = studyResultDao.findById(studyResultId);
                 checker.checkStudyResult(studyResult, loggedInUser, false);
                 Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
+                if (Files.exists(path)) resultFileList.add(path);
+            }
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+        if (resultFileList.isEmpty()) return notFound("No result files found");
+
+        File zipFile = File.createTempFile("resultFiles", "." + IOUtils.ZIP_FILE_SUFFIX);
+        zipFile.deleteOnExit();
+        ZipUtil.zipFiles(resultFileList, zipFile);
+        return okFileStreamed(zipFile, zipFile::delete, "application/zip");
+    }
+
+    @Transactional
+    @Authenticated
+    public Result exportResultFilesOfComponentResults(Http.Request request) throws IOException, JatosGuiException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+
+        List<Path> resultFileList = new ArrayList<>();
+        try {
+            for (JsonNode node : request.body().asJson().get("resultIds")) {
+                Long componentResultId = node.asLong();
+                ComponentResult componentResult = componentResultDao.findById(componentResultId);
+                checker.checkComponentResult(componentResult, loggedInUser, false);
+                Path path = Paths.get(IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(),
+                        componentResultId));
                 if (Files.exists(path)) resultFileList.add(path);
             }
         } catch (ForbiddenException | BadRequestException e) {

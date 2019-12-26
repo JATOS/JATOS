@@ -18,6 +18,7 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
+            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
         </tr>
@@ -36,6 +37,7 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
+            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
         </tr>
@@ -146,7 +148,21 @@ $(document).ready(function() {
             },
             { "data": "componentState" },
             {
-                "data": "message",
+                "data": "files",
+                "render": function (data, type, full, meta) {
+                    if (data.length === 0) return "none";
+                    var resultFiles = data.map(function(filename) {
+                        var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + full.studyId + "/resultFiles/"
+                            + full.studyResultId + "/" + full.id + "/" + filename;
+                        return '<a href="' + url + '" download>' + filename + '</a>';
+                    });
+                    return resultFiles.join("<br>");
+                }
+            },
+            {
+                "data": function(data, type, dataToSet) {
+                    return data.message ? data.message : "none";
+                },
                 "width": "20%"
             },
             {
@@ -215,6 +231,24 @@ $(document).ready(function() {
                         "text": "All",
                         "action": exportAllSelectedResultData,
                         "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                    }
+                ]
+            },
+            {
+                "extend": 'collection',
+                "text": 'Export Files <span class="caret"></span>',
+                "className": "btn btn-component",
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
+                "buttons": [
+                    {
+                        "text": "Selected",
+                        "action": exportSelectedResultFiles,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
+                    },
+                    {
+                        "text": "All",
+                        "action": exportAllResultFiles,
+                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
                     }
                 ]
             },
@@ -360,6 +394,10 @@ $(document).ready(function() {
                 .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
     });
 
+    function exportAllSelectedResultData(e, dt, node, config) {
+        exportSelectedResultData(e, dt, node, config, true);
+    }
+
     function exportSelectedResultData(e, dt, node, config, exportAll) {
         showWaitingModal();
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
@@ -373,23 +411,15 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
-        // Use download.js (http://danml.com/download.html) to get the result data and offer them
-        // as download to the user. download.js allows to use an Ajax call and error handling.
-        $.ajax({
-            url: '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()',
-            type : 'POST',
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({resultIds: ids}),
-            success: download.bind(true, "text/plain", "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt"),
-            error : function(err) {
-                showError(err.responseText);
-            },
-            complete: hideWaitingModal
-        });
+
+        var url = '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()';
+        var data = JSON.stringify({resultIds: ids});
+        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss");
+        downloadWithPost(url, data, filename);
     }
 
-    function exportAllSelectedResultData(e, dt, node, config) {
-        exportSelectedResultData(e, dt, node, config, true);
+    function deleteAllResults(e, dt, node, config) {
+        deleteSelectedResults(e, dt, node, config, true);
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
@@ -436,8 +466,28 @@ $(document).ready(function() {
         });
     }
 
-    function deleteAllResults(e, dt, node, config) {
-        deleteSelectedResults(e, dt, node, config, true);
+    function exportAllResultFiles(e, dt, node, config) {
+        exportSelectedResultFiles(e, dt, node, config, true);
+    }
+
+    function exportSelectedResultFiles(e, dt, node, config, exportAll) {
+        showWaitingModal();
+        var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
+        var ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            var rowData = resultsTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length == 0) {
+            hideWaitingModal();
+            showError("No results selected");
+            return;
+        }
+
+        var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfComponentResults()';
+        var data = JSON.stringify({resultIds: ids});
+        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss");
+        downloadWithPost(url, data, filename);
     }
 
     function childRowFormat(data) {

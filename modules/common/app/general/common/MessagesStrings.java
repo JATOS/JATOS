@@ -149,6 +149,7 @@ public class MessagesStrings {
     public static final String RESULTS_STUDY_MESSAGES = "Message that occured during the run of this study";
     public static final String RESULTS_COMPONENT_STATE =
             "Current state of this component's run, like " + ComponentState.allStatesAsString();
+    public static final String RESULTS_COMPONENT_FILES = "Uploaded files during the run of this component";
     public static final String RESULTS_COMPONENT_MESSAGES = "Message that occured during the run of this component";
 
     // Other

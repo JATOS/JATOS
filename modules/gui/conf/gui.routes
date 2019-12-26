@@ -107,6 +107,7 @@ GET      /jatos/:studyId/:componentId/clone                                 @con
 POST     /jatos/studyResult/export/resultData                               @controllers.gui.ImportExport.exportDataOfStudyResults(request: Request)
 POST     /jatos/studyResult/export/resultFiles                              @controllers.gui.ImportExport.exportResultFilesOfStudyResults(request: Request)
 POST     /jatos/componentResult/export/resultData                           @controllers.gui.ImportExport.exportDataOfComponentResults(request: Request)
+POST     /jatos/componentResult/export/resultFiles                          @controllers.gui.ImportExport.exportResultFilesOfComponentResults(request: Request)
 POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy(request: Request)
 POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed(request: Request)
 GET      /jatos/:studyId/export                                             @controllers.gui.ImportExport.exportStudy(studyId: Long)

@@ -472,7 +472,6 @@ function downloadWithPost(url, data, filename) {
 	xhr.onload = function () {
 		hideWaitingModal();
 		if (this.status === 200) {
-			filename = filename + "_" + moment().format("YYYYMMDDHHmmss");
 			var type = xhr.getResponseHeader('Content-Type');
 
 			var blob;
