@@ -9,9 +9,12 @@ import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
+import play.Logger;
 import services.publix.idcookie.IdCookieService;
+import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
@@ -25,6 +28,8 @@ import java.util.Optional;
  */
 public abstract class PublixUtils<T extends Worker> {
 
+    private static final Logger.ALogger LOGGER = Logger.of(PublixUtils.class);
+
     private final ResultCreator resultCreator;
     private final IdCookieService idCookieService;
     private final GroupAdministration groupAdministration;
@@ -36,6 +41,7 @@ public abstract class PublixUtils<T extends Worker> {
     private final WorkerDao workerDao;
     private final BatchDao batchDao;
     private final StudyLogger studyLogger;
+    private final IOUtils ioUtils;
 
     public PublixUtils(ResultCreator resultCreator,
             IdCookieService idCookieService,
@@ -43,7 +49,7 @@ public abstract class PublixUtils<T extends Worker> {
             PublixErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
-            BatchDao batchDao, StudyLogger studyLogger) {
+            BatchDao batchDao, StudyLogger studyLogger, IOUtils ioUtils) {
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.groupAdministration = groupAdministration;
@@ -55,6 +61,7 @@ public abstract class PublixUtils<T extends Worker> {
         this.workerDao = workerDao;
         this.batchDao = batchDao;
         this.studyLogger = studyLogger;
+        this.ioUtils = ioUtils;
     }
 
     /**
@@ -153,6 +160,13 @@ public abstract class PublixUtils<T extends Worker> {
             componentResult.setData(null);
             componentResult.setComponentState(ComponentState.ABORTED);
             componentResultDao.update(componentResult);
+        }
+
+        // Remove all uploaded result files
+        try {
+            ioUtils.removeResultUploadsDir(studyResult.getId());
+        } catch (IOException e) {
+            LOGGER.error("Cannot delete result upload files (srid " + studyResult.getId() + "): " + e.getMessage());
         }
 
         // Set StudyResult to state ABORTED and set message

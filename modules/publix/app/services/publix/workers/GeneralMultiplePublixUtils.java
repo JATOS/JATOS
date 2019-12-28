@@ -12,6 +12,7 @@ import play.mvc.Http;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
+import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -33,10 +34,10 @@ public class GeneralMultiplePublixUtils extends PublixUtils<GeneralMultipleWorke
             GeneralMultipleErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
-            BatchDao batchDao, StudyLogger studyLogger) {
+            BatchDao batchDao, StudyLogger studyLogger, IOUtils ioUtils) {
         super(resultCreator, idCookieService, groupAdministration,
                 errorMessages, studyDao, studyResultDao, componentDao,
-                componentResultDao, workerDao, batchDao, studyLogger);
+                componentResultDao, workerDao, batchDao, studyLogger, ioUtils);
     }
 
     @Override

@@ -16,6 +16,7 @@ import play.mvc.Http;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
+import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -41,10 +42,10 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
             JatosErrorMessages errorMessages, UserDao userDao,
             StudyDao studyDao, StudyResultDao studyResultDao,
             ComponentDao componentDao, ComponentResultDao componentResultDao,
-            WorkerDao workerDao, BatchDao batchDao, StudyLogger studyLogger) {
+            WorkerDao workerDao, BatchDao batchDao, StudyLogger studyLogger, IOUtils ioUtils) {
         super(resultCreator, idCookieService, groupAdministration,
                 errorMessages, studyDao, studyResultDao, componentDao,
-                componentResultDao, workerDao, batchDao, studyLogger);
+                componentResultDao, workerDao, batchDao, studyLogger, ioUtils);
         this.errorMessages = errorMessages;
         this.userDao = userDao;
     }
