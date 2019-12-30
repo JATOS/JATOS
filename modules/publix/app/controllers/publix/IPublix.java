@@ -5,6 +5,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Interface to Publix the public, RESTful API of JATOS. With these methods the studies and components (running in the
@@ -87,7 +88,7 @@ public interface IPublix {
      * <p>
      * Downloads a result file
      */
-    Result downloadResultFile(Http.Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+    Result downloadResultFile(Long studyId, Long studyResultId, String filename, Optional<Long> componentId)
             throws PublixException;
 
     /**

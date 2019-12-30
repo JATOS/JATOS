@@ -980,7 +980,7 @@ var jatos = {};
 	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
-	jatos.upload = function(obj, filename, onSuccess, onError) {
+	jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
 		if (typeof filename !== "string" || 0 === filename.length) {
 			callingOnError(onError, "No filename specified");
 			return rejectedPromise();
@@ -989,15 +989,15 @@ var jatos = {};
 		if (obj instanceof Blob) {
 			blob = obj;
 		} else if (typeof obj === "string") {
-			blob = new Blob([obj], {type : 'text/plain'});
+			blob = new Blob([obj], { type: 'text/plain' });
 		} else if (obj === Object(obj)) {
 			// Object can be stringified to JSON
-			blob = new Blob([JSON.stringify(obj, null, 2)], {type : 'application/json'});
+			blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
 		} else {
 			callingOnError(onError, "Only string, Object or Blob allowed");
 			return rejectedPromise();
 		}
-		
+
 		var deferred = jatos.jQuery.Deferred();
 		var data = new FormData();
 		data.append("file", blob, filename);
@@ -1028,17 +1028,46 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
+	 * 
+	 * Additional one can specify the component ID (in case different components uploaded
+	 * files with the same filename):
+	 * @param {number} componentPos - Position of the component to look for the file
+	 * @param {string} filename - Name of the uploaded file
+	 * @param {optional function} onSuccess - Function to be called in case of success
+	 * @param {optional function} onError - Function to be called in case of error
+	 * @return {jQuery.deferred.promise}
+	 * 
 	 */
-	jatos.download = function (filename, onSuccess, onError) {
+	jatos.downloadResultFile = function (param1, param2, param3, param4) {
+		var componentPos, filename, onSuccess, onError;
+		if (typeof param1 === 'number') {
+			componentPos = param1;
+			filename = param2;
+			onSuccess = param3;
+			onError = param4;
+		} else if (typeof param1 === 'string') {
+			filename = param1;
+			onSuccess = param2;
+			onError = param3;
+		} else {
+			callingOnError(onError, "Unknown first parameter");
+			return rejectedPromise();
+		}
 		if (typeof filename !== "string" || 0 === filename.length) {
 			callingOnError(onError, "No filename specified");
 			return rejectedPromise();
 		}
+
+		var url = "../files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId;
+		if (componentPos) {
+			var componentId = jatos.componentList[componentPos - 1].id;
+			url += "&componentId=" + componentId;
+		}
 		var deferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId,
+			url: url,
 			type: 'GET',
-			xhrFields:{
+			xhrFields: {
 				responseType: 'blob'
 			},
 			success: function (blob) {

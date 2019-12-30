@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)
@@ -356,35 +357,35 @@ public class PublixInterceptor extends Controller implements IPublix {
 
     @Override
     @Transactional
-    public Result downloadResultFile(Http.Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+    public Result downloadResultFile(Long studyId, Long studyResultId, String filename, Optional<Long> componentId)
             throws PublixException {
         Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case JatosWorker.WORKER_TYPE:
-                result = instanceOfPublix(JatosPublix.class).downloadResultFile(request, studyId, componentId, studyResultId,
-                        filename);
+                result = instanceOfPublix(JatosPublix.class).downloadResultFile(studyId, studyResultId, filename,
+                        componentId);
                 break;
             case PersonalSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalSinglePublix.class).downloadResultFile(request, studyId, componentId,
-                        studyResultId, filename);
+                result = instanceOfPublix(PersonalSinglePublix.class).downloadResultFile(studyId, studyResultId,
+                        filename, componentId);
                 break;
             case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class).downloadResultFile(request, studyId, componentId,
-                        studyResultId, filename);
+                result = instanceOfPublix(PersonalMultiplePublix.class).downloadResultFile(studyId, studyResultId,
+                        filename, componentId);
                 break;
             case GeneralSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(GeneralSinglePublix.class).downloadResultFile(request, studyId, componentId,
-                        studyResultId, filename);
+                result = instanceOfPublix(GeneralSinglePublix.class).downloadResultFile(studyId, studyResultId,
+                        filename, componentId);
                 break;
             case GeneralMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(GeneralMultiplePublix.class).downloadResultFile(request, studyId, componentId,
-                        studyResultId, filename);
+                result = instanceOfPublix(GeneralMultiplePublix.class).downloadResultFile(studyId, studyResultId,
+                        filename, componentId);
                 break;
             // Handle MTWorker like MTSandboxWorker
             case MTSandboxWorker.WORKER_TYPE:
             case MTWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).downloadResultFile(request, studyId, componentId, studyResultId,
-                        filename);
+                result = instanceOfPublix(MTPublix.class).downloadResultFile(studyId, studyResultId, filename,
+                        componentId);
                 break;
             default:
                 throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);

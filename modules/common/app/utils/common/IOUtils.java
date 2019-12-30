@@ -390,13 +390,6 @@ public class IOUtils {
         return getFileSecurely(baseDirPath, filename);
     }
 
-    public File getExistingResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)
-            throws IOException {
-        File file = getResultUploadFileSecurely(studyResultId, componentResultId, filename);
-        if (!file.exists()) throw new IOException("Result file doesn't exist: " + filename);
-        return file;
-    }
-
     public void removeResultUploadsDir(Long studyResultId) throws IOException {
         Path dir = Paths.get(getResultUploadsDir(studyResultId));
         if (Files.isDirectory(dir)) {

@@ -14,11 +14,11 @@ import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -185,7 +185,7 @@ public abstract class PublixUtils<T extends Worker> {
      *                    confirmation code and set the StudyResult's and current ComponentResult's
      *                    state to FINISHED. If false it sets both states to FAIL and doesn't
      *                    generate a confirmation code.
-     * @param message    Will be set in the StudyResult. Can be null.
+     * @param message     Will be set in the StudyResult. Can be null.
      * @param studyResult A StudyResult
      * @return The confirmation code or null if it was unsuccessful
      */
@@ -304,8 +304,8 @@ public abstract class PublixUtils<T extends Worker> {
      * yet starts one for the given component. The current ComponentResult
      * doesn't have to be of the given Component.
      */
-    public ComponentResult retrieveStartedComponentResult(Component component,
-            StudyResult studyResult) throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
+    public ComponentResult retrieveStartedComponentResult(Component component, StudyResult studyResult)
+            throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
         Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
         // Start the component if it was never started or if it's a reload of the component
         return current.isPresent() ? current.get() : startComponent(component, studyResult);
@@ -481,6 +481,29 @@ public abstract class PublixUtils<T extends Worker> {
         String parameter = JsonUtils.asJson(getNonJatosUrlQueryParameters());
         studyResult.setUrlQueryParameters(parameter);
         return studyResult;
+    }
+
+    /**
+     * Gets an uploaded result file. In case of several possible files (can happen with reloaded components) it returns
+     * the file uploaded last.
+     */
+    public Optional<File> retrieveLastUploadedResultFile(StudyResult studyResult, Component component, String filename) {
+        List<ComponentResult> componentResultList;
+        if (component != null) {
+            componentResultList = studyResult.getComponentResultList().stream()
+                    .filter(cr -> cr.getComponent() == component).collect(Collectors.toList());
+        } else {
+            componentResultList = studyResult.getComponentResultList();
+        }
+        Collections.reverse(componentResultList);
+
+        try {
+            for (ComponentResult cr : componentResultList) {
+                File file = ioUtils.getResultUploadFileSecurely(studyResult.getId(), cr.getId(), filename);
+                if (file.exists()) return Optional.of(file);
+            }
+        } catch (IOException ignore) {}
+        return Optional.empty();
     }
 
 }

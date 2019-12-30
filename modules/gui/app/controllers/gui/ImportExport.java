@@ -169,7 +169,7 @@ public class ImportExport extends Controller {
             jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
         }
 
-        String zipFileName = ioUtils.generateFileName(study.getTitle(), "." + IOUtils.JZIP_FILE_SUFFIX);
+        String zipFileName = ioUtils.generateFileName(study.getTitle(), IOUtils.JZIP_FILE_SUFFIX);
         return okFileStreamed(zipFile, zipFile::delete, "application/zip")
                 .withHeader("Content-disposition", "attachment; filename=" + zipFileName);
     }

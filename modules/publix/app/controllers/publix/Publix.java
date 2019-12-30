@@ -227,7 +227,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
         if (!componentResult.isPresent()) {
-            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitResultData");
+            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "uploadResultFile");
             return redirect(routes.PublixInterceptor.finishStudy(studyId, studyResult.getId(), false, error));
         }
 
@@ -248,29 +248,21 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     }
 
     @Override
-    public Result downloadResultFile(Request request, Long studyId, Long componentId, Long studyResultId, String filename)
+    public Result downloadResultFile(Long studyId, Long studyResultId, String filename, Optional<Long> componentId)
             throws PublixException {
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
         T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-        Component component = publixUtils.retrieveComponent(study, componentId);
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-        publixUtils.checkComponentBelongsToStudy(study, component);
-
+        Component component = null;
+        if (componentId.isPresent()) {
+            component = publixUtils.retrieveComponent(study, componentId.get());
+            publixUtils.checkComponentBelongsToStudy(study, component);
+        }
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
-        Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) {
-            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitResultData");
-            return redirect(routes.PublixInterceptor.finishStudy(studyId, studyResult.getId(), false, error));
-        }
-
-        try {
-            File file = ioUtils.getExistingResultUploadFileSecurely(studyResultId, componentResult.get().getId(), filename);
-            return ok(file, false);
-        } catch (IOException e) {
-            return notFound("Result file not found: " + filename);
-        }
+        Optional<File> file = publixUtils.retrieveLastUploadedResultFile(studyResult, component, filename);
+        return file.isPresent() ? ok(file.get(), false) : notFound("Result file not found: " + filename);
     }
 
     @Override
