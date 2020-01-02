@@ -5,6 +5,7 @@ import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
+import general.common.Common;
 import general.common.StudyLogger;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -216,6 +217,8 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     @Override
     public Result uploadResultFile(Request request, Long studyId, Long componentId, Long studyResultId, String filename)
             throws PublixException {
+        if (!Common.isResultUploadsEnabled()) return forbidden("File upload not allowed. Contact your admin.");
+
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
         Study study = publixUtils.retrieveStudy(studyId);
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -234,9 +237,15 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         MultipartFormData<TemporaryFile> body = request.body().asMultipartFormData();
         MultipartFormData.FilePart<TemporaryFile> filePart = body.getFile("file");
         if (filePart == null) return badRequest("Missing file");
-
         TemporaryFile tmpFile = filePart.getRef();
         try {
+            if (filePart.getFileSize() > Common.getResultUploadsMaxFileSize()) {
+                return badRequest("File size too large");
+            }
+            if (ioUtils.getResultUploadDirSize(studyResultId) > Common.getResultUploadsLimitPerStudyRun()) {
+                return badRequest("Reached max file size limit per study run");
+            }
+
             Path destFile = ioUtils.getResultUploadFileSecurely(
                     studyResultId, componentResult.get().getId(), filename).toPath();
             tmpFile.copyTo(destFile, true);

@@ -383,6 +383,12 @@ public class IOUtils {
         return getResultUploadsDir(studyResultId) + File.separator + "cresult_" + componentResultId;
     }
 
+    public long getResultUploadDirSize(Long studyResultId) throws IOException {
+        Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
+        if (!Files.exists(path)) return 0;
+        return Files.walk(path).mapToLong(p -> p.toFile().length()).sum();
+    }
+
     public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)
             throws IOException {
         String baseDirPath = getResultUploadsDir(studyResultId, componentResultId);

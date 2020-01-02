@@ -1021,8 +1021,10 @@ var jatos = {};
 	};
 
 	/**
-	 * Downloads a file that was previously uploaded from the JATOS server. Only 
-	 * possible for files that were uploaded in the same study run.
+	 * Downloads a file from the JATOS server. Can only download a file that was previously
+	 * uploaded with jatos.uploadResultFile in the same study run. If the file contains
+	 * text it returns the content as a string. If the file contains JSON, it returns
+	 * the JSON already parsed as an object. All other mime types are returned as a Blob.
 	 *
 	 * @param {string} filename - Name of the uploaded file
 	 * @param {optional function} onSuccess - Function to be called in case of success
@@ -1036,7 +1038,6 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
-	 * 
 	 */
 	jatos.downloadResultFile = function (param1, param2, param3, param4) {
 		var componentPos, filename, onSuccess, onError;
@@ -1060,26 +1061,53 @@ var jatos = {};
 
 		var url = "../files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId;
 		if (componentPos) {
+			if (isInvalidComponentPosition(componentPos)) {
+				callingOnError(onError, "Component position does not exist");
+				return rejectedPromise();
+			}
 			var componentId = jatos.componentList[componentPos - 1].id;
 			url += "&componentId=" + componentId;
 		}
+
 		var deferred = jatos.jQuery.Deferred();
-		jatos.jQuery.ajax({
-			url: url,
-			type: 'GET',
-			xhrFields: {
-				responseType: 'blob'
-			},
-			success: function (blob) {
-				callFunctionIfExist(onSuccess, blob);
-				deferred.resolve(blob);
-			},
-			error: function (err) {
-				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(onError, errMsg);
-				deferred.reject(errMsg);
+		// Use XMLHttpRequest instead of jQuery because jQuery cannot handle JSON within a Blob
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", url, true);
+		xhr.responseType = "blob";
+		xhr.onload = function () {
+			if (this.status == 200) {
+				var blob = xhr.response;
+				if (blob.type == "application/json") {
+					var jsonReader = new FileReader();
+					jsonReader.addEventListener("loadend", function () {
+						var obj = JSON.parse(jsonReader.result);
+						callFunctionIfExist(onSuccess, obj);
+						deferred.resolve(obj);
+					});
+					jsonReader.readAsText(blob);
+				} else if (blob.type == "text/plain") {
+					var textReader = new FileReader();
+					textReader.addEventListener("loadend", function () {
+						var text = textReader.result;
+						callFunctionIfExist(onSuccess, text);
+						deferred.resolve(text);
+					});
+					textReader.readAsText(blob);
+				} else {
+					callFunctionIfExist(onSuccess, blob);
+					deferred.resolve(blob);
+				}
+			} else {
+				xhr.onerror();
 			}
-		});
+		};
+		xhr.onerror = function () {
+			var error = "Download of " + filename + " returned " + xhr.statusText;
+			callingOnError(onError, error);
+			deferred.reject(error);
+		};
+		xhr.send(null);
+
 		return deferred.promise();
 	};
 
@@ -1200,6 +1228,10 @@ var jatos = {};
 	 * @param {optional function} onError - Callback function if fail
 	 */
 	jatos.startComponentByPos = function (componentPos, resultData, param3, param4) {
+		if (isInvalidComponentPosition(componentPos)) {
+			callingOnError(onError, "Component position does not exist");
+			return;
+		}
 		var componentId = jatos.componentList[componentPos - 1].id;
 		jatos.startComponent(componentId, resultData, param3, param4);
 	};
@@ -2415,10 +2447,8 @@ var jatos = {};
 		return deferred.promise();
 	}
 
-	function resolvedPromise() {
-		var deferred = jatos.jQuery.Deferred();
-		deferred.resolve();
-		return deferred.promise();
+	function isInvalidComponentPosition(pos) {
+		return pos <= 0 || pos > jatos.componentList.length;
 	}
 
 	function cloneJsonObj(obj) {

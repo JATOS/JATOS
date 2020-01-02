@@ -52,7 +52,10 @@ public class Common {
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
     private static String studyLogsPath;
+    private static boolean resultUploadsEnabled;
     private static String resultUploadsPath;
+    private static long resultUploadsMaxFileSize;
+    private static long resultUploadsLimitPerStudyRun;
     private static boolean inMemoryDb;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
@@ -88,7 +91,10 @@ public class Common {
         studyAssetsRootPath = fillStudyAssetsRootPath(config);
         studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
         studyLogsPath = fillStudyLogsPath(config);
+        resultUploadsEnabled = config.getBoolean("jatos.resultUploads.enabled");
         resultUploadsPath = fillResultUploadsPath(config);
+        resultUploadsMaxFileSize = config.getBytes("jatos.resultUploads.maxFileSize");
+        resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
         inMemoryDb = config.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
@@ -221,10 +227,31 @@ public class Common {
     }
 
     /**
+     * Are file uploads via jatos.js allowed?
+     */
+    public static boolean isResultUploadsEnabled() {
+        return resultUploadsEnabled;
+    }
+
+    /**
      * Path in the file system where JATOS stores uploaded result files
      */
     public static String getResultUploadsPath() {
         return resultUploadsPath;
+    }
+
+    /**
+     * Max file size in bytes for a single uploaded file
+     */
+    public static long getResultUploadsMaxFileSize() {
+        return resultUploadsMaxFileSize;
+    }
+
+    /**
+     * Max size of all files uploaded during a single study run in bytes
+     */
+    public static long getResultUploadsLimitPerStudyRun() {
+        return resultUploadsLimitPerStudyRun;
     }
 
     /**
