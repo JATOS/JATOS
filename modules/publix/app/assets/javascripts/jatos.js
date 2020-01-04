@@ -2374,6 +2374,59 @@ var jatos = {};
 	};
 
 	/**
+	 * Adds a button to the bottom right corner of the document that if pressed
+	 * calls jatos.abortStudy.
+	 * 
+	 * @param {object} config - Config object
+	 * 		text: Button text
+	 * 		confirm: Should the worker be asked for confirmation? Default true.
+	 * 		confirmText: Confirmation text
+	 * 		tooltip: Tooltip text
+	 * 		msg: Message to be send back to JATOS to be logged
+	 * 		style: Additional CSS styles
+	 */
+	jatos.addAbortButton = function (config) {
+		var buttonText = (config && typeof config.text == "string") ?
+				config.text : "Cancel";
+		var confirm = (config && typeof config.confirm == "boolean") ?
+				config.confirm : true;
+		var confirmText = (config && typeof config.confirmText == "string") ?
+				config.confirmText : "Do you really want to cancel this study?";
+		var tooltip = (config && typeof config.tooltip == "string") ?
+				config.tooltip : "Cancels this study and deletes all already submitted data";
+		var msg = (config && typeof config.msg == "string") ?
+				config.msg : "Worker decided to abort";
+		var style = 'color:black;' +
+				'font-family:Sans-Serif;' +
+				'font-size:20px;' +
+				'letter-spacing:2px;' +
+				'position:fixed;' +
+				'margin:2em 0 0 2em;' +
+				'bottom:1em;' +
+				'right:1em;' +
+				'opacity:0.6;' +
+				'z-index:100;' +
+				'cursor:pointer;' +
+				'text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;';
+		if (config && typeof config.style == "string") style += ";" + config.style;
+
+		var text = document.createTextNode(buttonText);
+		var p = document.createElement('p');
+		p.appendChild(text);
+		p.style.cssText = style;
+		p.setAttribute("title", tooltip);
+		p.addEventListener("click", function () {
+			if (!confirm || window.confirm(confirmText)) {
+				jatos.abortStudy(msg);
+			}
+		});
+
+		window.addEventListener('load', function () {
+			document.body.appendChild(p);
+		});
+	};
+
+	/**
 	 * Calls the function f it f exists with parameters a and b. 
 	 */
 	function callFunctionIfExist(f, a, b) {
