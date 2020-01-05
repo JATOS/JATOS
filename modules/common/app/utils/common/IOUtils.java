@@ -128,7 +128,7 @@ public class IOUtils {
      */
     public File getExistingFileSecurely(String path, String filePath) throws IOException {
         File file = getFileSecurely(path, filePath);
-        if (file == null || !file.exists() || file.isDirectory()) {
+        if (!file.exists() || file.isDirectory()) {
             throw new IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
         }
         return file;
