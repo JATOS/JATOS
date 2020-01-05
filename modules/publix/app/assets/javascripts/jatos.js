@@ -1254,9 +1254,12 @@ var jatos = {};
 	 * @param {optional function} onError - Callback function if fail
 	 */
 	jatos.startNextComponent = function (resultData, param2, param3) {
-		var message;
+		var message, onError;
 		if (typeof param2 === 'string') {
 			message = param2;
+			onError = param3;
+		} else {
+			onError = param2;
 		}
 
 		// If last component end study
