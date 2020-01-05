@@ -133,4 +133,12 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
     }
   }
 
+  def sendEndPageHtml(studyDirName: String): Result = {
+    try {
+      Ok.sendFile(ioUtils.getFileInStudyAssetsDir(studyDirName, "endPage.html"))
+    } catch {
+      case _: IOException => Ok(views.html.publix.endPage())
+    }
+  }
+
 }
