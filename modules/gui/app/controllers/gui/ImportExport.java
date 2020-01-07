@@ -316,7 +316,8 @@ public class ImportExport extends Controller {
         }
 
         try {
-            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename));
+            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename))
+                    .withHeader("Content-disposition", "attachment; filename=" + filename);
         } catch (IOException e) {
             return badRequest("File does not exist");
         }
@@ -370,6 +371,7 @@ public class ImportExport extends Controller {
         File zipFile = File.createTempFile("resultFiles", "." + IOUtils.ZIP_FILE_SUFFIX);
         zipFile.deleteOnExit();
         ZipUtil.zipFiles(resultFileList, zipFile);
+
         return okFileStreamed(zipFile, zipFile::delete, "application/zip");
     }
 

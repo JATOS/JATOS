@@ -513,7 +513,7 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss");
+        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss") + ".zip";
         downloadWithPost(url, data, filename);
     }
 
