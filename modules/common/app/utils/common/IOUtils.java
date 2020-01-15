@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Pattern;
 
 /**
  * Utility class that handles access to the system's file system.
@@ -163,6 +164,10 @@ public class IOUtils {
             filename = filename.concat("." + suffix);
         }
         return filename;
+    }
+
+    public static boolean checkFilename(String filename) {
+        return !Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME).matcher(filename).find();
     }
 
     /**

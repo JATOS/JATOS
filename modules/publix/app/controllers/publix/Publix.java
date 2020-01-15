@@ -245,10 +245,13 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             if (ioUtils.getResultUploadDirSize(studyResultId) > Common.getResultUploadsLimitPerStudyRun()) {
                 return badRequest("Reached max file size limit per study run");
             }
+            if (!IOUtils.checkFilename(filename)) {
+                return badRequest("Bad filename");
+            }
 
             Path destFile = ioUtils.getResultUploadFileSecurely(
                     studyResultId, componentResult.get().getId(), filename).toPath();
-            tmpFile.copyTo(destFile, true);
+            tmpFile.moveFileTo(destFile, true);
             studyLogger.logResultUploading(destFile, componentResult.get());
         } catch (IOException e) {
             return badRequest("File upload failed");

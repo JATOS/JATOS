@@ -218,9 +218,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         if (dirName != null && dirName.length() > 255) {
             errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
         }
-        Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
-        Matcher matcher = pattern.matcher(dirName);
-        if (dirName != null && matcher.find()) {
+        if (dirName != null && !IOUtils.checkFilename(dirName)) {
             errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
         }
         if (dirName != null && Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
