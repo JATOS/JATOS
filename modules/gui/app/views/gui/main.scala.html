@@ -466,14 +466,19 @@ function downloadWithPost(url, data, filename) {
 	// Doesn't use jQuery
 
 	var xhr = new XMLHttpRequest();
-	xhr.open('POST', url, true);
+	if (data) {
+		xhr.open('POST', url, true);
+	} else {
+		xhr.open('GET', url, true);
+	}
+
 	xhr.responseType = 'arraybuffer';
 
 	xhr.onload = function () {
-		hideWaitingModal();
 		if (this.status === 200) {
-			var type = xhr.getResponseHeader('Content-Type');
+			filename = filename ? filename : getFilenameFromContentDispositionHeader(xhr);
 
+			var type = xhr.getResponseHeader('Content-Type');
 			var blob;
 			if (typeof File === 'function') {
 				try {
@@ -508,6 +513,7 @@ function downloadWithPost(url, data, filename) {
 				}
 
 				setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
+				hideWaitingModal();
 			}
 		} else {
 			showError("Download failed (" + this.statusText + ")");
@@ -521,6 +527,20 @@ function downloadWithPost(url, data, filename) {
 
 	xhr.setRequestHeader('Content-type', 'application/json');
 	xhr.send(data);
+}
+
+function getFilenameFromContentDispositionHeader(xhr) {
+    // From https://stackoverflow.com/a/40940790/1278769
+	var filename;
+	var disposition = xhr.getResponseHeader('Content-Disposition');
+	if (disposition && disposition.indexOf('attachment') !== -1) {
+		var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+		var matches = filenameRegex.exec(disposition);
+		if (matches != null && matches[1]) {
+			filename = matches[1].replace(/['"]/g, '');
+		}
+	}
+	return filename;
 }
 
 </script>

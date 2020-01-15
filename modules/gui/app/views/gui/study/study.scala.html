@@ -499,10 +499,8 @@ $('#studyToolbar').on('click', '#workerAndBatchManagerButton', function() {
 
 $('#studyToolbar').on('click', '#exportStudy', function() {
     showWaitingModal();
-    var link = document.createElement("a");
-    link.href = '@controllers.gui.routes.ImportExport.exportStudy(study.getId())';
-    link.click();
-    hideWaitingModal();
+    var url = '@controllers.gui.routes.ImportExport.exportStudy(study.getId())';
+    downloadWithPost(url);
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
