@@ -195,7 +195,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId);
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
         if (!componentResult.isPresent()) {
-            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitResultData");
+            String error = PublixErrorMessages.componentNeverStarted(studyId, componentId, "submitOrAppendResultData");
             return redirect(routes.PublixInterceptor.finishStudy(studyId, studyResult.getId(), false, error));
         }
 

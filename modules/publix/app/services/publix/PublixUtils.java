@@ -484,8 +484,10 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     /**
-     * Gets an uploaded result file. In case of several possible files (can happen with reloaded components) it returns
-     * the file uploaded last.
+     * Gets an uploaded result file with the given filename. If component is given (not null) it only tries to get the
+     * file from component results belonging to this component. In case of several possible files (can happen with
+     * reloaded components) it returns the file uploaded last. If component is not given (equals null) it searches all
+     * component results of this study result for a file with this filename and returns the one that was uploaded last.
      */
     public Optional<File> retrieveLastUploadedResultFile(StudyResult studyResult, Component component, String filename) {
         List<ComponentResult> componentResultList;
@@ -493,7 +495,8 @@ public abstract class PublixUtils<T extends Worker> {
             componentResultList = studyResult.getComponentResultList().stream()
                     .filter(cr -> cr.getComponent() == component).collect(Collectors.toList());
         } else {
-            componentResultList = studyResult.getComponentResultList();
+            // We have to create a new list - otherwise the reverse would reverse the list in the DB too
+            componentResultList = new ArrayList<>(studyResult.getComponentResultList());
         }
         Collections.reverse(componentResultList);
 
