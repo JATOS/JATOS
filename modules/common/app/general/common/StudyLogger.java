@@ -58,6 +58,7 @@ public class StudyLogger {
     private static final String BATCH_ID = "batchId";
     private static final String DATA_HASH = "dataHash";
     private static final String FILE_HASH = "fileHash";
+    private static final String FILE_NAME = "fileName";
     private static final String NO_DATA = "no data";
     private static final String COMPONENT_UUID = "componentUuid";
 
@@ -187,6 +188,7 @@ public class StudyLogger {
         jsonObj.put(COMPONENT_UUID, componentResult.getComponent().getUuid());
         jsonObj.put(WORKER_ID, componentResult.getWorkerId());
         jsonObj.put(FILE_HASH, fileHash);
+        jsonObj.put(FILE_NAME, file.getFileName().toString());
         log(studyResult.getStudy(), null, jsonObj);
     }
 
