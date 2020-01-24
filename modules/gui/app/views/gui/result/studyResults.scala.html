@@ -19,6 +19,7 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>MTurk Worker ID (Confirmation Code)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
+            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
@@ -39,6 +40,7 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>MTurk Worker ID (Confirmation Code)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
+            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
             <th>Invisible column for result data filtering</th>
@@ -166,6 +168,14 @@ $(document).ready(function() {
                         'href="@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
                 }
             },
+            {
+                "data": "hasResultFiles",
+                "visible": false,
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    return data ? '<span class="glyphicon glyphicon-ok"/>' : '<span class="glyphicon glyphicon-minus"/>';
+                }
+            },
             { "data": "studyState" },
             {
                 "data": function(data, type, dataToSet) {
@@ -251,7 +261,7 @@ $(document).ready(function() {
             {
                 "extend": 'collection',
                 "text": 'Export Files <span class="caret"></span>',
-                "className": "btn btn-study",
+                "className": "btn btn-study exportFilesButton",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
                 "buttons": [
                     {
@@ -338,6 +348,7 @@ $(document).ready(function() {
     resultsTable.on('draw', function() {
         // Necessary - otherwise the button doesn't work with manually selected rows
         toggleDeselectAllButton();
+        toggleExportFilesButton();
         setButtonWidthToMax("button.collapseResultData");
     });
 
@@ -390,6 +401,17 @@ $(document).ready(function() {
         } else {
             resultsTable.buttons(['.buttons-select-none']).disable();
         }
+    }
+
+    function toggleExportFilesButton() {
+        resultsTable.buttons(['.exportFilesButton']).disable();
+        resultsTable.rows().data().each(function(studyResult, index) {
+            studyResult.componentResults.forEach(function(componentResult) {
+                if (componentResult.files.length > 0) {
+                    resultsTable.buttons(['.exportFilesButton']).enable();
+                }
+            });
+        });
     }
 
     function getMTWorkerId(data, type, full, meta) {

@@ -142,6 +142,7 @@ public class MessagesStrings {
     public static final String RESULTS_COMPONENT_RESULT_ID = "ID of this component result";
     public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE = "Mechanical Turk's worker ID and in brackets "
             + "the confirmation code for Mechanical Turk";
+    public static final String RESULTS_FILES = "Are there any uploaded result files?";
     public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
     public static final String RESULTS_NUMBER_COMPONENT_RESULTS = "Current number of component results";
     public static final String RESULTS_STUDY_STATE =

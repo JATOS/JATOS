@@ -237,7 +237,7 @@ $(document).ready(function() {
             {
                 "extend": 'collection',
                 "text": 'Export Files <span class="caret"></span>',
-                "className": "btn btn-component",
+                "className": "btn btn-component exportFilesButton",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
                 "buttons": [
                     {
@@ -322,7 +322,10 @@ $(document).ready(function() {
     $("#resultsTableSearch input").focus();
 
     // Necessary - otherwise the button doesn't work with manually selected rows
-    resultsTable.on('draw', toggleDeselectAllButton);
+    resultsTable.on('draw', function() {
+        toggleDeselectAllButton();
+        toggleExportFilesButton();
+    });
 
     resultsTable.on('select', function (e, dt, type, indexes) {
         if (type == "row") {
@@ -373,6 +376,15 @@ $(document).ready(function() {
         } else {
             resultsTable.buttons(['.buttons-select-none']).disable();
         }
+    }
+
+    function toggleExportFilesButton() {
+        resultsTable.buttons(['.exportFilesButton']).disable();
+        resultsTable.rows().data().each(function(componentResult, index) {
+            if (componentResult.files.length > 0) {
+                resultsTable.buttons(['.exportFilesButton']).enable();
+            }
+        });
     }
 
     $('#componentResultsTable tbody').on('click', 'td.details-control', function() {
