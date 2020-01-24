@@ -227,11 +227,14 @@ public class JsonUtils {
 
         // Add all componentResults
         ArrayNode componentResultsNode = studyResultNode.arrayNode();
+        boolean hasResultFiles = false;
         for (ComponentResult componentResult : studyResult.getComponentResultList()) {
             JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
             componentResultsNode.add(componentResultNode);
+            if (!componentResultNode.get("files").isEmpty(null)) hasResultFiles = true;
         }
         studyResultNode.set("componentResults", componentResultsNode);
+        studyResultNode.set("hasResultFiles", studyResultNode.booleanNode(hasResultFiles));
 
         return studyResultNode;
     }
