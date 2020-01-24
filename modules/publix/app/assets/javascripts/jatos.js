@@ -2246,6 +2246,17 @@ var jatos = {};
 	};
 
 	/**
+	 * Ends study and redirects to another URL. It's a convenience function / wrapper
+	 * arround jatos.endStudyAjax. The first parameter is the URL and the other up to
+	 * 5 parameters are the same as in jatos.endStudyAjax.
+	 */
+	jatos.endStudyAndRedirect = function(url, param1, param2, param3, param4, param5) {
+		jatos.endStudyAjax(param1, param2, param3, param4, param5).done(function() {
+			window.location.href = url;
+		 });
+	};
+
+	/**
 	 * Ends study.
 	 * 
 	 * Either without result data:
