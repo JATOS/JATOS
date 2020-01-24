@@ -48,7 +48,7 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   /**
     * Time to wait for an answer after asking an Akka actor
     */
-  implicit val timeout: Timeout = 10.seconds
+  implicit val timeout: Timeout = 30.seconds
 
   /**
     * HTTP endpoint that opens a batch channel and returns a Akka stream Flow that will be turned

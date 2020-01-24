@@ -52,7 +52,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   /**
     * Time to wait for an answer after asking an Akka actor
     */
-  implicit val timeout: Timeout = 10.seconds
+  implicit val timeout: Timeout = 30.seconds
 
   /**
     * Joins a group but doesn't open the group channel. In case of an error/problem an PublixException is thrown.
