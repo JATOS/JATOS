@@ -147,6 +147,18 @@ public class IOUtils {
     }
 
     /**
+     * Gets the File object which resides under filePath within the study assets' directory.
+     */
+    public File getExistingFileInStudyAssetsDir(String dirName, String filePath) {
+        String studyAssetsPath = generateStudyAssetsPath(dirName);
+        try {
+            return getFileSecurely(studyAssetsPath, filePath);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
      * Gets the study assets with the given directory name.
      */
     public File getStudyAssetsDir(String dirName) throws IOException {

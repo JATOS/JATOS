@@ -103,6 +103,13 @@ public class Study {
     private String jsonData;
 
     /**
+     * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
+     * endPage will be shown.
+     */
+    @JsonView({ JsonUtils.JsonForIO.class })
+    private String endRedirectUrl;
+
+    /**
      * List of users that are users of this study (have access rights). The relationship is bidirectional.
      */
     @JsonIgnore
@@ -342,6 +349,14 @@ public class Study {
     @JsonIgnore
     public List<Batch> getDefaultBatchList() {
         return Lists.newArrayList(this.batchList.get(0));
+    }
+
+    public String getEndRedirectUrl() {
+        return endRedirectUrl;
+    }
+
+    public void setEndRedirectUrl(String endRedirectUrl) {
+        this.endRedirectUrl = endRedirectUrl;
     }
 
     @Override

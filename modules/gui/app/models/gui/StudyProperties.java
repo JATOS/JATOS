@@ -38,6 +38,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String GROUP_STUDY = "groupStudy";
     public static final String LOCKED = "locked";
     public static final String LINEAR_STUDY_FLOW = "linearStudy";
+    public static final String END_REDIRECT_URL = "endRedirectUrl";
 
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
             "public", "assets", "study_assets_root", "study_assets"};
@@ -97,6 +98,12 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
      * Data in JSON format that are responded after public APIs 'getData' call.
      */
     private String jsonData;
+
+    /**
+     * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
+     * endPage will be shown.
+     */
+    private String endRedirectUrl;
 
     public void setStudyId(Long studyId) {
         this.studyId = studyId;
@@ -194,6 +201,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         this.jsonData = jsonData;
     }
 
+    public String getEndRedirectUrl() {
+        return endRedirectUrl;
+    }
+
+    public void setEndRedirectUrl(String endRedirectUrl) {
+        this.endRedirectUrl = endRedirectUrl;
+    }
+
     @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
@@ -229,6 +244,9 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         }
         if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
             errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        }
+        if (endRedirectUrl != null && !Jsoup.isValid(endRedirectUrl, Whitelist.none())) {
+            errorList.add(new ValidationError(END_REDIRECT_URL, MessagesStrings.NO_HTML_ALLOWED));
         }
         return errorList.isEmpty() ? null : errorList;
     }

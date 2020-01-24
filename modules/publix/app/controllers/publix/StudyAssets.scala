@@ -25,8 +25,13 @@ import scala.util.matching.Regex
   * @author Kristian Lange
   */
 @Singleton
-class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, idCookieService: IdCookieService, jpa: JPAApi,
-                            studyDao: StudyDao, componentDao: ComponentDao, assets: Assets) extends AbstractController(components) {
+class StudyAssets @Inject()(components: ControllerComponents,
+                            ioUtils: IOUtils,
+                            idCookieService: IdCookieService,
+                            jpa: JPAApi,
+                            studyDao: StudyDao,
+                            componentDao: ComponentDao,
+                            assets: Assets) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -133,12 +138,22 @@ class StudyAssets @Inject()(components: ControllerComponents, ioUtils: IOUtils, 
     }
   }
 
-  def sendEndPageHtml(studyDirName: String): Result = {
-    try {
-      Ok.sendFile(ioUtils.getFileInStudyAssetsDir(studyDirName, "endPage.html"))
-    } catch {
-      case _: IOException => Ok(views.html.publix.endPage())
-    }
+  /**
+    * Redirects to or shows the end page after a study run finished
+    */
+  def endPage(studyId: Long): Action[AnyContent] = Action { _ =>
+    jpa.withTransaction(asJavaSupplier(() => {
+      val study = studyDao.findById(studyId)
+      if (study == null) {
+        BadRequest(MessagesStrings.studyNotExist(studyId))
+      } else if (study.getEndRedirectUrl != null && study.getEndRedirectUrl.trim() != "") {
+        Redirect(study.getEndRedirectUrl)
+      } else if (ioUtils.checkFileInStudyAssetsDirExists(study.getDirName, "endPage.html")) {
+        Ok.sendFile(ioUtils.getExistingFileInStudyAssetsDir(study.getDirName, "endPage.html"))
+      } else {
+        Ok(views.html.publix.endPage.render())
+      }
+    }));
   }
 
 }

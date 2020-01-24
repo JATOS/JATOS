@@ -82,6 +82,7 @@ public class StudyService {
         clone.setDescription(study.getDescription());
         clone.setDirName(study.getDirName());
         clone.setComments(study.getComments());
+        clone.setEndRedirectUrl(study.getEndRedirectUrl());
         clone.setJsonData(study.getJsonData());
         clone.setLocked(false);
         clone.setGroupStudy(study.isGroupStudy());
@@ -285,6 +286,7 @@ public class StudyService {
         study.setTitle(updatedStudy.getTitle());
         study.setDescription(updatedStudy.getDescription());
         study.setComments(updatedStudy.getComments());
+        study.setEndRedirectUrl(updatedStudy.getEndRedirectUrl());
         study.setJsonData(updatedStudy.getJsonData());
     }
 
@@ -305,6 +307,7 @@ public class StudyService {
         study.setTitle(studyProperties.getTitle());
         study.setDescription(studyProperties.getDescription());
         study.setComments(studyProperties.getComments());
+        study.setEndRedirectUrl(studyProperties.getEndRedirectUrl());
         study.setJsonData(studyProperties.getJsonData());
         study.setGroupStudy(studyProperties.isGroupStudy());
         study.setLinearStudy(studyProperties.isLinearStudy());
@@ -340,6 +343,7 @@ public class StudyService {
         studyProperties.setLinearStudy(study.isLinearStudy());
         studyProperties.setDirName(study.getDirName());
         studyProperties.setComments(study.getComments());
+        studyProperties.setEndRedirectUrl(study.getEndRedirectUrl());
         studyProperties.setJsonData(study.getJsonData());
         return studyProperties;
     }

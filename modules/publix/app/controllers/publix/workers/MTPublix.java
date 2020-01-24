@@ -1,14 +1,12 @@
 package controllers.publix.workers;
 
-import controllers.publix.IPublix;
-import controllers.publix.MTGroupChannel;
-import controllers.publix.Publix;
-import controllers.publix.StudyAssets;
+import controllers.publix.*;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.MTWorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
+import general.common.Common;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
@@ -19,6 +17,7 @@ import models.common.workers.MTWorker;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
+import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
@@ -35,6 +34,8 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 /**
@@ -166,8 +167,12 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
-                return ok(views.html.publix.confirmationCode
-                        .render(confirmationCode));
+                return redirect(routes.StudyAssets.endPage(studyId))
+                        .withCookies(Http.Cookie.builder("JATOS_CONFIRMATION_CODE", confirmationCode)
+                                .withMaxAge(Duration.of(1, ChronoUnit.DAYS))
+                                .withHttpOnly(false)
+                                .withPath(Common.getPlayHttpContext())
+                                .build());
             }
         }
     }

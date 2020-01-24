@@ -55,6 +55,13 @@
                     </div>
 
                     <div class="form-group row">
+                        <label class="control-label col-xs-2" for="endRedirectUrl">End Redirect URL&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="To which URL should JATOS redirect to after a run of this study finished. If left empty a default page will be shown."></span></label>
+                        <div class="col-xs-10">
+                            <input type="text" class="form-control @models.gui.StudyProperties.END_REDIRECT_URL" id="endRedirectUrl" name="@models.gui.StudyProperties.END_REDIRECT_URL" placeholder="https://">
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
                         <label class="control-label col-xs-2" for="studyJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
                             <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
                         </label>
@@ -169,6 +176,8 @@ function fillStudyPropertiesForm(properties) {
     $('#studyPropertiesModal .@models.gui.StudyProperties.DIR_NAME').val(properties['@models.gui.StudyProperties.DIR_NAME']);
     var comments = (properties['@models.gui.StudyProperties.COMMENTS']) ? properties['@models.gui.StudyProperties.COMMENTS'] : "";
     $('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').val(comments);
+    var endRedirectUrl = (properties['@models.gui.StudyProperties.END_REDIRECT_URL']) ? properties['@models.gui.StudyProperties.END_REDIRECT_URL'] : "";
+    $('#studyPropertiesModal .@models.gui.StudyProperties.END_REDIRECT_URL').val(endRedirectUrl);
     if (!studyJsonDataEditor) setupStudyJsonDataEditor();
     try {
         var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";

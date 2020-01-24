@@ -330,7 +330,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
-                return studyAssets.sendEndPageHtml(study.getDirName()).asJava();
+                return redirect(routes.StudyAssets.endPage(studyId));
             }
         }
     }
