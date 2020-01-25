@@ -117,6 +117,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.COMMENTS, "Comments test.");
         formMap.put(StudyProperties.DIR_NAME, "dirName_submit");
         formMap.put(StudyProperties.JSON_DATA, "{}");
+        formMap.put(StudyProperties.END_REDIRECT_URL, "https://jatos.org");
         formMap.put(StudyProperties.GROUP_STUDY, "true");
         formMap.put(StudyProperties.LINEAR_STUDY_FLOW, "true");
 
@@ -145,6 +146,7 @@ public class StudiesControllerTest {
             assertEquals("Description test.", study.getDescription());
             assertEquals("dirName_submit", study.getDirName());
             assertEquals("{}", study.getJsonData());
+            assertEquals("https://jatos.org", study.getEndRedirectUrl());
             assertThat(study.getComponentList()).isEmpty();
             assertThat(study.getUserList()).contains(admin);
             assertThat(study.isLocked()).isFalse();
@@ -251,6 +253,8 @@ public class StudiesControllerTest {
                 .isEqualTo("\"" + study.getUuid() + "\"");
         assertThat(node.get(StudyProperties.JSON_DATA).toString())
                 .isEqualTo("\"{\\\"totalStudySlides\\\":17}\"");
+        assertThat(node.get(StudyProperties.END_REDIRECT_URL).toString())
+                .isEqualTo("null");
         assertThat(node.get(StudyProperties.LOCKED).toString())
                 .isEqualTo(String.valueOf(study.isLocked()));
         assertThat(node.get(StudyProperties.GROUP_STUDY).toString())
@@ -273,6 +277,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.DIR_NAME, "dirName_submitEdited");
         formMap.put(StudyProperties.DIR_RENAME, "true");
         formMap.put(StudyProperties.JSON_DATA, "{}");
+        formMap.put(StudyProperties.END_REDIRECT_URL, "https://jatos.org");
         formMap.put(StudyProperties.GROUP_STUDY, "true");
         formMap.put(StudyProperties.LINEAR_STUDY_FLOW, "true");
 
@@ -296,6 +301,7 @@ public class StudiesControllerTest {
         assertEquals("Comments test.", editedStudy.getComments());
         assertEquals("dirName_submitEdited", editedStudy.getDirName());
         assertEquals("{}", editedStudy.getJsonData());
+        assertEquals("https://jatos.org", editedStudy.getEndRedirectUrl());
         assertThat(editedStudy.isLocked()).isFalse();
         assertThat(editedStudy.isGroupStudy()).isTrue();
         assertThat(editedStudy.isLinearStudy()).isTrue();

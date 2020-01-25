@@ -174,6 +174,37 @@ public class StudyLoggerTest {
         assertThat(json.get("dataHash").asText()).isEqualTo(HashUtils.getHash("result data 1", HashUtils.SHA_256));
     }
 
+    @Test
+    public void checkLogResultFileUploading() throws IOException {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Worker worker = testHelper.getAdmin().getWorker();
+        Batch batch = study.getDefaultBatch();
+
+        StudyResult studyResult1 = new StudyResult(study, batch, worker);
+        ComponentResult componentResult = new ComponentResult(study.getFirstComponent().get());
+        componentResult.setStudyResult(studyResult1);
+        componentResult.setData("result data 1");
+        studyResult1.addComponentResult(componentResult);
+        Path uploadedFile = Paths.get("test/resources/example.png");
+
+        studyLogger.logResultUploading(uploadedFile, componentResult);
+
+        Path logPath = Paths.get(studyLogger.getPath(study));
+        List<String> content = Files.readAllLines(logPath);
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
+
+        assertThat(json.has("msg")).isTrue();
+        assertThat(json.has("timestamp")).isTrue();
+        assertThat(json.has("componentUuid")).isTrue();
+        assertThat(json.get("componentUuid").asText()).isEqualTo(study.getFirstComponent().get().getUuid());
+        assertThat(json.has("workerId")).isTrue();
+        assertThat(json.get("workerId").asLong()).isEqualTo(worker.getId());
+        assertThat(json.has("fileName")).isTrue();
+        assertThat(json.get("fileName").asText()).isEqualTo(uploadedFile.getFileName().toString());
+        assertThat(json.has("fileHash")).isTrue();
+        assertThat(json.get("fileHash").asText()).isEqualTo(HashUtils.getHash(uploadedFile, HashUtils.SHA_256));
+    }
+
     private void checkInitEntry(Study study) throws IOException {
         Path logPath = Paths.get(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);

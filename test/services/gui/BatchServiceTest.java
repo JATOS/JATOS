@@ -23,6 +23,8 @@ import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
 
+import java.io.IOException;
+
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
@@ -199,7 +201,11 @@ public class BatchServiceTest {
         // Remove the batch
         jpaApi.withTransaction(() -> {
             Batch b = batchDao.findById(batch.getId());
-            batchService.remove(b, testHelper.getAdmin());
+            try {
+                batchService.remove(b, testHelper.getAdmin());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         // Check the removal
