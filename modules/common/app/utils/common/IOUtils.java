@@ -393,11 +393,11 @@ public class IOUtils {
     }
 
     public static String getResultUploadsDir(Long studyResultId) {
-        return Common.getResultUploadsPath() + File.separator + "sresult_" + studyResultId;
+        return Common.getResultUploadsPath() + File.separator + "study-result_" + studyResultId;
     }
 
     public static String getResultUploadsDir(Long studyResultId, Long componentResultId) {
-        return getResultUploadsDir(studyResultId) + File.separator + "cresult_" + componentResultId;
+        return getResultUploadsDir(studyResultId) + File.separator + "comp-result_" + componentResultId;
     }
 
     public long getResultUploadDirSize(Long studyResultId) throws IOException {
