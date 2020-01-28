@@ -2388,10 +2388,11 @@ var jatos = {};
 	};
 
 	/**
-	 * Adds a button to the bottom right corner of the document that if pressed
-	 * calls jatos.abortStudy.
+	 * Adds a button to the document that if pressed calls jatos.abortStudy.
+	 * By default this button is in the bottom-right corner but this and
+	 * other properties can be configured.
 	 * 
-	 * @param {object} config - Config object
+	 * @param {object optional} config - Config object
 	 * 		text: Button text
 	 * 		confirm: Should the worker be asked for confirmation? Default true.
 	 * 		confirmText: Confirmation text
