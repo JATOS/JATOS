@@ -1031,7 +1031,7 @@ var jatos = {};
 	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 * 
-	 * Additional one can specify the component ID (in case different components uploaded
+	 * Additionally one can specify the component ID (in case different components uploaded
 	 * files with the same filename):
 	 * @param {number} componentPos - Position of the component to look for the file
 	 * @param {string} filename - Name of the uploaded file
