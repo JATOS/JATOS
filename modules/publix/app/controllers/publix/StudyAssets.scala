@@ -176,7 +176,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
   private def confirmationCodeCookie(confirmationCode: String): Cookie = Cookie(
     name = "JATOS_CONFIRMATION_CODE",
     value = confirmationCode,
-    maxAge = Some(86400),
+    maxAge = Some(86400), // 1 day
     path = Common.getPlayHttpContext,
     httpOnly = false)
 
