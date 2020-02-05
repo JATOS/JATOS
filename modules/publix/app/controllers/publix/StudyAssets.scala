@@ -139,21 +139,45 @@ class StudyAssets @Inject()(components: ControllerComponents,
   }
 
   /**
-    * Redirects to or shows the end page after a study run finished
+    * Redirects to or shows the end page (either from study assets or default end page) after a study run finished.
+    * Passes on the confirmationCode in case it's defined (either cookie or URL query parameter).
     */
-  def endPage(studyId: Long): Action[AnyContent] = Action { _ =>
+  def endPage(studyId: Long, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
     jpa.withTransaction(asJavaSupplier(() => {
       val study = studyDao.findById(studyId)
-      if (study == null) {
-        BadRequest(MessagesStrings.studyNotExist(studyId))
-      } else if (study.getEndRedirectUrl != null && study.getEndRedirectUrl.trim() != "") {
-        Redirect(study.getEndRedirectUrl)
+
+      if (study == null) BadRequest(MessagesStrings.studyNotExist(studyId))
+
+      else if (study.getEndRedirectUrl != null && study.getEndRedirectUrl.trim() != "") {
+        // Redirect to URL specified in study properties
+        confirmationCode match {
+          case Some(cc) => Redirect(study.getEndRedirectUrl, Map("confirmationCode" -> Seq(cc)))
+          case None => Redirect(study.getEndRedirectUrl)
+        }
+
       } else if (ioUtils.checkFileInStudyAssetsDirExists(study.getDirName, "endPage.html")) {
-        Ok.sendFile(ioUtils.getExistingFileInStudyAssetsDir(study.getDirName, "endPage.html"))
+        // Redirect to endPage.html from study assets
+        confirmationCode match {
+          case Some(cc) => Ok.sendFile(ioUtils.getExistingFileInStudyAssetsDir(study.getDirName, "endPage.html"))
+            .withCookies(confirmationCodeCookie(cc)).bakeCookies()
+          case None => Ok.sendFile(ioUtils.getExistingFileInStudyAssetsDir(study.getDirName, "endPage.html"))
+        }
+
       } else {
-        Ok(views.html.publix.endPage.render())
+        // Return default end page
+        confirmationCode match {
+          case Some(cc) => Ok(views.html.publix.confirmationCode.render(cc))
+          case None => Ok(views.html.publix.endPage.render())
+        }
       }
     }));
   }
+
+  private def confirmationCodeCookie(confirmationCode: String): Cookie = Cookie(
+    name = "JATOS_CONFIRMATION_CODE",
+    value = confirmationCode,
+    maxAge = Some(86400),
+    path = Common.getPlayHttpContext,
+    httpOnly = false)
 
 }

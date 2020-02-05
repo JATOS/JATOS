@@ -17,6 +17,7 @@ import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
+import scala.Option;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
@@ -330,7 +331,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
-                return redirect(routes.StudyAssets.endPage(studyId));
+                return redirect(routes.StudyAssets.endPage(studyId, Option.empty()));
             }
         }
     }
