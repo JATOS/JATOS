@@ -9,7 +9,8 @@
                 <h4 class="modal-title">Source Code for Mechanical Turk</h4>
             </div>
             <div class="modal-body">
-                <p><b>Copy & paste</b> this code into the 'source' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
+                <p><b>Copy & paste</b> this code into the '<i>source</i>' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
+                <p class="simulation"></p>
                 <p><button class="btn btn-worker copyToClipboardButton">Copy to Clipboard</button></p>
 <!-- Be careful with changing indentation - it changes the view -->
 <pre><code class="mtSourceCode">
@@ -54,12 +55,9 @@
 
 &lt;script&gt;
   // Hint: What&#39;s called an study in JATOS is called a survey in MT
-  @if(jatosUrl.getPort() > 0) {
-  var host = &quot;@jatosUrl.getProtocol()://@jatosUrl.getHost():@jatosUrl.getPort()&quot;;
-  } else {
-  var host = &quot;@jatosUrl.getProtocol()://@jatosUrl.getHost()&quot;;
-  }
-  var studyPath = &quot;@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start&quot;;
+  var address = &quot;addressDummy&quot;;
+  var studyPath = &quot;studyPathDummy&quot;;
+  var batchId = &quot;batchIdDummy&quot;;
   var query = document.URL.split(&#39;?&#39;)[1];
 
   window.onload = function() {
@@ -73,7 +71,7 @@
       // Show accepted HIT
       document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
       document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
-      var studyUrlHref = host + studyPath + &quot;?batchId=batchId&&quot; + query;
+      var studyUrlHref = address + studyPath + &quot;?batchId=&quot; + batchId + &quot;&&quot; + query;
       var studyUrlText = &quot;link to HIT&quot;;
     }
     document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
@@ -102,10 +100,24 @@ $('#batchList').on('click', '.mtWorkerSourceCode', function() {
 function showMTSourceCodeModal(batchId) {
     var modal = $('#mtSourceCodeModalTemplate').clone();
     $(modal).removeAttr('id');
-    // Put real batch ID into source code
+
+    var host = "@{ jatosUrl.getProtocol() + "://" + jatosUrl.getHost()}";
+    var port = @{ jatosUrl.getPort() };
+    var address = port > 0 ? host + ":" + port : host;
+    var studyPath = "@{ general.common.Common.getPlayHttpContext() + "publix/" + study.getId() + "/start" }"
+    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=111&assignmentId=def&turkSubmitTo=sandbox";
+
+    // Fill dummy variables in template source code
     $(modal).find('.mtSourceCode').text(function() {
-        return $(this).text().replace("?batchId=batchId", "?batchId=" + batchId);
+        return $(this).text()
+            .replace("addressDummy", address)
+            .replace("studyPathDummy", studyPath)
+            .replace("batchIdDummy", batchId);
     });
+    $(modal).find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
+        + '(<a target="_blank" href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk">more information</a>):<br>'
+        + '<a target="_blank" href=' + mturkSandboxUrl + ">" + mturkSandboxUrl + "</a>");
+
     $(modal).modal('show');
 
     // Select by clicking on source code text
