@@ -53,13 +53,14 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
 
       try {
         val clientsVersion = (json \ BatchActionJsonKey.SessionVersion.toString).as[Long]
+        val versioning = (json \ BatchActionJsonKey.SessionVersioning.toString).as[Boolean]
         val patches = (json \ BatchActionJsonKey.SessionPatches.toString).get
         val patchedSessionData = patchSessionData(patches, batch)
         logger.debug(s".handlePatch: batchId $batchId, " +
-            s"clientsVersion $clientsVersion, batchSessionPatch ${Json.stringify(patches)}, " +
-            s"updatedSessionData ${Json.stringify(patchedSessionData)}")
+          s"clientsVersion $clientsVersion, versioning $versioning, batchSessionPatch ${Json.stringify(patches)}, " +
+          s"updatedSessionData ${Json.stringify(patchedSessionData)}")
 
-        val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion)
+        val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion, versioning)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(batch, patches, TellWhom.All)
           val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, TellWhom.SenderOnly)
@@ -92,16 +93,16 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Persists the given sessionData in the Batch and increases
-    * the batchSessionVersion by 1 - but only if the stored version
-    * is equal to the received one. Returns true if this was successful -
+    * Persists the given sessionData in the Batch and increases the batchSessionVersion by 1 - but only if the stored
+    * version is equal to the received one or versioning is turned off. Returns true if this was successful -
     * otherwise false.
     */
   private def checkVersionAndPersistSessionData(sessionData: JsValue, batch: Batch,
-                                                version: Long): Boolean = {
-    if (batch != null && sessionData != null && batch.getBatchSessionVersion == version) {
+                                                version: Long,
+                                                versioning: Boolean): Boolean = {
+    if (batch != null && sessionData != null && (!versioning || batch.getBatchSessionVersion == version)) {
       batch.setBatchSessionData(sessionData.toString)
-      batch.setBatchSessionVersion(batch.getBatchSessionVersion + 1l)
+      batch.setBatchSessionVersion(batch.getBatchSessionVersion + 1L)
       batchDao.update(batch)
       return true
     }
