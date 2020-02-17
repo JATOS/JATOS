@@ -51,7 +51,7 @@ function start() {
     args+=(-Dplay.http.secret.key=$secret)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
-    "$dir/bin/jatos" ${args[*]} -J-server 2>>"$dir/logs/loader.log"
+    "$dir/bin/jatos" "${args[@]}" -J-server 2>>"$dir/logs/loader.log"
 
     # Let Docker not exit in case of update restart: sleep infinity
     sleep infinity
