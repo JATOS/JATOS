@@ -151,11 +151,15 @@ var jatos = {};
 	var batchChannelClosedCheckTimer;
 	var groupChannelClosedCheckTimer;
 	/**
-	 * Version of the current group and batch session data. This is used to prevent
-	 * concurrent changes of the data.
+	 * Version of the current group and batch session data. The version is
+	 * used to prevent concurrent changes of the data - in case of conflict
+	 * the patch with the higher version is applied. Can be switch on/off
+	 * by flags *SessionVersioning.
 	 */
 	var batchSessionVersion;
 	var groupSessionVersion;
+	var batchSessionVersioning = true;
+	var groupSessionVersioning = true;
 	/**
 	 * Batch channel WebSocket: exchange date between study runs of a batch
 	 */
@@ -821,6 +825,16 @@ var jatos = {};
 	};
 
 	/**
+	 * Set batch session versioning flag.
+	 * @param {boolean} versioning - If true a patch is only applied if the
+	 * 				accompanying version is the same as the one stored in JATOS.
+	 * 				If false the version is	ignored.
+	 */
+	jatos.batchSession.versioning = function (versioning) {
+	    if (typeof versioning === "boolean") batchSessionVersioning = versioning;
+	};
+
+	/**
 	 * Generates an abstract JSON Patch
 	 */
 	function generatePatch(op, path, value, from) {
@@ -858,6 +872,7 @@ var jatos = {};
 		msgObj.action = "SESSION";
 		msgObj.patches = (patches.constructor === Array) ? patches : [patches];
 		msgObj.version = batchSessionVersion;
+		msgObj.versioning = batchSessionVersioning;
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
@@ -1814,6 +1829,16 @@ var jatos = {};
 	};
 
 	/**
+	 * Set group session versioning flag. 
+	 * @param {boolean} versioning - If true a patch is only applied if the
+	 * 				accompanying version is the same as the one stored in JATOS.
+	 * 				If false the version is	ignored.
+	 */
+	jatos.groupSession.versioning = function (versioning) {
+	    if (typeof versioning === "boolean") groupSessionVersioning = versioning;
+	};
+
+	/**
 	 * Sends a JSON Patch via the group channel to JATOS and subsequently to all
 	 * other study currently running in this group. The parameter 'patches' can be a
 	 * a single patch object or an array of patch objects.
@@ -1833,6 +1858,7 @@ var jatos = {};
 		msgObj.action = "SESSION";
 		msgObj.sessionPatches = (patches.constructor === Array) ? patches : [patches];
 		msgObj.sessionVersion = groupSessionVersion;
+		msgObj.sessionVersioning = groupSessionVersioning;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.

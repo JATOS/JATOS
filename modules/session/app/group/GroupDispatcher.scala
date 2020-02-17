@@ -109,28 +109,29 @@ object GroupDispatcher {
     */
   object GroupActionJsonKey extends Enumeration {
     type GroupActionKey = Value
-    // JSON key name for an action (mandatory for an action GroupMsg)
+    // Action (mandatory for an action GroupMsg)
     val Action = Value("action")
-    // JSON key name to store the recipient of a group msg
+    // Recipient of a group msg
     val Recipient = Value("recipient")
-    // JSON key name for the group result ID
+    // Group result ID
     val GroupResultId = Value("groupResultId")
-    // JSON key name containing the GroupState
+    // GroupState
     val GroupState = Value("groupState")
-    // JSON key name containing the group member ID (which is the study result ID)
+    // Group member ID (which is equal to the study result ID)
     val MemberId = Value("memberId")
-    // JSON key name containing all active members of the group defined by their study result ID
+    // All active members of the group defined by their study result ID
     val Members = Value("members")
-    // JSON key name containing all open group channels defined by their study result ID
+    // All open group channels defined by their study result ID
     val Channels = Value("channels")
-    // JSON key name for session data (must be accompanied with a session version)
+    // Session data (must be accompanied with a session version)
     val SessionData = Value("sessionData")
-    // JSON key name for a session patches (must be accompanied with a session version)
+    // Session patches (must be accompanied with a session version)
     val SessionPatches = Value("sessionPatches")
-    // JSON key name for the group session version (always together with either session data or
-    // patches)
+    // Batch session version (always together with either session data or patches)
     val SessionVersion = Value("sessionVersion")
-    // JSON key name for an error message
+    // Defines if we check the version before applying the patch
+    val SessionVersioning = Value("sessionVersioning")
+    // Error message
     val ErrorMsg = Value("errorMsg")
   }
 

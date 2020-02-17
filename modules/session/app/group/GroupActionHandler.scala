@@ -1,12 +1,11 @@
 package group
 
-import javax.inject.{Inject, Singleton}
-
 import com.google.common.base.Strings
 import daos.common.GroupResultDao
 import general.ChannelRegistry
 import gnieh.diffson.playJson._
 import group.GroupDispatcher.{GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
+import javax.inject.{Inject, Singleton}
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import play.api.Logger
@@ -63,19 +62,17 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
 
       try {
         val clientsVersion = (json \ GroupActionJsonKey.SessionVersion.toString).as[Long]
+        val versioning = (json \ GroupActionJsonKey.SessionVersioning.toString).as[Boolean]
         val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
         val patchedSessionData = patchSessionData(patches, groupResult)
         logger.debug(s".handlePatch: groupResultId $groupResultId, " +
-          s"clientsVersion $clientsVersion, " +
-          s"groupSessionPatch ${Json.stringify(patches)}, " +
+          s"clientsVersion $clientsVersion, versioning $versioning, groupSessionPatch ${Json.stringify(patches)}, " +
           s"updatedSessionData ${Json.stringify(patchedSessionData)}")
 
-        val success = checkVersionAndPersistSessionData(patchedSessionData, groupResult,
-          clientsVersion)
+        val success = checkVersionAndPersistSessionData(patchedSessionData, groupResult, clientsVersion, versioning)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(groupResult, studyResultId, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, TellWhom
-            .SenderOnly)
+          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, TellWhom.SenderOnly)
           List(msg1, msg2)
         } else {
           List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, TellWhom.SenderOnly))
@@ -105,16 +102,16 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Persists the given sessionData in the GroupResult and increases the
-    * groupSessionVersion by 1 - but only if the stored version is equal to the
-    * received one. Returns true if this was successful - otherwise false.
+    * Persists the given sessionData in the GroupResult and increases the groupSessionVersion by 1 - but only if the
+    * stored version is equal to the received one or versioning is turned off. Returns true if this was successful -
+    * otherwise false.
     */
   private def checkVersionAndPersistSessionData(sessionData: JsValue, groupResult: GroupResult,
-                                                version: Long): Boolean = {
-    if (groupResult != null && sessionData != null &&
-      groupResult.getGroupSessionVersion == version) {
+                                                version: Long,
+                                                versioning: Boolean): Boolean = {
+    if (groupResult != null && sessionData != null && (!versioning || groupResult.getGroupSessionVersion == version)) {
       groupResult.setGroupSessionData(sessionData.toString)
-      groupResult.setGroupSessionVersion(groupResult.getGroupSessionVersion + 1l)
+      groupResult.setGroupSessionVersion(groupResult.getGroupSessionVersion + 1L)
       groupResultDao.update(groupResult)
       return true
     }

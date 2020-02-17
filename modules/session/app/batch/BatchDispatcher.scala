@@ -66,15 +66,17 @@ object BatchDispatcher {
     */
   object BatchActionJsonKey extends Enumeration {
     type BatchActionKey = Value
-    // JSON key for an action (mandatory for an BatchMsg)
+    // Action (mandatory for an BatchMsg)
     val Action = Value("action")
-    // JSON key for session data (must be accompanied with a session version)
+    // Session data (must be accompanied with a session version)
     val SessionData = Value("data")
-    // JSON key for a session patches (must be accompanied with a session version)
+    // Session patches (must be accompanied with a session version)
     val SessionPatches = Value("patches")
-    // JSON key for the batch session version (always together with either session data or patches)
+    // Batch session version (always together with either session data or patches)
     val SessionVersion = Value("version")
-    // JSON key for an error message
+    // Defines if we check the version before applying the patch
+    val SessionVersioning = Value("versioning")
+    // Error message
     val ErrorMsg = Value("errorMsg")
   }
 
