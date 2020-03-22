@@ -513,11 +513,11 @@ function downloadWithPost(url, data, filename) {
 				}
 
 				setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
-				hideWaitingModal();
 			}
 		} else {
 			showError("Download failed (" + this.statusText + ")");
 		}
+		hideWaitingModal();
 	};
 
 	xhr.onerror = function (err) {
