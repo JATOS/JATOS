@@ -1,18 +1,14 @@
 package services.gui;
 
-import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.util.ByteString;
-import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
 import general.common.StudyLogger;
-import models.common.*;
-import models.common.workers.Worker;
-import org.hibernate.ScrollableResults;
+import models.common.ComponentResult;
+import models.common.Study;
+import models.common.StudyResult;
+import models.common.User;
 import play.Logger;
 import play.db.jpa.JPAApi;
 
@@ -33,97 +29,26 @@ public class ResultDataExporter {
     private static final Logger.ALogger LOGGER = Logger.of(ResultDataExporter.class);
 
     private final Checker checker;
-    private final ResultService resultService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
-    private final WorkerDao workerDao;
-    private final ComponentDao componentDao;
     private final StudyLogger studyLogger;
     private final JPAApi jpaApi;
 
     @Inject
-    ResultDataExporter(Checker checker, ResultService resultService, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, WorkerDao workerDao, ComponentDao componentDao, StudyLogger studyLogger,
-            JPAApi jpaApi) {
+    ResultDataExporter(Checker checker, ComponentResultDao componentResultDao, StudyResultDao studyResultDao,
+            StudyLogger studyLogger, JPAApi jpaApi) {
         this.checker = checker;
-        this.resultService = resultService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
-        this.workerDao = workerDao;
-        this.componentDao = componentDao;
         this.studyLogger = studyLogger;
         this.jpaApi = jpaApi;
     }
 
     /**
-     * Retrieves all StudyResults that belong to the given worker and that the given user is allowed to see (means
-     * StudyResults from studies he is a user of), checks them and returns all their result data.
-     */
-    public Object byWorker(ActorRef sourceActor, Long workerId, User user) {
-        return jpaApi.withTransaction(entityManager -> {
-            Worker worker = workerDao.findById(workerId);
-            Set<Study> studies = new HashSet<>();
-            List<StudyResult> allowedStudyResultList = resultService.getAllowedStudyResultList(user, worker);
-            for (StudyResult studyResult : allowedStudyResultList) {
-                try {
-                    checker.checkStudyResult(studyResult, user, false);
-                    studies.add(studyResult.getStudy());
-                    studyResult.getComponentResultList().forEach(cr -> tellResultData(sourceActor, cr));
-                } catch (ForbiddenException | BadRequestException e) {
-                    LOGGER.warn("Couldn't get result data", e);
-                }
-            }
-            studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
-            return NotUsed.getInstance();
-        });
-    }
-
-    /**
-     * Retrieves all StudyResults of the given study, checks them and returns all their result data.
-     */
-    public Object byStudy(ActorRef sourceActor, Study study, User user) {
-        return jpaApi.withTransaction(entityManager -> {
-            ScrollableResults results = studyResultDao.findAllByStudyScrollable(study);
-            while (results.next()) {
-                try {
-                    StudyResult studyResult = (StudyResult) results.get(0);
-                    checker.checkStudyResult(studyResult, user, false);
-                    studyResult.getComponentResultList().forEach(cr -> tellResultData(sourceActor, cr));
-                } catch (Exception e) {
-                    LOGGER.warn("Couldn't get result data", e);
-                }
-            }
-            studyLogger.log(study, user, "Exported result data to file");
-            return NotUsed.getInstance();
-        });
-    }
-
-    /**
-     * Retrieves all ComponentResults of the given component, checks them and returns all their result data.
-     */
-    public Object byComponent(ActorRef sourceActor, Long componentId, User user) {
-        return jpaApi.withTransaction(entityManager -> {
-            Component component = componentDao.findById(componentId);
-            ScrollableResults results = componentResultDao.findAllByComponentScrollable(component);
-            while (results.next()) {
-                try {
-                    ComponentResult componentResult = (ComponentResult) results.get(0);
-                    checker.checkComponentResult(componentResult, user, false);
-                    tellResultData(sourceActor, componentResult);
-                } catch (Exception e) {
-                    LOGGER.warn("Couldn't get result data", e);
-                }
-            }
-            studyLogger.log(component.getStudy(), user, "Exported result data to file");
-            return NotUsed.getInstance();
-        });
-    }
-
-    /**
      * Retrieves the StudyResults that correspond to the IDs, checks them and returns all their result data.
      */
-    public Object byStudyResultIds(ActorRef sourceActor, List<Long> studyResultIdList, User user) {
-        return jpaApi.withTransaction(entityManager -> {
+    public void byStudyResultIds(ActorRef sourceActor, List<Long> studyResultIdList, User user) {
+        jpaApi.withTransaction(entityManager -> {
             Set<Study> studies = new HashSet<>();
             for (Long studyResultId : studyResultIdList) {
                 try {
@@ -140,15 +65,14 @@ public class ResultDataExporter {
                 }
             }
             studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
-            return NotUsed.getInstance();
         });
     }
 
     /**
      * Retrieves the ComponentResults that correspond to the IDs, checks them and returns all their result data.
      */
-    public Object byComponentResultIds(ActorRef sourceActor, List<Long> componentResultIdList, User user) {
-        return jpaApi.withTransaction(entityManager -> {
+    public void byComponentResultIds(ActorRef sourceActor, List<Long> componentResultIdList, User user) {
+        jpaApi.withTransaction(entityManager -> {
             Set<Study> studies = new HashSet<>();
             for (Long componentResultId : componentResultIdList) {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
@@ -165,7 +89,6 @@ public class ResultDataExporter {
                 }
             }
             studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
-            return NotUsed.getInstance();
         });
     }
 

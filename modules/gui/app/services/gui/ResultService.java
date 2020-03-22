@@ -116,6 +116,7 @@ public class ResultService {
                     LOGGER.warn("Couldn't get result");
                 }
             }
+            results.close();
         });
     }
 
@@ -142,6 +143,7 @@ public class ResultService {
                     LOGGER.warn("Couldn't get result");
                 }
             }
+            results.close();
         });
     }
 
