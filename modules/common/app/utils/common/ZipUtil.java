@@ -96,7 +96,7 @@ public class ZipUtil {
                 if (Files.isDirectory(child)) {
                     addToZip(out, entry, child);
                 } else {
-                    out.putNextEntry(new ZipEntry(entry.toString()));
+                    out.putNextEntry(new ZipEntry(entry.toString().replace("\\", ZIP_FILE_SEPARATOR)));
                     Files.copy(child, out);
                     out.closeEntry();
                 }
@@ -106,7 +106,7 @@ public class ZipUtil {
 
     static private void addFileToZip(ZipOutputStream out, Path root, Path file) throws IOException {
         Path entry = buildPath(root, file.getFileName());
-        out.putNextEntry(new ZipEntry(entry.toString()));
+        out.putNextEntry(new ZipEntry(entry.toString().replace("\\", ZIP_FILE_SEPARATOR)));
         Files.copy(file, out);
         out.closeEntry();
     }
