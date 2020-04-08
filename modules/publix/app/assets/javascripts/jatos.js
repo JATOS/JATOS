@@ -32,15 +32,14 @@ var jatos = {};
 	 */
 	jatos.version = "3.5.2";
 	/**
-	 * How long should JATOS wait until to retry the HTTP call. Warning: There is a
-	 * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
-	 * second call of the same function as a reload of the component. A reload of a
-	 * component is often forbidden and leads to failed finish of the study.
-	 * Therefore I put the HTTP timeout time to 60 secs. If there is now answer
-	 * within this time I assume the call never reached the server and it's our last
-	 * hope to continue the study is to retry the call.
+	 * How long should JATOS wait until to retry the HTTP call. Warning: In some
+	 * cases a JATOS regards a second call of the same function as a reload of
+	 * the component. A reload of a component is often forbidden and leads to
+	 * failed finish of the study. Therefore I put the HTTP timeout time to 15 secs.
+	 * If there is no answer within this time I assume the call never reached the
+	 * server and it's our last hope to continue the study is to retry the call.
 	 */
-	jatos.httpTimeout = 60000;
+	jatos.httpTimeout = 15000;
 	/**
 	 * How many times should jatos.js retry to send a failed HTTP call.
 	 */
@@ -183,12 +182,27 @@ var jatos = {};
 	 */
 	var heartbeatWorker;
 	/**
+	 * Web worker initialized in initJatos() that handles sending of result data,
+	 * result files, study session data, and log messages.
+	 */
+	var httpLoop;
+	/**
+	 * Number of requests handled by the httpLoop worker so far.
+	 */
+	var httpLoopCounter = 0;
+	/**
+	 * All requests currently handled by the httpLoop worker are in here.
+	 * Map of request IDs to jQuery.deferred objects.
+	 */
+	var waitingRequests = {};
+	/**
 	 * State booleans. If true jatos.js is in this state. Several states can be true
 	 * at the same time.
 	 */
 	var initialized = false;
 	var onLoadCalled = false;
 	var startingComponent = false;
+	var endingStudy = false;
 	/**
 	 * jQuery.Deferred objects: can hold state pending, resolved, or rejected
 	 */
@@ -199,9 +213,7 @@ var jatos = {};
 	var sendingGroupFixedDeferred;
 	var reassigningGroupDeferred;
 	var leavingGroupDeferred;
-	var submittingResultDataDeferred;
-	var endingDeferred;
-	var abortingDeferred;
+	var httpLoopDeferred;
 	/**
 	 * Callback function defined via jatos.onLoad.
 	 */
@@ -268,11 +280,12 @@ var jatos = {};
 			.then(function () {
 				jatos.studyResultId = getUrlQueryParameter("srid");
 				readIdCookie();
-				// Start the heartbeat (the general one - not the channel one)
-				if (window.Worker) {
-					heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
-					heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
-				}
+				// Start heartbeat.js (the general one - not the channel one)
+				heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
+				heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
+				// Start httpLoop.js
+				httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
+				httpLoop.addEventListener('message', function(msg) { httpLoopListener(msg.data); }, false);
 			})
 			.then(getInitData)
 			.then(openBatchChannelWithRetry)
@@ -280,6 +293,49 @@ var jatos = {};
 				initialized = true;
 				readyForOnLoad();
 			});
+	}
+
+	/**
+	 * Sends the given request to the httpLoop.js background worker.
+	 */
+	function sendToHttpLoop(request, onSuccess, onError) {
+		var deferred = jatos.jQuery.Deferred();
+		deferred.done(function() {
+			callFunctionIfExist(onSuccess);
+		});
+		deferred.fail(function(err) {
+			callingOnError(onError, err);
+		});
+
+		var requestId = httpLoopCounter++;
+		request.id = requestId;
+		waitingRequests[request.id] = deferred;
+		if (!isDeferredPending(httpLoopDeferred)) {
+			httpLoopDeferred = jatos.jQuery.Deferred();
+		}
+		httpLoop.postMessage(request);
+
+		return deferred;
+	}
+
+	/**
+	 * Handles messages from the httpLoop.js background worker. Each message
+	 * corresponds to a request send earlier to the worker.
+	 */
+	function httpLoopListener(msg) {
+		// Handle request's deferred
+		var deferred = waitingRequests[msg.requestId];
+		delete waitingRequests[msg.requestId];
+		if (msg.status == 200) {
+			deferred.resolve();
+		} else {
+			deferred.reject(msg.responseText);
+		}
+
+		// Handle httpLoop's deferred (are all requests done?)
+		if (Object.keys(waitingRequests).length === 0 && isDeferredPending(httpLoopDeferred)) {
+			httpLoopDeferred.resolve();
+		}
 	}
 
 	/**
@@ -352,7 +408,7 @@ var jatos = {};
 	 */
 	function getInitData() {
 		return jatos.jQuery.ajax({
-			url: "initData" + "?srid=" + jatos.studyResultId,
+			url: getURL("initData"),
 			type: "GET",
 			dataType: 'json',
 			timeout: jatos.httpTimeout,
@@ -949,37 +1005,20 @@ var jatos = {};
 	 * POST for appendResultData.
 	 */
 	function submitOrAppendResultData(resultData, append, onSuccess, onError) {
-		if (isDeferredPending(submittingResultDataDeferred)) {
-			callingOnError(onError, "Can send only one result data at a time");
-			return rejectedPromise();
-		}
-
 		var httpMethod = append ? "POST" : "PUT";
 		if (resultData === Object(resultData)) {
 			resultData = JSON.stringify(resultData);
 		}
-		submittingResultDataDeferred = jatos.jQuery.Deferred();
-		jatos.jQuery.ajax({
-			url: "resultData" + "?srid=" + jatos.studyResultId,
+		var request = {
+			url: getURL("resultData"),
 			data: resultData,
-			processData: false,
 			method: httpMethod,
 			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
-			success: function () {
-				callFunctionIfExist(onSuccess);
-				submittingResultDataDeferred.resolve();
-			},
-			error: function (err) {
-				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(onError, errMsg);
-				submittingResultDataDeferred.reject(errMsg);
-			}
-		}).retry({
-			times: jatos.httpRetry,
-			timeout: jatos.httpRetryWait
-		});
-		return submittingResultDataDeferred.promise();
+			retry: jatos.httpRetry,
+			retryWait: jatos.httpRetryWait
+		};
+		return sendToHttpLoop(request, onSuccess, onError).promise();
 	}
 
 	/**
@@ -988,7 +1027,7 @@ var jatos = {};
 	 * @param {Blob, string or object} obj - Data to be uploaded as a file. A Blob
 	 * 										will be uploaded right away. A string
 	 * 										is turned into a Blob. An object is
-	 * 										first turned into a JSON string	and
+	 * 										first turned into a JSON string	andl
 	 * 										then into a Blob.
 	 * @param {string} filename - Name of the uploaded file
 	 * @param {optional function} onSuccess - Function to be called in case of success
@@ -1000,6 +1039,7 @@ var jatos = {};
 			callingOnError(onError, "No filename specified");
 			return rejectedPromise();
 		}
+
 		var blob;
 		if (obj instanceof Blob) {
 			blob = obj;
@@ -1013,26 +1053,16 @@ var jatos = {};
 			return rejectedPromise();
 		}
 
-		var deferred = jatos.jQuery.Deferred();
-		var data = new FormData();
-		data.append("file", blob, filename);
-		jatos.jQuery.ajax({
-			url: "files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId,
-			data: data,
-			type: 'POST',
-			contentType: false,
-			processData: false,
-			success: function () {
-				callFunctionIfExist(onSuccess);
-				deferred.resolve();
-			},
-			error: function (err) {
-				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(onError, errMsg);
-				deferred.reject(errMsg);
-			}
-		});
-		return deferred.promise();
+		var request = {
+			url: getURL("files/" + encodeURI(filename)),
+			blob: blob,
+			filename: filename,
+			method: 'POST',
+			timeout: jatos.httpTimeout,
+			retry: jatos.httpRetry,
+			retryWait: jatos.httpRetryWait
+		};
+		return sendToHttpLoop(request, onSuccess, onError).promise();
 	};
 
 	/**
@@ -1074,7 +1104,7 @@ var jatos = {};
 			return rejectedPromise();
 		}
 
-		var url = "../files/" + encodeURI(filename) + "?srid=" + jatos.studyResultId;
+		var url = getURL("../files/" + encodeURI(filename));
 		if (componentPos) {
 			if (isInvalidComponentPosition(componentPos)) {
 				callingOnError(onError, "Component position does not exist");
@@ -1127,14 +1157,14 @@ var jatos = {};
 	};
 
 	/**
+	 * DEPRECATED (This function is automatically called by all functions that start a new
+	 * component, so it is not necessary to call it manually.)
+	 * 
 	 * If you want to just write into the study session, this function is
 	 * probably not what you want. This function sets the study session data and
 	 * sends it back to the JATOS server. If you want to write something
 	 * into the study session, just write into the 'jatos.studySessionData'
 	 * object.
-	 *
-	 * This function is automatically called by all functions that start a new
-	 * component, so it is usually not necessary to call it manually.
 	 * 
 	 * @param {object} studySessionData - Object to be submitted
 	 * @param {optional function} onSuccess - Function to be called after this
@@ -1143,44 +1173,30 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
-		var deferred = jatos.jQuery.Deferred();
+		console.warn("jatos.setStudySessionData is deprecated - it's called automatically by jatos.js");
+		return setStudySessionData(studySessionData, onSuccess, onFail);
+	};
+	
+	function setStudySessionData(studySessionData, onSuccess, onError) {	
 		jatos.studySessionData = studySessionData;
-		var studySessionDataStr;
-		try {
-			studySessionDataStr = JSON.stringify(studySessionData);
-		} catch (error) {
-			callingOnError(onFail, error);
-			deferred.reject(errMsg);
-			return deferred;
-		}
-		jatos.jQuery.ajax({
-			url: "../studySessionData" + "?srid=" + jatos.studyResultId,
+		var studySessionDataStr = JSON.stringify(studySessionData);
+		var request = {
+			url: getURL("../studySessionData"),
 			data: studySessionDataStr,
-			processData: false,
 			method: "POST",
 			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
-			success: function () {
-				callFunctionIfExist(onSuccess);
-				deferred.resolve();
-			},
-			error: function (err) {
-				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(onFail, errMsg);
-				deferred.reject(errMsg);
-			}
-		}).retry({
-			times: jatos.httpRetry,
-			timeout: jatos.httpRetryWait
-		});
-		return deferred.promise();
-	};
+			retry: jatos.httpRetry,
+			retryWait: jatos.httpRetryWait
+		};
+		return sendToHttpLoop(request, onSuccess, onError).promise();
+	}
 
 	/**
 	 * Starts the component with the given ID. Before it calls
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {number} componentId - ID of the component to start
@@ -1207,20 +1223,22 @@ var jatos = {};
 			return;
 		}
 		startingComponent = true;
-		var onComplete = function () {
-			var url = "../" + componentId + "/start" + "?srid=" + jatos.studyResultId;
+		
+		// Send result data and study session data before starting next component
+		if (resultData) jatos.appendResultData(resultData);
+		setStudySessionData(jatos.studySessionData);
+
+		var start = function () {
+			var url = getURL("../" + componentId + "/start");
 			if (message) url = url + "&" + jatos.jQuery.param({ "message": message });
 			window.location.href = url;
 		};
-		if (resultData) {
-			jatos.jQuery.when(
-				jatos.appendResultData(resultData),
-				jatos.setStudySessionData(jatos.studySessionData)
-			).then(onComplete, onError);
+
+		// Wait for httpLoop.js to finish
+		if (isDeferredPending(httpLoopDeferred)) {
+			httpLoopDeferred.always(start);
 		} else {
-			jatos.jQuery.when(
-				jatos.setStudySessionData(jatos.studySessionData)
-			).then(onComplete, onError);
+			start();
 		}
 	};
 
@@ -1229,7 +1247,7 @@ var jatos = {};
 	 * component of a study is 1). Before this it calls 
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {number} componentPos - Position of the component to start
@@ -1257,7 +1275,7 @@ var jatos = {};
 	 * last one it finishes the study. Before this it calls 
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
@@ -1303,7 +1321,7 @@ var jatos = {};
 	 * with the highest position that is active. Before this it calls
 	 * jatos.appendResultData (sends result data to the JATOS server and
 	 * appends them to the already existing ones for this component) and
-	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * setStudySessionData (syncs study session data with the JATOS server).
 	 *
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data be sent back
@@ -2022,7 +2040,7 @@ var jatos = {};
 
 		reassigningGroupDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "../group/reassign" + "?srid=" + jatos.studyResultId,
+			url: getURL("../group/reassign"),
 			processData: false,
 			type: "GET",
 			timeout: jatos.httpTimeout,
@@ -2073,7 +2091,7 @@ var jatos = {};
 
 		leavingGroupDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "../group/leave" + "?srid=" + jatos.studyResultId,
+			url: getURL("../group/leave"),
 			processData: false,
 			type: "GET",
 			timeout: jatos.httpTimeout,
@@ -2104,42 +2122,31 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
-		if (isDeferredPending(abortingDeferred)) {
-			callingOnError(onError, "Can abort only once");
+		if (endingStudy) {
+			callingOnError(onError, "Can end/abort study only once");
 			return rejectedPromise();
 		}
+		endingStudy = true;
 
-		function abort() {
-			abortingDeferred = jatos.jQuery.Deferred();
-			var url = "../abort" + "?srid=" + jatos.studyResultId;
-			var fullUrl;
-			if (typeof message == 'undefined') {
-				fullUrl = url;
-			} else {
-				fullUrl = url + "&message=" + message;
-			}
-			jatos.jQuery.ajax({
-				url: fullUrl,
-				processData: false,
-				type: "GET",
-				timeout: jatos.httpTimeout,
-				success: function (response) {
-					callFunctionIfExist(onSuccess, response);
-					abortingDeferred.resolve(response);
-				},
-				error: function (err) {
-					var errMsg = getAjaxErrorMsg(err);
-					callingOnError(onError, errMsg);
-					abortingDeferred.reject(errMsg);
-				}
-			}).retry({
-				times: jatos.httpRetry,
-				timeout: jatos.httpRetryWait
-			});
-			return abortingDeferred.promise();
+		var url = getURL("../abort");
+		if (typeof message != 'undefined') {
+			url = url + "&message=" + message;
 		}
+		var request = {
+			url: url,
+			method: "GET",
+			timeout: jatos.httpTimeout,
+			retry: jatos.httpRetry,
+			retryWait: jatos.httpRetryWait
+		};
+		var deferred = sendToHttpLoop(request, onSuccess, onError);
+		deferred.done(function () {
+			heartbeatWorker.terminate();
+			clearInterval(batchChannelClosedCheckTimer);
+			clearInterval(groupChannelClosedCheckTimer);
+		});
 
-		return jatos.setStudySessionData(jatos.studySessionData).always(abort).promise();
+		return deferred.promise();
 	};
 
 	/**
@@ -2154,22 +2161,27 @@ var jatos = {};
 			return jatos.abortStudyAjax(message);
 		}
 
-		if (isDeferredPending(abortingDeferred)) {
-			callingOnError(null, "Can abort only once");
-			return rejectedPromise();
+		if (endingStudy) {
+			callingOnError(null, "Can end/abort study only once");
+			return;
 		}
-
-		abortingDeferred = jatos.jQuery.Deferred();
+		endingStudy = true;
 
 		function abort() {
-			var url = "../abort" + "?srid=" + jatos.studyResultId;
+			var url = getURL("../abort");
 			if (typeof message == 'undefined') {
 				window.location.href = url;
 			} else {
 				window.location.href = url + "&message=" + message;
 			}
 		}
-		return jatos.setStudySessionData(jatos.studySessionData).always(abort).promise();
+
+		// Wait for httpLoop.js to finish
+		if (isDeferredPending(httpLoopDeferred)) {
+			httpLoopDeferred.always(abort);
+		} else {
+			abort();
+		}
 	};
 
 	/**
@@ -2212,63 +2224,45 @@ var jatos = {};
 			onError = param4;
 		}
 
-		if (isDeferredPending(endingDeferred)) {
-			callingOnError(onError, "Can end only once");
+		if (endingStudy) {
+			callingOnError(onError, "Can end/abort study only once");
 			return rejectedPromise();
 		}
+		endingStudy = true;
 
-		function end() {
-			endingDeferred = jatos.jQuery.Deferred();
-			var url = "../end" + "?srid=" + jatos.studyResultId;
-			if (typeof successful == 'boolean' && typeof message == 'string') {
-				url = url + "&" + jatos.jQuery.param({
-					"successful": successful,
-					"message": message
-				});
-			} else if (typeof successful == 'boolean' && typeof message != 'string') {
-				url = url + "&" + jatos.jQuery.param({
-					"successful": successful
-				});
-			} else if (typeof successful != 'boolean' && typeof message == 'string') {
-				url = url + "&" + jatos.jQuery.param({
-					"message": message
-				});
-			}
+		// Before finish send result data
+		if (resultData) jatos.appendResultData(resultData);
 
-			jatos.jQuery.ajax({
-				url: url,
-				processData: false,
-				type: "GET",
-				timeout: jatos.httpTimeout,
-				success: function (response) {
-					heartbeatWorker.terminate();
-					clearInterval(batchChannelClosedCheckTimer);
-					clearInterval(groupChannelClosedCheckTimer);
-					callFunctionIfExist(onSuccess, response);
-					endingDeferred.resolve(response);
-				},
-				error: function (err) {
-					var errMsg = getAjaxErrorMsg(err);
-					callingOnError(onError, errMsg);
-					endingDeferred.reject(errMsg);
-				}
-			}).retry({
-				times: jatos.httpRetry,
-				timeout: jatos.httpRetryWait
+		var url = getURL("../end");
+		if (typeof successful == 'boolean' && typeof message == 'string') {
+			url = url + "&" + jatos.jQuery.param({
+				"successful": successful,
+				"message": message
 			});
-			return endingDeferred.promise();
+		} else if (typeof successful == 'boolean' && typeof message != 'string') {
+			url = url + "&" + jatos.jQuery.param({
+				"successful": successful
+			});
+		} else if (typeof successful != 'boolean' && typeof message == 'string') {
+			url = url + "&" + jatos.jQuery.param({
+				"message": message
+			});
 		}
+		var request = {
+			url: url,
+			method: "GET",
+			timeout: jatos.httpTimeout,
+			retry: jatos.httpRetry,
+			retryWait: jatos.httpRetryWait
+		};
+		var deferred = sendToHttpLoop(request, onSuccess, onError);
+		deferred.done(function () {
+			heartbeatWorker.terminate();
+			clearInterval(batchChannelClosedCheckTimer);
+			clearInterval(groupChannelClosedCheckTimer);
+		});
 
-		if (resultData) {
-			return jatos.jQuery.when(
-				jatos.appendResultData(resultData),
-				jatos.setStudySessionData(jatos.studySessionData)
-			).always(end).promise();
-		} else {
-			return jatos.jQuery.when(
-				jatos.setStudySessionData(jatos.studySessionData)
-			).always(end).promise();
-		}
+		return deferred.promise();
 	};
 
 	/**
@@ -2324,14 +2318,17 @@ var jatos = {};
 			}
 		}
 
-		if (isDeferredPending(endingDeferred)) {
-			callingOnError(null, "Can end only once");
+		if (endingStudy) {
+			callingOnError(null, "Can end/abort study only once");
 			return;
 		}
+		endingStudy = true;
+
+		// Before finish send result data
+		if (resultData) jatos.appendResultData(resultData);
 
 		function end() {
-			endingDeferred = jatos.jQuery.Deferred();
-			var url = "../end" + "?srid=" + jatos.studyResultId;
+			var url = getURL("../end");
 			if (typeof successful == 'boolean' && typeof message == 'string') {
 				url = url + "&" + jatos.jQuery.param({
 					"successful": successful,
@@ -2348,24 +2345,33 @@ var jatos = {};
 			}
 			window.location.href = url;
 		}
-
-		if (resultData) {
-			return jatos.jQuery.when(
-				jatos.appendResultData(resultData),
-				jatos.setStudySessionData(jatos.studySessionData)
-			).always(end).promise();
+		
+		// Wait for httpLoop.js to finish
+		if (isDeferredPending(httpLoopDeferred)) {
+			httpLoopDeferred.always(end);
 		} else {
-			return jatos.jQuery.when(
-				jatos.setStudySessionData(jatos.studySessionData)
-			).always(end).promise();
+			end();
 		}
 	};
 
 	/**
+	 * Returns the URL with protocol, host and port to the given path and adds the 
+	 * 'srid' query parameter
+	 */
+	function getURL(path) {
+		return new URL(path, window.location.href).toString() + "?srid=" + jatos.studyResultId;
+	}
+
+	jatos.getHttpLoopCounter = function() {
+		return httpLoopCounter;
+	};
+
+	/**
 	 * Logs a message within the JATOS log on the server side.
-	 * Deprecated, use jatos.log instead.
+	 * DEPRECATED, use jatos.log instead.
 	 */
 	jatos.logError = function (logErrorMsg) {
+		console.warn("jatos.logError is deprecated - use jatos.log instead");
 		jatos.log(logErrorMsg);
 	};
 
@@ -2373,20 +2379,16 @@ var jatos = {};
 	 * Logs a message within the JATOS log on the server side.
 	 */
 	jatos.log = function (logMsg) {
-		jatos.jQuery.ajax({
-			url: "log" + "?srid=" + jatos.studyResultId,
+		var request = {
+			url:  getURL("log"),
+			method: "POST",
 			data: logMsg,
-			processData: false,
-			type: "POST",
 			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
-			error: function (err) {
-				callingOnError(null, getAjaxErrorMsg(err));
-			}
-		}).retry({
-			times: jatos.httpRetry,
-			timeout: jatos.httpRetryWait
-		});
+			retry: jatos.httpRetry,
+			retryWait: jatos.httpRetryWait
+		};
+		sendToHttpLoop(request);
 	};
 
 	/**
