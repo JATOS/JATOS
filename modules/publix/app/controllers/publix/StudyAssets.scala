@@ -54,6 +54,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
   def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String): Action[AnyContent] =
     urlPath match {
       case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
+      case "jatos-3.5.2.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
       case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix/javascripts", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
         val study = studyDao.findById(studyId)
