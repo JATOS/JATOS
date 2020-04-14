@@ -329,7 +329,9 @@ var jatos = {};
 		if (msg.status == 200) {
 			deferred.resolve();
 		} else {
-			deferred.reject(msg.responseText);
+		    var errMsg = [msg.status, msg.statusText, msg.error]
+                    .filter(function(s) {return s;}).join(", ");
+			deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg);
 		}
 
 		// Handle httpLoop's deferred (are all requests done?)

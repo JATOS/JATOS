@@ -15,20 +15,6 @@
 
 // jshint ignore: start
 
-
-// todo make sure abortStudy, endStudy (ajax) are not called in parallel: OK
-// use getURL everywhere: OK
-// check other jatos functions to move here: OK
-// todo jatos.endStudy setStudySession needed: no: OK
-// test study: check number of Ajax request: OK
-// TODO set timeouts to 15s?
-// todo check retry again
-// todo requestLoop -> httpLoop?: OK
-// check with OSWeb
-// todo check getURL with basePath
-// todo prerelease and let Sebastiaan test
-// todo do load tests
-
 "use strict";
 
 var requests = [];
@@ -65,28 +51,36 @@ function run() {
 			});
 			run();
 		} else {
-			xhr.onerror();
+			handleError(false);
 		}
 	};
-	xhr.ontimeout = function () {
-		xhr.onerror();
-	};
-	xhr.onerror = function () {
+	xhr.ontimeout = function () { handleError(true) };
+	xhr.onerror = function () { handleError(false) };
+
+	function handleError(timeout) {
 		if ("retry" in request === false || request.retry <= 0) {
-			self.postMessage({
+			var msg = {
 				requestId: request.id,
-				status: xhr.status,
-				statusText: xhr.statusText,
-				responseText: xhr.responseText
-			});
+				url: request.url,
+				method: request.method
+			}
+			if (timeout) {
+				msg.error = "timeout"
+			} else {
+				msg.status = xhr.status;
+				msg.statusText = xhr.statusText;
+				msg.error = xhr.responseText.trim() || null;
+			}
+			self.postMessage(msg);
 		} else {
-			console.log("Retry " + request.url);
+			console.log("Retry " + request.method + " to " + request.url);
 			request.retry = request.retry - 1;
 			requests.unshift(request);
 		}
 		setTimeout(run, request.retryWait);
-	};
+	}
 
+	// Actual sending of data
 	var data;
 	if ("data" in request) {
 		data = request.data;
@@ -96,5 +90,3 @@ function run() {
 	}
 	xhr.send(data);
 }
-
-
