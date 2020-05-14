@@ -116,7 +116,7 @@ public class Study {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "StudyUserMap", joinColumns = {
             @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = {
-            @JoinColumn(name = "user_email", referencedColumnName = "email") })
+            @JoinColumn(name = "user_username", referencedColumnName = "username") })
     private Set<User> userList = new HashSet<>();
 
     /**

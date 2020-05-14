@@ -1,9 +1,7 @@
 package controllers.gui.useraccess;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import controllers.gui.Authentication;
 import controllers.gui.routes;
 import daos.common.UserDao;
 import exceptions.publix.ForbiddenNonLinearFlowException;
@@ -23,9 +21,6 @@ import play.api.mvc.Call;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
-import play.libs.Json;
-import play.mvc.Http;
-import play.mvc.Result;
 import play.test.Helpers;
 import scala.Option;
 import services.gui.UserService;
@@ -128,7 +123,7 @@ public class ComponentResultUserAccessTest {
 
     private StudyResult createTwoComponentResults(Study study) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator
                     .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
             try {

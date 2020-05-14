@@ -43,7 +43,7 @@ public class Tests extends Controller {
     @Transactional
     public Result testDatabase() {
         try {
-            userDao.findByEmail(UserService.ADMIN_EMAIL);
+            userDao.findByUsername(UserService.ADMIN_USERNAME);
         } catch (Exception e) {
             return badRequest();
         }

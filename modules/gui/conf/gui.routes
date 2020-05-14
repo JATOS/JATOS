@@ -33,13 +33,13 @@ GET      /jatos/updateAndRestart                                            @con
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager()
 GET      /jatos/userData                                                    @controllers.gui.Users.allUserData()
 POST     /jatos/user                                                        @controllers.gui.Users.submitCreated()
-POST     /jatos/user/:email/profile                                         @controllers.gui.Users.submitEditedProfile(email: String)
-GET      /jatos/user/:email/userData                                        @controllers.gui.Users.singleUserData(email: String)
-POST     /jatos/user/:email/password                                        @controllers.gui.Users.submitChangedPassword(email: String)
-POST     /jatos/user/:email/admin                                           @controllers.gui.Users.toggleAdmin(email: String, admin: Boolean)
-GET      /jatos/user/:email                                                 @controllers.gui.Users.profile(email: String)
+POST     /jatos/user/:username/profile                                      @controllers.gui.Users.submitEditedProfile(username: String)
+GET      /jatos/user/:username/userData                                     @controllers.gui.Users.singleUserData(username: String)
+POST     /jatos/user/:username/password                                     @controllers.gui.Users.submitChangedPassword(username: String)
+POST     /jatos/user/:username/admin                                        @controllers.gui.Users.toggleAdmin(username: String, admin: Boolean)
+GET      /jatos/user/:username                                              @controllers.gui.Users.profile(username: String)
 # Play doesn't allow data in body in a DELETE request, so I use POST instead
-POST     /jatos/user/:email/delete                                          @controllers.gui.Users.remove(email: String)
+POST     /jatos/user/:username/delete                                       @controllers.gui.Users.remove(username: String)
 
 # ComponentResults & StudyResults controller
 GET      /jatos/worker/:workerId/results                                    @controllers.gui.StudyResults.workersStudyResults(workerId: Long, max: Option[Integer])
@@ -59,7 +59,7 @@ GET      /jatos/:studyId/resultsTableData                                   @con
 POST     /jatos/study                                                       @controllers.gui.Studies.submitCreated()
 GET      /jatos/:studyId/properties                                         @controllers.gui.Studies.properties(studyId: Long)
 POST     /jatos/:studyId/properties                                         @controllers.gui.Studies.submitEdited(studyId: Long)
-POST     /jatos/:studyId/memberUser                                         @controllers.gui.Studies.toggleMemberUser(studyId: Long, email: String, isMember: Boolean)
+POST     /jatos/:studyId/memberUser                                         @controllers.gui.Studies.toggleMemberUser(studyId: Long, username: String, isMember: Boolean)
 POST     /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.addAllMemberUsers(studyId: Long)
 DELETE   /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.removeAllMemberUsers(studyId: Long)
 GET      /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.memberUsers(studyId: Long)

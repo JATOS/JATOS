@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * This class stores and retrieves user session data from a cache. It uses the email in lower case.
+ * This class stores and retrieves user session data from a cache.
  *
  * @author Kristian Lange (2017)
  */
@@ -24,9 +24,8 @@ public class UserSessionCacheAccessor {
         this.cache = cache;
     }
 
-    public String getUserSessionId(String email, String remoteAddress) {
-        email = email.toLowerCase();
-        UserSession userSession = cache.get(email);
+    public String getUserSessionId(String normalizedUsername, String remoteAddress) {
+        UserSession userSession = cache.get(normalizedUsername);
         if (userSession != null) {
             return userSession.getSessionId(remoteAddress);
         } else {
@@ -34,15 +33,13 @@ public class UserSessionCacheAccessor {
         }
     }
 
-    public void setUserSessionId(String email, String remoteAddress, String sessionId) {
-        email = email.toLowerCase();
-        UserSession userSession = findOrCreateByEmail(email);
+    public void setUserSessionId(String normalizedUsername, String remoteAddress, String sessionId) {
+        UserSession userSession = findOrCreateByUsername(normalizedUsername);
         userSession.addSessionId(remoteAddress, sessionId);
     }
 
-    public boolean removeUserSessionId(String email, String remoteAddress) {
-        email = email.toLowerCase();
-        UserSession userSession = cache.get(email);
+    public boolean removeUserSessionId(String normalizedUsername, String remoteAddress) {
+        UserSession userSession = cache.get(normalizedUsername);
         if (userSession != null) {
             // Only remove the session ID - leave the UserSession in the Cache
             String sessionId = userSession.removeSessionId(remoteAddress);
@@ -52,32 +49,28 @@ public class UserSessionCacheAccessor {
         }
     }
 
-    public boolean isRepeatedLoginAttempt(String email) {
-        email = email.toLowerCase();
-        UserSession userSession = findOrCreateByEmail(email);
+    public boolean isRepeatedLoginAttempt(String normalizedUsername) {
+        UserSession userSession = findOrCreateByUsername(normalizedUsername);
         Instant oldest = userSession.getOldestLoginTime();
-        return !oldest.equals(Instant.MIN)
-                && oldest.plus(1, ChronoUnit.MINUTES).isAfter(Instant.now());
+        return !oldest.equals(Instant.MIN) && oldest.plus(1, ChronoUnit.MINUTES).isAfter(Instant.now());
     }
 
-    public void addLoginAttempt(String email) {
-        email = email.toLowerCase();
-        UserSession userSession = findOrCreateByEmail(email);
+    public void addLoginAttempt(String normalizedUsername) {
+        UserSession userSession = findOrCreateByUsername(normalizedUsername);
         userSession.overwriteOldestLoginTime(Instant.now());
     }
 
-    private UserSession findOrCreateByEmail(String email) {
-        email = email.toLowerCase();
-        UserSession userSession = cache.get(email);
+    private UserSession findOrCreateByUsername(String normalizedUsername) {
+        UserSession userSession = cache.get(normalizedUsername);
         if (userSession == null) {
-            userSession = new UserSession(email);
+            userSession = new UserSession(normalizedUsername);
             save(userSession);
         }
         return userSession;
     }
 
     private void save(UserSession userSession) {
-        cache.set(userSession.getEmail(), userSession);
+        cache.set(userSession.getUsername(), userSession);
     }
 
 }

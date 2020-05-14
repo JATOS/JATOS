@@ -22,8 +22,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Service class mostly for Users controller. Handles everything around User. For retrieval of users from the database
- * emails are turned into their lower case version.
+ * Service class mostly for Users controller. Handles everything around User.
  *
  * @author Kristian Lange
  */
@@ -33,10 +32,10 @@ public class UserService {
     private static final Logger.ALogger LOGGER = Logger.of(UserService.class);
 
     /**
-     * Default admin email; the admin user is created during first initialization of JATOS; don't confuse admin user
+     * Default admin username; the admin user is created during first initialization of JATOS; don't confuse admin user
      * with the Role ADMIN
      */
-    public static final String ADMIN_EMAIL = "admin";
+    public static final String ADMIN_USERNAME = "admin";
     /**
      * Default admin password; the admin user is created during first initialization of JATOS; don't confuse admin user
      * with the Role ADMIN
@@ -74,13 +73,12 @@ public class UserService {
     }
 
     /**
-     * Retrieves the user with the given email from the DB. Throws an Exception if it doesn't exist.
+     * Retrieves the user with the given username from the DB. Throws an Exception if it doesn't exist.
      */
-    public User retrieveUser(String email) throws NotFoundException {
-        email = email.toLowerCase();
-        User user = userDao.findByEmail(email);
+    public User retrieveUser(String normalizedUsername) throws NotFoundException {
+        User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
-            throw new NotFoundException(MessagesStrings.userNotExist(email));
+            throw new NotFoundException(MessagesStrings.userNotExist(normalizedUsername));
         }
         return user;
     }
@@ -91,10 +89,10 @@ public class UserService {
      */
     public void createAdminIfNotExists() {
         jpa.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             if (admin == null) {
-                admin = new User(ADMIN_EMAIL, ADMIN_NAME);
-                createAndPersistUser(admin, ADMIN_PASSWORD, true);
+                admin = new User(ADMIN_USERNAME, ADMIN_NAME);
+                createAndPersistUser(admin, ADMIN_PASSWORD, true, false);
                 LOGGER.info("Created Admin user");
             }
 
@@ -110,25 +108,36 @@ public class UserService {
      * Creates a user, sets password hash and persists him. Creates and persists an JatosWorker for the user.
      */
     public void bindToUserAndPersist(NewUserModel newUserModel) {
-        User user = new User(newUserModel.getEmail(), newUserModel.getName());
+        User user = new User(newUserModel.getUsername(), newUserModel.getName());
         String password = newUserModel.getPassword();
         boolean adminRole = newUserModel.getAdminRole();
-        createAndPersistUser(user, password, adminRole);
+        boolean authByLdap = newUserModel.getAuthByLdap();
+        createAndPersistUser(user, password, adminRole, authByLdap);
     }
 
     /**
-     * Creates a user, sets password hash and persists him. Creates and persists an JatosWorker for the user.
+     * Creates a user, sets password hash and persists them. Creates and persists an JatosWorker for the user.
      */
-    public void createAndPersistUser(User user, String password, boolean adminRole) {
-        String passwordHash = HashUtils.getHashMD5(password);
-        user.setPasswordHash(passwordHash);
+    public void createAndPersistUser(User user, String password, boolean adminRole, boolean authByLdap) {
+        // Set password only if not LDAP authentication
+        if (!authByLdap) {
+            String passwordHash = HashUtils.getHashMD5(password);
+            user.setPasswordHash(passwordHash);
+            user.setAuthMethod(User.AuthMethod.DB);
+        } else {
+            user.setAuthMethod(User.AuthMethod.LDAP);
+        }
+
+        // Every user has a JatosWorker
         JatosWorker worker = new JatosWorker(user);
         user.setWorker(worker);
+
         // Every user has the Role USER
         user.addRole(Role.USER);
         if (adminRole) {
             user.addRole(Role.ADMIN);
         }
+
         workerDao.create(worker);
         userDao.create(user);
     }
@@ -136,8 +145,7 @@ public class UserService {
     /**
      * Change password and persist user.
      */
-    public void updatePassword(String emailOfUserToChange, String newPassword) throws NotFoundException {
-        User user = retrieveUser(emailOfUserToChange);
+    public void updatePassword(User user, String newPassword) {
         String newPasswordHash = HashUtils.getHashMD5(newPassword);
         user.setPasswordHash(newPasswordHash);
         userDao.update(user);
@@ -152,17 +160,17 @@ public class UserService {
     }
 
     /**
-     * Adds or removes the ADMIN role of the user with the given email and persists the change. It the parameter admin
+     * Adds or removes ADMIN role of the user with the given username and persists the change. It the parameter admin
      * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
      * the end - or false if he hasn't.
      */
-    public boolean changeAdminRole(String email, boolean adminRole) throws NotFoundException, ForbiddenException {
-        User user = retrieveUser(email);
+    public boolean changeAdminRole(String normalizedUsername, boolean adminRole) throws NotFoundException, ForbiddenException {
+        User user = retrieveUser(normalizedUsername);
         User loggedInUser = authenticationService.getLoggedInUser();
         if (user.equals(loggedInUser)) {
             throw new ForbiddenException(MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
         }
-        if (user.getEmail().equals(ADMIN_EMAIL)) {
+        if (user.getUsername().equals(ADMIN_USERNAME)) {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS);
         }
 
@@ -176,12 +184,12 @@ public class UserService {
     }
 
     /**
-     * Removes the User belonging to the given email from the database. It also removes all studies where this user is
+     * Removes the User belonging to the given username from the database. It also removes all studies where this user is
      * the last member (which subsequently removes all components, results and the study assets too).
      */
-    public void removeUser(String email) throws NotFoundException, ForbiddenException, IOException {
-        User user = retrieveUser(email);
-        if (user.getEmail().equals(ADMIN_EMAIL)) {
+    public void removeUser(String normalizedUsername) throws NotFoundException, ForbiddenException, IOException {
+        User user = retrieveUser(normalizedUsername);
+        if (user.getUsername().equals(ADMIN_USERNAME)) {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_DELETE_ADMIN);
         }
 

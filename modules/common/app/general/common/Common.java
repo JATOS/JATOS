@@ -70,6 +70,9 @@ public class Common {
     private static String jatosUpdateMsg;
     private static String jatosHttpAddress;
     private static int jatosHttpPort;
+    private static String ldapBasedn;
+    private static String ldapUrl;
+    private static int ldapTimeout;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -115,6 +118,9 @@ public class Common {
         jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
         jatosHttpAddress = config.getString("play.server.http.address");
         jatosHttpPort = config.getInt("play.server.http.port");
+        ldapUrl = config.getString("jatos.user.authentication.ldap.url");
+        ldapBasedn = config.getString("jatos.user.authentication.ldap.basedn");
+        ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
     }
 
     private String fillBasePath(Application application) {
@@ -352,5 +358,30 @@ public class Common {
      */
     public static int getJatosHttpPort() {
         return jatosHttpPort;
+    }
+
+    /**
+     * LDAP URL (with port)
+     */
+    public static String getLdapUrl() {
+        return ldapUrl;
+    }
+
+    /**
+     * LDAP base DN (Distinguished Name)
+     */
+    public static String getLdapBasedn() {
+        return ldapBasedn;
+    }
+
+    public static boolean isLdapAllowed() {
+        return !Strings.isNullOrEmpty(ldapUrl) && !Strings.isNullOrEmpty(ldapBasedn);
+    }
+
+    /**
+     * Read timeout for the LDAP server
+     */
+    public static int getLdapTimeout() {
+        return ldapTimeout;
     }
 }

@@ -146,7 +146,7 @@ public class CheckerTest {
             Fail.fail();
         } catch (ForbiddenException e) {
             assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotUser(admin.getName(),
-                    admin.getEmail(), study.getId(), study.getTitle()));
+                    admin.getUsername(), study.getId(), study.getTitle()));
         } catch (BadRequestException e) {
             Fail.fail();
         }

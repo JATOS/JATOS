@@ -562,7 +562,7 @@ public class ImportExportServiceTest {
     private void importStudyConfirmed(ObjectNode node) {
         jpaApi.withTransaction(() -> {
             try {
-                User u = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User u = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 importExportService.importStudyConfirmed(u, node);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -636,7 +636,7 @@ public class ImportExportServiceTest {
         Study study = testHelper.importExampleStudy(injector);
         alterStudyProperties(study);
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User u = userDao.findByUsername(UserService.ADMIN_USERNAME);
             studyService.createAndPersistStudy(u, study);
         });
         return study;

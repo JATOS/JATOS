@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
  * controllers. It checks Play's session cookie and the cached user session.
  * Additionally it does authorization. It has several layers of security:
  * <p>
- * 1) First it checks if an email is in Play's session cookie and if this email
+ * 1) First it checks if an username is in Play's session cookie and if this username
  * belongs to a user in the database.
  * <p>
  * 2) We check whether the session ID stored in Play's session cookie is the
@@ -84,11 +84,9 @@ public class AuthenticationAction extends Action<Authenticated> {
     }
 
     public CompletionStage<Result> call(Http.Context ctx) {
-        // For authentication it's actually enough to check that the email is in
-        // Play's session. Play's session is safe from tempering. But we
-        // retrieve the user from the database and put it into our RequestScope
-        // since we need it later anyway. Storing it in the RequestScope now
-        // saves us some database requests later.
+        // For authentication it's actually enough to check that the username is in Play's session. Play's session
+        // is safe from tempering. But we retrieve the user from the database and put it into our RequestScope
+        // since we need it later anyway. Storing it in the RequestScope now saves us some database requests later.
         User loggedInUser = authenticationService.getLoggedInUserBySessionCookie(ctx.session());
         if (loggedInUser == null) {
             authenticationService.clearSessionCookie(ctx.session());
@@ -97,33 +95,32 @@ public class AuthenticationAction extends Action<Authenticated> {
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
         // Check user's session ID (only if not switched off in configuration)
-        if (Common.getUserSessionValidation() &&
-                !authenticationService.isValidSessionId(ctx.session(),
-                        loggedInUser.getEmail(), ctx.request().remoteAddress())) {
+        if (Common.getUserSessionValidation() && !authenticationService.isValidSessionId(ctx.session(),
+                        loggedInUser.getUsername(), ctx.request().remoteAddress())) {
             authenticationService.clearSessionCookie(ctx.session());
-            return callForbiddenDueToInvalidSession(loggedInUser.getEmail(),
+            return callForbiddenDueToInvalidSession(loggedInUser.getUsername(),
                     ctx.request().remoteAddress(), ctx.request().path());
         }
 
         // Check session timeout
         if (authenticationService.isSessionTimeout(ctx.session())) {
             authenticationService.clearSessionCookieAndSessionCache(
-                    ctx.session(), loggedInUser.getEmail(), ctx.request().remoteAddress());
-            return callForbiddenDueToSessionTimeout(loggedInUser.getEmail());
+                    ctx.session(), loggedInUser.getUsername(), ctx.request().remoteAddress());
+            return callForbiddenDueToSessionTimeout(loggedInUser.getUsername());
         }
 
         // Check inactivity timeout
         if (authenticationService.isInactivityTimeout(ctx.session())) {
             authenticationService.clearSessionCookieAndSessionCache(
-                    ctx.session(), loggedInUser.getEmail(), ctx.request().remoteAddress());
-            return callForbiddenDueToInactivityTimeout(loggedInUser.getEmail());
+                    ctx.session(), loggedInUser.getUsername(), ctx.request().remoteAddress());
+            return callForbiddenDueToInactivityTimeout(loggedInUser.getUsername());
         }
 
         authenticationService.refreshSessionCookie(ctx.session());
 
         // Check authorization
         if (!isAuthorized(loggedInUser)) {
-            return callForbiddenDueToAuthorization(loggedInUser.getEmail(), ctx.request().path());
+            return callForbiddenDueToAuthorization(loggedInUser.getUsername(), ctx.request().path());
         }
 
         // Everything ok: authenticated and authorized
@@ -148,10 +145,10 @@ public class AuthenticationAction extends Action<Authenticated> {
         return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
     }
 
-    private CompletionStage<Result> callForbiddenDueToInvalidSession(String userEmail, String remoteAddress,
+    private CompletionStage<Result> callForbiddenDueToInvalidSession(String normalizedUsername, String remoteAddress,
             String urlPath) {
-        LOGGER.warn("Invalid session: user " + userEmail + " tried to access page " + urlPath + " from remote address "
-                + remoteAddress + ".");
+        LOGGER.warn("Invalid session: user " + normalizedUsername + " tried to access page " + urlPath +
+                " from remote address " + remoteAddress + ".");
         String msg = "You have been logged out.";
         if (HttpUtils.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
@@ -161,8 +158,8 @@ public class AuthenticationAction extends Action<Authenticated> {
         }
     }
 
-    private CompletionStage<Result> callForbiddenDueToSessionTimeout(String userEmail) {
-        LOGGER.info("Session of user " + userEmail + " has expired and the user has been logged out.");
+    private CompletionStage<Result> callForbiddenDueToSessionTimeout(String normalizedUsername) {
+        LOGGER.info("Session of user " + normalizedUsername + " has expired and the user has been logged out.");
         String msg = "Your session has expired. You have been logged out.";
         if (HttpUtils.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
@@ -172,8 +169,8 @@ public class AuthenticationAction extends Action<Authenticated> {
         }
     }
 
-    private CompletionStage<Result> callForbiddenDueToInactivityTimeout(String userEmail) {
-        LOGGER.info("User " + userEmail + " has been logged out due to inactivity.");
+    private CompletionStage<Result> callForbiddenDueToInactivityTimeout(String normalizedUsername) {
+        LOGGER.info("User " + normalizedUsername + " has been logged out due to inactivity.");
         String msg = "You have been logged out due to inactivity.";
         if (HttpUtils.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
@@ -183,8 +180,8 @@ public class AuthenticationAction extends Action<Authenticated> {
         }
     }
 
-    private CompletionStage<Result> callForbiddenDueToAuthorization(String userEmail, String urlPath) {
-        String msg = "User " + userEmail + " isn't allowed to access page " + urlPath + ".";
+    private CompletionStage<Result> callForbiddenDueToAuthorization(String normalizedUsername, String urlPath) {
+        String msg = "User " + normalizedUsername + " isn't allowed to access page " + urlPath + ".";
         LOGGER.warn(msg);
         if (HttpUtils.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));

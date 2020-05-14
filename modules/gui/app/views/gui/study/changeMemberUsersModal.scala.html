@@ -14,7 +14,7 @@
                 <div class="messages"></div>
 
                 <form id="addMemberToStudyForm" action="#" class="form-horizontal col-xs-12" role="form">
-                    <label class="control-label" for="email">Add user by email
+                    <label class="control-label" for="username">Add user by username
                         <span class="glyphicon glyphicon-info-sign gray-light"
                             data-toggle="tooltip" title="They have to be a user of JATOS already.">
                         </span>
@@ -23,8 +23,7 @@
                         <div class="btn-toolbar" role="toolbar">
                             <div class="col-xs-8">
                                 <div class="input-group">
-                                    <!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
-                                    <input type="text" class="form-control email" name="email" placeholder="User's email">
+                                    <input type="text" class="form-control username" name="username" placeholder="username">
                                     <span class="input-group-btn">
                                         <input type="submit" class="btn btn-primary" value="Add">
                                     </span>
@@ -184,9 +183,9 @@ $('#changeMemberUsersModal').on('click', '#removeAllMemberButton', function() {
 
 $('#addMemberToStudyForm').submit(function(event) {
     event.preventDefault();
-    var emailToChange = $('#addMemberToStudyForm .email').val();
+    var usernameToChange = $('#addMemberToStudyForm .username').val();
     $.ajax({
-        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUser?email=' + emailToChange + '&isMember=true',
+        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUser?username=' + usernameToChange + '&isMember=true',
         type : "POST",
         success: function(user) {
             removeAlerts("#changeMemberUsersModal");
@@ -203,10 +202,10 @@ function alterTableAfterUserAdding(user) {
     var isAlreadyInTable = false;
     memberUserTable.rows().every(function(rowIdx, tableLoop, rowLoop) {
         var tableMember = this.data();
-        if (tableMember.email.toLowerCase() === user.email.toLowerCase()) {
+        if (tableMember.username.toLowerCase() === user.username.toLowerCase()) {
             isAlreadyInTable = true;
             if (tableMember.isMember) {
-                var msg = "User " + user.name + " (" + user.email + ") is already member.";
+                var msg = "User " + user.name + " (" + user.username + ") is already member.";
                 showInfo(msg, "#changeMemberUsersModal .messages");
             } else {
                 var button = $(this.node()).find('.memberToggleButton');
@@ -227,14 +226,14 @@ $('#changeMemberUsersModal .table').on('click', '.memberToggleButton', function(
     var tr = $(this).closest('tr');
     var tableMember = memberUserTable.row(tr).data();
     //var isMember = $(this).hasClass('isMember');
-    if (tableMember.email === "@loggedInUser.getEmail()" && !tableMember.removeConfirmation) {
+    if (tableMember.username === "@loggedInUser.getUsername()" && !tableMember.removeConfirmation) {
         showWarning("Are you sure you want to remove yourself from this study? "
             + "Then click again on the member checkbox.", "#changeMemberUsersModal .messages");
         tableMember.removeConfirmation = true;
         return;
     }
     $.ajax({
-        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUser?email=' + tableMember.email + '&isMember=' + !tableMember.isMember,
+        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUser?username=' + tableMember.username + '&isMember=' + !tableMember.isMember,
         type : "POST",
         success: function(user) {
             removeAlerts("#changeMemberUsersModal");

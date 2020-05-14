@@ -196,7 +196,7 @@ public class StudyAssetsTest {
     private Study cloneStudy(Study study) {
         return jpaApi.withTransaction(() -> {
             try {
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 Study clone = studyService.clone(study);
                 studyService.createAndPersistStudy(admin, clone);
                 return clone;
@@ -256,7 +256,7 @@ public class StudyAssetsTest {
         String url = Common.getPlayHttpContext() + "publix/" + study.getId() + "/start?"
                 + JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
         RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-                .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
+                .session(AuthenticationService.SESSION_USERNAME, admin.getUsername())
                 .session(JatosPublix.SESSION_JATOS_RUN, JatosRun.RUN_STUDY.name());
         return route(fakeApplication, request);
     }

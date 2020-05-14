@@ -10,8 +10,9 @@
 <table id="userTable" class="table top-buffer">
     <thead>
         <tr>
-            <th>Email</th>
+            <th>Username</th>
             <th>Name</th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Is this user authenticated by LDAP?">LDAP</th>
             <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can create/change/delete other users.">
                 Admin Rights
             </th>
@@ -57,9 +58,9 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <div class="form-group row">
-                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.EMAIL">Email address</label>
+                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.USERNAME">Username</label>
                         <div class="col-xs-8">
-                            <input type="email" class="form-control @models.gui.NewUserModel.EMAIL" name="@models.gui.NewUserModel.EMAIL">
+                            <input type="text" class="form-control @models.gui.NewUserModel.USERNAME" name="@models.gui.NewUserModel.USERNAME">
                             <span class="help-block">This will be the username.</span>
                         </div>
                     </div>
@@ -72,14 +73,6 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.PASSWORD">Password</label>
-                        <div class="col-xs-8">
-                            <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD" name="@models.gui.NewUserModel.PASSWORD" placeholder="Password" autocomplete="off" required>
-                            <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password" autocomplete="off" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
                         <label class="text-right col-xs-4">
                             Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users."></span>
                         </label>
@@ -87,6 +80,26 @@
                             <input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
                             <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
                             <input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
+                        </div>
+                    </div>
+
+
+                    <div class="form-group row" @if(!general.common.Common.isLdapAllowed()) {hidden}>
+                        <label class="text-right col-xs-4">
+                            LDAP <span class="glyphicon glyphicon-info-sign gray-light" title="Should this user be authenticated by your central LDAP service?"></span>
+                        </label>
+                        <div class="col-xs-8">
+                            <input type="checkbox" class="@models.gui.NewUserModel.AUTH_BY_LDAP" data-toggle="collapse" data-target=".passwordDiv" name="@models.gui.NewUserModel.AUTH_BY_LDAP" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.NewUserModel.AUTH_BY_LDAP" value="false" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row passwordDiv collapse in">
+                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.PASSWORD">Password</label>
+                        <div class="col-xs-8">
+                            <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD" name="@models.gui.NewUserModel.PASSWORD" placeholder="Password" autocomplete="off">
+                            <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password" autocomplete="off">
                         </div>
                     </div>
 
@@ -185,33 +198,53 @@ var userTable = $('#userTable').DataTable({
     "dom": 'ftip',
     "order": [[ 0, "asc" ]],
     "pageLength": 10,
+    "columnDefs": [
+        {
+            "visible": @{general.common.Common.isLdapAllowed()},
+            "targets": 2
+        }
+    ],
     "columns": [
-        { "data": "email" },
+        { "data": "username" },
         { "data": "name" },
-        { "class": 'adminRole',
+        {
+            "class": "text-center",
+            "data": "authByLdap",
+            "width": "1px",
+            "orderable": false,
+            "searchable": false,
+            "render": function (data, type, full, meta) {
+                if (data) {
+                    return '<span class="glyphicon glyphicon-ok"></span>';
+                } else {
+                    return '<span class="glyphicon glyphicon-remove"></span>';
+                }
+            }
+        },
+        {
+            "class": 'adminRole',
             "data": null,
             "defaultContent": '',
             "width": "1px",
             "orderable": false,
             "searchable": false,
-            "searchable": false,
             "render": function (data, type, full, meta) {
                 var buttonDiv = $('#userAdminToggleButtonDiv :first-child').clone();
                 var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", data.roleList) >= 0;
-                setAdminButton(buttonDiv, adminRole, data.email);
+                setAdminButton(buttonDiv, adminRole, data.username);
                 return buttonDiv.prop('outerHTML');
             }
         },
-        { "class": "toolbar",
+        {
+            "class": "toolbar",
             "data": null,
             "defaultContent": '',
             "width": "1%",
             "orderable": false,
             "searchable": false,
-            "searchable": false,
             "render": function (data, type, full, meta) {
                 var toolbar = $('#userToolbarDiv').clone().show();
-                setUserToolbar(toolbar, data.email);
+                setUserToolbar(toolbar, data.username, data.authByLdap);
                 return toolbar.html();
             }
         }
@@ -221,12 +254,14 @@ var userTable = $('#userTable').DataTable({
 $('#createUserButton').click(function(event) {
     removeAlerts("#createUserModal");
     removeFormErrors("#createUserModal");
-    $('#createUserModal .@models.gui.NewUserModel.EMAIL').val('');
+    $('#createUserModal .@models.gui.NewUserModel.USERNAME').val('');
     $('#createUserModal .@models.gui.NewUserModel.NAME').val('');
     $('#createUserModal .@models.gui.NewUserModel.PASSWORD').val('');
     $('#createUserModal .@models.gui.NewUserModel.PASSWORD_REPEAT').val('');
     $('#createUserModal .@models.gui.NewUserModel.ADMIN_ROLE').prop('checked', false);
-    $('#createUserModal .adminPasswordLabel').text("Password of user @loggedInUser.getEmail()");
+    $('#createUserModal .@models.gui.NewUserModel.AUTH_BY_LDAP').prop('checked', false);
+    $('#createUserModal .passwordDiv').addClass('in');
+    $('#createUserModal .adminPasswordLabel').text("Password of user @loggedInUser.getUsername()");
     $('#createUserModal .@models.gui.NewUserModel.ADMIN_PASSWORD').val('');
     $('#createUserModal').modal('show');
 });
@@ -256,18 +291,18 @@ $("#createUserForm").submit(function(event) {
     });
 });
 
-function setAdminButton(buttonDiv, adminRole, email) {
+function setAdminButton(buttonDiv, adminRole, username) {
     var button = $(buttonDiv).children("button:first");
     if (adminRole) {
         button.addClass('adminRole');
         button.removeClass('btn-default');
         button.addClass('btn-user');
         // Special treatment of admin users
-        if (email == "@services.gui.UserService.ADMIN_EMAIL") {
-            button.toggleClass('disabled', true);
+        if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+            button.attr('disabled', true);
             buttonDiv.attr('title', "User admin's admin rights can't be removed.");
-        } else if (email == "@loggedInUser.getEmail()") {
-            button.toggleClass('disabled', true);
+        } else if (username == "@loggedInUser.getUsername()") {
+            button.attr('disabled', true);
             buttonDiv.attr('title', "You can't remove your own admin rights. Only another user with admin rights can do it.");
         } else {
             buttonDiv.attr('title', "Click to remove admin rights from this user");
@@ -286,24 +321,33 @@ function setAdminButton(buttonDiv, adminRole, email) {
     }
 }
 
-function setUserToolbar(toolbar, email) {
-    if (email == "@services.gui.UserService.ADMIN_EMAIL") {
-        toolbar.find('.userDeleteButton').toggleClass('disabled', true);
+function setUserToolbar(toolbar, username, authByLdap) {
+    // Add delete user button
+    if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+        toolbar.find('.userDeleteButton').attr('disabled', true);
         toolbar.find('.userDeleteTooltip').attr('title', "It's not possible to delete the admin user.");
-        if ("@loggedInUser.getEmail()" != "@services.gui.UserService.ADMIN_EMAIL") {
-            toolbar.find('.userChangePasswordButton').toggleClass('disabled', true);
+    } else if (username == "@loggedInUser.getUsername()") {
+        toolbar.find('.userDeleteButton').attr('disabled', true);
+        toolbar.find('.userDeleteTooltip').attr('title', "You cannot delete your user here - but you can delete yourself in the user page (click on your username in the JATOS header).");
+    } else {
+        toolbar.find('.userDeleteTooltip').attr('title', "Delete this user from JATOS");
+    }
+
+    // Add change password button
+    if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+        if ("@loggedInUser.getUsername()" != "@services.gui.UserService.ADMIN_USERNAME") {
+            toolbar.find('.userChangePasswordButton').attr('disabled', true);
             toolbar.find('.userChangePasswordTooltip').attr('title', "Only user admin can change their own password.");
         } else {
             toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
         }
-    } else if (email == "@loggedInUser.getEmail()") {
-        toolbar.find('.userDeleteButton').toggleClass('disabled', true);
-        toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
-        toolbar.find('.userDeleteTooltip').attr('title', "You cannot delete your user here - but you can delete yourself in the user page (click on your email in the JATOS header).");
+    } else if (authByLdap) {
+        toolbar.find('.userChangePasswordButton').attr('disabled', true);
+        toolbar.find('.userChangePasswordTooltip').attr('title', "User authenticated by LDAP");
     } else {
         toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
-        toolbar.find('.userDeleteTooltip').attr('title', "Delete this user from JATOS");
     }
+
 }
 
 $('#userTable tbody').on('click', '.adminButton', function() {
@@ -312,7 +356,7 @@ $('#userTable tbody').on('click', '.adminButton', function() {
     var user = userTable.row(tr).data();
     var adminRole = $(this).hasClass('adminRole');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.email + "/admin?admin=" + !adminRole,
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/admin?admin=" + !adminRole,
         type : "POST",
         success: function(adminRole) {
             setAdminButton($(button).parent(), adminRole);
@@ -329,10 +373,10 @@ $('#userTable').on('click', '.userChangePasswordButton', function() {
     $('#changePasswordForm').data(user);
     removeAlerts("#changePasswordModal");
     removeFormErrors("#changePasswordModal");
-    $('#changePasswordModal .modal-title').text("Change password for " + user.name + "(" + user.email + ")");
-    $('#changePasswordModal .adminPasswordLabel').text("@loggedInUser.getEmail()'s password");
+    $('#changePasswordModal .modal-title').text("Change password for " + user.name + "(" + user.username + ")");
+    $('#changePasswordModal .adminPasswordLabel').text("@loggedInUser.getUsername()'s password");
     $('#changePasswordModal .@models.gui.ChangePasswordModel.ADMIN_PASSWORD').val('');
-    $('#changePasswordModal .newPasswordLabel').text("New password for user " + user.email);
+    $('#changePasswordModal .newPasswordLabel').text("New password for user " + user.username);
     $('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD').val('');
     $('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT').val('');
     $('#changePasswordModal').modal('show');
@@ -343,7 +387,7 @@ $("#changePasswordForm").submit(function(event) {
     var user = $(this).data(user);
     $.ajax({
         type: 'POST',
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/user/' + user.email + '/password',
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/user/' + user.username + '/password',
         data: $('#changePasswordForm').serialize(),
         success: function(response) {
             removeAlerts("#changePasswordModal");
@@ -369,15 +413,15 @@ $('#userTable tbody').on('click', '.userDeleteButton', function() {
     $('#deleteUserForm').data(user);
     removeAlerts("#deleteUserModal");
     removeFormErrors("#deleteUserModal");
-    $('#deleteUserModal .modal-title').text("Delete " + user.email + " (" + user.name + ")");
+    $('#deleteUserModal .modal-title').text("Delete " + user.username + " (" + user.name + ")");
     $('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml(user));
-    $('#deleteUserModal .adminPasswordLabel').text("Confirm with your (@loggedInUser.getEmail()) password");
+    $('#deleteUserModal .adminPasswordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
     $('#deleteUserModal .password').val('');
     $('#deleteUserModal').modal('show');
 });
 
 function generateUserDeleteConfirmationHtml(user) {
-    var confirmationText = "<p>You are about to delete the user <b>" + user.email + " (" + user.name + ")</b>. "
+    var confirmationText = "<p>You are about to delete the user <b>" + user.username + " (" + user.name + ")</b>. "
             + "All studies with this user as the only user will be deleted too.</p>";
     // Only add the studies that have a user size of 1 (means this user is the only
     // member and the study would be abandoned after user deletion) .
@@ -399,7 +443,7 @@ $('#deleteUserForm').submit(function(event) {
     event.preventDefault();
     var user = $('#deleteUserForm').data(user);
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.email + "/delete",
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/delete",
         type : 'POST',
         data: $('#deleteUserForm').serialize(),
         success : function(result) {

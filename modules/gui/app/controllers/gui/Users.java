@@ -11,6 +11,7 @@ import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
 import models.gui.NewUserModel;
+import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
@@ -23,6 +24,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.naming.NamingException;
 import java.io.IOException;
 import java.util.List;
 
@@ -34,6 +36,8 @@ import java.util.List;
 @GuiAccessLogging
 @Singleton
 public class Users extends Controller {
+
+    private static final Logger.ALogger LOGGER = Logger.of(Users.class);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final UserService userService;
@@ -63,8 +67,7 @@ public class Users extends Controller {
     @Authenticated(Role.ADMIN)
     public Result userManager() {
         User loggedInUser = authenticationService.getLoggedInUser();
-        String breadcrumbs = breadcrumbsService
-                .generateForHome(BreadcrumbsService.USER_MANAGER);
+        String breadcrumbs = breadcrumbsService.generateForHome(BreadcrumbsService.USER_MANAGER);
         return ok(views.html.gui.user.userManager.render(loggedInUser,
                 breadcrumbs, HttpUtils.isLocalhost()));
     }
@@ -86,10 +89,11 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated(Role.ADMIN)
-    public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole) {
+    public Result toggleAdmin(String usernameOfUserToChange, Boolean adminRole) {
         boolean hasAdminRole;
         try {
-            hasAdminRole = userService.changeAdminRole(emailOfUserToChange, adminRole);
+            String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
+            hasAdminRole = userService.changeAdminRole(normalizedUsernameOfUserToChange, adminRole);
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         } catch (ForbiddenException e) {
@@ -103,24 +107,24 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result profile(String email) throws JatosGuiException {
+    public Result profile(String username) throws JatosGuiException {
+        String normalizedUsername = User.normalizeUsername(username);
         User loggedInUser = authenticationService.getLoggedInUser();
-        checkEmailIsOfLoggedInUser(email, loggedInUser);
+        checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
-        return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
-                HttpUtils.isLocalhost()));
+        return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
     }
 
     /**
-     * Ajax GET request: Returns data of the user that belongs to the given
-     * email
+     * Ajax GET request: Returns data of the user that belongs to the given username
      */
     @Transactional
     @Authenticated
-    public Result singleUserData(String email) throws JatosGuiException {
+    public Result singleUserData(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
-        checkEmailIsOfLoggedInUser(email, loggedInUser);
+        String normalizedUsername = User.normalizeUsername(username);
+        checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
         return ok(jsonUtils.userData(loggedInUser));
     }
 
@@ -135,7 +139,12 @@ public class Users extends Controller {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest();
 
         // Validate via AuthenticationService
-        form = authenticationValidation.validateNewUser(loggedInUser.getEmail(), form);
+        try {
+            form = authenticationValidation.validateNewUser(loggedInUser.getUsername(), form);
+        } catch (NamingException e) {
+            LOGGER.warn("LDAP problems - " + e.toString());
+            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
+        }
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         userService.bindToUserAndPersist(form.get());
@@ -148,9 +157,10 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitEditedProfile(String email) throws JatosGuiException {
+    public Result submitEditedProfile(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
-        checkEmailIsOfLoggedInUser(email, loggedInUser);
+        String normalizedUsername = User.normalizeUsername(username);
+        checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -167,20 +177,33 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitChangedPassword(String emailOfUserToChange) {
+    public Result submitChangedPassword(String usernameOfUserToChange) {
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest();
+        String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
 
-        // Validate via AuthenticationValidation
-        form = authenticationValidation.validateChangePassword(emailOfUserToChange, form);
-        if (form.hasErrors()) return forbidden(form.errorsAsJson());
-
-        // Change password
+        User user;
         try {
-            String newPassword = form.get().getNewPassword();
-            userService.updatePassword(emailOfUserToChange, newPassword);
+            user = userService.retrieveUser(normalizedUsernameOfUserToChange);
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         }
+        if (user.isAuthByLdap()) {
+            return forbidden("It's not possible to change the password of an LDAP user.");
+        }
+
+        // Validate via AuthenticationValidation
+        try {
+            form = authenticationValidation.validateChangePassword(normalizedUsernameOfUserToChange, form);
+        } catch (NamingException e) {
+            // This should never happen since LDAP users are sorted out earlier
+            LOGGER.warn("LDAP problems - " + e.toString());
+            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
+        }
+        if (form.hasErrors()) return forbidden(form.errorsAsJson());
+
+        // Change password
+        String newPassword = form.get().getNewPassword();
+        userService.updatePassword(user, newPassword);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -193,21 +216,27 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(String emailOfUserToRemove) {
+    public Result remove(String usernameOfUserToRemove) {
         User loggedInUser = authenticationService.getLoggedInUser();
-        String loggedInUserEmail = loggedInUser.getEmail();
-        if (!loggedInUser.hasRole(Role.ADMIN) && !emailOfUserToRemove.equals(loggedInUserEmail)) {
+        String normalizedLoggedInUsername = loggedInUser.getUsername();
+        String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
+        if (!loggedInUser.hasRole(Role.ADMIN) && !normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
             return forbidden(MessagesStrings.NOT_ALLOWED_TO_DELETE_USER);
         }
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
         String password = requestData.get("password");
-        if (password == null || !authenticationService.authenticate(loggedInUserEmail, password)) {
-            return forbidden(MessagesStrings.WRONG_PASSWORD);
+        try {
+            if (password == null || !authenticationService.authenticate(normalizedLoggedInUsername, password)) {
+                return forbidden(MessagesStrings.WRONG_PASSWORD);
+            }
+        } catch (NamingException e) {
+            LOGGER.warn("LDAP problems - " + e.toString());
+            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
         }
 
         try {
-            userService.removeUser(emailOfUserToRemove);
+            userService.removeUser(normalizedUsernameOfUserToRemove);
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         } catch (ForbiddenException e) {
@@ -216,18 +245,16 @@ public class Users extends Controller {
             return internalServerError(e.getMessage());
         }
         // If the user removes himself: logout
-        if (emailOfUserToRemove.equals(loggedInUserEmail)) {
+        if (normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
             authenticationService.clearSessionCookieAndSessionCache(session(),
-                    loggedInUser.getEmail(), request().host());
+                    loggedInUser.getUsername(), request().host());
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
-    private void checkEmailIsOfLoggedInUser(String email, User loggedInUser)
-            throws JatosGuiException {
-        if (!email.toLowerCase().equals(loggedInUser.getEmail())) {
-            ForbiddenException e = new ForbiddenException(
-                    MessagesStrings.userNotAllowedToGetData(email));
+    private void checkUsernameIsOfLoggedInUser(String normalizedUsername, User loggedInUser) throws JatosGuiException {
+        if (!normalizedUsername.equals(loggedInUser.getUsername())) {
+            ForbiddenException e = new ForbiddenException(MessagesStrings.userNotAllowedToGetData(normalizedUsername));
             jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
         }
     }

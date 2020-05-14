@@ -1,5 +1,6 @@
 package services.gui;
 
+import com.sun.jndi.ldap.LdapCtxFactory;
 import controllers.gui.Authentication;
 import controllers.gui.actionannotations.AuthenticationAction;
 import daos.common.UserDao;
@@ -13,21 +14,23 @@ import utils.common.HashUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.naming.AuthenticationException;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Hashtable;
 
 /**
- * Service class around authentication, session cookie and session cache
- * handling. It works together with the {@link Authentication} controller and
- * the @Authenticated annotation defined in {@link AuthenticationAction}.
+ * Service class around authentication, session cookie and session cache handling. It works together with the
+ * {@link Authentication} controller and the @Authenticated annotation defined in {@link AuthenticationAction}.
  * <p>
- * If a user is authenticated (same password as stored in the database) a user
- * session ID is generated and stored in Play's session cookie and in the the
- * cache. With each subsequent request this session is checked in the
- * AuthenticationAction. For authentication the user's email is turned into
- * lower case.
+ * If a user is authenticated (same password as stored in the database) a user session ID is generated and stored in
+ * Play's session cookie and in the the cache. With each subsequent request this session is checked in the
+ * AuthenticationAction.
  *
  * @author Kristian Lange (2017)
  */
@@ -37,20 +40,17 @@ public class AuthenticationService {
     private static final ALogger LOGGER = Logger.of(AuthenticationService.class);
 
     /**
-     * Parameter name in Play's session cookie: It contains the email of the
-     * logged in user
+     * Parameter name in Play's session cookie: It contains the username of the logged in user
      */
     public static final String SESSION_ID = "sessionID";
 
     /**
-     * Parameter name in Play's session cookie: It contains the email of the
-     * logged in user
+     * Parameter name in Play's session cookie: It contains the username of the logged in user
      */
-    public static final String SESSION_USER_EMAIL = "userEmail";
+    public static final String SESSION_USERNAME = "username";
 
     /**
-     * Parameter name in Play's session cookie: It contains the timestamp of the
-     * login time
+     * Parameter name in Play's session cookie: It contains the timestamp of the login time
      */
     public static final String SESSION_LOGIN_TIME = "loginTime";
 
@@ -77,37 +77,64 @@ public class AuthenticationService {
     }
 
     /**
-     * Authenticates the user specified by the email with the given password.
+     * Authenticates the user specified by the username with the given password.
      */
-    public boolean authenticate(String email, String password) {
-        email = email.toLowerCase();
+    public boolean authenticate(String normalizedUsername, String password) throws NamingException {
+        User user = userDao.findByUsername(normalizedUsername);
+        if (user == null) return false;
+        if (user.isAuthByLdap()) {
+            return authenticateViaLdap(normalizedUsername, password);
+        } else {
+            return authenticateViaDb(normalizedUsername, password);
+        }
+    }
+
+    private boolean authenticateViaDb(String normalizedUsername, String password) {
         String passwordHash = HashUtils.getHashMD5(password);
-        return userDao.authenticate(email, passwordHash);
+        return userDao.authenticate(normalizedUsername, passwordHash);
+    }
+
+    /**
+     * Authenticated via an external LDAP server and throws an NamingException if the LDAP server can't be reached or
+     * the the LDAP URL or Base DN is wrong.
+     */
+    private boolean authenticateViaLdap(String normalizedUsername, String password) throws NamingException {
+        Hashtable<String, String> props = new Hashtable<>();
+        String principalName = "uid=" + normalizedUsername + "," + Common.getLdapBasedn();
+        props.put(Context.SECURITY_PRINCIPAL, principalName);
+        props.put(Context.SECURITY_CREDENTIALS, password);
+        props.put("com.sun.jndi.ldap.read.timeout", String.valueOf(Common.getLdapTimeout()));
+        props.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(Common.getLdapTimeout()));
+        DirContext context;
+        try {
+            context = LdapCtxFactory.getLdapCtxInstance(Common.getLdapUrl() + '/', props);
+            context.close();
+            return true;
+        } catch (AuthenticationException e) {
+            return false;
+        }
     }
 
     /**
      * Checks the user session cache whether this user tries to login repeatedly
      */
-    public boolean isRepeatedLoginAttempt(String email) {
-        email = email.toLowerCase();
-        userSessionCacheAccessor.addLoginAttempt(email);
-        return userSessionCacheAccessor.isRepeatedLoginAttempt(email);
+    public boolean isRepeatedLoginAttempt(String normalizedUsername) {
+        userSessionCacheAccessor.addLoginAttempt(normalizedUsername);
+        return userSessionCacheAccessor.isRepeatedLoginAttempt(normalizedUsername);
     }
 
     /**
-     * Retrieves the logged-in user from Play's session. If a user is logged-in
-     * his email is stored in the Play's session cookie. With the email a user
-     * can be retrieved from the database. Returns null if the session doesn't
-     * contains an email or if the user doesn't exists in the database.
+     * Retrieves the logged-in user from Play's session. If a user is logged-in their username is stored in Play's
+     * session cookie. With the username a user can be retrieved from the database. Returns null if the session doesn't
+     * contains an username or if the user doesn't exists in the database.
      * <p>
-     * In most cases getLoggedInUser() is faster since it doesn't has to query
-     * the database.
+     * In most cases getLoggedInUser() is faster since it doesn't has to query the database.
      */
     public User getLoggedInUserBySessionCookie(Http.Session session) {
-        String email = session.get(AuthenticationService.SESSION_USER_EMAIL);
+        String normalizedUsername = session.get(AuthenticationService.SESSION_USERNAME);
         User loggedInUser = null;
-        if (email != null) {
-            loggedInUser = userDao.findByEmail(email.toLowerCase());
+        if (normalizedUsername != null) {
+            loggedInUser = userDao.findByUsername(normalizedUsername);
         }
         return loggedInUser;
     }
@@ -123,16 +150,14 @@ public class AuthenticationService {
 
     /**
      * Prepares Play's session cookie and the user session cache for the user
-     * with the given email to be logged-in. Does not authenticate the user (use
+     * with the given username to be logged-in. Does not authenticate the user (use
      * authenticate() for this).
      */
-    public void writeSessionCookieAndSessionCache(Http.Session session,
-            String email, String remoteAddress) {
-        email = email.toLowerCase();
+    public void writeSessionCookieAndSessionCache(Http.Session session, String normalizedUsername, String remoteAddress) {
         String sessionId = generateSessionId();
-        userSessionCacheAccessor.setUserSessionId(email, remoteAddress, sessionId);
+        userSessionCacheAccessor.setUserSessionId(normalizedUsername, remoteAddress, sessionId);
         session.put(SESSION_ID, sessionId);
-        session.put(SESSION_USER_EMAIL, email);
+        session.put(SESSION_USERNAME, normalizedUsername);
         session.put(SESSION_LOGIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
         session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
     }
@@ -165,10 +190,8 @@ public class AuthenticationService {
      * Deletes the session cookie and removes the cache entry. This is usual
      * done during a user logout.
      */
-    public void clearSessionCookieAndSessionCache(Http.Session session,
-            String email, String remoteAddress) {
-        email = email.toLowerCase();
-        userSessionCacheAccessor.removeUserSessionId(email, remoteAddress);
+    public void clearSessionCookieAndSessionCache(Http.Session session, String normalizedUsername, String remoteAddress) {
+        userSessionCacheAccessor.removeUserSessionId(normalizedUsername, remoteAddress);
         session.clear();
     }
 
@@ -176,10 +199,9 @@ public class AuthenticationService {
      * Checks the session ID stored in Play's session cookie whether it is the
      * same as stored in the cache during the last login.
      */
-    public boolean isValidSessionId(Http.Session session, String email, String remoteAddress) {
-        email = email.toLowerCase();
+    public boolean isValidSessionId(Http.Session session, String normalizedUsername, String remoteAddress) {
         String cookieSessionId = session.get(SESSION_ID);
-        String cachedSessionId = userSessionCacheAccessor.getUserSessionId(email, remoteAddress);
+        String cachedSessionId = userSessionCacheAccessor.getUserSessionId(normalizedUsername, remoteAddress);
         return cookieSessionId != null && cookieSessionId.equals(cachedSessionId);
     }
 
@@ -189,11 +211,9 @@ public class AuthenticationService {
      */
     public boolean isSessionTimeout(Http.Session session) {
         try {
-            Instant loginTime =
-                    Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_LOGIN_TIME)));
+            Instant loginTime = Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_LOGIN_TIME)));
             Instant now = Instant.now();
-            Instant allowedUntil =
-                    loginTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
+            Instant allowedUntil = loginTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
@@ -208,11 +228,9 @@ public class AuthenticationService {
      */
     public boolean isInactivityTimeout(Http.Session session) {
         try {
-            Instant lastActivityTime = Instant.ofEpochMilli(
-                    Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
+            Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
             Instant now = Instant.now();
-            Instant allowedUntil = lastActivityTime.plus(
-                    Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
+            Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());

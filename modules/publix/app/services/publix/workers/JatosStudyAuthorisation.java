@@ -1,7 +1,5 @@
 package services.publix.workers;
 
-import javax.inject.Singleton;
-
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
 import exceptions.publix.ForbiddenPublixException;
@@ -11,6 +9,8 @@ import models.common.User;
 import models.common.workers.JatosWorker;
 import services.publix.PublixErrorMessages;
 import services.publix.StudyAuthorisation;
+
+import javax.inject.Singleton;
 
 /**
  * JatosPublix's implementation of StudyAuthorization
@@ -41,14 +41,12 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
         User user = worker.getUser();
         // User has to be a user of this study
         if (!study.hasUser(user)) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
+            throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
         // User has to be logged in
-        String email = Publix.session(JatosPublix.SESSION_USER_EMAIL);
-        if (!user.getEmail().equals(email)) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
+        String username = Publix.session(JatosPublix.SESSION_USERNAME);
+        if (!user.getUsername().equals(username)) {
+            throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
     }
 

@@ -23,6 +23,7 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
+import javax.naming.NamingException;
 import java.io.IOException;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -112,8 +113,7 @@ public class UserServiceTest {
                 userService.retrieveUser("user-not-exist");
                 Fail.fail();
             } catch (NotFoundException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        MessagesStrings.userNotExist("user-not-exist"));
+                assertThat(e.getMessage()).isEqualTo(MessagesStrings.userNotExist("user-not-exist"));
             }
         });
     }
@@ -124,7 +124,7 @@ public class UserServiceTest {
     @Test
     public void checkBindToUserAndPersist() {
         NewUserModel userModelBla = new NewUserModel();
-        userModelBla.setEmail(TestHelper.BLA_EMAIL);
+        userModelBla.setUsername(TestHelper.BLA_EMAIL);
         userModelBla.setName("Bla Bla");
         userModelBla.setAdminPassword("nobodyCaresAtThisPoint");
         userModelBla.setPassword("blaPw");
@@ -135,8 +135,8 @@ public class UserServiceTest {
 
         // Check that the user is stored in the DB properly
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            assertThat(u.getEmail()).isEqualTo(TestHelper.BLA_EMAIL);
+            User u = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            assertThat(u.getUsername()).isEqualTo(TestHelper.BLA_EMAIL);
             assertThat(u.getName()).isEqualTo(userModelBla.getName());
             assertThat(u.getPasswordHash()).isNotEmpty();
             // Since we requested an admin user it has the ADMIN role
@@ -148,7 +148,7 @@ public class UserServiceTest {
         // Now check with a second user but without admin rights
         // Additionally check that the 'passwordRepeat' is not checked here
         NewUserModel userModelFoo = new NewUserModel();
-        userModelFoo.setEmail("foo@foo.org");
+        userModelFoo.setUsername("foo@foo.org");
         userModelFoo.setName("Foo Foo");
         userModelFoo.setAdminPassword("nobodyCaresAtThisPoint");
         userModelFoo.setPassword("fooPw");
@@ -156,14 +156,14 @@ public class UserServiceTest {
         userModelFoo.setAdminRole(false);
         jpaApi.withTransaction(() -> userService.bindToUserAndPersist(userModelFoo));
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(userModelFoo.getEmail());
+            User u = userDao.findByUsername(userModelFoo.getUsername());
             // Since we didn't requested an admin user it only has the USER role
             assertThat(u.getRoleList()).containsOnly(Role.USER);
         });
 
         // Clean-up
-        testHelper.removeUser(userModelBla.getEmail());
-        testHelper.removeUser(userModelFoo.getEmail());
+        testHelper.removeUser(userModelBla.getUsername());
+        testHelper.removeUser(userModelFoo.getUsername());
     }
 
     /**
@@ -173,14 +173,14 @@ public class UserServiceTest {
     public void checkCreateAndPersistUser() {
         // Set first user
         User userBla = new User();
-        userBla.setEmail(TestHelper.BLA_EMAIL);
+        userBla.setUsername(TestHelper.BLA_EMAIL);
         userBla.setName("Bla Bla");
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, false));
 
         // Check that the user is stored in the DB properly
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            assertThat(u.getEmail()).isEqualTo(TestHelper.BLA_EMAIL);
+            User u = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            assertThat(u.getUsername()).isEqualTo(TestHelper.BLA_EMAIL);
             assertThat(u.getName()).isEqualTo("Bla Bla");
             assertThat(u.getPasswordHash()).isNotEmpty();
             // Since we requested an admin user it has the ADMIN role
@@ -190,18 +190,18 @@ public class UserServiceTest {
 
         // Store another user that is not an admin
         User userFoo = new User();
-        userFoo.setEmail("foo@foo.org");
+        userFoo.setUsername("foo@foo.org");
         userFoo.setName("Foo Foo");
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false, false));
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(userFoo.getEmail());
+            User u = userDao.findByUsername(userFoo.getUsername());
             // It only has the USER role
             assertThat(u.getRoleList()).containsOnly(Role.USER);
         });
 
         // Clean-up
-        testHelper.removeUser(userBla.getEmail());
-        testHelper.removeUser(userFoo.getEmail());
+        testHelper.removeUser(userBla.getUsername());
+        testHelper.removeUser(userFoo.getUsername());
     }
 
     /**
@@ -210,16 +210,15 @@ public class UserServiceTest {
     @Test
     public void checkCreateAndPersistUserEmailsCaseInsensitive() {
         User userBla = new User();
-        userBla.setEmail(TestHelper.BLA_UPPER_CASE_EMAIL); // Mixed case email address
+        userBla.setUsername(TestHelper.BLA_UPPER_CASE_EMAIL); // Mixed case email address
         userBla.setName("Bla Bla");
 
-        jpaApi.withTransaction(
-                () -> userService.createAndPersistUser(userBla, "blaPassword", true));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, false));
 
         // Retrieve user with lower-case email
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            assertThat(u.getEmail()).isEqualTo(TestHelper.BLA_EMAIL);
+            User u = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            assertThat(u.getUsername()).isEqualTo(TestHelper.BLA_EMAIL);
             assertThat(u.getName()).isEqualTo("Bla Bla");
             assertThat(u.getPasswordHash()).isNotEmpty();
             // Since we requested an admin user it has the ADMIN role
@@ -228,7 +227,7 @@ public class UserServiceTest {
         });
 
         // Clean-up
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**
@@ -236,18 +235,22 @@ public class UserServiceTest {
      */
     @Test
     public void checkUpdatePassword() {
-        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+        User user = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         jpaApi.withTransaction(() -> {
             try {
-                userService.updatePassword(TestHelper.BLA_EMAIL, "newPassword");
-            } catch (NotFoundException e) {
+                userService.updatePassword(user, "newPassword");
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
 
         jpaApi.withTransaction(() -> {
-            authenticationService.authenticate(TestHelper.BLA_EMAIL, "newPassword");
+            try {
+                authenticationService.authenticate(TestHelper.BLA_EMAIL, "newPassword");
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
@@ -256,34 +259,22 @@ public class UserServiceTest {
      */
     @Test
     public void checkUpdatePasswordEmailCaseInsensitive() {
-        testHelper.createAndPersistUser(TestHelper.BLA_UPPER_CASE_EMAIL, "Bla Bla", "bla");
+        User user = testHelper.createAndPersistUser(TestHelper.BLA_UPPER_CASE_EMAIL, "Bla Bla", "bla");
 
         jpaApi.withTransaction(() -> {
             try {
                 // Get with lower-case email
-                userService.updatePassword(TestHelper.BLA_EMAIL, "newPassword");
-            } catch (NotFoundException e) {
+                userService.updatePassword(user, "newPassword");
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
 
         jpaApi.withTransaction(() -> {
-            authenticationService.authenticate(TestHelper.BLA_EMAIL, "newPassword");
-        });
-    }
-
-    /**
-     * Test UserService.updatePassword()
-     */
-    @Test
-    public void checkUpdatePasswordNotFound() {
-        jpaApi.withTransaction(() -> {
             try {
-                userService.updatePassword("not-existing@user.org",
-                        "newPassword");
-                Fail.fail();
-            } catch (NotFoundException e) {
-                // A NotFoundException must be thrown
+                authenticationService.authenticate(TestHelper.BLA_EMAIL, "newPassword");
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
             }
         });
     }
@@ -306,7 +297,7 @@ public class UserServiceTest {
             }
         });
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(TestHelper.BLA_EMAIL);
+            User u = userDao.findByUsername(TestHelper.BLA_EMAIL);
             // User has role ADMIN now
             assertThat(u.getRoleList()).containsOnly(Role.USER, Role.ADMIN);
         });
@@ -320,52 +311,12 @@ public class UserServiceTest {
             }
         });
         jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(userBla.getEmail());
+            User u = userDao.findByUsername(userBla.getUsername());
             // User does not have role ADMIN now
             assertThat(u.getRoleList()).containsOnly(Role.USER);
         });
 
-        testHelper.removeUser(userBla.getEmail());
-    }
-
-    /**
-     * Test UserService.changeAdminRole(): add or remove the ADMIN role to a
-     * user while email is treated case-insensitive
-     */
-    @Test
-    public void checkChangeAdminRoleEmailCaseInsensitive() {
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-        testHelper.defineLoggedInUser(testHelper.getAdmin());
-
-        // Add ADMIN role to user with mixed-case email
-        jpaApi.withTransaction(() -> {
-            try {
-                userService.changeAdminRole(TestHelper.BLA_UPPER_CASE_EMAIL, true);
-            } catch (NotFoundException | ForbiddenException e) {
-                Fail.fail();
-            }
-        });
-        jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            // User has role ADMIN now
-            assertThat(u.getRoleList()).containsOnly(Role.USER, Role.ADMIN);
-        });
-
-        // Remove ADMIN role from user with mixed-case email
-        jpaApi.withTransaction(() -> {
-            try {
-                userService.changeAdminRole(TestHelper.BLA_UPPER_CASE_EMAIL, false);
-            } catch (NotFoundException | ForbiddenException e) {
-                Fail.fail();
-            }
-        });
-        jpaApi.withTransaction(() -> {
-            User u = userDao.findByEmail(userBla.getEmail());
-            // User does not have role ADMIN now
-            assertThat(u.getRoleList()).containsOnly(Role.USER);
-        });
-
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**
@@ -399,7 +350,7 @@ public class UserServiceTest {
 
         jpaApi.withTransaction(() -> {
             try {
-                userService.changeAdminRole(UserService.ADMIN_EMAIL, false);
+                userService.changeAdminRole(UserService.ADMIN_USERNAME, false);
                 Fail.fail();
             } catch (NotFoundException e) {
                 Fail.fail();
@@ -408,7 +359,7 @@ public class UserServiceTest {
             }
         });
 
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**
@@ -423,7 +374,7 @@ public class UserServiceTest {
         // First add ADMIN role to user
         jpaApi.withTransaction(() -> {
             try {
-                userService.changeAdminRole(userBla.getEmail(), true);
+                userService.changeAdminRole(userBla.getUsername(), true);
             } catch (NotFoundException | ForbiddenException e) {
                 Fail.fail();
             }
@@ -435,7 +386,7 @@ public class UserServiceTest {
         // Try to remove ADMIN role from user
         jpaApi.withTransaction(() -> {
             try {
-                userService.changeAdminRole(userBla.getEmail(), false);
+                userService.changeAdminRole(userBla.getUsername(), false);
                 Fail.fail();
             } catch (NotFoundException e) {
                 Fail.fail();
@@ -445,7 +396,7 @@ public class UserServiceTest {
         });
 
         // Clean-up
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**
@@ -456,8 +407,7 @@ public class UserServiceTest {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         // Create a study where the user is member
-        Study study = testHelper.createAndPersistExampleStudy(injector,
-                userBla.getEmail());
+        Study study = testHelper.createAndPersistExampleStudy(injector, userBla.getUsername());
 
         // Remove user
         jpaApi.withTransaction(() -> {
@@ -470,42 +420,11 @@ public class UserServiceTest {
 
         jpaApi.withTransaction(() -> {
             // User is removed from database
-            assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull();
+            assertThat(userDao.findByUsername(TestHelper.BLA_EMAIL)).isNull();
             // User's studies are removed
             userBla.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
             // Study's batches are removed
-            study.getBatchList()
-                    .forEach(s -> assertThat(batchDao.findById(study.getId())).isNull());
-        });
-    }
-
-    /**
-     * Test UserService.removeUser(): emails must be treaded case-insensitive
-     */
-    @Test
-    public void checkRemoveUserEmailCaseInsensitive() {
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-
-        // Create a study where the user is member
-        Study study = testHelper.createAndPersistExampleStudy(injector, userBla.getEmail());
-
-        // Remove user with mixed-case email
-        jpaApi.withTransaction(() -> {
-            try {
-                userService.removeUser(TestHelper.BLA_UPPER_CASE_EMAIL);
-            } catch (NotFoundException | ForbiddenException | IOException e) {
-                Fail.fail();
-            }
-        });
-
-        jpaApi.withTransaction(() -> {
-            // User is removed from database
-            assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull();
-            // User's studies are removed
-            userBla.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
-            // Study's batches are removed
-            study.getBatchList()
-                    .forEach(s -> assertThat(batchDao.findById(study.getId())).isNull());
+            study.getBatchList().forEach(s -> assertThat(batchDao.findById(study.getId())).isNull());
         });
     }
 
@@ -517,7 +436,7 @@ public class UserServiceTest {
     public void checkRemoveUserNotAdmin() {
         jpaApi.withTransaction(() -> {
             try {
-                userService.removeUser(UserService.ADMIN_EMAIL);
+                userService.removeUser(UserService.ADMIN_USERNAME);
                 Fail.fail();
             } catch (NotFoundException | IOException e) {
                 Fail.fail();

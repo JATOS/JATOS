@@ -93,7 +93,7 @@ public class ResultRemoverTest {
 
         // Now remove both ComponentResults
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 resultRemover.removeComponentResults(ids, admin);
             } catch (BadRequestException | NotFoundException | ForbiddenException | IOException e) {
@@ -120,7 +120,7 @@ public class ResultRemoverTest {
 
         // Now try to remove the results but one of the result IDs doesn't exist
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             ids.add(1111L);
             try {
                 resultRemover.removeComponentResults(ids, admin);
@@ -152,7 +152,7 @@ public class ResultRemoverTest {
 
         // Now remove both StudyResults
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 resultRemover.removeStudyResults(ids, admin);
             } catch (BadRequestException | NotFoundException | ForbiddenException | IOException e) {

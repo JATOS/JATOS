@@ -376,7 +376,7 @@ public class IdCookieServiceTest {
 
     private StudyResult createAndPersistStudyResult(Study study) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             return resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
         });
     }

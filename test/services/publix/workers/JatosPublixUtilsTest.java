@@ -36,7 +36,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
     @Test
     public void checkRetrieveTypedWorker() {
         JatosWorker retrievedWorker = jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 return jatosPublixUtils
                         .retrieveTypedWorker(admin.getWorker().getId());
@@ -46,7 +46,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
         });
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             assertThat(retrievedWorker.getId())
                     .isEqualTo(admin.getWorker().getId());
         });

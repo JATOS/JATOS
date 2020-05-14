@@ -206,14 +206,14 @@ function fillBatch(batchItem, batch) {
     $(batchItem).find('.batchResultsButton .resultsBadge').text(batch.resultCount);
     $(batchItem).find('.groupsButton .groupsBadge').text(batch.groupCount);
     if (!@study.isGroupStudy()) {
-        $(batchItem).find('.groupsButton').toggleClass('disabled', true);
+        $(batchItem).find('.groupsButton').attr('disabled', true);
     }
 }
 
 $('#batchList').on('click', '.collapseWorkerSetup, .batchTitle, .batchWorkersBadge', function() {
     var batchItem = $(this).closest('.batchItem');
     var collapse = $(batchItem).find(".panel-collapse:first");
-    if($(collapse).children().length == 0) {
+    if ($(collapse).children().length == 0) {
         var batch = getBatchData(this);
         if (!batch) {return} // should never happen
         var workerSetupDiv = generateWorkerSetupDiv(batch);

@@ -273,13 +273,14 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result toggleMemberUser(Long studyId, String email, boolean isMember) throws JatosGuiException {
+    public Result toggleMemberUser(Long studyId, String username, boolean isMember) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         User userToChange = null;
+        String normalizedUsername = User.normalizeUsername(username);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-            userToChange = userService.retrieveUser(email);
+            userToChange = userService.retrieveUser(normalizedUsername);
             studyService.changeUserMember(study, userToChange, isMember);
         } catch (ForbiddenException | NotFoundException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);

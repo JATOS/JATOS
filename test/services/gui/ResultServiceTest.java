@@ -95,7 +95,7 @@ public class ResultServiceTest {
                 List<ComponentResult> componentResultList = resultService.getComponentResults(ids);
 
                 // Must not throw an exception
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 checker.checkComponentResults(componentResultList, admin, true);
             } catch (NotFoundException | ForbiddenException | BadRequestException e) {
                 throw new RuntimeException(e);
@@ -117,7 +117,7 @@ public class ResultServiceTest {
                 checker.checkComponentResults(componentResultList, testUser, true);
             } catch (ForbiddenException e) {
                 assertThat(e.getMessage()).isEqualTo(MessagesStrings
-                        .studyNotUser(testUser.getName(), testUser.getEmail(), study.getId(), study.getTitle()));
+                        .studyNotUser(testUser.getName(), testUser.getUsername(), study.getId(), study.getTitle()));
             } catch (BadRequestException | NotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -133,7 +133,7 @@ public class ResultServiceTest {
         List<Long> ids = resultTestHelper.createTwoComponentResults(study.getId());
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             List<ComponentResult> componentResultList;
             try {
                 componentResultList = resultService.getComponentResults(ids);
@@ -169,7 +169,7 @@ public class ResultServiceTest {
         List<Long> ids = resultTestHelper.createTwoStudyResults(study.getId());
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 List<StudyResult> studyResultList = resultService.getStudyResults(ids);
 
@@ -188,7 +188,7 @@ public class ResultServiceTest {
         List<Long> ids = resultTestHelper.createTwoStudyResults(study.getId());
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             List<StudyResult> studyResultList;
             try {
                 studyResultList = resultService.getStudyResults(ids);
@@ -314,7 +314,7 @@ public class ResultServiceTest {
         // Leave the StudyResult but remove admin from the users of the corresponding studies
         jpaApi.withTransaction(() -> {
             try {
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 List<StudyResult> studyResultList = resultService.getStudyResults(ids);
                 studyResultList.forEach(studyResult -> studyResult.getStudy().removeUser(admin));
             } catch (NotFoundException e) {
@@ -324,7 +324,7 @@ public class ResultServiceTest {
 
         // Must be empty
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, admin.getWorker());
             assertThat(studyResultList.size()).isEqualTo(0);
         });
@@ -336,7 +336,7 @@ public class ResultServiceTest {
 
         // Don't add any results
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, admin.getWorker());
             assertThat(studyResultList).isEmpty();
         });
@@ -351,7 +351,7 @@ public class ResultServiceTest {
         // Use wrong user to retrieve results
         jpaApi.withTransaction(() -> {
             User testUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, testUser.getWorker());
             assertThat(studyResultList).isEmpty();
         });

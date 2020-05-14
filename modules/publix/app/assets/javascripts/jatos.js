@@ -30,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.5.3";
+	jatos.version = "3.5.4";
 	/**
 	 * How long should JATOS wait until to retry the HTTP call. Warning: In some
 	 * cases a JATOS regards a second call of the same function as a reload of
@@ -230,7 +230,7 @@ var jatos = {};
 	// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
 	// a component's jQuery version. Afterwards call initJatos.
 	jatos.jQuery = {};
-	getScript('jatos-publix/javascripts/jquery-3.4.1.min.js', function () {
+	getScript('jatos-publix/javascripts/jquery-3.5.1.min.js', function () {
 		jatos.jQuery = jQuery.noConflict(true);
 		jatos.jQuery.ajaxSetup({
 			cache: true

@@ -12,9 +12,9 @@
     }
     @if(worker.getWorkerType().equals(common.workers.JatosWorker.WORKER_TYPE)) {
         @if(worker.asInstanceOf[common.workers.JatosWorker].getUser() != null) {
-        User Email Address: @worker.asInstanceOf[common.workers.JatosWorker].getUser().getEmail()
+        Username: @worker.asInstanceOf[common.workers.JatosWorker].getUser().getUsername()
         } else {
-        User Email Address: unknown (user was probably deleted)
+        Username: unknown (user was probably deleted)
         }
     }
     @if(worker.getWorkerType().equals(common.workers.PersonalMultipleWorker.WORKER_TYPE)) {

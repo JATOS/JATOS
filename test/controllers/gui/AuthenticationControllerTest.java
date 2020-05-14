@@ -97,7 +97,7 @@ public class AuthenticationControllerTest {
         // Check that it redirects to the login page
         assertThat(result.status()).isEqualTo(SEE_OTHER);
         assertThat(result.redirectLocation().get()).contains("login");
-        assertThat(!result.session().containsKey(AuthenticationService.SESSION_USER_EMAIL));
+        assertThat(!result.session().containsKey(AuthenticationService.SESSION_USERNAME));
     }
 
     /**
@@ -108,14 +108,13 @@ public class AuthenticationControllerTest {
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL, Login.PASSWORD, UserService.ADMIN_PASSWORD))
+                .bodyForm(ImmutableMap.of(Login.USERNAME, UserService.ADMIN_USERNAME, Login.PASSWORD, UserService.ADMIN_PASSWORD))
                 .uri(controllers.gui.routes.Authentication.authenticate().url());
         Result result = route(fakeApplication, request);
 
-        // Successful login leads to a redirect and the user's email is in the
-        // session
+        // Successful login leads to a redirect and the user's email is in the session
         assertEquals(303, result.status());
-        assertEquals(UserService.ADMIN_EMAIL, result.session().get(AuthenticationService.SESSION_USER_EMAIL));
+        assertEquals(UserService.ADMIN_USERNAME, result.session().get(AuthenticationService.SESSION_USERNAME));
     }
 
     /**
@@ -126,7 +125,47 @@ public class AuthenticationControllerTest {
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL, Login.PASSWORD, "bla"))
+                .bodyForm(ImmutableMap.of(Login.USERNAME, UserService.ADMIN_USERNAME, Login.PASSWORD, "bla"))
+                .uri(controllers.gui.routes.Authentication.authenticate().url());
+        Result result = route(fakeApplication, request);
+
+        // Fail to login leads to a Bad Request (400)
+        assertEquals(400, result.status());
+        assertNull(result.session());
+    }
+
+    /**
+     * Test Authentication.authenticate() with LDAP
+     */
+    @Test
+    public void authenticateLdapSuccess() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+
+        RequestBuilder request = new RequestBuilder()
+                .method("POST")
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(ImmutableMap.of(Login.USERNAME, "einstein", Login.PASSWORD, "password"))
+                .uri(controllers.gui.routes.Authentication.authenticate().url());
+        Result result = route(fakeApplication, request);
+
+        // Successful login leads to a redirect and the user's email is in the session
+        assertEquals(303, result.status());
+        assertEquals("einstein", result.session().get(AuthenticationService.SESSION_USERNAME));
+    }
+
+    /**
+     * Test Authentication.authenticate() with LDAP
+     */
+    @Test
+    public void authenticateLdapFail() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+
+        RequestBuilder request = new RequestBuilder()
+                .method("POST")
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(ImmutableMap.of(Login.USERNAME, "einstein", Login.PASSWORD, "wrongpassword"))
                 .uri(controllers.gui.routes.Authentication.authenticate().url());
         Result result = route(fakeApplication, request);
 

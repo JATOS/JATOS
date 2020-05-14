@@ -8,11 +8,10 @@
 				<form id="loginForm" method="post" class="form-horizontal" role="form">
 					<h2 class="form-login-heading">Please log in again</h2>
 					<label class="explanation"></label>
-					<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
-					<input type="hidden" class="form-control email" name="@controllers.gui.Authentication.Login.EMAIL" value="@loggedInUser.getEmail()" required>
+					<input type="hidden" class="form-control username" name="@controllers.gui.Authentication.Login.USERNAME" value="@loggedInUser.getUsername()" required>
 					<div class="form-group">
 						<div class="col-sm-12">
-							<label>Password for @loggedInUser.getEmail()</label>
+							<label>Password for @loggedInUser.getUsername()</label>
 							<input type="password" class="form-control" name="@controllers.gui.Authentication.Login.PASSWORD" placeholder="Password" autocomplete="off" required autofocus>
 						</div>
 					</div>

@@ -329,7 +329,7 @@ public class LockedStudyControllerTest {
     public void callExportComponentResults() {
         // Create a study with a StudyResult
         long firstComponentResultId = jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             Study study;
             try {
                 study = testHelper.importExampleStudy(injector);

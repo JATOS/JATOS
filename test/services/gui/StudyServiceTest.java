@@ -88,7 +88,7 @@ public class StudyServiceTest {
 
     private Study cloneAndPersistStudy(Study studyToBeCloned) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 Study studyClone = studyService.clone(studyToBeCloned);
                 studyService.createAndPersistStudy(admin, studyClone);
@@ -157,9 +157,9 @@ public class StudyServiceTest {
         // Check that study's users are admin and user Bla
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            User uBlu = userDao.findByEmail("blu@blu.com");
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
+            User uBla = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            User uBlu = userDao.findByUsername("blu@blu.com");
             assertThat(s.getUserList()).containsOnly(uBla, admin);
             assertThat(admin.getStudyList()).contains(s);
             assertThat(uBla.getStudyList()).contains(s);
@@ -179,9 +179,9 @@ public class StudyServiceTest {
         // Check that study's user is only admin user
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            User uBlu = userDao.findByEmail("blu@blu.com");
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
+            User uBla = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            User uBlu = userDao.findByUsername("blu@blu.com");
             assertThat(s.getUserList()).containsOnly(admin);
             assertThat(admin.getStudyList()).contains(s);
             assertThat(uBla.getStudyList()).excludes(s);
@@ -213,10 +213,10 @@ public class StudyServiceTest {
         // Check that all users are members
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            User uFoo = userDao.findByEmail("foo@foo.com");
-            User uBar = userDao.findByEmail("bar@bar.com");
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
+            User uBla = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            User uFoo = userDao.findByUsername("foo@foo.com");
+            User uBar = userDao.findByUsername("bar@bar.com");
             assertThat(s.getUserList()).containsOnly(uBla, uFoo, uBar, admin);
             assertThat(admin.getStudyList()).contains(s);
             assertThat(uBla.getStudyList()).contains(s);
@@ -234,10 +234,10 @@ public class StudyServiceTest {
         // Check that only logged-in user (admin) is member
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-            User uBla = userDao.findByEmail(TestHelper.BLA_EMAIL);
-            User uFoo = userDao.findByEmail("foo@foo.com");
-            User uBar = userDao.findByEmail("bar@bar.com");
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
+            User uBla = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            User uFoo = userDao.findByUsername("foo@foo.com");
+            User uBar = userDao.findByUsername("bar@bar.com");
             assertThat(s.getUserList()).containsOnly(admin);
             assertThat(admin.getStudyList()).contains(s);
             assertThat(uBla.getStudyList()).excludes(s);
@@ -280,7 +280,7 @@ public class StudyServiceTest {
         // Check that study's users are only admin and user Bla
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             assertThat(s.getUserList()).containsOnly(userBla, admin);
         });
 
@@ -304,11 +304,11 @@ public class StudyServiceTest {
         // Check that study's users is only admin
         jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             assertThat(s.getUserList()).containsOnly(admin);
         });
 
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**
@@ -323,7 +323,7 @@ public class StudyServiceTest {
         jpaApi.withTransaction(() -> {
             try {
                 Study s = studyDao.findById(study.getId());
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 studyService.changeUserMember(s, admin, false);
                 Fail.fail();
             } catch (ForbiddenException e) {
@@ -344,7 +344,7 @@ public class StudyServiceTest {
             }
         });
 
-        testHelper.removeUser(userBla.getEmail());
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**
@@ -494,7 +494,7 @@ public class StudyServiceTest {
 
             // This study is removed from all its member users
             study.getUserList().forEach(
-                    u -> assertThat(userDao.findByEmail(u.getEmail()).hasStudy(s)).isFalse());
+                    u -> assertThat(userDao.findByUsername(u.getUsername()).hasStudy(s)).isFalse());
         });
 
         // Check study assets are removed

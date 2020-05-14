@@ -64,8 +64,10 @@ public class HomeControllerTest {
     public void callHome() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+        RequestBuilder request = new RequestBuilder()
+                .method("GET")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Home.home().url());
         Result result = route(fakeApplication, request);
 
@@ -79,8 +81,10 @@ public class HomeControllerTest {
     public void callLog() {
         Http.Session session = testHelper
                 .mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+        RequestBuilder request = new RequestBuilder()
+                .method("GET")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Home.log(1000).url());
         Result result = route(fakeApplication, request);
 
@@ -92,17 +96,17 @@ public class HomeControllerTest {
 
     @Test
     public void callLogNotAsAdmin() {
-        User notAdminUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                "Bla", "bla");
+        User notAdminUser = testHelper.createAndPersistUser("bla", "Bla", "blapw");
 
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(notAdminUser);
-        RequestBuilder request = new RequestBuilder().method("GET")
-                .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+        Http.Session session = testHelper.mockSessionCookieandCache(notAdminUser);
+        RequestBuilder request = new RequestBuilder()
+                .method("GET")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .uri(routes.Home.log(1000).url());
         testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
 
-        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("bla");
     }
 
 }

@@ -31,7 +31,7 @@
                 <thead>
                     <tr>
                         <th>Worker ID</th>
-                        <th>User Email</th>
+                        <th>Username</th>
                         <th data-toggle="tooltip" data-placement="bottom" title="State of the last study started by this worker">Last Study State</th>
                         <th></th>
                     </tr>
@@ -539,17 +539,17 @@ function fillWorkerTables(allWorkers, workerTables) {
 
 function fillJatosRow(worker, jatosWorkerTable) {
     var lastStudyState = worker.lastStudyState ? worker.lastStudyState : "none started yet";
-    if ("@loggedInUser.getEmail()" == worker.userEmail) {
+    if ("@loggedInUser.getUsername()" == worker.username) {
         jatosWorkerTable.row.add([
             worker.id,
-            worker.userEmail,
+            worker.username,
             lastStudyState,
             '<button type="button" class="btn btn-worker runButton">Run</button>'
         ]);
     } else {
         jatosWorkerTable.row.add([
             worker.id,
-            worker.userEmail,
+            worker.username,
             lastStudyState,
             ''
         ]);

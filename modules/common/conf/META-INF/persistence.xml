@@ -3,8 +3,7 @@
 			 xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
 			 version="2.1">
 
-	<persistence-unit name="h2PersistenceUnit"
-		transaction-type="RESOURCE_LOCAL">
+	<persistence-unit name="mysqlPersistenceUnit" transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 		<non-jta-data-source>DefaultDS</non-jta-data-source>
 		<properties>
@@ -14,19 +13,7 @@
 		</properties>
 	</persistence-unit>
 
-	<persistence-unit name="mysqlPersistenceUnit"
-		transaction-type="RESOURCE_LOCAL">
-		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-		<non-jta-data-source>DefaultDS</non-jta-data-source>
-		<properties>
-			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL57Dialect" />
-			<property name="hibernate.show_sql" value="false" />
-			<property name="hibernate.id.new_generator_mappings" value="false" />
-		</properties>
-	</persistence-unit>
-
-	<persistence-unit name="mysqlAutoUpdatePersistenceUnit"
-		transaction-type="RESOURCE_LOCAL">
+	<persistence-unit name="mysqlAutoUpdatePersistenceUnit" transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 		<non-jta-data-source>DefaultDS</non-jta-data-source>
 		<properties>

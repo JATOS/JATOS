@@ -1,21 +1,23 @@
 package models.gui;
 
+import models.common.User;
+
 /**
  * Model used by the GUI to create a new user. Validation is done in AuthenticationValidation.
- * Emails are stored in lower case.
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 public class NewUserModel {
 
+    public static final String USERNAME = "username";
     public static final String NAME = "name";
-    public static final String EMAIL = "email";
     public static final String PASSWORD = "password";
     public static final String PASSWORD_REPEAT = "passwordRepeat";
     public static final String ADMIN_ROLE = "adminRole";
+    public static final String AUTH_BY_LDAP = "authByLdap";
     public static final String ADMIN_PASSWORD = "adminPassword";
 
-    private String email;
+    private String username;
 
     private String name;
 
@@ -29,16 +31,21 @@ public class NewUserModel {
     private boolean adminRole = false;
 
     /**
+     * If true LDAP authentication is used for this user
+     */
+    private boolean authByLdap = false;
+
+    /**
      * Password from the logged-in admin user. Used for authentication.
      */
     private String adminPassword;
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return User.normalizeUsername(username);
     }
 
-    public void setEmail(String email) {
-        this.email = email.toLowerCase();
+    public void setUsername(String username) {
+        this.username = User.normalizeUsername(username);
     }
 
     public String getName() {
@@ -73,6 +80,14 @@ public class NewUserModel {
         this.adminRole = adminRole;
     }
 
+    public boolean getAuthByLdap() {
+        return authByLdap;
+    }
+
+    public void setAuthByLdap(boolean authByLdap) {
+        this.authByLdap = authByLdap;
+    }
+
     public String getAdminPassword() {
         return adminPassword;
     }
@@ -83,8 +98,7 @@ public class NewUserModel {
 
     @Override
     public String toString() {
-        return "NewUserModel [email=" + email + ", name=" + name
-                + ", adminRole=" + adminRole + "]";
+        return "NewUserModel [username=" + username + ", name=" + name + ", adminRole=" + adminRole + "]";
     }
 
 }

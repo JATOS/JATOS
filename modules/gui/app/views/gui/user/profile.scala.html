@@ -4,8 +4,10 @@
 
 <div id="toolbar" class="btn-group">
     <button id="editProfile" type="button" class="btn btn-user">Edit Profile</button>
+    @if(!loggedInUser.isAuthByLdap()) {
     <button id="changePassword" type="button" class="btn btn-user">Change Password <span class="glyphicon glyphicon-lock"></span></button>
-    @if(!loggedInUser.getEmail().equals(services.gui.UserService.ADMIN_EMAIL)) {
+    }
+    @if(!loggedInUser.getUsername().equals(services.gui.UserService.ADMIN_USERNAME)) {
     <button id="deleteUser" type="button" class="btn btn-user">Delete User <span class="glyphicon glyphicon-remove"></span></button>
     }
 </div>
@@ -116,7 +118,7 @@ loadUserData();
 function loadUserData() {
     $.ajax({
         type: 'GET',
-        url: "@controllers.gui.routes.Users.singleUserData(loggedInUser.getEmail())",
+        url: "@controllers.gui.routes.Users.singleUserData(loggedInUser.getUsername())",
         success: function(response) {
             userData = response;
             fillStudyList(userData.studyList);
@@ -154,13 +156,13 @@ $("#editProfileForm").submit(function(event) {
     event.preventDefault();
     $.ajax({
         type: 'POST',
-        url: "@controllers.gui.routes.Users.submitEditedProfile(loggedInUser.getEmail())",
+        url: "@controllers.gui.routes.Users.submitEditedProfile(loggedInUser.getUsername())",
         data: $('#editProfileForm').serialize(),
         success: function(response) {
             removeAlerts("#editProfileModal");
             removeFormErrors("#editProfileModal");
             $('#editProfileModal').modal('hide');
-            var userText = $('#editProfileModal .name').val() + " (@loggedInUser.getEmail())";
+            var userText = $('#editProfileModal .name').val() + " (@loggedInUser.getUsername())";
             $('#navUserText').text(userText);
             $('#breadcrumbs li:last-child').text(userText);
         },
@@ -190,7 +192,7 @@ $("#changePasswordForm").submit(function(event) {
     event.preventDefault();
     $.ajax({
         type: 'POST',
-        url: "@controllers.gui.routes.Users.submitChangedPassword(loggedInUser.getEmail())",
+        url: "@controllers.gui.routes.Users.submitChangedPassword(loggedInUser.getUsername())",
         data: $('#changePasswordForm').serialize(),
         success: function(response) {
             removeAlerts("#changePasswordModal");
@@ -214,14 +216,14 @@ $('#toolbar').on('click', '#deleteUser', function() {
     removeAlerts("#deleteUserModal");
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete yourself");
-    $('#deleteUserModal .passwordLabel').text("Confirm with your (" + userData.email+ ") password");
+    $('#deleteUserModal .passwordLabel').text("Confirm with your (" + userData.username+ ") password");
     $('#deleteUserModal .password').val('');
     $('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml());
     $('#deleteUserModal').modal('show');
 });
 
 function generateUserDeleteConfirmationHtml() {
-    var confirmationText = "<p>You are about to delete your user <b>" + userData.email
+    var confirmationText = "<p>You are about to delete your user <b>" + userData.username
             + " (" + userData.name + ") from JATOS</b>. "
             + "All studies with you as the only user will be deleted too.</p>";
     // Only add the studies that have a user size of 1 (means this user is the only
@@ -243,7 +245,7 @@ function generateUserDeleteConfirmationHtml() {
 $('#deleteUserForm').submit(function(event) {
     event.preventDefault();
     $.ajax({
-        url : "@controllers.gui.routes.Users.remove(loggedInUser.getEmail())",
+        url : "@controllers.gui.routes.Users.remove(loggedInUser.getUsername())",
         type : 'POST',
         data: $('#deleteUserForm').serialize(),
         success : function(result) {

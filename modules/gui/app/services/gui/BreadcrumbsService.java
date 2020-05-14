@@ -47,7 +47,7 @@ public class BreadcrumbsService {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
         breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         if (last != null) {
-            breadcrumbs.addBreadcrumb(user.toString(), routes.Users.profile(user.getEmail()).url());
+            breadcrumbs.addBreadcrumb(user.toString(), routes.Users.profile(user.getUsername()).url());
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(user.toString(), "");

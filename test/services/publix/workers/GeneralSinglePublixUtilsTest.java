@@ -54,7 +54,7 @@ public class GeneralSinglePublixUtilsTest extends PublixUtilsTest<GeneralSingleW
     @Test
     public void checkRetrieveTypedWorkerWrongType() {
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 generalSinglePublixUtils.retrieveTypedWorker(admin.getWorker().getId());
                 Fail.fail();

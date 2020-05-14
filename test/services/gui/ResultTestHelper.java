@@ -42,7 +42,7 @@ public class ResultTestHelper {
         return jpaApi.withTransaction(() -> {
             try {
                 Study study = studyDao.findById(studyId);
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 List<Long> idList = new ArrayList<>();
 
                 StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(),
@@ -67,7 +67,7 @@ public class ResultTestHelper {
         return jpaApi.withTransaction(() -> {
             try {
                 Study study = studyDao.findById(studyId);
-                User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+                User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
                 List<Long> idList = new ArrayList<>();
 
                 StudyResult studyResult1 = resultCreator.createStudyResult(study, study.getDefaultBatch(),

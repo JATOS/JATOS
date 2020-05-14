@@ -62,19 +62,16 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
     }
 
     /**
-     * Retrieves the currently logged-in user or throws an
-     * ForbiddenPublixException if none is logged-in.
+     * Retrieves the currently logged-in user or throws an ForbiddenPublixException if none is logged-in.
      */
     public User retrieveLoggedInUser() throws ForbiddenPublixException {
-        String email = Publix.session(JatosPublix.SESSION_USER_EMAIL);
-        if (email == null) {
-            throw new ForbiddenPublixException(
-                    JatosErrorMessages.NO_USER_LOGGED_IN);
+        String normalizedUsername = Publix.session(JatosPublix.SESSION_USERNAME);
+        if (normalizedUsername == null) {
+            throw new ForbiddenPublixException(JatosErrorMessages.NO_USER_LOGGED_IN);
         }
-        User loggedInUser = userDao.findByEmail(email);
+        User loggedInUser = userDao.findByUsername(normalizedUsername);
         if (loggedInUser == null) {
-            throw new ForbiddenPublixException(
-                    errorMessages.userNotExist(email));
+            throw new ForbiddenPublixException(errorMessages.userNotExist(normalizedUsername));
         }
         return loggedInUser;
     }

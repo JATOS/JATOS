@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import models.common.workers.JatosWorker;
 
 import javax.persistence.*;
+import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,10 +26,17 @@ public class User {
     }
 
     /**
-     * Email address is used as ID. Emails are stored in lower case.
+     * Possible authentication methods
+     */
+    public enum AuthMethod {
+        DB, LDAP
+    }
+
+    /**
+     * username is used as ID
      */
     @Id
-    private String email;
+    private String username;
 
     /**
      * User's name
@@ -58,32 +66,48 @@ public class User {
     private String passwordHash;
 
     /**
+     * Which method to use for authentication
+     */
+    @JsonIgnore
+    @Enumerated(EnumType.STRING)
+    private AuthMethod authMethod;
+
+    /**
      * List of studies this user has access rights to. This relationship is
      * bidirectional.
      */
     @ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
     private Set<Study> studyList = new HashSet<>();
 
-    public User(String email, String name, String passwordHash) {
-        this.email = email.toLowerCase();
-        this.name = name;
-        this.passwordHash = passwordHash;
-    }
-
-    public User(String email, String name) {
-        this.email = email.toLowerCase();
+    public User(String username, String name) {
+        setUsername(username);
         this.name = name;
     }
 
     public User() {
     }
 
-    public void setEmail(String email) {
-        this.email = email.toLowerCase();
+    /**
+     * Normalise username:
+     * 1) remove accents
+     * 2) turn to lower case
+     * 3) trim
+     * 4) return the the composed form NFKC (combining character sequences are mapped to composites
+     *    (see https://stackoverflow.com/a/1598365/1278769)
+     */
+    public static String normalizeUsername(String username) {
+        if (username == null) return null;
+        String usernameWithoutAccents = Normalizer.normalize(username, Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+        return Normalizer.normalize(usernameWithoutAccents, Normalizer.Form.NFKC).toLowerCase().trim();
     }
 
-    public String getEmail() {
-        return this.email.toLowerCase();
+    public void setUsername(String username) {
+        this.username = normalizeUsername(username);
+    }
+
+    public String getUsername() {
+        return normalizeUsername(this.username);
     }
 
     public void setName(String name) {
@@ -122,6 +146,18 @@ public class User {
         return this.passwordHash;
     }
 
+    public AuthMethod getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(AuthMethod authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public boolean isAuthByLdap() {
+        return authMethod == AuthMethod.LDAP;
+    }
+
     public void setWorker(JatosWorker worker) {
         this.worker = worker;
     }
@@ -153,9 +189,9 @@ public class User {
     @Override
     public String toString() {
         if (this.getName() != null && !this.getName().trim().isEmpty()) {
-            return this.getName() + " (" + this.getEmail() + ")";
+            return this.getName() + " (" + this.getUsername() + ")";
         } else {
-            return this.getEmail();
+            return this.getUsername();
         }
     }
 
@@ -163,7 +199,7 @@ public class User {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((this.getEmail() == null) ? 0 : this.getEmail().hashCode());
+        result = prime * result + ((this.getUsername() == null) ? 0 : this.getUsername().hashCode());
         return result;
     }
 
@@ -176,8 +212,8 @@ public class User {
         if (!(obj instanceof User)) return false;
 
         User other = (User) obj;
-        if (getEmail() == null) return other.getEmail() == null;
-        return getEmail().equals(other.getEmail());
+        if (getUsername() == null) return other.getUsername() == null;
+        return getUsername().equals(other.getUsername());
     }
 
 }

@@ -1,5 +1,7 @@
 package models.gui;
 
+import models.common.User;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -17,7 +19,7 @@ public class UserSession {
     /**
      * Identifies an user
      */
-    private final String email;
+    private final String username;
 
     /**
      * This map maps the request's remote address (usually an IP) to its session
@@ -38,12 +40,12 @@ public class UserSession {
     private final Instant[] loginTimes = {Instant.MIN, Instant.MIN, Instant.MIN,
             Instant.MIN};
 
-    public UserSession(String email) {
-        this.email = email;
+    public UserSession(String username) {
+        this.username = User.normalizeUsername(username);
     }
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return username;
     }
 
     public String getSessionId(String remoteAddress) {

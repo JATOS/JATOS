@@ -22,14 +22,15 @@ public class MessagesStrings {
     public static final String MISSING_FILE_PATH = "Missing file path";
     public static final String MISSING_NAME = "Missing name";
     public static final String NAME_TOO_LONG = "Name too long";
-    public static final String MISSING_EMAIL = "Missing email";
-    public static final String EMAIL_TOO_LONG = "Email too long";
-    public static final String NO_USER_LOGGED_IN = "No user logged in";
+    public static final String MISSING_USERNAME = "Missing username";
+    public static final String USERNAME_TOO_LONG = "Username too long";
+    public static final String USERNAME_INVALID = "Username invalid (only alphabetic characters, numbers and -_@.+&'=~)";
     public static final String MISSING_DIR_NAME = "Missing directory name";
     public static final String DIR_NAME_TOO_LONG = "Directory name too long";
     public static final String INVALID_DIR_NAME = "Invalid directory name";
     public static final String COMPONENT_INVALID = "Component is invalid";
     public static final String STUDY_INVALID = "Study is invalid";
+    public static final String LDAP_PROBLEMS = "Problems with LDAP. Ask your admin.";
 
     // Edit HTML forms
     public static final String INVALID_JSON_FORMAT = "Invalid JSON format";
@@ -67,7 +68,7 @@ public class MessagesStrings {
     public static final String WRONG_OLD_PASSWORD = "Wrong old password";
     public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
     public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
-    public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
+    public static final String THIS_USERNAME_IS_ALREADY_REGISTERED = "This username is already registered.";
     public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
     public static final String COULDNT_OPEN_LOG = "Error: Could not open log file";
     public static final String LOG_CUT = "--- Log is cut here. Download it to get the whole file. ---";
@@ -172,12 +173,12 @@ public class MessagesStrings {
         return "A worker with ID " + workerIdStr + " doesn't exist.";
     }
 
-    public static String studyNotExist(Long studyId) {
+    public static String    studyNotExist(Long studyId) {
         return "An study with ID " + studyId + " doesn't exist.";
     }
 
-    public static String studyNotUser(String username, String email, Long studyId, String title) {
-        return username + " (" + email + ") isn't user of study \"" + title + "\" (" + studyId + ").";
+    public static String studyNotUser(String name, String username, Long studyId, String title) {
+        return name + " (" + username + ") isn't user of study \"" + title + "\" (" + studyId + ").";
     }
 
     public static String studyReorderUnknownPosition(String position, Long studyId, String title) {
@@ -227,16 +228,16 @@ public class MessagesStrings {
         return "The component with ID " + componentId + " doesn't belong to any study.";
     }
 
-    public static String userNotExist(String email) {
-        return "An user with email " + email + " doesn't exist.";
+    public static String userNotExist(String username) {
+        return "An user with username " + username + " doesn't exist.";
     }
 
     public static String userPasswordMinLength(int minLength) {
         return "Passwords should be at least " + minLength + " characters long.";
     }
 
-    public static String userNotAllowedToGetData(String email) {
-        return "You are not allowed to get data for user " + email + ".";
+    public static String userNotAllowedToGetData(String username) {
+        return "You are not allowed to get data for user " + username + ".";
     }
 
     public static String componentNotExist(Long componentId) {
@@ -273,15 +274,6 @@ public class MessagesStrings {
 
     public static String studyResultNotExist(Long studyResultId) {
         return "A study result with ID " + studyResultId + " doesn't exist.";
-    }
-
-    public static String studyResultNotExist(String studyResultIdStr) {
-        return "A study result with ID \"" + studyResultIdStr + "\" doesn't exist.";
-    }
-
-    public static String removeJatosWorkerNotAllowed(Long workerId, String username, String email) {
-        return "Worker (ID: " + workerId + ") is a worker of " + "JATOS, associated to the user " + username + " ("
-                + email + ") and can't be deleted.";
     }
 
     public static String htmlFilePathEmpty(Long componentId) {

@@ -36,18 +36,17 @@ public class UserDao extends AbstractDao {
         super.remove(user);
     }
 
-    public boolean authenticate(String email, String passwordHash) {
-        String queryStr =
-                "SELECT u FROM User u WHERE u.email=:email and u.passwordHash=:passwordHash";
-        boolean doesNotExist = jpa.em().createQuery(queryStr, User.class)
-                .setMaxResults(1).setParameter("email", email)
-                .setParameter("passwordHash", passwordHash).getResultList()
-                .isEmpty();
+    public boolean authenticate(String normalizedUsername, String passwordHash) {
+        boolean doesNotExist = jpa.em().createQuery(
+                    "SELECT u FROM User u WHERE u.username=:username and u.passwordHash=:passwordHash", User.class)
+                    .setParameter("username", normalizedUsername)
+                    .setParameter("passwordHash", passwordHash)
+                    .setMaxResults(1).getResultList().isEmpty();
         return !doesNotExist;
     }
 
-    public User findByEmail(String email) {
-        return jpa.em().find(User.class, email);
+    public User findByUsername(String normalizedUsername) {
+        return jpa.em().find(User.class, normalizedUsername);
     }
 
     public List<User> findAll() {

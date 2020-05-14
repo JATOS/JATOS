@@ -92,7 +92,7 @@ public class UsersUserAccessTest {
     public void callProfile() {
         User someUser =
                 testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
-        Call call = routes.Users.profile(someUser.getEmail());
+        Call call = routes.Users.profile(someUser.getUsername());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkThatCallLeadsToRedirect(call, Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);

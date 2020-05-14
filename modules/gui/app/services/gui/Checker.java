@@ -97,7 +97,8 @@ public class Checker {
         }
         // Check that the user is a user of the study
         if (!study.hasUser(user)) {
-            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getEmail(), studyId, study.getTitle());
+            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), studyId,
+                    study.getTitle());
             throw new ForbiddenException(errorMsg);
         }
     }

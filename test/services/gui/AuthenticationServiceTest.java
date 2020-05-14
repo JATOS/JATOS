@@ -6,6 +6,7 @@ import general.TestHelper;
 import general.common.Common;
 import general.common.RequestScope;
 import models.common.User;
+import org.fest.assertions.Fail;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,6 +18,10 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http;
 
 import javax.inject.Inject;
+import javax.naming.CommunicationException;
+import javax.naming.InvalidNameException;
+import javax.naming.NamingException;
+import java.net.MalformedURLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -27,7 +32,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * Tests AuthenticationService
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 public class AuthenticationServiceTest {
 
@@ -68,12 +73,14 @@ public class AuthenticationServiceTest {
     @Test
     public void checkAuthenticate() {
         jpaApi.withTransaction(() -> {
-            assertThat(authenticationService.authenticate(
-                    UserService.ADMIN_EMAIL, UserService.ADMIN_PASSWORD))
-                    .isTrue();
-            assertThat(authenticationService
-                    .authenticate(UserService.ADMIN_EMAIL, "wrongPassword"))
-                    .isFalse();
+            try {
+                assertThat(authenticationService.authenticate(UserService.ADMIN_USERNAME, UserService.ADMIN_PASSWORD))
+                        .isTrue();
+                assertThat(authenticationService.authenticate(UserService.ADMIN_USERNAME, "wrongPassword"))
+                        .isFalse();
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
@@ -83,20 +90,100 @@ public class AuthenticationServiceTest {
      */
     @Test
     public void checkAuthenticateNotAdminUser() {
-        testHelper.createAndPersistUser("oliver.zumba@gmail.com", "Bla Bla",
-                "bla");
+        testHelper.createAndPersistUser("oliver.zumba@gmail.com", "Bla Bla", "bla");
 
         jpaApi.withTransaction(() -> {
-            assertThat(authenticationService
-                    .authenticate("oliver.zumba@gmail.com", "bla")).isTrue();
-            // Emails are case-insensitive
-            assertThat(authenticationService
-                    .authenticate("OlIvEr.ZuMbA@gMaIl.CoM", "bla")).isTrue();
-            assertThat(authenticationService
-                    .authenticate("oliver.zumba@gmail.com", "wrongPassword")).isFalse();
+            try {
+                assertThat(authenticationService.authenticate("oliver.zumba@gmail.com", "bla")).isTrue();
+                assertThat(authenticationService.authenticate("oliver.zumba@gmail.com", "wrongPassword")).isFalse();
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         testHelper.removeUser("oliver.zumba@gmail.com");
+    }
+
+    /**
+     * Test AuthenticationService.authenticate(): check LDAP successful authentication with external service
+     */
+    @Test
+    public void checkAuthenticateUserLdap() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+
+        jpaApi.withTransaction(() -> {
+            try {
+                assertThat(authenticationService.authenticate("einstein", "password")).isTrue();
+                assertThat(authenticationService.authenticate("einstein", "wrongPassword")).isFalse();
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        testHelper.removeUser("einstein");
+    }
+
+    /**
+     * Test AuthenticationService.authenticate(): check LDAP fail due to wrong URL in config
+     */
+    @Test
+    public void checkAuthenticateUserLdapWrongLdapUrl() {
+        // Set up LDAP in Common with wrong URL (wrong port)
+        testHelper.setupLdap("ldap://ldap.forumsys.com:666", "dc=example,dc=com");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+
+        jpaApi.withTransaction(() -> {
+            try {
+                authenticationService.authenticate("einstein", "password");
+                Fail.fail();
+            } catch (NamingException e) {
+                assertThat(e).isInstanceOf(CommunicationException.class);
+            }
+        });
+
+        testHelper.removeUser("einstein");
+    }
+
+    /**
+     * Test AuthenticationService.authenticate(): check LDAP fail due to wrong ldapBase in config
+     */
+    @Test
+    public void checkAuthenticateUserLdapWrongLdapBase() {
+        // Set up LDAP in Common with wrong ldapBase
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "foo=example,bar=org");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+
+        jpaApi.withTransaction(() -> {
+            try {
+                authenticationService.authenticate("einstein", "password");
+                Fail.fail();
+            } catch (NamingException e) {
+                assertThat(e).isInstanceOf(InvalidNameException.class);
+            }
+        });
+
+        testHelper.removeUser("einstein");
+    }
+
+    /**
+     * Test AuthenticationService.authenticate(): check LDAP authentication fail due to missing config
+     */
+    @Test
+    public void checkAuthenticateUserLdapNoConf() {
+        // By default no LDAP is configured
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+
+        jpaApi.withTransaction(() -> {
+            try {
+                authenticationService.authenticate("einstein", "password");
+                Fail.fail();
+            } catch (NamingException e) {
+                assertThat(e.getRootCause()).isInstanceOf(MalformedURLException.class);
+            }
+        });
+
+        testHelper.removeUser("einstein");
     }
 
     /**
@@ -107,23 +194,13 @@ public class AuthenticationServiceTest {
     public void checkIsRepeatedLoginAttempt() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
-        assertThat(authenticationService
-                .isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
-                .isFalse();
-        assertThat(authenticationService
-                .isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
-                .isFalse();
-        // Emails are case-insensitive
-        assertThat(authenticationService
-                .isRepeatedLoginAttempt(TestHelper.BLA_UPPER_CASE_EMAIL))
-                .isFalse();
-        assertThat(authenticationService
-                .isRepeatedLoginAttempt(TestHelper.BLA_UPPER_CASE_EMAIL))
-                .isTrue();
+        assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL)).isFalse();
+        assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL)).isFalse();
+        assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL)).isFalse();
+        assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL)).isTrue();
 
         // Try a different email - should still return true
-        assertThat(authenticationService.isRepeatedLoginAttempt("foo@foo.org"))
-                .isFalse();
+        assertThat(authenticationService.isRepeatedLoginAttempt("foo@foo.org")).isFalse();
     }
 
     /**
@@ -133,25 +210,18 @@ public class AuthenticationServiceTest {
     public void checkGetLoggedInUserBySession() {
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
-            data.put(AuthenticationService.SESSION_USER_EMAIL,
-                    UserService.ADMIN_EMAIL);
+            data.put(AuthenticationService.SESSION_USERNAME, UserService.ADMIN_USERNAME);
             Http.Session session = new Http.Session(data);
-            assertThat(authenticationService
-                    .getLoggedInUserBySessionCookie(session))
-                    .isEqualTo(testHelper.getAdmin());
+            assertThat(authenticationService.getLoggedInUserBySessionCookie(session)).isEqualTo(testHelper.getAdmin());
         });
 
         // Try again with another non-admin user
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                "Bla Bla", "bla");
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
-            data.put(AuthenticationService.SESSION_USER_EMAIL,
-                    userBla.getEmail());
+            data.put(AuthenticationService.SESSION_USERNAME, userBla.getUsername());
             Http.Session session = new Http.Session(data);
-            assertThat(authenticationService
-                    .getLoggedInUserBySessionCookie(session))
-                    .isEqualTo(userBla);
+            assertThat(authenticationService.getLoggedInUserBySessionCookie(session)).isEqualTo(userBla);
         });
     }
 
@@ -163,11 +233,9 @@ public class AuthenticationServiceTest {
     public void checkGetLoggedInUserBySessionNotFound() {
         jpaApi.withTransaction(() -> {
             Map<String, String> data = new HashMap<>();
-            data.put(AuthenticationService.SESSION_USER_EMAIL,
-                    "user-not-exist@bla.org");
+            data.put(AuthenticationService.SESSION_USERNAME, "user-not-exist@bla.org");
             Http.Session session = new Http.Session(data);
-            assertThat(authenticationService
-                    .getLoggedInUserBySessionCookie(session)).isNull();
+            assertThat(authenticationService.getLoggedInUserBySessionCookie(session)).isNull();
         });
     }
 
@@ -179,8 +247,7 @@ public class AuthenticationServiceTest {
     public void checkGetLoggedInUser() {
         testHelper.mockContext();
 
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                "Bla Bla", "bla");
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, userBla);
 
         assertThat(authenticationService.getLoggedInUser()).isEqualTo(userBla);
@@ -201,38 +268,23 @@ public class AuthenticationServiceTest {
      */
     @Test
     public void checkWriteSessionCookieAndSessionCache() {
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                "Bla Bla", "bla");
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
         Map<String, String> data = new HashMap<>();
         Http.Session session = new Http.Session(data);
 
-        jpaApi.withTransaction(
-                () -> authenticationService.writeSessionCookieAndSessionCache(session,
-                        userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
+        jpaApi.withTransaction(() -> authenticationService.writeSessionCookieAndSessionCache(session,
+                userBla.getUsername(), TestHelper.WWW_EXAMPLE_COM));
 
         // Check session cookie
         assertThat(session.get(AuthenticationService.SESSION_ID)).isNotEmpty();
-        assertThat(session.get(AuthenticationService.SESSION_USER_EMAIL))
-                .isEqualTo(userBla.getEmail());
-        assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME))
-                .isNotEmpty();
-        assertThat(
-                session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-                .isNotEmpty();
+        assertThat(session.get(AuthenticationService.SESSION_USERNAME)).isEqualTo(userBla.getUsername());
+        assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME)).isNotEmpty();
+        assertThat(session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME)).isNotEmpty();
 
-        // Check that user session cache and that the session ID is the same as
-        // in the session cookie
-        String cachedUserSessionId = userSessionCacheAccessor
-                .getUserSessionId(userBla.getEmail(),
-                        TestHelper.WWW_EXAMPLE_COM);
-        assertThat(cachedUserSessionId)
-                .isEqualTo(session.get(AuthenticationService.SESSION_ID));
-        // Emails are case-insensitive
-        cachedUserSessionId = userSessionCacheAccessor
-                .getUserSessionId(TestHelper.BLA_UPPER_CASE_EMAIL,
-                        TestHelper.WWW_EXAMPLE_COM);
-        assertThat(cachedUserSessionId)
-                .isEqualTo(session.get(AuthenticationService.SESSION_ID));
+        // Check that user session cache and that the session ID is the same as in the session cookie
+        String cachedUserSessionId = userSessionCacheAccessor.getUserSessionId(userBla.getUsername(),
+                TestHelper.WWW_EXAMPLE_COM);
+        assertThat(cachedUserSessionId).isEqualTo(session.get(AuthenticationService.SESSION_ID));
     }
 
     /**
@@ -246,9 +298,7 @@ public class AuthenticationServiceTest {
         Http.Session session = new Http.Session(data);
         authenticationService.refreshSessionCookie(session);
 
-        assertThat(
-                session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-                .isNotEqualTo("blafasel");
+        assertThat(session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME)).isNotEqualTo("blafasel");
     }
 
     /**
@@ -261,19 +311,15 @@ public class AuthenticationServiceTest {
         data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME, "blafasel");
         data.put(AuthenticationService.SESSION_ID, "blafasel");
         data.put(AuthenticationService.SESSION_LOGIN_TIME, "blafasel");
-        data.put(AuthenticationService.SESSION_USER_EMAIL, "blafasel");
+        data.put(AuthenticationService.SESSION_USERNAME, "blafasel");
         Http.Session session = new Http.Session(data);
         authenticationService.clearSessionCookie(session);
 
         // Check that session is cleared
-        assertThat(
-                session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-                .isNull();
+        assertThat(session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME)).isNull();
         assertThat(session.get(AuthenticationService.SESSION_ID)).isNull();
-        assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME))
-                .isNull();
-        assertThat(session.get(AuthenticationService.SESSION_USER_EMAIL))
-                .isNull();
+        assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME)).isNull();
+        assertThat(session.get(AuthenticationService.SESSION_USERNAME)).isNull();
     }
 
     /**
@@ -283,33 +329,26 @@ public class AuthenticationServiceTest {
      */
     @Test
     public void checkClearSessionCookieAndSessionCache() {
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
-                "Bla Bla", "bla");
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
         Map<String, String> data = new HashMap<>();
         data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME, "blafasel");
         data.put(AuthenticationService.SESSION_ID, "blafasel");
         data.put(AuthenticationService.SESSION_LOGIN_TIME, "blafasel");
-        data.put(AuthenticationService.SESSION_USER_EMAIL, "blafasel");
+        data.put(AuthenticationService.SESSION_USERNAME, "blafasel");
         Http.Session session = new Http.Session(data);
-        jpaApi.withTransaction(
-                () -> authenticationService.clearSessionCookieAndSessionCache(session,
-                        userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
+        jpaApi.withTransaction(() -> authenticationService.clearSessionCookieAndSessionCache(session,
+                userBla.getUsername(), TestHelper.WWW_EXAMPLE_COM));
 
         // Check that session is cleared
-        assertThat(
-                session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-                .isNull();
+        assertThat(session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME)).isNull();
         assertThat(session.get(AuthenticationService.SESSION_ID)).isNull();
-        assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME))
-                .isNull();
-        assertThat(session.get(AuthenticationService.SESSION_USER_EMAIL))
-                .isNull();
+        assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME)).isNull();
+        assertThat(session.get(AuthenticationService.SESSION_USERNAME)).isNull();
 
         // Check that the session ID that was stored in cached user session is
         // removed
-        String cachedUserSessionId = userSessionCacheAccessor
-                .getUserSessionId(userBla.getEmail(),
-                        TestHelper.WWW_EXAMPLE_COM);
+        String cachedUserSessionId = userSessionCacheAccessor.getUserSessionId(userBla.getUsername(),
+                TestHelper.WWW_EXAMPLE_COM);
         assertThat(cachedUserSessionId).isNull();
     }
 
@@ -319,15 +358,15 @@ public class AuthenticationServiceTest {
      */
     @Test
     public void checkIsValidSessionIdIsValid() {
-        userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
-                TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
+        userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM,
+                "this-is-a-session-id");
 
         Map<String, String> data = new HashMap<>();
         data.put(AuthenticationService.SESSION_ID, "this-is-a-session-id");
         Http.Session session = new Http.Session(data);
 
-        assertThat(authenticationService.isValidSessionId(session,
-                TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isTrue();
+        assertThat(authenticationService.isValidSessionId(session, TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM))
+                .isTrue();
     }
 
     /**
@@ -336,16 +375,15 @@ public class AuthenticationServiceTest {
      */
     @Test
     public void checkIsValidSessionIdReturnsFalse() {
-        userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
-                TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
+        userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM,
+                "this-is-a-session-id");
 
         Map<String, String> data = new HashMap<>();
-        data.put(AuthenticationService.SESSION_ID,
-                "this-is-a-complete-different-session-id");
+        data.put(AuthenticationService.SESSION_ID, "this-is-a-complete-different-session-id");
         Http.Session session = new Http.Session(data);
 
-        assertThat(authenticationService.isValidSessionId(session,
-                TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
+        assertThat(authenticationService.isValidSessionId(session, TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM))
+                .isFalse();
         // Emails are case-insensitive
         assertThat(authenticationService.isValidSessionId(session,
                 TestHelper.BLA_UPPER_CASE_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
@@ -371,8 +409,8 @@ public class AuthenticationServiceTest {
      */
     @Test
     public void checkIsValidSessionIdNullInSession() {
-        userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
-                TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
+        userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM,
+                "this-is-a-session-id");
 
         Map<String, String> data = new HashMap<>();
         Http.Session session = new Http.Session(data);
@@ -391,8 +429,7 @@ public class AuthenticationServiceTest {
     public void checkIsSessionTimeout() {
         Map<String, String> data = new HashMap<>();
         Instant loginTime = Instant.now();
-        data.put(AuthenticationService.SESSION_LOGIN_TIME,
-                String.valueOf(loginTime.toEpochMilli()));
+        data.put(AuthenticationService.SESSION_LOGIN_TIME, String.valueOf(loginTime.toEpochMilli()));
         Http.Session session = new Http.Session(data);
 
         assertThat(authenticationService.isSessionTimeout(session)).isFalse();
@@ -408,11 +445,8 @@ public class AuthenticationServiceTest {
         Map<String, String> data = new HashMap<>();
         // Make sure login time is older than what is allowed in the configured
         // session timeout
-        Instant loginTime =
-                Instant.now().minus(Common.getUserSessionTimeout() + 1,
-                        ChronoUnit.MINUTES);
-        data.put(AuthenticationService.SESSION_LOGIN_TIME,
-                String.valueOf(loginTime.toEpochMilli()));
+        Instant loginTime = Instant.now().minus(Common.getUserSessionTimeout() + 1, ChronoUnit.MINUTES);
+        data.put(AuthenticationService.SESSION_LOGIN_TIME, String.valueOf(loginTime.toEpochMilli()));
         Http.Session session = new Http.Session(data);
 
         assertThat(authenticationService.isSessionTimeout(session)).isTrue();
@@ -428,12 +462,10 @@ public class AuthenticationServiceTest {
     public void checkIsSessionInactivity() {
         Map<String, String> data = new HashMap<>();
         Instant lastActivityTime = Instant.now();
-        data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME,
-                String.valueOf(lastActivityTime.toEpochMilli()));
+        data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME, String.valueOf(lastActivityTime.toEpochMilli()));
         Http.Session session = new Http.Session(data);
 
-        assertThat(authenticationService.isInactivityTimeout(session))
-                .isFalse();
+        assertThat(authenticationService.isInactivityTimeout(session)).isFalse();
     }
 
     /**
@@ -445,11 +477,8 @@ public class AuthenticationServiceTest {
     @Test
     public void checkIsSessionInactivityFail() {
         Map<String, String> data = new HashMap<>();
-        Instant lastActivityTime = Instant.now()
-                .minus(Common.getUserSessionInactivity() + 1,
-                        ChronoUnit.MINUTES);
-        data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME,
-                String.valueOf(lastActivityTime.toEpochMilli()));
+        Instant lastActivityTime = Instant.now().minus(Common.getUserSessionInactivity() + 1, ChronoUnit.MINUTES);
+        data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME, String.valueOf(lastActivityTime.toEpochMilli()));
         Http.Session session = new Http.Session(data);
 
         assertThat(authenticationService.isInactivityTimeout(session)).isTrue();

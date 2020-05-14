@@ -36,7 +36,7 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		guiLogger.info(request.method() + " " + request.uri() + " ("
-				+ Controller.session(AuthenticationService.SESSION_USER_EMAIL)
+				+ Controller.session(AuthenticationService.SESSION_USERNAME)
 				+ ")");
 		return delegate.call(ctx);
 	}

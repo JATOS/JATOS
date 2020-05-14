@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import general.common.Common;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
@@ -333,7 +332,7 @@ public class JsonUtils {
     public ObjectNode memberUserOfStudy(User user, Study study) {
         ObjectNode userNode = Json.mapper().createObjectNode();
         userNode.put("name", user.getName());
-        userNode.put("email", user.getEmail());
+        userNode.put("username", user.getUsername());
         userNode.put("isMember", study.hasUser(user));
         return userNode;
     }
@@ -359,9 +358,10 @@ public class JsonUtils {
     public JsonNode userData(User user) {
         ObjectNode userNode = Json.mapper().createObjectNode();
         userNode.put("name", user.getName());
-        userNode.put("email", user.getEmail());
+        userNode.put("username", user.getUsername());
         ArrayNode roleListArray = Json.mapper().valueToTree(user.getRoleList());
         userNode.putArray("roleList").addAll(roleListArray);
+        userNode.put("authByLdap", user.isAuthByLdap());
         // Add array with study titles
         ArrayNode studyArrayNode = Json.mapper().createArrayNode();
         for (Study study : user.getStudyList()) {
@@ -509,7 +509,7 @@ public class JsonUtils {
             String lastStudyState = last.map(studyResult -> studyResult.getStudyState().name()).orElse(null);
             workerNode.put("lastStudyState", lastStudyState);
 
-            addUserEmailForJatosWorker(worker, workerNode);
+            addUsernameForJatosWorker(worker, workerNode);
             workerArrayNode.add(workerNode);
         }
         ObjectNode workersNode = Json.mapper().createObjectNode();
@@ -518,9 +518,8 @@ public class JsonUtils {
     }
 
     /**
-     * Returns a JsonNode with all workers (additionally for
-     * JatosWorkers the user's email is added), the given studyResultCountsPerWorker
-     * and all allowed worker types of this batch.
+     * Returns a JsonNode with all workers (additionally for JatosWorkers the username is added), the given
+     * studyResultCountsPerWorker and all allowed worker types of this batch.
      * Intended for use in JATOS' GUI / worker setup.
      */
     public JsonNode workerSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker) {
@@ -536,7 +535,7 @@ public class JsonUtils {
                     lastStudyResult != null ? lastStudyResult.getStudyState().name() : null;
             workerNode.put("lastStudyState", lastStudyState);
 
-            addUserEmailForJatosWorker(worker, workerNode);
+            addUsernameForJatosWorker(worker, workerNode);
             workerArrayNode.add(workerNode);
         }
         workerSetupData.set("allWorkers", workerArrayNode);
@@ -549,18 +548,18 @@ public class JsonUtils {
         return workerSetupData;
     }
 
-    private void addUserEmailForJatosWorker(Worker worker, ObjectNode workerNode) {
+    private void addUsernameForJatosWorker(Worker worker, ObjectNode workerNode) {
         if (worker instanceof JatosWorker) {
             JatosWorker jatosWorker = (JatosWorker) worker;
             if (jatosWorker.getUser() != null) {
-                workerNode.put("userEmail", jatosWorker.getUser().getEmail());
+                workerNode.put("username", jatosWorker.getUser().getUsername());
             } else {
-                workerNode.put("userEmail", "unknown");
+                workerNode.put("username", "unknown");
             }
         } else if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
             // In case the JatosWorker's user is already removed from the
             // database Hibernate doesn't use the type JatosWorker
-            workerNode.put("userEmail", "unknown (probably deleted)");
+            workerNode.put("username", "unknown (probably deleted)");
         }
     }
 

@@ -130,10 +130,10 @@ public class StudyV2 {
      */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "StudyMemberMap", joinColumns = {
+    @JoinTable(name = "StudyUserMap", joinColumns = {
             @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = {
-            @JoinColumn(name = "member_email", referencedColumnName = "email") })
-    private Set<User> memberList = new HashSet<>();
+            @JoinColumn(name = "user_username", referencedColumnName = "username") })
+    private Set<User> userList = new HashSet<>();
 
     /**
      * Ordered list of component of this study
@@ -245,24 +245,24 @@ public class StudyV2 {
         return allowedWorkerList.contains(workerType);
     }
 
-    public void setMemberList(Set<User> memberList) {
-        this.memberList = memberList;
+    public void setUserList(Set<User> userList) {
+        this.userList = userList;
     }
 
-    public Set<User> getMemberList() {
-        return memberList;
+    public Set<User> getUserList() {
+        return userList;
     }
 
     public void addMember(User user) {
-        memberList.add(user);
+        userList.add(user);
     }
 
     public void removeMember(User user) {
-        memberList.remove(user);
+        userList.remove(user);
     }
 
     public boolean hasMember(User user) {
-        return memberList.contains(user);
+        return userList.contains(user);
     }
 
     public void setComponentList(List<Component> componentList) {

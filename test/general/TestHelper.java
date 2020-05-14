@@ -1,6 +1,7 @@
 package general;
 
 import com.google.inject.Injector;
+import controllers.gui.Authentication;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -31,6 +32,7 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -40,7 +42,7 @@ import static org.mockito.Mockito.when;
 import static play.test.Helpers.route;
 
 /**
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 @Singleton
 public class TestHelper {
@@ -48,6 +50,8 @@ public class TestHelper {
     public static final String WWW_EXAMPLE_COM = "www.example.com";
 
     public static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
+
+    public static final String BLA_USERNAME = "bla";
 
     public static final String BLA_EMAIL = "bla@bla.org";
 
@@ -75,10 +79,16 @@ public class TestHelper {
     private BatchService batchService;
 
     @Inject
+    private Authentication authentication;
+
+    @Inject
     private AuthenticationService authenticationService;
 
     @Inject
     private IOUtils ioUtils;
+
+    @Inject
+    private Common common;
 
     public void removeStudyAssetsRootDir() throws IOException {
         File assetsRoot = new File(Common.getStudyAssetsRootPath());
@@ -97,22 +107,34 @@ public class TestHelper {
 
     public User getAdmin() {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             return fetchTheLazyOnes(admin);
         });
     }
 
     /**
-     * Creates and persist user if an user with this email doesn't exist
-     * already.
+     * Creates and persist user if an user with this email doesn't exist already.
      */
-    public User createAndPersistUser(String email, String name,
-            String password) {
+    public User createAndPersistUser(String username, String name, String password) {
         return jpaApi.withTransaction(entityManager -> {
-            User user = userDao.findByEmail(email);
+            User user = userDao.findByUsername(username);
             if (user == null) {
-                user = new User(email, name);
-                userService.createAndPersistUser(user, password, false);
+                user = new User(username, name);
+                userService.createAndPersistUser(user, password, false, false);
+            }
+            return user;
+        });
+    }
+
+    /**
+     * Creates and persist an LDAP user if an user with this email doesn't exist already.
+     */
+    public User createAndPersistUserLdap(String username, String name, String password) {
+        return jpaApi.withTransaction(entityManager -> {
+            User user = userDao.findByUsername(username);
+            if (user == null) {
+                user = new User(username, name);
+                userService.createAndPersistUser(user, password, false, true);
             }
             return user;
         });
@@ -131,12 +153,12 @@ public class TestHelper {
     }
 
     public Study createAndPersistExampleStudyForAdmin(Injector injector) {
-        return createAndPersistExampleStudy(injector, UserService.ADMIN_EMAIL);
+        return createAndPersistExampleStudy(injector, UserService.ADMIN_USERNAME);
     }
 
     public Study createAndPersistExampleStudy(Injector injector, String userEmail) {
         return jpaApi.withTransaction(() -> {
-            User user = userDao.findByEmail(userEmail);
+            User user = userDao.findByUsername(userEmail);
             try {
                 Study exampleStudy = importExampleStudy(injector);
                 studyService.createAndPersistStudy(user, exampleStudy);
@@ -275,14 +297,29 @@ public class TestHelper {
 
     public Http.Session mockSessionCookieandCache(User user) {
         Http.Session session = new Http.Session(new HashMap<>());
-        authenticationService.writeSessionCookieAndSessionCache(session,
-                user.getEmail(), WWW_EXAMPLE_COM);
+        authenticationService.writeSessionCookieAndSessionCache(session, user.getUsername(), WWW_EXAMPLE_COM);
         return session;
     }
 
     public void defineLoggedInUser(User user) {
         mockContext();
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, user);
+    }
+
+    /**
+     * Use reflection to set up LDAP in Common
+     */
+    public void setupLdap(String ldapUrl, String ldapBasedn) {
+        try {
+            Field ldapUrlField = Common.class.getDeclaredField("ldapUrl");
+            ldapUrlField.setAccessible(true);
+            ldapUrlField.set(common, ldapUrl);
+            Field ldapBasednField = Common.class.getDeclaredField("ldapBasedn");
+            ldapBasednField.setAccessible(true);
+            ldapBasednField.set(common, ldapBasedn);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

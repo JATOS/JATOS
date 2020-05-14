@@ -122,7 +122,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     @Test
     public void checkRetrieveWorker() {
         Worker worker = jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 return publixUtils.retrieveWorker(admin.getWorker().getId());
             } catch (ForbiddenPublixException e) {
@@ -237,7 +237,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Create a StudyResult and set the study to linear study flow only
         // Start the first and second component
         long studyResultId = jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
             study.setLinearStudy(true);
             try {
@@ -286,7 +286,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Create a StudyResult and set the first component as not reloadable
         // Start the first component
         long studyResultId = jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
             study.getFirstComponent().get().setReloadable(false);
             try {
@@ -333,7 +333,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         // Create a StudyResult and study session data.
         long studyResultId = jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
             studyResult.setStudySessionData("{\"test\":\"test\"}");
@@ -569,7 +569,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         long studyResultId2 = createStudyResult(study);
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult1 = studyResultDao.findById(studyResultId1);
             StudyResult studyResult2 = studyResultDao.findById(studyResultId2);
 
@@ -602,7 +602,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study clone = createClone(study);
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
 
             try {
                 publixUtils.retrieveStudyResult(admin.getWorker(), clone, studyResultId1);
@@ -657,7 +657,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         // Never started any study
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 publixUtils.retrieveStudyResult(admin.getWorker(), study, 1L);
                 Fail.fail();
@@ -686,7 +686,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         });
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 publixUtils.retrieveStudyResult(admin.getWorker(), study, studyResultId1);
                 Fail.fail();
@@ -1373,7 +1373,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     private long createStudyResultAndStartFirstComponent(Study study) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
             try {
@@ -1400,7 +1400,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     protected long createStudyResult(Study study) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
             return studyResult.getId();
@@ -1441,7 +1441,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     private Study createClone(Study study) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 Study c = studyService.clone(study);
                 studyService.createAndPersistStudy(admin, c);

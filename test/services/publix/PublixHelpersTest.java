@@ -77,7 +77,7 @@ public class PublixHelpersTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator
                     .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
 
@@ -107,7 +107,7 @@ public class PublixHelpersTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study)).isFalse();
 
             // Create a result for the admin's worker
@@ -125,7 +125,7 @@ public class PublixHelpersTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator.createStudyResult(study,
                     study.getDefaultBatch(), admin.getWorker());
 
@@ -159,7 +159,7 @@ public class PublixHelpersTest {
         jpaApi.withTransaction(() -> {
 
             // Create a study result and start a component to get a component result
-            User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             StudyResult studyResult = resultCreator
                     .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
 

@@ -10,6 +10,7 @@ import models.common.User;
 import models.gui.ChangePasswordModel;
 import models.gui.NewUserModel;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +25,7 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.libs.typedmap.TypedMap;
 
 import javax.inject.Inject;
+import javax.naming.NamingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,163 +81,79 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUser() {
-        testHelper.mockContext();
+        checkValidateNewUserSuccess();
+    }
 
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(),
-                createDummyUserData());
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isEmpty();
-        });
+    @Test
+    public void checkValidateNewUserLdap() {
+        checkValidateNewUserSuccess(
+                Pair.of("authByLdap", "true"),
+                Pair.of("password", null),
+                Pair.of("passwordRepeat", null));
     }
 
     /**
-     * Test AuthenticationService.validateNewUser(): email is empty
+     * Test AuthenticationService.validateNewUser(): successful username validation
      */
     @Test
-    public void checkValidateNewUserEmailEmpty() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("email", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.MISSING_EMAIL);
-        });
+    public void checkValidateNewUserSuccess() {
+        checkValidateNewUserSuccess(Pair.of("username", "foo"));
+        checkValidateNewUserSuccess(Pair.of("username", "FOO"));
+        checkValidateNewUserSuccess(Pair.of("username", "föóß"));
+        checkValidateNewUserSuccess(Pair.of("username", "123abc"));
+        checkValidateNewUserSuccess(Pair.of("username", "foo "));
+        checkValidateNewUserSuccess(Pair.of("username", " foo"));
+        checkValidateNewUserSuccess(Pair.of("username", "芷若"));
+        checkValidateNewUserSuccess(Pair.of("username", "かいと"));
+        checkValidateNewUserSuccess(Pair.of("username", "foo.bar@gmail.com"));
+        checkValidateNewUserSuccess(Pair.of("username", "foo+bar&pop=sol'big~don_tee-sam"));
     }
 
     /**
-     * Test AuthenticationService.validateNewUser(): email too long
+     * Test AuthenticationService.validateNewUser(): failed username validation
      */
     @Test
-    public void checkValidateNewUserEmailTooLong() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("email",
-                "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.EMAIL_TOO_LONG);
-        });
+    public void checkValidateNewUserUsernameFail() {
+        checkValidateNewUserFail(MessagesStrings.MISSING_USERNAME, Pair.of("username", ""));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_TOO_LONG, Pair.of("username",
+                "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo bar"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo\""));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo/"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo%"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo()"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo?"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo*"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo#"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo:"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo;"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo,"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo<"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo>"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID, Pair.of("username", "foo>|"));
+        checkValidateNewUserFail(MessagesStrings.USERNAME_INVALID,
+                Pair.of("username", "\uD83D\uDE01\uD83D\uDE09\uD83D\uDE0D"));
     }
 
     /**
-     * Test AuthenticationService.validateNewUser(): HTML is not allowed
+     * Test AuthenticationService.validateNewUser(): name validation fail
      */
     @Test
-    public void checkValidateNewUserEmailNoHtml() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("email", "<html><p></p></html>");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
-        });
+    public void checkValidateNewUserNameFail() {
+        checkValidateNewUserFail(MessagesStrings.MISSING_NAME, Pair.of("name", ""));
+        checkValidateNewUserFail(MessagesStrings.NAME_TOO_LONG, Pair.of("name",
+                "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
+        checkValidateNewUserFail(MessagesStrings.NO_HTML_ALLOWED, Pair.of("name", "<html><p></p></html>"));
     }
 
     /**
-     * Test AuthenticationService.validateNewUser(): name is empty
+     * Test AuthenticationService.validateNewUser(): password validation fail
      */
     @Test
-    public void checkValidateNewUserNameEmpty() {
-        testHelper.mockContext();
+    public void checkValidateNewUserPasswordFail() {
+        checkValidateNewUserFail(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS, Pair.of("password", ""));
+        checkValidateNewUserFail(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS, Pair.of("passwordRepeat", ""));
 
-        Map<String, String> data = createDummyUserData();
-        data.put("name", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.MISSING_NAME);
-        });
-    }
-
-    /**
-     * Test AuthenticationService.validateNewUser(): name is too long
-     */
-    @Test
-    public void checkValidateNewUserNameTooLong() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("name",
-                "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.NAME_TOO_LONG);
-        });
-    }
-
-    /**
-     * Test AuthenticationService.validateNewUser(): HTML is not allowed
-     */
-    @Test
-    public void checkValidateNewUserNameNoHtml() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("name", "<html><p></p></html>");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.NO_HTML_ALLOWED);
-        });
-    }
-
-    /**
-     * Test AuthenticationService.validateNewUser(): password is empty
-     */
-    @Test
-    public void checkValidateNewUserPasswordEmpty() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("password", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-        });
-    }
-
-    /**
-     * Test AuthenticationService.validateNewUser(): password is empty
-     */
-    @Test
-    public void checkValidateNewUserRepeatedPasswordEmpty() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("passwordRepeat", "");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-        });
     }
 
     /**
@@ -243,18 +161,8 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserPasswordMinLength() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a');
-        data.put("password", pw);
-        data.put("passwordRepeat", pw);
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isEmpty();
-        });
+        checkValidateNewUserSuccess(Pair.of("password", pw), Pair.of("passwordRepeat", pw));
     }
 
     /**
@@ -262,20 +170,9 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserPasswordNotLongEnough() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
-        data.put("password", pw);
-        data.put("passwordRepeat", pw);
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings
-                    .userPasswordMinLength(Common.getUserPasswordMinLength()));
-        });
+        checkValidateNewUserFail(MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength()),
+                Pair.of("password", pw), Pair.of("passwordRepeat", pw));
     }
 
     /**
@@ -283,17 +180,7 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserPasswordStrongEnough() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("password", "abcABC1$");
-        data.put("passwordRepeat", "abcABC1$");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isEmpty();
-        });
+        checkValidateNewUserSuccess(Pair.of("password", "abcABC1$"), Pair.of("passwordRepeat", "abcABC1$"));
     }
 
     /**
@@ -301,59 +188,18 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserPasswordNotStrongEnough() {
-        testHelper.mockContext();
-
-        // No upper case
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = createDummyUserData();
-            data.put("password", "abcabc1$");
-            data.put("passwordRepeat", "abcabc1$");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
-
-        // No lower case
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = createDummyUserData();
-            data.put("password", "ABCABC1$");
-            data.put("passwordRepeat", "ABCABC1$");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
-
-        // No number
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = createDummyUserData();
-            data.put("password", "abcABC$$");
-            data.put("passwordRepeat", "abcABC$$");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
-
-        // No special character
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = createDummyUserData();
-            data.put("password", "abcABC11");
-            data.put("passwordRepeat", "abcABC11");
-            Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
+        checkValidateNewUserFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("password", "abcabc1$"),
+                Pair.of("passwordRepeat", "abcabc1$"));
+        checkValidateNewUserFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("password", "ABCABC1$"),
+                Pair.of("passwordRepeat", "ABCABC1$"));
+        checkValidateNewUserFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("password", "abcABC$$"),
+                Pair.of("passwordRepeat", "abcABC$$"));
+        checkValidateNewUserFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("password", "abcABC11"),
+                Pair.of("passwordRepeat", "abcABC11"));
     }
 
     /**
@@ -362,17 +208,9 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserPasswordsNotEqual() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("passwordRepeat", "different");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
-        });
+        checkValidateNewUserFail(MessagesStrings.PASSWORDS_DONT_MATCH,
+                Pair.of("password", "abcABC1$"),
+                Pair.of("passwordRepeat", "different"));
     }
 
     /**
@@ -380,18 +218,7 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserUserExistsAlready() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("email", "admin");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED);
-        });
+        checkValidateNewUserFail(MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED, Pair.of("username", "admin"));
     }
 
     /**
@@ -399,17 +226,9 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateNewUserWrongAdminPassword() {
-        testHelper.mockContext();
-
-        Map<String, String> data = createDummyUserData();
-        data.put("adminPassword", "wrongPw");
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
-
-        jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_EMAIL, form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.WRONG_PASSWORD);
-        });
+        checkValidateNewUserFail(MessagesStrings.WRONG_PASSWORD,
+                Pair.of("adminPassword", "wrongPw"),
+                Pair.of("username", "foo"));
     }
 
     /**
@@ -418,20 +237,10 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordViaAdmin() {
-        prepareChangePasswordWithAdminTest();
-
-        Map<String, String> data = new HashMap<>();
-        data.put("adminPassword", UserService.ADMIN_PASSWORD);
-        data.put("newPassword", "abc123A$");
-        data.put("newPasswordRepeat", "abc123A$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isEmpty();
-        });
+        checkValidateChangePasswordSuccess(
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "abc123A$"),
+                Pair.of("newPasswordRepeat", "abc123A$"));
     }
 
     /**
@@ -439,21 +248,9 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordNotEmpty() {
-        prepareChangePasswordWithAdminTest();
-
-        Map<String, String> data = new HashMap<>();
-        data.put("adminPassword", UserService.ADMIN_PASSWORD);
-        data.put("newPassword", "");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-        });
+        checkValidateChangePasswordFail(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS,
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", ""));
     }
 
     /**
@@ -461,22 +258,10 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordRepeatNotEmpty() {
-        prepareChangePasswordWithAdminTest();
-
-        Map<String, String> data = new HashMap<>();
-        data.put("adminPassword", UserService.ADMIN_PASSWORD);
-        data.put("newPassword", "abc");
-        data.put("newPasswordRepeat", "");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-        });
+        checkValidateChangePasswordFail(MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS,
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "abc"),
+                Pair.of("newPasswordRepeat", ""));
     }
 
     /**
@@ -484,21 +269,10 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordViaAdminNotMatch() {
-        prepareChangePasswordWithAdminTest();
-
-        Map<String, String> data = new HashMap<>();
-        data.put("adminPassword", UserService.ADMIN_PASSWORD);
-        data.put("newPassword", "abc123A$");
-        data.put("newPasswordRepeat", "wer345B$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
-        });
+        checkValidateChangePasswordFail(MessagesStrings.PASSWORDS_DONT_MATCH,
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "abc123A$"),
+                Pair.of("newPasswordRepeat", "wer345B$"));
     }
 
     /**
@@ -506,21 +280,11 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordMinLength() {
-        prepareChangePasswordWithAdminTest();
-
-        Map<String, String> data = new HashMap<>();
-        data.put("adminPassword", UserService.ADMIN_PASSWORD);
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength(), 'a');
-        data.put("newPassword", pw);
-        data.put("newPasswordRepeat", pw);
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isEmpty();
-        });
+        checkValidateChangePasswordSuccess(
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", pw),
+                Pair.of("newPasswordRepeat", pw));
     }
 
     /**
@@ -528,23 +292,11 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordNotLongEnough() {
-        prepareChangePasswordWithAdminTest();
-
-        Map<String, String> data = new HashMap<>();
-        data.put("adminPassword", UserService.ADMIN_PASSWORD);
         String pw = StringUtils.leftPad("aA1$", Common.getUserPasswordMinLength() - 1, 'a');
-        data.put("newPassword", pw);
-        data.put("newPasswordRepeat", pw);
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(MessagesStrings
-                    .userPasswordMinLength(Common.getUserPasswordMinLength()));
-        });
+        checkValidateChangePasswordFail(MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength()),
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", pw),
+                Pair.of("newPasswordRepeat", pw));
     }
 
     /**
@@ -552,67 +304,29 @@ public class AuthenticationValidationTest {
      */
     @Test
     public void checkValidateChangePasswordNotStrongEnough() {
-        prepareChangePasswordWithAdminTest();
-
         // No upper case
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = new HashMap<>();
-            data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            data.put("newPassword", "abcabc1$");
-            data.put("newPasswordRepeat", "abcabc1$");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
-                    TypedMap.empty(), data);
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
+        checkValidateChangePasswordFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "abcabc1$"),
+                Pair.of("newPasswordRepeat", "abcabc1$"));
 
         // No lower case
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = new HashMap<>();
-            data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            data.put("newPassword", "ABCABC1$");
-            data.put("newPasswordRepeat", "ABCABC1$");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
-                    TypedMap.empty(), data);
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
+        checkValidateChangePasswordFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "ABCABC1$"),
+                Pair.of("newPasswordRepeat", "ABCABC1$"));
 
         // No number
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = new HashMap<>();
-            data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            data.put("newPassword", "abcABC$$");
-            data.put("newPasswordRepeat", "abcABC$$");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
-                    TypedMap.empty(), data);
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
+        checkValidateChangePasswordFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "abcABC$$"),
+                Pair.of("newPasswordRepeat", "abcABC$$"));
 
         // No special character
-        jpaApi.withTransaction(() -> {
-            Map<String, String> data = new HashMap<>();
-            data.put("adminPassword", UserService.ADMIN_PASSWORD);
-            data.put("newPassword", "abcABC11");
-            data.put("newPasswordRepeat", "abcABC11");
-            Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang,
-                    TypedMap.empty(), data);
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    Common.getUserPasswordStrengthRegex().getLeft());
-        });
+        checkValidateChangePasswordFail(Common.getUserPasswordStrengthRegex().getLeft(),
+                Pair.of("adminPassword", UserService.ADMIN_PASSWORD),
+                Pair.of("newPassword", "abcABC11"),
+                Pair.of("newPasswordRepeat", "abcABC11"));
     }
 
     /**
@@ -633,8 +347,12 @@ public class AuthenticationValidationTest {
                 data);
 
         jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "tester.test@test.com", form);
+            Form<ChangePasswordModel> validatedForm;
+            try {
+                validatedForm = authenticationValidation.validateChangePassword("tester.test@test.com", form);
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
             assertThat(validatedForm.errors()).isEmpty();
         });
     }
@@ -657,11 +375,103 @@ public class AuthenticationValidationTest {
                 data);
 
         jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(
-                    "different.test@test.com", form);
+            Form<ChangePasswordModel> validatedForm;
+            try {
+                validatedForm = authenticationValidation.validateChangePassword("different.test@test.com", form);
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
             assertThat(validatedForm.errors()).isNotEmpty();
             assertThat(validatedForm.errors().get(0).message()).isEqualTo(
                     MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS);
+        });
+    }
+
+    @SafeVarargs
+    private final void checkValidateNewUserSuccess(Pair<String, String>... userFields) {
+        testHelper.mockContext();
+
+        Map<String, String> data = createDummyUserData();
+        for (Pair<String, String> userField : userFields) {
+            data.put(userField.getKey(), userField.getValue());
+        }
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
+
+        jpaApi.withTransaction(() -> {
+            Form<NewUserModel> validatedForm;
+            try {
+                validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_USERNAME, form);
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
+            assertThat(validatedForm.errors()).isEmpty();
+        });
+    }
+
+    @SafeVarargs
+    private final void checkValidateNewUserFail(String expectedErrorMsg, Pair<String, String>... userFields) {
+        testHelper.mockContext();
+
+        Map<String, String> data = createDummyUserData();
+        for (Pair<String, String> userField : userFields) {
+            data.put(userField.getKey(), userField.getValue());
+        }
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
+
+        jpaApi.withTransaction(() -> {
+            Form<NewUserModel> validatedForm;
+            try {
+                validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_USERNAME, form);
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(expectedErrorMsg);
+        });
+    }
+
+    @SafeVarargs
+    private final void checkValidateChangePasswordSuccess(Pair<String, String>... userFields) {
+        prepareChangePasswordWithAdminTest();
+
+        Map<String, String> data = new HashMap<>();
+        for (Pair<String, String> userField : userFields) {
+            data.put(userField.getKey(), userField.getValue());
+        }
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
+
+        jpaApi.withTransaction(() -> {
+            Form<ChangePasswordModel> validatedForm;
+            try {
+                validatedForm = authenticationValidation.validateChangePassword("tester.test@test.com", form);
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
+            assertThat(validatedForm.errors()).isEmpty();
+        });
+    }
+
+    @SafeVarargs
+    private final void checkValidateChangePasswordFail(String expectedErrorMsg, Pair<String, String>... userFields) {
+        prepareChangePasswordWithAdminTest();
+
+        Map<String, String> data = new HashMap<>();
+        for (Pair<String, String> userField : userFields) {
+            data.put(userField.getKey(), userField.getValue());
+        }
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
+                data);
+
+        jpaApi.withTransaction(() -> {
+            Form<ChangePasswordModel> validatedForm;
+            try {
+                validatedForm = authenticationValidation.validateChangePassword("tester.test@test.com", form);
+            } catch (NamingException e) {
+                throw new RuntimeException(e);
+            }
+            assertThat(validatedForm.errors()).isNotEmpty();
+            assertThat(validatedForm.errors().get(0).message()).isEqualTo(expectedErrorMsg);
         });
     }
 
@@ -675,12 +485,13 @@ public class AuthenticationValidationTest {
 
     private Map<String, String> createDummyUserData() {
         Map<String, String> data = new HashMap<>();
-        data.put("email", "george@bla.com");
+        data.put("username", "george@bla.com");
         data.put("name", "Georg Lange");
         data.put("password", "123äbcA$");
         data.put("passwordRepeat", "123äbcA$");
         data.put("adminRole", "true");
         data.put("adminPassword", "admin");
+        data.put("authByLdap", "false");
         return data;
     }
 

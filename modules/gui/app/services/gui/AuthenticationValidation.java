@@ -15,6 +15,7 @@ import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.naming.NamingException;
 
 /**
  * Service class that validates models that create, change or delete users.
@@ -22,7 +23,7 @@ import javax.inject.Singleton;
  * concerns important user authentication and it used other service and DAO
  * classes I put it in an extra class.
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 @Singleton
 public class AuthenticationValidation {
@@ -31,8 +32,7 @@ public class AuthenticationValidation {
     private final UserDao userDao;
 
     @Inject
-    AuthenticationValidation(AuthenticationService authenticationService,
-            UserDao userDao) {
+    AuthenticationValidation(AuthenticationService authenticationService, UserDao userDao) {
         this.authenticationService = authenticationService;
         this.userDao = userDao;
     }
@@ -42,24 +42,30 @@ public class AuthenticationValidation {
      * done in the model class, but since here the user DAO is needed I put it
      * in an extra class. In the NewUserModel are still some simple validations.
      */
-    public Form<NewUserModel> validateNewUser(String loggedInAdminEmail, Form<NewUserModel> form) {
-        String email = form.get().getEmail();
+    public Form<NewUserModel> validateNewUser(String normalizedLoggedInAdminUsername, Form<NewUserModel> form)
+            throws NamingException {
+        String normalizeUsername = User.normalizeUsername(form.get().getUsername());
         String password = form.get().getPassword();
         String passwordRepeat = form.get().getPasswordRepeat();
         String name = form.get().getName();
         String adminPassword = form.get().getAdminPassword();
+        boolean authByLdap = form.get().getAuthByLdap();
 
-        if (email == null || email.trim().isEmpty()) {
-            return form.withError(new ValidationError(NewUserModel.EMAIL, MessagesStrings.MISSING_EMAIL));
+        if (normalizeUsername == null || normalizeUsername.isEmpty()) {
+            return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.MISSING_USERNAME));
         }
 
-        if (email.length() > 255) {
-            form = form.withError(new ValidationError(NewUserModel.EMAIL, MessagesStrings.EMAIL_TOO_LONG));
+        if (!normalizeUsername.matches("^[\\p{IsAlphabetic}\\p{IsDigit}-_@.+&'=~]+$")) {
+            return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.USERNAME_INVALID));
+        }
+
+        if (normalizeUsername.length() > 255) {
+            form = form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.USERNAME_TOO_LONG));
         }
 
         // Check with Jsoup for illegal HTML
-        if (!Jsoup.isValid(email, Whitelist.none())) {
-            form = form.withError(new ValidationError(NewUserModel.EMAIL, MessagesStrings.NO_HTML_ALLOWED));
+        if (!Jsoup.isValid(normalizeUsername, Whitelist.none())) {
+            form = form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
         if (name == null || name.trim().isEmpty()) {
@@ -75,41 +81,44 @@ public class AuthenticationValidation {
             form = form.withError(new ValidationError(NewUserModel.NAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
-        if (password == null || password.trim().isEmpty()) {
-            return form.withError(
-                    new ValidationError(NewUserModel.PASSWORD, MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
-        }
-        if (passwordRepeat == null || passwordRepeat.trim().isEmpty()) {
-            return form.withError(new ValidationError(NewUserModel.PASSWORD_REPEAT,
-                    MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
-        }
-
-        // Check password length as specified in config
-        if (password.length() < Common.getUserPasswordMinLength()) {
-            form = form.withError(new ValidationError(NewUserModel.PASSWORD,
-                    MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
-        }
-
-        // Check password strength as specified in config
-        Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
-        if (!password.matches(regex.getRight())) {
-            form = form.withError(new ValidationError(NewUserModel.PASSWORD, regex.getLeft()));
-        }
-
-        // Check if user with this email already exists
-        User existingUser = userDao.findByEmail(email);
+        // Check if user with this username already exists
+        User existingUser = userDao.findByUsername(normalizeUsername);
         if (existingUser != null) {
             form = form.withError(
-                    new ValidationError(NewUserModel.EMAIL, MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED));
+                    new ValidationError(NewUserModel.USERNAME, MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED));
         }
 
-        // Check both passwords equal
-        if (!password.equals(passwordRepeat)) {
-            form = form.withError(new ValidationError(NewUserModel.PASSWORD, MessagesStrings.PASSWORDS_DONT_MATCH));
+        // Check password only if not authenticated by LDAP
+        if (!authByLdap) {
+            if (password == null || password.trim().isEmpty()) {
+                return form.withError(new ValidationError(NewUserModel.PASSWORD,
+                        MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            }
+            if (passwordRepeat == null || passwordRepeat.trim().isEmpty()) {
+                return form.withError(new ValidationError(NewUserModel.PASSWORD_REPEAT,
+                        MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            }
+
+            // Check password length as specified in config
+            if (password.length() < Common.getUserPasswordMinLength()) {
+                form = form.withError(new ValidationError(NewUserModel.PASSWORD,
+                        MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
+            }
+
+            // Check password strength as specified in config
+            Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
+            if (!password.matches(regex.getRight())) {
+                form = form.withError(new ValidationError(NewUserModel.PASSWORD, regex.getLeft()));
+            }
+
+            // Check both passwords equal
+            if (!password.equals(passwordRepeat)) {
+                form = form.withError(new ValidationError(NewUserModel.PASSWORD, MessagesStrings.PASSWORDS_DONT_MATCH));
+            }
         }
 
         // Authenticate: check admin password
-        if (!authenticationService.authenticate(loggedInAdminEmail, adminPassword)) {
+        if (!authenticationService.authenticate(normalizedLoggedInAdminUsername, adminPassword)) {
             form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
         }
 
@@ -123,15 +132,14 @@ public class AuthenticationValidation {
      * in the ChangePasswordModel class, but since here the user DAO is needed I
      * put it in an extra class.
      */
-    public Form<ChangePasswordModel> validateChangePassword(String emailOfUserToChange,
-            Form<ChangePasswordModel> form) {
+    public Form<ChangePasswordModel> validateChangePassword(String normalizedUsernameOfUserToChange,
+            Form<ChangePasswordModel> form) throws NamingException {
         ChangePasswordModel model = form.get();
-        emailOfUserToChange = emailOfUserToChange.toLowerCase();
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Only user 'admin' is allowed to change his password
-        if (emailOfUserToChange.equals(UserService.ADMIN_EMAIL) &&
-                !loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
+        if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
+                !loggedInUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
             return form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
                     MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
         }
@@ -153,7 +161,8 @@ public class AuthenticationValidation {
 
         // Check both match
         if (!newPassword.equals(newPasswordRepeat)) {
-            form = form.withError(new ValidationError(ChangePasswordModel.NEW_PASSWORD, MessagesStrings.PASSWORDS_DONT_MATCH));
+            form = form.withError(
+                    new ValidationError(ChangePasswordModel.NEW_PASSWORD, MessagesStrings.PASSWORDS_DONT_MATCH));
         }
 
         // Check length as specified in conf
@@ -171,16 +180,18 @@ public class AuthenticationValidation {
         // Authenticate: Either admin changes a password for some other user
         // or an user changes their own password
         if (loggedInUser.hasRole(Role.ADMIN) && model.getAdminPassword() != null) {
-            String adminEmail = loggedInUser.getEmail();
+            String adminUsername = loggedInUser.getUsername();
             String adminPassword = model.getAdminPassword();
-            if (!authenticationService.authenticate(adminEmail, adminPassword)) {
-                form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
+            if (!authenticationService.authenticate(adminUsername, adminPassword)) {
+                form = form.withError(
+                        new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
             }
 
-        } else if (loggedInUser.getEmail().equals(emailOfUserToChange) && model.getOldPassword() != null) {
+        } else if (loggedInUser.getUsername().equals(normalizedUsernameOfUserToChange) && model.getOldPassword() != null) {
             String oldPassword = model.getOldPassword();
-            if (!authenticationService.authenticate(emailOfUserToChange, oldPassword)) {
-                form = form.withError(new ValidationError(ChangePasswordModel.OLD_PASSWORD, MessagesStrings.WRONG_OLD_PASSWORD));
+            if (!authenticationService.authenticate(normalizedUsernameOfUserToChange, oldPassword)) {
+                form = form.withError(
+                        new ValidationError(ChangePasswordModel.OLD_PASSWORD, MessagesStrings.WRONG_OLD_PASSWORD));
             }
 
         } else {

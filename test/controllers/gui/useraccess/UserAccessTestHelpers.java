@@ -125,7 +125,7 @@ public class UserAccessTestHelpers {
         User admin = testHelper.getAdmin();
         RequestBuilder request = new RequestBuilder()
                 .method(method)
-                .session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
+                .session(AuthenticationService.SESSION_USERNAME, admin.getUsername())
                 .uri(call.url());
 
         testHelper.assertJatosGuiException(request, Http.Status.SEE_OTHER, "");
