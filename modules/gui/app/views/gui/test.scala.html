@@ -20,33 +20,44 @@
 
 <body>
 
-<p><b>JATOS configuration</b><br>
-Version: @general.common.Common.getJatosVersion()<br>
-Java: @java.lang.System.getProperty("java.version")<br>
-URL host: @utils.common.HttpUtils.getHostUrl()<br>
-URL basepath: @general.common.Common.getPlayHttpContext()<br>
-Local basepath: @general.common.Common.getBasepath()<br>
-Study assets root path: @general.common.Common.getStudyAssetsRootPath()<br>
-Uses in-memory DB: @general.common.Common.isInMemoryDb()<br>
-User session timeout: @general.common.Common.getUserSessionTimeout()<br>
-User session inactivity: @general.common.Common.getUserSessionInactivity()<br>
-DB URL: @general.common.Common.getDbDefaultUrl()<br>
-DB driver: @general.common.Common.getDbDefaultDriver()<br>
-JPA unit: @general.common.Common.getJpaDefault()<br>
-Used memory: @((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024)) MB<br>
-Max memory: @(Runtime.getRuntime.maxMemory() / (1024*1024)) MB
+<h1>JATOS configuration</h1>
+<p>
+<b>Version</b>: @general.common.Common.getJatosVersion()<br>
+<b>Java</b>: @java.lang.System.getProperty("java.version")<br>
+<b>URL host</b>: @utils.common.HttpUtils.getHostUrl()<br>
+<b>URL basepath</b>: @general.common.Common.getPlayHttpContext()<br>
+<b>Local basepath</b>: @general.common.Common.getBasepath()<br>
+<b>Study assets root path</b>: @general.common.Common.getStudyAssetsRootPath()<br>
+<b>Result uploads allowed</b>: @general.common.Common.isResultUploadsEnabled()<br>
+<b>Result uploads path</b>: @general.common.Common.getResultUploadsPath()<br>
+<b>Result uploads max file size</b>: @(general.common.Common.getResultUploadsMaxFileSize() / (1000*1000)) MB<br>
+<b>Result uploads limit per study run</b>: @(general.common.Common.getResultUploadsLimitPerStudyRun() / (1000*1000)) MB<br>
+<b>Study logs allowed</b>: @general.common.Common.isStudyLogsEnabled()<br>
+<b>Study logs path</b>: @general.common.Common.getStudyLogsPath()<br>
+<b>Uses in-memory DB</b>: @general.common.Common.isInMemoryDb()<br>
+<b>User session timeout</b>: @general.common.Common.getUserSessionTimeout()<br>
+<b>User session inactivity</b>: @general.common.Common.getUserSessionInactivity()<br>
+<b>DB URL</b>: @general.common.Common.getDbDefaultUrl()<br>
+<b>DB driver</b>: @general.common.Common.getDbDefaultDriver()<br>
+<b>JPA unit</b>: @general.common.Common.getJpaDefault()<br>
+<b>LDAP URL</b>: @general.common.Common.getLdapUrl()<br>
+<b>LDAP base DN</b>: @general.common.Common.getLdapBasedn()<br>
+<b>LDAP timeout</b>: @general.common.Common.getLdapTimeout()<br>
+<b>Used memory</b>: @((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024)) MB<br>
+<b>Max memory</b>: @(Runtime.getRuntime.maxMemory() / (1024*1024)) MB
 </p>
 
-<p><b>Tests</b><br>
-Correct URL host: <span id="testHostUrlResult"></span><br>
-Connect to database: <span id="testDatabaseResult"></span><br>
-Access to study assets root folder: <span id="testStudyAssetsRootFolderResult"></span><br>
-Acess internal cache: <span id="testCacheResult"></span><br>
-Internal JSON serialization: <span id="testJsonSerializationResult"></span><br>
-Read jatos.js (via study path): <span id="testJatosJsViaStudyPathResult"></span><br>
-Read jatos.js (via assets path): <span id="testJatosJsViaAssetsPathResult"></span><br>
-Read heartbeat.js: <span id="testHeartbeatJsResult"></span><br>
-Open WebSocket: <span id="testWebSocketResult"></span><br>
+<h1>JATOS configuration</h1>
+<p>
+<b>Correct URL host</b>: <span id="testHostUrlResult"></span><br>
+<b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
+<b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
+<b>Acess internal cache</b>: <span id="testCacheResult"></span><br>
+<b>Internal JSON serialization</b>: <span id="testJsonSerializationResult"></span><br>
+<b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
+<b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
+<b>Read heartbeat.js</b>: <span id="testHeartbeatJsResult"></span><br>
+<b>Open WebSocket</b>: <span id="testWebSocketResult"></span><br>
 </p>
 
 <script>
