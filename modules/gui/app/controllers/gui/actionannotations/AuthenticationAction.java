@@ -95,7 +95,7 @@ public class AuthenticationAction extends Action<Authenticated> {
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
         // Check user's session ID (only if not switched off in configuration)
-        if (Common.getUserSessionValidation() && !authenticationService.isValidSessionId(ctx.session(),
+        if (Common.isUserSessionValidation() && !authenticationService.isValidSessionId(ctx.session(),
                         loggedInUser.getUsername(), ctx.request().remoteAddress())) {
             authenticationService.clearSessionCookie(ctx.session());
             return callForbiddenDueToInvalidSession(loggedInUser.getUsername(),

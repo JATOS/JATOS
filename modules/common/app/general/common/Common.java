@@ -286,7 +286,7 @@ public class Common {
     /**
      * Toggle for user session validation (not the Play session validation which is done by Play).
      */
-    public static boolean getUserSessionValidation() {
+    public static boolean isUserSessionValidation() {
         return userSessionValidation;
     }
 
