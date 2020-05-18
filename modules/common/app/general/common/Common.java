@@ -117,6 +117,7 @@ public class Common {
         playHttpContext = config.getString("play.http.context");
         jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
         jatosHttpAddress = config.getString("play.server.http.address");
+        if (jatosHttpAddress.equals("0.0.0.0")) jatosHttpAddress = "127.0.0.1"; // Fix localhost IP
         jatosHttpPort = config.getInt("play.server.http.port");
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
         ldapBasedn = config.getString("jatos.user.authentication.ldap.basedn");
