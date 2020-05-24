@@ -3,8 +3,10 @@
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <div id="toolbar" class="btn-group">
+    @if(loggedInUser.getAuthMethod() != common.User.AuthMethod.OAUTH_GOOGLE) {
     <button id="editProfile" type="button" class="btn btn-user">Edit Profile</button>
-    @if(!loggedInUser.isAuthByLdap()) {
+    }
+    @if(loggedInUser.getAuthMethod() == common.User.AuthMethod.DB) {
     <button id="changePassword" type="button" class="btn btn-user">Change Password <span class="glyphicon glyphicon-lock"></span></button>
     }
     @if(!loggedInUser.getUsername().equals(services.gui.UserService.ADMIN_USERNAME)) {

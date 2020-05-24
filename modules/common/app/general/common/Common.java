@@ -73,6 +73,7 @@ public class Common {
     private static String ldapBasedn;
     private static String ldapUrl;
     private static int ldapTimeout;
+    private static String oauthGoogleClientId;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -122,6 +123,7 @@ public class Common {
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
         ldapBasedn = config.getString("jatos.user.authentication.ldap.basedn");
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
+        oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
     }
 
     private String fillBasePath(Application application) {
@@ -384,5 +386,16 @@ public class Common {
      */
     public static int getLdapTimeout() {
         return ldapTimeout;
+    }
+
+    public static boolean isOauthGoogleAllowed() {
+        return !Strings.isNullOrEmpty(oauthGoogleClientId);
+    }
+
+    /**
+     * Google Sign-in Client ID for OAuth / OpenId Connect (OIDC)
+     */
+    public static String getOauthGoogleClientId() {
+        return oauthGoogleClientId;
     }
 }

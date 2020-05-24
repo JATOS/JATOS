@@ -1,5 +1,10 @@
 package services.gui;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.sun.jndi.ldap.LdapCtxFactory;
 import controllers.gui.Authentication;
 import controllers.gui.actionannotations.AuthenticationAction;
@@ -7,6 +12,7 @@ import daos.common.UserDao;
 import general.common.Common;
 import general.common.RequestScope;
 import models.common.User;
+import models.common.User.AuthMethod;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http;
@@ -18,10 +24,13 @@ import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Hashtable;
 
 /**
@@ -32,7 +41,7 @@ import java.util.Hashtable;
  * Play's session cookie and in the the cache. With each subsequent request this session is checked in the
  * AuthenticationAction.
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 @Singleton
 public class AuthenticationService {
@@ -82,7 +91,7 @@ public class AuthenticationService {
     public boolean authenticate(String normalizedUsername, String password) throws NamingException {
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) return false;
-        if (user.isAuthByLdap()) {
+        if (user.getAuthMethod() == AuthMethod.LDAP) {
             return authenticateViaLdap(normalizedUsername, password);
         } else {
             return authenticateViaDb(normalizedUsername, password);
@@ -113,6 +122,18 @@ public class AuthenticationService {
         } catch (AuthenticationException e) {
             return false;
         }
+    }
+
+    /**
+     * Verifies and fetches an ID token from Google OAuth by sending an HTTP POST to Google. The actual authentication
+     * happens in the frontend with Google's gapi library.
+     */
+    public GoogleIdToken fetchOAuthGoogleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
+        HttpTransport transport = new NetHttpTransport();
+        JacksonFactory jacksonFactory = new JacksonFactory();
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jacksonFactory)
+                .setAudience(Collections.singletonList(Common.getOauthGoogleClientId())).build();
+        return verifier.verify(idTokenString);
     }
 
     /**

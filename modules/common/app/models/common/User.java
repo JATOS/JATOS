@@ -29,7 +29,7 @@ public class User {
      * Possible authentication methods
      */
     public enum AuthMethod {
-        DB, LDAP
+        DB, LDAP, OAUTH_GOOGLE
     }
 
     /**
@@ -152,10 +152,6 @@ public class User {
 
     public void setAuthMethod(AuthMethod authMethod) {
         this.authMethod = authMethod;
-    }
-
-    public boolean isAuthByLdap() {
-        return authMethod == AuthMethod.LDAP;
     }
 
     public void setWorker(JatosWorker worker) {

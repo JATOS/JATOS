@@ -5,6 +5,12 @@
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
 			<div class="modal-body">
+				@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+				<h3 class="form-login-heading">Please sign in again</h3>
+				<p class="explanation"></p>
+				<div id="signin-google"></div>
+				<p>Or <a href="@controllers.gui.routes.Authentication.login()">login as a different user</a>.</p>
+				} else {
 				<form id="loginForm" method="post" class="form-horizontal" role="form">
 					<h2 class="form-login-heading">Please log in again</h2>
 					<label class="explanation"></label>
@@ -18,6 +24,7 @@
 					<button type="submit" class="btn btn-lg btn-primary btn-block">Log in</button>
 					<label>Or <a href="@controllers.gui.routes.Authentication.login()">login as a different user</a>.</label>
 				</form>
+				}
 			</div>
 		</div>
 	</div>
@@ -37,9 +44,12 @@ if (window.Worker) {
 
 function showLoginModal(explanationText) {
 	removeAlerts('#loginModal');
-	removeFormErrors('#loginModal')
+	removeFormErrors('#loginModal');
 	$('#loginModal .explanation').text(explanationText);
 	clearForm("#loginForm");
+	@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+	renderSignInGoogleButton(270);
+	}
 	$('#loginModal').modal('show');
 }
 

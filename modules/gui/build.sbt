@@ -15,7 +15,8 @@ libraryDependencies ++= Seq(
   javaWs,
   ehcache,
   guice,
-  "org.webjars" % "bootstrap" % "3.4.1"
+  "org.webjars" % "bootstrap" % "3.4.1",
+  "com.google.api-client" % "google-api-client" % "1.30.9"
 )
 
 // Routes from submodules

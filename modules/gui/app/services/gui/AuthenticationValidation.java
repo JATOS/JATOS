@@ -1,10 +1,8 @@
 package services.gui;
 
-import daos.common.UserDao;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.User;
-import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.NewUserModel;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,58 +11,44 @@ import org.jsoup.safety.Whitelist;
 import play.data.Form;
 import play.data.validation.ValidationError;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.naming.NamingException;
 
 /**
- * Service class that validates models that create, change or delete users.
- * Usually this validation is part of the model class, but since this is
- * concerns important user authentication and it used other service and DAO
- * classes I put it in an extra class.
+ * Service class that validates models that create, change or delete users. Usually this validation is part of the model
+ * class, but since this is concerns important user authentication and it used other service I put it in an extra class.
  *
  * @author Kristian Lange
  */
 @Singleton
 public class AuthenticationValidation {
 
-    private final AuthenticationService authenticationService;
-    private final UserDao userDao;
-
-    @Inject
-    AuthenticationValidation(AuthenticationService authenticationService, UserDao userDao) {
-        this.authenticationService = authenticationService;
-        this.userDao = userDao;
-    }
-
     /**
      * Validates a NewUserModel and returns a Form with errors. Usually this is
      * done in the model class, but since here the user DAO is needed I put it
      * in an extra class. In the NewUserModel are still some simple validations.
      */
-    public Form<NewUserModel> validateNewUser(String normalizedLoggedInAdminUsername, Form<NewUserModel> form)
-            throws NamingException {
-        String normalizeUsername = User.normalizeUsername(form.get().getUsername());
+    public Form<NewUserModel> validateNewUser(Form<NewUserModel> form) {
+        String normalizedUsername = User.normalizeUsername(form.get().getUsername());
         String password = form.get().getPassword();
         String passwordRepeat = form.get().getPasswordRepeat();
         String name = form.get().getName();
-        String adminPassword = form.get().getAdminPassword();
         boolean authByLdap = form.get().getAuthByLdap();
+        boolean authByOAuthGoogle = form.get().getAuthByOAuthGoogle();
 
-        if (normalizeUsername == null || normalizeUsername.isEmpty()) {
+        if (normalizedUsername == null || normalizedUsername.isEmpty()) {
             return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.MISSING_USERNAME));
         }
 
-        if (!normalizeUsername.matches("^[\\p{IsAlphabetic}\\p{IsDigit}-_@.+&'=~]+$")) {
+        if (!normalizedUsername.matches("^[\\p{IsAlphabetic}\\p{IsDigit}-_@.+&'=~]+$")) {
             return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.USERNAME_INVALID));
         }
 
-        if (normalizeUsername.length() > 255) {
+        if (normalizedUsername.length() > 255) {
             form = form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.USERNAME_TOO_LONG));
         }
 
         // Check with Jsoup for illegal HTML
-        if (!Jsoup.isValid(normalizeUsername, Whitelist.none())) {
+        if (!Jsoup.isValid(normalizedUsername, Whitelist.none())) {
             form = form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
@@ -81,15 +65,8 @@ public class AuthenticationValidation {
             form = form.withError(new ValidationError(NewUserModel.NAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
-        // Check if user with this username already exists
-        User existingUser = userDao.findByUsername(normalizeUsername);
-        if (existingUser != null) {
-            form = form.withError(
-                    new ValidationError(NewUserModel.USERNAME, MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED));
-        }
-
-        // Check password only if not authenticated by LDAP
-        if (!authByLdap) {
+        // Check password only if not authenticated by LDAP or OAuth
+        if (!authByLdap && !authByOAuthGoogle) {
             if (password == null || password.trim().isEmpty()) {
                 return form.withError(new ValidationError(NewUserModel.PASSWORD,
                         MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
@@ -117,11 +94,6 @@ public class AuthenticationValidation {
             }
         }
 
-        // Authenticate: check admin password
-        if (!authenticationService.authenticate(normalizedLoggedInAdminUsername, adminPassword)) {
-            form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
-        }
-
         return form;
     }
 
@@ -132,18 +104,8 @@ public class AuthenticationValidation {
      * in the ChangePasswordModel class, but since here the user DAO is needed I
      * put it in an extra class.
      */
-    public Form<ChangePasswordModel> validateChangePassword(String normalizedUsernameOfUserToChange,
-            Form<ChangePasswordModel> form) throws NamingException {
+    public Form<ChangePasswordModel> validateChangePassword(Form<ChangePasswordModel> form) {
         ChangePasswordModel model = form.get();
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        // Only user 'admin' is allowed to change his password
-        if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
-                !loggedInUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
-            return form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
-                    MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
-        }
-
         String newPassword = model.getNewPassword();
         String newPasswordRepeat = model.getNewPasswordRepeat();
 
@@ -175,29 +137,6 @@ public class AuthenticationValidation {
         Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
         if (!newPassword.matches(regex.getRight())) {
             form = form.withError(new ValidationError(ChangePasswordModel.NEW_PASSWORD, regex.getLeft()));
-        }
-
-        // Authenticate: Either admin changes a password for some other user
-        // or an user changes their own password
-        if (loggedInUser.hasRole(Role.ADMIN) && model.getAdminPassword() != null) {
-            String adminUsername = loggedInUser.getUsername();
-            String adminPassword = model.getAdminPassword();
-            if (!authenticationService.authenticate(adminUsername, adminPassword)) {
-                form = form.withError(
-                        new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
-            }
-
-        } else if (loggedInUser.getUsername().equals(normalizedUsernameOfUserToChange) && model.getOldPassword() != null) {
-            String oldPassword = model.getOldPassword();
-            if (!authenticationService.authenticate(normalizedUsernameOfUserToChange, oldPassword)) {
-                form = form.withError(
-                        new ValidationError(ChangePasswordModel.OLD_PASSWORD, MessagesStrings.WRONG_OLD_PASSWORD));
-            }
-
-        } else {
-            // Should never happen since we checked role ADMIN already
-            form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
-                    MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS));
         }
 
         return form;

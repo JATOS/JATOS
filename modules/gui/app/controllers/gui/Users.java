@@ -2,11 +2,13 @@ package controllers.gui;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.User;
+import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
@@ -15,6 +17,7 @@ import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -40,6 +43,7 @@ public class Users extends Controller {
     private static final Logger.ALogger LOGGER = Logger.of(Users.class);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+    private final UserDao userDao;
     private final UserService userService;
     private final AuthenticationService authenticationService;
     private final AuthenticationValidation authenticationValidation;
@@ -49,12 +53,13 @@ public class Users extends Controller {
 
     @Inject
     Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            UserService userService,
+            UserDao userDao, UserService userService,
             AuthenticationService authenticationService,
             AuthenticationValidation authenticationValidation,
             BreadcrumbsService breadcrumbsService, FormFactory formFactory,
             JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+        this.userDao = userDao;
         this.userService = userService;
         this.authenticationService = authenticationService;
         this.authenticationValidation = authenticationValidation;
@@ -138,14 +143,30 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest();
 
-        // Validate via AuthenticationService
+        // Validate
+        form = authenticationValidation.validateNewUser(form);
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
+
+        // Check if user with this username already exists
+        String normalizedUsername = User.normalizeUsername(form.get().getUsername());
+        User existingUser = userDao.findByUsername(normalizedUsername);
+        if (existingUser != null) {
+            form = form.withError(
+                    new ValidationError(NewUserModel.USERNAME, MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED));
+            return forbidden(form.errorsAsJson());
+        }
+
+        // Authenticate: check admin password
         try {
-            form = authenticationValidation.validateNewUser(loggedInUser.getUsername(), form);
+            String adminPassword = form.get().getAdminPassword();
+            if (!authenticationService.authenticate(loggedInUser.getUsername(), adminPassword)) {
+                form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
+                return forbidden(form.errorsAsJson());
+            }
         } catch (NamingException e) {
             LOGGER.warn("LDAP problems - " + e.toString());
             return internalServerError(MessagesStrings.LDAP_PROBLEMS);
         }
-        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         userService.bindToUserAndPersist(form.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -160,6 +181,11 @@ public class Users extends Controller {
     public Result submitEditedProfile(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedUsername = User.normalizeUsername(username);
+
+        if (loggedInUser.getAuthMethod() == AuthMethod.OAUTH_GOOGLE) {
+            return forbidden("Users signed in by Google can't change their name.");
+        }
+
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
@@ -177,7 +203,8 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitChangedPassword(String usernameOfUserToChange) {
+    public Result submitChangedPassword(String usernameOfUserToChange) throws NamingException {
+        User loggedInUser = authenticationService.getLoggedInUser();
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest();
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
 
@@ -187,23 +214,52 @@ public class Users extends Controller {
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         }
-        if (user.isAuthByLdap()) {
-            return forbidden("It's not possible to change the password of an LDAP user.");
+
+        if (user.getAuthMethod() == AuthMethod.LDAP || user.getAuthMethod() == AuthMethod.OAUTH_GOOGLE) {
+            return forbidden("It's only possible to change the passwords of locally stored users"
+                    + " - not LDAP users or Google sign-in users.");
         }
 
-        // Validate via AuthenticationValidation
-        try {
-            form = authenticationValidation.validateChangePassword(normalizedUsernameOfUserToChange, form);
-        } catch (NamingException e) {
-            // This should never happen since LDAP users are sorted out earlier
-            LOGGER.warn("LDAP problems - " + e.toString());
-            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
+        // Only user 'admin' is allowed to change his password
+        if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
+                !loggedInUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
+            form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
+                    MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
+            return forbidden(form.errorsAsJson());
         }
+
+        // Validate
+        form = authenticationValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
-        // Change password
-        String newPassword = form.get().getNewPassword();
-        userService.updatePassword(user, newPassword);
+        // Authenticate: Admin changes a password for some other user
+        if (loggedInUser.hasRole(Role.ADMIN) && form.get().getAdminPassword() != null) {
+            String adminUsername = loggedInUser.getUsername();
+            String adminPassword = form.get().getAdminPassword();
+            if (!authenticationService.authenticate(adminUsername, adminPassword)) {
+                form = form.withError(
+                        new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
+                return forbidden(form.errorsAsJson());
+            }
+            // Change password
+            String newPassword = form.get().getNewPassword();
+            userService.updatePassword(user, newPassword);
+        }
+
+        // Authenticate: An user changes their own password
+        if (loggedInUser.getUsername().equals(normalizedUsernameOfUserToChange)
+                && form.get().getOldPassword() != null) {
+            String oldPassword = form.get().getOldPassword();
+            if (!authenticationService.authenticate(normalizedUsernameOfUserToChange, oldPassword)) {
+                form = form.withError(
+                        new ValidationError(ChangePasswordModel.OLD_PASSWORD, MessagesStrings.WRONG_OLD_PASSWORD));
+                return forbidden(form.errorsAsJson());
+            }
+            // Change password
+            String newPassword = form.get().getNewPassword();
+            userService.updatePassword(user, newPassword);
+        }
+
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 

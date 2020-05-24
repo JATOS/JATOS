@@ -28,6 +28,10 @@
 <meta http-equiv="Expires" content="0" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+<meta name="google-signin-client_id" content="@{general.common.Common.getOauthGoogleClientId()}">
+}
 </head>
 
 <body>
@@ -38,7 +42,7 @@ function showSuccess(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-ok-circle"></i>'
-		+ '<span>' + msg + '</span>'
+		+ '<span>' + $(msg).text() + '</span>'
 		+ '</div>';
 	if (insertAfterElem) {
 		$(html).insertAfter(insertAfterElem);
@@ -53,7 +57,7 @@ function showInfo(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-eye-open"></i>'
-		+ '<span>' + msg + '</span>'
+		+ '<span>' + $(msg).text() + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
 			$(html).insertAfter(insertAfterElem);
@@ -68,7 +72,7 @@ function showWarning(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-warning-sign"></i>'
-		+ '<span>' + msg + '</span>'
+		+ '<span>' + $(msg).text() + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
 			$(html).insertAfter(insertAfterElem);
@@ -83,7 +87,7 @@ function showError(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-exclamation-sign"></i>'
-		+ '<span>' + msg + '</span>'
+		+ '<span>' + $(msg).text() + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
 			$(html).insertAfter(insertAfterElem);
@@ -150,7 +154,7 @@ function showModalError(formElem, response) {
 
 function showSingleFormError(selector, msg) {
 	$(selector).closest(".form-group").addClass("has-error");
-	$(selector).after('<span class="help-block">' + msg + '</span>');
+	$(selector).after('<span class="help-block">' + $(msg).text() + '</span>');
 }
 
 function removeFormErrors(elem) {
@@ -269,10 +273,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 				<li><a id="navUserText" href="@controllers.gui.routes.Users.profile(loggedInUser.getUsername())">
 					<span class="glyphicon glyphicon-user"></span> @loggedInUser.getName()
 				</a></li>
-				<li><a href="@controllers.gui.routes.Authentication.logout()">
-					<span class="glyphicon glyphicon-off"></span>
-					Logout
-				</a></li>
+				<li><a href="#" onclick="logout();"><span class="glyphicon glyphicon-off"></span> Logout</a></li>
 			</ul>
 		</div>
 	</div>
@@ -451,6 +452,19 @@ function fillSidebarStudyList(studyArray) {
 		listItem = listItem + componentsStr;
 		$('#sidebarStudyList').append(listItem);
 	});
+}
+
+@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+@views.html.gui.auth.oauthSignInGoogle()
+}
+
+function logout() {
+	var redirectToLogout = function() { window.location.href = "@controllers.gui.routes.Authentication.logout()" };
+	@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+	signOutGoogle(redirectToLogout);
+	} else {
+	redirectToLogout();
+	}
 }
 
 $(document).on('show.bs.modal', '.modal', function() {

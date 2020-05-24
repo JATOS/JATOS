@@ -18,6 +18,10 @@
 <meta http-equiv="Expires" content="0" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+@if(general.common.Common.isOauthGoogleAllowed()) {
+<script src="https://apis.google.com/js/platform.js?onload=renderSignInGoogleButton" async defer></script>
+<meta name="google-signin-client_id" content="@{general.common.Common.getOauthGoogleClientId()}">
+}
 </head>
 <body>
 
@@ -38,11 +42,22 @@
 	</div>
 </nav>
 
-<div class="container-fluid">
-	<div class="form-login-div">
+<div class="container-fluid" id="login-container">
+	@if(general.common.Common.isOauthGoogleAllowed()) {
+	<div class="row">
+		<div id="signin-google"></div>
+	</div>
+	<div class="row">
+		<h2 class="login-text">... or log in</h2>
+	</div>
+	} else {
+	<div class="row">
+		<h2 class="login-text">Please log in</h2>
+	</div>
+	}
+	<div class="row">
 		@helper.form(action = controllers.gui.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
-		<h2 class="form-login-heading">Please log in</h2>
-		<input type="text" name="username" id="username" class="form-control" placeholder="Username" value="@form("usernmae").value().orElse("")" required autofocus>
+		<input type="text" name="username" id="username" class="form-control" placeholder="Username" value="@form("username").value().orElse("")" required autofocus>
 		<input type="password" name="password" id="password" class="form-control" placeholder="Password" autocomplete="off" required>
 		<button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
 		}
@@ -50,6 +65,10 @@
 </div>
 
 <script>
+
+@if({general.common.Common.isOauthGoogleAllowed()}) {
+@views.html.gui.auth.oauthSignInGoogle()
+}
 
 setBrand();
 

@@ -361,7 +361,7 @@ public class JsonUtils {
         userNode.put("username", user.getUsername());
         ArrayNode roleListArray = Json.mapper().valueToTree(user.getRoleList());
         userNode.putArray("roleList").addAll(roleListArray);
-        userNode.put("authByLdap", user.isAuthByLdap());
+        userNode.put("authMethod", user.getAuthMethod().name());
         // Add array with study titles
         ArrayNode studyArrayNode = Json.mapper().createArrayNode();
         for (Study study : user.getStudyList()) {

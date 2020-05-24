@@ -12,10 +12,8 @@
         <tr>
             <th>Username</th>
             <th>Name</th>
-            <th data-toggle="tooltip" data-placement="bottom" title="Is this user authenticated by LDAP?">LDAP</th>
-            <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can create/change/delete other users.">
-                Admin Rights
-            </th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Authentication method, e.g. locally stored User or by LDAP">Auth</th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can create/change/delete other users.">Admin Rights</th>
             <th></th>
         </tr>
     </thead>
@@ -200,7 +198,7 @@ var userTable = $('#userTable').DataTable({
     "pageLength": 10,
     "columnDefs": [
         {
-            "visible": @{general.common.Common.isLdapAllowed()},
+            "visible": @{general.common.Common.isLdapAllowed() || general.common.Common.isOauthGoogleAllowed()},
             "targets": 2
         }
     ],
@@ -209,15 +207,16 @@ var userTable = $('#userTable').DataTable({
         { "data": "name" },
         {
             "class": "text-center",
-            "data": "authByLdap",
+            "data": "authMethod",
             "width": "1px",
             "orderable": false,
             "searchable": false,
-            "render": function (data, type, full, meta) {
-                if (data) {
-                    return '<span class="glyphicon glyphicon-ok"></span>';
-                } else {
-                    return '<span class="glyphicon glyphicon-remove"></span>';
+            "render": function (authMethod, type, full, meta) {
+                switch(authMethod) {
+                    case "@{common.User.AuthMethod.DB.name()}": return "local";
+                    case "@{common.User.AuthMethod.LDAP.name()}": return "LDAP";
+                    case "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}": return "Google";
+                    default: return "unknown";
                 }
             }
         },
@@ -244,7 +243,7 @@ var userTable = $('#userTable').DataTable({
             "searchable": false,
             "render": function (data, type, full, meta) {
                 var toolbar = $('#userToolbarDiv').clone().show();
-                setUserToolbar(toolbar, data.username, data.authByLdap);
+                setUserToolbar(toolbar, data.username, data.authMethod);
                 return toolbar.html();
             }
         }
@@ -321,7 +320,7 @@ function setAdminButton(buttonDiv, adminRole, username) {
     }
 }
 
-function setUserToolbar(toolbar, username, authByLdap) {
+function setUserToolbar(toolbar, username, authMethod) {
     // Add delete user button
     if (username == "@services.gui.UserService.ADMIN_USERNAME") {
         toolbar.find('.userDeleteButton').attr('disabled', true);
@@ -341,11 +340,11 @@ function setUserToolbar(toolbar, username, authByLdap) {
         } else {
             toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
         }
-    } else if (authByLdap) {
-        toolbar.find('.userChangePasswordButton').attr('disabled', true);
-        toolbar.find('.userChangePasswordTooltip').attr('title', "User authenticated by LDAP");
-    } else {
+    } else if (authMethod == "@{common.User.AuthMethod.DB.name()}") {
         toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
+    } else {
+        toolbar.find('.userChangePasswordButton').attr('disabled', true);
+        toolbar.find('.userChangePasswordTooltip').attr('title', "Not a locally stored User (e.g. authenticated by LDAP)");
     }
 
 }

@@ -13,8 +13,9 @@ GET      /jatos/testWebSocket                                               @con
 
 # Authentication controller
 GET      /jatos/login                                                       @controllers.gui.Authentication.login()
-POST     /jatos/login                                                       @controllers.gui.Authentication.authenticate()
-GET      /jatos/logout                                                      @controllers.gui.Authentication.logout()
+POST     /jatos/login                                                       @controllers.gui.Authentication.authenticate(request: Request)
+POST     /jatos/signInWithGoogle                                            @controllers.gui.Authentication.signInWithGoogle(request: Request)
+GET      /jatos/logout                                                      @controllers.gui.Authentication.logout(request: Request)
 
 # Home controller
 GET      /jatos/sidebarStudyList                                            @controllers.gui.Home.sidebarStudyList()

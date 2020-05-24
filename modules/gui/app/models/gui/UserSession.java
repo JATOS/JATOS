@@ -12,12 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * stores the session IDs for a user. The session ID is stored in two different
  * locations: 1) in Play's session cookie, and 2) in the cache with this object.
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 public class UserSession {
 
     /**
-     * Identifies an user
+     * Identifies an user (normalized username)
      */
     private final String username;
 
@@ -37,8 +37,7 @@ public class UserSession {
      * It is sorted so the oldest in the first position and the youngest in the
      * last.
      */
-    private final Instant[] loginTimes = {Instant.MIN, Instant.MIN, Instant.MIN,
-            Instant.MIN};
+    private final Instant[] loginTimes = {Instant.MIN, Instant.MIN, Instant.MIN, Instant.MIN};
 
     public UserSession(String username) {
         this.username = User.normalizeUsername(username);

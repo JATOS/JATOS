@@ -9,6 +9,7 @@ import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
+import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
 import models.gui.NewUserModel;
@@ -92,7 +93,7 @@ public class UserService {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             if (admin == null) {
                 admin = new User(ADMIN_USERNAME, ADMIN_NAME);
-                createAndPersistUser(admin, ADMIN_PASSWORD, true, false);
+                createAndPersistUser(admin, ADMIN_PASSWORD, true, AuthMethod.DB);
                 LOGGER.info("Created Admin user");
             }
 
@@ -111,21 +112,21 @@ public class UserService {
         User user = new User(newUserModel.getUsername(), newUserModel.getName());
         String password = newUserModel.getPassword();
         boolean adminRole = newUserModel.getAdminRole();
-        boolean authByLdap = newUserModel.getAuthByLdap();
-        createAndPersistUser(user, password, adminRole, authByLdap);
+        AuthMethod authMethod = newUserModel.getAuthByLdap() ? AuthMethod.LDAP :
+                newUserModel.getAuthByOAuthGoogle() ? AuthMethod.OAUTH_GOOGLE : AuthMethod.DB;
+        createAndPersistUser(user, password, adminRole, authMethod);
     }
 
     /**
      * Creates a user, sets password hash and persists them. Creates and persists an JatosWorker for the user.
      */
-    public void createAndPersistUser(User user, String password, boolean adminRole, boolean authByLdap) {
-        // Set password only if not LDAP authentication
-        if (!authByLdap) {
+    public void createAndPersistUser(User user, String password, boolean adminRole, AuthMethod authMethod) {
+        user.setAuthMethod(authMethod);
+
+        // Set password only if DB authentication
+        if (authMethod == AuthMethod.DB) {
             String passwordHash = HashUtils.getHashMD5(password);
             user.setPasswordHash(passwordHash);
-            user.setAuthMethod(User.AuthMethod.DB);
-        } else {
-            user.setAuthMethod(User.AuthMethod.LDAP);
         }
 
         // Every user has a JatosWorker
@@ -164,7 +165,8 @@ public class UserService {
      * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
      * the end - or false if he hasn't.
      */
-    public boolean changeAdminRole(String normalizedUsername, boolean adminRole) throws NotFoundException, ForbiddenException {
+    public boolean changeAdminRole(String normalizedUsername, boolean adminRole)
+            throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
         User loggedInUser = authenticationService.getLoggedInUser();
         if (user.equals(loggedInUser)) {
@@ -184,7 +186,8 @@ public class UserService {
     }
 
     /**
-     * Removes the User belonging to the given username from the database. It also removes all studies where this user is
+     * Removes the User belonging to the given username from the database. It also removes all studies where this user
+     * is
      * the last member (which subsequently removes all components, results and the study assets too).
      */
     public void removeUser(String normalizedUsername) throws NotFoundException, ForbiddenException, IOException {
