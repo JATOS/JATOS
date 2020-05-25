@@ -42,7 +42,7 @@ function showSuccess(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-ok-circle"></i>'
-		+ '<span>' + $(msg).text() + '</span>'
+		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
 		+ '</div>';
 	if (insertAfterElem) {
 		$(html).insertAfter(insertAfterElem);
@@ -57,7 +57,7 @@ function showInfo(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-eye-open"></i>'
-		+ '<span>' + $(msg).text() + '</span>'
+		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
 			$(html).insertAfter(insertAfterElem);
@@ -72,7 +72,7 @@ function showWarning(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-warning-sign"></i>'
-		+ '<span>' + $(msg).text() + '</span>'
+		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
 			$(html).insertAfter(insertAfterElem);
@@ -87,7 +87,7 @@ function showError(msg, insertAfterElem) {
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-exclamation-sign"></i>'
-		+ '<span>' + $(msg).text() + '</span>'
+		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
 		+ '</div>';
 		if (insertAfterElem) {
 			$(html).insertAfter(insertAfterElem);
@@ -154,7 +154,7 @@ function showModalError(formElem, response) {
 
 function showSingleFormError(selector, msg) {
 	$(selector).closest(".form-group").addClass("has-error");
-	$(selector).after('<span class="help-block">' + $(msg).text() + '</span>');
+	$(selector).after('<span class="help-block">' + $($.parseHTML(msg)).text() + '</span>');
 }
 
 function removeFormErrors(elem) {

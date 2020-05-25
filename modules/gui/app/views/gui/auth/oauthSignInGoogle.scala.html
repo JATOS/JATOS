@@ -32,7 +32,7 @@ function onSignInGoogle(googleUser) {
 
 function onSignInGoogleFailure(error) {
 	clearLoginAlerts();
-	$('#signin-google').parent().append('<p class="text-danger login-text">' + $(error).text() + '</p>');
+	$('#signin-google').parent().append('<p class="text-danger login-text">' + $($.parseHTML(error)).text() + '</p>');
 }
 
 function signOutGoogle(callback = function() {}) {
