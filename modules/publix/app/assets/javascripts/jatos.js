@@ -32,7 +32,7 @@ var jatos = {};
 	 */
 	jatos.version = "3.5.4";
 	/**
-	 * How long should JATOS wait until to retry the HTTP call. Warning: In some
+	 * How long should JATOS wait before retrying the HTTP call. Warning: In some
 	 * cases a JATOS regards a second call of the same function as a reload of
 	 * the component. A reload of a component is often forbidden and leads to
 	 * failed finish of the study. Therefore I put the HTTP timeout time to 15 secs.
@@ -200,7 +200,7 @@ var jatos = {};
 	 * at the same time.
 	 */
 	var initialized = false;
-	var onLoadCalled = false;
+	var jatosOnLoadEventFired = false;
 	var startingComponent = false;
 	var endingStudy = false;
 	/**
@@ -215,9 +215,9 @@ var jatos = {};
 	var leavingGroupDeferred;
 	var httpLoopDeferred;
 	/**
-	 * Callback function defined via jatos.onLoad.
-	 */
-	var onLoadCallback;
+     * Event fired when jatos.js is initialized (e.g. init data loaded and channels opened)
+     */
+	var jatosOnLoadEvent = new Event("jatosOnLoad");
 	/**
 	 * Callback function defined via jatos.onBatchSession
 	 */
@@ -474,22 +474,31 @@ var jatos = {};
 	}
 
 	/**
-	 * Defines callback function that is to be called when jatos.js finished its initialisation.
-	 * @param {function} callback - Function that is to be called when jatos.js is done initializing
+	 * Defines a listener (a callback function) that will be called
+	 * when jatos.js finished its initialisation (e.g. channels are
+	 * open and init data loaded). It's possible to define several
+	 * listeners. If several listeners are defined they will be
+	 * called in the same order as defined.
+	 * @param {function} callback - callback function
 	 */
 	jatos.onLoad = function (callback) {
-		onLoadCallback = callback;
+		window.addEventListener("jatosOnLoad", callback);
 		readyForOnLoad();
 	};
+
+	/**
+	 * Just for convenience. People are used to 'onload' all lower case
+	 */
+	jatos.onload = jatos.onLoad;
 
 	/**
 	 * Calls onLoadCallback if it already exists and jatos.js is initialised.
 	 * We can't use Deferred since jQuery might not be defined yet.
 	 */
 	function readyForOnLoad() {
-		if (onLoadCallback && !onLoadCalled && initialized) {
-			onLoadCalled = true;
-			onLoadCallback();
+		if (!jatosOnLoadEventFired && initialized) {
+			jatosOnLoadEventFired = true;
+			window.dispatchEvent(jatosOnLoadEvent);
 		}
 	}
 
