@@ -2427,6 +2427,22 @@ var jatos = {};
 	};
 
 	/**
+	 * Warn worker if component is not reloadable before unload event
+	 * Check: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#the-unload-event
+	 */
+	jatos.onLoad(function () {
+		if (!jatos.componentProperties.reloadable) {
+			window.addEventListener("beforeunload", beforeUnloadListener, { capture: true });
+		}
+	});
+
+	var beforeUnloadListener = function (event) {
+		event.preventDefault();
+		// Most browsers do not show this message but a standardized one
+		event.returnValue = "Are you sure you want to leave?";
+	};
+
+	/**
 	 * Adds a button to the document that if pressed calls jatos.abortStudy.
 	 * By default this button is in the bottom-right corner but this and
 	 * other properties can be configured.
@@ -2471,6 +2487,7 @@ var jatos = {};
 		p.setAttribute("title", tooltip);
 		p.addEventListener("click", function () {
 			if (!confirm || window.confirm(confirmText)) {
+				window.removeEventListener('beforeunload', beforeUnloadListener, { capture: true });
 				jatos.abortStudy(msg);
 			}
 		});
