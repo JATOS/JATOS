@@ -30,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.5.4";
+	jatos.version = "3.5.5";
 	/**
 	 * How long should JATOS wait before retrying the HTTP call. Warning: In some
 	 * cases a JATOS regards a second call of the same function as a reload of
