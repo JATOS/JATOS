@@ -36,13 +36,14 @@
 
 <body>
 <script>
-function showSuccess(msg, insertAfterElem) {
+function showSuccess(msg, insertAfterElem, allowHtml = false) {
+	msg = allowHtml ? msg : $($.parseHTML(msg)).text();
 	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-ok-circle"></i>'
-		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
+		+ '<span>' + msg + '</span>'
 		+ '</div>';
 	if (insertAfterElem) {
 		$(html).insertAfter(insertAfterElem);
@@ -51,49 +52,52 @@ function showSuccess(msg, insertAfterElem) {
 	}
 }
 
-function showInfo(msg, insertAfterElem) {
+function showInfo(msg, insertAfterElem, allowHtml = false) {
+	msg = allowHtml ? msg : $($.parseHTML(msg)).text();
 	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-eye-open"></i>'
-		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
+		+ '<span>' + msg + '</span>'
 		+ '</div>';
-		if (insertAfterElem) {
-			$(html).insertAfter(insertAfterElem);
-		} else {
-			$(html).insertAfter("#breadcrumbs");
-		}
+	if (insertAfterElem) {
+		$(html).insertAfter(insertAfterElem);
+	} else {
+		$(html).insertAfter("#breadcrumbs");
+	}
 }
 
-function showWarning(msg, insertAfterElem) {
+function showWarning(msg, insertAfterElem, allowHtml = false) {
+	msg = allowHtml ? msg : $($.parseHTML(msg)).text();
 	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-warning-sign"></i>'
-		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
+		+ '<span>' + msg + '</span>'
 		+ '</div>';
-		if (insertAfterElem) {
-			$(html).insertAfter(insertAfterElem);
-		} else {
-			$(html).insertAfter("#breadcrumbs");
-		}
+	if (insertAfterElem) {
+		$(html).insertAfter(insertAfterElem);
+	} else {
+		$(html).insertAfter("#breadcrumbs");
+	}
 }
 
-function showError(msg, insertAfterElem) {
+function showError(msg, insertAfterElem, allowHtml = false) {
+	msg = allowHtml ? msg : $($.parseHTML(msg)).text();
 	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span>&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
 		+ '<i class="glyphicon glyphicon-exclamation-sign"></i>'
-		+ '<span>' + $($.parseHTML(msg)).text() + '</span>'
+		+ '<span>' + msg + '</span>'
 		+ '</div>';
-		if (insertAfterElem) {
-			$(html).insertAfter(insertAfterElem);
-		} else {
-			$(html).insertAfter("#breadcrumbs");
-		}
+	if (insertAfterElem) {
+		$(html).insertAfter(insertAfterElem);
+	} else {
+		$(html).insertAfter("#breadcrumbs");
+	}
 }
 
 function removeSuccess(elem) {

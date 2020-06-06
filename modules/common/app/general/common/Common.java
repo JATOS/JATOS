@@ -74,6 +74,8 @@ public class Common {
     private static String ldapUrl;
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
+    private static boolean donationAllowed;
+    private static boolean termsOfUseInfo;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -124,6 +126,8 @@ public class Common {
         ldapBasedn = config.getString("jatos.user.authentication.ldap.basedn");
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
+        donationAllowed = config.getBoolean("jatos.donationAllowed");
+        termsOfUseInfo = config.getBoolean("jatos.termsOfUseInfo");
     }
 
     private String fillBasePath(Application application) {
@@ -397,5 +401,19 @@ public class Common {
      */
     public static String getOauthGoogleClientId() {
         return oauthGoogleClientId;
+    }
+
+    /**
+     * Should the GUI show a donations button
+     */
+    public static boolean isDonationAllowed() {
+        return donationAllowed;
+    }
+
+    /**
+     * Should the GUI show a the Terms of Use info
+     */
+    public static boolean isTermsOfUseInfo() {
+        return termsOfUseInfo;
     }
 }
