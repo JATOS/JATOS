@@ -2481,20 +2481,18 @@ var jatos = {};
 		if (config && typeof config.style == "string") style += ";" + config.style;
 
 		var text = document.createTextNode(buttonText);
-		var p = document.createElement('p');
-		p.appendChild(text);
-		p.style.cssText = style;
-		p.setAttribute("title", tooltip);
-		p.addEventListener("click", function () {
+		var buttonDiv = document.createElement('div');
+		buttonDiv.appendChild(text);
+		buttonDiv.style.cssText = style;
+		buttonDiv.setAttribute("title", tooltip);
+		buttonDiv.addEventListener("click", function () {
 			if (!confirm || window.confirm(confirmText)) {
 				window.removeEventListener('beforeunload', beforeUnloadListener, { capture: true });
 				jatos.abortStudy(msg);
 			}
 		});
 
-		window.addEventListener('load', function () {
-			document.body.appendChild(p);
-		});
+		document.body.appendChild(buttonDiv);
 	};
 
 	/**
