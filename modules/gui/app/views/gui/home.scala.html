@@ -18,6 +18,29 @@
     <p><a href="http://www.jatos.org/Whats-JATOS.html" class="btn btn-default" role="button" target="_blank">Learn more in our docs &raquo;</a></p>
 </div>
 
+<div id="jatosStatus" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
+    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Studies</div>
+    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Study Results</div>
+    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Workers</div>
+    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Users</div>
+</div>
+
+<div id="lastUnfinishedStudyRuns" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
+    <p>Which are the last 5 unfinished studies running right now?</p>
+    <div class="col-sm-3 placeholder">Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></div>
+    <div class="col-sm-3 placeholder">Last Seen&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></div>
+    <div class="col-sm-3 placeholder">State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></div>
+    <div class="col-sm-3 placeholder">Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></div>
+</div>
+
+<div id="lastFinishedStudyRuns" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
+    <p>Which are the last 5 finished studies?</p>
+    <div class="col-sm-3 placeholder">Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></div>
+    <div class="col-sm-3 placeholder">Last Seen&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></div>
+    <div class="col-sm-3 placeholder">State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></div>
+    <div class="col-sm-3 placeholder">Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></div>
+</div>
+
 @if(general.common.Common.isDonationAllowed()) {
 <div class="jumbotron text-center hidden-xs hidden-sm">
     <style>.bmc-button img{height: 34px !important;width: 35px !important;margin-bottom: 1px !important;box-shadow: none !important;border: none !important;vertical-align: middle !important;}.bmc-button{padding: 7px 15px 7px 10px !important;line-height: 35px !important;height:51px !important;text-decoration: none !important;display:inline-flex !important;color:#FFFFFF !important;background-color:#FF813F !important;border-radius: 5px !important;border: 1px solid transparent !important;padding: 7px 15px 7px 10px !important;font-size: 20px !important;letter-spacing:-0.08px !important;box-shadow: 0px 1px 2px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 1px 2px 2px rgba(190, 190, 190, 0.5) !important;margin: 0 auto !important;font-family:'Lato', sans-serif !important;-webkit-box-sizing: border-box !important;box-sizing: border-box !important;}.bmc-button:hover, .bmc-button:active, .bmc-button:focus {-webkit-box-shadow: 0px 1px 2px 2px rgba(190, 190, 190, 0.5) !important;text-decoration: none !important;box-shadow: 0px 1px 2px 2px rgba(190, 190, 190, 0.5) !important;opacity: 0.85 !important;color:#FFFFFF !important;}</style><link href="https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext" rel="stylesheet"><a class="bmc-button" target="_blank" href="https://www.buymeacoffee.com/jatos"><img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy JATOS a coffee"><span style="margin-left:5px;font-size:19px !important;">Buy JATOS a coffee</span></a>
@@ -27,8 +50,8 @@
 @if(localhost){
 <div class="jumbotron text-center hidden-xs hidden-sm">
     <p>Where are my files?</p>
-    Your study assets root path is: <samp>@general.common.Common.getStudyAssetsRootPath()</samp><br>
-    Your JATOS installation is in: <samp>@general.common.Common.getBasepath()</samp>
+    Your study assets root path is: <samp class="text-l">@general.common.Common.getStudyAssetsRootPath()</samp><br>
+    Your JATOS installation is in: <samp class="text-l">@general.common.Common.getBasepath()</samp>
 </div>
 }
 
@@ -81,15 +104,66 @@
 </div>
 
 <script type="text/javascript">
+var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
 
 @if(general.common.Common.isTermsOfUseInfo()) {
 showInfo('By using this web application you agree to the <a href="http://www.jatos.org/JATOS-server-during-the-COVID-19-pandemic.html">Terms of Use</a>.', null, true);
 }
 
-checkJatosReleaseInfo();
+if (loggedInUserIsAdmin) getJatosStatus();
+function getJatosStatus() {
+    $.getJSON({
+        url: '@controllers.gui.routes.Home.status()',
+        success: function(status) {
+            $("#jatosStatus div:nth-child(1) span").text(status.studyCount);
+            $("#jatosStatus div:nth-child(2) span").text(status.studyResultCount);
+            $("#jatosStatus div:nth-child(3) span").text(status.workerCount);
+            $("#jatosStatus div:nth-child(4) span").text(status.userCount);
+            $("#jatosStatus").show();
+        },
+        error: function () {
+            console.warn("Couldn't get JATOS status.");
+        }
+    });
+}
 
+if (loggedInUserIsAdmin) getStudyResultStatus();
+function getStudyResultStatus() {
+    $.getJSON({
+        url: '@controllers.gui.routes.StudyResults.status()',
+        success: function(status) {
+            fillStudyResultStateTable(status.lastUnfinishedStudyResults, "#lastUnfinishedStudyRuns");
+            fillStudyResultStateTable(status.lastFinishedStudyResults, "#lastFinishedStudyRuns");
+            $("#lastUnfinishedStudyRuns").show();
+            $("#lastFinishedStudyRuns").show();
+        },
+        error: function () {
+            console.warn("Couldn't get JATOS study result status.");
+        }
+    });
+}
+
+function fillStudyResultStateTable(srsList, elementId) {
+    srsList.forEach(function(srs) {
+        var userList;
+        if (srs.users.length == 1) {
+             userList = srs.users[0];
+        } else {
+            userList = '<button type="button" role="button" class="btn btn-sm btn-default" data-toggle="popover" data-placement="bottom" data-trigger="click" data-container="body" data-html="true" '
+                   + 'data-content="' + srs.users.join("<br>") + '">show all</button>';
+        }
+        $(elementId).append(
+            '<div class="col-sm-3 text-l">' + srs.startDate + '</div>' +
+            '<div class="col-sm-3 text-l">' + srs.lastSeenDate + '</div>' +
+            '<div class="col-sm-3 text-l">' + srs.studyState + '</div>' +
+            '<div class="col-sm-3 text-l">' + userList + '</div>');
+    });
+    $('[data-toggle="popover"]').popover();
+}
+
+checkJatosReleaseInfo();
 function checkJatosReleaseInfo() {
-    var urlQueryParams = new URLSearchParams(window.location.search).toString()
+    var urlQueryParams = new URLSearchParams(window.location.search).toString();
     $.getJSON({
         url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?' + urlQueryParams,
         success: function(releaseInfo) {
@@ -131,7 +205,6 @@ function showJatosReleaseInfo(releaseInfo) {
 
 function showUpdateAvailable(releaseInfo) {
     var text;
-    var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
     var version = getVersionName(releaseInfo);
     if (releaseInfo.isUpdateAllowed && ! releaseInfo.isDifferentJava && releaseInfo.zipUrl && loggedInUserIsAdmin) {
         text = "Do you want to automatically update to version&nbsp;" + version + "?";

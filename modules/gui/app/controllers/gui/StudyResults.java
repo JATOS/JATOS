@@ -30,6 +30,7 @@ import play.mvc.Result;
 import scala.Option;
 import services.gui.*;
 import utils.common.HttpUtils;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -342,5 +343,18 @@ public class StudyResults extends Controller {
                 });
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
+
+    /**
+     * Ajax request
+     *
+     * Returns the last 5 finished and unfinished StudyResultStatus as JSON
+     */
+    @Transactional
+    @Authenticated(User.Role.ADMIN)
+    public Result status() {
+        return ok(JsonUtils.asJson(resultService.getStudyResultStatus()));
+    }
+
+
 
 }

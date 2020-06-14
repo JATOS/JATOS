@@ -71,4 +71,12 @@ public class StudyDao extends AbstractDao {
         return query.getResultList();
     }
 
+    /**
+     * Returns the number of Study rows
+     */
+    public int count() {
+        Number result = (Number) jpa.em().createQuery("SELECT COUNT(s) FROM Study s").getSingleResult();
+        return result.intValue();
+    }
+
 }

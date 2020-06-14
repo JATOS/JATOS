@@ -1,14 +1,13 @@
 package daos.common.worker;
 
-import java.util.List;
+import daos.common.AbstractDao;
+import models.common.workers.Worker;
+import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
-
-import daos.common.AbstractDao;
-import models.common.workers.Worker;
-import play.db.jpa.JPAApi;
+import java.util.List;
 
 /**
  * DAO for abstract Worker entity
@@ -42,6 +41,14 @@ public class WorkerDao extends AbstractDao {
     public List<Worker> findAll() {
         TypedQuery<Worker> query = jpa.em().createQuery("SELECT w FROM Worker w", Worker.class);
         return query.getResultList();
+    }
+
+    /**
+     * Returns the number of Worker rows
+     */
+    public int count() {
+        Number result = (Number) jpa.em().createQuery("SELECT COUNT(w) FROM Worker w").getSingleResult();
+        return result.intValue();
     }
 
 }

@@ -45,22 +45,24 @@
 <div class="container-fluid" id="login-container">
 	@if(general.common.Common.isOauthGoogleAllowed()) {
 	<div class="row">
-		<div id="signin-google"></div>
+		<div id="signin-google" class="col"></div>
 	</div>
 	<div class="row">
-		<h2 class="login-text">... or log in</h2>
+		<h2 class="login-text col">... or log in</h2>
 	</div>
 	} else {
 	<div class="row">
-		<h2 class="login-text">Please log in</h2>
+		<h2 class="login-text col">Please log in</h2>
 	</div>
 	}
 	<div class="row">
-		@helper.form(action = controllers.gui.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
-		<input type="text" name="username" id="username" class="form-control" placeholder="Username" value="@form("username").value().orElse("")" required autofocus>
-		<input type="password" name="password" id="password" class="form-control" placeholder="Password" autocomplete="off" required>
-		<button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
-		}
+		<div class="col">
+			@helper.form(action = controllers.gui.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
+			<input type="text" name="username" id="username" class="form-control" placeholder="Username" value="@form("username").value().orElse("")" required autofocus>
+			<input type="password" name="password" id="password" class="form-control" placeholder="Password" autocomplete="off" required>
+			<button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
+			}
+		</div>
 	</div>
 </div>
 

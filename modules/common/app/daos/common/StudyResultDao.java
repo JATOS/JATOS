@@ -1,9 +1,6 @@
 package daos.common;
 
-import models.common.Batch;
-import models.common.GroupResult;
-import models.common.Study;
-import models.common.StudyResult;
+import models.common.*;
 import models.common.workers.Worker;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -13,7 +10,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import java.util.Arrays;
 import java.util.List;
+
+import static models.common.StudyResult.StudyState;
 
 /**
  * DAO for StudyResult entity
@@ -46,6 +46,14 @@ public class StudyResultDao extends AbstractDao {
 
     public StudyResult findById(Long id) {
         return jpa.em().find(StudyResult.class, id);
+    }
+
+    /**
+     * Returns the number of StudyResult rows
+     */
+    public int count() {
+        Number result = (Number) jpa.em().createQuery("SELECT COUNT(sr) FROM StudyResult sr").getSingleResult();
+        return result.intValue();
     }
 
     /**
@@ -148,6 +156,28 @@ public class StudyResultDao extends AbstractDao {
                 + "OR sr.historyGroupResult = :group";
         org.hibernate.query.Query query = (org.hibernate.query.Query)  jpa.em().createQuery(queryStr, StudyResult.class);
         return query.setParameter("group", groupResult).scroll(ScrollMode.FORWARD_ONLY);
+    }
+
+    public List<StudyResultStatus> findLastUnfinished(int count) {
+        String queryStr = "SELECT srs FROM StudyResultStatus srs "
+                + "WHERE srs.studyState in :studyStates "
+                + "AND srs.startDate is not null "
+                + "AND srs.endDate is null "
+                + "ORDER BY srs.startDate desc";
+        TypedQuery<StudyResultStatus> query = jpa.em().createQuery(queryStr, StudyResultStatus.class);
+        query.setParameter("studyStates", Arrays.asList(StudyState.PRE, StudyState.STARTED, StudyState.DATA_RETRIEVED));
+        if (count != -1) query.setMaxResults(count);
+        return query.getResultList();
+    }
+
+    public List<StudyResultStatus> findLastFinished(int count) {
+        String queryStr = "SELECT srs FROM StudyResultStatus srs "
+                + "WHERE srs.studyState in :studyStates "
+                + "ORDER BY srs.endDate desc";
+        TypedQuery<StudyResultStatus> query = jpa.em().createQuery(queryStr, StudyResultStatus.class);
+        query.setParameter("studyStates", Arrays.asList(StudyState.FINISHED, StudyState.FAIL, StudyState.ABORTED));
+        if (count != -1) query.setMaxResults(count);
+        return query.getResultList();
     }
 
 }

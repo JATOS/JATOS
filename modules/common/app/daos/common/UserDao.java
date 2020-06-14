@@ -54,4 +54,12 @@ public class UserDao extends AbstractDao {
         return query.getResultList();
     }
 
+    /**
+     * Returns the number of User rows
+     */
+    public int count() {
+        Number result = (Number) jpa.em().createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
+        return result.intValue();
+    }
+
 }

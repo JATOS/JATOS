@@ -9,6 +9,7 @@ import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.ComponentResult;
 import models.common.StudyResult;
+import models.common.StudyResultStatus;
 import models.common.User;
 import models.common.workers.Worker;
 import org.hibernate.ScrollableResults;
@@ -20,7 +21,9 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -121,8 +124,9 @@ public class ResultService {
     }
 
     /**
-     * Retrieves ComponentResult (including their result data) and uses the given Supplier function to fetches them from
-     * the database. It gets up to max results - or if max is not defined it gets all. It also checks the ComponentResult.
+     * Retrieves ComponentResult (including their result data) and uses the given Supplier function to fetches them
+     * from the database. It gets up to max results - or if max is not defined it gets all. It also checks the
+     * ComponentResult.
      */
     public void fetchComponentResultsAndWriteIntoActor(ActorRef sourceActor, User user, Option<Integer> max,
             Supplier<ScrollableResults> resultFetcher) {
@@ -145,6 +149,34 @@ public class ResultService {
             }
             results.close();
         });
+    }
+
+    /**
+     * Returns the last 5 finished and unfinished StudyResultStatus
+     */
+    public Map<String, Object> getStudyResultStatus() {
+        Map<String, Object> studyResultStatus = new HashMap<>();
+
+        List<StudyResultStatus> lastUnfinishedStudyResults = studyResultDao.findLastUnfinished(5);
+        fillUsers(lastUnfinishedStudyResults);
+        studyResultStatus.put("lastUnfinishedStudyResults", lastUnfinishedStudyResults);
+
+        List<StudyResultStatus> lastFinishedStudyResults = studyResultDao.findLastFinished(5);
+        fillUsers(lastFinishedStudyResults);
+        studyResultStatus.put("lastFinishedStudyResults", lastFinishedStudyResults);
+
+        return studyResultStatus;
+    }
+
+    /**
+     * Adds the user's name and username to the given list of StudyResultStatus
+     */
+    private void fillUsers(List<StudyResultStatus> lastUnfinishedStudyResults) {
+        for (StudyResultStatus srs : lastUnfinishedStudyResults) {
+            for (User user : srs.getStudy().getUserList()) {
+                srs.addUser(user.getName() + " (" + user.getUsername() + ")");
+            }
+        }
     }
 
 }
