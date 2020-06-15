@@ -477,13 +477,18 @@ var jatos = {};
 	 * Defines a listener (a callback function) that will be called
 	 * when jatos.js finished its initialisation (e.g. channels are
 	 * open and init data loaded). It's possible to define several
-	 * listeners. If several listeners are defined they will be
-	 * called in the same order as defined.
+	 * listeners (called in the order as defined). If the
+	 * jatosOnLoad event was already fired, the callback is called
+	 * right away.
 	 * @param {function} callback - callback function
 	 */
 	jatos.onLoad = function (callback) {
-		window.addEventListener("jatosOnLoad", callback);
-		readyForOnLoad();
+		if (!jatosOnLoadEventFired) {
+			window.addEventListener("jatosOnLoad", callback);
+			readyForOnLoad();
+		} else {
+			callback();
+		}
 	};
 
 	/**
@@ -1240,6 +1245,8 @@ var jatos = {};
 		setStudySessionData(jatos.studySessionData);
 
 		var start = function () {
+			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+
 			var url = getURL("../" + componentId + "/start");
 			if (message) url = url + "&" + jatos.jQuery.param({ "message": message });
 			window.location.href = url;
@@ -2152,6 +2159,7 @@ var jatos = {};
 		};
 		var deferred = sendToHttpLoop(request, onSuccess, onError);
 		deferred.done(function () {
+			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 			heartbeatWorker.terminate();
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
@@ -2179,6 +2187,8 @@ var jatos = {};
 		endingStudy = true;
 
 		function abort() {
+			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+
 			var url = getURL("../abort");
 			if (typeof message == 'undefined') {
 				window.location.href = url;
@@ -2268,6 +2278,7 @@ var jatos = {};
 		};
 		var deferred = sendToHttpLoop(request, onSuccess, onError);
 		deferred.done(function () {
+			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 			heartbeatWorker.terminate();
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
@@ -2339,6 +2350,8 @@ var jatos = {};
 		if (resultData) jatos.appendResultData(resultData);
 
 		function end() {
+			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+
 			var url = getURL("../end");
 			if (typeof successful == 'boolean' && typeof message == 'string') {
 				url = url + "&" + jatos.jQuery.param({
@@ -2427,16 +2440,17 @@ var jatos = {};
 	};
 
 	/**
-	 * Warn worker if component is not reloadable before unload event
+	 * Warn worker with a popup that the component is not reloadable and leaving the page would end the study
+	 * Remember: This works only if at least one user action happend in the window (e.g. mouse click)
 	 * Check: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#the-unload-event
 	 */
 	jatos.onLoad(function () {
 		if (!jatos.componentProperties.reloadable) {
-			window.addEventListener("beforeunload", beforeUnloadListener, { capture: true });
+			window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
 		}
 	});
 
-	var beforeUnloadListener = function (event) {
+	var beforeUnloadWarning = function (event) {
 		event.preventDefault();
 		// Most browsers do not show this message but a standardized one
 		event.returnValue = "Are you sure you want to leave?";
@@ -2487,7 +2501,6 @@ var jatos = {};
 		buttonDiv.setAttribute("title", tooltip);
 		buttonDiv.addEventListener("click", function () {
 			if (!confirm || window.confirm(confirmText)) {
-				window.removeEventListener('beforeunload', beforeUnloadListener, { capture: true });
 				jatos.abortStudy(msg);
 			}
 		});
