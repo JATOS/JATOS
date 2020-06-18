@@ -32,14 +32,9 @@ var jatos = {};
 	 */
 	jatos.version = "3.5.5";
 	/**
-	 * How long should JATOS wait before retrying the HTTP call. Warning: In some
-	 * cases a JATOS regards a second call of the same function as a reload of
-	 * the component. A reload of a component is often forbidden and leads to
-	 * failed finish of the study. Therefore I put the HTTP timeout time to 15 secs.
-	 * If there is no answer within this time I assume the call never reached the
-	 * server and it's our last hope to continue the study is to retry the call.
+	 * How long in ms should JATOS wait before retrying the HTTP call.
 	 */
-	jatos.httpTimeout = 15000;
+	jatos.httpTimeout = 30000;
 	/**
 	 * How many times should jatos.js retry to send a failed HTTP call.
 	 */
