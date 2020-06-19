@@ -95,7 +95,7 @@ public class ComponentResults extends Controller {
      * Ajax POST request
      * <p>
      * Removes all ComponentResults specified in the parameter. The parameter is
-     * a comma separated list of of ComponentResult IDs as a String.
+     * a comma separated list of ComponentResult IDs as a String.
      */
     @Transactional
     @Authenticated

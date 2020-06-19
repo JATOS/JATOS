@@ -172,7 +172,7 @@ public class StudyResults extends Controller {
     /**
      * Ajax POST request
      * <p>
-     * Removes all StudyResults specified in the parameter. The parameter is a comma separated list of of StudyResults
+     * Removes all StudyResults specified in the parameter. The parameter is a comma separated list of StudyResults
      * IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Transactional
