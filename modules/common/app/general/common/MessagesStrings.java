@@ -173,7 +173,7 @@ public class MessagesStrings {
         return "A worker with ID " + workerIdStr + " doesn't exist.";
     }
 
-    public static String    studyNotExist(Long studyId) {
+    public static String studyNotExist(Long studyId) {
         return "An study with ID " + studyId + " doesn't exist.";
     }
 
@@ -196,16 +196,21 @@ public class MessagesStrings {
 
     public static String studyAssetsOverwritten(String studyAssetsName, Long studyId, String studyTitle) {
         return "Assets \"" + studyAssetsName + "\" of study \"" + studyTitle + "\" (ID " + studyId
-                + ") were overwritten.";
+                + ") were overwritten. " + goToThisStudyLink(studyId);
     }
 
     public static String studysPropertiesOverwritten(Long studyId, String studyTitle) {
-        return "Properties of of study \"" + studyTitle + "\" (ID " + studyId + ") were overwritten.";
+        return "Properties of of study \"" + studyTitle + "\" (ID " + studyId + ") were overwritten. "
+                + goToThisStudyLink(studyId);
     }
 
     public static String importedNewStudy(String studyAssetsName, Long studyId, String studyTitle) {
         return "Newly imported study \"" + studyTitle + "\" (ID " + studyId + ") with study assets \"" + studyAssetsName
-                + "\"";
+                + "\". " + goToThisStudyLink(studyId);
+    }
+
+    private static String goToThisStudyLink(Long studyId) {
+        return "<a href=\"" + Common.getPlayHttpContext() + "jatos/" + studyId + "\">Go to this study.</a>";
     }
 
     public static String componentExportFailure(Long componentId, String componentTitle) {

@@ -360,12 +360,12 @@ function hideWaitingModal() {
 	$('#waitingModal').modal('hide');
 }
 
-function showMessages(messages) {
+function showMessages(messages, allowHtml = false) {
 	if (messages != null) {
-		if (messages.successList != null) messages.successList.forEach(showSuccess);
-		if (messages.infoList != null) messages.infoList.forEach(showInfo);
-		if (messages.warningList != null) messages.warningList.forEach(showWarning);
-		if (messages.errorList != null) messages.errorList.forEach(showError);
+		if (messages.successList != null) messages.successList.forEach(function(msg) { showSuccess(msg, null, allowHtml) });
+		if (messages.infoList != null) messages.infoList.forEach(function(msg) { showInfo(msg, null, allowHtml) });
+		if (messages.warningList != null) messages.warningList.forEach(function(msg) { showWarning(msg, null, allowHtml) });
+		if (messages.errorList != null) messages.errorList.forEach(function(msg) { showError(msg, null, allowHtml) });
 	}
 }
 

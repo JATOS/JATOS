@@ -182,7 +182,8 @@ function postStudyImportConfirm(jsonData) {
         dataType: 'text',
         data: jsonData,
         success: function(result) {
-            showMessages(JSON.parse(result));
+            var msgs = JSON.parse(result);
+            showMessages(msgs, true);
             fillSidebar();
             if (typeof componentsTable !== 'undefined') {
                 componentsTable.ajax.reload();
