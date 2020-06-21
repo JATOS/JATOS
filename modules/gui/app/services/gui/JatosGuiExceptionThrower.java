@@ -1,11 +1,5 @@
 package services.gui;
 
-import java.io.IOException;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 import controllers.gui.Home;
 import controllers.gui.Studies;
 import exceptions.gui.BadRequestException;
@@ -19,6 +13,11 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
 import utils.common.HttpUtils;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.IOException;
 
 /**
  * Class with convenience methods to throw a {@link JatosGuiException}. It
@@ -90,23 +89,6 @@ public class JatosGuiExceptionThrower {
 	}
 
 	/**
-	 * Throws a JatosGuiException with the given error msg and HTTP status. If
-	 * non Ajax it shows home view. Distinguishes between normal and Ajax
-	 * request.
-	 */
-	public void throwHome(String errorMsg, int httpStatus)
-			throws JatosGuiException {
-		Result result;
-		if (HttpUtils.isAjax()) {
-			result = Results.status(httpStatus, errorMsg);
-		} else {
-			RequestScopeMessaging.error(errorMsg);
-			result = homeProvider.get().home(httpStatus);
-		}
-		throw new JatosGuiException(result, errorMsg);
-	}
-
-	/**
 	 * Throws a JatosGuiException. If it's a non-Ajax request, it puts the
 	 * exception's message into the request scope and returns the home view. If
 	 * it's a Ajax request, it just returns the exception's message. The HTTP
@@ -120,22 +102,6 @@ public class JatosGuiExceptionThrower {
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
 			result = homeProvider.get().home(httpStatus);
-		}
-		throw new JatosGuiException(result, e.getMessage());
-	}
-
-	/**
-	 * Throws a JatosGuiException with the given Result and a HTTP status
-	 * according to the exception. Distinguishes between normal and Ajax
-	 * request.
-	 */
-	public void throwResult(Exception e, Result result)
-			throws JatosGuiException {
-		if (HttpUtils.isAjax()) {
-			int httpStatus = getHttpStatusFromException(e);
-			result = Results.status(httpStatus, e.getMessage());
-		} else {
-			RequestScopeMessaging.error(e.getMessage());
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}
