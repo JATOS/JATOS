@@ -11,6 +11,8 @@ import javax.inject.Singleton;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
+import static play.mvc.Http.Cookie.*;
+
 /**
  * Manages the GeneralSingle cookie. This cookie exists only with GeneralSingle
  * workers. In this cookie is stored which studies where done in the browser
@@ -90,10 +92,11 @@ import java.time.temporal.ChronoUnit;
 	public void set(Study study, Worker worker) {
 		Cookie oldCookie = GeneralSinglePublix.request().cookie(COOKIE_NAME);
 		String newCookieValue = addStudy(study, worker, oldCookie);
-		Cookie newCookie = Cookie.builder(COOKIE_NAME, newCookieValue)
+		Cookie newCookie = builder(COOKIE_NAME, newCookieValue)
 				.withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
 				.withSecure(false)
 				.withHttpOnly(true)
+				.withSameSite(SameSite.LAX)
 				.withPath(Common.getPlayHttpContext())
 				.build();
 		Publix.response().setCookie(newCookie);

@@ -22,6 +22,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
+import static play.mvc.Http.Cookie.*;
+
 /**
  * This class offers a simple interface to extract, log and discard IdCookies.
  * <p>
@@ -297,10 +299,11 @@ public class IdCookieAccessor {
 
         // Put new IdCookie into Response
         String cookieValue = idCookieSerialiser.asCookieValueString(newIdCookie);
-        Http.Cookie cookie = Cookie.builder(newIdCookie.getName(), cookieValue)
+        Http.Cookie cookie = builder(newIdCookie.getName(), cookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
                 .withSecure(false)
                 .withHttpOnly(false)
+                .withSameSite(SameSite.LAX)
                 .withPath(Common.getPlayHttpContext())
                 .build();
         Publix.response().setCookie(cookie);
