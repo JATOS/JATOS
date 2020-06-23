@@ -30,7 +30,6 @@ class StudyAssets @Inject()(components: ControllerComponents,
                             idCookieService: IdCookieService,
                             jpa: JPAApi,
                             studyDao: StudyDao,
-                            componentDao: ComponentDao,
                             assets: Assets) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
