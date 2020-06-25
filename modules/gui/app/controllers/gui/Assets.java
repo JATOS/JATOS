@@ -1,16 +1,25 @@
 package controllers.gui;
 
+import controllers.AssetsMetadata;
+import play.api.http.HttpErrorHandler;
+import play.api.mvc.Action;
+import play.api.mvc.AnyContent;
+
 import javax.inject.Inject;
 
-import play.api.mvc.*;
+public class Assets extends controllers.Assets {
 
-public class Assets {
+    @Inject
+    public Assets(HttpErrorHandler errorHandler, AssetsMetadata meta) {
+        super(errorHandler, meta);
+    }
 
-	@Inject
-	controllers.Assets assets;
+    public Action<AnyContent> at(String path, String file) {
+        boolean aggressiveCaching = true;
+        return super.at(path, file, aggressiveCaching);
+    }
 
-	public Action<AnyContent> versioned(String path,
-			controllers.Assets.Asset file) {
-		return assets.versioned(path, file);
-	}
+    public Action<AnyContent> versioned(String path, controllers.Assets.Asset file) {
+        return super.versioned(path, file);
+    }
 }

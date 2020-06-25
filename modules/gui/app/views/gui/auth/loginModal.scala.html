@@ -35,7 +35,7 @@
 // Let a background worker check for session timeouts
 var sessionTimeoutWorker;
 if (window.Worker) {
-	sessionTimeoutWorker = new Worker('@controllers.gui.routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
+	sessionTimeoutWorker = new Worker('@routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
 	sessionTimeoutWorker.postMessage([@general.common.Common.getUserSessionTimeout(), @general.common.Common.getUserSessionInactivity()]);
 	sessionTimeoutWorker.onmessage = function(msg) {
 		showLoginModal(msg.data);

@@ -27,3 +27,6 @@ sources in(Compile, doc) := Seq.empty
 
 // No source docs in distribution 
 publishArtifact in(Compile, packageDoc) := false
+
+// Add versioning with Etag to assets (e.g. for CSS files)
+pipelineStages := Seq(digest)

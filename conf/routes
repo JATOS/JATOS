@@ -12,6 +12,7 @@ GET     /favicon-96x96.png                 controllers.Assets.at(path="/public",
 GET     /assets/javascripts/jatos.js       controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.js")
 GET     /assets/javascripts/jatos-3.5.2.js controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
 GET     /assets/*file                      controllers.Assets.at(path="/public", file)
+GET     /assets/*file                      controllers.Assets.versioned(path="/public", file: Asset)
 
 # Include other route files
 ->  /  gui.Routes

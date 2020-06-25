@@ -68,7 +68,7 @@ lazy val publix = (project in file("modules/publix"))
 
 // Submodule jatos-gui: responsible for running studies
 lazy val gui = (project in file("modules/gui"))
-    .enablePlugins(PlayJava)
+    .enablePlugins(PlayJava, SbtWeb)
     .dependsOn(common)
 
 // Routes from submodules
