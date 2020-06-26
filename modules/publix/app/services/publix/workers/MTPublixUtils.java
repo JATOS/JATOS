@@ -1,6 +1,5 @@
 package services.publix.workers;
 
-import controllers.publix.workers.MTPublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
@@ -54,11 +53,11 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
     public Map<String, String> getNonJatosUrlQueryParameters() {
         Map<String, String> queryMap = new HashMap<>();
         Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
-        // Allow MTurk's worker ID: https://github.com/JATOS/JATOS/issues/40
+        // Allow MTurk's worker ID and other MTurk IDs: https://github.com/JATOS/JATOS/issues/40
         // queryMap.remove(MTPublix.MT_WORKER_ID);
-        queryMap.remove(MTPublix.MT_ASSIGNMENT_ID);
-        queryMap.remove("hitId");
-        queryMap.remove("turkSubmitTo");
+        // queryMap.remove(MTPublix.MT_ASSIGNMENT_ID);
+        // queryMap.remove("hitId");
+        // queryMap.remove("turkSubmitTo");
         queryMap.remove("batchId");
         return queryMap;
     }
