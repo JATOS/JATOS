@@ -25,9 +25,6 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
         if (!batch.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }
-        if (!(worker instanceof MTSandboxWorker) && PublixHelpers.didStudyAlready(worker, study)) {
-            throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
-        }
         checkMaxTotalWorkers(batch, worker);
         checkWorkerAllowedToDoStudy(worker, study, batch);
     }
