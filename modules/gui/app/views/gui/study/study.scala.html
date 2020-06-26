@@ -528,9 +528,11 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
     $.ajax({
         url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
         type : 'GET',
-        success : function(cloneTitle) {
+        success : function(response) {
             fillSidebar();
-            showInfo('Created clone "' + cloneTitle + '"');
+            var msg = 'Created clone "' + response.title + '". ' +
+                '<a href="@{general.common.Common.getPlayHttpContext()}jatos/' + response.id + '">Go to this study.</a>';
+            showInfo(msg, null, true);
         },
         error : function(err) {
             showError(err.responseText);

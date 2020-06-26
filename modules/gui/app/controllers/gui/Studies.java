@@ -4,6 +4,7 @@ import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableMap;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.*;
@@ -22,6 +23,7 @@ import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.http.HttpEntity;
+import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.ResponseHeader;
@@ -248,7 +250,7 @@ public class Studies extends Controller {
         } catch (IOException e) {
             jatosGuiExceptionThrower.throwAjax(e.getMessage(), Http.Status.INTERNAL_SERVER_ERROR);
         }
-        return ok(clone.getTitle());
+        return ok(Json.toJson(ImmutableMap.of("id", clone.getId(), "title", clone.getTitle())));
     }
 
     /**

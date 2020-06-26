@@ -346,6 +346,10 @@ public class Common {
         return playHttpContext;
     }
 
+    public static String getUrlWithBase(String path) {
+        return playHttpContext + path;
+    }
+
     /**
      * If in update happened during last startup a message might be stored here
      */
