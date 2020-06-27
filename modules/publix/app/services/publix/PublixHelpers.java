@@ -15,13 +15,11 @@ import models.common.workers.Worker;
 public abstract class PublixHelpers {
 
 	/**
-	 * Checks if the worker finished this study already. 'Finished' includes
-	 * failed and aborted.
+	 * Checks if the worker finished this study already at least once. 'Finished' includes failed and aborted.
 	 */
 	public static boolean finishedStudyAlready(Worker worker, Study study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().equals(study)
-					&& studyDone(studyResult)) {
+			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
 				return true;
 			}
 		}
