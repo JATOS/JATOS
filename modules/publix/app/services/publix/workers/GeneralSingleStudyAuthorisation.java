@@ -14,7 +14,7 @@ import services.publix.StudyAuthorisation;
 import java.util.Optional;
 
 /**
- * GeneralSinglePublix's implementation of StudyAuthorization
+ * StudyAuthorization for GeneralSingleWorker
  *
  * @author Kristian Lange
  */

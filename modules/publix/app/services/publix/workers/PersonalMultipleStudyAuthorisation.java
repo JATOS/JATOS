@@ -10,7 +10,7 @@ import services.publix.PublixErrorMessages;
 import services.publix.StudyAuthorisation;
 
 /**
- * PersonalMultiplePublix's implementation of StudyAuthorization
+ * StudyAuthorization for PersonalMultipleWorker
  *
  * @author Kristian Lange
  */

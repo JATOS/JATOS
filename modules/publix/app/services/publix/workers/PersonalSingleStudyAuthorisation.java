@@ -14,7 +14,7 @@ import javax.inject.Singleton;
 import java.util.Optional;
 
 /**
- * PersonalSinglePublix's implementation of StudyAuthorization
+ * StudyAuthorization for PersonalSingleWorker
  *
  * @author Kristian Lange
  */

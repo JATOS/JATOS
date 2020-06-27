@@ -10,7 +10,7 @@ import services.publix.StudyAuthorisation;
 import javax.inject.Singleton;
 
 /**
- * GeneralMultiplePublix's implementation of StudyAuthorization
+ * StudyAuthorization for GeneralMultipleWorker
  *
  * @author Kristian Lange
  */

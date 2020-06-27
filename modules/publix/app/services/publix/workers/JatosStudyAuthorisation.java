@@ -13,7 +13,7 @@ import services.publix.StudyAuthorisation;
 import javax.inject.Singleton;
 
 /**
- * JatosPublix's implementation of StudyAuthorization
+ * StudyAuthorization for JatosWorker
  *
  * @author Kristian Lange
  */
