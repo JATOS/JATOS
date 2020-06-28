@@ -232,7 +232,8 @@ $("#updateJatos .releaseNotesButton").click(function() {
     var releaseInfo = $("#updateJatos").data("releaseInfo");
     var version = getVersionName(releaseInfo);
     $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
-    var releaseNotesHtml = new showdown.Converter().makeHtml(releaseInfo.releaseNotes);
+    var releaseNodesClean = releaseInfo.releaseNotes.replace(/(\s|\n|\r|#)*Which variant(.|\n|\r)*/, "");
+    var releaseNotesHtml = new showdown.Converter().makeHtml(releaseNodesClean);
     $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
     if (!loggedInUserIsAdmin) {
         $("#releaseNotesModal .updateJatosButton").hide();
