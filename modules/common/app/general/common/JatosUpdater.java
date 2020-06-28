@@ -222,7 +222,8 @@ public class JatosUpdater {
                 zipJavaUrl = asset.get("browser_download_url").asText();
                 zipJavaSize = asset.get("size").asInt();
                 newJavaVersion = getAssetsJavaVersion(filename);
-                isDifferentJava = !newJavaVersion.equals(System.getProperty("java.specification.version"));
+                isDifferentJava = newJavaVersion != null &&
+                        !newJavaVersion.equals(System.getProperty("java.specification.version"));
             } else if (!filename.contains("linux") && !filename.contains("mac") && !filename.contains("win")) {
                 zipUrl = asset.get("browser_download_url").asText();
                 zipSize = asset.get("size").asInt();
@@ -232,7 +233,7 @@ public class JatosUpdater {
         private String getAssetsJavaVersion(String filename) {
             Pattern p = Pattern.compile("java(.+).zip"); // Everything between 'java' and '.zip' is Java version
             Matcher m = p.matcher(filename);
-            return m.find() ? m.group(1) : "1.8"; // Default Java is 1.8
+            return m.find() ? m.group(1) : null;
         }
     }
 
