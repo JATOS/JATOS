@@ -125,11 +125,11 @@ public class MessagesStrings {
     public static final String RESULTS_DATA = "Click on the › icon to open the result's data";
     public static final String RESULTS_DATA_SELECTION = "Check the box to select this result data for export or "
             + "deleting";
-    public static final String RESULTS_START_TIME = "Start of study time according to the JATOS server";
-    public static final String RESULTS_START_TIME_COMPONENT = "Start of component time according to the JATOS server";
-    public static final String RESULTS_END_TIME = "End of study time according to the JATOS server";
-    public static final String RESULTS_END_TIME_COMPONENT = "End of component time according to the JATOS server";
-    public static final String RESULTS_LAST_SEEN_TIME = "Time of the last heartbeat according to the JATOS server";
+    public static final String RESULTS_START_TIME = "Start of study (time according to the JATOS server)";
+    public static final String RESULTS_START_TIME_COMPONENT = "Start of component (time according to the JATOS server)";
+    public static final String RESULTS_END_TIME = "End of study (time according to the JATOS server)";
+    public static final String RESULTS_END_TIME_COMPONENT = "End of component (time according to the JATOS server)";
+    public static final String RESULTS_LAST_SEEN_TIME = "Last heartbeat (time according to the JATOS server)";
     public static final String RESULTS_DURATION = "Duration from start to end or if the study isn't finished yet from"
             + " start to last seen. Format is (days:)hours:minutes:seconds.";
     public static final String RESULTS_DURATION_COMPONENT = "Duration from start to end. Format is (days:)"
