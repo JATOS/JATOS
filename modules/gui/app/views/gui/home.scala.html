@@ -242,7 +242,7 @@ $("#updateJatos .releaseNotesButton").click(function() {
 });
 
 function getVersionName(releaseInfo) {
-    return releaseInfo.isPrerelease ? releaseInfo.version + " (pre-release)" : releaseInfo.version;
+    return releaseInfo.isPrerelease ? releaseInfo.versionFull + " (pre-release)" : releaseInfo.versionFull;
 }
 
 function getFileSizeInMb(releaseInfo) {
