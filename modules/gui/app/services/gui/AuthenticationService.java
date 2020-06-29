@@ -5,7 +5,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.sun.jndi.ldap.LdapCtxFactory;
 import controllers.gui.Authentication;
 import controllers.gui.actionannotations.AuthenticationAction;
 import daos.common.UserDao;
@@ -24,6 +23,7 @@ import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -112,11 +112,12 @@ public class AuthenticationService {
         String principalName = "uid=" + normalizedUsername + "," + Common.getLdapBasedn();
         props.put(Context.SECURITY_PRINCIPAL, principalName);
         props.put(Context.SECURITY_CREDENTIALS, password);
+        props.put(Context.PROVIDER_URL, Common.getLdapUrl());
         props.put("com.sun.jndi.ldap.read.timeout", String.valueOf(Common.getLdapTimeout()));
         props.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(Common.getLdapTimeout()));
         DirContext context;
         try {
-            context = LdapCtxFactory.getLdapCtxInstance(Common.getLdapUrl() + '/', props);
+            context = new InitialDirContext(props);
             context.close();
             return true;
         } catch (AuthenticationException e) {
