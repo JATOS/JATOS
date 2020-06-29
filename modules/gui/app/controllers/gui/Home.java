@@ -25,6 +25,8 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -189,6 +191,7 @@ public class Home extends Controller {
         map.put("studyResultCount", studyResultDao.count());
         map.put("workerCount", workerDao.count());
         map.put("userCount", userDao.count());
+        map.put("serverTime", (new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")).format(new Date()));
         return ok(JsonUtils.asJson(map));
     }
 

@@ -203,7 +203,7 @@ public class Common {
     }
 
     /**
-     * JATOS version
+     * JATOS version (full version e.g. v3.5.5-alpha)
      */
     public static String getJatosVersion() {
         return jatosVersion;

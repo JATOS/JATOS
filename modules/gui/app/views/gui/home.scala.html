@@ -19,10 +19,11 @@
 </div>
 
 <div id="jatosStatus" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
-    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Studies</div>
-    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Study Results</div>
-    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Workers</div>
-    <div class="col-sm-3 placeholder"><span class="text-xl"></span> Users</div>
+    <div class="col-sm-2 col-md-offset-1 placeholder">Studies<br><span class="text-xl"></span></div>
+    <div class="col-sm-2 placeholder">Study Results<br><span class="text-xl"></span></div>
+    <div class="col-sm-2 placeholder">Workers<br><span class="text-xl"></span></div>
+    <div class="col-sm-2 placeholder">Users<br><span class="text-xl"></span></div>
+    <div class="col-sm-2 placeholder">Server Time<br><span class="text-xl"></span></div>
 </div>
 
 <div id="lastUnfinishedStudyRuns" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
@@ -119,6 +120,7 @@ function getJatosStatus() {
             $("#jatosStatus div:nth-child(2) span").text(status.studyResultCount);
             $("#jatosStatus div:nth-child(3) span").text(status.workerCount);
             $("#jatosStatus div:nth-child(4) span").text(status.userCount);
+            $("#jatosStatus div:nth-child(5) span").text(status.serverTime);
             $("#jatosStatus").show();
         },
         error: function () {
@@ -193,7 +195,7 @@ function showJatosReleaseInfo(releaseInfo) {
             showWarning("JATOS is currently restarting to finish an update. Please wait.");
             break;
         case "SUCCESS":
-            showInfo("JATOS was successfully updated to " + releaseInfo.currentVersion);
+            showInfo("JATOS was successfully updated to " + releaseInfo.currentVersionFull);
             break;
         case "FAILED":
             showError("Something went wrong in an JATOS update. More information can be found in"

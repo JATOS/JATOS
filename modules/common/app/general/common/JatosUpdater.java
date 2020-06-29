@@ -111,12 +111,17 @@ public class JatosUpdater {
     static class ReleaseInfo {
 
         /**
+         * Version of the currently installed JATOS like in GitHub, e.g. v3.5.5-alpha
+         */
+        public final String currentVersionFull;
+
+        /**
          * Version of the currently installed one in format x.x.x
          */
         public final String currentVersion;
 
         /**
-         * Version of JATOS like in GitHub
+         * Version of JATOS like in GitHub, e.g. v3.5.5-alpha
          */
         public final String versionFull;
 
@@ -179,11 +184,12 @@ public class JatosUpdater {
             this.isLatest = isLatest;
             versionFull = jsonNode.get("tag_name").asText();
             version = versionFull.replaceAll("[^\\d.]", "");
+            currentVersionFull = Common.getJatosVersion();
+            currentVersion = currentVersionFull.replaceAll("[^\\d.]", "");
             isPrerelease = jsonNode.get("prerelease").asBoolean();
             releaseNotes = jsonNode.get("body").asText();
-            isNewerVersion = compareVersions(version, Common.getJatosVersion()) == 1;
+            isNewerVersion = compareVersions(version, currentVersion) == 1;
             isUpdateAllowed = !versionFull.contains("n") && isOsUx();
-            currentVersion = Common.getJatosVersion();
             jsonNode.get("assets").forEach(this::getFieldsFromAsset);
         }
 
