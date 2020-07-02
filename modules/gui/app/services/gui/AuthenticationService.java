@@ -11,7 +11,6 @@ import daos.common.UserDao;
 import general.common.Common;
 import general.common.RequestScope;
 import models.common.User;
-import models.common.User.AuthMethod;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http;
@@ -89,12 +88,18 @@ public class AuthenticationService {
      * Authenticates the user specified by the username with the given password.
      */
     public boolean authenticate(String normalizedUsername, String password) throws NamingException {
+        if (password == null) return false;
+
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) return false;
-        if (user.getAuthMethod() == AuthMethod.LDAP) {
-            return authenticateViaLdap(normalizedUsername, password);
-        } else {
-            return authenticateViaDb(normalizedUsername, password);
+
+        switch (user.getAuthMethod()) {
+            case LDAP:
+                return authenticateViaLdap(normalizedUsername, password);
+            case DB:
+                return authenticateViaDb(normalizedUsername, password);
+            default:
+                throw new UnsupportedOperationException("Unsupported auth method " + user.getAuthMethod().name());
         }
     }
 

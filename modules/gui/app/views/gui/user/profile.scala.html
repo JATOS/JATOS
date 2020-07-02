@@ -96,12 +96,21 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <p class="confirmationText"></p>
-                    <div class="form-group row">
+                    @if(loggedInUser.getAuthMethod() != common.User.AuthMethod.OAUTH_GOOGLE) {
+                    <div class="form-group row" hidden>
                         <label class="control-label col-xs-6 passwordLabel" for="password">Your password</label>
                         <div class="col-xs-5">
                             <input type="password" class="form-control password" name="password" placeholder="Your password">
                         </div>
                     </div>
+                    } else {
+                    <div class="form-group row" hidden>
+                        <label class="control-label col-xs-6 usernameLabel" for="username">Your email</label>
+                        <div class="col-xs-5">
+                            <input type="text" class="form-control username" name="username" placeholder="Your email">
+                        </div>
+                    </div>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -218,8 +227,15 @@ $('#toolbar').on('click', '#deleteUser', function() {
     removeAlerts("#deleteUserModal");
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete yourself");
+    @if(loggedInUser.getAuthMethod() != common.User.AuthMethod.OAUTH_GOOGLE) {
     $('#deleteUserModal .passwordLabel').text("Confirm with your (" + userData.username+ ") password");
     $('#deleteUserModal .password').val('');
+    $('#deleteUserModal .password').parents('.form-group').show();
+    } else {
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address");
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .username').parents('.form-group').show();
+    }
     $('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml());
     $('#deleteUserModal').modal('show');
 });
@@ -257,6 +273,8 @@ $('#deleteUserForm').submit(function(event) {
             removeAlerts("#deleteUserModal");
             removeFormErrors("#deleteUserModal");
             showWarning("User wasn't deleted", "#deleteUserModal .messages");
+            $('#deleteUserModal .password').val('');
+            $('#deleteUserModal .username').val('');
             if (isJson(response.responseText)) {
                 showFormErrors("#deleteUserModal", response);
             } else {
