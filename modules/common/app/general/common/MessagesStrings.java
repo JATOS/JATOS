@@ -63,6 +63,7 @@ public class MessagesStrings {
     public static final String FAILED_THREE_TIMES = "You failed three times. Now you have to wait for a minute before"
             + " you can try again.";
     public static final String WRONG_PASSWORD = "Wrong password";
+    public static final String WRONG_USERNAME = "Wrong username";
     public static final String NOT_ALLOWED_TO_CHANGE_PASSWORDS = "You are not allowed to change passwords.";
     public static final String NOT_ALLOWED_TO_DELETE_USER = "You are not allowed to delete this user.";
     public static final String WRONG_OLD_PASSWORD = "Wrong old password";

@@ -281,14 +281,21 @@ public class Users extends Controller {
         }
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
-        String password = requestData.get("password");
-        try {
-            if (password == null || !authenticationService.authenticate(normalizedLoggedInUsername, password)) {
-                return forbidden(MessagesStrings.WRONG_PASSWORD);
+        if (loggedInUser.getAuthMethod() != AuthMethod.OAUTH_GOOGLE) {
+            try {
+                String password = requestData.get("password");
+                if (!authenticationService.authenticate(normalizedLoggedInUsername, password)) {
+                    return forbidden(MessagesStrings.WRONG_PASSWORD);
+                }
+            } catch (NamingException e) {
+                LOGGER.warn("LDAP problems - " + e.toString());
+                return internalServerError(MessagesStrings.LDAP_PROBLEMS);
             }
-        } catch (NamingException e) {
-            LOGGER.warn("LDAP problems - " + e.toString());
-            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
+        } else {
+            String username = requestData.get("username");
+            if (!username.equals(loggedInUser.getUsername())) {
+                return forbidden(MessagesStrings.WRONG_USERNAME);
+            }
         }
 
         try {

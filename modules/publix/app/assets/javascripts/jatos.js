@@ -221,6 +221,12 @@ var jatos = {};
 	 * Callback function if jatos.js produces an error, defined via jatos.onError.
 	 */
 	var onJatosError;
+    /**
+     * Flag that determines if the 'beforeunload' warning should be shown
+     * by the browser to the worker if they attempt to reload or close the
+     * broser (tab)
+     */
+	var showBeforeUnloadWarning = true;
 
 	// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
 	// a component's jQuery version. Afterwards call initJatos.
@@ -2440,7 +2446,7 @@ var jatos = {};
 	 * Check: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#the-unload-event
 	 */
 	jatos.onLoad(function () {
-		if (!jatos.componentProperties.reloadable) {
+		if (showBeforeUnloadWarning && !jatos.componentProperties.reloadable) {
 			window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
 		}
 	});
@@ -2449,6 +2455,22 @@ var jatos = {};
 		event.preventDefault();
 		// Most browsers do not show this message but a standardized one
 		event.returnValue = "Are you sure you want to leave?";
+	};
+
+	/**
+	 * Adds or cancels warning popup that will be shown by the browser to the worker who
+	 * attempts to reload the page or close the browser (tab).
+	 * 
+	 * @param {boolean} show - If true the warning will be shown - if false a
+	 * 		previously added warning will be canceled
+	 */
+	jatos.showBeforeUnloadWarning = function(show) {
+		showBeforeUnloadWarning = show;
+		if (show) {
+			window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+		} else {
+			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+		}
 	};
 
 	/**
