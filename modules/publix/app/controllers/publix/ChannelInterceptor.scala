@@ -164,16 +164,16 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
             // Due to returning a WebSocket we can't throw a PublixExceptions like
             // with other publix endpoints
             case e: NotFoundPublixException =>
-              logger.info(s".open: ${e.getMessage}")
+              logger.info(s".join: ${e.getMessage}")
               Left(Results.NotFound)
             case e: ForbiddenPublixException =>
-              logger.info(s".open: ${e.getMessage}")
+              logger.info(s".join: ${e.getMessage}")
               Left(Results.Forbidden)
             case e: BadRequestPublixException =>
-              logger.info(s".open: ${e.getMessage}")
+              logger.info(s".join: ${e.getMessage}")
               Left(Results.BadRequest)
             case e: Exception =>
-              logger.error(".open: Exception during opening of group channel", e)
+              logger.error(".join: Exception during opening of group channel", e)
               Left(Results.InternalServerError)
           }
         })

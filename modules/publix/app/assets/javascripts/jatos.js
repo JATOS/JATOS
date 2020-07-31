@@ -133,10 +133,14 @@ var jatos = {};
 	jatos.channelOpeningBackoffTimeMin = 1000;
 	jatos.channelOpeningBackoffTimeMax = 120000; // 2 min
 	/**
+	 * All batch/group session actions currently waiting for an response.
+	 * Maps sessionActionId -> timeout object
+	 */
+	var batchSessionTimeouts = {};
+	var groupSessionTimeouts = {};
+	/**
 	 * Channel timeout and interval objects
 	 */
-	var batchSessionTimeout;
-	var groupSessionTimeout;
 	var groupFixedTimeout;
 	var batchChannelHeartbeatTimer;
 	var groupChannelHeartbeatTimer;
@@ -145,15 +149,29 @@ var jatos = {};
 	var batchChannelClosedCheckTimer;
 	var groupChannelClosedCheckTimer;
 	/**
-	 * Version of the current group and batch session data. The version is
-	 * used to prevent concurrent changes of the data - in case of conflict
-	 * the patch with the higher version is applied. Can be switch on/off
-	 * by flags *SessionVersioning.
+	 * Version of the current group/batch session data. The version is
+	 * used to prevent concurrent changes of the data. Can be switch on/off
+     * by flags *SessionVersioning.
 	 */
 	var batchSessionVersion;
 	var groupSessionVersion;
-	var batchSessionVersioning = true;
-	var groupSessionVersioning = true;
+	/**
+	 * Number of batch/group session updates so far. Used to generate the
+	 * sessionActionId.
+	 */
+	var batchSessionCounter = 0;
+	var groupSessionCounter = 0;
+	/**
+	 * If versioning is set to true all batch/group session data patches are
+	 * accompanied by a version. On the JATOS server side only the a patch with
+	 * the current version (as stored in the database) is applied. If there are
+	 * multiple concurrent patches only the first one is applied.
+	 * If versioning is turned off all patches arriving at the JATOS server are
+	 * applied right away without checking the version. This is faster but can
+	 * lead to unintended session data changes.
+	 */
+	jatos.batchSessionVersioning = true;
+	jatos.groupSessionVersioning = true;
 	/**
 	 * Batch channel WebSocket: exchange date between study runs of a batch
 	 */
@@ -693,10 +711,20 @@ var jatos = {};
 				});
 				break;
 			case "SESSION_ACK":
-				batchSessionTimeout.cancel();
+				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
+					batchSessionTimeouts[batchMsg.id].cancel();
+				} else {
+					callingOnError(null, "Batch session got 'SESSION_ACK' " +
+						"with nonexistent ID " + batchMsg.id);
+				}
 				break;
 			case "SESSION_FAIL":
-				batchSessionTimeout.trigger();
+				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
+					batchSessionTimeouts[batchMsg.id].trigger();
+				} else {
+					callingOnError(null, "Batch session got 'SESSION_FAIL' " +
+						"with nonexistent ID " + batchMsg.id);
+				}
 				break;
 			case "ERROR":
 				callingOnError(null, batchMsg.errorMsg);
@@ -898,16 +926,6 @@ var jatos = {};
 	};
 
 	/**
-	 * Set batch session versioning flag.
-	 * @param {boolean} versioning - If true a patch is only applied if the
-	 * 				accompanying version is the same as the one stored in JATOS.
-	 * 				If false the version is	ignored.
-	 */
-	jatos.batchSession.versioning = function (versioning) {
-	    if (typeof versioning === "boolean") batchSessionVersioning = versioning;
-	};
-
-	/**
 	 * Generates an abstract JSON Patch
 	 */
 	function generatePatch(op, path, value, from) {
@@ -935,27 +953,31 @@ var jatos = {};
 			callingOnError(onFail, "No open batch channel");
 			return rejectedPromise();
 		}
-		if (isDeferredPending(sendingBatchSessionDeferred)) {
+		if (jatos.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
 			callingOnError(onFail, "Can send only one batch session patch at a time");
 			return rejectedPromise();
 		}
 
-		sendingBatchSessionDeferred = jatos.jQuery.Deferred();
+		var deferred = jatos.jQuery.Deferred();
+		if (jatos.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
+
+		var sessionActionId = batchSessionCounter++;
 		var msgObj = {};
 		msgObj.action = "SESSION";
+		msgObj.id = sessionActionId;
 		msgObj.patches = (patches.constructor === Array) ? patches : [patches];
 		msgObj.version = batchSessionVersion;
-		msgObj.versioning = batchSessionVersioning;
+		msgObj.versioning = !!jatos.batchSessionVersioning;
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			batchSessionTimeout = setChannelSendingTimeoutAndPromiseResolution(
-				sendingBatchSessionDeferred, onSuccess, onFail);
+			setChannelSendingTimeoutAndPromiseResolution(deferred, batchSessionTimeouts,
+				 sessionActionId, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
-			sendingBatchSessionDeferred.reject();
+			deferred.reject();
 		}
-		return sendingBatchSessionDeferred.promise();
+		return deferred.promise();
 	}
 
 	/**
@@ -1492,7 +1514,7 @@ var jatos = {};
 	 * to keep the WebSocket open in routers. This heartbeat is additional
 	 * to the ping/pong heartbeat of the underlying WebSocket. For each
 	 * heartbeat ping we set a timeout until when the pong has to be received.
-	 * If no pong arrived the batch channel will be closed and reopened.
+	 * If no pong arrived the group channel will be closed and reopened.
 	 */
 	function groupChannelHeartbeat() {
 		clearInterval(groupChannelHeartbeatTimer);
@@ -1676,10 +1698,20 @@ var jatos = {};
 				callFunctionIfExist(groupChannelCallbacks.onUpdate);
 				break;
 			case "SESSION_ACK":
-				groupSessionTimeout.cancel();
+				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
+					groupSessionTimeouts[groupMsg.sessionActionId].cancel();
+				} else {
+					callingOnError(null, "Group session got 'SESSION_ACK' " +
+						"with nonexistent ID " + groupMsg.sessionActionId);
+				}
 				break;
 			case "SESSION_FAIL":
-				groupSessionTimeout.trigger();
+				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
+					groupSessionTimeouts[groupMsg.sessionActionId].trigger();
+				} else {
+					callingOnError(null, "Group session got 'SESSION_FAIL' " +
+						"with nonexistent ID " + groupMsg.sessionActionId);
+				}
 				break;
 			case "ERROR":
 				// onError or jatos.onError
@@ -1866,16 +1898,6 @@ var jatos = {};
 	};
 
 	/**
-	 * Set group session versioning flag. 
-	 * @param {boolean} versioning - If true a patch is only applied if the
-	 * 				accompanying version is the same as the one stored in JATOS.
-	 * 				If false the version is	ignored.
-	 */
-	jatos.groupSession.versioning = function (versioning) {
-	    if (typeof versioning === "boolean") groupSessionVersioning = versioning;
-	};
-
-	/**
 	 * Sends a JSON Patch via the group channel to JATOS and subsequently to all
 	 * other study currently running in this group. The parameter 'patches' can be a
 	 * a single patch object or an array of patch objects.
@@ -1885,27 +1907,31 @@ var jatos = {};
 			callingOnError(onFail, "No open group channel");
 			return rejectedPromise();
 		}
-		if (isDeferredPending(sendingGroupSessionDeferred)) {
+		if (jatos.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
 			callingOnError(onFail, "Can send only one group session patch at a time");
 			return rejectedPromise();
 		}
 
-		sendingGroupSessionDeferred = jatos.jQuery.Deferred();
+		var deferred = jatos.jQuery.Deferred();
+		if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
+		
+		var sessionActionId = groupSessionCounter++;
 		var msgObj = {};
 		msgObj.action = "SESSION";
+		msgObj.sessionActionId = sessionActionId;
 		msgObj.sessionPatches = (patches.constructor === Array) ? patches : [patches];
 		msgObj.sessionVersion = groupSessionVersion;
-		msgObj.sessionVersioning = groupSessionVersioning;
+		msgObj.sessionVersioning = !!jatos.groupSessionVersioning;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			groupSessionTimeout = setChannelSendingTimeoutAndPromiseResolution(
-				sendingGroupSessionDeferred, onSuccess, onFail);
+			setChannelSendingTimeoutAndPromiseResolution(deferred, groupSessionTimeouts,
+				sessionActionId, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
-			sendingGroupSessionDeferred.reject();
+			deferred.reject();
 		}
-		return sendingGroupSessionDeferred.promise();
+		return deferred.promise();
 	}
 
 	/**
@@ -2564,15 +2590,19 @@ var jatos = {};
 	}
 
 	/**
-	 * Sets a timeout and returns an object with two functions 1) to cancel the
-	 * timeout and 2) to trigger the timeout prematurely
+	 * Sets a timeout and puts an object with two functions, 'cancel' and 'trigger'
+	 * into the given sessionTimeouts
 	 */
-	function setChannelSendingTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
+	function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts,
+		sessionActionId, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
 			callFunctionIfExist(onFail, "Timeout sending message");
 			deferred.reject("Timeout sending message");
 		}, jatos.channelSendingTimeoutTime);
-		return {
+
+		// Create a new timeout object with two functions: 1) to cancel
+		// the timeout and 2) to trigger the timeout prematurely
+		sessionTimeouts[sessionActionId] = {
 			cancel: function () {
 				clearTimeout(timeoutId);
 				callFunctionIfExist(onSuccess, "success");
@@ -2584,6 +2614,9 @@ var jatos = {};
 				deferred.reject("Error sending message");
 			}
 		};
+
+		// Always clean up and delete the timeout obj after the deferred is resolved
+		deferred.always(function () { delete sessionTimeouts[sessionActionId]; });
 	}
 
 	/**

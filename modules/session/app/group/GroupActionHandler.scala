@@ -2,7 +2,6 @@ package group
 
 import com.google.common.base.Strings
 import daos.common.GroupResultDao
-import general.ChannelRegistry
 import gnieh.diffson.playJson._
 import group.GroupDispatcher.{GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
 import javax.inject.{Inject, Singleton}
@@ -34,15 +33,14 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     * session, or 2) the msg to fix the group. The function returns GroupMsges that will be send
     * out to the group members.
     */
-  def handleActionMsg(msg: GroupMsg, groupResultId: Long, studyResultId: Long,
-                      registry: ChannelRegistry): List[GroupMsg] = {
+  def handleActionMsg(msg: GroupMsg, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
     logger.debug(s".handleActionMsg: groupResultId $groupResultId, studyResultId $studyResultId, " +
       s"jsonNode ${Json.stringify(msg.json)}")
     val actionValue = (msg.json \ GroupActionJsonKey.Action.toString).as[String]
     val action = GroupAction.withName(actionValue)
     action match {
-      case GroupAction.Session => handlePatch(msg.json, groupResultId, studyResultId, registry)
-      case GroupAction.Fixed => handleActionFix(groupResultId, studyResultId, registry);
+      case GroupAction.Session => handlePatch(msg.json, groupResultId, studyResultId)
+      case GroupAction.Fixed => handleActionFix(groupResultId);
       case _ =>
         List(msgBuilder.buildError(groupResultId, s"Unknown action $action", TellWhom.SenderOnly))
     }
@@ -51,8 +49,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   /**
     * Applies the patch to the group session
     */
-  private def handlePatch(json: JsObject, groupResultId: Long,
-                          studyResultId: Long, registry: ChannelRegistry): List[GroupMsg] = {
+  private def handlePatch(json: JsObject, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult == null) {
@@ -60,9 +57,10 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
         List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
       }
 
+      val sessionActionId = (json \ GroupActionJsonKey.SessionActionId.toString).as[Long]
+      val clientsVersion = (json \ GroupActionJsonKey.SessionVersion.toString).as[Long]
+      val versioning = (json \ GroupActionJsonKey.SessionVersioning.toString).as[Boolean]
       try {
-        val clientsVersion = (json \ GroupActionJsonKey.SessionVersion.toString).as[Long]
-        val versioning = (json \ GroupActionJsonKey.SessionVersioning.toString).as[Boolean]
         val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
         val patchedSessionData = patchSessionData(patches, groupResult)
         logger.debug(s".handlePatch: groupResultId $groupResultId, " +
@@ -72,16 +70,16 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
         val success = checkVersionAndPersistSessionData(patchedSessionData, groupResult, clientsVersion, versioning)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(groupResult, studyResultId, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, TellWhom.SenderOnly)
+          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, Some(sessionActionId), TellWhom.SenderOnly)
           List(msg1, msg2)
         } else {
-          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, TellWhom.SenderOnly))
+          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), TellWhom.SenderOnly))
         }
       } catch {
         case e: Exception =>
           logger.warn(s".handlePatch: groupResultId $groupResultId, json ${Json.stringify(json)}," +
             s" ${e.getClass.getName}: ${e.getMessage}")
-          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, TellWhom.SenderOnly))
+          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), TellWhom.SenderOnly))
       }
     }))
   }
@@ -122,14 +120,13 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     * Changes state of GroupResult to FIXED and sends an update to all group
     * members
     */
-  private def handleActionFix(groupResultId: Long, studyResultId: Long,
-                              registry: ChannelRegistry) = {
+  private def handleActionFix(groupResultId: Long) = {
     jpa.withTransaction(asJavaSupplier(() => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)
         groupResultDao.update(groupResult)
-        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, TellWhom.SenderOnly))
+        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, TellWhom.SenderOnly))
       } else {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
         List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
