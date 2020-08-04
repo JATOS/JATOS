@@ -22,7 +22,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
-import static play.mvc.Http.Cookie.*;
+import static play.mvc.Http.Cookie.SameSite;
+import static play.mvc.Http.Cookie.builder;
 
 /**
  * This class offers a simple interface to extract, log and discard IdCookies.
@@ -119,6 +120,8 @@ public class IdCookieAccessor {
                 true, cookie.name()));
         idCookie.setStudyResultId(getValueAsLong(cookieMap,
                 IdCookieModel.STUDY_RESULT_ID, true, cookie.name()));
+        idCookie.setStudyResultUuid(getValueAsString(cookieMap,
+                IdCookieModel.STUDY_RESULT_UUID, true, cookie.name()));
         idCookie.setComponentId(getValueAsLong(cookieMap,
                 IdCookieModel.COMPONENT_ID, false, cookie.name()));
         idCookie.setComponentResultId(getValueAsLong(cookieMap,

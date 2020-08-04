@@ -11,18 +11,11 @@ public class PublixErrorMessages {
 
 	public static final String ABANDONED_STUDY_BY_COOKIE = "Closed by JATOS: Too many unfinished studies open in the same browser.";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
-	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
-	public static final String MT_PREVIEW_NOT_START = "You cannot start a study from a MTurk requester preview";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
-	public static final String NO_WORKER_IN_QUERY_STRING = "Missing worker ID in query string";
 	public static final String IDCOOKIE_COLLECTION_FULL = "Can't generate a new ID cookie due to max number is reached. This should never happen.";
 	public static final String IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND = "Max number of ID cookies is reached but a new index was requested.";
 	public static final String STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY = "Study result doesn't belong to this study.";
 	public static final String STUDY_RESULT_DOESN_T_EXIST = "Study result doesn't exist.";
-
-	public String workerNotCorrectType(Long workerId) {
-		return "The worker with ID " + workerId + " isn't the right worker type.";
-	}
 
 	public static String workerNeverDidStudy(Worker worker, Long studyId) {
 		return "Worker " + worker.getId() + " never did study " + studyId + ".";
@@ -34,10 +27,6 @@ public class PublixErrorMessages {
 
 	public static String workerFinishedStudyAlready(Worker worker, Long studyId) {
 		return "Worker " + worker.getId() + " finished study " + studyId + " already.";
-	}
-
-	public static String workerNotExist(Long workerId) {
-		return workerNotExist(String.valueOf(workerId));
 	}
 
 	public static String workerNotExist(String workerIdStr) {
@@ -96,11 +85,6 @@ public class PublixErrorMessages {
 
 	public static String noComponentAtPosition(Long studyId, Integer position) {
 		return "There is no component at position " + position + " in study " + studyId + ".";
-	}
-
-	public static String componentNeverStarted(Long studyId, Long componentId, String methodName) {
-		return "Illegal function call " + methodName + ": component (ID " + componentId + ") of study (ID " + studyId
-				+ ") was never started.";
 	}
 
 	public static String studyNotExist(Long studyId) {

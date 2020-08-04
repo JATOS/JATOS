@@ -31,9 +31,9 @@ public class ResultCreator {
     /**
      * Creates StudyResult and adds it to the given Worker.
      */
-    public StudyResult createStudyResult(Study study, Batch batch, Worker worker, boolean pre) {
-        StudyResult studyResult = new StudyResult(study, batch, worker);
-        if (pre) {
+    public StudyResult createStudyResult(StudyRun studyRun, Worker worker) {
+        StudyResult studyResult = new StudyResult(studyRun, worker);
+        if (studyResult.getStudy().isAllowPreview()) {
             studyResult.setStudyState(StudyResult.StudyState.PRE);
         } else {
             studyResult.setStudyState(StudyResult.StudyState.STARTED);
@@ -42,13 +42,6 @@ public class ResultCreator {
         studyResultDao.create(studyResult);
         workerDao.update(worker);
         return studyResult;
-    }
-
-    /**
-     * Creates StudyResult and adds it to the given Worker.
-     */
-    public StudyResult createStudyResult(Study study, Batch batch, Worker worker) {
-        return createStudyResult(study, batch, worker, false);
     }
 
     public ComponentResult createComponentResult(StudyResult studyResult, Component component) {

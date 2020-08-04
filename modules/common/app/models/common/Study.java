@@ -12,17 +12,17 @@ import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * Domain model / entity of a study. Used for JSON marshalling and JPA persistance.
- * <p>
+ * DB entity of a study. Used for JSON marshalling and JPA persistance.
+ *
  * This entity has all properties of a study but not the results of a study. The results of a study are stored in
  * StudyResults and ComponentResult. A study consists of a list components and their model is Component. It can have
  * several Batches.
- * <p>
+ *
  * Default values, where necessary, are at the fields or in the constructor.
- * <p>
+ *
  * For the GUI a different model (models.gui.StudyProperties) is used.
  *
- * @author Kristian Lange (2014)
+ * @author Kristian Lange
  */
 @Entity
 @Table(name = "Study")
@@ -80,6 +80,14 @@ public class Study {
      */
     @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
     private boolean linearStudy = false;
+
+    /**
+     * If true a preview of a study run of this study is allowed: the study run link can be used many times as long as
+     * it does not go further than the first component. As soon as the second component is reached the usual
+     * restrictions of the worker apply. 'Single' workers only.
+     */
+    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
+    private boolean allowPreview = false;
 
     /**
      * Study assets directory name
@@ -227,6 +235,14 @@ public class Study {
 
     public void setLinearStudy(boolean linearStudy) {
         this.linearStudy = linearStudy;
+    }
+
+    public boolean isAllowPreview() {
+        return allowPreview;
+    }
+
+    public void setAllowPreview(boolean allowPreview) {
+        this.allowPreview = allowPreview;
     }
 
     public String getJsonData() {

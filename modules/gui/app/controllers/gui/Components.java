@@ -2,17 +2,18 @@ package controllers.gui;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
+import daos.common.StudyRunDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
-import models.common.Component;
-import models.common.Study;
-import models.common.User;
+import models.common.*;
 import models.gui.ComponentProperties;
 import play.data.Form;
 import play.data.FormFactory;
@@ -20,10 +21,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.AuthenticationService;
-import services.gui.Checker;
-import services.gui.ComponentService;
-import services.gui.JatosGuiExceptionThrower;
+import services.gui.*;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -47,36 +45,46 @@ public class Components extends Controller {
     private final Checker checker;
     private final ComponentService componentService;
     private final AuthenticationService authenticationService;
+    private final BatchService batchService;
     private final StudyDao studyDao;
+    private final BatchDao batchDao;
+    private final StudyRunDao studyRunDao;
     private final ComponentDao componentDao;
     private final FormFactory formFactory;
     private final JsonUtils jsonUtils;
 
     @Inject
     Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, ComponentService componentService,
-            AuthenticationService authenticationService, StudyDao studyDao, ComponentDao componentDao,
-            FormFactory formFactory, JsonUtils jsonUtils) {
+            AuthenticationService authenticationService, BatchService batchService, StudyDao studyDao,
+            BatchDao batchDao, StudyRunDao studyRunDao, ComponentDao componentDao, FormFactory formFactory,
+            JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.componentService = componentService;
         this.authenticationService = authenticationService;
+        this.batchService = batchService;
         this.studyDao = studyDao;
+        this.batchDao = batchDao;
+        this.studyRunDao = studyRunDao;
         this.componentDao = componentDao;
         this.formFactory = formFactory;
         this.jsonUtils = jsonUtils;
     }
 
     /**
-     * Actually shows a single component. It uses a JatosWorker and redirects to Publix.startStudy().
+     * Shows a single component. It uses a JatosWorker and redirects to Publix.startStudy().
      */
     @Transactional
     @Authenticated
-    public Result runComponent(Long studyId, Long componentId, Long batchId) throws JatosGuiException {
+    public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId)
+            throws JatosGuiException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Study study = studyDao.findById(studyId);
+        Batch batch = batchService.fetchBatch(batchId, study);
         Component component = componentDao.findById(componentId);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForBatch(batch, study, batchId);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
@@ -85,18 +93,18 @@ public class Components extends Controller {
         } catch (BadRequestException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
-
         if (component.getHtmlFilePath() == null || component.getHtmlFilePath().trim().isEmpty()) {
             String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
             jatosGuiExceptionThrower.throwStudy(errorMsg, Http.Status.BAD_REQUEST, studyId);
         }
-        session("jatos_run", "RUN_COMPONENT_START");
-        session("run_component_id", componentId.toString());
-        // Redirect to jatos-publix: start study
-        String startComponentUrl =
-                Common.getPlayHttpContext() + "publix/" + study.getId() + "/start?" + "batchId" + "=" + batchId + "&"
-                        + "jatosWorkerId" + "=" + loggedInUser.getWorker().getId();
-        return redirect(startComponentUrl);
+
+        // Get a StudyRun, generate run URL, specify component in session and redirect to jatos-publix: start study
+        StudyRun sr = studyRunDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
+                .orElseGet(() -> studyRunDao.create(new StudyRun(batch, loggedInUser.getWorker())));
+        String runUrl = Common.getUrlWithBase("publix/" + sr.getUuid() + "/run");
+        return redirect(runUrl)
+                .addingToSession(request, "jatos_run", "RUN_COMPONENT_START")
+                .addingToSession(request, "run_component_uuid", component.getUuid());
     }
 
     /**

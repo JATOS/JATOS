@@ -8,6 +8,7 @@ import play.cache.NamedCache;
 import play.cache.SyncCacheApi;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
@@ -27,7 +28,7 @@ import java.io.File;
 @Singleton
 public class Tests extends Controller {
 
-    private final UserDao      userDao;
+    private final UserDao userDao;
     private final SyncCacheApi cache;
 
     @Inject
@@ -36,8 +37,8 @@ public class Tests extends Controller {
         this.cache = cache;
     }
 
-    public Result test() {
-        return ok(views.html.gui.test.render());
+    public Result test(Http.Request request) {
+        return ok(views.html.gui.test.render(request));
     }
 
     @Transactional

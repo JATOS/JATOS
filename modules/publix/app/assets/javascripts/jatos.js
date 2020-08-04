@@ -1,7 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2019
+ * Author Kristian Lange 2014 - 2020
  * Licensed under Apache License 2.0
  * 
  * Uses plugin jquery.ajax-retry:
@@ -297,11 +297,12 @@ var jatos = {};
 				jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.js")
 			)
 			.then(function () {
-				jatos.studyResultId = getUrlQueryParameter("srid");
+				// Get studyResultUuid from URL path
+				jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
 				readIdCookie();
 				// Start heartbeat.js (the general one - not the channel one)
 				heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
-				heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
+				heartbeatWorker.postMessage([jatos.studyResultUuid]);
 				// Start httpLoop.js
 				httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
 				httpLoop.addEventListener('message', function(msg) { httpLoopListener(msg.data); }, false);
@@ -360,23 +361,6 @@ var jatos = {};
 	}
 
 	/**
-	 * Extracts the given URL query parameter from the URL query string
-	 */
-	function getUrlQueryParameter(parameter) {
-		var a = window.location.search.substr(1).split('&');
-		if (a === "") return {};
-		var b = {};
-		for (var i = 0; i < a.length; ++i) {
-			var p = a[i].split('=', 2);
-			if (p.length == 1)
-				b[p[0]] = "";
-			else
-				b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
-		}
-		return b[parameter];
-	}
-
-	/**
 	 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
 	 * and stores all key-value pairs into jatos scope.
 	 */
@@ -400,7 +384,7 @@ var jatos = {};
 				cookie.length);
 			var idArray = cookieStr.split("&");
 			var idMap = getIdsFromCookie(idArray);
-			if (idMap.studyResultId == jatos.studyResultId) {
+			if (idMap.studyResultUuid == jatos.studyResultUuid) {
 				jatos.jQuery.each(idMap, fillJatos);
 				// Convert component's position to int
 				jatos.componentPos = parseInt(jatos.componentPos);
@@ -564,8 +548,7 @@ var jatos = {};
 
 		batchChannel = new WebSocket(
 			((window.location.protocol === "https:") ? "wss://" : "ws://") +
-			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
-			"/batch/open" + "?srid=" + jatos.studyResultId);
+			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/batch/open");
 		batchChannel.onopen = function (event) {
 			batchChannelHeartbeat();
 			batchChannelClosedCheck();
@@ -989,9 +972,7 @@ var jatos = {};
 	 */
 	jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
 		if (typeof heartbeatPeriod == 'number' && heartbeatWorker) {
-			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId,
-				heartbeatPeriod
-			]);
+			heartbeatWorker.postMessage([jatos.studyResultUuid, heartbeatPeriod]);
 		}
 	};
 
@@ -1150,7 +1131,7 @@ var jatos = {};
 				return rejectedPromise();
 			}
 			var componentId = jatos.componentList[componentPos - 1].id;
-			url += "&componentId=" + componentId;
+			url += "?componentId=" + componentId;
 		}
 
 		var deferred = jatos.jQuery.Deferred();
@@ -1238,18 +1219,23 @@ var jatos = {};
 	 * setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
-	 * @param {number} componentId - ID of the component to start
+	 * @param {number} componentIdOrUuid - ID or UUID of the component to start
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional function} onError - Callback function if fail
 	 * 
 	 * Or with message:
-	 * @param {number} componentId - ID of the component to start
+	 * @param {number} componentIdOrUuid - ID or UUID of the component to start
 	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
 	 * @param {optional string} message - Message that should be logged (max 255 chars)
 	 * @param {optional function} onError - Callback function if fail
 	 */
-	jatos.startComponent = function (componentId, resultData, param3, param4) {
-		var message, onError;
+	jatos.startComponent = function (componentIdOrUuid, resultData, param3, param4) {
+		var message, onError, componentUuid;
+		if (typeof componentIdOrUuid !== 'string') {
+			componentUuid = getComponentUuidFromId(componentId);
+		} else {
+			componentUuid = componentIdOrUuid;
+		}
 		if (typeof param3 === 'string') {
 			message = param3;
 			onError = param4;
@@ -1270,8 +1256,8 @@ var jatos = {};
 		var start = function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 
-			var url = getURL("../" + componentId + "/start");
-			if (message) url = url + "&" + jatos.jQuery.param({ "message": message });
+			var url = getURL("../" + componentUuid + "/start");
+			if (message) url = url + "?" + jatos.jQuery.param({ "message": message });
 			window.location.href = url;
 		};
 
@@ -1282,6 +1268,12 @@ var jatos = {};
 			start();
 		}
 	};
+
+	function getComponentUuidFromId(id) {
+		for (var i = 0; i < jatos.componentList.length; ++i) {
+			if (jatos.componentList[i].id == id) return jatos.componentList[i].uuid;
+		}
+	}
 
 	/**
 	 * Starts the component with the given position (position of the first
@@ -1306,8 +1298,8 @@ var jatos = {};
 			callingOnError(onError, "Component position does not exist");
 			return;
 		}
-		var componentId = jatos.componentList[componentPos - 1].id;
-		jatos.startComponent(componentId, resultData, param3, param4);
+		var componentUuid = jatos.componentList[componentPos - 1].uuid;
+		jatos.startComponent(componentUuid, resultData, param3, param4);
 	};
 
 	/**
@@ -1350,8 +1342,8 @@ var jatos = {};
 		}
 		for (var i = jatos.componentPos; i < jatos.componentList.length; i++) {
 			if (jatos.componentList[i].active) {
-				var nextComponentId = jatos.componentList[i].id;
-				jatos.startComponent(nextComponentId, resultData, param2, param3);
+				var nextComponentUuid = jatos.componentList[i].uuid;
+				jatos.startComponent(nextComponentUuid, resultData, param2, param3);
 				break;
 			}
 		}
@@ -1376,8 +1368,8 @@ var jatos = {};
 	jatos.startLastComponent = function (resultData, param2, param3) {
 		for (var i = jatos.componentList.length - 1; i >= 0; i--) {
 			if (jatos.componentList[i].active) {
-				var lastComponentId = jatos.componentList[i].id;
-				jatos.startComponent(lastComponentId, resultData, param2, param3);
+				var lastComponentUuid = jatos.componentList[i].uuid;
+				jatos.startComponent(lastComponentUuid, resultData, param2, param3);
 				break;
 			}
 		}
@@ -1455,8 +1447,7 @@ var jatos = {};
 		openingGroupChannelDeferred = jatos.jQuery.Deferred();
 		groupChannel = new WebSocket(
 			((window.location.protocol === "https:") ? "wss://" : "ws://") +
-			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyId +
-			"/group/join" + "?srid=" + jatos.studyResultId);
+			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join");
 		groupChannel.onopen = function (event) {
 			groupChannelHeartbeat();
 			groupChannelClosedCheck();
@@ -1914,7 +1905,7 @@ var jatos = {};
 
 		var deferred = jatos.jQuery.Deferred();
 		if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
-		
+
 		var sessionActionId = groupSessionCounter++;
 		var msgObj = {};
 		msgObj.action = "SESSION";
@@ -2175,7 +2166,7 @@ var jatos = {};
 
 		var url = getURL("../abort");
 		if (typeof message != 'undefined') {
-			url = url + "&message=" + message;
+			url = url + "?message=" + message;
 		}
 		var request = {
 			url: url,
@@ -2220,7 +2211,7 @@ var jatos = {};
 			if (typeof message == 'undefined') {
 				window.location.href = url;
 			} else {
-				window.location.href = url + "&message=" + message;
+				window.location.href = url + "?message=" + message;
 			}
 		}
 
@@ -2283,16 +2274,16 @@ var jatos = {};
 
 		var url = getURL("../end");
 		if (typeof successful == 'boolean' && typeof message == 'string') {
-			url = url + "&" + jatos.jQuery.param({
+			url = url + "?" + jatos.jQuery.param({
 				"successful": successful,
 				"message": message
 			});
 		} else if (typeof successful == 'boolean' && typeof message != 'string') {
-			url = url + "&" + jatos.jQuery.param({
+			url = url + "?" + jatos.jQuery.param({
 				"successful": successful
 			});
 		} else if (typeof successful != 'boolean' && typeof message == 'string') {
-			url = url + "&" + jatos.jQuery.param({
+			url = url + "?" + jatos.jQuery.param({
 				"message": message
 			});
 		}
@@ -2381,16 +2372,16 @@ var jatos = {};
 
 			var url = getURL("../end");
 			if (typeof successful == 'boolean' && typeof message == 'string') {
-				url = url + "&" + jatos.jQuery.param({
+				url = url + "?" + jatos.jQuery.param({
 					"successful": successful,
 					"message": message
 				});
 			} else if (typeof successful == 'boolean' && typeof message != 'string') {
-				url = url + "&" + jatos.jQuery.param({
+				url = url + "?" + jatos.jQuery.param({
 					"successful": successful
 				});
 			} else if (typeof successful != 'boolean' && typeof message == 'string') {
-				url = url + "&" + jatos.jQuery.param({
+				url = url + "?" + jatos.jQuery.param({
 					"message": message
 				});
 			}
@@ -2406,11 +2397,10 @@ var jatos = {};
 	};
 
 	/**
-	 * Returns the URL with protocol, host and port to the given path and adds the 
-	 * 'srid' query parameter
+	 * Returns the URL with protocol, host and port to the given path
 	 */
 	function getURL(path) {
-		return new URL(path, window.location.href).toString() + "?srid=" + jatos.studyResultId;
+		return new URL(path, window.location.href).toString();
 	}
 
 	jatos.getHttpLoopCounter = function() {

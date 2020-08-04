@@ -7,15 +7,11 @@ import java.util.Objects;
 /**
  * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
  * study run, e.g. study result ID, worker ID, worker type.
- * <p>
+ *
  * ID cookies are used to provide those IDs to jatos.js and subsequent to the
  * components JavaScript.
- * <p>
- * Additionally the cookies are used to pass on information between Publix calls
- * e.g. between Publix.startStudy and Publix.startComponent. (Since we are
- * RESTful we can't have a state on the server side except in the DB).
  *
- * @author Kristian Lange (2016)
+ * @author Kristian Lange
  */
 public class IdCookieModel {
 
@@ -33,6 +29,7 @@ public class IdCookieModel {
     public static final String GROUP_RESULT_ID = "groupResultId";
     public static final String STUDY_ID = "studyId";
     public static final String STUDY_RESULT_ID = "studyResultId";
+    public static final String STUDY_RESULT_UUID = "studyResultUuid";
     public static final String COMPONENT_ID = "componentId";
     public static final String COMPONENT_RESULT_ID = "componentResultId";
     public static final String COMPONENT_POSITION = "componentPos";
@@ -81,6 +78,7 @@ public class IdCookieModel {
     private Long groupResultId;
     private Long studyId;
     private Long studyResultId;
+    private String studyResultUuid;
     private Long componentId;
     private Long componentResultId;
     private Integer componentPosition;
@@ -171,6 +169,14 @@ public class IdCookieModel {
 
     public void setStudyResultId(Long studyResultId) {
         this.studyResultId = studyResultId;
+    }
+
+    public String getStudyResultUuid() {
+        return studyResultUuid;
+    }
+
+    public void setStudyResultUuid(String studyResultUuid) {
+        this.studyResultUuid = studyResultUuid;
     }
 
     public Long getComponentId() {

@@ -41,11 +41,10 @@ public class StudyDao extends AbstractDao {
 
     public Optional<Study> findByUuid(String uuid) {
         String queryStr = "SELECT s FROM Study s WHERE " + "s.uuid=:uuid";
-        TypedQuery<Study> query = jpa.em().createQuery(queryStr, Study.class);
-        query.setParameter("uuid", uuid);
-        // There can be only one study with this UUID
-        query.setMaxResults(1);
-        List<Study> studyList = query.getResultList();
+        List<Study> studyList = jpa.em().createQuery(queryStr, Study.class)
+                .setParameter("uuid", uuid)
+                .setMaxResults(1)
+                .getResultList();
         return !studyList.isEmpty() ? Optional.of(studyList.get(0)) : Optional.empty();
     }
 

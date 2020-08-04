@@ -24,14 +24,12 @@ var ajax;
 
 /**
  * Web workers callback function. In the event's data must be an array with the
- * study Id, the study result ID and optionally the heartbeat's period.
+ * study result's UUID and optionally the heartbeat's period.
  */
 onmessage = function(e) {
-	var studyId = e.data[0];
-	var studyResultId = e.data[1];
-	period = (typeof e.data[2] === 'undefined') ? periodDefault
-			: e.data[2];
-	url = "../../../../" + studyId + "/heartbeat" + "?srid=" + studyResultId;
+	var studyResultUuid = e.data[0];
+	period = (typeof e.data[1] === 'undefined') ? periodDefault : e.data[1];
+	url = "../../../../" + studyResultUuid + "/heartbeat";
 	if (!ajax) {
 		send();
 	}

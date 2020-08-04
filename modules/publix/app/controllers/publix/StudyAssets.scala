@@ -3,8 +3,9 @@ package controllers.publix
 import java.io.{File, IOException}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
-import daos.common.{ComponentDao, StudyDao}
+import daos.common.{StudyDao, StudyResultDao}
 import exceptions.publix.{ForbiddenPublixException, NotFoundPublixException, PublixException}
 import general.common.{Common, MessagesStrings}
 import javax.inject.{Inject, Singleton}
@@ -32,6 +33,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
                             idCookieService: IdCookieService,
                             jpa: JPAApi,
                             studyDao: StudyDao,
+                            studyResultDao: StudyResultDao,
                             assets: Assets) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -46,12 +48,33 @@ class StudyAssets @Inject()(components: ControllerComponents,
   val jatosPublixPattern: Regex = "(.*)(jatos-publix/javascripts/)(.*)".r
 
   /**
+    * Returns the study asset file that belongs to the study with the given study resutl UUID
+    * and has the given relative path within the study assets folder. In difference to
+    * the viaAssetsPath method it is not necessary to add the prefix 'study_assets' or the study
+    * assets folder name (because it's retrieved from the DB).
+    * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
+    */
+  def viaStudyPath(studyResultUuid: String, componentUuid: String, urlPath: String): Action[AnyContent] =
+    urlPath match {
+      case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
+      case "jatos-3.5.2.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
+      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix/javascripts", file)
+      case _ => jpa.withTransaction(asJavaSupplier(() => {
+        val studyResult = studyResultDao.findByUuid(UUID.fromString(studyResultUuid)).orElseGet(null);
+        if (studyResult == null) BadRequest("A study result " + studyResultUuid + " doesn't exist.")
+        viaAssetsPath(studyResult.getStudy.getDirName + URL_PATH_SEPARATOR + urlPath)
+      }))
+    }
+
+  /**
+    * @deprecated since JATOS 3.6.1
     * Returns the study asset file that belongs to the study with the given study ID
     * and has the given relative path within the study assets folder. In difference to
     * the viaAssetsPath method it is not necessary to add the prefix 'study_assets' or the study
     * assets folder name (because it's retrieved from the DB).
     * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
     */
+  @deprecated
   def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String): Action[AnyContent] =
     urlPath match {
       case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")

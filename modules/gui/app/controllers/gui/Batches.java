@@ -3,30 +3,23 @@ package controllers.gui;
 import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import daos.common.BatchDao;
-import daos.common.GroupResultDao;
-import daos.common.StudyDao;
-import daos.common.StudyResultDao;
+import daos.common.*;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import general.gui.RequestScopeMessaging;
-import models.common.Batch;
-import models.common.GroupResult;
+import models.common.*;
 import models.common.GroupResult.GroupState;
-import models.common.Study;
-import models.common.User;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
 import models.gui.GroupSession;
-import play.Logger;
-import play.Logger.ALogger;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.libs.F.Function3;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
 import utils.common.HttpUtils;
@@ -50,8 +43,6 @@ import java.util.stream.Collectors;
 @Singleton
 public class Batches extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(Batches.class);
-
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
     private final JsonUtils jsonUtils;
@@ -64,6 +55,7 @@ public class Batches extends Controller {
     private final BatchDao batchDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
+    private final StudyRunDao studyRunDao;
     private final FormFactory formFactory;
 
     @Inject
@@ -71,7 +63,7 @@ public class Batches extends Controller {
             JsonUtils jsonUtils, AuthenticationService authenticationService,
             WorkerService workerService, BatchService batchService, GroupService groupService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            BatchDao batchDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao,
+            BatchDao batchDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao, StudyRunDao studyRunDao,
             FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -85,6 +77,7 @@ public class Batches extends Controller {
         this.batchDao = batchDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
+        this.studyRunDao = studyRunDao;
         this.formFactory = formFactory;
     }
 
@@ -93,7 +86,7 @@ public class Batches extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result workerAndBatchManager(Long studyId) throws JatosGuiException {
+    public Result workerAndBatchManager(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
@@ -102,13 +95,11 @@ public class Batches extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
-        int allWorkersSize =
-                study.getBatchList().stream().mapToInt(b -> b.getWorkerList().size()).sum();
-        String breadcrumbs = breadcrumbsService.generateForStudy(study,
-                BreadcrumbsService.WORKER_AND_BATCH_MANAGER);
-        URL jatosURL = HttpUtils.getHostUrl();
+        int allWorkersSize = study.getBatchList().stream().mapToInt(b -> b.getWorkerList().size()).sum();
+        String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.WORKER_AND_BATCH_MANAGER);
+        URL realBaseUrl = HttpUtils.getRealBaseUrl(request);
         return ok(views.html.gui.workerAndBatch.workerAndBatchManager.render(loggedInUser,
-                breadcrumbs, HttpUtils.isLocalhost(), study, jatosURL, allWorkersSize));
+                breadcrumbs, HttpUtils.isLocalhost(), study, realBaseUrl, allWorkersSize));
     }
 
     /**
@@ -499,18 +490,46 @@ public class Batches extends Controller {
         JsonNode json = request().body().asJson();
         String comment = json.findPath("comment").asText().trim();
         int amount = json.findPath("amount").asInt();
-        List<Long> workerIdList;
+        List<String> studyRunUuidList;
         try {
-            List<? extends Worker> workerList =
-                    createAndPersistWorker.apply(comment, amount, batch);
-            workerIdList = workerList.stream().map(Worker::getId).collect(Collectors.toList());
+            List<? extends Worker> workerList = createAndPersistWorker.apply(comment, amount, batch);
+            studyRunUuidList = workerList.stream()
+                    .map(w -> new StudyRun(batch, w))
+                    .map(studyRunDao::create)
+                    .map(sr -> sr.getUuid().toString())
+                    .collect(Collectors.toList());
         } catch (BadRequestException e) {
             return badRequest(e.getMessage());
         } catch (Throwable e) {
             return internalServerError();
         }
 
-        return ok(jsonUtils.asJsonNode(workerIdList));
+        return ok(jsonUtils.asJsonNode(studyRunUuidList));
+    }
+
+    /**
+     * Ajax GET request: returns study run UUID for the given worker type that can be one of the 'general' ones
+     * (GeneralMultipleWorker, GeneralSingleWorker, MTWorker). This UUID is used on the client side to create the
+     * study run link. Since for the 'general' workers only one study run link exists per batch and worker type it
+     * only creates them anew if they are not stored in the StudyRun table.
+     */
+    @Transactional
+    @Authenticated
+    public Result createGeneralRun(Long studyId, Long batchId, String workerType) throws JatosGuiException {
+        Study study = studyDao.findById(studyId);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        Batch batch = batchDao.findById(batchId);
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStudyLocked(study);
+            checker.checkStandardForBatch(batch, study, batchId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        StudyRun sr = studyRunDao.findByBatchAndWorkerType(batch, workerType)
+                .orElseGet(() -> studyRunDao.create(new StudyRun(batch, workerType)));
+        return ok(sr.getUuid().toString());
     }
 
     /**

@@ -14,9 +14,7 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.StudyLogger;
-import models.common.Component;
-import models.common.Study;
-import models.common.User;
+import models.common.*;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.data.Form;
@@ -57,11 +55,13 @@ public class Studies extends Controller {
     private final AuthenticationService authenticationService;
     private final WorkerService workerService;
     private final BreadcrumbsService breadcrumbsService;
-    private final UserDao userDao;
+    private final BatchService batchService;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final StudyResultDao studyResultDao;
+    private final UserDao userDao;
     private final ComponentResultDao componentResultDao;
+    private final StudyRunDao studyRunDao;
     private final JsonUtils jsonUtils;
     private final IOUtils ioUtils;
     private final FormFactory formFactory;
@@ -70,8 +70,9 @@ public class Studies extends Controller {
     @Inject
     Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, StudyService studyService,
             UserService userService, AuthenticationService authenticationService, WorkerService workerService,
-            BreadcrumbsService breadcrumbsService, StudyDao studyDao, ComponentDao componentDao,
-            StudyResultDao studyResultDao, UserDao userDao, ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+            BreadcrumbsService breadcrumbsService, BatchService batchService, StudyDao studyDao,
+            ComponentDao componentDao, StudyResultDao studyResultDao, UserDao userDao,
+            ComponentResultDao componentResultDao, StudyRunDao studyRunDao, JsonUtils jsonUtils,
             IOUtils ioUtils, FormFactory formFactory, StudyLogger studyLogger) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -80,11 +81,13 @@ public class Studies extends Controller {
         this.authenticationService = authenticationService;
         this.workerService = workerService;
         this.breadcrumbsService = breadcrumbsService;
+        this.batchService = batchService;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.studyResultDao = studyResultDao;
-        this.componentResultDao = componentResultDao;
         this.userDao = userDao;
+        this.componentResultDao = componentResultDao;
+        this.studyRunDao = studyRunDao;
         this.jsonUtils = jsonUtils;
         this.ioUtils = ioUtils;
         this.formFactory = formFactory;
@@ -349,21 +352,28 @@ public class Studies extends Controller {
     }
 
     /**
-     * Actually runs the study with the given study ID, in the batch with the given batch ID while using a JatosWorker.
+     * Runs the study with the given study ID, in the batch with the given batch ID while using a JatosWorker.
      * It redirects to Publix.startStudy() action.
      */
     @Transactional
     @Authenticated
-    public Result runStudy(Long studyId, Long batchId) throws JatosGuiException {
+    public Result runStudy(Http.Request request, Long studyId, Long batchId)
+            throws JatosGuiException, NotFoundException {
         Study study = studyDao.findById(studyId);
+        Batch batch = batchService.fetchBatch(batchId, study);
         User loggedInUser = authenticationService.getLoggedInUser();
-        checkStandardForStudy(studyId, study, loggedInUser);
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForBatch(batch, study, batchId);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
 
-        session("jatos_run", "RUN_STUDY");
-        String startStudyUrl =
-                Common.getPlayHttpContext() + "publix/" + study.getId() + "/start?" + "batchId" + "=" + batchId + "&"
-                        + "jatosWorkerId" + "=" + loggedInUser.getWorker().getId();
-        return redirect(startStudyUrl);
+        // Get StudyRun and redirect to jatos-publix: start study
+        StudyRun sr = studyRunDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
+                .orElseGet(() -> studyRunDao.create(new StudyRun(batch, loggedInUser.getWorker())));
+        String runUrl = Common.getUrlWithBase("publix/" + sr.getUuid() + "/run");
+        return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 
     /**

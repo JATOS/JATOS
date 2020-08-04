@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, study: common.Study, jatosUrl: java.net.URL)
+@(loggedInUser: common.User, study: common.Study, realBaseUrl: java.net.URL)
 
 <!-- Template worker setup -->
 <div id="workerSetupTemplate" class="panel-group workerSetupItem" role="tablist" style="display: none">
@@ -708,9 +708,9 @@ function postGetWorkerLinksPersonal(url, showWorkerLinksModal, batch, workerSetu
         contentType: "application/json; charset=utf-8",
         dataType: 'text',
         data: JSON.stringify(jsonData),
-        success: function(workerIds) {
+        success: function(studyRunUuidList) {
             if (workerSetupDiv.length > 0) loadWorkers(batch.id, workerSetupDiv);
-            showWorkerLinksModal($.parseJSON(workerIds), batch);
+            showWorkerLinksModal($.parseJSON(studyRunUuidList), batch);
         },
         error : function(err) {
             showError(err.responseText);
@@ -729,12 +729,11 @@ $('#batchList').on('click', '.personalSingleWorkerSetup .linkButton', function()
     showShowWorkerLinksPersonalSingleModal(workerIds, batch);
 });
 
-function showShowWorkerLinksPersonalSingleModal(workerIds, batch) {
+function showShowWorkerLinksPersonalSingleModal(studyRunUuidList, batch) {
     var title = "Links for Personal Single workers in batch '" + batch.title + "'";
     var urls = [];
-    $.each(workerIds, function(i, workerId) {
-        urls.push("@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?"
-            + "batchId=" + batch.id + "&personalSingleWorkerId=" + workerId);
+    $.each(studyRunUuidList, function(i, uuid) {
+        urls.push("@realBaseUrl.toString()" + "publix/" + uuid + "/run");
     });
     var showRunButton = (urls.length == 1
             && batch.allowedWorkerTypes.includes("@common.workers.PersonalSingleWorker.WORKER_TYPE"));
@@ -760,12 +759,11 @@ $('#batchList').on('click', '.personalMultipleWorkerSetup .linkButton', function
     showShowWorkerLinksPersonalMultipleModal(workerIds, batch);
 });
 
-function showShowWorkerLinksPersonalMultipleModal(workerIds, batch) {
+function showShowWorkerLinksPersonalMultipleModal(studyRunUuidList, batch) {
     var title = "Links for Personal Multiple workers in batch '" + batch.title + "'";
     var urls = [];
-    $.each(workerIds, function(i, workerId) {
-        urls.push("@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?"
-            + "batchId=" + batch.id + "&personalMultipleWorkerId=" + workerId);
+    $.each(studyRunUuidList, function(i, uuid) {
+        urls.push("@realBaseUrl.toString()" + "publix/" + uuid + "/run");
     });
     var showRunButton = (urls.length == 1
             && batch.allowedWorkerTypes.includes("@common.workers.PersonalMultipleWorker.WORKER_TYPE"));
@@ -782,18 +780,33 @@ function showShowWorkerLinksPersonalMultipleModal(workerIds, batch) {
 
 $('#batchList').on('click', '.generalSingleWorkerSetup .linkButton', function() {
     var batch = getBatchData(this);
-    showShowWorkerLinksGeneralSingleModal(batch);
+    $.ajax({
+        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/generalSingleRun",
+        success: function(studyRunUuid) {
+            showShowWorkerLinksGeneralSingleModal(studyRunUuid, batch);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
 $('#batchList').on('click', '.generalMultipleWorkerSetup .linkButton', function() {
     var batch = getBatchData(this);
-    showShowWorkerLinksGeneralMultipleModal(batch);
+    $.ajax({
+        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/generalMultipleRun",
+        success: function(studyRunUuid) {
+            showShowWorkerLinksGeneralMultipleModal(studyRunUuid, batch);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
-function showShowWorkerLinksGeneralSingleModal(batch) {
+function showShowWorkerLinksGeneralSingleModal(studyRunUuid, batch) {
     var title = "Link for General Single workers in batch '" + batch.title + "'";
-    var url = "@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?" +
-        "batchId=" + batch.id + "&generalSingle";
+    var url = "@realBaseUrl.toString()" + "publix/" + studyRunUuid + "/run";
     var preText = "This URL will start the run.";
     var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE");
     var postText;
@@ -805,10 +818,9 @@ function showShowWorkerLinksGeneralSingleModal(batch) {
     showShowWorkerLinksModal(title, preText, [url], true, postText, showRunButton);
 }
 
-function showShowWorkerLinksGeneralMultipleModal(batch) {
+function showShowWorkerLinksGeneralMultipleModal(studyRunUuid, batch) {
     var title = "Link for General Multiple workers in batch '" + batch.title + "'";
-    var url = "@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?" +
-        "batchId=" + batch.id + "&generalMultiple";
+    var url = "@realBaseUrl.toString()" + "publix/" + studyRunUuid + "/run";
     var preText = "This URL will start the run.";
     var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE");
     var postText;

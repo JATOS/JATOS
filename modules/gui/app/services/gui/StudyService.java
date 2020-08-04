@@ -87,6 +87,7 @@ public class StudyService {
         clone.setLocked(false);
         clone.setGroupStudy(study.isGroupStudy());
         clone.setLinearStudy(study.isLinearStudy());
+        clone.setAllowPreview(study.isAllowPreview());
 
         // Clone each component
         for (Component component : study.getComponentList()) {
@@ -288,6 +289,10 @@ public class StudyService {
         study.setComments(updatedStudy.getComments());
         study.setEndRedirectUrl(updatedStudy.getEndRedirectUrl());
         study.setJsonData(updatedStudy.getJsonData());
+        study.setLinearStudy(updatedStudy.isLinearStudy());
+        study.setAllowPreview(updatedStudy.isAllowPreview());
+        study.setGroupStudy(updatedStudy.isGroupStudy());
+        study.setEndRedirectUrl(updatedStudy.getEndRedirectUrl());
     }
 
     /**
@@ -311,6 +316,7 @@ public class StudyService {
         study.setJsonData(studyProperties.getJsonData());
         study.setGroupStudy(studyProperties.isGroupStudy());
         study.setLinearStudy(studyProperties.isLinearStudy());
+        study.setAllowPreview(studyProperties.isAllowPreview());
     }
 
     /**
@@ -341,6 +347,7 @@ public class StudyService {
         studyProperties.setLocked(study.isLocked());
         studyProperties.setGroupStudy(study.isGroupStudy());
         studyProperties.setLinearStudy(study.isLinearStudy());
+        studyProperties.setAllowPreview(study.isAllowPreview());
         studyProperties.setDirName(study.getDirName());
         studyProperties.setComments(study.getComments());
         studyProperties.setEndRedirectUrl(study.getEndRedirectUrl());

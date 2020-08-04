@@ -22,10 +22,8 @@ public class IdCookieSerialiser {
         StringBuilder sb = new StringBuilder();
         appendCookieEntry(sb, IdCookieModel.BATCH_ID, idCookie.getBatchId(), true);
         appendCookieEntry(sb, IdCookieModel.COMPONENT_ID, idCookie.getComponentId(), true);
-        appendCookieEntry(sb, IdCookieModel.COMPONENT_POSITION, idCookie.getComponentPosition(),
-                true);
-        appendCookieEntry(sb, IdCookieModel.COMPONENT_RESULT_ID, idCookie.getComponentResultId(),
-                true);
+        appendCookieEntry(sb, IdCookieModel.COMPONENT_POSITION, idCookie.getComponentPosition(), true);
+        appendCookieEntry(sb, IdCookieModel.COMPONENT_RESULT_ID, idCookie.getComponentResultId(), true);
         appendCookieEntry(sb, IdCookieModel.CREATION_TIME, idCookie.getCreationTime(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_ASSETS, idCookie.getStudyAssets(), true);
         appendCookieEntry(sb, IdCookieModel.URL_BASE_PATH, idCookie.getUrlBasePath(), true);
@@ -33,6 +31,7 @@ public class IdCookieSerialiser {
         appendCookieEntry(sb, IdCookieModel.GROUP_RESULT_ID, idCookie.getGroupResultId(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_ID, idCookie.getStudyId(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_RESULT_ID, idCookie.getStudyResultId(), true);
+        appendCookieEntry(sb, IdCookieModel.STUDY_RESULT_UUID, idCookie.getStudyResultUuid(), true);
         appendCookieEntry(sb, IdCookieModel.WORKER_ID, idCookie.getWorkerId(), true);
         appendCookieEntry(sb, IdCookieModel.WORKER_TYPE, idCookie.getWorkerType(), false);
         return sb.toString();

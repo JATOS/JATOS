@@ -1,3 +1,4 @@
+@(request: Http.Request)
 <!DOCTYPE html>
 
 <html lang="en">
@@ -19,8 +20,9 @@
 <p>
 <b>Version</b>: @general.common.Common.getJatosVersion()<br>
 <b>Java</b>: @java.lang.System.getProperty("java.version")<br>
-<b>URL host</b>: @utils.common.HttpUtils.getHostUrl()<br>
+<b>URL host</b>: @utils.common.HttpUtils.getRealHostUrl(request)<br>
 <b>URL basepath</b>: @general.common.Common.getPlayHttpContext()<br>
+<b>URL host + basepath</b>: @utils.common.HttpUtils.getRealBaseUrl(request)<br>
 <b>Local basepath</b>: @general.common.Common.getBasepath()<br>
 <b>Study assets root path</b>: @general.common.Common.getStudyAssetsRootPath()<br>
 <b>Result uploads allowed</b>: @general.common.Common.isResultUploadsEnabled()<br>
@@ -45,7 +47,7 @@
 
 <h1>Tests</h1>
 <p>
-<b>Correct URL host</b>: <span id="testHostUrlResult"></span><br>
+<b>Correct URL host</b>: <span id="testRealHostUrlResult"></span><br>
 <b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
 <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
 <b>Acess internal cache</b>: <span id="testCacheResult"></span><br>
@@ -58,7 +60,7 @@
 
 <script>
 
-testHostUrl();
+testRealHostUrl();
 testDatabase();
 testStudyAssetsRootFolder();
 testCache();
@@ -68,15 +70,15 @@ testJatosJsViaAssetsPath();
 testHeartbeatJs();
 testWebSocket();
 
-function testHostUrl() {
-	var jatosHostUrl = "@utils.common.HttpUtils.getHostUrl()";
+function testRealHostUrl() {
+	var jatosHostUrl = "@utils.common.HttpUtils.getRealHostUrl(request)";
 	var browserUrl = window.location.origin;
 	if (jatosHostUrl == browserUrl) {
-		$('#testHostUrlResult').html('<font color="green">OK</font>');
+		$('#testRealHostUrlResult').html('<font color="green">OK</font>');
 	} else if (jatosHostUrl.replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
-	    $('#testHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
+	    $('#testRealHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
 	} else {
-		$('#testHostUrlResult').html('<font color="red">FAIL</font>');
+		$('#testRealHostUrlResult').html('<font color="red">FAIL</font>');
 	}
 }
 
@@ -135,7 +137,7 @@ function testJsonSerialization() {
 function testJatosJsViaStudyPath() {
 	$.ajax({
 		type: 'GET',
-		url: "@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos.js",
+		url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos.js")}',
 		dataType: "text",
 		success: function(result) {
 			$('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
@@ -149,7 +151,7 @@ function testJatosJsViaStudyPath() {
 function testJatosJsViaAssetsPath() {
 	$.ajax({
 		type: 'GET',
-		url: "@{general.common.Common.getPlayHttpContext()}assets/javascripts/jatos.js",
+		url: '@{general.common.Common.getUrlWithBase("assets/javascripts/jatos.js")}',
 		dataType: "text",
 		success: function(result) {
 			$('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
@@ -163,7 +165,7 @@ function testJatosJsViaAssetsPath() {
 function testHeartbeatJs() {
 	$.ajax({
 		type: 'GET',
-		url: "@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos-publix/javascripts/heartbeat.js",
+		url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos-publix/javascripts/heartbeat.js")},
 		dataType: "text",
 		success: function(result) {
 			$('#testHeartbeatJsResult').html('<font color="green">OK</font>');

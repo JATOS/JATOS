@@ -78,7 +78,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
         Http.Context.current().session().put(JatosPublix.SESSION_JATOS_RUN,
                 JatosRun.RUN_STUDY.name());
 
-        JatosRun jatosRun = jatosPublixUtils.retrieveJatosRunFromSession();
+        JatosRun jatosRun = jatosPublixUtils.fetchJatosRunFromSession();
 
         assertThat(jatosRun).isEqualTo(JatosRun.RUN_STUDY);
     }
@@ -88,7 +88,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
         testHelper.mockContext();
 
         try {
-            jatosPublixUtils.retrieveJatosRunFromSession();
+            jatosPublixUtils.fetchJatosRunFromSession();
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(

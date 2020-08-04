@@ -27,7 +27,7 @@ import scala.concurrent.duration._
   * each worker type.
   */
 abstract class GroupChannel[A <: Worker](components: ControllerComponents,
-                                         publixUtils: PublixUtils[A],
+                                         publixUtils: PublixUtils,
                                          studyAuthorisation:
                                          StudyAuthorisation[A]) extends AbstractController(components) {
 
@@ -59,33 +59,29 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     * Synchronized to prevent race conditions with group members joining, leaving, reassigning.
     */
   @throws(classOf[PublixException])
-  def join(studyId: Long, studyResultId: Long): StudyResult = synchronized {
-    logger.info(s".join: studyId $studyId, studyResultId $studyResultId")
-    val idCookie = idCookieService.getIdCookie(studyResultId)
-    val worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId)
-    val study = publixUtils.retrieveStudy(studyId)
-    val batch = publixUtils.retrieveBatch(idCookie.getBatchId)
-    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
+  def join(studyResult: StudyResult)(implicit request: RequestHeader): Unit = synchronized {
+    logger.info(s".join: studyResult ${studyResult.getId}")
+    val worker = studyResult.getWorker.asInstanceOf[A]
+    val study = studyResult.getStudy
+    val batch = studyResult.getBatch
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().asJava, worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
-    val studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId)
 
     if (studyResult.getHistoryGroupResult != null) {
       logger.info(s".join: It's not allowed to join a group after it was explicitly left " +
-          s"(studyId $studyId, studyResultId $studyResultId)."
-      )
+        s"(studyResult ${studyResult.getId}).")
       throw new ForbiddenPublixException("It's not allowed to join a group after it was explicitly left.")
     }
 
     if (studyResult.getActiveGroupResult != null)
-      logger.info(s".join: studyId $studyId, workerId ${idCookie.getWorkerId}" +
-          s" already member of group ${studyResult.getActiveGroupResult.getId}")
+      logger.info(s".join: studyResult ${studyResult.getId}, workerId ${worker.getId}" +
+        s" already member of group ${studyResult.getActiveGroupResult.getId}")
     else {
       val groupResult = groupAdministration.join(studyResult, batch)
       sendJoinedMsg(studyResult)
-      logger.info(s".join: studyId $studyId, workerId ${idCookie.getWorkerId} joined group ${groupResult.getId}")
+      logger.info(s".join: studyResult ${studyResult.getId}, workerId ${worker.getId} " +
+        s"joined group ${groupResult.getId}")
     }
-
-    studyResult
   }
 
   /**
@@ -111,19 +107,17 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     * members joining, leaving, reassigning.
     */
   @throws(classOf[PublixException])
-  def reassign(studyId: Long, studyResultId: Long): Result = synchronized {
-    logger.info(s".reassign: studyId $studyId, studyResultId $studyResultId")
-    val idCookie = idCookieService.getIdCookie(studyResultId)
-    val worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId)
-    val study = publixUtils.retrieveStudy(studyId)
-    val batch = publixUtils.retrieveBatch(idCookie.getBatchId)
-    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
+  def reassign(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
+    logger.info(s".reassign: studyResultId ${studyResult.getId}")
+    val worker = studyResult.getWorker.asInstanceOf[A]
+    val study = studyResult.getStudy
+    val batch = studyResult.getBatch
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.asJava, worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
-    val studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId)
 
     if (studyResult.getHistoryGroupResult != null) {
       logger.info(s".reassign: It's not allowed to run a group study twice in the same study run " +
-          s"(studyId $studyId, studyResultId $studyResultId).")
+        s"(studyResult ${studyResult.getId}).")
       return Forbidden
     }
 
@@ -134,7 +128,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
         return Forbidden(msg)
       case Right(differentGroupResult) =>
         reassignGroupChannel(studyResult, currentGroupResult, differentGroupResult)
-        logger.info(s".reassign: studyId $studyId, workerId ${idCookie.getWorkerId} reassigned from group" +
+        logger.info(s".reassign: studyResult ${studyResult.getId}, workerId ${worker.getId} reassigned from group" +
           s" ${currentGroupResult.getId} to group ${differentGroupResult.getId}")
     }
     Ok(" ") // jQuery.ajax cannot handle empty responses
@@ -145,23 +139,22 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     * prevent race conditions with group members joining, leaving, reassigning.
     */
   @throws(classOf[PublixException])
-  def leave(studyId: Long, studyResultId: Long): Result = synchronized {
-    logger.info(s".leave: studyId $studyId, studyResultId $studyResultId")
-    val idCookie = idCookieService.getIdCookie(studyResultId)
-    val worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId)
-    val study = publixUtils.retrieveStudy(studyId)
-    val batch = publixUtils.retrieveBatch(idCookie.getBatchId)
-    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
-    val studyResult = publixUtils.retrieveStudyResult(worker, study, studyResultId)
+  def leave(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
+    logger.info(s".leave: studyResultId ${studyResult.getId}")
+    val worker = studyResult.getWorker.asInstanceOf[A]
+    val study = studyResult.getStudy
+    val batch = studyResult.getBatch
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.asJava, worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null) {
-      logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} isn't member of a group - can't leave.")
+      logger.info(s".leave: studyResult ${studyResult.getId}, workerId ${worker.getId} " +
+        s"isn't member of a group - can't leave.")
       return Ok(" ") // jQuery.ajax cannot handle empty responses
     }
 
     closeGroupChannelAndLeaveGroup(studyResult)
-    logger.info(s".leave: studyId $studyId, workerId ${idCookie.getWorkerId} left group ${groupResult.getId}")
+    logger.info(s".leave: studyResult ${studyResult.getId}, workerId ${worker.getId} left group ${groupResult.getId}")
     Ok(" ") // jQuery.ajax cannot handle empty responses
   }
 
@@ -235,7 +228,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   private def getDispatcher(groupResultId: Long): Option[ActorRef] = {
     val future = groupDispatcherRegistry ? Get(groupResultId)
     Await.result(future, timeout.duration).asInstanceOf[ItsThisOne]
-        .groupDispatcherOption
+      .groupDispatcherOption
   }
 
   /**
@@ -245,7 +238,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   private def getOrCreateDispatcher(groupResultId: Long): ActorRef = {
     val future = groupDispatcherRegistry ? GetOrCreate(groupResultId)
     Await.result(future, timeout.duration).asInstanceOf[ItsThisOne]
-        .groupDispatcherOption.get
+      .groupDispatcherOption.get
   }
 
   /**
@@ -268,38 +261,38 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
 
 @Singleton
 class JatosGroupChannel @Inject()(components: ControllerComponents,
-                                  publixUtils: JatosPublixUtils,
+                                  publixUtils: PublixUtils,
                                   studyAuthorisation: JatosStudyAuthorisation)
-    extends GroupChannel[JatosWorker](components, publixUtils, studyAuthorisation)
+  extends GroupChannel[JatosWorker](components, publixUtils, studyAuthorisation)
 
 @Singleton
 class PersonalSingleGroupChannel @Inject()(components: ControllerComponents,
-                                           publixUtils: PersonalSinglePublixUtils,
+                                           publixUtils: PublixUtils,
                                            studyAuthorisation: PersonalSingleStudyAuthorisation)
-    extends GroupChannel[PersonalSingleWorker](components, publixUtils, studyAuthorisation)
+  extends GroupChannel[PersonalSingleWorker](components, publixUtils, studyAuthorisation)
 
 
 @Singleton
 class PersonalMultipleGroupChannel @Inject()(components: ControllerComponents,
-                                             publixUtils: PersonalMultiplePublixUtils,
+                                             publixUtils: PublixUtils,
                                              studyAuthorisation: PersonalMultipleStudyAuthorisation)
-    extends GroupChannel[PersonalMultipleWorker](components, publixUtils, studyAuthorisation)
+  extends GroupChannel[PersonalMultipleWorker](components, publixUtils, studyAuthorisation)
 
 @Singleton
 class GeneralSingleGroupChannel @Inject()(components: ControllerComponents,
-                                          publixUtils: GeneralSinglePublixUtils,
+                                          publixUtils: PublixUtils,
                                           studyAuthorisation: GeneralSingleStudyAuthorisation)
-    extends GroupChannel[GeneralSingleWorker](components, publixUtils, studyAuthorisation)
+  extends GroupChannel[GeneralSingleWorker](components, publixUtils, studyAuthorisation)
 
 @Singleton
 class GeneralMultipleGroupChannel @Inject()(components: ControllerComponents,
-                                            publixUtils: GeneralMultiplePublixUtils,
+                                            publixUtils: PublixUtils,
                                             studyAuthorisation: GeneralMultipleStudyAuthorisation)
-    extends GroupChannel[GeneralMultipleWorker](components, publixUtils, studyAuthorisation)
+  extends GroupChannel[GeneralMultipleWorker](components, publixUtils, studyAuthorisation)
 
 // Handles both MTWorker and MTSandboxWorker
 @Singleton
 class MTGroupChannel @Inject()(components: ControllerComponents,
-                               publixUtils: MTPublixUtils,
+                               publixUtils: PublixUtils,
                                studyAuthorisation: MTStudyAuthorisation)
-    extends GroupChannel[MTWorker](components, publixUtils, studyAuthorisation)
+  extends GroupChannel[MTWorker](components, publixUtils, studyAuthorisation)

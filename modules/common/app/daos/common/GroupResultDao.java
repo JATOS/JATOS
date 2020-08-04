@@ -59,14 +59,6 @@ public class GroupResultDao extends AbstractDao {
         return result.intValue();
     }
 
-    public List<GroupResult> findAllStartedByBatch(Batch batch) {
-        String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch "
-                + "AND gr.groupState=:groupState ";
-        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr, GroupResult.class);
-        return query.setParameter("batch", batch)
-                .setParameter("groupState", GroupState.STARTED).getResultList();
-    }
-
     /**
      * Searches the database for GroupResults that fit the criteria: 1) are in the given batch, 2) are in state STARTED,
      * 3) where the activeMemberCount < Batch's maxActiveMembers, 3) activeMemberCount + historyMemberCount < Batch's
@@ -78,7 +70,8 @@ public class GroupResultDao extends AbstractDao {
      */
     public List<GroupResult> findAllMaxNotReached(Batch batch) {
         String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
-                + "WHERE gr.batch=:batch AND b.id=:batch "
+                + "WHERE gr.batch=:batch "
+                + "AND b.id=:batch "
                 + "AND gr.groupState=:groupState "
                 + "AND (b.maxActiveMembers is null OR gr.activeMemberCount < b.maxActiveMembers) "
                 + "AND (b.maxTotalMembers is null OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "

@@ -39,6 +39,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String LOCKED = "locked";
     public static final String LINEAR_STUDY_FLOW = "linearStudy";
     public static final String END_REDIRECT_URL = "endRedirectUrl";
+    public static final String ALLOW_PREVIEW = "allowPreview";
 
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
             "public", "assets", "study_assets_root", "study_assets"};
@@ -77,6 +78,11 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
      * components).
      */
     private boolean linearStudy = false;
+
+    /**
+     * If true, allows a preview of the first component of the study
+     */
+    private boolean allowPreview = false;
 
     /**
      * Study assets directory name
@@ -191,6 +197,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
 
     public void setLinearStudy(boolean linearStudy) {
         this.linearStudy = linearStudy;
+    }
+
+    public boolean isAllowPreview() {
+        return allowPreview;
+    }
+
+    public void setAllowPreview(boolean allowPreview) {
+        this.allowPreview = allowPreview;
     }
 
     public String getJsonData() {

@@ -12,6 +12,8 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static models.common.StudyResult.StudyState;
 
@@ -46,6 +48,15 @@ public class StudyResultDao extends AbstractDao {
 
     public StudyResult findById(Long id) {
         return jpa.em().find(StudyResult.class, id);
+    }
+
+    public Optional<StudyResult> findByUuid(UUID uuid) {
+        List<StudyResult> studyResult = jpa.em()
+                .createQuery("SELECT sr FROM StudyResult sr WHERE sr.uuid =:uuid", StudyResult.class)
+                .setParameter("uuid", uuid)
+                .setMaxResults(1)
+                .getResultList();
+        return !studyResult.isEmpty() ? Optional.of(studyResult.get(0)) : Optional.empty();
     }
 
     /**

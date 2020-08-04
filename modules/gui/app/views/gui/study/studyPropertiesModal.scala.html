@@ -93,6 +93,18 @@
                             <input type="hidden" name="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" value="false" />
                         </div>
                     </div>
+
+                    <div class="form-group row">
+                        <label class="text-right col-xs-2">
+                            Allow preview <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip"
+                            title="Allows a preview of the study run: the study run link can be used multiple times by the worker as long as the run does not go further than the first component. As soon as the second component is started the usual worker restrictions apply. A preview works only with @common.workers.PersonalSingleWorker.UI_WORKER_TYPE, @common.workers.GeneralSingleWorker.UI_WORKER_TYPE, @common.workers.JatosWorker.UI_WORKER_TYPE type workers."></span>
+                        </label>
+                        <div class="col-xs-10">
+                            <input type="checkbox" class="@models.gui.StudyProperties.ALLOW_PREVIEW" name="@models.gui.StudyProperties.ALLOW_PREVIEW" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.StudyProperties.ALLOW_PREVIEW" value="false" />
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -188,6 +200,7 @@ function fillStudyPropertiesForm(properties) {
     }
     $('#studyPropertiesModal .@models.gui.StudyProperties.GROUP_STUDY').prop('checked', properties['@models.gui.StudyProperties.GROUP_STUDY']);
     $('#studyPropertiesModal .@models.gui.StudyProperties.LINEAR_STUDY_FLOW').prop('checked', properties['@models.gui.StudyProperties.LINEAR_STUDY_FLOW']);
+    $('#studyPropertiesModal .@models.gui.StudyProperties.ALLOW_PREVIEW').prop('checked', properties['@models.gui.StudyProperties.ALLOW_PREVIEW']);
     $('#studyPropertiesModal .confirmed').val("Save");
     $('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", properties['@models.gui.StudyProperties.LOCKED']);
     if (properties['@models.gui.StudyProperties.LOCKED']) {

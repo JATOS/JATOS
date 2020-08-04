@@ -8,22 +8,20 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
-import models.common.Batch;
-import models.common.Component;
-import models.common.Study;
-import models.common.StudyResult;
+import models.common.*;
 import models.common.workers.GeneralMultipleWorker;
 import models.common.workers.PersonalMultipleWorker;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
+import play.mvc.Http;
 import play.mvc.Result;
+import services.publix.PublixErrorMessages;
+import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.idcookie.IdCookieService;
-import services.publix.workers.GeneralMultiplePublixUtils;
 import services.publix.workers.GeneralMultipleStudyAuthorisation;
-import services.publix.workers.PersonalMultipleErrorMessages;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -43,19 +41,19 @@ public class GeneralMultiplePublix extends Publix<GeneralMultipleWorker> impleme
 
     public static final String GENERALMULTIPLE = "generalMultiple";
 
-    private final GeneralMultiplePublixUtils publixUtils;
+    private final PublixUtils publixUtils;
     private final GeneralMultipleStudyAuthorisation studyAuthorisation;
     private final ResultCreator resultCreator;
     private final WorkerCreator workerCreator;
     private final StudyLogger studyLogger;
 
     @Inject
-    GeneralMultiplePublix(JPAApi jpa, GeneralMultiplePublixUtils publixUtils,
+    GeneralMultiplePublix(JPAApi jpa, PublixUtils publixUtils,
             GeneralMultipleStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator, WorkerCreator workerCreator,
             GeneralMultipleGroupChannel groupChannel,
             IdCookieService idCookieService,
-            PersonalMultipleErrorMessages errorMessages,
+            PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
@@ -70,24 +68,27 @@ public class GeneralMultiplePublix extends Publix<GeneralMultipleWorker> impleme
     }
 
     @Override
-    public Result startStudy(Long studyId, Long batchId) throws PublixException {
-        LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId " + batchId);
-        Study study = publixUtils.retrieveStudy(studyId);
-        Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
-
+    public Result startStudy(Http.Request request, StudyRun studyRun) throws PublixException {
+        Batch batch = studyRun.getBatch();
+        Study study = batch.getStudy();
         GeneralMultipleWorker worker = workerCreator.createAndPersistGeneralMultipleWorker(batch);
-        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-        LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
-                + batchId + ") " + "assigned to worker with ID " + worker.getId());
+        studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+
         publixUtils.finishOldestStudyResult();
-        StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
-        publixUtils.setUrlQueryParameter(studyResult);
-        idCookieService.writeIdCookie(worker, batch, studyResult);
+        StudyResult studyResult = resultCreator.createStudyResult(studyRun, worker);
+        publixUtils.setUrlQueryParameter(request, studyResult);
+        idCookieService.writeIdCookie(studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
+
+        LOGGER.info(".startStudy: studyRunUuid " + studyRun.getUuid() + ", "
+                + "studyResultId" + studyResult.getId() + ", "
+                + "studyId " + study.getId() + ", "
+                + "batchId " + batch.getId() + ", "
+                + "workerId " + worker.getId());
         studyLogger.log(study, "Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE
                 + " worker", batch, worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyId, firstComponent.getId(), studyResult.getId(), null));
+                studyResult.getUuid().toString(), firstComponent.getUuid(), null));
     }
 
 }

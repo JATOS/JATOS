@@ -84,29 +84,25 @@ public class IdCookieService {
      * Generates an ID cookie from the given parameters and sets it in the
      * response object.
      */
-    public void writeIdCookie(Worker worker, Batch batch,
-            StudyResult studyResult) throws InternalServerErrorPublixException {
-        writeIdCookie(worker, batch, studyResult, null, null);
+    public void writeIdCookie(StudyResult studyResult) throws InternalServerErrorPublixException {
+        writeIdCookie(studyResult, null, null);
     }
 
     /**
      * Generates an ID cookie from the given parameters and sets it in the
      * response object.
      */
-    public void writeIdCookie(Worker worker, Batch batch,
-            StudyResult studyResult, ComponentResult componentResult)
+    public void writeIdCookie(StudyResult studyResult, ComponentResult componentResult)
             throws InternalServerErrorPublixException {
-        writeIdCookie(worker, batch, studyResult, componentResult, null);
+        writeIdCookie(studyResult, componentResult, null);
     }
 
     /**
      * Generates an ID cookie from the given parameters and sets it in the
      * response object.
      */
-    public void writeIdCookie(Worker worker, Batch batch,
-            StudyResult studyResult, JatosRun jatosRun)
-            throws InternalServerErrorPublixException {
-        writeIdCookie(worker, batch, studyResult, null, jatosRun);
+    public void writeIdCookie(StudyResult studyResult, JatosRun jatosRun) throws InternalServerErrorPublixException {
+        writeIdCookie(studyResult, null, jatosRun);
     }
 
     /**
@@ -117,28 +113,24 @@ public class IdCookieService {
      * InternalServerErrorPublixException (should never happen). The deletion of
      * the oldest cookie must have happened beforehand.
      */
-    public void writeIdCookie(Worker worker, Batch batch,
-            StudyResult studyResult, ComponentResult componentResult,
-            JatosRun jatosRun) throws InternalServerErrorPublixException {
+    public void writeIdCookie(StudyResult studyResult, ComponentResult componentResult, JatosRun jatosRun)
+            throws InternalServerErrorPublixException {
         IdCookieCollection idCookieCollection = getIdCookieCollection();
         try {
             String newIdCookieName;
 
             // Check if there is an existing IdCookie for this StudyResult
-            IdCookieModel existingIdCookie = idCookieCollection
-                    .findWithStudyResultId(studyResult.getId());
+            IdCookieModel existingIdCookie = idCookieCollection.findWithStudyResultId(studyResult.getId());
             if (existingIdCookie != null) {
                 newIdCookieName = existingIdCookie.getName();
             } else {
                 newIdCookieName = getNewIdCookieName(idCookieCollection);
             }
 
-            IdCookieModel newIdCookie = buildIdCookie(newIdCookieName, batch,
-                    studyResult, componentResult, worker, jatosRun);
+            IdCookieModel newIdCookie = buildIdCookie(newIdCookieName, studyResult, componentResult, jatosRun);
 
             idCookieAccessor.write(newIdCookie);
-        } catch (IdCookieCollectionFullException
-                | IdCookieAlreadyExistsException e) {
+        } catch (IdCookieCollectionFullException | IdCookieAlreadyExistsException e) {
             // Should never happen since we check in front
             throw new InternalServerErrorPublixException(e.getMessage());
         }
@@ -164,11 +156,12 @@ public class IdCookieService {
      * ComponentResult and GroupResult (stored in StudyResult). All others must
      * not be null.
      */
-    private IdCookieModel buildIdCookie(String name, Batch batch,
-            StudyResult studyResult, ComponentResult componentResult,
-            Worker worker, JatosRun jatosRun) {
+    private IdCookieModel buildIdCookie(String name, StudyResult studyResult, ComponentResult componentResult,
+            JatosRun jatosRun) {
         IdCookieModel idCookie = new IdCookieModel();
         Study study = studyResult.getStudy();
+        Batch batch = studyResult.getBatch();
+        Worker worker = studyResult.getWorker();
 
         // ComponentResult might not yet be created
         if (componentResult != null) {
@@ -191,6 +184,7 @@ public class IdCookieService {
         idCookie.setName(name);
         idCookie.setStudyId(study.getId());
         idCookie.setStudyResultId(studyResult.getId());
+        idCookie.setStudyResultUuid(studyResult.getUuid().toString());
         idCookie.setWorkerId(worker.getId());
         idCookie.setWorkerType(worker.getWorkerType());
         idCookie.setJatosRun(jatosRun);
@@ -231,7 +225,7 @@ public class IdCookieService {
     public IdCookieModel getOldestIdCookie()
             throws InternalServerErrorPublixException {
         IdCookieCollection idCookieCollection = getIdCookieCollection();
-        Long oldest = Long.MAX_VALUE;
+        long oldest = Long.MAX_VALUE;
         IdCookieModel oldestIdCookie = null;
         for (IdCookieModel idCookie : idCookieCollection.getAll()) {
             Long creationTime = idCookie.getCreationTime();

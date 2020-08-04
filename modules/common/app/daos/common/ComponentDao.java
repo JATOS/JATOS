@@ -48,19 +48,30 @@ public class ComponentDao extends AbstractDao {
     }
 
     /**
+     * Finds the component with this UUID
+     */
+    public Optional<Component> findByUuid(String uuid) {
+        String queryStr = "SELECT c FROM Component c WHERE c.uuid=:uuid";
+        List<Component> componentList = jpa.em().createQuery(queryStr, Component.class)
+                .setParameter("uuid", uuid)
+                .setMaxResults(1)
+                .getResultList();
+        return !componentList.isEmpty() ? Optional.of(componentList.get(0)) : Optional.empty();
+    }
+
+    /**
      * Searches for components with this UUID within the study with the given
      * ID.
      */
     public Optional<Component> findByUuid(String uuid, Study study) {
         String queryStr = "SELECT c FROM Component c WHERE "
                 + "c.uuid=:uuid and c.study=:study";
-        TypedQuery<Component> query = jpa.em().createQuery(queryStr, Component.class);
-        query.setParameter("uuid", uuid);
-        query.setParameter("study", study);
-        // There can be only one component with this UUID
-        query.setMaxResults(1);
-        List<Component> studyList = query.getResultList();
-        return !studyList.isEmpty() ? Optional.of(studyList.get(0)) : Optional.empty();
+        List<Component> componentList = jpa.em().createQuery(queryStr, Component.class)
+                .setParameter("uuid", uuid)
+                .setParameter("study", study)
+                .setMaxResults(1)
+                .getResultList();
+        return !componentList.isEmpty() ? Optional.of(componentList.get(0)) : Optional.empty();
     }
 
     /**

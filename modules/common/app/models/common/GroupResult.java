@@ -11,17 +11,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Model and DB entity of a group result. A group result defines some properties and who's member in a group of a group
+ * DB entity of a group result. A group result defines some properties and who's member in a group of a group
  * study.
- * <p>
+ *
  * Members of a GroupResult (or just group) are the StudyResults and not the workers. But a studyResult is always
  * associated with a Worker.
- * <p>
+ *
  * A member (StudyResult) can join a group (GroupResult) or leave a group.
- * <p>
+ *
  * An active member is a StudyResult who joined a group and is in the activeMemberList. A past member is in the
  * historyMemberList.
- * <p>
+ *
  * 'Group result' and 'group' are used interchangeably.
  *
  * @author Kristian Lange

@@ -140,6 +140,7 @@ public class JsonUtils {
         for (Component component : study.getComponentList()) {
             ObjectNode componentNode = Json.mapper().createObjectNode();
             componentNode.put("id", component.getId());
+            componentNode.put("uuid", component.getUuid());
             componentNode.put("title", component.getTitle());
             componentNode.put("active", component.isActive());
             componentNode.put("reloadable", component.isReloadable());

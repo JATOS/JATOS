@@ -1,5 +1,7 @@
 package services.publix;
 
+import controllers.publix.Publix;
+import controllers.publix.workers.JatosPublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.*;
@@ -10,10 +12,12 @@ import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
+import play.mvc.Http;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -26,7 +30,7 @@ import java.util.stream.Collectors;
  *
  * @author Kristian Lange
  */
-public abstract class PublixUtils<T extends Worker> {
+public class PublixUtils {
 
     private static final Logger.ALogger LOGGER = Logger.of(PublixUtils.class);
 
@@ -40,16 +44,18 @@ public abstract class PublixUtils<T extends Worker> {
     private final ComponentResultDao componentResultDao;
     private final WorkerDao workerDao;
     private final BatchDao batchDao;
+    private final UserDao userDao;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
 
+    @Inject
     public PublixUtils(ResultCreator resultCreator,
             IdCookieService idCookieService,
             GroupAdministration groupAdministration,
             PublixErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
-            BatchDao batchDao, StudyLogger studyLogger, IOUtils ioUtils) {
+            BatchDao batchDao, UserDao userDao, StudyLogger studyLogger, IOUtils ioUtils) {
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.groupAdministration = groupAdministration;
@@ -60,16 +66,10 @@ public abstract class PublixUtils<T extends Worker> {
         this.componentResultDao = componentResultDao;
         this.workerDao = workerDao;
         this.batchDao = batchDao;
+        this.userDao = userDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
     }
-
-    /**
-     * Like {@link #retrieveWorker(Long)} but returns a concrete
-     * implementation of the abstract Worker class
-     */
-    public abstract T retrieveTypedWorker(Long workerId)
-            throws ForbiddenPublixException;
 
     /**
      * Retrieves the worker with the given worker ID from the DB.
@@ -77,8 +77,7 @@ public abstract class PublixUtils<T extends Worker> {
     public Worker retrieveWorker(Long workerId) throws ForbiddenPublixException {
         Worker worker = workerDao.findById(workerId);
         if (worker == null) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.workerNotExist(workerId));
+            throw new ForbiddenPublixException("A worker with ID " + workerId + " doesn't exist.");
         }
         return worker;
     }
@@ -257,26 +256,21 @@ public abstract class PublixUtils<T extends Worker> {
         }
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         if (studyResult == null) {
-            throw new BadRequestPublixException(
-                    PublixErrorMessages.STUDY_RESULT_DOESN_T_EXIST);
+            throw new BadRequestPublixException(PublixErrorMessages.STUDY_RESULT_DOESN_T_EXIST);
         }
         // Check that the given worker actually did this study result
         if (!worker.getStudyResultList().contains(studyResult)) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.workerNeverDidStudy(worker, study.getId()));
+            throw new ForbiddenPublixException(PublixErrorMessages.workerNeverDidStudy(worker, study.getId()));
         }
         // Check that this study result belongs to the given study
         if (!studyResult.getStudy().getId().equals(study.getId())) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
+            throw new ForbiddenPublixException(PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
         }
         // Check that this study result isn't finished
         if (PublixHelpers.studyDone(studyResult)) {
-            throw new ForbiddenPublixException(
-                    PublixErrorMessages.workerFinishedStudyAlready(worker, study.getId()));
+            throw new ForbiddenPublixException(PublixErrorMessages.workerFinishedStudyAlready(worker, study.getId()));
         }
         return studyResult;
-
     }
 
     /**
@@ -427,21 +421,6 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     /**
-     * Gets the batch with given ID from the database or if the batchId is -1
-     * returns the default batch of this study. If the batch doesn't exist it throws an
-     * NotFoundPublixException.
-     */
-    public Batch retrieveBatchByIdOrDefault(Long batchId, Study study)
-            throws NotFoundPublixException {
-        if (batchId == -1) {
-            // The default batch is always the first one in study's batch list
-            return study.getDefaultBatch();
-        } else {
-            return retrieveBatch(batchId);
-        }
-    }
-
-    /**
      * Retrieves batch from database. If the batch doesn't exist it throws an
      * NotFoundPublixException.
      */
@@ -458,27 +437,23 @@ public abstract class PublixUtils<T extends Worker> {
      * state PRE and the study result moved away from the first active component (this
      * means the given componentId isn't the first component's one).
      */
-    public void setPreStudyStateByComponentId(StudyResult studyResult, Study study,
-            Long componentId) throws NotFoundPublixException {
+    public void setPreStudyStateByComponentId(StudyResult studyResult, Study study, Component component)
+            throws NotFoundPublixException {
         if (studyResult.getStudyState() == StudyState.PRE
-                && !retrieveFirstActiveComponent(study).getId().equals(componentId)) {
+                && !retrieveFirstActiveComponent(study).getId().equals(component.getId())) {
             studyResult.setStudyState(StudyState.STARTED);
         }
         studyResultDao.update(studyResult);
     }
 
     /**
-     * Gets the URL query parameters without the JATOS specific ones. Since the JATOS specific ones
-     * vary from worker to worker the method is defined in the worker-specific sub-classes.
-     */
-    protected abstract Map<String, String> getNonJatosUrlQueryParameters();
-
-    /**
      * Get query string parameters from the calling URL and put them into the field
      * urlQueryParameters in StudyResult as a JSON string.
      */
-    public StudyResult setUrlQueryParameter(StudyResult studyResult) {
-        String parameter = JsonUtils.asJson(getNonJatosUrlQueryParameters());
+    public StudyResult setUrlQueryParameter(Http.Request request, StudyResult studyResult) {
+        Map<String, String> queryMap = new HashMap<>();
+        request.queryString().forEach((k, v) -> queryMap.put(k, v[0]));
+        String parameter = JsonUtils.asJson(queryMap);
         studyResult.setUrlQueryParameters(parameter);
         return studyResult;
     }
@@ -489,7 +464,8 @@ public abstract class PublixUtils<T extends Worker> {
      * reloaded components) it returns the file uploaded last. If component is not given (equals null) it searches all
      * component results of this study result for a file with this filename and returns the one that was uploaded last.
      */
-    public Optional<File> retrieveLastUploadedResultFile(StudyResult studyResult, Component component, String filename) {
+    public Optional<File> retrieveLastUploadedResultFile(StudyResult studyResult, Component component,
+            String filename) {
         List<ComponentResult> componentResultList;
         if (component != null) {
             componentResultList = studyResult.getComponentResultList().stream()
@@ -507,6 +483,35 @@ public abstract class PublixUtils<T extends Worker> {
             }
         } catch (IOException ignore) {}
         return Optional.empty();
+    }
+
+    /**
+     * Retrieves the currently logged-in user or throws an ForbiddenPublixException if none is logged-in.
+     */
+    public User retrieveLoggedInUser(Http.Request request) throws ForbiddenPublixException {
+        String normalizedUsername = request.session().getOptional(JatosPublix.SESSION_USERNAME)
+                .orElseThrow(() -> new ForbiddenPublixException("No user logged in"));
+
+        User loggedInUser = userDao.findByUsername(normalizedUsername);
+        if (loggedInUser == null) {
+            throw new ForbiddenPublixException("User " + normalizedUsername + " doesn't exist.");
+        }
+        return loggedInUser;
+    }
+
+    /**
+     * Retrieves the JatosRun object that maps to the jatos run parameter in the session.
+     */
+    public JatosPublix.JatosRun fetchJatosRunFromSession(Http.Request request)
+            throws ForbiddenPublixException, BadRequestPublixException {
+        String sessionValue = request.session().getOptional("jatos_run")
+                .orElseThrow(() -> new ForbiddenPublixException("This study or component was never started in JATOS."));
+
+        try {
+            return JatosPublix.JatosRun.valueOf(sessionValue);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new BadRequestPublixException("Malformed session parameter 'jatos_run'");
+        }
     }
 
 }

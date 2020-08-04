@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
+import daos.common.StudyRunDao;
 import daos.common.worker.WorkerDao;
+import exceptions.gui.NotFoundException;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Study;
@@ -34,16 +36,18 @@ public class BatchService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final GroupResultDao groupResultDao;
+    private final StudyRunDao studyRunDao;
     private final StudyLogger studyLogger;
 
     @Inject
     BatchService(ResultRemover resultRemover, BatchDao batchDao, StudyDao studyDao,
-            WorkerDao workerDao, GroupResultDao groupResultDao, StudyLogger studyLogger) {
+            WorkerDao workerDao, GroupResultDao groupResultDao, StudyRunDao studyRunDao, StudyLogger studyLogger) {
         this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.groupResultDao = groupResultDao;
+        this.studyRunDao = studyRunDao;
         this.studyLogger = studyLogger;
     }
 
@@ -203,6 +207,22 @@ public class BatchService {
     }
 
     /**
+     * Gets the batch with given ID from the database or if the batchId is -1
+     * returns the default batch of this study. If the batch doesn't exist it throws an
+     * NotFoundPublixException.
+     */
+    public Batch fetchBatch(Long batchId, Study study) throws NotFoundException {
+        if (batchId == -1) {
+            // The default batch is always the first one in study's batch list
+            return study.getDefaultBatch();
+        } else {
+            Batch batch = batchDao.findById(batchId);
+            if (batch == null) throw new NotFoundException("Batch with ID " + batchId + " does not exist");
+            return batch;
+        }
+    }
+
+    /**
      * Removes batch, all it's StudyResults, ComponentResults, GroupResults and
      * Workers (if they don't belong to an other batch) and persists the changes
      * to the database.
@@ -212,6 +232,9 @@ public class BatchService {
         Study study = batch.getStudy();
         study.removeBatch(batch);
         studyDao.update(study);
+
+        // Delete all StudyRuns that belong to this Batch
+        studyRunDao.removeAllByBatch(batch);
 
         // Delete all StudyResults and all ComponentResults
         resultRemover.removeAllStudyResults(batch, loggedinUser);

@@ -6,25 +6,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * Domain model /entity of a study result. It's used for JSON marshalling and JPA persistance. A study result
- * essentially stores the state and the result of a study run.
+ * DB entity of a study result. It's used for JSON marshalling and JPA persistance. A study result
+ * essentially stores the state and the result of a study run. It has an index on id and uuid, since both are used
+ * identifier.
  *
  * @author Kristian Lange
  */
 @Entity
-@Table(name = "StudyResult")
+@Table(name = "StudyResult", indexes = { @Index(columnList = "uuid") })
 @JsonPropertyOrder(value = { "id", "startDate", "worker", "confirmationCode", "studyState", "errorMsg", "abortMsg" })
 public class StudyResult {
 
     @Id
     @GeneratedValue
     private Long id;
+
+    @Type(type = "uuid-char")
+    private UUID uuid;
 
     /**
      * Time and date when the study was started on the server.
@@ -104,7 +109,12 @@ public class StudyResult {
     private List<ComponentResult> componentResultList = new ArrayList<>();
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "studyRun_uuid")
+    private StudyRun studyRun;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "worker_id", insertable = false, updatable = false, nullable = false)
     private Worker worker;
 
@@ -143,10 +153,12 @@ public class StudyResult {
     public StudyResult() {
     }
 
-    public StudyResult(Study study, Batch batch, Worker worker) {
+    public StudyResult(StudyRun studyRun, Worker worker) {
+        this.uuid = UUID.randomUUID();
         this.startDate = new Timestamp(new Date().getTime());
-        this.study = study;
-        this.batch = batch;
+        this.studyRun = studyRun;
+        this.batch = studyRun.getBatch();
+        this.study = batch.getStudy();
         this.worker = worker;
         this.studyState = StudyState.STARTED;
     }
@@ -167,6 +179,14 @@ public class StudyResult {
 
     public Long getId() {
         return this.id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public void setStartDate(Timestamp startDate) {
@@ -273,6 +293,14 @@ public class StudyResult {
 
     public void addComponentResult(ComponentResult componentResult) {
         componentResultList.add(componentResult);
+    }
+
+    public StudyRun getStudyRun() {
+        return studyRun;
+    }
+
+    public void setStudyRun(StudyRun studyRun) {
+        this.studyRun = studyRun;
     }
 
     public void setWorker(Worker worker) {

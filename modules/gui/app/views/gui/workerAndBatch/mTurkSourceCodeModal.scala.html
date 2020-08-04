@@ -1,4 +1,4 @@
-@(study: common.Study, jatosUrl: java.net.URL)
+@(study: common.Study, realBaseUrl: java.net.URL)
 
 <!-- Mechanical Turk Source Code Modal Template -->
 <div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
@@ -94,18 +94,26 @@ var studyId = @study.getId();
 
 $('#batchList').on('click', '.mtWorkerSourceCode', function() {
     var batch = getBatchData(this);
-    showMTSourceCodeModal(batch.id);
+    $.ajax({
+        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/mTurkRun",
+        success: function(studyRunUuid) {
+            showMTSourceCodeModal(studyRunUuid, batch.id);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
 });
 
-function showMTSourceCodeModal(batchId) {
+function showMTSourceCodeModal(studyRunUuid, batchId) {
     var modal = $('#mtSourceCodeModalTemplate').clone();
     $(modal).removeAttr('id');
 
-    var host = "@{ jatosUrl.getProtocol() + "://" + jatosUrl.getHost()}";
-    var port = @{ jatosUrl.getPort() };
+    var host = "@{ realBaseUrl.getProtocol() + "://" + realBaseUrl.getHost()}";
+    var port = @{ realBaseUrl.getPort() };
     var address = port > 0 ? host + ":" + port : host;
-    var studyPath = "@{ general.common.Common.getPlayHttpContext() + "publix/" + study.getId() + "/start" }"
-    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=111&assignmentId=def&turkSubmitTo=sandbox";
+    var studyPath = "@{ general.common.Common.getPlayHttpContext()}publix/" + studyRunUuid + "/run";
+    var mturkSandboxUrl = address + studyPath + "?workerId=111&assignmentId=def&turkSubmitTo=sandbox";
 
     // Fill dummy variables in template source code
     $(modal).find('.mtSourceCode').text(function() {

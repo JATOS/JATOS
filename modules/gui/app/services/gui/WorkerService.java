@@ -80,7 +80,7 @@ public class WorkerService {
      */
     private <T extends Worker> List<T> createAndPersistWorker(String comment, int amount,
             Batch batch, Function<String, T> workerConstructor) throws BadRequestException {
-        amount = amount <= 1 ? 1 : amount;
+        amount = Math.max(amount, 1);
         List<T> workerList = new ArrayList<>();
         while (amount > 0) {
             T worker = workerConstructor.apply(comment);

@@ -5,30 +5,30 @@
 
 ### Publix ###
 
-GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long, batchId: Long ?= -1)
-GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, srid: Long, successful: Boolean ?= true, message: String ?= null)
-GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, srid: Long, message: String ?= null)
-POST    /publix/:studyId/heartbeat                       @controllers.publix.PublixInterceptor.heartbeat(studyId: Long, srid: Long)
-POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long, srid: Long)
-GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long, srid: Long, message: String ?= null)
-GET     /publix/:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long, srid: Long)
-PUT     /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
-POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.appendResultData(studyId: Long, componentId: Long, srid: Long)
-POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long, srid: Long)
-POST    /publix/:studyId/:componentId/files/:filename    @controllers.publix.PublixInterceptor.uploadResultFile(request: Request, studyId: Long, componentId: Long, srid: Long, filename: String)
-GET     /publix/:studyId/files/:filename                 @controllers.publix.PublixInterceptor.downloadResultFile(studyId: Long, srid: Long, filename: String, componentId: java.util.Optional[java.lang.Long])
+GET     /publix/:studyRunUuid/run                                   @controllers.publix.PublixInterceptor.run(request: Request, studyRunUuid: String)
+GET     /publix/:studyResultUuid/end                                @controllers.publix.PublixInterceptor.finishStudy(request: Request, studyResultUuid: String, successful: Boolean ?= true, message: String ?= null)
+GET     /publix/:studyResultUuid/abort                              @controllers.publix.PublixInterceptor.abortStudy(request: Request, studyResultUuid: String, message: String ?= null)
+GET     /publix/:studyResultUuid/:componentUuid/start               @controllers.publix.PublixInterceptor.startComponent(request: Request, studyResultUuid: String, componentUuid: String, message: String ?= null)
+GET     /publix/:studyResultUuid/:componentUuid/initData            @controllers.publix.PublixInterceptor.getInitData(request: Request, studyResultUuid: String, componentUuid: String)
+POST    /publix/:studyResultUuid/studySessionData                   @controllers.publix.PublixInterceptor.setStudySessionData(request: Request, studyResultUuid: String)
+POST    /publix/:studyResultUuid/heartbeat                          @controllers.publix.PublixInterceptor.heartbeat(request: Request, studyResultUuid: String)
+PUT     /publix/:studyResultUuid/:componentUuid/resultData          @controllers.publix.PublixInterceptor.submitResultData(request: Request, studyResultUuid: String, componentUuid: String)
+POST    /publix/:studyResultUuid/:componentUuid/resultData          @controllers.publix.PublixInterceptor.appendResultData(request: Request, studyResultUuid: String, componentUuid: String)
+POST    /publix/:studyResultUuid/:componentUuid/log                 @controllers.publix.PublixInterceptor.log(request: Request, studyResultUuid: String, componentUuid: String)
+POST    /publix/:studyResultUuid/:componentUuid/files/:filename     @controllers.publix.PublixInterceptor.uploadResultFile(request: Request, studyResultUuid: String, componentUuid: String, filename: String)
+GET     /publix/:studyResultUuid/files/:filename                    @controllers.publix.PublixInterceptor.downloadResultFile(request: Request, studyResultUuid: String, filename: String, componentId: String ?= null)
 
 # Batch and group channel endpoints
-GET     /publix/:studyId/batch/open                      @controllers.publix.ChannelInterceptor.openBatch(studyId: Long, srid: Long)
-GET     /publix/:studyId/group/join                      @controllers.publix.ChannelInterceptor.joinGroup(studyId: Long, srid: Long)
-GET     /publix/:studyId/group/reassign                  @controllers.publix.ChannelInterceptor.reassignGroup(studyId: Long, srid: Long)
-GET     /publix/:studyId/group/leave                     @controllers.publix.ChannelInterceptor.leaveGroup(studyId: Long, srid: Long)
+GET     /publix/:studyResultUuid/batch/open                         @controllers.publix.ChannelInterceptor.openBatch(studyResultUuid: String)
+GET     /publix/:studyResultUuid/group/join                         @controllers.publix.ChannelInterceptor.joinGroup(studyResultUuid: String)
+GET     /publix/:studyResultUuid/group/reassign                     @controllers.publix.ChannelInterceptor.reassignGroup(studyResultUuid: String)
+GET     /publix/:studyResultUuid/group/leave                        @controllers.publix.ChannelInterceptor.leaveGroup(studyResultUuid: String)
 
 
 ### Static resources ###
 
 # Study assets
 GET     /publix/:studyId/endPage.html                    @controllers.publix.StudyAssets.endPage(studyId: Long, confirmationCode: Option[String])
-GET     /publix/:studyId/:arbitrary/*file                @controllers.publix.StudyAssets.viaStudyPath(studyId: Long, arbitrary, file: String)
+GET     /publix/:studyResultUuid/:componentUuid/*file    @controllers.publix.StudyAssets.viaStudyPath(studyResultUuid: String, componentUuid: String, file: String)
 GET     /study_assets_root/*file                         @controllers.publix.StudyAssets.viaAssetsPath(file)
 GET     /study_assets/*file                              @controllers.publix.StudyAssets.viaAssetsPath(file)
