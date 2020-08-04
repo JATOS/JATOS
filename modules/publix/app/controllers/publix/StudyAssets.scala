@@ -1,6 +1,8 @@
 package controllers.publix
 
 import java.io.{File, IOException}
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 import daos.common.{ComponentDao, StudyDao}
 import exceptions.publix.{ForbiddenPublixException, NotFoundPublixException, PublixException}
@@ -72,9 +74,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
     // Set Http.Context used in Play with Java. Needed by IdCookieService
     play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
+    val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
+    val filePath = urlDecodedPath.replace(URL_PATH_SEPARATOR, File.separator)
     try {
       checkProperAssets(urlPath)
-      val filePath = urlPath.replace(URL_PATH_SEPARATOR, File.separator)
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
       logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
       if (request.headers.hasHeader(RANGE)) {
@@ -92,8 +95,8 @@ class StudyAssets @Inject()(components: ControllerComponents,
         else Forbidden(views.html.publix.error.render(errorMsg))
       case _: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
-          s"${File.separator}$urlPath")
-        val errorMsg = s"Resource '$urlPath' couldn't be found."
+          s"${File.separator}$filePath")
+        val errorMsg = s"Resource '$filePath' couldn't be found."
         if (HttpUtils.isAjax) NotFound(errorMsg)
         else NotFound(views.html.publix.error.render(errorMsg))
     }

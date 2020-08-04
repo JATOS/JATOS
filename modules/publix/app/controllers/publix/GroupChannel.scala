@@ -73,7 +73,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
       logger.info(s".join: It's not allowed to join a group after it was explicitly left " +
           s"(studyId $studyId, studyResultId $studyResultId)."
       )
-      throw new ForbiddenPublixException(PublixErrorMessages.GROUP_STUDY_NOT_POSSIBLE_TWICE)
+      throw new ForbiddenPublixException("It's not allowed to join a group after it was explicitly left.")
     }
 
     if (studyResult.getActiveGroupResult != null)

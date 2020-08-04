@@ -72,7 +72,9 @@ object BatchDispatcher {
     val SessionData = Value("data")
     // Session patches (must be accompanied with a session version)
     val SessionPatches = Value("patches")
-    // Batch session version (always together with either session data or patches)
+    // Identifier of an session action (mandatory)
+    val SessionActionId = Value("id")
+    // Batch session version (mandatory for session data or patches)
     val SessionVersion = Value("version")
     // Defines if we check the version before applying the patch
     val SessionVersioning = Value("versioning")

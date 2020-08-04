@@ -127,7 +127,9 @@ object GroupDispatcher {
     val SessionData = Value("sessionData")
     // Session patches (must be accompanied with a session version)
     val SessionPatches = Value("sessionPatches")
-    // Batch session version (always together with either session data or patches)
+    // Identifier of an session action (mandatory)
+    val SessionActionId = Value("sessionActionId")
+    // Batch session version (mandatory for session data or patches)
     val SessionVersion = Value("sessionVersion")
     // Defines if we check the version before applying the patch
     val SessionVersioning = Value("sessionVersioning")
@@ -194,8 +196,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     if (msg.json.keys.contains(GroupActionJsonKey.Action.toString)) {
       // We have a group action message
       val studyResultId = channelRegistry.getStudyResult(sender).get
-      val msgList = actionHandler.handleActionMsg(msg, groupResultId, studyResultId,
-        channelRegistry)
+      val msgList = actionHandler.handleActionMsg(msg, groupResultId, studyResultId)
       tellActionMsg(msgList)
 
     } else if (msg.json.keys.contains(GroupActionJsonKey.Recipient.toString)) {

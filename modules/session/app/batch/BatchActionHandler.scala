@@ -16,7 +16,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
 /**
   * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
   *
-  * @author Kristian Lange (2017)
+  * @author Kristian Lange
   */
 @Singleton
 class BatchActionHandler @Inject()(jpa: JPAApi,
@@ -51,9 +51,10 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
         List(msgBuilder.buildError(errorMsg, TellWhom.SenderOnly))
       }
 
+      val sessionActionId = (json \ BatchActionJsonKey.SessionActionId.toString).as[Long]
+      val clientsVersion = (json \ BatchActionJsonKey.SessionVersion.toString).as[Long]
+      val versioning = (json \ BatchActionJsonKey.SessionVersioning.toString).as[Boolean]
       try {
-        val clientsVersion = (json \ BatchActionJsonKey.SessionVersion.toString).as[Long]
-        val versioning = (json \ BatchActionJsonKey.SessionVersioning.toString).as[Boolean]
         val patches = (json \ BatchActionJsonKey.SessionPatches.toString).get
         val patchedSessionData = patchSessionData(patches, batch)
         logger.debug(s".handlePatch: batchId $batchId, " +
@@ -63,16 +64,17 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
         val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion, versioning)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(batch, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, TellWhom.SenderOnly)
+          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, sessionActionId, TellWhom.SenderOnly)
           List(msg1, msg2)
-        } else
-          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, TellWhom.SenderOnly))
+        } else {
+          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, TellWhom.SenderOnly))
+        }
 
       } catch {
         case e: Exception =>
           logger.warn(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
-              s"${e.getClass.getName}: ${e.getMessage}")
-          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, TellWhom.SenderOnly))
+            s"${e.getClass.getName}: ${e.getMessage}")
+          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, TellWhom.SenderOnly))
       }
     }))
   }
