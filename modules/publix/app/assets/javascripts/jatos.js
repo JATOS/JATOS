@@ -2443,6 +2443,32 @@ var jatos = {};
 	};
 
 	/**
+	 * Convenience function that sends all 'error' and 'unhandledrejection'
+	 * events and console.error and console.warn calls to JATOS server log
+	 */
+	jatos.catchAndLogErrors = function () {
+		window.addEventListener('error', function (e) {
+			jatos.log("Via 'error' event in " + e.filename + ":" +
+					e.lineno + " - " + e.message);
+		});
+		window.addEventListener('unhandledrejection', function (e) {
+			jatos.log("Via 'unhandledrejection' event in " + e.filename + ":" +
+					e.lineno + " - " + e.message);
+		});
+
+		var errorLog = console.error;
+		var warnLog = console.warn;
+		console.error = function (message) {
+			jatos.log("Via console.error - " + message);
+			errorLog.apply(this, arguments);
+		};
+		console.warn = function (message) {
+			jatos.log("Via console.warn - " + message);
+			warnLog.apply(this, arguments);
+		};
+	};
+
+	/**
 	 * Convenience function that adds all JATOS IDs (study ID, study title, 
 	 * component ID, component position, component title, worker ID,
 	 * study result ID, component result ID, group result ID, group member ID)
