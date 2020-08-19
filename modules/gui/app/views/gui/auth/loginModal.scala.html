@@ -5,7 +5,7 @@
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
 			<div class="modal-body">
-				@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+				@if(loggedInUser.isOauthGoogle()) {
 				<h3 class="form-login-heading">Please sign in again</h3>
 				<p class="explanation"></p>
 				<div id="signin-google"></div>
@@ -47,7 +47,7 @@ function showLoginModal(explanationText) {
 	removeFormErrors('#loginModal');
 	$('#loginModal .explanation').text(explanationText);
 	clearForm("#loginForm");
-	@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+	@if(loggedInUser.isOauthGoogle()) {
 	renderSignInGoogleButton(270);
 	}
 	$('#loginModal').modal('show');

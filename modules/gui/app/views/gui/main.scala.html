@@ -24,7 +24,7 @@
 <meta charset="utf-8"/>
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+@if(loggedInUser.isOauthGoogle()) {
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <meta name="google-signin-client_id" content="@{general.common.Common.getOauthGoogleClientId()}">
 }
@@ -260,7 +260,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 						Import Study
 					</a>
 				</li>
-				@if(loggedInUser.hasRole(common.User.Role.ADMIN)) {
+				@if(loggedInUser.isAdmin()) {
 				<li data-toggle="tooltip" data-placement="bottom" title="Create or delete users and change their passwords">
 					<a id="userManagerLink" href="@controllers.gui.routes.Users.userManager()">
 						<span class="glyphicon glyphicon-user"></span>
@@ -454,13 +454,13 @@ function fillSidebarStudyList(studyArray) {
 	});
 }
 
-@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+@if(loggedInUser.isOauthGoogle()) {
 @views.html.gui.auth.oauthSignInGoogle()
 }
 
 function logout() {
 	var redirectToLogout = function() { window.location.href = "@controllers.gui.routes.Authentication.logout()" };
-	@if(loggedInUser.getAuthMethod() == common.User.AuthMethod.OAUTH_GOOGLE) {
+	@if(loggedInUser.isOauthGoogle()) {
 	signOutGoogle(redirectToLogout);
 	} else {
 	redirectToLogout();

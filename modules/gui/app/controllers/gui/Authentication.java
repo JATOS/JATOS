@@ -172,7 +172,7 @@ public class Authentication extends Controller {
             }
 
             userService.bindToUserAndPersist(newUserModel);
-        } else if (existingUser.getAuthMethod() != User.AuthMethod.OAUTH_GOOGLE) {
+        } else if (!existingUser.isOauthGoogle()) {
             return unauthorized("User exists already - but does not use Google sign in");
         }
 

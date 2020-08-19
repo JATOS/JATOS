@@ -105,7 +105,7 @@
 </div>
 
 <script type="text/javascript">
-var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+var loggedInUserIsAdmin = @loggedInUser.isAdmin();
 
 @if(general.common.Common.isTermsOfUseInfo()) {
 showInfo('By using this web application you agree to the <a href="http://www.jatos.org/JATOS-server-during-the-COVID-19-pandemic.html">Terms of Use</a>.', null, true);
@@ -234,7 +234,7 @@ function showUpdateAvailable(releaseInfo) {
 }
 
 $("#updateJatos .releaseNotesButton").click(function() {
-    var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+    var loggedInUserIsAdmin = @loggedInUser.isAdmin();
     var releaseInfo = $("#updateJatos").data("releaseInfo");
     var version = getVersionName(releaseInfo);
     $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
