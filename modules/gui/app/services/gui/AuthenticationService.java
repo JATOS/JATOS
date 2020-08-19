@@ -114,8 +114,9 @@ public class AuthenticationService {
      */
     private boolean authenticateViaLdap(String normalizedUsername, String password) throws NamingException {
         Hashtable<String, String> props = new Hashtable<>();
-        String principalName = "uid=" + normalizedUsername + "," + Common.getLdapBasedn();
-        props.put(Context.SECURITY_PRINCIPAL, principalName);
+        props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        props.put(Context.SECURITY_AUTHENTICATION, "simple");
+        props.put(Context.SECURITY_PRINCIPAL, "uid=" + normalizedUsername + "," + Common.getLdapBasedn());
         props.put(Context.SECURITY_CREDENTIALS, password);
         props.put(Context.PROVIDER_URL, Common.getLdapUrl());
         props.put("com.sun.jndi.ldap.read.timeout", String.valueOf(Common.getLdapTimeout()));
