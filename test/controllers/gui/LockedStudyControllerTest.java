@@ -181,32 +181,6 @@ public class LockedStudyControllerTest {
     }
 
     /**
-     * Check that Batches.createPersonalSingleRun() doesn't work if study is
-     * locked
-     */
-    @Test
-    public void callBatchesCreatePersonalSingleRun() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        lockStudy(study);
-        Call call = routes.Batches.createPersonalSingleRun(
-                study.getId(), study.getDefaultBatch().getId());
-        checkForbiddenBecauseLocked(call, Helpers.POST);
-    }
-
-    /**
-     * Check that Batches.createPersonalMultipleRun() doesn't work if study is
-     * locked
-     */
-    @Test
-    public void callBatchesCreatePersonalMultipleRun() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        lockStudy(study);
-        Call call = routes.Batches.createPersonalMultipleRun(
-                study.getId(), study.getDefaultBatch().getId());
-        checkForbiddenBecauseLocked(call, Helpers.POST);
-    }
-
-    /**
      * Check that Components.submitCreated() doesn't work if study is locked
      */
     @Test

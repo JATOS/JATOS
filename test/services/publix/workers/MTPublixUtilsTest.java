@@ -80,21 +80,22 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
         // Put URL query parameters in the Context
         Map<String, String[]> queryString = new HashMap<>();
-        queryString.put("foo", new String[]{"bar"});
-        queryString.put("para2", new String[]{"1234567890"});
-        queryString.put("para3", new String[]{"i%20like%20gizmodo"});
-        queryString.put(MTPublix.MT_WORKER_ID, new String[]{"123"});
-        queryString.put(MTPublix.MT_ASSIGNMENT_ID, new String[]{"123"});
-        queryString.put("hitId", new String[]{"4"});
-        queryString.put("turkSubmitTo", new String[]{"sandbox"});
-        queryString.put("batchId", new String[]{"3"});
+        queryString.put("foo", new String[] { "bar" });
+        queryString.put("para2", new String[] { "1234567890" });
+        queryString.put("para3", new String[] { "i%20like%20gizmodo" });
+        queryString.put(MTPublix.MT_WORKER_ID, new String[] { "123" });
+        queryString.put(MTPublix.MT_ASSIGNMENT_ID, new String[] { "123" });
+        queryString.put("hitId", new String[] { "4" });
+        queryString.put("turkSubmitTo", new String[] { "sandbox" });
+        queryString.put("batchId", new String[] { "3" });
         testHelper.mockContext(queryString);
 
         jpaApi.withTransaction(() -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             publixUtils.setUrlQueryParameter(studyResult);
             assertThat(studyResult.getUrlQueryParameters()).isEqualTo(
-                    "{\"workerId\":\"123\",\"foo\":\"bar\",\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\"}");
+                    "{\"workerId\":\"123\",\"hitId\":\"4\",\"foo\":\"bar\",\"turkSubmitTo\":\"sandbox\","
+                            + "\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\",\"assignmentId\":\"123\"}");
         });
     }
 

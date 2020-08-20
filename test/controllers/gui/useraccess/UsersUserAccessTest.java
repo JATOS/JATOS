@@ -100,8 +100,8 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callSubmitCreated() {
-        Call call = routes.Users.submitCreated();
+    public void callCreate() {
+        Call call = routes.Users.create();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.POST);
     }
@@ -115,14 +115,20 @@ public class UsersUserAccessTest {
     }
 
     @Test
-    public void callSubmitEditedProfile() {
-        Call call = routes.Users.submitEditedProfile(TestHelper.BLA_EMAIL);
+    public void callEdit() {
+        Call call = routes.Users.edit(TestHelper.BLA_EMAIL);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 
     @Test
-    public void callSubmitChangedPassword() {
-        Call call = routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL);
+    public void callChangePasswordByAdmin() {
+        Call call = routes.Users.changePasswordByAdmin();
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+    }
+
+    @Test
+    public void callChangePasswordByUser() {
+        Call call = routes.Users.changePasswordByUser();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
     }
 

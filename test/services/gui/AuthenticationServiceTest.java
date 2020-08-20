@@ -110,7 +110,7 @@ public class AuthenticationServiceTest {
     @Test
     public void checkAuthenticateUserLdap() {
         testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
-        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", false);
 
         jpaApi.withTransaction(() -> {
             try {
@@ -131,7 +131,7 @@ public class AuthenticationServiceTest {
     public void checkAuthenticateUserLdapWrongLdapUrl() {
         // Set up LDAP in Common with wrong URL (wrong port)
         testHelper.setupLdap("ldap://ldap.forumsys.com:666", "dc=example,dc=com");
-        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", false);
 
         jpaApi.withTransaction(() -> {
             try {
@@ -152,7 +152,7 @@ public class AuthenticationServiceTest {
     public void checkAuthenticateUserLdapWrongLdapBase() {
         // Set up LDAP in Common with wrong ldapBase
         testHelper.setupLdap("ldap://ldap.forumsys.com:389", "foo=example,bar=org");
-        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", false);
 
         jpaApi.withTransaction(() -> {
             try {
@@ -170,16 +170,16 @@ public class AuthenticationServiceTest {
      * Test AuthenticationService.authenticate(): check LDAP authentication fail due to missing config
      */
     @Test
-    public void checkAuthenticateUserLdapNoConf() {
+    public void checkAuthenticateUserLdapNoConfig() {
         // By default no LDAP is configured
-        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", false);
 
         jpaApi.withTransaction(() -> {
             try {
                 authenticationService.authenticate("einstein", "password");
                 Fail.fail();
             } catch (NamingException e) {
-                assertThat(e.getRootCause()).isInstanceOf(MalformedURLException.class);
+                assertThat(e).isInstanceOf(NamingException.class);
             }
         });
 
