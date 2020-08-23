@@ -24,6 +24,7 @@ import general.gui.RequestScopeMessaging;
 import models.common.*;
 import play.Logger;
 import play.Logger.ALogger;
+import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -170,8 +171,9 @@ public class ImportExport extends Controller {
         }
 
         String zipFileName = ioUtils.generateFileName(study.getTitle(), IOUtils.JZIP_FILE_SUFFIX);
+        String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", zipFileName);
         return okFileStreamed(zipFile, zipFile::delete, "application/zip")
-                .withHeader("Content-disposition", "attachment; filename=" + zipFileName);
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
     }
 
     /**
@@ -201,7 +203,8 @@ public class ImportExport extends Controller {
         }
 
         String filename = ioUtils.generateFileName(component.getTitle(), IOUtils.COMPONENT_FILE_SUFFIX);
-        return ok(componentAsJson).withHeader("Content-disposition", "attachment; filename=" + filename);
+        String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", filename);
+        return ok(componentAsJson).withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
     }
 
     /**
@@ -316,8 +319,9 @@ public class ImportExport extends Controller {
         }
 
         try {
+            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", filename);
             return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename))
-                    .withHeader("Content-disposition", "attachment; filename=" + filename);
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
         } catch (IOException e) {
             return badRequest("File does not exist");
         }
@@ -378,11 +382,11 @@ public class ImportExport extends Controller {
     /**
      * Helper function to allow an action after a file was sent (e.g. delete the file)
      */
-    private Result okFileStreamed(final File file, final Runnable handler, final String mimeType) {
+    private Result okFileStreamed(final File file, final Runnable handler, final String contentType) {
         final Source<ByteString, CompletionStage<IOResult>> fileSource = FileIO.fromFile(file);
         Source<ByteString, CompletionStage<IOResult>> wrap = fileSource.mapMaterializedValue(
                 action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
-        return ok().streamed(wrap, Optional.of(file.length()), Optional.of(mimeType));
+        return ok().streamed(wrap, Optional.of(file.length()), Optional.of(contentType));
     }
 
 }
