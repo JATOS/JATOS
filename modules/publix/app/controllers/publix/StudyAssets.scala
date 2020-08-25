@@ -77,7 +77,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
     val filePath = urlDecodedPath.replace(URL_PATH_SEPARATOR, File.separator)
     try {
-      checkProperAssets(urlPath)
+      checkProperAssets(filePath)
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
       logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
       if (request.headers.hasHeader(RANGE)) {
