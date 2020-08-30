@@ -466,7 +466,8 @@ var jatos = {};
 
 		// Study properties
 		jatos.studyProperties = initData.studyProperties;
-		if (typeof jatos.studyProperties.jsonData != 'undefined') {
+		if (typeof jatos.studyProperties.jsonData != 'undefined' &&
+				jatos.studyProperties.jsonData !== null) {
 			jatos.studyJsonInput = jatos.jQuery
 				.parseJSON(jatos.studyProperties.jsonData);
 		} else {
@@ -480,7 +481,8 @@ var jatos = {};
 
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
-		if (typeof jatos.componentProperties.jsonData != 'undefined') {
+		if (typeof jatos.componentProperties.jsonData != 'undefined' &&
+				jatos.componentProperties.jsonData !== null) {
 			jatos.componentJsonInput = jatos.jQuery
 				.parseJSON(jatos.componentProperties.jsonData);
 		} else {
