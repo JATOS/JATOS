@@ -112,8 +112,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String studyAssetsNotAllowedOutsideRun(String filePath) {
-		return "You tried to access the file " + filePath + " but it seems you have no access rights."
-				+ " Maybe this study was never started?";
+		return "You tried to access the file " + filePath + " but it seems you have no access rights.";
 	}
 
 	public static String couldntExtractFromIdCookie(String idCookieName, String key) {

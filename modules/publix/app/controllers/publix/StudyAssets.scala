@@ -77,7 +77,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
     val filePath = urlDecodedPath.replace(URL_PATH_SEPARATOR, File.separator)
     try {
-      checkProperAssets(filePath)
+      checkProperAssets(urlPath) // Windows needs URL path
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
       logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
       if (request.headers.hasHeader(RANGE)) {
@@ -117,12 +117,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
   private def checkProperAssets(urlPath: String): Unit = {
     val filePathArray = urlPath.split(URL_PATH_SEPARATOR)
     if (filePathArray.isEmpty)
-      throw new ForbiddenPublixException(
-        PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
-    val studyAssets = filePathArray(0)
+      throw new ForbiddenPublixException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
+    val studyAssets = URLDecoder.decode(filePathArray(0), StandardCharsets.UTF_8.name())
     if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets))
-      throw new ForbiddenPublixException(
-        PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
+      throw new ForbiddenPublixException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
   }
 
   /**
