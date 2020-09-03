@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.5.6"
+version := "3.5.7"
 organization := "org.jatos"
 scalaVersion := "2.11.12"
 maintainer := "lange.kristian@gmail.com"
