@@ -1227,7 +1227,7 @@ var jatos = {};
 			retryWait: jatos.httpRetryWait
 		};
 		return sendToHttpLoop(request, onSuccess, onFail).promise();
-	}
+	};
 
 	/**
 	 * Starts the component with the given ID. Before it calls
