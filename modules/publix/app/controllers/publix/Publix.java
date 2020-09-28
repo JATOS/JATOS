@@ -343,7 +343,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
         T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-        String msg = request().body().asText();
+        String msg = request().body().asText().replaceAll("\\R+", " ").replaceAll("\\s+"," ");
         LOGGER.info("logging from client: study ID " + studyId
                 + ", component ID " + componentId + ", worker ID "
                 + worker.getId() + ", study result ID " + studyResultId
