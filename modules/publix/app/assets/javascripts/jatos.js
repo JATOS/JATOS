@@ -1233,7 +1233,7 @@ var jatos = {};
 	 * Starts the component with the given ID. Before it calls
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {number} componentId - ID of the component to start
@@ -1263,7 +1263,7 @@ var jatos = {};
 		
 		// Send result data and study session data before starting next component
 		if (resultData) jatos.appendResultData(resultData);
-		setStudySessionData(jatos.studySessionData);
+		jatos.setStudySessionData(jatos.studySessionData);
 
 		var start = function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
@@ -1286,7 +1286,7 @@ var jatos = {};
 	 * component of a study is 1). Before this it calls 
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {number} componentPos - Position of the component to start
@@ -1314,7 +1314,7 @@ var jatos = {};
 	 * last one it finishes the study. Before this it calls 
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
@@ -1360,7 +1360,7 @@ var jatos = {};
 	 * with the highest position that is active. Before this it calls
 	 * jatos.appendResultData (sends result data to the JATOS server and
 	 * appends them to the already existing ones for this component) and
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 *
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data be sent back
