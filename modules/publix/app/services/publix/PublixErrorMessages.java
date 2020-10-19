@@ -124,7 +124,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String idCookieForThisStudyResultNotExists(Long studyResultId) {
-		return "JATOS isn't allowed to run a study with the study result ID " + studyResultId + ".";
+		return "Couldn't find cookie for study result ID " + studyResultId + ". Are cookies allowed in your browser?";
 	}
 
 	public static String idCookieExistsAlready(Long studyResultId) {
