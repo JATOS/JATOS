@@ -17,6 +17,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 
+import static controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+
 /**
  * Controller with endpoints used by /jatos/test. Each endpoint test a different
  * aspect of JATOS.
@@ -27,7 +29,7 @@ import java.io.File;
 @Singleton
 public class Tests extends Controller {
 
-    private final UserDao      userDao;
+    private final UserDao userDao;
     private final SyncCacheApi cache;
 
     @Inject
@@ -36,11 +38,14 @@ public class Tests extends Controller {
         this.cache = cache;
     }
 
+    @Transactional
+    @Authenticated
     public Result test() {
         return ok(views.html.gui.test.render());
     }
 
     @Transactional
+    @Authenticated
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -50,6 +55,8 @@ public class Tests extends Controller {
         return ok();
     }
 
+    @Transactional
+    @Authenticated
     public Result testStudyAssetsRootFolder() {
         try {
             File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
@@ -68,6 +75,8 @@ public class Tests extends Controller {
         return ok();
     }
 
+    @Transactional
+    @Authenticated
     public Result testCache() {
         try {
             cache.set("test", "testValue");
@@ -81,6 +90,8 @@ public class Tests extends Controller {
         return ok();
     }
 
+    @Transactional
+    @Authenticated
     public Result testJsonSerialization() {
         try {
             JsonUtils.asStringForDB("{\"test\":\"test\"}");
@@ -90,6 +101,8 @@ public class Tests extends Controller {
         return ok();
     }
 
+    @Transactional
+    @Authenticated
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to client
