@@ -280,7 +280,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
-        String msg = request.body().asText();
+        String msg = request.body().asText().replaceAll("\\R+", " ").replaceAll("\\s+"," ");
         LOGGER.info("Logging from client: studyResult " + studyResult.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "studyId " + study.getId() + ", "

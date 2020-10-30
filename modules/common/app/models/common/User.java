@@ -138,6 +138,10 @@ public class User {
         return roleList.contains(role);
     }
 
+    public boolean isAdmin() {
+        return roleList.contains(Role.ADMIN);
+    }
+
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
@@ -152,6 +156,18 @@ public class User {
 
     public void setAuthMethod(AuthMethod authMethod) {
         this.authMethod = authMethod;
+    }
+
+    public boolean isDb() {
+        return this.authMethod == AuthMethod.DB;
+    }
+
+    public boolean isLdap() {
+        return this.authMethod == AuthMethod.LDAP;
+    }
+
+    public boolean isOauthGoogle() {
+        return this.authMethod == AuthMethod.OAUTH_GOOGLE;
     }
 
     public void setWorker(JatosWorker worker) {

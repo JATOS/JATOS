@@ -7,6 +7,7 @@ import models.common.User;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
 import models.gui.NewUserModel;
+import org.fest.assertions.Fail;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,6 +17,7 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
@@ -24,17 +26,17 @@ import services.gui.BreadcrumbsService;
 import services.gui.UserService;
 
 import javax.inject.Inject;
+import javax.naming.NamingException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.FORBIDDEN;
-import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.*;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
 /**
- * Testing actions of controller.gui.Users: basic integration tests
+ * Testing actions of controller.gui.Users
  *
  * @author Kristian Lange
  */
@@ -73,18 +75,10 @@ public class UsersControllerTest {
         testHelper.removeAllStudyLogs();
     }
 
-    /**
-     * Action Users.userManager()
-     */
     @Test
     public void callUserManager() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("GET")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Users.userManager().url());
-        Result result = route(fakeApplication, request);
+        Map<String, String> formMap = new HashMap<>();
+        Result result = call("GET", testHelper.getAdmin(), formMap, routes.Users.userManager());
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("utf-8");
@@ -92,36 +86,21 @@ public class UsersControllerTest {
         assertThat(contentAsString(result)).contains(BreadcrumbsService.USER_MANAGER);
     }
 
-    /**
-     * Action Users.allUserData()
-     */
     @Test
     public void callAllUserData() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("GET")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Users.allUserData().url());
-        Result result = route(fakeApplication, request);
+        Map<String, String> formMap = new HashMap<>();
+        Result result = call("GET", testHelper.getAdmin(), formMap, routes.Users.allUserData());
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.contentType().get()).isEqualTo("application/json");
     }
 
-    /**
-     * Action Users.toggleAdmin()
-     */
     @Test
     public void callToggleAdmin() {
         testHelper.createAndPersistUser("bla", "Bla", "bla");
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Users.toggleAdmin("bla", true).url());
-        Result result = route(fakeApplication, request);
+
+        Map<String, String> formMap = new HashMap<>();
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.toggleAdmin("bla", true));
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.contentType().get()).isEqualTo("application/json");
@@ -130,18 +109,10 @@ public class UsersControllerTest {
         testHelper.removeUser("bla");
     }
 
-    /**
-     * Action Users.profile()
-     */
     @Test
     public void callProfile() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("GET")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Users.profile(UserService.ADMIN_USERNAME).url());
-        Result result = route(fakeApplication, request);
+        Map<String, String> formMap = new HashMap<>();
+        Result result = call("GET", testHelper.getAdmin(), formMap, routes.Users.profile(UserService.ADMIN_USERNAME));
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.charset().get()).isEqualToIgnoringCase("UTF-8");
@@ -149,28 +120,18 @@ public class UsersControllerTest {
         assertThat(contentAsString(result)).contains(UserService.ADMIN_USERNAME);
     }
 
-    /**
-     * Action Users.singleUserData()
-     */
     @Test
     public void callSingleUserData() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("GET")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Users.singleUserData(UserService.ADMIN_USERNAME).url());
-        Result result = route(fakeApplication, request);
+        Map<String, String> formMap = new HashMap<>();
+        Result result = call("GET", testHelper.getAdmin(), formMap,
+                routes.Users.singleUserData(UserService.ADMIN_USERNAME));
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(result.contentType().get()).isEqualTo("application/json");
     }
 
-    /**
-     * Action Users.submitCreated()
-     */
     @Test
-    public void callSubmitCreated() {
+    public void callCreate() {
         Map<String, String> formMap = new HashMap<>();
         formMap.put(NewUserModel.ADMIN_PASSWORD, UserService.ADMIN_PASSWORD);
         formMap.put(NewUserModel.ADMIN_ROLE, "true");
@@ -179,14 +140,7 @@ public class UsersControllerTest {
         formMap.put(NewUserModel.PASSWORD, "abcABC1!");
         formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitCreated().url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.create());
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -194,11 +148,8 @@ public class UsersControllerTest {
         testHelper.removeUser("foo@foo.org");
     }
 
-    /**
-     * Action Users.submitCreated()
-     */
     @Test
-    public void callSubmitCreatedLdap() {
+    public void callCreateLdap() {
         Map<String, String> formMap = new HashMap<>();
         formMap.put(NewUserModel.ADMIN_PASSWORD, UserService.ADMIN_PASSWORD);
         formMap.put(NewUserModel.ADMIN_ROLE, "true");
@@ -206,14 +157,7 @@ public class UsersControllerTest {
         formMap.put(NewUserModel.NAME, "Albert Einstein");
         formMap.put(NewUserModel.AUTH_BY_LDAP, "true");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitCreated().url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.create());
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -222,23 +166,122 @@ public class UsersControllerTest {
     }
 
     /**
-     * Action Users.submitEditedProfile()
+     * Google user can create without typing an password
      */
     @Test
-    public void callSubmitEditedProfile() {
+    public void callCreateWithGoogleAdmin() {
+        User userBla = testHelper.createAndPersistUserOAuthGoogle(TestHelper.BLA_EMAIL, "Bla Bla", "bla", true);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(NewUserModel.USERNAME, "foo@foo.org");
+        formMap.put(NewUserModel.NAME, "Foo Fool");
+        formMap.put(NewUserModel.PASSWORD, "abcABC1!");
+        formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
+
+        Result result = call("POST", userBla, formMap, routes.Users.create());
+
+        assertThat(result.status()).isEqualTo(OK);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("foo@foo.org");
+    }
+
+    @Test
+    public void callCreateWithLdapAdmin() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        User user = testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", true);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(NewUserModel.ADMIN_PASSWORD, "password");
+        formMap.put(NewUserModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(NewUserModel.NAME, "Foo Fool");
+        formMap.put(NewUserModel.PASSWORD, "abcABC1!");
+        formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
+
+        Result result = call("POST", user, formMap, routes.Users.create());
+
+        assertThat(result.status()).isEqualTo(OK);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("einstein");
+        testHelper.removeUser("foo@foo.org");
+    }
+
+    @Test
+    public void callCreateWithLdapAdminWrongLdapUrl() {
+        testHelper.setupLdap("ldap://ldap.wrong.com:389", "dc=example,dc=com");
+        User user = testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", true);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(NewUserModel.ADMIN_PASSWORD, "password");
+        formMap.put(NewUserModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(NewUserModel.NAME, "Foo Fool");
+        formMap.put(NewUserModel.PASSWORD, "abcABC1!");
+        formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
+
+        try {
+            call("POST", user, formMap, routes.Users.create());
+            Fail.fail();
+        } catch (RuntimeException e) {
+            assertThat(e.getCause()).isInstanceOf(NamingException.class);
+        }
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("einstein");
+        testHelper.removeUser("foo@foo.org");
+    }
+
+    @Test
+    public void callCreateWrongPassword() {
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(NewUserModel.ADMIN_PASSWORD, "wrongpassword");
+        formMap.put(NewUserModel.ADMIN_ROLE, "true");
+        formMap.put(NewUserModel.USERNAME, "foo@foo.org");
+        formMap.put(NewUserModel.NAME, "Foo Fool");
+        formMap.put(NewUserModel.PASSWORD, "abcABC1!");
+        formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
+
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.create());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser("foo@foo.org");
+    }
+
+    @Test
+    public void callCreateWithLdapAdminButWrongPassword() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        User user = testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", true);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(NewUserModel.ADMIN_PASSWORD, "wrongpassword");
+        formMap.put(NewUserModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(NewUserModel.NAME, "Foo Fool");
+        formMap.put(NewUserModel.PASSWORD, "abcABC1!");
+        formMap.put(NewUserModel.PASSWORD_REPEAT, "abcABC1!");
+
+        Result result = call("POST", user, formMap, routes.Users.create());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("einstein");
+        testHelper.removeUser("foo@foo.org");
+    }
+
+    @Test
+    public void callEditProfile() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         Map<String, String> formMap = new HashMap<>();
         formMap.put(ChangeUserProfileModel.NAME, "Different Name");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitEditedProfile(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.edit(TestHelper.BLA_EMAIL));
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -246,30 +289,17 @@ public class UsersControllerTest {
         testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
 
-    /**
-     * Action Users.submitChangedPassword(): there are two uses: 1) user changes
-     * his own password, 2) an admin changes the password of another user. This
-     * tests the first case. Here old password field must be filled and the
-     * admin password can be left empty.
-     */
     @Test
-    public void callSubmitChangedPasswordByUserSelf() {
+    public void callChangePasswordByUser() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         Map<String, String> formMap = new HashMap<>();
-        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "");
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
         formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
         formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
         formMap.put(ChangePasswordModel.OLD_PASSWORD, "bla");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByUser());
 
         assertThat(result.status()).isEqualTo(OK);
 
@@ -277,123 +307,195 @@ public class UsersControllerTest {
         testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
 
-    /**
-     * Action Users.submitChangedPassword(): forbidden to change password of LDAP user
-     */
     @Test
-    public void callSubmitChangedPasswordByUserSelfLdap() {
-        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
-        User userBla = testHelper.createAndPersistUserLdap(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+    public void callChangePasswordByUserWrongUser() {
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+        testHelper.createAndPersistUser("wronguser", "Wrong User", "wronguser");
 
         Map<String, String> formMap = new HashMap<>();
-        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "");
+        formMap.put(ChangePasswordModel.USERNAME, "wronguser");
         formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
         formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
         formMap.put(ChangePasswordModel.OLD_PASSWORD, "bla");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByUser());
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
         // Clean-up
         testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("wronguser");
     }
 
-    /**
-     * Action Users.submitChangedPassword(): there are two uses: 1) user changes
-     * his own password, 2) an admin changes the password of another user. This
-     * tests the second case. Here the admin password must be filled and the old
-     * password can be left empty.
-     */
     @Test
-    public void callSubmitChangedPasswordByAdmin() {
-        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-
-        Map<String, String> formMap = new HashMap<>();
-        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, UserService.ADMIN_PASSWORD);
-        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
-        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
-        formMap.put(ChangePasswordModel.OLD_PASSWORD, "");
-
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
-
-        assertThat(result.status()).isEqualTo(OK);
-
-        // Clean-up
-        testHelper.removeUser(TestHelper.BLA_EMAIL);
-    }
-
-    /**
-     * Action Users.submitChangedPassword(): there are two uses: 1) user changes
-     * his own password, 2) an admin changes the password of another user. This
-     * tests the second case.
-     * <p>
-     * If the wrong admin password is given an 403 is returned.
-     */
-    @Test
-    public void callSubmitChangedPasswordByAdminWrongPassword() {
+    public void callChangePasswordByUserWrongPassword() {
         User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
         Map<String, String> formMap = new HashMap<>();
-        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "wrong password");
-        formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
-        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "Different Password");
-        formMap.put(ChangePasswordModel.OLD_PASSWORD, "");
-
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
-
-        assertThat(result.status()).isEqualTo(FORBIDDEN);
-
-        // Clean-up
-        testHelper.removeUser(TestHelper.BLA_EMAIL);
-    }
-
-    /**
-     * Action Users.submitChangedPassword(): there are two uses: 1) user changes
-     * his own password, 2) an admin changes the password of another user. This
-     * tests the second case.
-     * <p>
-     * If the wrong user password is given an 403 is returned.
-     */
-    @Test
-    public void callSubmitChangedPasswordByUserSelfWrongPassword() {
-        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-
-        Map<String, String> formMap = new HashMap<>();
-        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "");
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
         formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
         formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "Different Password");
         formMap.put(ChangePasswordModel.OLD_PASSWORD, "wrong password");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.submitChangedPassword(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByUser());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    /**
+     * Action Users.changedPasswordByUser(): forbidden to change password of LDAP user
+     */
+    @Test
+    public void callChangePasswordByUserLdap() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        User userBla = testHelper.createAndPersistUserLdap(TestHelper.BLA_EMAIL, "Bla Bla", "bla", false);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.OLD_PASSWORD, "bla");
+
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByUser());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    /**
+     * Action Users.changePasswordByUser(): forbidden to change password of Oauth Google users
+     */
+    @Test
+    public void callchangePasswordByUserGoogle() {
+        User userBla = testHelper.createAndPersistUserOAuthGoogle(TestHelper.BLA_EMAIL, "Bla Bla", "bla", false);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.OLD_PASSWORD, "bla");
+
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByUser());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    @Test
+    public void callChangePasswordByAdmin() {
+        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, UserService.ADMIN_PASSWORD);
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
+
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.changePasswordByAdmin());
+
+        assertThat(result.status()).isEqualTo(OK);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    @Test
+    public void callChangePasswordByAdminNotAdmin() {
+        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+        User nonAdmin = testHelper.createAndPersistUser("foobar", "Foo Bar", "foobar");
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "foobar");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
+
+        Result result = call("POST", nonAdmin, formMap, routes.Users.changePasswordByAdmin());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+        testHelper.removeUser("foobar");
+    }
+
+    @Test
+    public void callChangePasswordByAdminWrongPassword() {
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "wrong password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "Different Password");
+
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByAdmin());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    @Test
+    public void callChangePasswordByAdminUserNotExists() {
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "wrong password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "Different Password");
+
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.changePasswordByAdmin());
+
+        assertThat(result.status()).isEqualTo(BAD_REQUEST);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    /**
+     * Action Users.changePasswordByAdmin(): forbidden to change password of LDAP user
+     */
+    @Test
+    public void callChangePasswordByAdminLdap() {
+        testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
+        User userBla = testHelper.createAndPersistUserLdap(TestHelper.BLA_EMAIL, "Bla Bla", "bla", false);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "wrong password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "Different Password");
+
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByAdmin());
+
+        assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    /**
+     * Action Users.changePasswordByAdmin(): forbidden to change password of Oauth Google users
+     */
+    @Test
+    public void callChangePasswordByAdminGoogle() {
+        User userBla = testHelper.createAndPersistUserOAuthGoogle(TestHelper.BLA_EMAIL, "Bla Bla", "bla", false);
+
+        Map<String, String> formMap = new HashMap<>();
+        formMap.put(ChangePasswordModel.USERNAME, TestHelper.BLA_EMAIL);
+        formMap.put(ChangePasswordModel.NEW_PASSWORD, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT, "DifferentPw1!");
+        formMap.put(ChangePasswordModel.OLD_PASSWORD, "bla");
+
+        Result result = call("POST", userBla, formMap, routes.Users.changePasswordByAdmin());
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -414,18 +516,13 @@ public class UsersControllerTest {
         Map<String, String> formMap = new HashMap<>();
         formMap.put("password", UserService.ADMIN_PASSWORD);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.remove(TestHelper.BLA_EMAIL));
 
         assertThat(result.status()).isEqualTo(OK);
-
         jpaApi.withTransaction(() -> assertThat(userDao.findByUsername(TestHelper.BLA_EMAIL)).isNull());
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
 
     /**
@@ -441,18 +538,14 @@ public class UsersControllerTest {
         Map<String, String> formMap = new HashMap<>();
         formMap.put("password", "bla");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.remove(TestHelper.BLA_EMAIL));
 
         assertThat(result.status()).isEqualTo(OK);
 
         jpaApi.withTransaction(() -> assertThat(userDao.findByUsername(TestHelper.BLA_EMAIL)).isNull());
+
+        // Clean-up
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
     }
 
     /**
@@ -470,14 +563,7 @@ public class UsersControllerTest {
         Map<String, String> formMap = new HashMap<>();
         formMap.put("password", "bla");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.remove("foo@foo.org").url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.remove("foo@foo.org"));
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -496,19 +582,23 @@ public class UsersControllerTest {
         Map<String, String> formMap = new HashMap<>();
         formMap.put("password", "wrong password");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(userBla);
-        RequestBuilder request = new RequestBuilder()
-                .method("POST")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(formMap)
-                .uri(routes.Users.remove(TestHelper.BLA_EMAIL).url());
-        Result result = route(fakeApplication, request);
+        Result result = call("POST", userBla, formMap, routes.Users.remove(TestHelper.BLA_EMAIL));
 
         assertThat(result.status()).isEqualTo(FORBIDDEN);
 
         // Clean-up
         testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    private Result call(String method, User user, Map<String, String> formMap, Call call) {
+        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        RequestBuilder request = new RequestBuilder()
+                .method(method)
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .bodyForm(formMap)
+                .uri(call.url());
+        return route(fakeApplication, request);
     }
 
 }

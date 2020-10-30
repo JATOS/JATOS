@@ -306,7 +306,12 @@ public class IdCookieAccessor {
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
                 .withSecure(false)
                 .withHttpOnly(false)
-                .withSameSite(SameSite.LAX)
+                // https://github.com/JATOS/JATOS/issues/208
+                // Safari + MTurk does not work with LAX: https://bugs.webkit.org/show_bug.cgi?id=194906
+                // Safari sees start study -> start component as a cross-side redirect although it's not
+                // We can't use SameSite.NONE: 1) not supported by Play yet, 2) needs secure flag true (only via HTTPS)
+                // Older browsers default to None - recent browsers to LAX
+//                .withSameSite(SameSite.LAX)
                 .withPath(Common.getPlayHttpContext())
                 .build();
         Publix.response().setCookie(cookie);

@@ -30,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.5.6-alpha";
+	jatos.version = "3.5.8";
 	/**
 	 * How long in ms should JATOS wait before retrying the HTTP call.
 	 */
@@ -450,7 +450,8 @@ var jatos = {};
 
 		// Study properties
 		jatos.studyProperties = initData.studyProperties;
-		if (typeof jatos.studyProperties.jsonData != 'undefined') {
+		if (typeof jatos.studyProperties.jsonData != 'undefined' &&
+				jatos.studyProperties.jsonData !== null) {
 			jatos.studyJsonInput = jatos.jQuery
 				.parseJSON(jatos.studyProperties.jsonData);
 		} else {
@@ -464,7 +465,8 @@ var jatos = {};
 
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
-		if (typeof jatos.componentProperties.jsonData != 'undefined') {
+		if (typeof jatos.componentProperties.jsonData != 'undefined' &&
+				jatos.componentProperties.jsonData !== null) {
 			jatos.componentJsonInput = jatos.jQuery
 				.parseJSON(jatos.componentProperties.jsonData);
 		} else {
@@ -791,7 +793,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.add = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("add", path, value, null);
@@ -809,7 +811,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.set = function (name, value, onSuccess, onFail) {
 		var patch = generatePatch("add", "/" + name, value, null);
@@ -824,7 +826,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.setAll = function (value, onSuccess, onFail) {
 		return jatos.batchSession.replace("", value, onSuccess, onFail);
@@ -839,7 +841,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.remove = function (path, onSuccess, onFail) {
 		var patch = generatePatch("remove", path, null, null);
@@ -853,7 +855,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.clear = function (onSuccess, onFail) {
 		var patch = generatePatch("remove", "/", null, null);
@@ -869,7 +871,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.replace = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("replace", path, value, null);
@@ -885,7 +887,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.copy = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("copy", path, null, from);
@@ -901,7 +903,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.batchSession.move = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("move", path, null, from);
@@ -993,13 +995,13 @@ var jatos = {};
 	/**
 	 * Posts result data for the currently running component back to the JATOS
 	 * server. Already stored result data for this component will be overwritten.
-	 * It offers callbacks, either as parameter or via jQuery.deferred.promise,
+	 * It offers callbacks, either as parameter or via Promise,
 	 * to signal success or failure in the transfer.
 	 * 
 	 * @param {object} resultData - String or object to be submitted
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
 		return submitOrAppendResultData(resultData, false, onSuccess, onError);
@@ -1008,13 +1010,13 @@ var jatos = {};
 	/**
 	 * Appends result data for the currently running component back to the JATOS
 	 * server. Contrary to jatos.submitResultData it does not overwrite the result
-	 * data. It offers callbacks, either as parameter or via jQuery.deferred.promise,
+	 * data. It offers callbacks, either as parameter or via Promise,
 	 * to signal success or failure in the transfer.
 	 *
 	 * @param {object or string} resultData - String or object to be appended
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.appendResultData = function (resultData, onSuccess, onError) {
 		return submitOrAppendResultData(resultData, true, onSuccess, onError);
@@ -1052,7 +1054,7 @@ var jatos = {};
 	 * @param {string} filename - Name of the uploaded file
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
 		if (typeof filename !== "string" || 0 === filename.length) {
@@ -1094,7 +1096,7 @@ var jatos = {};
 	 * @param {string} filename - Name of the uploaded file
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 * 
 	 * Additionally one can specify the component ID (in case different components uploaded
 	 * files with the same filename):
@@ -1102,7 +1104,7 @@ var jatos = {};
 	 * @param {string} filename - Name of the uploaded file
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.downloadResultFile = function (param1, param2, param3, param4) {
 		var componentPos, filename, onSuccess, onError;
@@ -1177,27 +1179,23 @@ var jatos = {};
 	};
 
 	/**
-	 * DEPRECATED (This function is automatically called by all functions that start a new
-	 * component, so it is not necessary to call it manually.)
-	 * 
 	 * If you want to just write into the study session, this function is
-	 * probably not what you want. This function sets the study session data and
-	 * sends it back to the JATOS server. If you want to write something
-	 * into the study session, just write into the 'jatos.studySessionData'
-	 * object.
+	 * not what you need. If you want to write something into the study
+	 * session, just write into the 'jatos.studySessionData' object.
+	 * 
+	 * This function sets the study session data and sends it to the
+	 * JATOS server for safe storage. This is done automatically whenever
+	 * a component finishes. But sometimes it is necessary to trigger this
+	 * manually, e.g. in a very long-running component one might want to
+	 * store the session intermediately.
 	 * 
 	 * @param {object} studySessionData - Object to be submitted
 	 * @param {optional function} onSuccess - Function to be called after this
 	 *				function is finished
 	 * @param {optional function} onFail - Callback if fail
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
-		console.warn("jatos.setStudySessionData is deprecated - it's called automatically by jatos.js");
-		return setStudySessionData(studySessionData, onSuccess, onFail);
-	};
-	
-	function setStudySessionData(studySessionData, onSuccess, onError) {	
 		jatos.studySessionData = studySessionData;
 		var studySessionDataStr = JSON.stringify(studySessionData);
 		var request = {
@@ -1209,14 +1207,14 @@ var jatos = {};
 			retry: jatos.httpRetry,
 			retryWait: jatos.httpRetryWait
 		};
-		return sendToHttpLoop(request, onSuccess, onError).promise();
-	}
+		return sendToHttpLoop(request, onSuccess, onFail).promise();
+	};
 
 	/**
 	 * Starts the component with the given ID. Before it calls
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {number} componentIdOrUuid - ID or UUID of the component to start
@@ -1251,7 +1249,7 @@ var jatos = {};
 		
 		// Send result data and study session data before starting next component
 		if (resultData) jatos.appendResultData(resultData);
-		setStudySessionData(jatos.studySessionData);
+		jatos.setStudySessionData(jatos.studySessionData);
 
 		var start = function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
@@ -1280,7 +1278,7 @@ var jatos = {};
 	 * component of a study is 1). Before this it calls 
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {number} componentPos - Position of the component to start
@@ -1308,7 +1306,7 @@ var jatos = {};
 	 * last one it finishes the study. Before this it calls 
 	 * jatos.appendResultData (sends result data to the JATOS server and 
 	 * appends them to the already existing ones for this component) and 
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
@@ -1354,7 +1352,7 @@ var jatos = {};
 	 * with the highest position that is active. Before this it calls
 	 * jatos.appendResultData (sends result data to the JATOS server and
 	 * appends them to the already existing ones for this component) and
-	 * setStudySessionData (syncs study session data with the JATOS server).
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 *
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data be sent back
@@ -1408,7 +1406,7 @@ var jatos = {};
 	 *		onUpdate(): Combines several other callbacks. It's called if one of the
 	 *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
 	 *			onMemberClose, or onGroupSession.
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.joinGroup = function (callbacks) {
 		groupChannelCallbacks = callbacks ? callbacks : {};
@@ -1783,7 +1781,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.add = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("add", path, value, null);
@@ -1798,7 +1796,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.set = function (name, value, onSuccess, onFail) {
 		var patch = generatePatch("add", "/" + name, value, null);
@@ -1812,7 +1810,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.setAll = function (value, onSuccess, onFail) {
 		return jatos.groupSession.replace("", value, onSuccess, onFail);
@@ -1825,7 +1823,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.remove = function (path, onSuccess, onFail) {
 		var patch = generatePatch("remove", path, null, null);
@@ -1839,7 +1837,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.clear = function (onSuccess, onFail) {
 		var patch = generatePatch("remove", "/", null, null);
@@ -1853,7 +1851,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.replace = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("replace", path, value, null);
@@ -1867,7 +1865,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.copy = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("copy", path, null, from);
@@ -1881,7 +1879,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.groupSession.move = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("move", path, null, from);
@@ -1931,7 +1929,7 @@ var jatos = {};
 	 *             the fixing was successful
 	 * @param {optional callback} onFail - Function to be called if
 	 *             the fixing failed
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.setGroupFixed = function (onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
@@ -2054,7 +2052,7 @@ var jatos = {};
 	 *            reassignment was successful
 	 * @param {optional function} onFail - Function to be called if the
 	 *            reassignment was unsuccessful. 
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
 		if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -2109,7 +2107,7 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called after the group
 	 *            is left.
 	 * @param {optional function} onError - Function to be called in case of error.
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
 		if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -2155,7 +2153,7 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
 	 * @param {optional function} onError - Function to be called in case of error
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
 		if (endingStudy) {
@@ -2246,7 +2244,7 @@ var jatos = {};
 	 *				successful submit
 	 * @param {optional function} onError - Function to be called in case of error
 	 * 
-	 * @return {jQuery.deferred.promise}
+	 * @return {Promise}
 	 */
 	jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
 		var resultData, successful, message, onSuccess, onError;
@@ -2433,6 +2431,32 @@ var jatos = {};
 	};
 
 	/**
+	 * Convenience function that sends all 'error' and 'unhandledrejection'
+	 * events and console.error and console.warn calls to JATOS server log
+	 */
+	jatos.catchAndLogErrors = function () {
+		window.addEventListener('error', function (e) {
+			jatos.log("Via 'error' event in " + e.filename + ":" +
+					e.lineno + " - " + e.message);
+		});
+		window.addEventListener('unhandledrejection', function (e) {
+			jatos.log("Via 'unhandledrejection' event in " + e.filename + ":" +
+					e.lineno + " - " + e.message);
+		});
+
+		var errorLog = console.error;
+		var warnLog = console.warn;
+		console.error = function (message) {
+			jatos.log("Via console.error - " + message);
+			errorLog.apply(this, arguments);
+		};
+		console.warn = function (message) {
+			jatos.log("Via console.warn - " + message);
+			warnLog.apply(this, arguments);
+		};
+	};
+
+	/**
 	 * Convenience function that adds all JATOS IDs (study ID, study title, 
 	 * component ID, component position, component title, worker ID,
 	 * study result ID, component result ID, group result ID, group member ID)
@@ -2459,7 +2483,7 @@ var jatos = {};
 	/**
 	 * Warn worker with a popup that the component is not reloadable and leaving the page would end the study
 	 * Remember: This works only if at least one user action happend in the window (e.g. mouse click)
-	 * Check: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#the-unload-event
+	 * Check: https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
 	 */
 	jatos.onLoad(function () {
 		if (showBeforeUnloadWarning && !jatos.componentProperties.reloadable) {

@@ -481,7 +481,6 @@ public class Batches extends Controller {
         Batch batch = batchDao.findById(batchId);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
             checker.checkStandardForBatch(batch, study, batchId);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);

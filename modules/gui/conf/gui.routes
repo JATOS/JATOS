@@ -32,10 +32,11 @@ GET      /jatos/status                                                      @con
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager()
 GET      /jatos/userData                                                    @controllers.gui.Users.allUserData()
-POST     /jatos/user                                                        @controllers.gui.Users.submitCreated()
-POST     /jatos/user/:username/profile                                      @controllers.gui.Users.submitEditedProfile(username: String)
+POST     /jatos/user                                                        @controllers.gui.Users.create(request: Request)
+POST     /jatos/user/:username/profile                                      @controllers.gui.Users.edit(username: String)
 GET      /jatos/user/:username/userData                                     @controllers.gui.Users.singleUserData(username: String)
-POST     /jatos/user/:username/password                                     @controllers.gui.Users.submitChangedPassword(username: String)
+POST     /jatos/user/passwordByUser                                         @controllers.gui.Users.changePasswordByAdmin(request: Request)
+POST     /jatos/user/passwordByAdmin                                        @controllers.gui.Users.changePasswordByUser(request: Request)
 POST     /jatos/user/:username/admin                                        @controllers.gui.Users.toggleAdmin(username: String, admin: Boolean)
 GET      /jatos/user/:username                                              @controllers.gui.Users.profile(username: String)
 # Play doesn't allow data in body in a DELETE request, so I use POST instead

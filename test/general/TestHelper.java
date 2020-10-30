@@ -113,28 +113,36 @@ public class TestHelper {
     }
 
     /**
-     * Creates and persist user if an user with this email doesn't exist already.
+     * Creates and persist an DB user if an user with this email doesn't exist already.
      */
     public User createAndPersistUser(String username, String name, String password) {
-        return jpaApi.withTransaction(entityManager -> {
-            User user = userDao.findByUsername(username);
-            if (user == null) {
-                user = new User(username, name);
-                userService.createAndPersistUser(user, password, false, false);
-            }
-            return user;
-        });
+        return createAndPersistUser(username, name, password, User.AuthMethod.DB, false);
     }
 
     /**
      * Creates and persist an LDAP user if an user with this email doesn't exist already.
      */
-    public User createAndPersistUserLdap(String username, String name, String password) {
+    public User createAndPersistUserLdap(String username, String name, String password, boolean admin) {
+        return createAndPersistUser(username, name, password, User.AuthMethod.LDAP, admin);
+    }
+
+    /**
+     * Creates and persist an OAuth Google user if an user with this email doesn't exist already.
+     */
+    public User createAndPersistUserOAuthGoogle(String username, String name, String password, boolean admin) {
+        return createAndPersistUser(username, name, password, User.AuthMethod.OAUTH_GOOGLE, admin);
+    }
+
+    /**
+     * Creates and persist an LDAP user if an user with this email doesn't exist already.
+     */
+    public User createAndPersistUser(String username, String name, String password, User.AuthMethod authMethod,
+            boolean admin) {
         return jpaApi.withTransaction(entityManager -> {
             User user = userDao.findByUsername(username);
             if (user == null) {
                 user = new User(username, name);
-                userService.createAndPersistUser(user, password, false, true);
+                userService.createAndPersistUser(user, password, admin, authMethod);
             }
             return user;
         });

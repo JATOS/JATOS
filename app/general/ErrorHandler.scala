@@ -1,9 +1,9 @@
 package general
 
 import javax.inject.{Inject, Singleton}
-
 import exceptions.gui.JatosGuiException
 import exceptions.publix.{InternalServerErrorPublixException, PublixException}
+import javax.naming.NamingException
 import play.api.Logger
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Results._
@@ -59,6 +59,9 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
         case e: PublixException =>
           logger.info(s"PublixException during call ${request.uri}: ${e.getMessage}")
           getErrorResult(e.getHttpStatus, e.getMessage, request)
+        case e: NamingException =>
+          logger.error("LDAP error", throwable)
+          InternalServerError(s"LDAP error: ${e.getCause}")
         case _ =>
           logger.error("Internal JATOS error", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more " +

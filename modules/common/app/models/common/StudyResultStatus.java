@@ -35,7 +35,7 @@ public class StudyResultStatus {
     /**
      * Time and date when the study was finished on the server.
      */
-    @JsonIgnore
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
 
     /**

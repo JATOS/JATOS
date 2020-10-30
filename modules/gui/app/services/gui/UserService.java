@@ -98,7 +98,7 @@ public class UserService {
             }
 
             // Some older JATOS versions miss the ADMIN role
-            if (!admin.hasRole(Role.ADMIN)) {
+            if (!admin.isAdmin()) {
                 admin.addRole(Role.ADMIN);
                 userDao.update(admin);
             }
@@ -182,7 +182,7 @@ public class UserService {
             user.removeRole(Role.ADMIN);
         }
         userDao.update(user);
-        return user.hasRole(Role.ADMIN);
+        return user.isAdmin();
     }
 
     /**

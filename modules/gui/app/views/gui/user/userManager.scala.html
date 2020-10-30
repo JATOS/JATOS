@@ -101,12 +101,14 @@
                         </div>
                     </div>
 
+                    @if(!loggedInUser.isOauthGoogle()){
                     <div class="form-group row">
                         <label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.NewUserModel.ADMIN_PASSWORD">Your password</label>
                         <div class="col-xs-5">
                             <input type="password" class="form-control @models.gui.NewUserModel.ADMIN_PASSWORD" name="@models.gui.NewUserModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
                         </div>
                     </div>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -128,12 +130,15 @@
                 </div>
                 <div class="modal-body">
                     <div class="messages"></div>
+                    <input type="hidden" class="form-control username" name="@models.gui.ChangePasswordModel.USERNAME" required>
+                    @if(!loggedInUser.isOauthGoogle()){
                     <div class="form-group row">
                         <label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.ChangePasswordModel.ADMIN_PASSWORD">Your password</label>
                         <div class="col-xs-5">
                             <input type="password" class="form-control @models.gui.ChangePasswordModel.ADMIN_PASSWORD" name="@models.gui.ChangePasswordModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
                         </div>
                     </div>
+                    }
                     <div class="form-group row">
                         <label class="control-label col-xs-4 newPasswordLabel" for="@models.gui.ChangePasswordModel.NEW_PASSWORD">New password</label>
                         <div class="col-xs-5">
@@ -163,12 +168,21 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <p class="confirmationText"></p>
+                    @if(!loggedInUser.isOauthGoogle()){
                     <div class="form-group row">
-                        <label class="control-label col-xs-6 adminPasswordLabel" for="password">Your password</label>
+                        <label class="control-label col-xs-6 passwordLabel" for="password">Your password</label>
                         <div class="col-xs-5">
                             <input type="password" class="form-control password" name="password" placeholder="Your password" autocomplete="off" required>
                         </div>
                     </div>
+                    } else {
+                    <div class="form-group row">
+                        <label class="control-label col-xs-6 usernameLabel" for="username">Your email</label>
+                        <div class="col-xs-5">
+                            <input type="text" class="form-control username" name="username" placeholder="Your email">
+                        </div>
+                    </div>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -269,7 +283,7 @@ $("#createUserForm").submit(function(event) {
     event.preventDefault();
     $.ajax({
         type: 'POST',
-        url: "@controllers.gui.routes.Users.submitCreated()",
+        url: "@controllers.gui.routes.Users.create()",
         data: $('#createUserForm').serialize(),
         success: function(response) {
             removeAlerts("#createUserModal");
@@ -344,7 +358,7 @@ function setUserToolbar(toolbar, username, authMethod) {
         toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
     } else {
         toolbar.find('.userChangePasswordButton').attr('disabled', true);
-        toolbar.find('.userChangePasswordTooltip').attr('title', "Not a locally stored User (e.g. authenticated by LDAP)");
+        toolbar.find('.userChangePasswordTooltip').attr('title', "Not a locally stored User (e.g. authenticated by LDAP or Google)");
     }
 
 }
@@ -372,6 +386,7 @@ $('#userTable').on('click', '.userChangePasswordButton', function() {
     $('#changePasswordForm').data(user);
     removeAlerts("#changePasswordModal");
     removeFormErrors("#changePasswordModal");
+    $('#changePasswordModal .@models.gui.ChangePasswordModel.USERNAME').val(user.username);
     $('#changePasswordModal .modal-title').text("Change password for " + user.name + "(" + user.username + ")");
     $('#changePasswordModal .adminPasswordLabel').text("@loggedInUser.getUsername()'s password");
     $('#changePasswordModal .@models.gui.ChangePasswordModel.ADMIN_PASSWORD').val('');
@@ -386,7 +401,7 @@ $("#changePasswordForm").submit(function(event) {
     var user = $(this).data(user);
     $.ajax({
         type: 'POST',
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/user/' + user.username + '/password',
+        url: "@controllers.gui.routes.Users.changePasswordByAdmin()",
         data: $('#changePasswordForm').serialize(),
         success: function(response) {
             removeAlerts("#changePasswordModal");
@@ -414,7 +429,13 @@ $('#userTable tbody').on('click', '.userDeleteButton', function() {
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete " + user.username + " (" + user.name + ")");
     $('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml(user));
-    $('#deleteUserModal .adminPasswordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
+    @if(!loggedInUser.isOauthGoogle()) {
+    $('#deleteUserModal .password').val('');
+    $('#deleteUserModal .passwordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
+    } else {
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address");
+    }
     $('#deleteUserModal .password').val('');
     $('#deleteUserModal').modal('show');
 });

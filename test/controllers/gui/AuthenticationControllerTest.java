@@ -130,7 +130,7 @@ public class AuthenticationControllerTest {
         Result result = route(fakeApplication, request);
 
         // Fail to login leads to a Bad Request (400)
-        assertEquals(400, result.status());
+        assertEquals(401, result.status());
         assertNull(result.session());
     }
 
@@ -140,7 +140,7 @@ public class AuthenticationControllerTest {
     @Test
     public void authenticateLdapSuccess() {
         testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
-        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", false);
 
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
@@ -160,7 +160,7 @@ public class AuthenticationControllerTest {
     @Test
     public void authenticateLdapFail() {
         testHelper.setupLdap("ldap://ldap.forumsys.com:389", "dc=example,dc=com");
-        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password");
+        testHelper.createAndPersistUserLdap("einstein", "Albert Einstein", "password", false);
 
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
@@ -170,7 +170,7 @@ public class AuthenticationControllerTest {
         Result result = route(fakeApplication, request);
 
         // Fail to login leads to a Bad Request (400)
-        assertEquals(400, result.status());
+        assertEquals(401, result.status());
         assertNull(result.session());
     }
 

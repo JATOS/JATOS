@@ -1,5 +1,6 @@
 package services.gui;
 
+import daos.common.UserDao;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.User;
@@ -11,6 +12,7 @@ import org.jsoup.safety.Whitelist;
 import play.data.Form;
 import play.data.validation.ValidationError;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
@@ -22,10 +24,17 @@ import javax.inject.Singleton;
 @Singleton
 public class AuthenticationValidation {
 
+    private final UserDao userDao;
+
+    @Inject
+    AuthenticationValidation(UserDao userDao) {
+        this.userDao = userDao;
+    }
+
     /**
-     * Validates a NewUserModel and returns a Form with errors. Usually this is
-     * done in the model class, but since here the user DAO is needed I put it
-     * in an extra class. In the NewUserModel are still some simple validations.
+     * Validates a NewUserModel and returns a Form with errors. It also checks if the user already exists in the
+     * database. Usually this is done in the model class, but since here the user DAO is needed I put it in an extra
+     * class. In the NewUserModel are still some simple validations.
      */
     public Form<NewUserModel> validateNewUser(Form<NewUserModel> form) {
         String normalizedUsername = User.normalizeUsername(form.get().getUsername());
@@ -44,12 +53,12 @@ public class AuthenticationValidation {
         }
 
         if (normalizedUsername.length() > 255) {
-            form = form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.USERNAME_TOO_LONG));
+            return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.USERNAME_TOO_LONG));
         }
 
         // Check with Jsoup for illegal HTML
         if (!Jsoup.isValid(normalizedUsername, Whitelist.none())) {
-            form = form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.NO_HTML_ALLOWED));
+            return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
         if (name == null || name.trim().isEmpty()) {
@@ -94,15 +103,20 @@ public class AuthenticationValidation {
             }
         }
 
+        // Check if the user already exists in database
+        User existingUser = userDao.findByUsername(normalizedUsername);
+        if (existingUser != null) {
+            form = form.withError(
+                    new ValidationError(NewUserModel.USERNAME, MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED));
+        }
+
         return form;
     }
 
     /**
-     * Validates a ChangePasswordModel and returns the Form with errors. It can
-     * either originate in the GUI in the user manager or in the user profile.
-     * Both cases have to be validated differently. Usually this would be done
-     * in the ChangePasswordModel class, but since here the user DAO is needed I
-     * put it in an extra class.
+     * Validates a ChangePasswordModel and returns the Form with errors. It can either originate in the GUI in the user
+     * manager or in the user profile. Usually this would be done in the ChangePasswordModel class, but since here the
+     * user DAO is needed I put it in an extra class.
      */
     public Form<ChangePasswordModel> validateChangePassword(Form<ChangePasswordModel> form) {
         ChangePasswordModel model = form.get();

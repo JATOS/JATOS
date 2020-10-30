@@ -37,7 +37,7 @@
 <div id="lastFinishedStudyRuns" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
     <p>Which are the last 5 finished studies?</p>
     <div class="col-sm-3 placeholder">Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></div>
-    <div class="col-sm-3 placeholder">Last Seen&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></div>
+    <div class="col-sm-3 placeholder">End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></div>
     <div class="col-sm-3 placeholder">State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></div>
     <div class="col-sm-3 placeholder">Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></div>
 </div>
@@ -105,7 +105,7 @@
 </div>
 
 <script type="text/javascript">
-var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+var loggedInUserIsAdmin = @loggedInUser.isAdmin();
 
 @if(general.common.Common.isTermsOfUseInfo()) {
 showInfo('By using this web application you agree to the <a href="http://www.jatos.org/JATOS-server-during-the-COVID-19-pandemic.html">Terms of Use</a>.', null, true);
@@ -154,12 +154,16 @@ function fillStudyResultStateTable(srsList, elementId) {
             userList = srs.users[0] + '&nbsp;<button type="button" role="button" class="btn btn-sm btn-default" data-toggle="popover" data-placement="bottom" data-trigger="click" data-container="body" data-html="true" '
                    + 'data-content="' + srs.users.join("<br>") + '">show all</button>';
         }
-        var lastSeenDate = srs.lastSeenDate ? srs.lastSeenDate : "never";
-        $(elementId).append(
-            '<div class="col-sm-3 text-l">' + srs.startDate + '</div>' +
-            '<div class="col-sm-3 text-l">' + lastSeenDate + '</div>' +
-            '<div class="col-sm-3 text-l">' + srs.studyState + '</div>' +
-            '<div class="col-sm-3 text-l">' + userList + '</div>');
+        var row = '<div class="col-sm-3 text-l">' + srs.startDate + '</div>';
+        if (srs.endDate) {
+            row += '<div class="col-sm-3 text-l">' + srs.endDate + '</div>';
+        } else {
+            var lastSeenDate = srs.lastSeenDate ? srs.lastSeenDate : "never";
+            row += '<div class="col-sm-3 text-l">' + lastSeenDate + '</div>';
+        }
+        row += '<div class="col-sm-3 text-l">' + srs.studyState + '</div>';
+        row += '<div class="col-sm-3 text-l">' + userList + '</div>';
+        $(elementId).append(row);
     });
     $('[data-toggle="popover"]').popover();
 }
@@ -230,7 +234,7 @@ function showUpdateAvailable(releaseInfo) {
 }
 
 $("#updateJatos .releaseNotesButton").click(function() {
-    var loggedInUserIsAdmin = @loggedInUser.hasRole(common.User.Role.ADMIN);
+    var loggedInUserIsAdmin = @loggedInUser.isAdmin();
     var releaseInfo = $("#updateJatos").data("releaseInfo");
     var version = getVersionName(releaseInfo);
     $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);

@@ -25,7 +25,6 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.libs.typedmap.TypedMap;
 
 import javax.inject.Inject;
-import javax.naming.NamingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -222,16 +221,6 @@ public class AuthenticationValidationTest {
     }
 
     /**
-     * Test AuthenticationService.validateNewUser(): wrong admin password
-     */
-    @Test
-    public void checkValidateNewUserWrongAdminPassword() {
-        checkValidateNewUserFail(MessagesStrings.WRONG_PASSWORD,
-                Pair.of("adminPassword", "wrongPw"),
-                Pair.of("username", "foo"));
-    }
-
-    /**
      * AuthenticationService.validateChangePassword(): change password of an
      * user via user manager and an admin user must be logged-in
      */
@@ -346,45 +335,8 @@ public class AuthenticationValidationTest {
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
                 data);
 
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm;
-            try {
-                validatedForm = authenticationValidation.validateChangePassword("tester.test@test.com", form);
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
-            assertThat(validatedForm.errors()).isEmpty();
-        });
-    }
-
-    /**
-     * AuthenticationService.validateChangePassword(): unauthorized user tries to change pw
-     */
-    @Test
-    public void checkValidateChangePasswordViaUnauthorizedUser() {
-        testHelper.mockContext();
-
-        User loggedInUser = testHelper.createAndPersistUser("tester.test@test.com", "Test Tester", "password");
-        RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
-
-        Map<String, String> data = new HashMap<>();
-        data.put("oldPassword", "password");
-        data.put("newPassword", "abc123A$");
-        data.put("newPasswordRepeat", "abc123A$");
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
-                data);
-
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm;
-            try {
-                validatedForm = authenticationValidation.validateChangePassword("different.test@test.com", form);
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(
-                    MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS);
-        });
+        Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(form);
+        assertThat(validatedForm.errors()).isEmpty();
     }
 
     @SafeVarargs
@@ -398,12 +350,7 @@ public class AuthenticationValidationTest {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm;
-            try {
-                validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_USERNAME, form);
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(form);
             assertThat(validatedForm.errors()).isEmpty();
         });
     }
@@ -419,12 +366,7 @@ public class AuthenticationValidationTest {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bind(defaultLang, TypedMap.empty(), data);
 
         jpaApi.withTransaction(() -> {
-            Form<NewUserModel> validatedForm;
-            try {
-                validatedForm = authenticationValidation.validateNewUser(UserService.ADMIN_USERNAME, form);
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
+            Form<NewUserModel> validatedForm = authenticationValidation.validateNewUser(form);
             assertThat(validatedForm.errors()).isNotEmpty();
             assertThat(validatedForm.errors().get(0).message()).isEqualTo(expectedErrorMsg);
         });
@@ -441,15 +383,8 @@ public class AuthenticationValidationTest {
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
                 data);
 
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm;
-            try {
-                validatedForm = authenticationValidation.validateChangePassword("tester.test@test.com", form);
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
-            assertThat(validatedForm.errors()).isEmpty();
-        });
+        Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(form);
+        assertThat(validatedForm.errors()).isEmpty();
     }
 
     @SafeVarargs
@@ -463,16 +398,9 @@ public class AuthenticationValidationTest {
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bind(defaultLang, TypedMap.empty(),
                 data);
 
-        jpaApi.withTransaction(() -> {
-            Form<ChangePasswordModel> validatedForm;
-            try {
-                validatedForm = authenticationValidation.validateChangePassword("tester.test@test.com", form);
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
-            assertThat(validatedForm.errors()).isNotEmpty();
-            assertThat(validatedForm.errors().get(0).message()).isEqualTo(expectedErrorMsg);
-        });
+        Form<ChangePasswordModel> validatedForm = authenticationValidation.validateChangePassword(form);
+        assertThat(validatedForm.errors()).isNotEmpty();
+        assertThat(validatedForm.errors().get(0).message()).isEqualTo(expectedErrorMsg);
     }
 
     private void prepareChangePasswordWithAdminTest() {

@@ -175,7 +175,7 @@ public class UserServiceTest {
         User userBla = new User();
         userBla.setUsername(TestHelper.BLA_EMAIL);
         userBla.setName("Bla Bla");
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, false));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, User.AuthMethod.DB));
 
         // Check that the user is stored in the DB properly
         jpaApi.withTransaction(() -> {
@@ -192,7 +192,7 @@ public class UserServiceTest {
         User userFoo = new User();
         userFoo.setUsername("foo@foo.org");
         userFoo.setName("Foo Foo");
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false, false));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false, User.AuthMethod.DB));
         jpaApi.withTransaction(() -> {
             User u = userDao.findByUsername(userFoo.getUsername());
             // It only has the USER role
@@ -213,7 +213,7 @@ public class UserServiceTest {
         userBla.setUsername(TestHelper.BLA_UPPER_CASE_EMAIL); // Mixed case email address
         userBla.setName("Bla Bla");
 
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, false));
+        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, User.AuthMethod.DB));
 
         // Retrieve user with lower-case email
         jpaApi.withTransaction(() -> {

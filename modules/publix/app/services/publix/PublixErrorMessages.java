@@ -96,8 +96,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String studyAssetsNotAllowedOutsideRun(String filePath) {
-		return "You tried to access the file " + filePath + " but it seems you have no access rights."
-				+ " Maybe this study was never started?";
+		return "You tried to access the file " + filePath + " but it seems you have no access rights.";
 	}
 
 	public static String couldntExtractFromIdCookie(String idCookieName, String key) {
@@ -109,7 +108,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String idCookieForThisStudyResultNotExists(Long studyResultId) {
-		return "JATOS isn't allowed to run a study with the study result ID " + studyResultId + ".";
+		return "Couldn't find cookie for study result ID " + studyResultId + ". Are cookies allowed in your browser?";
 	}
 
 	public static String idCookieExistsAlready(Long studyResultId) {

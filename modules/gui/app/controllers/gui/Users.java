@@ -8,7 +8,6 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.User;
-import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
@@ -20,6 +19,7 @@ import play.data.FormFactory;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
 import utils.common.HttpUtils;
@@ -139,33 +139,20 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated(Role.ADMIN)
-    public Result submitCreated() {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest();
+    public Result create(Http.Request request) throws NamingException {
+        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
 
         // Validate
         form = authenticationValidation.validateNewUser(form);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Check if user with this username already exists
-        String normalizedUsername = User.normalizeUsername(form.get().getUsername());
-        User existingUser = userDao.findByUsername(normalizedUsername);
-        if (existingUser != null) {
-            form = form.withError(
-                    new ValidationError(NewUserModel.USERNAME, MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED));
+        // Check admin password (except if Oauth Google)
+        User loggedInUser = authenticationService.getLoggedInUser();
+        String adminPassword = form.get().getAdminPassword();
+        if (!loggedInUser.isOauthGoogle()
+                && !authenticationService.authenticate(loggedInUser.getUsername(), adminPassword)) {
+            form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, "Wrong password"));
             return forbidden(form.errorsAsJson());
-        }
-
-        // Authenticate: check admin password
-        try {
-            String adminPassword = form.get().getAdminPassword();
-            if (!authenticationService.authenticate(loggedInUser.getUsername(), adminPassword)) {
-                form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
-                return forbidden(form.errorsAsJson());
-            }
-        } catch (NamingException e) {
-            LOGGER.warn("LDAP problems - " + e.toString());
-            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
         }
 
         userService.bindToUserAndPersist(form.get());
@@ -178,11 +165,11 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitEditedProfile(String username) throws JatosGuiException {
+    public Result edit(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedUsername = User.normalizeUsername(username);
 
-        if (loggedInUser.getAuthMethod() == AuthMethod.OAUTH_GOOGLE) {
+        if (loggedInUser.isOauthGoogle()) {
             return forbidden("Users signed in by Google can't change their name.");
         }
 
@@ -198,33 +185,32 @@ public class Users extends Controller {
     }
 
     /**
-     * Handles POST request of change password form. Can be either origin in the
-     * user manager or in the user profile.
+     * Handles POST request from change password form in user manager initiated by an admin
      */
     @Transactional
     @Authenticated
-    public Result submitChangedPassword(String usernameOfUserToChange) throws NamingException {
+    public Result changePasswordByAdmin(Http.Request request) throws NamingException {
         User loggedInUser = authenticationService.getLoggedInUser();
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest();
-        String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
+        String normalizedUsernameOfUserToChange = form.get().getUsername();
 
-        User user;
-        try {
-            user = userService.retrieveUser(normalizedUsernameOfUserToChange);
-        } catch (NotFoundException e) {
-            return badRequest(e.getMessage());
+        if (!loggedInUser.isAdmin()) {
+            return forbidden("Only admin users are allowed to change passwords of other users.");
         }
 
-        if (user.getAuthMethod() == AuthMethod.LDAP || user.getAuthMethod() == AuthMethod.OAUTH_GOOGLE) {
-            return forbidden("It's only possible to change the passwords of locally stored users"
-                    + " - not LDAP users or Google sign-in users.");
+        User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
+        if (user == null) {
+            return badRequest("An user with username " + normalizedUsernameOfUserToChange + " doesn't exist.");
+        }
+        if (user.isLdap() || user.isOauthGoogle()) {
+            return forbidden("It's not possible to change the password of LDAP or Google sign-in users.");
         }
 
-        // Only user 'admin' is allowed to change his password
+        // Only user 'admin' is allowed to change his own password
         if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
                 !loggedInUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
             form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
-                    MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
+                    "It's not possible to change admin's password."));
             return forbidden(form.errorsAsJson());
         }
 
@@ -232,33 +218,54 @@ public class Users extends Controller {
         form = authenticationValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
-        // Authenticate: Admin changes a password for some other user
-        if (loggedInUser.hasRole(Role.ADMIN) && form.get().getAdminPassword() != null) {
+        // Authenticate loggedInUser
+        if (!loggedInUser.isOauthGoogle()) {
             String adminUsername = loggedInUser.getUsername();
             String adminPassword = form.get().getAdminPassword();
             if (!authenticationService.authenticate(adminUsername, adminPassword)) {
-                form = form.withError(
-                        new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, MessagesStrings.WRONG_PASSWORD));
+                form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, "Wrong password"));
                 return forbidden(form.errorsAsJson());
             }
-            // Change password
-            String newPassword = form.get().getNewPassword();
-            userService.updatePassword(user, newPassword);
+        }
+        // Change password
+        String newPassword = form.get().getNewPassword();
+        userService.updatePassword(user, newPassword);
+
+        return ok(" "); // jQuery.ajax cannot handle empty responses
+    }
+
+    /**
+     * Handles POST request from change password form by user themselves
+     */
+    @Transactional
+    @Authenticated
+    public Result changePasswordByUser(Http.Request request) throws NamingException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
+        String normalizedUsernameOfUserToChange = form.get().getUsername();
+
+        if (!loggedInUser.getUsername().equals(normalizedUsernameOfUserToChange)) {
+            return forbidden("User can change only their own password");
         }
 
-        // Authenticate: An user changes their own password
-        if (loggedInUser.getUsername().equals(normalizedUsernameOfUserToChange)
-                && form.get().getOldPassword() != null) {
-            String oldPassword = form.get().getOldPassword();
-            if (!authenticationService.authenticate(normalizedUsernameOfUserToChange, oldPassword)) {
-                form = form.withError(
-                        new ValidationError(ChangePasswordModel.OLD_PASSWORD, MessagesStrings.WRONG_OLD_PASSWORD));
-                return forbidden(form.errorsAsJson());
-            }
-            // Change password
-            String newPassword = form.get().getNewPassword();
-            userService.updatePassword(user, newPassword);
+        if (loggedInUser.isLdap() || loggedInUser.isOauthGoogle()) {
+            return forbidden("It's not possible to change the password of LDAP or Google sign-in users.");
         }
+
+        // Validate
+        form = authenticationValidation.validateChangePassword(form);
+        if (form.hasErrors()) return forbidden(form.errorsAsJson());
+
+        // Check old password
+        String oldPassword = form.get().getOldPassword();
+        if (!authenticationService.authenticate(normalizedUsernameOfUserToChange, oldPassword)) {
+            form = form.withError(new ValidationError(ChangePasswordModel.OLD_PASSWORD, "Wrong password"));
+            return forbidden(form.errorsAsJson());
+        }
+
+        // Change password
+        String newPassword = form.get().getNewPassword();
+        userService.updatePassword(loggedInUser, newPassword);
 
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
@@ -276,12 +283,12 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedLoggedInUsername = loggedInUser.getUsername();
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
-        if (!loggedInUser.hasRole(Role.ADMIN) && !normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
+        if (!loggedInUser.isAdmin() && !normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
             return forbidden(MessagesStrings.NOT_ALLOWED_TO_DELETE_USER);
         }
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
-        if (loggedInUser.getAuthMethod() != AuthMethod.OAUTH_GOOGLE) {
+        if (!loggedInUser.isOauthGoogle()) {
             try {
                 String password = requestData.get("password");
                 if (!authenticationService.authenticate(normalizedLoggedInUsername, password)) {
@@ -292,6 +299,7 @@ public class Users extends Controller {
                 return internalServerError(MessagesStrings.LDAP_PROBLEMS);
             }
         } else {
+            // Google Oauth users confirm with their email address (stored in username)
             String username = requestData.get("username");
             if (!username.equals(loggedInUser.getUsername())) {
                 return forbidden(MessagesStrings.WRONG_USERNAME);

@@ -3,10 +3,10 @@
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <div id="toolbar" class="btn-group">
-    @if(loggedInUser.getAuthMethod() != common.User.AuthMethod.OAUTH_GOOGLE) {
+    @if(!loggedInUser.isOauthGoogle()) {
     <button id="editProfile" type="button" class="btn btn-user">Edit Profile</button>
     }
-    @if(loggedInUser.getAuthMethod() == common.User.AuthMethod.DB) {
+    @if(loggedInUser.isDb()) {
     <button id="changePassword" type="button" class="btn btn-user">Change Password <span class="glyphicon glyphicon-lock"></span></button>
     }
     @if(!loggedInUser.getUsername().equals(services.gui.UserService.ADMIN_USERNAME)) {
@@ -61,6 +61,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="messages"></div>
+                    <input type="hidden" class="form-control username" name="@models.gui.ChangePasswordModel.USERNAME" value="@loggedInUser.getUsername()" required>
                     <div class="form-group row">
                         <label class="control-label col-xs-4" for="@models.gui.ChangePasswordModel.OLD_PASSWORD">Old password</label>
                         <div class="col-xs-5">
@@ -96,7 +97,7 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <p class="confirmationText"></p>
-                    @if(loggedInUser.getAuthMethod() != common.User.AuthMethod.OAUTH_GOOGLE) {
+                    @if(!loggedInUser.isOauthGoogle()) {
                     <div class="form-group row" hidden>
                         <label class="control-label col-xs-6 passwordLabel" for="password">Your password</label>
                         <div class="col-xs-5">
@@ -167,7 +168,7 @@ $("#editProfileForm").submit(function(event) {
     event.preventDefault();
     $.ajax({
         type: 'POST',
-        url: "@controllers.gui.routes.Users.submitEditedProfile(loggedInUser.getUsername())",
+        url: "@controllers.gui.routes.Users.edit(loggedInUser.getUsername())",
         data: $('#editProfileForm').serialize(),
         success: function(response) {
             removeAlerts("#editProfileModal");
@@ -203,7 +204,7 @@ $("#changePasswordForm").submit(function(event) {
     event.preventDefault();
     $.ajax({
         type: 'POST',
-        url: "@controllers.gui.routes.Users.submitChangedPassword(loggedInUser.getUsername())",
+        url: "@controllers.gui.routes.Users.changePasswordByUser()",
         data: $('#changePasswordForm').serialize(),
         success: function(response) {
             removeAlerts("#changePasswordModal");
@@ -227,7 +228,7 @@ $('#toolbar').on('click', '#deleteUser', function() {
     removeAlerts("#deleteUserModal");
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete yourself");
-    @if(loggedInUser.getAuthMethod() != common.User.AuthMethod.OAUTH_GOOGLE) {
+    @if(!loggedInUser.isOauthGoogle()) {
     $('#deleteUserModal .passwordLabel').text("Confirm with your (" + userData.username+ ") password");
     $('#deleteUserModal .password').val('');
     $('#deleteUserModal .password').parents('.form-group').show();
