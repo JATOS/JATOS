@@ -35,13 +35,8 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?"></span></label>
+                        <label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?"></span></label>
                         <div class="col-xs-9" id="allowedWorkerTypes">
-                            <div class="checkbox"><label>
-                                <input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE">
-                                <span class="glyphicon glyphicon-jatos"></span> @common.workers.JatosWorker.UI_WORKER_TYPE
-                                <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want."></span>
-                            </label></div>
                             <div class="checkbox"><label>
                                 <input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE">
                                 <span class="glyphicon glyphicon-personal-single"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE
@@ -156,18 +151,18 @@ $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED'
     $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS').prop("disabled", !this.checked);
 });
 
-$('#batchList').on('click', '.batchPropertiesButton', function() {
+$('#batchTable').on('click', '.batchPropertiesButton', function() {
     var batch = getBatchData(this);
-    var batchItem = $(this).closest('.batchItem');
+    var batchRow = $(this).closest('.batchRow');
     if (!batch) {return} // should never happen
     $.ajax({
         type: 'GET',
         url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/properties",
         success: function(properties) {
             removeAlerts('#batchPropertiesModal');
-            removeFormErrors('#batchPropertiesModal')
+            removeFormErrors('#batchPropertiesModal');
             clearForm("#batchPropertiesForm");
-            fillbatchPropertiesForm(batch, properties, batchItem);
+            fillbatchPropertiesForm(batch, properties, batchRow);
             $('#batchPropertiesModal').modal('show');
         },
         error: function(response) {
@@ -176,10 +171,10 @@ $('#batchList').on('click', '.batchPropertiesButton', function() {
     });
 });
 
-function fillbatchPropertiesForm(batch, properties, batchItem) {
+function fillbatchPropertiesForm(batch, properties, batchRow) {
     $('#batchPropertiesModal').data('batch', batch);
     $('#batchPropertiesModal').data('properties', properties);
-    $('#batchPropertiesModal').data('batchItem', batchItem);
+    $('#batchPropertiesModal').data('batchRow', batchRow);
     $('#batchPropertiesModal .@models.gui.BatchProperties.ID').text(properties['@models.gui.BatchProperties.ID']);
     $('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
     $('#batchPropertiesModal .@models.gui.BatchProperties.COMMENTS').val(properties['@models.gui.BatchProperties.COMMENTS']);
@@ -279,12 +274,8 @@ $("#batchPropertiesForm").submit(function(event) {
             removeAlerts('#batchPropertiesModal');
             removeFormErrors('#batchPropertiesModal')
             $('#batchPropertiesModal').modal('hide');
-            var batchItem = $('#batchPropertiesModal').data('batchItem');
             var batch = $('#batchPropertiesModal').data('batch');
-            refreshBatch(batchItem, batch);
-            var workerSetupDiv = $(batchItem).find('.workerSetupItem');
-            if (workerSetupDiv.length == 0) {return} // might happen if worker setup was never opened
-            loadWorkers(batch.id, workerSetupDiv);
+            batchTable.ajax.reload();
         },
         error: function(response) {
             removeAlerts('#batchPropertiesModal');

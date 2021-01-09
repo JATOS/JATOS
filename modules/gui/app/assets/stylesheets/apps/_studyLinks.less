@@ -11,73 +11,75 @@
 
 
 /*
- * Define worker button colors
+ * Define worker button
  */
 @btn-worker-color:   #ffffff;
 @btn-worker-bg:      #97cd47;
 @btn-worker-border:  #91c541;
-.btn-worker,
+@btn-worker-active:  #79A339;
+
+.btn-worker {
+  color: @btn-worker-color;
+  background-color: @btn-worker-bg;
+  border-color: @btn-worker-border;
+}
+
 .btn-worker:hover,
 .btn-worker:focus,
 .btn-worker:active,
-.btn-worker:visited {
-	color: @btn-worker-color;
-	background-color: @btn-worker-bg;
-	border-color: @btn-worker-border;
+.btn-worker.active,
+.open .dropdown-toggle.btn-worker {
+  color: @btn-worker-color;
+  background-color: @btn-worker-active;
+  border-color: @btn-worker-border;
 }
 
-/*
- * Batch Bootstrap Panels
- */
-#batchList {
-    margin-top: 20px;
+.btn-worker:active,
+.btn-worker.active,
+.open .dropdown-toggle.btn-worker {
+  background-image: none;
 }
-#batchList > .panel {
-    background-color: white;
-    border: 0;
-    border-radius: 0;
-    border-bottom: 1px solid #cccccc;
+
+.btn-worker.disabled,
+.btn-worker[disabled],
+fieldset[disabled] .btn-worker,
+.btn-worker.disabled:hover,
+.btn-worker[disabled]:hover,
+fieldset[disabled] .btn-worker:hover,
+.btn-worker.disabled:focus,
+.btn-worker[disabled]:focus,
+fieldset[disabled] .btn-worker:focus,
+.btn-worker.disabled:active,
+.btn-worker[disabled]:active,
+fieldset[disabled] .btn-worker:active,
+.btn-worker.disabled.active,
+.btn-worker[disabled].active,
+fieldset[disabled] .btn-worker.active {
+  background-color: @btn-worker-bg;
+  border-color: @btn-worker-border;
 }
-#batchList > .panel > .panel-heading {
-    line-height:32px;
-    background-image: none;
-    background-color: white;
+
+
+.btn-worker .badge {
+  color: @btn-worker-bg;
+  background-color: @btn-worker-color;
 }
-#batchList .panel-collapse {
-    padding-bottom: 20px;
-}
-#batchList .collapseWorkerSetup {
-    margin-right: 10px;
-}
-#batchList .activeBatchButton {
-    margin-right: 10px;
-}
-#batchList .collapseWorkerTable {
-    margin-right: 10px;
-}
-#batchList .activeWorkerButton {
+
+#batchTable .studyLinksSetupItem .activeTypeButton {
     margin-right: 10px;
 }
 
-/*
- * Worker Bootstrap Panels
- */
-.workerSetupItem {
+#batchTable .studyLinksSetupItem {
     margin: 10px;
 }
-.workerSetupItem .panel > .panel-heading {
+#batchTable .studyLinksSetupItem .panel > .panel-heading {
     overflow: hidden;
     line-height:32px;
     background-image: none;
-    background-color: #f0f0f0;
+    background-color: #fff;
 }
-.workerSetupItem .panel > .panel-heading .activeButton {
-    margin-left: 10px;
-    margin-right: 10px;
-}
-.workerSetupItem .panel-collapse {
-    padding-left: 20px;
-    padding-right: 20px;
+#batchTable .studyLinksSetupItem .panel > .panel-heading:hover {
+    background-color: #f0f0f0 !important;
 }
 
 /*
@@ -87,23 +89,23 @@
     color: @btn-worker-bg;
     background-color: @btn-worker-color;
 }
-.batchItem > .panel-heading .resultsBadge {
+#batchTable .batchResultsBadge {
     color: @btn-batch-bg;
     background-color: @btn-batch-color;
 }
-.batchItem > .panel-heading .groupsBadge {
+#batchTable .groupsBadge {
     color: @btn-batch-bg;
     background-color: @btn-batch-color;
 }
-.batchItem > .panel-heading .batchWorkersBadge {
+#batchTable .batchStudyLinksBadge {
     color: @btn-batch-bg;
     background-color: @btn-batch-color;
 }
-.workerSetupItem .panel > .panel-heading .resultsBadge {
+#batchTable .workerResultsBadge {
     color: @btn-worker-bg;
     background-color: @btn-worker-color;
 }
-.workerSetupItem .panel > .panel-heading .workersBadge {
+#batchTable .studyLinksBadge {
     color: @btn-worker-bg;
     background-color: @btn-worker-color;
 }
@@ -172,39 +174,31 @@
 
 
 /*
- * DataTables .workerSetupItem
+ * DataTables #studyLinksModal
  */
-.workerSetupItem .pagination > li.active > a {
+#studyLinksModal .pagination > li.active > a {
     color: @btn-worker-color;
     background-color: @btn-worker-bg;
     border-color: darken(@btn-worker-bg, 5%);
 }
-.workerSetupItem .pagination > li.active > a:hover {
+#studyLinksModal .pagination > li.active > a:hover {
     background-color: darken(@btn-worker-bg, 10%);
 }
-.workerSetupItem .pagination > li > a {
+#studyLinksModal .pagination > li > a {
     color: @btn-default-color;
     background-color: @btn-default-bg;
     border-color: darken(@btn-default-bg, 20%);
 }
-.workerSetupItem .pagination > li:not(.disabled):not(.active) > a:hover {
+#studyLinksModal .pagination > li:not(.disabled):not(.active) > a:hover {
     background-color: darken(@btn-default-bg, 10%);
 }
-.workerSetupItem .pagination > li.disabled > a {
+#studyLinksModal .pagination > li.disabled > a {
     color: lighten(@btn-default-color, 20%);
 }
-.workerSetupItem .pagination > li.next > a {
+#studyLinksModal .pagination > li.next > a {
     margin-right: 10px;
 }
-.workerSetupItem table.dataTable thead .sorting:after,
-        #workerSetupTemplate table.dataTable thead .sorting_asc:after,
-        #workerSetupTemplate table.dataTable thead .sorting_desc:after {
-    display: none;
-}
 
-/*
- * Get worker links Bootstrap Modal
- */
-#workerRunLinkModal .linkUrls > ul {
-    margin-bottom: 0px;
+#showStudyLinksModal td {
+    word-break:break-all;
 }

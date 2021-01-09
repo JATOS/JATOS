@@ -11,7 +11,7 @@ a:focus {
     text-decoration: none;
 }
 .gray-light {
-	color: #aaa;
+    color: #aaa;
 }
 
 .noWrap {
@@ -25,6 +25,14 @@ a:focus {
 .text-xl {
     font-size: 150%;
 }
+
+.clipboardButton,
+.showAllButton {
+    &:extend(.btn-default all);
+    margin: 0 5px;
+    color: #888 !important;
+}
+
 
 /*
  * Glyphicons
@@ -211,6 +219,16 @@ a:focus {
 }
 
 /*
+ * Define Bootstrap Modal XL
+ */
+@media (min-width: 768px) {
+    .modal-xl {
+        width: 90%;
+        max-width:1200px;
+    }
+}
+
+/*
  * ACE editor and Bootstrap modals: stop jumping to the top with
  * https://stackoverflow.com/questions/43738707
  */
@@ -257,7 +275,7 @@ table.dataTable tbody tr.selected a {
 
 @import 'apps/_study.less';         // Study related views
 @import 'apps/_user.less';          // User related views
-@import 'apps/_workerAndBatch.less';// Batch related views
+@import 'apps/_studyLinks.less';    // Study links and Batch related views
 @import 'apps/_result.less';        // Results views
 @import 'apps/_edit.less';          // Edit forms
 

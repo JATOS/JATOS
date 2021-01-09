@@ -13,7 +13,7 @@ import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
 import services.publix.idcookie.exception.IdCookieMalformedException;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -22,7 +22,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
-import static play.mvc.Http.Cookie.SameSite;
 import static play.mvc.Http.Cookie.builder;
 
 /**
@@ -214,7 +213,7 @@ public class IdCookieAccessor {
             throws IdCookieMalformedException {
         String valueStr;
         try {
-            valueStr = HttpUtils.urlDecode(cookieMap.get(key));
+            valueStr = Helpers.urlDecode(cookieMap.get(key));
         } catch (Exception e) {
             throw new IdCookieMalformedException(PublixErrorMessages
                     .couldntExtractFromIdCookie(cookieName, key));

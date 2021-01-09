@@ -1,6 +1,5 @@
 package services.publix;
 
-import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
@@ -75,11 +74,7 @@ public class PublixUtils {
      * Retrieves the worker with the given worker ID from the DB.
      */
     public Worker retrieveWorker(Long workerId) throws ForbiddenPublixException {
-        Worker worker = workerDao.findById(workerId);
-        if (worker == null) {
-            throw new ForbiddenPublixException("A worker with ID " + workerId + " doesn't exist.");
-        }
-        return worker;
+        return workerDao.findById(workerId);
     }
 
     public ComponentResult startComponent(Component component, StudyResult studyResult)

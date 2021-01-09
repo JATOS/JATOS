@@ -20,9 +20,9 @@
 <p>
 <b>Version</b>: @general.common.Common.getJatosVersion()<br>
 <b>Java</b>: @java.lang.System.getProperty("java.version")<br>
-<b>URL host</b>: @utils.common.HttpUtils.getRealHostUrl(request)<br>
+<b>URL host</b>: @utils.common.Helpers.getRealHostUrl(request)<br>
 <b>URL basepath</b>: @general.common.Common.getPlayHttpContext()<br>
-<b>URL host + basepath</b>: @utils.common.HttpUtils.getRealBaseUrl(request)<br>
+<b>URL host + basepath</b>: @utils.common.Helpers.getRealBaseUrl(request)<br>
 <b>Local basepath</b>: @general.common.Common.getBasepath()<br>
 <b>Study assets root path</b>: @general.common.Common.getStudyAssetsRootPath()<br>
 <b>Result uploads allowed</b>: @general.common.Common.isResultUploadsEnabled()<br>
@@ -60,141 +60,141 @@
 
 <script>
 
-testRealHostUrl();
-testDatabase();
-testStudyAssetsRootFolder();
-testCache();
-testJsonSerialization();
-testJatosJsViaStudyPath();
-testJatosJsViaAssetsPath();
-testHeartbeatJs();
-testWebSocket();
+    testRealHostUrl();
+    testDatabase();
+    testStudyAssetsRootFolder();
+    testCache();
+    testJsonSerialization();
+    testJatosJsViaStudyPath();
+    testJatosJsViaAssetsPath();
+    testHeartbeatJs();
+    testWebSocket();
 
-function testRealHostUrl() {
-	var jatosHostUrl = "@utils.common.HttpUtils.getRealHostUrl(request)";
-	var browserUrl = window.location.origin;
-	if (jatosHostUrl == browserUrl) {
-		$('#testRealHostUrlResult').html('<font color="green">OK</font>');
-	} else if (jatosHostUrl.replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
-	    $('#testRealHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
-	} else {
-		$('#testRealHostUrlResult').html('<font color="red">FAIL</font>');
-	}
+    function testRealHostUrl() {
+    var jatosHostUrl = "@utils.common.Helpers.getRealHostUrl(request)";
+    var browserUrl = window.location.origin;
+    if (jatosHostUrl == browserUrl) {
+        $('#testRealHostUrlResult').html('<font color="green">OK</font>');
+    } else if (jatosHostUrl.replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
+        $('#testRealHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
+    } else {
+        $('#testRealHostUrlResult').html('<font color="red">FAIL</font>');
+    }
 }
 
 function testDatabase() {
-	$.ajax({
-		type: 'GET',
-		url: '@controllers.gui.routes.Tests.testDatabase()',
-		success: function(result) {
-			$('#testDatabaseResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testDatabaseResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testDatabase()',
+        success: function(result) {
+            $('#testDatabaseResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testDatabaseResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testStudyAssetsRootFolder() {
-	$.ajax({
-		type: 'GET',
-		url: '@controllers.gui.routes.Tests.testStudyAssetsRootFolder()',
-		success: function(result) {
-			$('#testStudyAssetsRootFolderResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testStudyAssetsRootFolderResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testStudyAssetsRootFolder()',
+        success: function(result) {
+            $('#testStudyAssetsRootFolderResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testStudyAssetsRootFolderResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testCache() {
-	$.ajax({
-		type: 'GET',
-		url: '@controllers.gui.routes.Tests.testCache()',
-		success: function(result) {
-			$('#testCacheResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testCacheResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testCache()',
+        success: function(result) {
+            $('#testCacheResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testCacheResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testJsonSerialization() {
-	$.ajax({
-		type: 'GET',
-		url: '@controllers.gui.routes.Tests.testJsonSerialization()',
-		success: function(result) {
-			$('#testJsonSerializationResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testJsonSerializationResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testJsonSerialization()',
+        success: function(result) {
+            $('#testJsonSerializationResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testJsonSerializationResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testJatosJsViaStudyPath() {
-	$.ajax({
-		type: 'GET',
-		url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos.js")}',
-		dataType: "text",
-		success: function(result) {
-			$('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testJatosJsViaStudyPathResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos.js")}',
+        dataType: "text",
+        success: function(result) {
+            $('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testJatosJsViaStudyPathResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testJatosJsViaAssetsPath() {
-	$.ajax({
-		type: 'GET',
-		url: '@{general.common.Common.getUrlWithBase("assets/javascripts/jatos.js")}',
-		dataType: "text",
-		success: function(result) {
-			$('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testJatosJsViaAssetsPathResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@{general.common.Common.getUrlWithBase("assets/javascripts/jatos.js")}',
+        dataType: "text",
+        success: function(result) {
+            $('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testJatosJsViaAssetsPathResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testHeartbeatJs() {
-	$.ajax({
-		type: 'GET',
-		url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos-publix/javascripts/heartbeat.js")},
-		dataType: "text",
-		success: function(result) {
-			$('#testHeartbeatJsResult').html('<font color="green">OK</font>');
-		},
-		error : function(err) {
-			$('#testHeartbeatJsResult').html('<font color="red">FAIL</font>');
-		}
-	});
+    $.ajax({
+        type: 'GET',
+        url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos-publix/javascripts/heartbeat.js")}',
+        dataType: "text",
+        success: function(result) {
+            $('#testHeartbeatJsResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testHeartbeatJsResult').html('<font color="red">FAIL</font>');
+        }
+    });
 }
 
 function testWebSocket() {
-	var webSocket = new WebSocket(((
-			window.location.protocol === "https:") ? "wss://" : "ws://")
-			+ window.location.host
-			+ "@controllers.gui.routes.Tests.testWebSocket()");
-	webSocket.onerror = function () {
-		$('#testWebSocketResult').html('<font color="red">FAIL</font>');
-	};
-			
-	webSocket.onmessage = function (event) {
-		if (event.data != "test message") {
-			$('#testWebSocketResult').html('<font color="red">FAIL</font>');
-		} else {
-			$('#testWebSocketResult').html('<font color="green">OK</font>');
-		}
-	};
-	webSocket.onopen = function (event) {
-		webSocket.send("test message");
-	};
+    var webSocket = new WebSocket(((
+            window.location.protocol === "https:") ? "wss://" : "ws://")
+            + window.location.host
+            + "@controllers.gui.routes.Tests.testWebSocket()");
+    webSocket.onerror = function () {
+        $('#testWebSocketResult').html('<font color="red">FAIL</font>');
+    };
+
+    webSocket.onmessage = function (event) {
+        if (event.data != "test message") {
+            $('#testWebSocketResult').html('<font color="red">FAIL</font>');
+        } else {
+            $('#testWebSocketResult').html('<font color="green">OK</font>');
+        }
+    };
+    webSocket.onopen = function (event) {
+        webSocket.send("test message");
+    };
 }
 
 </script>

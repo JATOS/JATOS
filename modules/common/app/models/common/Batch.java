@@ -99,7 +99,7 @@ public class Batch {
      * type is not in this list, it has no permission to run this study.
      */
     @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
-    @ElementCollection
+    @ElementCollection(fetch=FetchType.EAGER)
     private Set<String> allowedWorkerTypes = new HashSet<>();
 
     /**

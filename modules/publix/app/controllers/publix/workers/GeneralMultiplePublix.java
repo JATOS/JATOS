@@ -68,27 +68,27 @@ public class GeneralMultiplePublix extends Publix<GeneralMultipleWorker> impleme
     }
 
     @Override
-    public Result startStudy(Http.Request request, StudyRun studyRun) throws PublixException {
-        Batch batch = studyRun.getBatch();
+    public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
+        Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         GeneralMultipleWorker worker = workerCreator.createAndPersistGeneralMultipleWorker(batch);
         studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
 
         publixUtils.finishOldestStudyResult();
-        StudyResult studyResult = resultCreator.createStudyResult(studyRun, worker);
+        StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
         idCookieService.writeIdCookie(studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
-        LOGGER.info(".startStudy: studyRunUuid " + studyRun.getUuid() + ", "
+        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId());
-        studyLogger.log(study, "Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE
-                + " worker", batch, worker);
+        studyLogger.log(studyLink, "Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE
+                + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyResult.getUuid().toString(), firstComponent.getUuid(), null));
+                studyResult.getUuid(), firstComponent.getUuid(), null));
     }
 
 }

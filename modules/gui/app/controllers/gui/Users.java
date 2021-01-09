@@ -22,7 +22,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -74,7 +74,7 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         String breadcrumbs = breadcrumbsService.generateForHome(BreadcrumbsService.USER_MANAGER);
         return ok(views.html.gui.user.userManager.render(loggedInUser,
-                breadcrumbs, HttpUtils.isLocalhost()));
+                breadcrumbs, Helpers.isLocalhost()));
     }
 
     /**
@@ -118,7 +118,7 @@ public class Users extends Controller {
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
-        return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
+        return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs, Helpers.isLocalhost()));
     }
 
     /**

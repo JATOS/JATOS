@@ -82,7 +82,7 @@ public class Study {
     private boolean linearStudy = false;
 
     /**
-     * If true a preview of a study run of this study is allowed: the study run link can be used many times as long as
+     * If true a preview of a study run of this study is allowed: the study link can be used many times as long as
      * it does not go further than the first component. As soon as the second component is reached the usual
      * restrictions of the worker apply. 'Single' workers only.
      */

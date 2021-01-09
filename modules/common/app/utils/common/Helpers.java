@@ -14,16 +14,16 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Optional;
 
 /**
- * Utility class for all JATOS Controllers.
- *
  * @author Kristian Lange
  */
-public class HttpUtils {
+public class Helpers {
 
-    private static final ALogger LOGGER = Logger.of(HttpUtils.class);
+    private static final ALogger LOGGER = Logger.of(Helpers.class);
 
     /**
      * Check if the request was made via Ajax or not for Scala requests.
@@ -127,6 +127,18 @@ public class HttpUtils {
             value = value.trim();
         }
         return value;
+    }
+
+    public static String humanReadableByteCountSI(long bytes) {
+        if (-1000 < bytes && bytes < 1000) {
+            return bytes + " B";
+        }
+        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+        while (bytes <= -999_950 || bytes >= 999_950) {
+            bytes /= 1000;
+            ci.next();
+        }
+        return String.format("%.1f %cB", bytes / 1000.0, ci.current());
     }
 
 }

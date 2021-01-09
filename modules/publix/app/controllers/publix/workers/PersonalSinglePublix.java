@@ -76,10 +76,10 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
      * different then the first.
      */
     @Override
-    public Result startStudy(Http.Request request, StudyRun studyRun) throws PublixException {
-        Batch batch = studyRun.getBatch();
+    public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
+        Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
-        PersonalSingleWorker worker = (PersonalSingleWorker) studyRun.getWorker();
+        PersonalSingleWorker worker = (PersonalSingleWorker) studyLink.getWorker();
         studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
 
         // There are 5 possibilities
@@ -92,7 +92,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         StudyResult studyResult;
         if (!studyResultOpt.isPresent()) {
             publixUtils.finishOldestStudyResult();
-            studyResult = resultCreator.createStudyResult(studyRun, worker);
+            studyResult = resultCreator.createStudyResult(studyLink, worker);
         } else {
             if (!idCookieService.hasIdCookie(studyResultOpt.get().getId())) {
                 publixUtils.finishOldestStudyResult();
@@ -103,15 +103,15 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         publixUtils.setUrlQueryParameter(request, studyResult);
         Component component = publixUtils.retrieveFirstActiveComponent(study);
 
-        LOGGER.info(".startStudy: studyRunUuid " + studyRun.getUuid() + ", "
+        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId());
-        studyLogger.log(study, "Started study run with " + PersonalSingleWorker.UI_WORKER_TYPE
-                + " worker", batch, worker);
+        studyLogger.log(studyLink, "Started study run with " + PersonalSingleWorker.UI_WORKER_TYPE
+                + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyResult.getUuid().toString(), component.getUuid(), null));
+                studyResult.getUuid(), component.getUuid(), null));
     }
 
 }

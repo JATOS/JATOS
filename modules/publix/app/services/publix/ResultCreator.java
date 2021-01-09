@@ -31,8 +31,8 @@ public class ResultCreator {
     /**
      * Creates StudyResult and adds it to the given Worker.
      */
-    public StudyResult createStudyResult(StudyRun studyRun, Worker worker) {
-        StudyResult studyResult = new StudyResult(studyRun, worker);
+    public StudyResult createStudyResult(StudyLink studyLink, Worker worker) {
+        StudyResult studyResult = new StudyResult(studyLink, worker);
         if (studyResult.getStudy().isAllowPreview()) {
             studyResult.setStudyState(StudyResult.StudyState.PRE);
         } else {

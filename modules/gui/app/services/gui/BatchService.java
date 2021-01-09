@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
-import daos.common.StudyRunDao;
+import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.NotFoundException;
 import general.common.StudyLogger;
@@ -36,18 +36,18 @@ public class BatchService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final GroupResultDao groupResultDao;
-    private final StudyRunDao studyRunDao;
+    private final StudyLinkDao studyLinkDao;
     private final StudyLogger studyLogger;
 
     @Inject
-    BatchService(ResultRemover resultRemover, BatchDao batchDao, StudyDao studyDao,
-            WorkerDao workerDao, GroupResultDao groupResultDao, StudyRunDao studyRunDao, StudyLogger studyLogger) {
+    BatchService(ResultRemover resultRemover, BatchDao batchDao, StudyDao studyDao, WorkerDao workerDao,
+            GroupResultDao groupResultDao, StudyLinkDao studyLinkDao, StudyLogger studyLogger) {
         this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.groupResultDao = groupResultDao;
-        this.studyRunDao = studyRunDao;
+        this.studyLinkDao = studyLinkDao;
         this.studyLogger = studyLogger;
     }
 
@@ -73,10 +73,9 @@ public class BatchService {
     /**
      * Initialises Batch. Does NOT persist.
      */
-    Batch createBatch(Batch batch, Study study) {
+    void createBatch(Batch batch, Study study) {
         initBatch(batch, study);
         batch.setStudy(study);
-        return batch;
     }
 
     /**
@@ -227,17 +226,17 @@ public class BatchService {
      * Workers (if they don't belong to an other batch) and persists the changes
      * to the database.
      */
-    public void remove(Batch batch, User loggedinUser) throws IOException {
+    public void remove(Batch batch, User loggedinUser) {
         // Remove this Batch from its study
         Study study = batch.getStudy();
         study.removeBatch(batch);
         studyDao.update(study);
 
-        // Delete all StudyRuns that belong to this Batch
-        studyRunDao.removeAllByBatch(batch);
-
         // Delete all StudyResults and all ComponentResults
         resultRemover.removeAllStudyResults(batch, loggedinUser);
+
+        // Delete all StudyLinks that belong to this Batch
+        studyLinkDao.removeAllByBatch(batch);
 
         // Delete all GroupResults
         groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);

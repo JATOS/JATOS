@@ -1,0 +1,692 @@
+@(loggedInUser: common.User, study: common.Study, realBaseUrl: java.net.URL)
+
+<!-- Template study links setup (each batch has one)-->
+<div id="studyLinksSetupTemplate" class="slider panel-group studyLinksSetupItem" role="tablist" style="display: none">
+    <div class="personalSingleStudyLinksSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <button type="button" class="btn btn-default activeTypeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+                <span data-toggle="tooltip" title="Study links with the worker type Personal Single can run a study only once. They are typically used to be distributed amongst participants that you contact individually. Each link can be personalized with a comment.">
+                    <span class="glyphicon glyphicon-personal-single"></span>&nbsp;Personal Single
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker studyLinksButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Show existing and create new study links for the worker type Personal Single">
+                    Study Links
+                    <span class="glyphicon glyphicon-link"></span>
+                    <span class="studyLinksBadge badge"></span>
+                </button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Show all study results that belong to this batch and worker type Personal Single">
+                    Results <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch and worker type Personal Single"></span>
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <div class="personalMultipleStudyLinksSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <button type="button" class="btn btn-default activeTypeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+                <span data-toggle="tooltip" title="Study links with the worker type Personal Multiple can run a study multiple times. They are typically used to be distributed amongst participants that you contact individually. Each link can be personalized with a comment.">
+                    <span class="glyphicon glyphicon-personal-multiple"></span>&nbsp;Personal Multiple
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker studyLinksButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Show existing and create new study links for the worker type Personal Multiple">
+                    Study Links
+                    <span class="glyphicon glyphicon-link"></span>
+                    <span class="studyLinksBadge badge"></span>
+                </button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Show all study results that belong to this batch and worker type Personal Multiple">
+                    Results <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch and worker type Personal Multiple"></span>
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <div class="generalSingleStudyLinksSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <button type="button" class="btn btn-default activeTypeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+                <span data-toggle="tooltip" title="Study links with the worker type General Single can be used many times - but only once in the same browser. There is only one link of this type per batch. They are typically used to be distributed in a mailing list or posting in social media.">
+                    <span class="glyphicon glyphicon-general-single"></span>&nbsp;General Single
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker studyLinkButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Get the study link for workers of type General Single">
+                    Study Link
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Show all study results that belong to this batch and worker type General Single">
+                    Results <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch and worker type General Single"></span>
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <div class="generalMultipleStudyLinksSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <button type="button" class="btn btn-default activeTypeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+                <span data-toggle="tooltip" title="Study links with the worker type General Multiple can be used many times - even in the same browser. There is only one link of this type per batch. They are typically used to be distributed in a mailing list or posting in social media.">
+                    <span class="glyphicon glyphicon-general-multiple"></span>&nbsp;General Multiple
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker studyLinkButton" data-toggle="tooltip"
+                    data-placement="bottom" title="Get the study link for workers of type General Multiple">
+                    Study Link
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Show study results that belong to this batch and worker type General Multiple">
+                    Results <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch and worker type General Multiple"></span>
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <div class="mtStudyLinksSetup panel panel-default">
+        <div class="panel-heading">
+            <span class="panel-title">
+                <button type="button" class="btn btn-default activeTypeButton" data-toggle="tooltip" data-placement="bottom" title="">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+                <span data-toggle="tooltip" title="MTurk workers do not have a study link they have source code that contains the study link. This source code has to be copied into the 'source' field of your study's design layout in Mechanical Turk.">
+                    <span class="glyphicon glyphicon-mturk"></span>&nbsp;MTurk
+                </span>
+            </span>
+            <span class="btn-group pull-right">
+                <button type="button" class="btn btn-worker mtWorkerSourceCode" data-toggle="tooltip" data-placement="bottom"
+                    title="Show code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">
+                    Source Code
+                </button>
+                <button type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip" data-placement="bottom"
+                    title="Show study results that belong to this batch and worker type MTurk">
+                    Results <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                    title="Number of study results that belong to this batch and worker type MTurk"></span>
+                </button>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Study link Modal (Personal Single or Personal Multiple) -->
+<div id="studyLinksModal" class="modal fade" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Study Links</h4>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <button type="button" class="btn btn-worker newStudyLinksButton" data-toggle="tooltip"
+                        data-placement="bottom" title="Create new study links">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    New Study Links
+                    <span class="glyphicon glyphicon-link"></span>
+                </button>
+                <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <thead>
+                    <tr>
+                        <th data-toggle="tooltip" data-placement="bottom" title="Activate / inactivate this study link - only activated links can be used to run this study">Active</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="ID of the worker that belongs to this study link">Worker&nbsp;ID</th>
+                        <th>Study&nbsp;Link</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of study link">Comment</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last.">Study&nbsp;Result&nbsp;State</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template for active button in study link's row -->
+<div id="studyLinkActiveButtonDiv" style="display: none">
+    <button type="button" class="btn btn-default activeStudyLinkButton"
+            data-toggle="tooltip" data-placement="bottom" title="">
+        <span class="glyphicon glyphicon-ok"></span>
+    </button>
+</div>
+
+<!-- Study link creator Modal (Personal Single or Personal Multiple) -->
+<div id="studyLinksCreatorModal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span><span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title"></h4>
+                </div>
+                <div class="modal-body">
+                    <div class="messages"></div>
+                    <p class="modalText"></p>
+                    <div class="form-group row">
+                        <label class="control-label col-xs-3" for="comment">Comment&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Use the comment to distinguish the worker(s) from others."></span></label>
+                        <div class="col-xs-9">
+                            <input class="comment form-control" type="text" placeholder="Comment">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="control-label col-xs-3" for="amount">Amount&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the number of links you want to create."></span></label>
+                        <div class="col-xs-3">
+                            <input class="amount form-control col-xs-3" type="number" min="1" max="100" value="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="confirmed btn btn-worker">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Study link display Modal -->
+<div id="studyLinksDisplayModal" class="modal fade" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span><span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title">Study link</h4>
+                </div>
+                <div class="modal-body">
+                    <!-- Filled dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+function loadStudyLinksSetup(batchId) {
+    var studyLinksSetupDiv = $(batchTable.row('#' + batchId).node()).next().find('.studyLinksSetupItem').first();
+    if (studyLinksSetupDiv.length == 0) {
+        var studyLinksSetupDiv = $('#studyLinksSetupTemplate').clone().removeAttr('id').show();
+    }
+
+    $.ajax({
+        type: 'GET',
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batchId + "/studyLinksSetupData",
+        success: function(studyLinksSetupData) {
+            fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv);
+        },
+        error: function(response) {
+            showError("Couldn't load study links setup.");
+        }
+    });
+    return studyLinksSetupDiv;
+}
+
+function fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv) {
+    setAllowedWorkerTypes(studyLinksSetupDiv, studyLinksSetupData.allowedWorkerTypes);
+
+    $(studyLinksSetupDiv).find('.personalSingleStudyLinksSetup .studyLinksBadge').text(studyLinksSetupData.personalSingleLinkCount);
+    $(studyLinksSetupDiv).find('.personalMultipleStudyLinksSetup .studyLinksBadge').text(studyLinksSetupData.personalMultipleLinkCount);
+
+    resultCount = studyLinksSetupData.studyResultCountsPerWorker['@common.workers.PersonalSingleWorker.WORKER_TYPE'];
+    $(studyLinksSetupDiv).find('.personalSingleStudyLinksSetup .workerResultsButton .workerResultsBadge').text(resultCount);
+    resultCount = studyLinksSetupData.studyResultCountsPerWorker['@common.workers.PersonalMultipleWorker.WORKER_TYPE'];
+    $(studyLinksSetupDiv).find('.personalMultipleStudyLinksSetup .workerResultsButton .workerResultsBadge').text(resultCount);
+    resultCount = studyLinksSetupData.studyResultCountsPerWorker['@common.workers.GeneralSingleWorker.WORKER_TYPE'];
+    $(studyLinksSetupDiv).find('.generalSingleStudyLinksSetup .workerResultsButton .workerResultsBadge').text(resultCount);
+    resultCount = studyLinksSetupData.studyResultCountsPerWorker['@common.workers.GeneralMultipleWorker.WORKER_TYPE'];
+    $(studyLinksSetupDiv).find('.generalMultipleStudyLinksSetup .workerResultsButton .workerResultsBadge').text(resultCount);
+    resultCount = studyLinksSetupData.studyResultCountsPerWorker['@common.workers.MTWorker.WORKER_TYPE']
+            + studyLinksSetupData.studyResultCountsPerWorker['@common.workers.MTSandboxWorker.WORKER_TYPE'];
+    $(studyLinksSetupDiv).find('.mtStudyLinksSetup .workerResultsButton .workerResultsBadge').text(resultCount);
+
+    setButtonWidthToMax(".studyLinksSetupItem .studyLinksButton");
+    setButtonWidthToMax(".studyLinksSetupItem .workerResultsButton");
+}
+
+function setAllowedWorkerTypes(studyLinksSetupDiv, allowedWorkerTypes) {
+    // First clear all allowed worker types
+    $(studyLinksSetupDiv).find(".activeTypeButton").each(function(index) {
+        toggleWorkerTypeButton($(this), false);
+    });
+    // Now set the allowed ones
+    $.each(allowedWorkerTypes, function(index, workerType) {
+        var button;
+        switch (workerType) {
+        case '@common.workers.PersonalSingleWorker.WORKER_TYPE':
+            button = $(studyLinksSetupDiv).find(".personalSingleStudyLinksSetup .activeTypeButton");
+            break;
+        case '@common.workers.PersonalMultipleWorker.WORKER_TYPE':
+            button = $(studyLinksSetupDiv).find(".personalMultipleStudyLinksSetup .activeTypeButton");
+            break;
+        case '@common.workers.GeneralSingleWorker.WORKER_TYPE':
+            button = $(studyLinksSetupDiv).find(".generalSingleStudyLinksSetup .activeTypeButton");
+            break;
+        case '@common.workers.GeneralMultipleWorker.WORKER_TYPE':
+            button = $(studyLinksSetupDiv).find(".generalMultipleStudyLinksSetup .activeTypeButton");
+            break;
+        case '@common.workers.MTWorker.WORKER_TYPE':
+            button = $(studyLinksSetupDiv).find(".mtStudyLinksSetup .activeTypeButton");
+            break;
+        }
+        if (button) {
+            toggleWorkerTypeButton(button, true);
+        }
+    });
+}
+
+function toggleWorkerTypeButton(button, active) {
+    if (active) {
+        button.addClass('allowedWorkerType');
+        button.removeClass('btn-default');
+        button.addClass('btn-worker');
+        button.attr('title', "Click to forbid this worker type");
+        $(button).find('.glyphicon').removeClass('glyphicon-remove').addClass('glyphicon-ok');
+    } else {
+        button.removeClass('allowedWorkerType');
+        button.removeClass('btn-worker');
+        button.addClass('btn-default');
+        button.attr('title', "Click to allow this worker type");
+        $(button).find('.glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-remove');
+    }
+}
+
+$('#batchTable').on('click', '.activeTypeButton', function() {
+    var workerType = getWorkerTypeFromPanel(this);
+    var allow = $(this).hasClass('allowedWorkerType');
+    var batch = getBatchData(this);
+    var studyLinksSetupDiv = $(this).closest('.studyLinksSetupItem');
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id
+                + "/properties/workerType/" + workerType + "?allow=" + !allow,
+        type : "POST",
+        success: function(allowedWorkerTypes) {
+            setAllowedWorkerTypes(studyLinksSetupDiv, allowedWorkerTypes);
+        },
+        error : function(err) {
+            showError("Couldn't change worker type activation.");
+        }
+    });
+});
+
+function getWorkerTypeFromPanel(panelElem) {
+    if ($(panelElem).closest('.panel').is('.personalSingleStudyLinksSetup')) {
+        return "@common.workers.PersonalSingleWorker.WORKER_TYPE";
+    } else if ($(panelElem).closest('.panel').is('.personalMultipleStudyLinksSetup')) {
+        return "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
+    } else if ($(panelElem).closest('.panel').is('.generalSingleStudyLinksSetup')) {
+        return "@common.workers.GeneralSingleWorker.WORKER_TYPE";
+    } else if ($(panelElem).closest('.panel').is('.generalMultipleStudyLinksSetup')) {
+            return "@common.workers.GeneralMultipleWorker.WORKER_TYPE";
+    } else if ($(panelElem).closest('.panel').is('.mtStudyLinksSetup')) {
+        return "@common.workers.MTWorker.WORKER_TYPE";
+    }
+}
+
+var paginationLength = 10;
+var studyLinksTable;
+
+$('#batchTable').on('click', '.studyLinksButton', function(e) {
+    var batch = getBatchData(this);
+    if (!batch) {return} // should never happen
+    var workerType;
+
+    if ($(this).parents('.personalSingleStudyLinksSetup').length) {
+        workerType = "@common.workers.PersonalSingleWorker.WORKER_TYPE";
+        $('#studyLinksModal .modal-title').text("Study links for worker type Personal Single in batch '" + batch.title + "'");
+        $('#studyLinksModal .newStudyLinksButton').attr('title', 'Create new study links for worker type Personal Single');
+        fillStudyLinksTable(batch, workerType);
+    } else if ($(this).parents('.personalMultipleStudyLinksSetup').length) {
+        workerType = "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
+        $('#studyLinksModal .modal-title').text("Study links for worker type Personal Multiple in batch '" + batch.title + "'");
+        $('#studyLinksModal .newStudyLinksButton').attr('title', 'Create new study links for worker type Personal Multiple');
+        fillStudyLinksTable(batch, workerType);
+
+    }
+
+    $('#studyLinksModal').data('batch', batch);
+    $('#studyLinksModal').data('workerType', workerType);
+    $('#studyLinksModal').modal('show');
+});
+
+function fillStudyLinksTable(batch, workerType) {
+    studyLinksTable = $('#studyLinksModal').find('.table').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/studyLinksData?workerType=" + workerType,
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText, "#studyLinksModal .messages");
+                } else {
+                    showError("Couldn't load study links for " + workerType + " worker type.", "#studyLinksModal .messages");
+                }
+            }
+        },
+        "destroy": true,
+        "initComplete": toggleTablePagination,
+        "pageLength": paginationLength,
+        "dom": 'ftip',
+        "columns": [
+            {
+                "data": null,
+                "defaultContent": '',
+                "orderable": false,
+                "width": "1px",
+                "render": function (data, type, full, meta) {
+                    var button = $('#studyLinkActiveButtonDiv button:first-child').clone();
+                    setStudyLinkRowActive(button, data.active);
+                    return button.prop('outerHTML');
+                }
+            },
+            {
+                "data": "workerId",
+                "width": "1%"
+            },
+            {
+                "data": "studyLinkId",
+                "render": function(studyLinkId, type, row) {
+                    return '@realBaseUrl.toString()publix/' + studyLinkId
+                        + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
+                        + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button>';
+                }
+            },
+            {
+                "data": "comment",
+            },
+            {
+                "data": "studyResultState",
+                "width": "20%"
+            }
+        ],
+        "createdRow": function(row, data, index) {
+            setStudyLinkRowActive($(row).find('.activeStudyLinkButton'), data.active);
+        },
+        "order": [[ 1, "desc" ]],
+        "autoWidth": false,
+        "pageLength": 10,
+        "pagingType": "simple_numbers",
+        "lengthChange": false,
+        "info": false,
+        "language": {
+            "emptyTable": "No links yet",
+            "search": "Search:"
+        }
+    });
+}
+
+$('#batchTable').on('click', '.workerResultsButton', function() {
+    var workerType = getWorkerTypeFromPanel(this);
+    var batch = getBatchData(this);
+    if (workerType) {
+        window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id
+            + "/results?workerType=" + workerType;
+    }
+});
+
+function toggleTablePagination() {
+    var rowNumber = studyLinksTable.rows().count();
+    var hidePaging = rowNumber <= paginationLength;
+    $('#studyLinksModal .dataTables_paginate').toggle(!hidePaging);
+}
+
+function setStudyLinkRowActive(button, active) {
+    var studyLinkRow = $(button).closest('tr');
+    if (active) {
+        studyLinkRow.removeClass("grayout");
+        button.addClass('activeStudyLink');
+        button.removeClass('btn-default');
+        button.addClass('btn-worker');
+        button.attr('title', "Click to deactivate this study link");
+        button.html($(button.html())
+                .removeClass('glyphicon-remove')
+                .addClass('glyphicon-ok').prop('outerHTML'));
+    } else {
+        studyLinkRow.addClass("grayout");
+        button.removeClass('activeStudyLink');
+        button.removeClass('btn-worker');
+        button.addClass('btn-default');
+        button.attr('title', "Click to activate this study link");
+        button.html($(button.html())
+                .removeClass('glyphicon-ok')
+                .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+}
+
+$('#studyLinksModal').on('click', '.activeStudyLinkButton', function() {
+    var button = this;
+    var batch = $('#studyLinksModal').data('batch');
+    var active = $(button).hasClass('activeStudyLink');
+    var tr = $(button).closest('tr');
+    var rowData = studyLinksTable.row(tr).data();
+    var studyLinkId = rowData.studyLinkId;
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id
+                + "/studyLink/" + studyLinkId + "?active=" + !active,
+        type : "POST",
+        success: function(active) {
+            setStudyLinkRowActive($(button), active);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#studyLinksModal').on('click', '.newStudyLinksButton', function(e) {
+    var batch = $('#studyLinksModal').data('batch');
+    var workerType = $('#studyLinksModal').data('workerType');
+    if (workerType == "@common.workers.PersonalSingleWorker.WORKER_TYPE") {
+        showStudyLinksCreatorPersonalSingleModal(batch);
+    } else if (workerType == "@common.workers.PersonalMultipleWorker.WORKER_TYPE") {
+        showStudyLinksCreatorPersonalMultipleModal(batch)
+    }
+});
+
+function showStudyLinksCreatorPersonalSingleModal(batch) {
+    var text = "Use a comment to distinguish these study links from others.";
+    var title = "Create study links for worker type Personal Single in batch '" + batch.title + "'";
+    showStudyLinksCreatorModal(title, text);
+    $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
+        $('#studyLinksCreatorModal').modal('hide');
+        var url = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/personalSingleRun";
+        postGetLinksPersonal(url, showStudyLinksDisplayPersonalSingleModal, batch);
+    });
+}
+
+function showStudyLinksCreatorPersonalMultipleModal(batch) {
+    var text = "Use a comment to distinguish these study links from others.";
+    var title = "Create study links for worker type Personal Multiple in batch '" + batch.title + "'";
+    showStudyLinksCreatorModal(title, text);
+    $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
+        $('#studyLinksCreatorModal').modal('hide');
+        var url = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/personalMultipleRun";
+        postGetLinksPersonal(url, showStudyLinksDisplayPersonalMultipleModal, batch);
+    });
+}
+
+
+function showStudyLinksCreatorModal(title, text) {
+    $('#studyLinksCreatorModal').find('.modal-title').html(title);
+    $('#studyLinksCreatorModal').find('.modalText').html(text);
+    $('#studyLinksCreatorModal').find('.comment').val("");
+    $('#studyLinksCreatorModal').find('.amount').val(1);
+    // Focus on comment input field in modal
+    $('#studyLinksCreatorModal').on('shown.bs.modal', function () {
+        $('#studyLinksCreatorModal').find('.comment').focus();
+    })
+    $('#studyLinksCreatorModal').modal('show');
+}
+
+function postGetLinksPersonal(url, studyLinksDisplayModal, batch) {
+    var jsonData = {};
+    jsonData['comment'] = $('#studyLinksCreatorModal').find('.comment').val();
+    jsonData['amount'] = $('#studyLinksCreatorModal').find('.amount').val();
+    $.ajax({
+        type: 'POST',
+        url: url,
+        contentType: "application/json; charset=utf-8",
+        dataType: 'text',
+        data: JSON.stringify(jsonData),
+        success: function(studyLinkIdList) {
+            if (studyLinksTable) {
+                loadStudyLinksSetup(batch.id);
+                studyLinksTable.ajax.reload();
+            }
+            studyLinksDisplayModal($.parseJSON(studyLinkIdList), batch);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+}
+
+$('#batchTable').on('click', '.personalSingleStudyLinksSetup .studyLinkButton', function() {
+    var studyLinksSetupDiv = $(this).closest('.studyLinksSetupItem');
+    var workerTables = $(studyLinksSetupDiv).data('workerTables');
+    var tr = $(this).closest('tr');
+    var rowData = workerTables.personalSingle.row(tr).data();
+    var workerId = rowData[0];
+    var workerIds = [workerId];
+    var batch = getBatchData(this);
+    showStudyLinksDisplayPersonalSingleModal(workerIds, batch);
+});
+
+function showStudyLinksDisplayPersonalSingleModal(studyLinkIdList, batch) {
+    var title = "Study links for Personal Single workers in batch '" + batch.title + "'";
+    var urls = [];
+    $.each(studyLinkIdList, function(i, studyLinkId) {
+        urls.push("@realBaseUrl.toString()" + "publix/" + studyLinkId);
+    });
+    var preText, postText;
+    if (urls.length == 1) {
+        preText = "This link will start the study.";
+        postText = "Copy & paste and hand it to your worker.";
+    } else {
+        preText = "Each of these links will start the study.";
+        postText = "Copy & paste and hand them to your workers.";
+    }
+    showStudyLinksDisplayModal(title, preText, urls, postText);
+}
+
+$('#batchTable').on('click', '.personalMultipleStudyLinksSetup .studyLinkButton', function() {
+    var studyLinksSetupDiv = $(this).closest('.studyLinksSetupItem');
+    var workerTables = $(studyLinksSetupDiv).data('workerTables');
+    var tr = $(this).closest('tr');
+    var rowData = workerTables.personalMultiple.row(tr).data();
+    var workerId = rowData[0];
+    var workerIds = [workerId];
+    var batch = getBatchData(this);
+    showStudyLinksDisplayPersonalMultipleModal(workerIds, batch);
+});
+
+function showStudyLinksDisplayPersonalMultipleModal(studyLinkIdList, batch) {
+    var title = "Study links for Personal Multiple workers in batch '" + batch.title + "'";
+    var urls = [];
+    $.each(studyLinkIdList, function(i, studyLinkId) {
+        urls.push("@realBaseUrl.toString()" + "publix/" + studyLinkId);
+    });
+    var preText, postText;
+    if (urls.length == 1) {
+        preText = "This link will start the study.";
+        postText = "Copy & paste and hand it to your worker.";
+    } else {
+        preText = "Each of these links will start the study.";
+        postText = "Copy & paste and hand them to your workers.";
+    }
+    showStudyLinksDisplayModal(title, preText, urls, postText);
+}
+
+$('#batchTable').on('click', '.generalSingleStudyLinksSetup .studyLinkButton', function() {
+    showStudyLinkGeneralSingleModal(getBatchData(this));
+});
+
+$('#batchTable').on('click', '.generalMultipleStudyLinksSetup .studyLinkButton', function() {
+    showStudyLinkGeneralMultipleModal(getBatchData(this));
+});
+
+function showStudyLinkGeneralSingleModal(batch) {
+    $.ajax({
+        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/generalSingleRun",
+        success: function(studyLinkId) {
+            var title = "Study link for worker type General Single in batch '" + batch.title + "'";
+            var url = "@realBaseUrl.toString()" + "publix/" + studyLinkId;
+            var preText = "This link will start the study.";
+            var postText = "Copy & paste and hand it to your workers.";
+            showStudyLinksDisplayModal(title, preText, [url], postText);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+}
+
+function showStudyLinkGeneralMultipleModal(batch) {
+    $.ajax({
+        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/generalMultipleRun",
+        success: function(studyLinkId) {
+            var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
+            var url = "@realBaseUrl.toString()" + "publix/" + studyLinkId;
+            var preText = "This URL will start the run.";
+            var postText = "Copy & paste and hand it to your workers.";
+            showStudyLinksDisplayModal(title, preText, [url], postText);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+}
+
+function showStudyLinksDisplayModal(title, preText, urls, postText) {
+    var htmlPreText = '<p>' + preText + '</p>';
+    var htmlUrl = '<div class="well linkUrls">'
+        + '<button type="button" class="btn clipboardButton btn-xs pull-right" data-toggle="tooltip" title="Copy this link to the clipboard.">'
+        + 'Copy&nbsp;<span class="glyphicon glyphicon-duplicate gray-light"></span></button>'
+        + urls.join('<br>\n') + '</div>';
+
+    var htmlPostText = '<p>' + postText + '</p>';
+    var htmlBody = htmlPreText + htmlUrl + htmlPostText;
+    $('#studyLinksDisplayModal').find('.modal-title').text(title);
+    $('#studyLinksDisplayModal').find('.modal-body').html(htmlBody);
+    $('#studyLinksDisplayModal').find('.linkUrls').data("linkUrls", urls);
+    $('#studyLinksDisplayModal').modal('show');
+}
+
+$('#studyLinksDisplayModal, #studyLinksModal').on('click', '.clipboardButton', function(e) {
+	// Get text from parent element without text from children (e.g. '.clipboardButton' element)
+	var text = $(this).parent().clone().children().remove().end().text();
+	navigator.clipboard.writeText(text);
+});
+
+</script>

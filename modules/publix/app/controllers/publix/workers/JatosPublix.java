@@ -23,7 +23,7 @@ import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosStudyAuthorisation;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -86,8 +86,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     }
 
     @Override
-    public Result startStudy(Http.Request request, StudyRun studyRun) throws PublixException {
-        Batch batch = studyRun.getBatch();
+    public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
+        Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         JatosWorker worker = publixUtils.retrieveLoggedInUser(request).getWorker();
         studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
@@ -107,20 +107,20 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 throw new ForbiddenPublixException("This study was never started in JATOS.");
         }
         publixUtils.finishOldestStudyResult();
-        StudyResult studyResult = resultCreator.createStudyResult(studyRun, worker);
+        StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
         idCookieService.writeIdCookie(studyResult, jatosRun);
 
         String username = request.session().getOptional(JatosPublix.SESSION_USERNAME).orElse("unknown");
-        LOGGER.info(".startStudy: studyRunUuid " + studyRun.getUuid() + ", "
+        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "logged-in username " + username + ", "
                 + "workerId " + worker.getId());
-        studyLogger.log(study, "Started study run with " + JatosWorker.UI_WORKER_TYPE + " worker", batch, worker);
+        studyLogger.log(studyLink, "Started study run with " + JatosWorker.UI_WORKER_TYPE + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor
-                .startComponent(studyResult.getUuid().toString(), componentUuid, null))
+                .startComponent(studyResult.getUuid(), componentUuid, null))
                 .withSession(session);
     }
 
@@ -149,7 +149,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                     // It's already the second component (first is finished and it
                     // isn't a reload of the same one). Finish study after first component.
                     return redirect(controllers.publix.routes.PublixInterceptor
-                            .finishStudy(studyResult.getUuid().toString(), true, null));
+                            .finishStudy(studyResult.getUuid(), true, null));
                 }
                 break;
         }
@@ -159,7 +159,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             componentResult = publixUtils.startComponent(component, studyResult, message);
         } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyResult.getUuid().toString(), false, e.getMessage()));
+                    .finishStudy(studyResult.getUuid(), false, e.getMessage()));
         }
         idCookieService.writeIdCookie(studyResult, componentResult, jatosRun);
         return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava();
@@ -179,7 +179,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         }
         if (message != null) {
@@ -205,7 +205,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         }
         if (message != null) {

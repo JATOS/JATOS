@@ -5,7 +5,7 @@
 
 ### Publix ###
 
-GET     /publix/:studyRunUuid/run                                   @controllers.publix.PublixInterceptor.run(request: Request, studyRunUuid: String)
+GET     /publix/:studyLinkId                                        @controllers.publix.PublixInterceptor.run(request: Request, studyLinkId: String)
 GET     /publix/:studyResultUuid/end                                @controllers.publix.PublixInterceptor.finishStudy(request: Request, studyResultUuid: String, successful: Boolean ?= true, message: String ?= null)
 GET     /publix/:studyResultUuid/abort                              @controllers.publix.PublixInterceptor.abortStudy(request: Request, studyResultUuid: String, message: String ?= null)
 GET     /publix/:studyResultUuid/:componentUuid/start               @controllers.publix.PublixInterceptor.startComponent(request: Request, studyResultUuid: String, componentUuid: String, message: String ?= null)

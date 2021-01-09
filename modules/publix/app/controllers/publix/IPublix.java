@@ -3,7 +3,7 @@ package controllers.publix;
 import exceptions.publix.PublixException;
 import models.common.Component;
 import models.common.StudyResult;
-import models.common.StudyRun;
+import models.common.StudyLink;
 import play.mvc.Http;
 import play.mvc.Result;
 
@@ -25,7 +25,7 @@ public interface IPublix {
      *
      * Starts the study. Then redirects to start the first component.
      */
-    Result startStudy(Http.Request request, StudyRun studyRun) throws PublixException;
+    Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException;
 
     /**
      * HTTP type: GET request

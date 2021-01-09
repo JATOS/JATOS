@@ -9,7 +9,7 @@ import models.common.workers.Worker;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -179,12 +179,12 @@ public class IdCookieService {
 
         idCookie.setBatchId(batch.getId());
         idCookie.setCreationTime(System.currentTimeMillis());
-        idCookie.setStudyAssets(HttpUtils.urlEncode(study.getDirName()));
+        idCookie.setStudyAssets(Helpers.urlEncode(study.getDirName()));
         idCookie.setUrlBasePath(Common.getPlayHttpContext());
         idCookie.setName(name);
         idCookie.setStudyId(study.getId());
         idCookie.setStudyResultId(studyResult.getId());
-        idCookie.setStudyResultUuid(studyResult.getUuid().toString());
+        idCookie.setStudyResultUuid(studyResult.getUuid());
         idCookie.setWorkerId(worker.getId());
         idCookie.setWorkerType(worker.getWorkerType());
         idCookie.setJatosRun(jatosRun);

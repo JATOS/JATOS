@@ -55,7 +55,7 @@ public class GeneralSingleCookieServiceTest {
 
         putCookieInContext(study.getUuid() + "=10");
 
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerByStudy(study);
         assertThat(workerId).isEqualTo(10L);
     }
 
@@ -66,7 +66,7 @@ public class GeneralSingleCookieServiceTest {
 
         // Did studies but not this one
         putCookieInContext(DUMMY_COOKIE);
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerByStudy(study);
         assertThat(workerId).isNull();
     }
 
@@ -77,7 +77,7 @@ public class GeneralSingleCookieServiceTest {
 
         // Empty cookie value is allowed
         putCookieInContext("");
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerByStudy(study);
         assertThat(workerId).isNull();
     }
 
@@ -88,7 +88,7 @@ public class GeneralSingleCookieServiceTest {
 
         // Weird cookie value is allowed
         putCookieInContext("foo");
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerByStudy(study);
         assertThat(workerId).isNull();
     }
 
@@ -99,7 +99,7 @@ public class GeneralSingleCookieServiceTest {
 
         // Weird cookie value is allowed
         putCookieInContext("foo=3x");
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerByStudy(study);
         assertThat(workerId).isNull();
     }
 
@@ -110,7 +110,7 @@ public class GeneralSingleCookieServiceTest {
 
         // Weird cookie value is allowed
         putCookieInContext("foo=3=4");
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerByStudy(study);
         assertThat(workerId).isNull();
     }
 

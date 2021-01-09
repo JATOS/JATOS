@@ -1,5 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study, component: common.Component,
-    max: scala.Option[Integer])
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study, component: common.Component)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -10,6 +9,9 @@
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
             <th>Comp. Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID"></span></th>
+            <th>Comp. ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the component this result belongs to"></span></th>
+            <th>Study Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study result this component result belongs to"></span></th>
+            <th>Study Link ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
             <th>Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT"></span></th>
             <th>End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT"></span></th>
             <th>Duration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT"></span></th>
@@ -18,9 +20,9 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
-            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
+            <th>Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data"></span></th>
+            <th>Files&nbsp;(Size)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
-            <th>Invisible column for result data filtering</th>
         </tr>
     </thead>
     <tfoot>
@@ -29,6 +31,9 @@
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
             <th>Comp. Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID"></span></th>
+            <th>Comp. ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the component this result belongs to"></span></th>
+            <th>Study Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study result this component result belongs to"></span></th>
+            <th>Study Link ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
             <th>Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT"></span></th>
             <th>End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT"></span></th>
             <th>Duration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT"></span></th>
@@ -37,9 +42,9 @@
             <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
             <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
-            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
+            <th>Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data"></span></th>
+            <th>Files&nbsp;(Size)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
-            <th>Invisible column for result data filtering</th>
         </tr>
     </tfoot>
 </table>
@@ -56,6 +61,22 @@
     </div>
 </div>
 
+<!-- Component result data Modal -->
+<div class="modal fade" id="componentResultDataModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Component Result Data</h4>
+            </div>
+            <div class="modal-body">
+                <pre><code class="componentResultData">
+                </code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
 var studyId = @study.getId();
 
@@ -63,7 +84,7 @@ var resultsTable;
 $(document).ready(function() {
     resultsTable = $('#componentResultsTable').DataTable({
         "ajax": {
-            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId(), max)",
+            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
             "dataType": "text",
             "dataSrc": function(json) {
                 return JSON.parse("[" + json + "]");
@@ -107,6 +128,21 @@ $(document).ready(function() {
                 "data": "id",
                 "width": "1%"
             },
+            {
+                "data": "componentId",
+                "visible": false,
+                "width": "1%"
+            },
+            {
+                "data": "studyResultId",
+                "visible": false,
+                "width": "1%"
+            },
+            {
+                "data": "studyLinkId",
+                "visible": false,
+                "width": "1%"
+            },
             { "data": "startDate" },
             {
                 "data": "endDate",
@@ -147,14 +183,15 @@ $(document).ready(function() {
                 }
             },
             { "data": "componentState" },
+            { "data": "dataSize" },
             {
                 "data": "files",
                 "render": function (data, type, full, meta) {
                     if (data.length === 0) return "none";
-                    var resultFiles = data.map(function(filename) {
+                    var resultFiles = data.map(function(fileObj) {
                         var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + full.studyId + "/resultFiles/"
-                            + full.studyResultId + "/" + full.id + "/" + filename;
-                        return '<a href="' + url + '" download>' + filename + '</a>';
+                            + full.studyResultId + "/" + full.id + "/" + fileObj.name;
+                        return '<a href="' + url + '" download>' + fileObj.name + '&nbsp;(' + fileObj.size + ')</a>';
                     });
                     return resultFiles.join("<br>");
                 }
@@ -164,10 +201,6 @@ $(document).ready(function() {
                     return data.message ? data.message : "none";
                 },
                 "width": "20%"
-            },
-            {
-                "data": "data",
-                "visible": false
             }
         ],
         select: {
@@ -397,10 +430,19 @@ $(document).ready(function() {
             });
         }
         else {
-            row.child(childRowFormat(row.data())).show();
-            tr.addClass('shown');
-            tr.next().addClass('info');
-            $('div.slider', row.child()).slideDown();
+            var componentResultId = row.data().id;
+            $.ajax({
+                url : "@{general.common.Common.getPlayHttpContext()}jatos/componentResult/" + componentResultId + "/data",
+                contentType: "application/json; charset=utf-8"
+            }).done(function(resultData) {
+                var childRow = generateComponentResultDataChildRow(resultData, componentResultId);
+                row.child(childRow).show();
+                tr.addClass('shown');
+                tr.next().addClass('info');
+                $('div.slider', row.child()).slideDown();
+            }).fail(function(err) {
+                showError(err.responseText);
+            });
         }
         $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
                 .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
@@ -426,7 +468,7 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss");
+        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt";
         downloadWithPost(url, data, filename);
     }
 
@@ -502,10 +544,32 @@ $(document).ready(function() {
         downloadWithPost(url, data, filename);
     }
 
-    function childRowFormat(data) {
-        // `data` is the original data object for the row
-        return '<div class="slider" style="display: none"><p><pre class="details-data">' + data.data + '</pre></p></div>';
+    function generateComponentResultDataChildRow(resultData, componentResultId) {
+        var showAllButton = "";
+        if (resultData.substr(resultData.length - 3) == "...") {
+            showAllButton = '<button type="button" class="btn btn-xs showAllButton" data-toggle="tooltip" '
+                + 'title="Show all result data of this component result.">show all</button>';
+        }
+        return '<div class="slider" style="display: none"><p><pre class="details-data">' + resultData + showAllButton + '</pre></p></div>';
     }
+
+    $('#componentResultsTable tbody').on('click', '.showAllButton', function() {
+        var componentResultId = resultsTable.row($(this).closest('tr').prev()).data().id;
+        $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
+        $.ajax({
+            url : '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()',
+            type : 'POST',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({resultIds: [componentResultId]}),
+            success : function(result) {
+                $('#componentResultDataModal .componentResultData').text(result);
+                $('#componentResultDataModal').modal('show');
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
+    });
 
 });
 

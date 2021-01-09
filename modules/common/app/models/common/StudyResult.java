@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -28,8 +27,14 @@ public class StudyResult {
     @GeneratedValue
     private Long id;
 
-    @Type(type = "uuid-char")
-    private UUID uuid;
+    private String uuid;
+
+    /**
+     * We don't need the whole StudyLink object and therefore we only get the ID here
+     */
+    @JsonIgnore
+    @Column(name = "studyLink_id")
+    private String studyLinkId;
 
     /**
      * Time and date when the study was started on the server.
@@ -93,7 +98,7 @@ public class StudyResult {
      * Batch this StudyResult belongs to. This relationship is unidirectional.
      */
     @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "batch_id")
     private Batch batch;
 
@@ -107,11 +112,6 @@ public class StudyResult {
     // Not using mappedBy because of
     // http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
     private List<ComponentResult> componentResultList = new ArrayList<>();
-
-    @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "studyRun_uuid")
-    private StudyRun studyRun;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.EAGER)
@@ -153,11 +153,11 @@ public class StudyResult {
     public StudyResult() {
     }
 
-    public StudyResult(StudyRun studyRun, Worker worker) {
-        this.uuid = UUID.randomUUID();
+    public StudyResult(StudyLink studyLink, Worker worker) {
+        this.uuid = UUID.randomUUID().toString();
         this.startDate = new Timestamp(new Date().getTime());
-        this.studyRun = studyRun;
-        this.batch = studyRun.getBatch();
+        this.studyLinkId = studyLink.getId();
+        this.batch = studyLink.getBatch();
         this.study = batch.getStudy();
         this.worker = worker;
         this.studyState = StudyState.STARTED;
@@ -181,12 +181,20 @@ public class StudyResult {
         return this.id;
     }
 
-    public UUID getUuid() {
+    public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
+    public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getStudyLinkId() {
+        return studyLinkId;
+    }
+
+    public void setStudyLinkId(String studyLinkId) {
+        this.studyLinkId = studyLinkId;
     }
 
     public void setStartDate(Timestamp startDate) {
@@ -293,14 +301,6 @@ public class StudyResult {
 
     public void addComponentResult(ComponentResult componentResult) {
         componentResultList.add(componentResult);
-    }
-
-    public StudyRun getStudyRun() {
-        return studyRun;
-    }
-
-    public void setStudyRun(StudyRun studyRun) {
-        this.studyRun = studyRun;
     }
 
     public void setWorker(Worker worker) {

@@ -27,7 +27,7 @@ import play.mvc.Http;
 import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -61,7 +61,7 @@ public class Studies extends Controller {
     private final StudyResultDao studyResultDao;
     private final UserDao userDao;
     private final ComponentResultDao componentResultDao;
-    private final StudyRunDao studyRunDao;
+    private final StudyLinkDao studyLinkDao;
     private final JsonUtils jsonUtils;
     private final IOUtils ioUtils;
     private final FormFactory formFactory;
@@ -72,7 +72,7 @@ public class Studies extends Controller {
             UserService userService, AuthenticationService authenticationService, WorkerService workerService,
             BreadcrumbsService breadcrumbsService, BatchService batchService, StudyDao studyDao,
             ComponentDao componentDao, StudyResultDao studyResultDao, UserDao userDao,
-            ComponentResultDao componentResultDao, StudyRunDao studyRunDao, JsonUtils jsonUtils,
+            ComponentResultDao componentResultDao, StudyLinkDao studyLinkDao, JsonUtils jsonUtils,
             IOUtils ioUtils, FormFactory formFactory, StudyLogger studyLogger) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -87,7 +87,7 @@ public class Studies extends Controller {
         this.studyResultDao = studyResultDao;
         this.userDao = userDao;
         this.componentResultDao = componentResultDao;
-        this.studyRunDao = studyRunDao;
+        this.studyLinkDao = studyLinkDao;
         this.jsonUtils = jsonUtils;
         this.ioUtils = ioUtils;
         this.formFactory = formFactory;
@@ -107,7 +107,7 @@ public class Studies extends Controller {
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study
-                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study, studyResultCount));
+                .render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), study, studyResultCount));
     }
 
     @Transactional
@@ -369,10 +369,10 @@ public class Studies extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        // Get StudyRun and redirect to jatos-publix: start study
-        StudyRun sr = studyRunDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
-                .orElseGet(() -> studyRunDao.create(new StudyRun(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getUrlWithBase("publix/" + sr.getUuid() + "/run");
+        // Get StudyLink and redirect to jatos-publix: start study
+        StudyLink sr = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
+                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
+        String runUrl = Common.getUrlWithBase("publix/" + sr.getId());
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 

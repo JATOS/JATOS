@@ -476,6 +476,8 @@ var jatos = {};
 
 		// Query string parameters of the URL that starts the study
 		jatos.urlQueryParameters = initData.urlQueryParameters;
+
+		jatos.studyLinkId = initData.studyLinkId;
 	}
 
 	/**
@@ -2474,6 +2476,7 @@ var jatos = {};
 		obj.componentTitle = jatos.componentProperties.title;
 		obj.workerId = jatos.workerId;
 		obj.studyResultId = jatos.studyResultId;
+		obj.studyLinkId = jatos.studyLinkId;
 		obj.componentResultId = jatos.componentResultId;
 		obj.groupResultId = jatos.groupResultId;
 		obj.groupMemberId = jatos.groupMemberId;

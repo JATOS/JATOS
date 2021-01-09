@@ -8,7 +8,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import models.common.*;
 import models.common.workers.JatosWorker;
+import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import play.Logger;
@@ -19,12 +22,15 @@ import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -109,24 +115,24 @@ public class JsonUtils {
      * and puts them together with the session data (stored in StudyResult) into
      * a new JSON object.
      */
-    public JsonNode initData(Batch batch, StudyResult studyResult, Study study,
-            Component component) throws IOException {
+    public JsonNode initData(Batch batch, StudyResult studyResult, Study study, Component component)
+            throws IOException {
         String studyProperties = asJsonForPublix(study);
         String batchProperties = asJsonForPublix(batch);
         ArrayNode componentList = getComponentListForInitData(study);
         String componentProperties = asJsonForPublix(component);
         String studySessionData = studyResult.getStudySessionData();
         String urlQueryParameters = studyResult.getUrlQueryParameters();
+        String studyLinkId = studyResult.getStudyLinkId();
 
         ObjectNode initData = Json.mapper().createObjectNode();
         initData.put("studySessionData", studySessionData);
-        // This is ugly: first marshaling, now unmarshaling again
-        // https://stackoverflow.com/questions/23006241/converting-pojo-to-jsonnode-using-a-jsonview
         initData.set("studyProperties", Json.mapper().readTree(studyProperties));
         initData.set("batchProperties", Json.mapper().readTree(batchProperties));
         initData.set("componentList", componentList);
         initData.set("componentProperties", Json.mapper().readTree(componentProperties));
-        initData.set("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
+        initData.put("urlQueryParameters", urlQueryParameters);
+        initData.put("studyLinkId", studyLinkId);
         return initData;
     }
 
@@ -203,16 +209,16 @@ public class JsonUtils {
      * Returns ObjectNode of the given StudyResult. It contains the worker,
      * study's ID and title, and all ComponentResults.
      */
-    public JsonNode studyResultAsJsonNode(StudyResult studyResult) {
+    public JsonNode studyResultAsJsonNode(StudyResult studyResult, int componentResultCount) {
         ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
 
         // Add worker
-        ObjectNode workerNode = Json.mapper()
-                .valueToTree(initializeAndUnproxy(studyResult.getWorker()));
+        ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(studyResult.getWorker()));
         studyResultNode.set("worker", workerNode);
 
         // Add extra variables
         studyResultNode.put("studyId", studyResult.getStudy().getId());
+        studyResultNode.put("studyLinkId", studyResult.getStudyLinkId());
         studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
         studyResultNode.put("batchTitle", studyResult.getBatch().getTitle());
         String duration;
@@ -224,19 +230,19 @@ public class JsonUtils {
         }
         studyResultNode.put("duration", duration);
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
-
-        // Add all componentResults
-        ArrayNode componentResultsNode = studyResultNode.arrayNode();
-        boolean hasResultFiles = false;
-        for (ComponentResult componentResult : studyResult.getComponentResultList()) {
-            JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
-            componentResultsNode.add(componentResultNode);
-            if (!componentResultNode.get("files").isEmpty(null)) hasResultFiles = true;
-        }
-        studyResultNode.set("componentResults", componentResultsNode);
-        studyResultNode.set("hasResultFiles", studyResultNode.booleanNode(hasResultFiles));
+        studyResultNode.put("componentResultCount", componentResultCount);
+        studyResultNode.put("hasResultFiles", hasResultUploadFiles(studyResult));
 
         return studyResultNode;
+    }
+
+    public JsonNode getComponentResultsByStudyResult(StudyResult studyResult) {
+        ArrayNode componentResultsNode = Json.mapper().createArrayNode();
+        for (ComponentResult componentResult : studyResult.getComponentResultList()) {
+            JsonNode componentResultNode = componentResultAsJsonNode(componentResult, true);
+            componentResultsNode.add(componentResultNode);
+        }
+        return componentResultsNode;
     }
 
     /**
@@ -256,7 +262,7 @@ public class JsonUtils {
     /**
      * Returns an ObjectNode of the given ComponentResult.
      */
-    public JsonNode componentResultAsJsonNode(ComponentResult componentResult) {
+    public JsonNode componentResultAsJsonNode(ComponentResult componentResult, boolean withData) {
         ObjectNode componentResultNode = Json.mapper().valueToTree(componentResult);
 
         // Add extra variables
@@ -266,12 +272,18 @@ public class JsonUtils {
         componentResultNode.put("duration", getDurationPretty(
                 componentResult.getStartDate(), componentResult.getEndDate()));
         componentResultNode.put("studyResultId", componentResult.getStudyResult().getId());
+        componentResultNode.put("studyLinkId", componentResult.getStudyResult().getStudyLinkId());
         String groupResultId = getGroupResultId(componentResult.getStudyResult());
         componentResultNode.put("groupResultId", groupResultId);
         componentResultNode.put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
-        componentResultNode.put(DATA, componentResultDataForUI(componentResult));
+        if (withData) {
+            componentResultNode.put("data", componentResultDataForUI(componentResult));
+        }
+        int dataSize = componentResult.getData() != null ?
+                componentResult.getData().getBytes(StandardCharsets.UTF_8).length : 0;
+        componentResultNode.put("dataSize", Helpers.humanReadableByteCountSI(dataSize));
 
         // Add uploaded result files
         ArrayNode filesNode = componentResultNode.arrayNode();
@@ -281,15 +293,42 @@ public class JsonUtils {
         return componentResultNode;
     }
 
-    private List<String> getResultUploadFiles(ComponentResult componentResult) {
+    private List<ObjectNode> getResultUploadFiles(ComponentResult componentResult) {
         Path dir = Paths.get(
                 IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId()));
         if (Files.isDirectory(dir)) {
             try {
-                return Files.list(dir).map(filePath -> filePath.getFileName().toString()).collect(Collectors.toList());
-            } catch (IOException ignore) { }
+                return Files.list(dir).map(this::getResultUploadFileNode).collect(Collectors.toList());
+            } catch (IOException e) {
+                LOGGER.warn("Cannot open directory " + dir);
+            }
         }
         return new ArrayList<>();
+    }
+
+    private ObjectNode getResultUploadFileNode(Path filePath) {
+        String fileSize = null;
+        try {
+            FileChannel fileChannel = FileChannel.open(filePath);
+            fileSize = Helpers.humanReadableByteCountSI(fileChannel.size());
+        } catch (IOException e) {
+            LOGGER.warn("Cannot open file " + filePath);
+        }
+        return Json.mapper().createObjectNode()
+                .put("name", filePath.getFileName().toString())
+                .put("size", fileSize);
+    }
+
+    private boolean hasResultUploadFiles(StudyResult studyResult) {
+        Path dir = Paths.get(IOUtils.getResultUploadsDir(studyResult.getId()));
+        if (Files.isDirectory(dir)) {
+            try (Stream<Path> entries = Files.list(dir)) {
+                return entries.findFirst().isPresent();
+            } catch (IOException e) {
+                LOGGER.warn("Cannot open directory " + dir);
+            }
+        }
+        return false;
     }
 
     private static String getDurationPretty(Timestamp startDate, Timestamp endDate) {
@@ -447,7 +486,9 @@ public class JsonUtils {
             batchNode.put("position", position);
             batchListNode.add(batchNode);
         }
-        return batchListNode;
+        ObjectNode dataNode = Json.mapper().createObjectNode();
+        dataNode.set("data", batchListNode);
+        return dataNode;
     }
 
     /**
@@ -518,35 +559,57 @@ public class JsonUtils {
         return workersNode;
     }
 
-    /**
-     * Returns a JsonNode with all workers (additionally for JatosWorkers the username is added), the given
-     * studyResultCountsPerWorker and all allowed worker types of this batch.
-     * Intended for use in JATOS' GUI / worker setup.
-     */
-    public JsonNode workerSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker) {
-        ObjectNode workerSetupData = Json.mapper().createObjectNode();
+    public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,
+            Long personalSingleLinkCount, Long personalMultipleLinkCount) {
+        ObjectNode studyLinkSetupData = Json.mapper().createObjectNode();
+        studyLinkSetupData.set("studyResultCountsPerWorker", asJsonNode(studyResultCountsPerWorker));
+        studyLinkSetupData.put("personalSingleLinkCount", personalSingleLinkCount);
+        studyLinkSetupData.put("personalMultipleLinkCount", personalMultipleLinkCount);
+        studyLinkSetupData.set("allowedWorkerTypes", asJsonNode(batch.getAllowedWorkerTypes()));
+        return studyLinkSetupData;
+    }
 
-        ArrayNode workerArrayNode = Json.mapper().createArrayNode();
-        for (Worker worker : batch.getWorkerList()) {
-            ObjectNode workerNode = Json.mapper().valueToTree(worker);
+    public JsonNode studyLinksData(List<StudyLink> studyLinkList) {
+        ObjectNode dataNode = Json.mapper().createObjectNode();
+        ArrayNode arrayNode = Json.mapper().createArrayNode();
 
-            // We have to get last StudyResult only from within the given batch.
-            StudyResult lastStudyResult = getLastStudyResultByBatch(worker, batch);
-            String lastStudyState =
-                    lastStudyResult != null ? lastStudyResult.getStudyState().name() : null;
-            workerNode.put("lastStudyState", lastStudyState);
+        for (StudyLink studyLink : studyLinkList) {
+            ObjectNode studyLinkDataNode = Json.mapper().createObjectNode();
+            studyLinkDataNode.put("studyLinkId", studyLink.getId());
+            studyLinkDataNode.put("active", studyLink.isActive());
 
-            addUsernameForJatosWorker(worker, workerNode);
-            workerArrayNode.add(workerNode);
+            if (studyLink.getWorker() != null) {
+                Worker worker = studyLink.getWorker();
+
+                studyLinkDataNode.put("workerId", worker.getId());
+
+                // Worker's comment
+                String comment;
+                switch (worker.getWorkerType()) {
+                    case PersonalSingleWorker.WORKER_TYPE:
+                        comment = ((PersonalSingleWorker) worker).getComment();
+                        break;
+                    case PersonalMultipleWorker.WORKER_TYPE:
+                        comment = ((PersonalMultipleWorker) worker).getComment();
+                        break;
+                    default:
+                        throw new IllegalArgumentException(
+                                ".studyLinkData: illegal workerType " + worker.getWorkerType());
+                }
+                studyLinkDataNode.put("comment", !StringUtils.isBlank(comment) ? comment : "none");
+
+                // (last) StudyResult's state
+                Optional<StudyResult> lastStudyResult = worker.getLastStudyResult();
+                if (lastStudyResult.isPresent()) {
+                    studyLinkDataNode.put("studyResultState", lastStudyResult.get().getStudyState().name());
+                } else {
+                    studyLinkDataNode.put("studyResultState", "none yet");
+                }
+            }
+            arrayNode.add(studyLinkDataNode);
         }
-        workerSetupData.set("allWorkers", workerArrayNode);
-
-        JsonNode studyResultCountsPerWorkerNode = asJsonNode(studyResultCountsPerWorker);
-        workerSetupData.set("studyResultCountsPerWorker", studyResultCountsPerWorkerNode);
-
-        workerSetupData.set("allowedWorkerTypes", asJsonNode(batch.getAllowedWorkerTypes()));
-
-        return workerSetupData;
+        dataNode.set("data", arrayNode);
+        return dataNode;
     }
 
     private void addUsernameForJatosWorker(Worker worker, ObjectNode workerNode) {
@@ -562,16 +625,6 @@ public class JsonUtils {
             // database Hibernate doesn't use the type JatosWorker
             workerNode.put("username", "unknown (probably deleted)");
         }
-    }
-
-    private StudyResult getLastStudyResultByBatch(Worker worker, Batch batch) {
-        List<StudyResult> studyResultList = worker.getStudyResultList();
-        ListIterator<StudyResult> iterator = studyResultList.listIterator(studyResultList.size());
-        while (iterator.hasPrevious()) {
-            StudyResult sr = iterator.previous();
-            if (sr != null && sr.getBatch().equals(batch)) return sr;
-        }
-        return null;
     }
 
     @SuppressWarnings("unchecked")

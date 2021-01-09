@@ -4,14 +4,14 @@ import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAcces
 import controllers.publix.workers.*;
 import daos.common.ComponentDao;
 import daos.common.StudyResultDao;
-import daos.common.StudyRunDao;
+import daos.common.StudyLinkDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.Component;
 import models.common.StudyResult;
-import models.common.StudyRun;
+import models.common.StudyLink;
 import models.common.workers.*;
 import play.Application;
 import play.Logger;
@@ -58,41 +58,43 @@ public class PublixInterceptor extends Controller {
 
     private static final Logger.ALogger LOGGER = Logger.of(PublixInterceptor.class);
 
-    private final StudyRunDao studyRunDao;
+    private final StudyLinkDao studyLinkDao;
     private final StudyResultDao studyResultDao;
     private final ComponentDao componentDao;
     private final Provider<Application> application;
 
     @Inject
-    public PublixInterceptor(StudyRunDao studyRunDao, StudyResultDao studyResultDao, ComponentDao componentDao,
+    public PublixInterceptor(StudyLinkDao studyLinkDao, StudyResultDao studyResultDao, ComponentDao componentDao,
             Provider<Application> application) {
-        this.studyRunDao = studyRunDao;
+        this.studyLinkDao = studyLinkDao;
         this.studyResultDao = studyResultDao;
         this.componentDao = componentDao;
         this.application = application;
     }
 
     @Transactional
-    public Result run(Http.Request request, String studyRunUuid) throws PublixException {
-        LOGGER.info(".run: studyRunUuid " + studyRunUuid);
-        StudyRun studyRun = studyRunDao.findByUuid(UUID.fromString(studyRunUuid));
-        if (studyRun == null) throw new BadRequestPublixException("This study run does not exist");
+    public Result run(Http.Request request, String studyLinkId) throws PublixException {
+        LOGGER.info(".run: studyLinkId " + studyLinkId);
+        StudyLink studyLink = studyLinkDao.findById(studyLinkId);
+        if (studyLink == null) throw new BadRequestPublixException("This study run does not exist");
 
-        switch (studyRun.getWorkerType()) {
+        if (!studyLink.isActive()) throw new ForbiddenPublixException("This study link is inactive");
+
+        switch (studyLink.getWorkerType()) {
             case JatosWorker.WORKER_TYPE:
-                return instanceOfPublix(JatosPublix.class).startStudy(request, studyRun);
+                return instanceOfPublix(JatosPublix.class).startStudy(request, studyLink);
             case PersonalSingleWorker.WORKER_TYPE:
-                return instanceOfPublix(PersonalSinglePublix.class).startStudy(request, studyRun);
+                return instanceOfPublix(PersonalSinglePublix.class).startStudy(request, studyLink);
             case PersonalMultipleWorker.WORKER_TYPE:
-                return instanceOfPublix(PersonalMultiplePublix.class).startStudy(request, studyRun);
+                return instanceOfPublix(PersonalMultiplePublix.class).startStudy(request, studyLink);
             case GeneralSingleWorker.WORKER_TYPE:
-                return instanceOfPublix(GeneralSinglePublix.class).startStudy(request, studyRun);
+                return instanceOfPublix(GeneralSinglePublix.class).startStudy(request, studyLink);
             case GeneralMultipleWorker.WORKER_TYPE:
-                return instanceOfPublix(GeneralMultiplePublix.class).startStudy(request, studyRun);
+                return instanceOfPublix(GeneralMultiplePublix.class).startStudy(request, studyLink);
             // Handle MTWorker like MTSandboxWorker
             case MTSandboxWorker.WORKER_TYPE:
             case MTWorker.WORKER_TYPE:
-                return instanceOfPublix(MTPublix.class).startStudy(request, studyRun);
+                return instanceOfPublix(MTPublix.class).startStudy(request, studyLink);
             default:
                 throw new BadRequestPublixException("Unknown worker type");
         }
@@ -264,8 +266,7 @@ public class PublixInterceptor extends Controller {
         Component component = fetchComponent(componentUuid);
         checkStudyResultAndComponent(studyResult, component);
         LOGGER.info(".uploadResultFile: studyResultId " + studyResult.getId() + ", "
-                + "componentId " + component.getId() + ", "
-                + "filename " + filename);
+                + "componentId " + component.getId() + ", " + "filename " + filename);
 
         switch (studyResult.getWorkerType()) {
             case JatosWorker.WORKER_TYPE:
@@ -414,7 +415,7 @@ public class PublixInterceptor extends Controller {
         if (uuid == null || uuid.equals("undefined")) {
             throw new ForbiddenPublixException("Error getting study result UUID");
         }
-        return studyResultDao.findByUuid(UUID.fromString(uuid))
+        return studyResultDao.findByUuid(uuid)
                 .orElseThrow(() -> new BadRequestPublixException("Study result " + uuid + " doesn't exist."));
     }
 

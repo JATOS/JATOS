@@ -102,10 +102,10 @@
             </li>
         </ul>
     </div>
-    <button id="workerAndBatchManagerButton" type="button" class="btn btn-batch"
+    <button id="studyLinksButton" type="button" class="btn btn-batch"
             data-toggle="tooltip" data-placement="bottom"
-            title="Open Worker & Batch Manager to manage your batches and get links for workers">
-        Worker & Batch Manager
+            title="Get study links that you can distribute to your workers and let them run your study">
+        Study Links
     </button>
 </div>
 
@@ -146,7 +146,7 @@
 
 <!-- Template for button toolbar in Component's row -->
 <div id="componentToolbarDiv" style="display: none">
-    <div class="componentBtnGroup btn-group">
+    <div class="noWrapBtnGroup btn-group">
         <button type="button" class="runComponent btn btn-component"
                 data-toggle="tooltip" data-placement="bottom"
                 title="Runs only this component as a JATOS worker in the default batch">
@@ -490,11 +490,11 @@ $('#studyToolbar').on('click', '#runStudy', function() {
 });
 
 $('#studyToolbar').on('click', '#studyResults', function() {
-    window.location.href = "@controllers.gui.routes.StudyResults.studysStudyResults(study.getId(), scala.None)";
+    window.location.href = "@controllers.gui.routes.StudyResults.studysStudyResults(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#workerAndBatchManagerButton', function() {
-    window.location.href = "@controllers.gui.routes.Batches.workerAndBatchManager(study.getId())";
+$('#studyToolbar').on('click', '#studyLinksButton', function() {
+    window.location.href = "@controllers.gui.routes.StudyLinks.studyLinks(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#exportStudy', function() {

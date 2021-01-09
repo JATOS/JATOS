@@ -1,19 +1,55 @@
-
 /*
- * Define user button colors
+ * Define user button
  */
 @btn-user-color:   #ffffff;
 @btn-user-bg:      #b17632;
 @btn-user-border:  #8e5e28;
+@btn-user-active:  #996529;
 
-.btn-user,
+.btn-user {
+  color: @btn-user-color;
+  background-color: @btn-user-bg;
+  border-color: @btn-user-border;
+}
+
 .btn-user:hover,
 .btn-user:focus,
 .btn-user:active,
-.btn-user:visited {
-	color: @btn-user-color;
-	background-color: @btn-user-bg;
-	border-color: @btn-user-border;
+.btn-user.active,
+.open .dropdown-toggle.btn-user {
+  color: @btn-user-color;
+  background-color: @btn-user-active;
+  border-color: @btn-user-border;
+}
+
+.btn-user:active,
+.btn-user.active,
+.open .dropdown-toggle.btn-user {
+  background-image: none;
+}
+
+.btn-user.disabled,
+.btn-user[disabled],
+fieldset[disabled] .btn-user,
+.btn-user.disabled:hover,
+.btn-user[disabled]:hover,
+fieldset[disabled] .btn-user:hover,
+.btn-user.disabled:focus,
+.btn-user[disabled]:focus,
+fieldset[disabled] .btn-user:focus,
+.btn-user.disabled:active,
+.btn-user[disabled]:active,
+fieldset[disabled] .btn-user:active,
+.btn-user.disabled.active,
+.btn-user[disabled].active,
+fieldset[disabled] .btn-user.active {
+  background-color: @btn-user-bg;
+  border-color: @btn-user-border;
+}
+
+.btn-user .badge {
+  color: @btn-user-bg;
+  background-color: @btn-user-color;
 }
 
 /*

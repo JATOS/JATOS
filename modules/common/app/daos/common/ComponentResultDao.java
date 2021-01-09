@@ -2,8 +2,7 @@ package daos.common;
 
 import models.common.Component;
 import models.common.ComponentResult;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
+import models.common.StudyResult;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -55,17 +54,36 @@ public class ComponentResultDao extends AbstractDao {
         return result.intValue();
     }
 
-    public List<ComponentResult> findAllByComponent(Component component) {
-        String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.component=:component";
-        TypedQuery<ComponentResult> query = jpa.em().createQuery(queryStr, ComponentResult.class);
-        return query.setParameter("component", component).getResultList();
+    /**
+     * Returns the number of ComponentResults belonging to the given StudyResult.
+     */
+    public int countByStudyResult(StudyResult studyResult) {
+        String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.studyResult=:studyResult";
+        Query query = jpa.em().createQuery(queryStr);
+        Number result = (Number) query.setParameter("studyResult", studyResult).getSingleResult();
+        return result.intValue();
     }
 
-    public ScrollableResults findAllByComponentScrollable(Component component) {
-        String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.component=:component";
-        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr,
-                ComponentResult.class);
-        return query.setParameter("component", component).scroll(ScrollMode.FORWARD_ONLY);
+    public List<ComponentResult> findAllByComponent(Component component) {
+        return jpa.em()
+                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
+                .setParameter("component", component)
+                .getResultList();
+    }
+
+    /**
+     * Returns paginated ComponentResult that belong to the given Component
+     *
+     * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
+     * (https://stackoverflow.com/a/2826512/1278769)
+     */
+    public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
+        return jpa.em()
+                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .setParameter("component", component)
+                .getResultList();
     }
 
 }

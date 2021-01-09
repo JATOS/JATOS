@@ -1,11 +1,10 @@
 package models.common;
 
 import models.common.workers.Worker;
-import org.hibernate.annotations.Type;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.persistence.*;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * DB entity of a study run.
@@ -13,16 +12,14 @@ import java.util.UUID;
  * @author Kristian Lange
  */
 @Entity
-@Table(name = "StudyRun")
-public class StudyRun {
+@Table(name = "StudyLink")
+public class StudyLink {
 
     @Id
-    @GeneratedValue
-    @Type(type="uuid-char")
-    private UUID uuid;
+    private String id;
 
     /**
-     * Batch this study run belongs to
+     * The Batch this study link belongs to
      */
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "batch_id")
@@ -41,26 +38,31 @@ public class StudyRun {
      */
     private String workerType;
 
-    public StudyRun() {
+    /**
+     * Only an active study link can be used to run a study
+     */
+    private boolean active = true;
+
+    public StudyLink() {
     }
 
-    public StudyRun(Batch batch, Worker worker) {
+    public StudyLink(Batch batch, Worker worker) {
+        this(batch, worker.getWorkerType());
         this.worker = worker;
-        this.workerType = worker.getWorkerType();
-        this.batch = batch;
     }
 
-    public StudyRun(Batch batch, String workerType) {
+    public StudyLink(Batch batch, String workerType) {
+        this.id = RandomStringUtils.randomAlphanumeric(11);
         this.workerType = workerType;
         this.batch = batch;
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public String getId() {
+        return id;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Batch getBatch() {
@@ -87,19 +89,27 @@ public class StudyRun {
         this.workerType = workerType;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        StudyRun studyRun = (StudyRun) o;
+        StudyLink studyLink = (StudyLink) o;
 
-        return Objects.equals(uuid, studyRun.uuid);
+        return Objects.equals(id, studyLink.id);
     }
 
     @Override
     public int hashCode() {
-        return uuid != null ? uuid.hashCode() : 0;
+        return id != null ? id.hashCode() : 0;
     }
 
 }

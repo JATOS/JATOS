@@ -23,13 +23,14 @@ import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieService;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -92,7 +93,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             componentResult = publixUtils.startComponent(component, studyResult, message);
         } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyResult.getUuid().toString(), false, e.getMessage()));
+                    .finishStudy(studyResult.getUuid(), false, e.getMessage()));
         }
 
         idCookieService.writeIdCookie(studyResult, componentResult);
@@ -112,7 +113,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             componentResult = publixUtils.retrieveStartedComponentResult(component, studyResult);
         } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
             return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyResult.getUuid().toString(), false, e.getMessage()));
+                    .finishStudy(studyResult.getUuid(), false, e.getMessage()));
         }
         if (studyResult.getStudyState() != StudyState.PRE) {
             studyResult.setStudyState(StudyState.DATA_RETRIEVED);
@@ -154,7 +155,11 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) return forbidden("Impossible to put result data to component result");
+        if (!componentResult.isPresent()) {
+            LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
+                    + "componentId " + component.getId() + " - " + "Can't fetch current ComponentResult");
+            return forbidden("Impossible to put result data to component result");
+        }
 
         String postedResultData = request.body().asText();
         String resultData;
@@ -164,6 +169,14 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         } else {
             resultData = postedResultData;
         }
+
+        if (resultData.getBytes(StandardCharsets.UTF_8).length > Common.getResultDataMaxSize()) {
+            String maxSize = Helpers.humanReadableByteCountSI(Common.getResultDataMaxSize());
+            LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
+                    + "componentId " + component.getId() + " - " + "Result data size exceeds allowed " + maxSize);
+            return badRequest("Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
+        }
+
         componentResult.get().setData(resultData);
         componentResult.get().setComponentState(ComponentState.RESULTDATA_POSTED);
         componentResultDao.update(componentResult.get());
@@ -174,7 +187,10 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     @Override
     public Result uploadResultFile(Request request, StudyResult studyResult, Component component, String filename)
             throws PublixException {
-        if (!Common.isResultUploadsEnabled()) return forbidden("File upload not allowed. Contact your admin.");
+        if (!Common.isResultUploadsEnabled()) {
+            LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File upload not allowed."));
+            return forbidden("File upload not allowed. Contact your admin.");
+        }
 
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
@@ -183,20 +199,31 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) return forbidden("Impossible to upload result file to component result");
+        if (!componentResult.isPresent()) {
+            LOGGER.info(getLogForUploadResultFile(studyResult, component, filename,
+                    "Can't fetch current ComponentResult"));
+            return forbidden("Impossible to upload result file to component result");
+        }
 
         MultipartFormData<TemporaryFile> body = request.body().asMultipartFormData();
         MultipartFormData.FilePart<TemporaryFile> filePart = body.getFile("file");
-        if (filePart == null) return badRequest("Missing file");
+        if (filePart == null) {
+            LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "Missing file"));
+            return badRequest("Missing file");
+        }
         TemporaryFile tmpFile = filePart.getRef();
         try {
             if (filePart.getFileSize() > Common.getResultUploadsMaxFileSize()) {
+                LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File size too large"));
                 return badRequest("File size too large");
             }
             if (ioUtils.getResultUploadDirSize(studyResult.getId()) > Common.getResultUploadsLimitPerStudyRun()) {
+                LOGGER.info(getLogForUploadResultFile(studyResult, component, filename,
+                        "Reached max file size limit per study run"));
                 return badRequest("Reached max file size limit per study run");
             }
             if (!IOUtils.checkFilename(filename)) {
+                LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "Bad filename"));
                 return badRequest("Bad filename");
             }
 
@@ -205,9 +232,15 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             tmpFile.moveFileTo(destFile, true);
             studyLogger.logResultUploading(destFile, componentResult.get());
         } catch (IOException e) {
+            LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File upload failed"));
             return badRequest("File upload failed");
         }
         return ok("File uploaded");
+    }
+
+    private String getLogForUploadResultFile(StudyResult sr, Component c, String filename, String logMsg) {
+        return ".uploadResultFile: studyResultId " + sr.getId() + ", " + "componentId " + c.getId()
+                + ", " + "filename " + filename + " - " + logMsg;
     }
 
     @Override
@@ -241,7 +274,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             return ok(views.html.publix.abort.render());
@@ -263,7 +296,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (!successful) {
@@ -280,7 +313,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
-        String msg = request.body().asText().replaceAll("\\R+", " ").replaceAll("\\s+"," ");
+        String msg = request.body().asText().replaceAll("\\R+", " ").replaceAll("\\s+", " ");
         LOGGER.info("Logging from client: studyResult " + studyResult.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "studyId " + study.getId() + ", "

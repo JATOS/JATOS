@@ -55,6 +55,7 @@ public class StudyLogger {
     private static final String HASH_FUNCTION = "hashFunction";
     private static final String USER_NAME = "userName";
     private static final String WORKER_ID = "workerId";
+    private static final String STUDYLINK_ID = "studyLinkId";
     private static final String BATCH_ID = "batchId";
     private static final String DATA_HASH = "dataHash";
     private static final String FILE_HASH = "fileHash";
@@ -163,13 +164,14 @@ public class StudyLogger {
         log(study, null, jsonObj);
     }
 
-    public void log(Study study, String msg, Batch batch, Worker worker) {
+    public void log(StudyLink studyLink, String msg, Worker worker) {
         if (!Common.isStudyLogsEnabled()) return;
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
-        jsonObj.put(BATCH_ID, batch.getId());
+        jsonObj.put(BATCH_ID, studyLink.getBatch().getId());
+        jsonObj.put(STUDYLINK_ID, studyLink.getId());
         jsonObj.put(WORKER_ID, worker.getId());
-        log(study, null, jsonObj);
+        log(studyLink.getBatch().getStudy(), null, jsonObj);
     }
 
     /**
@@ -245,8 +247,7 @@ public class StudyLogger {
     public Source<ByteString, ?> readLogFile(Study study, int entryLimit) {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
-        int bufferSize = entryLimit > 256 ? entryLimit : 256; // ensure min buffer size
-        return Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail()).mapMaterializedValue(
+        return Source.<ByteString>actorRef(256, OverflowStrategy.fail()).mapMaterializedValue(
                 sourceActor -> fillSourceWithLogFile(sourceActor, getPath(study), entryLimit));
     }
 

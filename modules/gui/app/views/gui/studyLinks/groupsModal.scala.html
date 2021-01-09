@@ -193,13 +193,13 @@ function generateGroupsTable(batch) {
     function renderWorkerColumn(data, type, dataToSet) {
         if (data.length == 0) return "none";
 
-        var workerLinks = [];
+        var links = [];
         data.forEach(function(workerId) {
-            workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
+            links.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
             'data-placement="bottom" title="Click to get to this worker\'s results page" ' +
             'href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
         });
-        return workerLinks.join(' ');
+        return links.join(' ');
     }
 
     function renderGroupButtonBarColumn(data, type, dataToSet) {

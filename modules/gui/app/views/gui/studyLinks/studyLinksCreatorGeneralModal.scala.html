@@ -1,13 +1,13 @@
 @(study: common.Study)
 
-<!-- Get Worker Links Modal -->
-<div id="getWorkerLinksGeneralModal" class="modal fade" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<!-- Get Links Modal -->
+<div id="studyLinksCreatorGeneralModal" class="modal fade" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="/" class="form-horizontal" role="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Get Worker Links</h4>
+                    <h4 class="modal-title">Get Study Links</h4>
                 </div>
                 <div class="modal-body">
 
@@ -23,13 +23,13 @@
                                 </ul>
                             </div>
                         </div>
-                        <div class="allowedWorkerTypesInfo col-xs-offset-5 col-xs-7">
+                        <div class="allowedTypesInfo col-xs-offset-5 col-xs-7">
                             <!-- filled dynamically -->
                         </div>
                     </div>
 
-                    <div class="chooseWorkerType form-group row">
-                        <label class="control-label col-xs-5">Choose Worker Type</label>
+                    <div class="chooseType form-group row">
+                        <label class="control-label col-xs-5">Choose Type</label>
                         <div class="col-xs-7">
                             <!-- With Bootstrap 3 we can't use <select> -->
                             <div class="btn-group">
@@ -54,87 +54,77 @@
 
 <script>
 
-$('#getWorkerLinksGeneralButton').click(function(event) {
-    removeAlerts("#getWorkerLinksGeneralModal");
-    removeFormErrors("#getWorkerLinksGeneralModal");
+$('#studyLinksCreatorGeneralButton').click(function(event) {
+    removeAlerts("#studyLinksCreatorGeneralModal");
+    removeFormErrors("#studyLinksCreatorGeneralModal");
 
     // Set the batch selector
-    var batchList = getBatchListData();
-    var dropdownMenuBatch = $('#getWorkerLinksGeneralModal .chooseBatch .dropdown-menu');
+    var dropdownMenuBatch = $('#studyLinksCreatorGeneralModal .chooseBatch .dropdown-menu');
     dropdownMenuBatch.empty();
+    var batchList = batchTable.data();
     $.each(batchList, function(index, batch) {
         dropdownMenuBatch.append('<li><a href="#">' + batch.title + '</a></li>');
         dropdownMenuBatch.find('a:last').data(batch);
         // Pre-set with the first batch
         if (index == 0) {
-            $('#getWorkerLinksGeneralModal .chooseBatch button:first').text(batch.title);
-            $('#getWorkerLinksGeneralModal .chooseBatch button:first').data(batch);
-            showAllowedWorkerTypesInfo(batch);
+            $('#studyLinksCreatorGeneralModal .chooseBatch button:first').text(batch.title);
+            $('#studyLinksCreatorGeneralModal .chooseBatch button:first').data(batch);
+            showAllowedTypesInfo(batch);
         }
     });
 
-    var dropdownMenuWorkerType = $('#getWorkerLinksGeneralModal .chooseWorkerType .dropdown-menu');
+    var dropdownMenuWorkerType = $('#studyLinksCreatorGeneralModal .chooseType .dropdown-menu');
     dropdownMenuWorkerType.empty();
     dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.PersonalSingleWorker.WORKER_TYPE') + '</a></li>');
     dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.PersonalMultipleWorker.WORKER_TYPE') + '</a></li>');
     dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.GeneralSingleWorker.WORKER_TYPE') + '</a></li>');
     dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.GeneralMultipleWorker.WORKER_TYPE') + '</a></li>');
     dropdownMenuWorkerType.append('<li><a href="#">' + getUIWorkerTypeWithGlyphicon('@common.workers.MTWorker.WORKER_TYPE') + '</a></li>');
-    // Pre-set with Personal Single worker
-    $('#getWorkerLinksGeneralModal .chooseWorkerType button:first').html(getUIWorkerTypeWithGlyphicon('@common.workers.PersonalSingleWorker.WORKER_TYPE'));
+    // Pre-set with Personal Single
+    $('#studyLinksCreatorGeneralModal .chooseType button:first').html(getUIWorkerTypeWithGlyphicon('@common.workers.PersonalSingleWorker.WORKER_TYPE'));
 
-    $('#getWorkerLinksGeneralModal').modal('show');
+    $('#studyLinksCreatorGeneralModal').modal('show');
 });
 
-$('#getWorkerLinksGeneralModal .dropdown-menu').on('click', 'a', function(e) {
+$('#studyLinksCreatorGeneralModal .dropdown-menu').on('click', 'a', function(e) {
     $(this).closest('.btn-group').find('button:first').html($(this).html());
     $(this).closest('.btn-group').find('button:first').data($(this).data());
-    if ($(this).data().allowedWorkerTypes) {
-        showAllowedWorkerTypesInfo($(this).data());
+    if ($(this).data().allowedTypes) {
+        showAllowedTypesInfo($(this).data());
     }
 });
 
-function showAllowedWorkerTypesInfo(currentBatch) {
-    var allowedWorkerTypes = [];
-    $.each(currentBatch.allowedWorkerTypes, function(index, allowedWorkerType) {
-        allowedWorkerTypes.push(getUIWorkerTypeWithGlyphicon(allowedWorkerType));
+function showAllowedTypesInfo(currentBatch) {
+    var allowedTypes = [];
+    $.each(currentBatch.allowedTypes, function(index, allowedType) {
+        allowedTypes.push(getUIWorkerTypeWithGlyphicon(allowedType));
     });
     var html = 'In batch "' + currentBatch.title + '"'
-        + ' the currently allowed worker types are: ' + allowedWorkerTypes.join(", ");
-    $("#getWorkerLinksGeneralModal .allowedWorkerTypesInfo").html(html);
+        + ' the currently allowed types are: ' + allowedTypes.join(", ");
+    $("#studyLinksCreatorGeneralModal .allowedTypesInfo").html(html);
 }
 
-$('#getWorkerLinksGeneralModal').on('click', '.confirmed', function(e) {
-    $('#getWorkerLinksGeneralModal').modal('hide');
-    var batch = $('#getWorkerLinksGeneralModal .chooseBatch .btn-group').find('button:first').data();
-    var workerType = $('#getWorkerLinksGeneralModal .chooseWorkerType .btn-group').find('button:first').text().trim();
-    if (!batch || !workerType) return;
+$('#studyLinksCreatorGeneralModal').on('click', '.confirmed', function(e) {
+    $('#studyLinksCreatorGeneralModal').modal('hide');
+    var batch = $('#studyLinksCreatorGeneralModal .chooseBatch .btn-group').find('button:first').data();
+    var type = $('#studyLinksCreatorGeneralModal .chooseType .btn-group').find('button:first').text().trim();
+    if (!batch || !type) return;
 
-    // Get workerSetupDiv
-    var workerSetupDiv;
-    $('.batchItem').each(function() {
-        var batchFromBatchItem = $(this).data();
-        if (batchFromBatchItem.id == batch.id) {
-            workerSetupDiv = $(this).find('.workerSetupItem');
-            return false;
-        }
-    });
-
-    switch (workerType) {
+    switch (type) {
     case '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE':
-        showGetWorkerLinksPersonalSingleModal(batch, workerSetupDiv);
+        showStudyLinksCreatorPersonalSingleModal(batch);
         break;
     case '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE':
-        showGetWorkerLinksPersonalMultipleModal(batch, workerSetupDiv);
+        showStudyLinksCreatorPersonalMultipleModal(batch);
         break;
     case '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE':
-        showShowWorkerLinksGeneralSingleModal(batch);
+        showStudyLinkGeneralSingleModal(batch);
         break;
     case '@common.workers.GeneralMultipleWorker.UI_WORKER_TYPE':
-        showShowWorkerLinksGeneralMultipleModal(batch);
+        showStudyLinkGeneralMultipleModal(batch);
         break;
     case '@common.workers.MTWorker.UI_WORKER_TYPE':
-        showMTSourceCodeModal(batch.id);
+        showSourceCodeMTurkModal(batch);
         break;
     }
 });

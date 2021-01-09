@@ -96,7 +96,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   @throws[BadRequestPublixException]
   private def fetchStudyResult(uuid: String) = {
     if (uuid == null || uuid == "undefined") throw new ForbiddenPublixException("Error getting study result UUID")
-    val srOptional = studyResultDao.findByUuid(UUID.fromString(uuid))
+    val srOptional = studyResultDao.findByUuid(uuid)
     if (!srOptional.isPresent) throw new BadRequestPublixException("Study result " + uuid + " doesn't exist.")
     srOptional.get()
   }

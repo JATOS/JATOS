@@ -21,7 +21,7 @@ public class BreadcrumbsService {
 
     public static final String HOME = "Home";
     public static final String RESULTS = "Results";
-    public static final String WORKER_AND_BATCH_MANAGER = "Worker & Batch Manager";
+    public static final String STUDY_LINKS = "Study Links";
     public static final String USER_MANAGER = "User Manager";
 
     public String generateForHome() {
@@ -76,7 +76,7 @@ public class BreadcrumbsService {
         breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(),
-                routes.Batches.workerAndBatchManager(study.getId()).url());
+                routes.StudyLinks.studyLinks(study.getId()).url());
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");
         }
@@ -88,7 +88,7 @@ public class BreadcrumbsService {
         breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(),
-                routes.Batches.workerAndBatchManager(study.getId()).url());
+                routes.StudyLinks.studyLinks(study.getId()).url());
         breadcrumbs.addBreadcrumb("Group " + groupResult.getId(), "");
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");

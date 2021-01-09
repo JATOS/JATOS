@@ -6,6 +6,7 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
@@ -84,10 +85,10 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
      * different then the first.
      */
     @Override
-    public Result startStudy(Http.Request request, StudyRun studyRun) throws PublixException {
-        Batch batch = studyRun.getBatch();
+    public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
+        Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
-        Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerIdByStudy(study);
 
         // There are 4 possibilities
         // 1. Preview study, first call -> create Worker and StudyResult, call finishOldestStudyResult, write General Single Cookie
@@ -101,12 +102,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
             studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
             publixUtils.finishOldestStudyResult();
-            studyResult = resultCreator.createStudyResult(studyRun, worker);
+            studyResult = resultCreator.createStudyResult(studyLink, worker);
             generalSingleCookieService.set(study, worker);
-            studyLogger.log(study, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
-                    + " worker", batch, worker);
+            studyLogger.log(studyLink, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
+                    + " worker", worker);
         } else {
             worker = publixUtils.retrieveWorker(workerId);
+            if (worker == null) throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
             studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
             studyResult = worker.getLastStudyResult().orElseThrow(() -> new InternalServerErrorPublixException(
                     "Repeated study run but couldn't find last study result"));
@@ -119,13 +121,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
         publixUtils.setUrlQueryParameter(request, studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
-        LOGGER.info(".startStudy: studyRunUuid " + studyRun.getUuid() + ", "
+        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId());
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyResult.getUuid().toString(), firstComponent.getUuid(), null));
+                studyResult.getUuid(), firstComponent.getUuid(), null));
     }
 
 }
