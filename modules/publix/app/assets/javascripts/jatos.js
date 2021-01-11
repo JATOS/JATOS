@@ -1338,9 +1338,10 @@ var jatos = {};
 			if (jatos.componentList[i].active) {
 				var nextComponentId = jatos.componentList[i].id;
 				jatos.startComponent(nextComponentId, resultData, param2, param3);
-				break;
+				return;
 			}
 		}
+		
 		// If last component end study
 		if (resultData) {
 			var onComplete = function () {
