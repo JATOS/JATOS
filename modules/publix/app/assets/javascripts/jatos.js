@@ -1335,7 +1335,9 @@ var jatos = {};
 		}
 
 		// If last component end study
-		if (jatos.componentPos >= jatos.componentList.length) {
+		var lastActiveComponent = jatos.componentList.reverse()
+			.find(function(component) { return component.active; });
+		if (jatos.componentPos >= lastActiveComponent.position) {
 			if (resultData) {
 				var onComplete = function () {
 					jatos.endStudy(true, message);
@@ -1346,6 +1348,7 @@ var jatos = {};
 			}
 			return;
 		}
+		// Start next active component
 		for (var i = jatos.componentPos; i < jatos.componentList.length; i++) {
 			if (jatos.componentList[i].active) {
 				var nextComponentId = jatos.componentList[i].id;
@@ -1372,13 +1375,9 @@ var jatos = {};
 	 * @param {optional function} onError - Callback function if fail
 	 */
 	jatos.startLastComponent = function (resultData, param2, param3) {
-		for (var i = jatos.componentList.length - 1; i >= 0; i--) {
-			if (jatos.componentList[i].active) {
-				var lastComponentId = jatos.componentList[i].id;
-				jatos.startComponent(lastComponentId, resultData, param2, param3);
-				break;
-			}
-		}
+		var lastActiveComponent = jatos.componentList.reverse()
+			.find(function(component) { return component.active; });
+		jatos.startComponent(lastActiveComponent.id, resultData, param2, param3);
 	};
 
 	/**
