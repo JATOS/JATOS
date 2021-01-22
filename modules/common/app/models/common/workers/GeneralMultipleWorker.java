@@ -7,10 +7,8 @@ import javax.persistence.Entity;
 import java.util.List;
 
 /**
- * Model and DB entity of the concrete Worker if a study is run as an General
- * Multiple Worker. A General Multiple Worker is a worker for an external run, the
- * worker can run the study many times. The worker is created during start of the
- * study.
+ * DB entity of the concrete Worker if a study is run as an General Multiple Worker. A General Multiple Worker is a
+ * worker for an external run, the worker can run the study many times. The worker is created during start of the study.
  *
  * @author Kristian Lange
  */

@@ -12,12 +12,11 @@ import javax.persistence.*;
 import java.util.*;
 
 /**
- * Abstract domain model / entity of a worker. It's used for JSON marshaling and
- * JPA persistence.
- * <p>
+ * Abstract DB entity of a worker. It's used for JSON marshaling and JPA persistence.
+ *
  * Workers are doing studies (and their components) and produce study results
  * (and their component results).
- * <p>
+ *
  * All worker entities are stored in the same database table. Inheritance is
  * established with an discriminator column.
  *

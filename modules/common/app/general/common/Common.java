@@ -56,6 +56,8 @@ public class Common {
     private static String resultUploadsPath;
     private static long resultUploadsMaxFileSize;
     private static long resultUploadsLimitPerStudyRun;
+    private static long resultDataMaxSize;
+    private static int maxResultsDbQuerySize;
     private static boolean inMemoryDb;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
@@ -101,6 +103,8 @@ public class Common {
         resultUploadsPath = fillResultUploadsPath(config);
         resultUploadsMaxFileSize = config.getBytes("jatos.resultUploads.maxFileSize");
         resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
+        resultDataMaxSize = config.getBytes("jatos.resultData.maxSize");
+        maxResultsDbQuerySize = config.getInt("jatos.maxResultsDbQuerySize");
         inMemoryDb = config.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
@@ -265,6 +269,20 @@ public class Common {
      */
     public static long getResultUploadsLimitPerStudyRun() {
         return resultUploadsLimitPerStudyRun;
+    }
+
+    /**
+     * Maximal size of result data of one component result in Byte
+     */
+    public static long getResultDataMaxSize() {
+        return resultDataMaxSize;
+    }
+
+    /**
+     * Maximal number of results to be fetched from the DB at once
+     */
+    public static int getMaxResultsDbQuerySize() {
+        return maxResultsDbQuerySize;
     }
 
     /**

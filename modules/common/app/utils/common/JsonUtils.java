@@ -19,12 +19,15 @@ import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -109,8 +112,8 @@ public class JsonUtils {
      * and puts them together with the session data (stored in StudyResult) into
      * a new JSON object.
      */
-    public JsonNode initData(Batch batch, StudyResult studyResult, Study study,
-            Component component) throws IOException {
+    public JsonNode initData(Batch batch, StudyResult studyResult, Study study, Component component)
+            throws IOException {
         String studyProperties = asJsonForPublix(study);
         String batchProperties = asJsonForPublix(batch);
         ArrayNode componentList = getComponentListForInitData(study);
@@ -120,13 +123,11 @@ public class JsonUtils {
 
         ObjectNode initData = Json.mapper().createObjectNode();
         initData.put("studySessionData", studySessionData);
-        // This is ugly: first marshaling, now unmarshaling again
-        // https://stackoverflow.com/questions/23006241/converting-pojo-to-jsonnode-using-a-jsonview
         initData.set("studyProperties", Json.mapper().readTree(studyProperties));
         initData.set("batchProperties", Json.mapper().readTree(batchProperties));
         initData.set("componentList", componentList);
         initData.set("componentProperties", Json.mapper().readTree(componentProperties));
-        initData.set("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
+        initData.put("urlQueryParameters", urlQueryParameters);
         return initData;
     }
 
@@ -140,6 +141,7 @@ public class JsonUtils {
         for (Component component : study.getComponentList()) {
             ObjectNode componentNode = Json.mapper().createObjectNode();
             componentNode.put("id", component.getId());
+            componentNode.put("uuid", component.getUuid());
             componentNode.put("title", component.getTitle());
             componentNode.put("active", component.isActive());
             componentNode.put("reloadable", component.isReloadable());
@@ -202,12 +204,11 @@ public class JsonUtils {
      * Returns ObjectNode of the given StudyResult. It contains the worker,
      * study's ID and title, and all ComponentResults.
      */
-    public JsonNode studyResultAsJsonNode(StudyResult studyResult) {
+    public JsonNode studyResultAsJsonNode(StudyResult studyResult, int componentResultCount) {
         ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
 
         // Add worker
-        ObjectNode workerNode = Json.mapper()
-                .valueToTree(initializeAndUnproxy(studyResult.getWorker()));
+        ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(studyResult.getWorker()));
         studyResultNode.set("worker", workerNode);
 
         // Add extra variables
@@ -223,19 +224,19 @@ public class JsonUtils {
         }
         studyResultNode.put("duration", duration);
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
-
-        // Add all componentResults
-        ArrayNode componentResultsNode = studyResultNode.arrayNode();
-        boolean hasResultFiles = false;
-        for (ComponentResult componentResult : studyResult.getComponentResultList()) {
-            JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
-            componentResultsNode.add(componentResultNode);
-            if (!componentResultNode.get("files").isEmpty(null)) hasResultFiles = true;
-        }
-        studyResultNode.set("componentResults", componentResultsNode);
-        studyResultNode.set("hasResultFiles", studyResultNode.booleanNode(hasResultFiles));
+        studyResultNode.put("componentResultCount", componentResultCount);
+        studyResultNode.put("hasResultFiles", hasResultUploadFiles(studyResult));
 
         return studyResultNode;
+    }
+
+    public JsonNode getComponentResultsByStudyResult(StudyResult studyResult) {
+        ArrayNode componentResultsNode = Json.mapper().createArrayNode();
+        for (ComponentResult componentResult : studyResult.getComponentResultList()) {
+            JsonNode componentResultNode = componentResultAsJsonNode(componentResult, true);
+            componentResultsNode.add(componentResultNode);
+        }
+        return componentResultsNode;
     }
 
     /**
@@ -255,7 +256,7 @@ public class JsonUtils {
     /**
      * Returns an ObjectNode of the given ComponentResult.
      */
-    public JsonNode componentResultAsJsonNode(ComponentResult componentResult) {
+    public JsonNode componentResultAsJsonNode(ComponentResult componentResult, boolean withData) {
         ObjectNode componentResultNode = Json.mapper().valueToTree(componentResult);
 
         // Add extra variables
@@ -270,7 +271,12 @@ public class JsonUtils {
         componentResultNode.put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
-        componentResultNode.put(DATA, componentResultDataForUI(componentResult));
+        if (withData) {
+            componentResultNode.put("data", componentResultDataForUI(componentResult));
+        }
+        int dataSize = componentResult.getData() != null ?
+                componentResult.getData().getBytes(StandardCharsets.UTF_8).length : 0;
+        componentResultNode.put("dataSize", Helpers.humanReadableByteCountSI(dataSize));
 
         // Add uploaded result files
         ArrayNode filesNode = componentResultNode.arrayNode();
@@ -280,15 +286,42 @@ public class JsonUtils {
         return componentResultNode;
     }
 
-    private List<String> getResultUploadFiles(ComponentResult componentResult) {
+    private List<ObjectNode> getResultUploadFiles(ComponentResult componentResult) {
         Path dir = Paths.get(
                 IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId()));
         if (Files.isDirectory(dir)) {
             try {
-                return Files.list(dir).map(filePath -> filePath.getFileName().toString()).collect(Collectors.toList());
-            } catch (IOException ignore) { }
+                return Files.list(dir).map(this::getResultUploadFileNode).collect(Collectors.toList());
+            } catch (IOException e) {
+                LOGGER.warn("Cannot open directory " + dir);
+            }
         }
         return new ArrayList<>();
+    }
+
+    private ObjectNode getResultUploadFileNode(Path filePath) {
+        String fileSize = null;
+        try {
+            FileChannel fileChannel = FileChannel.open(filePath);
+            fileSize = Helpers.humanReadableByteCountSI(fileChannel.size());
+        } catch (IOException e) {
+            LOGGER.warn("Cannot open file " + filePath);
+        }
+        return Json.mapper().createObjectNode()
+                .put("name", filePath.getFileName().toString())
+                .put("size", fileSize);
+    }
+
+    private boolean hasResultUploadFiles(StudyResult studyResult) {
+        Path dir = Paths.get(IOUtils.getResultUploadsDir(studyResult.getId()));
+        if (Files.isDirectory(dir)) {
+            try (Stream<Path> entries = Files.list(dir)) {
+                return entries.findFirst().isPresent();
+            } catch (IOException e) {
+                LOGGER.warn("Cannot open directory " + dir);
+            }
+        }
+        return false;
     }
 
     private static String getDurationPretty(Timestamp startDate, Timestamp endDate) {

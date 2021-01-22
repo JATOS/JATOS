@@ -16,14 +16,53 @@
 @btn-worker-color:   #ffffff;
 @btn-worker-bg:      #97cd47;
 @btn-worker-border:  #91c541;
-.btn-worker,
+@btn-worker-active:  #79A339;
+
+.btn-worker {
+  color: @btn-worker-color;
+  background-color: @btn-worker-bg;
+  border-color: @btn-worker-border;
+}
+
 .btn-worker:hover,
 .btn-worker:focus,
 .btn-worker:active,
-.btn-worker:visited {
-	color: @btn-worker-color;
-	background-color: @btn-worker-bg;
-	border-color: @btn-worker-border;
+.btn-worker.active,
+.open .dropdown-toggle.btn-worker {
+  color: @btn-worker-color;
+  background-color: @btn-worker-active;
+  border-color: @btn-worker-border;
+}
+
+.btn-worker:active,
+.btn-worker.active,
+.open .dropdown-toggle.btn-worker {
+  background-image: none;
+}
+
+.btn-worker.disabled,
+.btn-worker[disabled],
+fieldset[disabled] .btn-worker,
+.btn-worker.disabled:hover,
+.btn-worker[disabled]:hover,
+fieldset[disabled] .btn-worker:hover,
+.btn-worker.disabled:focus,
+.btn-worker[disabled]:focus,
+fieldset[disabled] .btn-worker:focus,
+.btn-worker.disabled:active,
+.btn-worker[disabled]:active,
+fieldset[disabled] .btn-worker:active,
+.btn-worker.disabled.active,
+.btn-worker[disabled].active,
+fieldset[disabled] .btn-worker.active {
+  background-color: @btn-worker-bg;
+  border-color: @btn-worker-border;
+}
+
+
+.btn-worker .badge {
+  color: @btn-worker-bg;
+  background-color: @btn-worker-color;
 }
 
 /*

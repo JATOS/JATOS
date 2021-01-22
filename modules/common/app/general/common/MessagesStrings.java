@@ -124,8 +124,8 @@ public class MessagesStrings {
     public static final String RESULTS_DELETE = "Delete selected results";
     public static final String RESULTS_DELETE_ALL = "Delete all results";
     public static final String RESULTS_DATA = "Click on the › icon to open the result's data";
-    public static final String RESULTS_DATA_SELECTION = "Check the box to select this result data for export or "
-            + "deleting";
+    public static final String RESULTS_DATA_SELECTION = "Check the box to select this result for export or "
+            + "deleting. Use Shift and Ctrl keys for selecting multiple rows.";
     public static final String RESULTS_START_TIME = "Start of study (time according to the JATOS server)";
     public static final String RESULTS_START_TIME_COMPONENT = "Start of component (time according to the JATOS server)";
     public static final String RESULTS_END_TIME = "End of study (time according to the JATOS server)";
@@ -144,7 +144,8 @@ public class MessagesStrings {
     public static final String RESULTS_COMPONENT_RESULT_ID = "ID of this component result";
     public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE = "Mechanical Turk's worker ID and in brackets "
             + "the confirmation code for Mechanical Turk";
-    public static final String RESULTS_FILES = "Are there any uploaded result files?";
+    public static final String RESULTS_FILES = "Are there any uploaded result files? "
+            + "Open the component results to actually see them.";
     public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
     public static final String RESULTS_NUMBER_COMPONENT_RESULTS = "Current number of component results";
     public static final String RESULTS_STUDY_STATE =
@@ -188,11 +189,10 @@ public class MessagesStrings {
     }
 
     public static String studyImportNotUser(String studyTitle) {
-        return "The study \"" + studyTitle + "\" you're trying "
-                + "to upload already exists but you aren't a user of it. "
+        return "The study you're trying to upload already exists but you aren't a user of it. "
                 + "You can always import this study in another JATOS instance "
                 + "(e.g. <a href=\"http://www.jatos.org/Installation.html\">"
-                + "in your local instance</a>), clone it there, export it, " + "and import it here again.";
+                + "in your local instance</a>), clone it there, export it, and import it here again.";
     }
 
     public static String studyAssetsOverwritten(String studyAssetsName, Long studyId, String studyTitle) {

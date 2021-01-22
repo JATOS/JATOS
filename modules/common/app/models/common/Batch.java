@@ -11,9 +11,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Model of a DB entity of a batch. The corresponding UI model is
- * BatchProperties in model Gui.
- * <p>
+ * DB entity of a batch. The corresponding UI model is BatchProperties in model Gui.
+ *
  * Defines the constrains regarding workers for a batch of a study, e.g. which
  * worker types are allowed, how many workers, which Workers etc.
  *
@@ -100,7 +99,7 @@ public class Batch {
      * type is not in this list, it has no permission to run this study.
      */
     @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
-    @ElementCollection
+    @ElementCollection(fetch=FetchType.EAGER)
     private Set<String> allowedWorkerTypes = new HashSet<>();
 
     /**

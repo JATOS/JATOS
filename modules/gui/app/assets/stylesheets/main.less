@@ -11,7 +11,7 @@ a:focus {
     text-decoration: none;
 }
 .gray-light {
-	color: #aaa;
+    color: #aaa;
 }
 
 .noWrap {
@@ -25,6 +25,14 @@ a:focus {
 .text-xl {
     font-size: 150%;
 }
+
+.clipboardButton,
+.showAllButton {
+    &:extend(.btn-default all);
+    margin: 0 5px;
+    color: #888 !important;
+}
+
 
 /*
  * Glyphicons
@@ -208,6 +216,16 @@ a:focus {
  */
 .modal {
     overflow-y: auto;
+}
+
+/*
+ * Define Bootstrap Modal XL
+ */
+@media (min-width: 768px) {
+    .modal-xl {
+        width: 90%;
+        max-width:1200px;
+    }
 }
 
 /*

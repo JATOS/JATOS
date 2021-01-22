@@ -22,7 +22,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -82,8 +82,8 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
      */
     @Override
     public Result startStudy(Long studyId, Long batchId) throws PublixException {
-        String workerIdStr = HttpUtils.getQueryString(PERSONAL_SINGLE_WORKER_ID);
-        boolean pre = HttpUtils.getQueryString("pre") != null;
+        String workerIdStr = Helpers.getQueryString(PERSONAL_SINGLE_WORKER_ID);
+        boolean pre = Helpers.getQueryString("pre") != null;
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId + ", " + PERSONAL_SINGLE_WORKER_ID + " " + workerIdStr
                 + ", " + "pre " + pre);

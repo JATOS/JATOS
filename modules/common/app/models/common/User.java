@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Domain entity of a user. Used for JSON marshalling and JPA persistance.
+ * DB entity of a user. Used for JSON marshalling and JPA persistance.
  *
  * @author Kristian Lange
  */

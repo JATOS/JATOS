@@ -7,15 +7,11 @@ import java.util.Objects;
 /**
  * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
  * study run, e.g. study result ID, worker ID, worker type.
- * <p>
+ *
  * ID cookies are used to provide those IDs to jatos.js and subsequent to the
  * components JavaScript.
- * <p>
- * Additionally the cookies are used to pass on information between Publix calls
- * e.g. between Publix.startStudy and Publix.startComponent. (Since we are
- * RESTful we can't have a state on the server side except in the DB).
  *
- * @author Kristian Lange (2016)
+ * @author Kristian Lange
  */
 public class IdCookieModel {
 

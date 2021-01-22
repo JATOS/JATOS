@@ -24,7 +24,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -208,7 +208,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (message != null) {
@@ -238,13 +238,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (message != null) {
                 Controller.flash("info", PublixErrorMessages.studyFinishedWithMessage(message));
             }
-            return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId());
+            return redirect(Common.getUrlWithBase("jatos/" + study.getId()));
         }
     }
 

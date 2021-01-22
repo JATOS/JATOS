@@ -1,16 +1,14 @@
 package daos.common.worker;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.persistence.TypedQuery;
-
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import play.db.jpa.JPAApi;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * DAO for MTWorker entity
@@ -45,10 +43,10 @@ public class MTWorkerDao extends WorkerDao {
      */
     public Optional<MTWorker> findByMTWorkerId(String mtWorkerId) {
         String queryStr = "SELECT w FROM Worker w WHERE upper(w.mtWorkerId)=:mtWorkerId";
-        TypedQuery<Worker> query = jpa.em().createQuery(queryStr, Worker.class);
-        query.setParameter("mtWorkerId", mtWorkerId.toUpperCase());
-        query.setMaxResults(1);
-        List<Worker> workerList = query.getResultList();
+        List<Worker> workerList = jpa.em().createQuery(queryStr, Worker.class)
+                .setParameter("mtWorkerId", mtWorkerId.toUpperCase())
+                .setMaxResults(1)
+                .getResultList();
         return !workerList.isEmpty() ? Optional.of((MTWorker) workerList.get(0)) : Optional.empty();
     }
 

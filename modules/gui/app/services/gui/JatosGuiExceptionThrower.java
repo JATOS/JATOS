@@ -12,7 +12,7 @@ import play.api.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -78,7 +78,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwRedirect(Exception e, Call call) throws JatosGuiException {
 		Result result;
-		if (HttpUtils.isAjax()) {
+		if (Helpers.isAjax()) {
 			int statusCode = getHttpStatusFromException(e);
 			result = Results.status(statusCode, e.getMessage());
 		} else {
@@ -97,7 +97,7 @@ public class JatosGuiExceptionThrower {
 	public void throwHome(Exception e) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
-		if (HttpUtils.isAjax()) {
+		if (Helpers.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
@@ -114,7 +114,7 @@ public class JatosGuiExceptionThrower {
 	public void throwStudy(String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
 		Result result;
-		if (HttpUtils.isAjax()) {
+		if (Helpers.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
@@ -132,7 +132,7 @@ public class JatosGuiExceptionThrower {
 	public void throwStudy(Exception e, Long studyId) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
-		if (HttpUtils.isAjax()) {
+		if (Helpers.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());

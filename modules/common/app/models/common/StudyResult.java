@@ -12,8 +12,9 @@ import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * Domain model /entity of a study result. It's used for JSON marshalling and JPA persistance. A study result
- * essentially stores the state and the result of a study run.
+ * DB entity of a study result. It's used for JSON marshalling and JPA persistance. A study result
+ * essentially stores the state and the result of a study run. It has an index on id and uuid, since both are used
+ * identifier.
  *
  * @author Kristian Lange
  */
@@ -88,7 +89,7 @@ public class StudyResult {
      * Batch this StudyResult belongs to. This relationship is unidirectional.
      */
     @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "batch_id")
     private Batch batch;
 
@@ -104,7 +105,7 @@ public class StudyResult {
     private List<ComponentResult> componentResultList = new ArrayList<>();
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "worker_id", insertable = false, updatable = false, nullable = false)
     private Worker worker;
 

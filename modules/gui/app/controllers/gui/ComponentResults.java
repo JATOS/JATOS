@@ -16,15 +16,16 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import models.common.Component;
+import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
-import scala.Option;
 import services.gui.*;
-import utils.common.HttpUtils;
-import utils.common.IOUtils;
+import utils.common.Helpers;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -51,13 +52,13 @@ public class ComponentResults extends Controller {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
-    private final IOUtils ioUtils;
+    private final JsonUtils jsonUtils;
 
     @Inject
     ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
             AuthenticationService authenticationService, BreadcrumbsService breadcrumbsService,
             ResultRemover resultRemover, ResultService resultService, StudyDao studyDao,
-            ComponentDao componentDao, ComponentResultDao componentResultDao, IOUtils ioUtils) {
+            ComponentDao componentDao, ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.authenticationService = authenticationService;
@@ -67,7 +68,7 @@ public class ComponentResults extends Controller {
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
-        this.ioUtils = ioUtils;
+        this.jsonUtils = jsonUtils;
     }
 
     /**
@@ -75,7 +76,7 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result componentResults(Long studyId, Long componentId, Option<Integer> max) throws JatosGuiException {
+    public Result componentResults(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -88,7 +89,7 @@ public class ComponentResults extends Controller {
 
         String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.RESULTS);
         return ok(views.html.gui.result.componentResults
-                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study, component, max));
+                .render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), study, component));
     }
 
     /**
@@ -99,14 +100,14 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove() throws JatosGuiException {
+    public Result remove(Http.Request request) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
-        request().body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+        request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
         try {
             // Permission check is done in service for each result individually
             resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
-        } catch (ForbiddenException | BadRequestException | NotFoundException | IOException e) {
+        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -115,12 +116,11 @@ public class ComponentResults extends Controller {
     /**
      * Ajax request with chunked streaming (reduces memory usage)
      *
-     * Returns all ComponentResults as JSON for a given component. It gets up to 'max' results - or if 'max' is
-     * undefined it gets all. If their is a problem during retrieval it returns nothing.
+     * Returns all ComponentResults as JSON for a given component.
      */
     @Transactional
     @Authenticated
-    public Result tableDataByComponent(Long studyId, Long componentId, Option<Integer> max) throws JatosGuiException {
+    public Result tableDataByComponent(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -131,18 +131,34 @@ public class ComponentResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        int resultCount = componentResultDao.countByComponent(component);
-        int bufferSize = max.isDefined() ? max.get() : resultCount;
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
                 .mapMaterializedValue(sourceActor -> {
                     CompletableFuture.runAsync(() -> {
-                        resultService.fetchComponentResultsAndWriteIntoActor(sourceActor, loggedInUser, max,
-                                () -> componentResultDao.findAllByComponentScrollable(component));
+                        resultService.fetchComponentResultsPaginatedAndWriteIntoActor(sourceActor, component);
                         sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
                     });
                     return sourceActor;
                 });
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
+
+    /**
+     * GET result data of one component result
+     */
+    @Transactional
+    @Authenticated
+    public Result tableDataComponentResultData(Long componentResultId) throws JatosGuiException {
+        ComponentResult componentResult = componentResultDao.findById(componentResultId);
+        Study study = componentResult.getStudyResult().getStudy();
+        User loggedInUser = authenticationService.getLoggedInUser();
+        try {
+            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+        } catch (ForbiddenException | BadRequestException e) {
+            jatosGuiExceptionThrower.throwAjax(e);
+        }
+
+        return ok(jsonUtils.componentResultDataForUI(componentResult));
+    }
+
 
 }

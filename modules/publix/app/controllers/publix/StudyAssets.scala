@@ -14,7 +14,7 @@ import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
 import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
-import utils.common.{HttpUtils, IOUtils}
+import utils.common.{Helpers, IOUtils}
 
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -91,13 +91,13 @@ class StudyAssets @Inject()(components: ControllerComponents,
       case e: PublixException =>
         val errorMsg = e.getMessage
         logger.info(".viaAssetsPath: " + errorMsg)
-        if (HttpUtils.isAjax) Forbidden(errorMsg)
+        if (Helpers.isAjax) Forbidden(errorMsg)
         else Forbidden(views.html.publix.error.render(errorMsg))
       case _: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
           s"${File.separator}$filePath")
         val errorMsg = s"Resource '$filePath' couldn't be found."
-        if (HttpUtils.isAjax) NotFound(errorMsg)
+        if (Helpers.isAjax) NotFound(errorMsg)
         else NotFound(views.html.publix.error.render(errorMsg))
     }
   }

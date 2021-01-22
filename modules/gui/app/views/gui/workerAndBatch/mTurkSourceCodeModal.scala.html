@@ -1,8 +1,8 @@
-@(study: common.Study, jatosUrl: java.net.URL)
+@(study: common.Study, realBaseUrl: java.net.URL)
 
 <!-- Mechanical Turk Source Code Modal Template -->
 <div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
@@ -11,7 +11,7 @@
             <div class="modal-body">
                 <p><b>Copy & paste</b> this code into the '<i>source</i>' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
                 <p class="simulation"></p>
-                <p><button class="btn btn-worker copyToClipboardButton">Copy to Clipboard</button></p>
+                <p><button class="btn btn-worker copyToClipboardButton">Copy to Clipboard&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button></p>
 <!-- Be careful with changing indentation - it changes the view -->
 <pre><code class="mtSourceCode">
 &lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
@@ -79,7 +79,6 @@
   }
 &lt;/script&gt;
 </code></pre>
-
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -101,11 +100,12 @@ function showMTSourceCodeModal(batchId) {
     var modal = $('#mtSourceCodeModalTemplate').clone();
     $(modal).removeAttr('id');
 
-    var host = "@{ jatosUrl.getProtocol() + "://" + jatosUrl.getHost()}";
-    var port = @{ jatosUrl.getPort() };
+    var host = "@{ realBaseUrl.getProtocol() + "://" + realBaseUrl.getHost()}";
+    var port = @{ realBaseUrl.getPort() };
     var address = port > 0 ? host + ":" + port : host;
-    var studyPath = "@{ general.common.Common.getPlayHttpContext() + "publix/" + study.getId() + "/start" }"
-    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=111&assignmentId=def&turkSubmitTo=sandbox";
+    var studyPath = "@{ general.common.Common.getPlayHttpContext() + "publix/" + study.getId() + "/start" }";
+    var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
+    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=" + randomMturkWorkerId + "&assignmentId=def&turkSubmitTo=sandbox";
 
     // Fill dummy variables in template source code
     $(modal).find('.mtSourceCode').text(function() {
@@ -116,20 +116,16 @@ function showMTSourceCodeModal(batchId) {
     });
     $(modal).find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
         + '(<a target="_blank" href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk">more information</a>):<br>'
-        + '<a target="_blank" href=' + mturkSandboxUrl + ">" + mturkSandboxUrl + "</a>");
+                    + '<div><i>' + mturkSandboxUrl + '</i>'
+            + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
+            + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button></div>');
 
     $(modal).modal('show');
 
-    // Select by clicking on source code text
-    $(modal).on('click', '.mtSourceCode', function(e) {
-        selectText(this);
-    });
-
     // Select and copy to clipboard by button
     $(modal).on('click', '.copyToClipboardButton', function(e) {
-        var mtSourceCode = $(modal).find('.mtSourceCode').get()[0];
-        selectText(mtSourceCode);
-        document.execCommand('copy');
+        var mtSourceCode = $(modal).find('.mtSourceCode').text();
+        navigator.clipboard.writeText(mtSourceCode);
     });
 }
 

@@ -12,7 +12,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.IdCookieService;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -525,38 +525,38 @@ public class PublixInterceptor extends Controller implements IPublix {
      */
     private String getWorkerTypeFromQuery() throws BadRequestPublixException {
         // Check for JATOS worker
-        String jatosWorkerId = HttpUtils.getQueryString(JatosPublix.JATOS_WORKER_ID);
+        String jatosWorkerId = Helpers.getQueryString(JatosPublix.JATOS_WORKER_ID);
         if (jatosWorkerId != null) {
             return JatosWorker.WORKER_TYPE;
         }
         // Check for Personal Single Worker
-        String personalSingleWorkerId = HttpUtils.getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
+        String personalSingleWorkerId = Helpers.getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
         if (personalSingleWorkerId != null) {
             return PersonalSingleWorker.WORKER_TYPE;
         }
         // Check for Personal Multiple Worker
-        String pmWorkerId = HttpUtils.getQueryString(PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
+        String pmWorkerId = Helpers.getQueryString(PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
         if (pmWorkerId != null) {
             return PersonalMultipleWorker.WORKER_TYPE;
         }
         // Check for General Single Worker
-        String generalSingle = HttpUtils.getQueryString(GeneralSinglePublix.GENERALSINGLE);
+        String generalSingle = Helpers.getQueryString(GeneralSinglePublix.GENERALSINGLE);
         if (generalSingle != null) {
             return GeneralSingleWorker.WORKER_TYPE;
         }
         // Check for General Multiple Worker
-        String generalMultiple = HttpUtils.getQueryString(GeneralMultiplePublix.GENERALMULTIPLE);
+        String generalMultiple = Helpers.getQueryString(GeneralMultiplePublix.GENERALMULTIPLE);
         if (generalMultiple != null) {
             return GeneralMultipleWorker.WORKER_TYPE;
         }
         // Check for MT worker and MT Sandbox worker
-        String mtWorkerId = HttpUtils.getQueryString(MTPublix.MT_WORKER_ID);
-        String mtAssignmentId = HttpUtils.getQueryString(MTPublix.MT_ASSIGNMENT_ID);
+        String mtWorkerId = Helpers.getQueryString(MTPublix.MT_WORKER_ID);
+        String mtAssignmentId = Helpers.getQueryString(MTPublix.MT_ASSIGNMENT_ID);
         if (mtWorkerId != null && mtAssignmentId != null) {
             return instanceOfPublix(MTPublix.class).retrieveWorkerType();
         }
         // Check for MT (sandbox) requester preview link
-        String mtMode = HttpUtils.getQueryString("mode");
+        String mtMode = Helpers.getQueryString("mode");
         if ("requester-preview".equals(mtMode)) {
             throw new BadRequestPublixException(PublixErrorMessages.MT_PREVIEW_NOT_START);
         }

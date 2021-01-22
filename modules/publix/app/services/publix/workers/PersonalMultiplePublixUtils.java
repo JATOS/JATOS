@@ -69,13 +69,4 @@ public class PersonalMultiplePublixUtils
         return retrieveTypedWorker(workerId);
     }
 
-    @Override
-    public Map<String, String> getNonJatosUrlQueryParameters() {
-        Map<String, String> queryMap = new HashMap<>();
-        Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
-        queryMap.remove(PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
-        queryMap.remove("batchId");
-        return queryMap;
-    }
-
 }

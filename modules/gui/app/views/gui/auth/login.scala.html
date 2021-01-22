@@ -72,7 +72,7 @@
 setBrand();
 
 function setBrand() {
-	@if(utils.common.HttpUtils.isLocalhost()) {
+	@if(utils.common.Helpers.isLocalhost()) {
 		$(".navbar-brand img").attr("src", "@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
 		$("#jatosBrandName").text("JATOS local");
 		$("#jatosHeader").removeClass('navbar-default');

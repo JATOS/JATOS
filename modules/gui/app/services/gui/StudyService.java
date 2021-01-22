@@ -288,6 +288,9 @@ public class StudyService {
         study.setComments(updatedStudy.getComments());
         study.setEndRedirectUrl(updatedStudy.getEndRedirectUrl());
         study.setJsonData(updatedStudy.getJsonData());
+        study.setLinearStudy(updatedStudy.isLinearStudy());
+        study.setGroupStudy(updatedStudy.isGroupStudy());
+        study.setEndRedirectUrl(updatedStudy.getEndRedirectUrl());
     }
 
     /**

@@ -22,7 +22,6 @@
             <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
-            <th>Invisible column for result data filtering</th>
         </tr>
     </thead>
     <tfoot>
@@ -43,7 +42,6 @@
             <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
             <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
             <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
-            <th>Invisible column for result data filtering</th>
         </tr>
     </tfoot>
 </table>
@@ -59,6 +57,23 @@
         </div>
     </div>
 </div>
+
+<!-- Component result data Modal -->
+<div class="modal fade" id="componentResultDataModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Component Result Data</h4>
+            </div>
+            <div class="modal-body">
+                <pre><code class="componentResultData">
+                </code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script type="text/javascript">
 var studyId = @study.getId();
@@ -84,20 +99,18 @@ $(document).ready(function() {
         },
         "dom": '<"pull-right"B>lfrtip',
         "order": [[ 2, "desc" ]],
-        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         "pageLength": 10,
         "stateSave": true,
         "columns": [
             {
                 "class": 'details-control',
                 "orderable": false,
-                "data": null,
+                "data": "componentResultCount",
                 "render": function (data, type, full, meta) {
-                    var numberOfResults = (full.componentResults.constructor === Array) ?
-                        full.componentResults.length : 0;
                     return '<button type="button" class="btn btn-study collapseResultData" data-toggle="tooltip"' +
                         'data-placement="bottom" title="Show/hide component result data">' +
-                        '<span class="badge">' + numberOfResults + '</span>&nbsp;' +
+                        '<span class="badge">' + data + '</span>&nbsp;' +
                         '<span class="glyphicon glyphicon-chevron-right"></span></button>';
                 }
             },
@@ -182,16 +195,6 @@ $(document).ready(function() {
                     return data.message ? data.message : "none";
                 },
                 "width": "20%"
-            },
-            {
-                "data": function(data, type, dataToSet) {
-                    var allResultDataForSearch = [];
-                    data.componentResults.forEach(function(componentResult) {
-                        allResultDataForSearch.push(componentResult.data);
-                    });
-                    return allResultDataForSearch.join(" ");
-                },
-                "visible": false
             }
         ],
         select: {
@@ -294,6 +297,7 @@ $(document).ready(function() {
                             }
                         },
                         "action": function(e, dt, node, config) {
+                            $("ul.dropdown-menu").hide();
                             $('#waitingModal').modal('show');
                             setTimeout(function(){
                                 $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
@@ -310,6 +314,7 @@ $(document).ready(function() {
                             "columns": ':nth-child(n+3):visible'
                         },
                         "action": function(e, dt, node, config) {
+                            $("ul.dropdown-menu").hide();
                             $('#waitingModal').modal('show');
                             setTimeout(function(){
                                 $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
@@ -405,13 +410,9 @@ $(document).ready(function() {
 
     function toggleExportFilesButton() {
         resultsTable.buttons(['.exportFilesButton']).disable();
-        resultsTable.rows().data().each(function(studyResult, index) {
-            studyResult.componentResults.forEach(function(componentResult) {
-                if (componentResult.files.length > 0) {
-                    resultsTable.buttons(['.exportFilesButton']).enable();
-                }
-            });
-        });
+        if (resultsTable.rows().data().toArray().find(function(studyResult) { return studyResult.hasResultFiles })) {
+            resultsTable.buttons(['.exportFilesButton']).enable();
+        }
     }
 
     function getMTWorkerId(data, type, full, meta) {
@@ -433,16 +434,26 @@ $(document).ready(function() {
                 tr.removeClass('shown');
             });
         } else {
-            row.child(childRowFormat(row.data())).show();
-            tr.addClass('shown');
-            tr.next().addClass('info');
-            $('div.slider', row.child()).slideDown();
+            var studyResultId = row.data().id;
+            $.ajax({
+                url : "@{general.common.Common.getPlayHttpContext()}jatos/studyResult/" + studyResultId + "/componentResults",
+                contentType: "application/json; charset=utf-8"
+            }).done(function(result) {
+                var childRow = generateComponentResultsChildRow(result, studyResultId);
+                row.child(childRow).show();
+                tr.addClass('shown');
+                tr.next().addClass('info');
+                $('div.slider', row.child()).slideDown();
+            }).fail(function(err) {
+                showError(err.responseText);
+            });
         }
         $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
                 .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
     });
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
+        $("ul.dropdown-menu").hide();
         showWaitingModal();
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
@@ -458,8 +469,8 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss");
-        downloadWithPost(url, data, filename);
+        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt";
+        downloadFileStreaming(url, data, filename);
     }
 
     function exportAllResultData(e, dt, node, config, ) {
@@ -467,6 +478,7 @@ $(document).ready(function() {
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
+        $("ul.dropdown-menu").hide();
         showWaitingModal();
         var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
@@ -506,7 +518,7 @@ $(document).ready(function() {
                 error : function(err) {
                     showError(err.responseText);
                 },
-                complete: hideWaitingModal()
+                complete: hideWaitingModal
             });
         });
     }
@@ -515,11 +527,8 @@ $(document).ready(function() {
         deleteSelectedResults(e, dt, node, config, true);
     }
 
-    function exportAllResultFiles(e, dt, node, config) {
-        exportSelectedResultFiles(e, dt, node, config, true);
-    }
-
     function exportSelectedResultFiles(e, dt, node, config, exportAll) {
+        $("ul.dropdown-menu").hide();
         showWaitingModal();
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
@@ -536,55 +545,89 @@ $(document).ready(function() {
         var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
         var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss") + ".zip";
-        downloadWithPost(url, data, filename);
+        downloadFileStreaming(url, data, filename);
     }
 
-    function childRowFormat(data) {
-        // `data` is the original data object for the row
-        var html = [];
-        html.push('<div class="slider" style="display: none">',
-            '<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
-            '<tr class="info">',
-            '<td><b>Comp. Result ID</b></td>',
-            '<td><b>Comp. ID</b></td>',
-            '<td><b>Component Title</b></td>',
-            '<td><b>Start Time (Server)</b></td>',
-            '<td><b>Duration</b></td>',
-            '<td><b>State</b></td>',
-            '<td><b>Files</b></td>',
-            '<td><b>Message</b></td>',
-            '</tr>');
-            if (data.componentResults.length > 0) {
-                data.componentResults.forEach(function(componentResult) {
-                    var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-                    var message = (componentResult.message) ? componentResult.message : "none";
-                    var resultFiles = componentResult.files.map(function(filename) {
-                        var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + data.studyId + "/resultFiles/"
-                            + data.id + "/" + componentResult.id + "/" + filename;
-                        return '<a href="' + url + '" download>' + filename + '</a>';
-                    });
-                    if (resultFiles.length === 0) resultFiles.push("none");
-                    html.push('<tr class="info">',
-                        '<td>' + componentResult.id + '</td>',
-                        '<td>' + componentResult.componentId + '</td>',
-                        '<td>' + componentResult.componentTitle + '</td>',
-                        '<td>' + componentResult.startDate + '</td>',
-                        '<td>' + duration + '</td>',
-                        '<td>' + componentResult.componentState + '</td>',
-                        '<td>' + resultFiles.join('<br>') + '</td>',
-                        '<td>' + message + '</td>',
-                        '</tr><tr class="info">',
-                        '<td colspan="8"><pre class="details-data">' + componentResult.data + '</pre></td>',
-                        '</tr>');
-                });
-            } else {
-                html.push('<tr class="info">',
-                    '<td colspan="8">empty</td>',
-                    '</tr>');
-            }
-            html.push('</table>', '</div>');
-        return html.join("");
+    function exportAllResultFiles(e, dt, node, config) {
+        exportSelectedResultFiles(e, dt, node, config, true);
     }
+
+    function generateComponentResultsChildRow(componentResults, studyResultId) {
+        var childRow = $('<div class="slider" style="display: none">'
+            + '<table class="table borderless" cellpadding="5" cellspacing="0" border="0">'
+            + '<tr class="info header">'
+            + '<td><b>Comp. Result ID</b></td>'
+            + '<td><b>Comp. ID</b></td>'
+            + '<td><b>Component Title</b></td>'
+            + '<td><b>Start Time (Server)</b></td>'
+            + '<td><b>Duration</b></td>'
+            + '<td><b>State</b></td>'
+            + '<td><b>Data Size</b></td>'
+            + '<td><b>Files (Size)</b></td>'
+            + '<td><b>Message</b></td>'
+            + '</tr>'
+            + '</table>'
+            + '</div>');
+
+        if (componentResults.length == 0) {
+            var row = $('<tr class="info"><td colspan="8">empty</td></tr>');
+            childRow.find("tr").after(row);
+            return childRow;
+        }
+
+        componentResults.forEach(function(componentResult) {
+            var duration = (componentResult.duration) ? componentResult.duration : "not yet";
+            var message = (componentResult.message) ? componentResult.message : "none";
+            var resultFiles = componentResult.files.map(function(fileObj) {
+                var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + componentResult.studyId + "/resultFiles/"
+                    + studyResultId + "/" + componentResult.id + "/" + fileObj.name;
+                return '<a href="' + url + '" download>' + fileObj.name + '&nbsp;(' + fileObj.size + ')</a>';
+            });
+            if (resultFiles.length === 0) resultFiles.push("none");
+            var showAllButton = "";
+            if (componentResult.data.substr(componentResult.data.length - 3) == "...") {
+                showAllButton = '<button type="button" class="btn btn-xs showAllButton" data-toggle="tooltip" '
+                    + 'title="Show all result data of this component result.">show all</button>';
+            }
+
+            var row1 = $('<tr class="info">'
+                + '<td>' + componentResult.id + '</td>'
+                + '<td>' + componentResult.componentId + '</td>'
+                + '<td>' + componentResult.componentTitle + '</td>'
+                + '<td>' + componentResult.startDate + '</td>'
+                + '<td>' + duration + '</td>'
+                + '<td>' + componentResult.componentState + '</td>'
+                + '<td>' + componentResult.dataSize + '</td>'
+                + '<td>' + resultFiles.join('<br>') + '</td>'
+                + '<td>' + message + '</td>'
+                + '</tr>');
+            var row2 = $('<tr class="info">'
+                + '<td colspan="9"><pre class="details-data">' + componentResult.data + showAllButton +'</pre></td>'
+                + '</tr>');
+            row2.data(componentResult);
+            childRow.find("tr").last().after(row1, row2);
+        });
+
+        return childRow;
+    }
+
+    $('#resultsTable tbody').on('click', '.showAllButton', function() {
+        var componentResultId = $(this).closest('tr').data().id;
+        $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
+        $.ajax({
+            url : '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()',
+            type : 'POST',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({resultIds: [componentResultId]}),
+            success : function(result) {
+                $('#componentResultDataModal .componentResultData').text(result);
+                $('#componentResultDataModal').modal('show');
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
+    });
 
 });
 

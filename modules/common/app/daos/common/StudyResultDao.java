@@ -2,8 +2,6 @@ package daos.common;
 
 import models.common.*;
 import models.common.workers.Worker;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -12,6 +10,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static models.common.StudyResult.StudyState;
 
@@ -77,12 +76,15 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of StudyResults belonging to the given worker.
+     * Returns the number of StudyResults belonging to the given worker. It checks for each StudyResult if its
+     * Study has the given User as a member.
      */
-    public int countByWorker(Worker worker) {
-        String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.worker_id = :workerId";
-        Query query = jpa.em().createNativeQuery(queryStr).setParameter("workerId", worker.getId());
-        Number result = (Number) query.getSingleResult();
+    public int countByWorker(Worker worker, User user) {
+        Number result = (Number) jpa.em().createQuery("SELECT COUNT(*) FROM StudyResult sr WHERE sr.worker = :worker "
+                + "AND sr.study IN (SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)")
+                .setParameter("worker", worker)
+                .setParameter("username", user.getUsername())
+                .getSingleResult();
         return result.intValue();
     }
 
@@ -110,52 +112,90 @@ public class StudyResultDao extends AbstractDao {
         return result.intValue();
     }
 
-    public ScrollableResults findAllByStudyScrollable(Study study) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
-        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("study", study).scroll(ScrollMode.FORWARD_ONLY);
-    }
-
     public List<StudyResult> findAllByStudy(Study study) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.study=:study";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("study", study).getResultList();
-    }
-
-    public ScrollableResults findAllByBatchScrollable(Batch batch) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch";
-        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("batch", batch).scroll(ScrollMode.FORWARD_ONLY);
-    }
-
-    public List<StudyResult> findAllByBatch(Batch batch) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch";
-        TypedQuery<StudyResult> query = jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("batch", batch).getResultList();
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.study=:study", StudyResult.class)
+                .setParameter("study", study)
+                .getResultList();
     }
 
     /**
-     * Returns a ScrollableResults of all StudyResults that belongs to the given Batch and worker type.
+     * Returns paginated StudyResults that belong to the given Study
+     *
+     * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
+     * (https://stackoverflow.com/a/2826512/1278769)
      */
-    public ScrollableResults findAllByBatchAndWorkerTypeScrollable(Batch batch, String workerType) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
-                + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)";
-        org.hibernate.query.Query query = (org.hibernate.query.Query) jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("batch", batch).setParameter("workerType", workerType).scroll(
-                ScrollMode.FORWARD_ONLY);
+    public List<StudyResult> findAllByStudy(Study study, int first, int max) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.study=:study", StudyResult.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .setParameter("study", study)
+                .getResultList();
     }
 
-    public ScrollableResults findAllByWorkerScrollable(Worker worker) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.worker=:worker";
-        org.hibernate.query.Query query = (org.hibernate.query.Query)  jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("worker", worker).scroll(ScrollMode.FORWARD_ONLY);
+    public List<StudyResult> findAllByBatch(Batch batch) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch", StudyResult.class)
+                .setParameter("batch", batch)
+                .getResultList();
     }
 
-    public ScrollableResults findAllByGroupScrollable(GroupResult groupResult) {
-        String queryStr = "SELECT sr FROM StudyResult sr WHERE sr.activeGroupResult = :group "
-                + "OR sr.historyGroupResult = :group";
-        org.hibernate.query.Query query = (org.hibernate.query.Query)  jpa.em().createQuery(queryStr, StudyResult.class);
-        return query.setParameter("group", groupResult).scroll(ScrollMode.FORWARD_ONLY);
+    /**
+     * Returns paginated StudyResults that belong to the given Batch.
+     *
+     * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
+     * (https://stackoverflow.com/a/2826512/1278769)
+     */
+    public List<StudyResult> findAllByBatch(Batch batch, int first, int max) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch", StudyResult.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .setParameter("batch", batch)
+                .getResultList();
+    }
+
+    /**
+     * Returns paginated StudyResults that belong to the given Batch and worker type.
+     *
+     * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
+     * (https://stackoverflow.com/a/2826512/1278769)
+     */
+    public List<StudyResult> findAllByBatchAndWorkerType(Batch batch, String workerType, int first, int max) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
+                + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)", StudyResult.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .setParameter("batch", batch)
+                .setParameter("workerType", workerType)
+                .getResultList();
+    }
+
+    /**
+     * Returns paginated StudyResults that belong to the given Worker and User. It checks for each StudyResult if its
+     * Study has the given User as a member.
+     *
+     * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
+     * (https://stackoverflow.com/a/2826512/1278769)
+     */
+    public List<StudyResult> findAllByWorker(Worker worker, User user, int first, int max) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.worker = :worker AND sr.study IN "
+                + "(SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)", StudyResult.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .setParameter("worker", worker)
+                .setParameter("username", user.getUsername())
+                .getResultList();
+    }
+
+    /**
+     * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
+     * (https://stackoverflow.com/a/2826512/1278769)
+     */
+    public List<StudyResult> findAllByGroup(GroupResult groupResult, int first, int max) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.activeGroupResult = :group "
+                + "OR sr.historyGroupResult = :group", StudyResult.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .setParameter("group", groupResult)
+                .getResultList();
     }
 
     public List<StudyResultStatus> findLastUnfinished(int count) {

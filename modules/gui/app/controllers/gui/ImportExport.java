@@ -269,8 +269,7 @@ public class ImportExport extends Controller {
         List<Long> studyResultIdList = new ArrayList<>();
         request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
 
-        int bufferSize = studyResultIdList.size();
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
                 .mapMaterializedValue(sourceActor -> {
                     CompletableFuture.runAsync(() -> {
                         resultDataExporter.byStudyResultIds(sourceActor, studyResultIdList, loggedInUser);
@@ -294,8 +293,7 @@ public class ImportExport extends Controller {
         List<Long> componentResultIdList = new ArrayList<>();
         request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
 
-        int bufferSize = componentResultIdList.size();
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail())
+        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
                 .mapMaterializedValue(sourceActor -> {
                     CompletableFuture.runAsync(() -> {
                         resultDataExporter.byComponentResultIds(sourceActor, componentResultIdList, loggedInUser);

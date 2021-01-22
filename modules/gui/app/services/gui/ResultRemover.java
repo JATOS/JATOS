@@ -12,6 +12,7 @@ import models.common.*;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
+import play.db.jpa.JPAApi;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -32,6 +33,7 @@ public class ResultRemover {
 
     private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
+    private final JPAApi jpa;
     private final Checker checker;
     private final ResultService resultService;
     private final ComponentResultDao componentResultDao;
@@ -42,10 +44,11 @@ public class ResultRemover {
     private final IOUtils ioUtils;
 
     @Inject
-    ResultRemover(Checker checker, ResultService resultService,
+    ResultRemover(JPAApi jpa, Checker checker, ResultService resultService,
             ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, GroupResultDao groupResultDao,
             WorkerDao workerDao, StudyLogger studyLogger, IOUtils ioUtils) {
+        this.jpa = jpa;
         this.checker = checker;
         this.resultService = resultService;
         this.componentResultDao = componentResultDao;
@@ -61,18 +64,18 @@ public class ResultRemover {
      * String, checks them and if yes, removes them. Removes result upload files.
      *
      * @param componentResultIdList List of IDs of ComponentResults
-     * @param user               For each ComponentResult it will be checked that the given
-     *                           user is a user of the study that the ComponentResult belongs
-     *                           too.
+     * @param user                  For each ComponentResult it will be checked that the given
+     *                              user is a user of the study that the ComponentResult belongs
+     *                              too.
      */
     public void removeComponentResults(List<Long> componentResultIdList, User user)
-            throws BadRequestException, NotFoundException, ForbiddenException, IOException {
+            throws BadRequestException, NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = resultService.getComponentResults(componentResultIdList);
         Set<Study> studies = new HashSet<>();
         checker.checkComponentResults(componentResultList, user, true);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
         for (ComponentResult componentResult : componentResultList) {
-            removeComponentResult(componentResult);
+            removeComponentResult(componentResult.getId());
         }
         componentResultList.forEach(cr -> studies.add(cr.getStudyResult().getStudy()));
         studies.forEach(study -> studyLogger.log(study, user, "Removed result data and files"));
@@ -84,16 +87,16 @@ public class ResultRemover {
      * removes them. Removes result upload files.
      *
      * @param studyResultIdList List of IDs of StudyResults.
-     * @param user           For each StudyResult it will be checked that the given user is
-     *                       a user of the study that the StudyResult belongs too.
+     * @param user              For each StudyResult it will be checked that the given user is
+     *                          a user of the study that the StudyResult belongs too.
      */
     public void removeStudyResults(List<Long> studyResultIdList, User user)
-            throws BadRequestException, NotFoundException, ForbiddenException, IOException {
+            throws BadRequestException, NotFoundException, ForbiddenException {
         List<StudyResult> studyResultList = resultService.getStudyResults(studyResultIdList);
         Set<Study> studies = new HashSet<>();
         checker.checkStudyResults(studyResultList, user, true);
         for (StudyResult studyResult : studyResultList) {
-            removeStudyResult(studyResult);
+            removeStudyResult(studyResult.getId());
         }
         studyResultList.forEach(sr -> studies.add(sr.getStudy()));
         studies.forEach(study -> studyLogger.log(study, user, "Removed result data and files"));
@@ -103,11 +106,11 @@ public class ResultRemover {
      * Removes all ComponentResults that belong to the given component. Remove them from their
      * StudyResults. Removes result upload files.
      */
-    void removeAllComponentResults(Component component, User user) throws IOException {
+    void removeAllComponentResults(Component component, User user) {
         List<ComponentResult> componentResultList = componentResultDao.findAllByComponent(component);
         componentResultList.forEach(this::removeComponentResultFromStudyResult);
         for (ComponentResult componentResult : componentResultList) {
-            removeComponentResult(componentResult);
+            removeComponentResult(componentResult.getId());
         }
         studyLogger.log(component.getStudy(), user, "Removed result data and files");
     }
@@ -127,32 +130,38 @@ public class ResultRemover {
     /**
      * Removes all StudyResults that belong to the given batch. Removes result upload files.
      */
-    void removeAllStudyResults(Batch batch, User user) throws IOException {
+    void removeAllStudyResults(Batch batch, User user) {
         List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
         for (StudyResult studyResult : studyResultList) {
-            removeStudyResult(studyResult);
+            removeStudyResult(studyResult.getId());
         }
         studyLogger.log(batch.getStudy(), user, "Removed result data and files");
     }
 
     /**
-     * Remove ComponentResult from its StudyResult and then remove itself.
-     * Removes result upload files.
+     * Remove ComponentResult from its StudyResult and then remove itself. Removes result upload files.
      */
-    private void removeComponentResult(ComponentResult componentResult) throws IOException {
-        StudyResult studyResult = componentResult.getStudyResult();
-        if (studyResult != null) {
+    private void removeComponentResult(long componentResultId) {
+        jpa.withTransaction(entityManager -> {
+            ComponentResult componentResult = componentResultDao.findById(componentResultId);
+            StudyResult studyResult = componentResult.getStudyResult();
+            if (studyResult == null) {
+                LOGGER.error(".removeComponentResult: StudyResult is null - but a ComponentResult always belongs to a "
+                        + "StudyResult (ComponentResult's ID is " + componentResult.getId() + ")");
+                componentResultDao.remove(componentResult);
+                return;
+            }
+
             studyResult.removeComponentResult(componentResult);
             studyResultDao.update(studyResult);
-
-            // Remove componentResult's upload dir
-            ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
-        } else {
-            LOGGER.error(".removeComponentResult: StudyResult is null - "
-                    + "but a ComponentResult always belongs to a StudyResult "
-                    + "(ComponentResult's ID is " + componentResult.getId() + ")");
-        }
-        componentResultDao.remove(componentResult);
+            try {
+                // Remove componentResult's upload dir
+                ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
+            } catch (IOException e) {
+                LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
+            }
+            componentResultDao.remove(componentResult);
+        });
     }
 
     /**
@@ -160,32 +169,41 @@ public class ResultRemover {
      * StudyResult from the given worker, removes this StudyResult from the
      * GroupResult and then remove StudyResult itself. Removes result upload files.
      */
-    private void removeStudyResult(StudyResult studyResult) throws IOException {
-        // Remove all component results of this study result
-        studyResult.getComponentResultList().forEach(componentResultDao::remove);
+    private void removeStudyResult(long studyResultId) {
+        jpa.withTransaction(entityManager -> {
+            StudyResult studyResult = studyResultDao.findById(studyResultId);
 
-        // Remove study result from worker
-        Worker worker = studyResult.getWorker();
-        worker.removeStudyResult(studyResult);
-        workerDao.update(worker);
+            // Remove all component results of this study result
+            studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
-        // Remove studyResult as member from group result
-        GroupResult activeGroupResult = studyResult.getActiveGroupResult();
-        if (activeGroupResult != null) {
-            activeGroupResult.removeActiveMember(studyResult);
-            updateOrRemoveGroupResult(activeGroupResult);
-        }
-        GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
-        if (historyGroupResult != null) {
-            historyGroupResult.removeHistoryMember(studyResult);
-            updateOrRemoveGroupResult(historyGroupResult);
-        }
+            // Remove study result from worker
+            Worker worker = studyResult.getWorker();
+            worker.removeStudyResult(studyResult);
+            workerDao.update(worker);
 
-        // Remove studyResult
-        studyResultDao.remove(studyResult);
+            // Remove studyResult as member from group result
+            GroupResult activeGroupResult = studyResult.getActiveGroupResult();
+            if (activeGroupResult != null) {
+                activeGroupResult.removeActiveMember(studyResult);
+                updateOrRemoveGroupResult(activeGroupResult);
+            }
+            GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
+            if (historyGroupResult != null) {
+                historyGroupResult.removeHistoryMember(studyResult);
+                updateOrRemoveGroupResult(historyGroupResult);
+            }
 
-        // Remove studyResult's upload dir
-        ioUtils.removeResultUploadsDir(studyResult.getId());
+            try {
+                // Remove studyResult's upload dir
+                ioUtils.removeResultUploadsDir(studyResultId);
+            } catch (IOException e) {
+                LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
+            }
+
+            // Remove studyResult
+            studyResultDao.remove(studyResult);
+        });
+
     }
 
     /**

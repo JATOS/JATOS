@@ -17,6 +17,7 @@ import models.common.workers.GeneralSingleWorker;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
+import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
@@ -25,7 +26,7 @@ import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -89,7 +90,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
      */
     @Override
     public Result startStudy(Long studyId, Long batchId) throws PublixException {
-        boolean pre = HttpUtils.getQueryString("pre") != null;
+        boolean pre = Helpers.getQueryString("pre") != null;
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId + ", " + "pre " + pre);
         Study study = publixUtils.retrieveStudy(studyId);

@@ -12,17 +12,17 @@ import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * Domain model / entity of a study. Used for JSON marshalling and JPA persistance.
- * <p>
+ * DB entity of a study. Used for JSON marshalling and JPA persistance.
+ *
  * This entity has all properties of a study but not the results of a study. The results of a study are stored in
  * StudyResults and ComponentResult. A study consists of a list components and their model is Component. It can have
  * several Batches.
- * <p>
+ *
  * Default values, where necessary, are at the fields or in the constructor.
- * <p>
+ *
  * For the GUI a different model (models.gui.StudyProperties) is used.
  *
- * @author Kristian Lange (2014)
+ * @author Kristian Lange
  */
 @Entity
 @Table(name = "Study")

@@ -29,7 +29,7 @@ import play.mvc.Http;
 import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -104,7 +104,7 @@ public class Studies extends Controller {
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study
-                .render(loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study, studyResultCount));
+                .render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), study, studyResultCount));
     }
 
     @Transactional
@@ -349,7 +349,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Actually runs the study with the given study ID, in the batch with the given batch ID while using a JatosWorker.
+     * Runs the study with the given study ID, in the batch with the given batch ID while using a JatosWorker.
      * It redirects to Publix.startStudy() action.
      */
     @Transactional

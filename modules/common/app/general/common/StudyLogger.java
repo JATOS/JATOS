@@ -245,8 +245,7 @@ public class StudyLogger {
     public Source<ByteString, ?> readLogFile(Study study, int entryLimit) {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
-        int bufferSize = entryLimit > 256 ? entryLimit : 256; // ensure min buffer size
-        return Source.<ByteString>actorRef(bufferSize, OverflowStrategy.fail()).mapMaterializedValue(
+        return Source.<ByteString>actorRef(256, OverflowStrategy.fail()).mapMaterializedValue(
                 sourceActor -> fillSourceWithLogFile(sourceActor, getPath(study), entryLimit));
     }
 

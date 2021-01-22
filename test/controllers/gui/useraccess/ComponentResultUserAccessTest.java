@@ -93,8 +93,7 @@ public class ComponentResultUserAccessTest {
     @Test
     public void callComponentResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.ComponentResults
-                .componentResults(study.getId(), study.getComponent(1).getId(), Option.empty());
+        Call call = routes.ComponentResults.componentResults(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -139,8 +138,7 @@ public class ComponentResultUserAccessTest {
     @Test
     public void callComponentResultsTableDataByComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.ComponentResults
-                .tableDataByComponent(study.getId(), study.getComponent(1).getId(), Option.empty());
+        Call call = routes.ComponentResults.tableDataByComponent(study.getId(), study.getComponent(1).getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());

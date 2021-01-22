@@ -22,10 +22,8 @@ public class IdCookieSerialiser {
         StringBuilder sb = new StringBuilder();
         appendCookieEntry(sb, IdCookieModel.BATCH_ID, idCookie.getBatchId(), true);
         appendCookieEntry(sb, IdCookieModel.COMPONENT_ID, idCookie.getComponentId(), true);
-        appendCookieEntry(sb, IdCookieModel.COMPONENT_POSITION, idCookie.getComponentPosition(),
-                true);
-        appendCookieEntry(sb, IdCookieModel.COMPONENT_RESULT_ID, idCookie.getComponentResultId(),
-                true);
+        appendCookieEntry(sb, IdCookieModel.COMPONENT_POSITION, idCookie.getComponentPosition(), true);
+        appendCookieEntry(sb, IdCookieModel.COMPONENT_RESULT_ID, idCookie.getComponentResultId(), true);
         appendCookieEntry(sb, IdCookieModel.CREATION_TIME, idCookie.getCreationTime(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_ASSETS, idCookie.getStudyAssets(), true);
         appendCookieEntry(sb, IdCookieModel.URL_BASE_PATH, idCookie.getUrlBasePath(), true);

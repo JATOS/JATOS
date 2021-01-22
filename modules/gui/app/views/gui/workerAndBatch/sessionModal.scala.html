@@ -42,18 +42,18 @@ $('#batchList').on('click', '.batchSessionButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
     var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
-    $('#sessionModal').data('id', batch.id);
     $('#sessionModal').data('type', 'batch');
+    $('#sessionModal').data('data', batch);
     getSession(dataUrl);
 });
 
 $('#groupsModal').on('click', '.groupSessionButton', function() {
     var tr = $(this).closest('tr');
-    var groupId = groupsTable.row(tr).data().id;
-    if (!groupId) {return} // should never happen
-    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + groupId + "/groupSessionData";
-    $('#sessionModal').data('id', groupId);
+    var group = groupsTable.row(tr).data();
+    if (!group) {return} // should never happen
+    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + group.id + "/groupSessionData";
     $('#sessionModal').data('type', 'group');
+    $('#sessionModal').data('data', group);
     getSession(dataUrl);
 });
 
@@ -76,10 +76,11 @@ function fillSessionModal(session, type) {
     clearForm("#sessionForm");
 
     var type = $('#sessionModal').data('type');
+    var data = $('#sessionModal').data('data');
     if (type == 'batch') {
-        $('#sessionModal .modal-title').text("Current Batch Session Data");
+        $('#sessionModal .modal-title').text("Current Batch Session Data for Batch '" + data.title + "'");
     } else if (type == 'group') {
-        $('#sessionModal .modal-title').text("Current Group Session Data");
+        $('#sessionModal .modal-title').text("Current Group Session Data for group with ID " + data.id);
     }
 
     if (!sessionDataEditor) setupSessionDataEditor();
@@ -126,8 +127,8 @@ $("#sessionForm").submit(function(event) {
     // Put JSON from editor into textarea to let it be picked up by form.serialize
     var sessionData = sessionDataEditor.getSession().getValue();
     $("#sessionModal textarea.sessionData").val(sessionData);
-    var id = $('#sessionModal').data('id');
     var type = $('#sessionModal').data('type');
+    var id = $('#sessionModal').data('data').id;
     if (!id || !type) {return} // should never happen
 
     if (type == 'batch') {

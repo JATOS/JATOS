@@ -13,7 +13,7 @@ import models.common.User;
 import play.data.validation.ValidationError;
 
 /**
- * Model and DB entity of the concrete Worker who originates from JATOS itself.
+ * DB entity of the concrete Worker who originates from JATOS itself.
  * 
  * @author Kristian Lange
  */

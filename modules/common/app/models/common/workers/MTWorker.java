@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Model and DB entity of the concrete worker who originates from the MTurk.
+ * DB entity of the concrete worker who originates from the MTurk.
  * 
  * @author Kristian Lange
  */

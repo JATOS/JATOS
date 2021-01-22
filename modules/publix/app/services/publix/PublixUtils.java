@@ -10,6 +10,7 @@ import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
+import play.mvc.Controller;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -468,17 +469,13 @@ public abstract class PublixUtils<T extends Worker> {
     }
 
     /**
-     * Gets the URL query parameters without the JATOS specific ones. Since the JATOS specific ones
-     * vary from worker to worker the method is defined in the worker-specific sub-classes.
-     */
-    protected abstract Map<String, String> getNonJatosUrlQueryParameters();
-
-    /**
      * Get query string parameters from the calling URL and put them into the field
      * urlQueryParameters in StudyResult as a JSON string.
      */
     public StudyResult setUrlQueryParameter(StudyResult studyResult) {
-        String parameter = JsonUtils.asJson(getNonJatosUrlQueryParameters());
+        Map<String, String> queryMap = new HashMap<>();
+        Controller.request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
+        String parameter = JsonUtils.asJson(queryMap);
         studyResult.setUrlQueryParameters(parameter);
         return studyResult;
     }

@@ -69,10 +69,9 @@ public class BatchService {
     /**
      * Initialises Batch. Does NOT persist.
      */
-    Batch createBatch(Batch batch, Study study) {
+    void createBatch(Batch batch, Study study) {
         initBatch(batch, study);
         batch.setStudy(study);
-        return batch;
     }
 
     /**

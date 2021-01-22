@@ -19,7 +19,7 @@ import play.mvc.Result;
 import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -79,7 +79,7 @@ public class Home extends Controller {
         List<Study> studyList = studyDao.findAllByUser(loggedInUser);
         String breadcrumbs = breadcrumbsService.generateForHome();
         return status(httpStatus,
-                views.html.gui.home.render(studyList, loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
+                views.html.gui.home.render(studyList, loggedInUser, breadcrumbs, Helpers.isLocalhost()));
     }
 
     @Transactional

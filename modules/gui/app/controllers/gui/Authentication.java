@@ -19,7 +19,7 @@ import play.mvc.Result;
 import services.gui.AuthenticationService;
 import services.gui.AuthenticationValidation;
 import services.gui.UserService;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -89,7 +89,7 @@ public class Authentication extends Controller {
         } else {
             authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername,
                     request.remoteAddress());
-            if (HttpUtils.isAjax()) {
+            if (Helpers.isAjax()) {
                 return ok(" "); // jQuery.ajax cannot handle empty responses
             } else {
                 return redirect(controllers.gui.routes.Home.home());
@@ -101,7 +101,7 @@ public class Authentication extends Controller {
             String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress
                 + " failed repeatedly for username " + normalizedUsername);
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return unauthorized(MessagesStrings.FAILED_THREE_TIMES);
         } else {
             return unauthorized(
@@ -113,7 +113,7 @@ public class Authentication extends Controller {
             String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " failed for username "
                 + normalizedUsername);
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
         } else {
             return unauthorized(views.html.gui.auth.login
@@ -123,7 +123,7 @@ public class Authentication extends Controller {
 
     private Result returnInternalServerErrorDueToLdapProblems(Form<Login> loginForm, NamingException e) {
         LOGGER.warn("LDAP problems - " + e.toString());
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return internalServerError(MessagesStrings.LDAP_PROBLEMS);
         } else {
             return internalServerError(views.html.gui.auth.login

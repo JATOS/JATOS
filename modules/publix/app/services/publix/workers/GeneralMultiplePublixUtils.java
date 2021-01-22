@@ -50,13 +50,4 @@ public class GeneralMultiplePublixUtils extends PublixUtils<GeneralMultipleWorke
         return (GeneralMultipleWorker) worker;
     }
 
-    @Override
-    public Map<String, String> getNonJatosUrlQueryParameters() {
-        Map<String, String> queryMap = new HashMap<>();
-        Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
-        queryMap.remove(GeneralMultiplePublix.GENERALMULTIPLE);
-        queryMap.remove("batchId");
-        return queryMap;
-    }
-
 }

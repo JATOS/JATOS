@@ -1,12 +1,6 @@
 package utils.common;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Optional;
-
+import general.common.Common;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.mvc.RequestHeader;
@@ -14,14 +8,22 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import scala.Option;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.util.Optional;
+
 /**
- * Utility class for all JATOS Controllers.
- *
  * @author Kristian Lange
  */
-public class HttpUtils {
+public class Helpers {
 
-    private static final ALogger LOGGER = Logger.of(HttpUtils.class);
+    private static final ALogger LOGGER = Logger.of(Helpers.class);
 
     /**
      * Check if the request was made via Ajax or not for Scala requests.
@@ -39,18 +41,35 @@ public class HttpUtils {
     }
 
     /**
-     * Returns the request's host URL without path (including the 'play.http.context') or query string. It returns the
-     * URL with the proper protocol http or https.
+     * Returns the request's host URL without path (and without base path from 'play.http.context') or query string
+     * (e.g. "https://www.example.com"). It returns the URL with the proper protocol http or https.
+     * If JATOS is run behind a proxy the real host address must be passed on with X-Forwarded-For header.
+     * See: https://www.playframework.com/documentation/2.8.x/HTTPServer#Forwarded-header-version
      */
-    public static URL getHostUrl() {
+    public static URL getRealHostUrl(Http.Request request) {
         try {
             String protocol = getRequestsProtocol();
-            return new URL(protocol + "://" + Controller.request().host());
+            return new URL(protocol + "://" + request.host());
         } catch (MalformedURLException e) {
-            LOGGER.error(".getHostUrl: couldn't get request's host URL", e);
+            LOGGER.error(".getRealHostUrl: couldn't get request's host URL", e);
+            return null;
         }
-        // Should never happen
-        return null;
+    }
+
+    /**
+     * Returns the request's host URL with base path from 'play.http.context' but without the rest of the path
+     * or query string (e.g. "https://www.example.com/basepath/"). It returns the URL with the proper protocol http
+     * or https. If JATOS is run behind a proxy the real host address must be passed on with X-Forwarded-For header.
+     * See: https://www.playframework.com/documentation/2.8.x/HTTPServer#Forwarded-header-version
+     */
+    public static URL getRealBaseUrl(Http.Request request) {
+        try {
+            String protocol = getRequestsProtocol();
+            return new URL(protocol + "://" + request.host() + Common.getPlayHttpContext());
+        } catch (MalformedURLException e) {
+            LOGGER.error(".getRealBaseUrl: error in base URL", e);
+            return null;
+        }
     }
 
     public static boolean isLocalhost() {
@@ -82,7 +101,7 @@ public class HttpUtils {
     public static String urlEncode(String str) {
         String encodedStr = "";
         try {
-            encodedStr = URLEncoder.encode(str, "UTF-8");
+            encodedStr = URLEncoder.encode(str, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
             // Do nothing
         }
@@ -92,7 +111,7 @@ public class HttpUtils {
     public static String urlDecode(String str) {
         String decodedStr = null;
         try {
-            decodedStr = URLDecoder.decode(str, "UTF-8");
+            decodedStr = URLDecoder.decode(str, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
             // Do nothing
         }
@@ -108,6 +127,18 @@ public class HttpUtils {
             value = value.trim();
         }
         return value;
+    }
+
+    public static String humanReadableByteCountSI(long bytes) {
+        if (-1000 < bytes && bytes < 1000) {
+            return bytes + " B";
+        }
+        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+        while (bytes <= -999_950 || bytes >= 999_950) {
+            bytes /= 1000;
+            ci.next();
+        }
+        return String.format("%.1f %cB", bytes / 1000.0, ci.current());
     }
 
 }

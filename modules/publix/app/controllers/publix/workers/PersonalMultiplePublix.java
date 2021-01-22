@@ -22,7 +22,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalMultipleErrorMessages;
 import services.publix.workers.PersonalMultiplePublixUtils;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -69,7 +69,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> imple
 
     @Override
     public Result startStudy(Long studyId, Long batchId) throws PublixException {
-        String workerIdStr = HttpUtils.getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
+        String workerIdStr = Helpers.getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId + ", " + "workerId " + workerIdStr);
         Study study = publixUtils.retrieveStudy(studyId);

@@ -8,6 +8,7 @@ import play.cache.NamedCache;
 import play.cache.SyncCacheApi;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
@@ -40,8 +41,8 @@ public class Tests extends Controller {
 
     @Transactional
     @Authenticated
-    public Result test() {
-        return ok(views.html.gui.test.render());
+    public Result test(Http.Request request) {
+        return ok(views.html.gui.test.render(request));
     }
 
     @Transactional

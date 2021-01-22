@@ -16,7 +16,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.gui.AuthenticationService;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -136,7 +136,7 @@ public class AuthenticationAction extends Action<Authenticated> {
     private CompletionStage<Result> callForbiddenDueToAuthentication(String remoteAddress, String urlPath) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " tried to access page " + urlPath);
         String msg = "You are not allowed to access this page. Please log in.";
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
         }
         if (!urlPath.isEmpty() && !urlPath.matches("(/|/jatos|/jatos/)")) {
@@ -150,7 +150,7 @@ public class AuthenticationAction extends Action<Authenticated> {
         LOGGER.warn("Invalid session: user " + normalizedUsername + " tried to access page " + urlPath +
                 " from remote address " + remoteAddress + ".");
         String msg = "You have been logged out.";
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
         } else {
             FlashScopeMessaging.warning(msg);
@@ -161,7 +161,7 @@ public class AuthenticationAction extends Action<Authenticated> {
     private CompletionStage<Result> callForbiddenDueToSessionTimeout(String normalizedUsername) {
         LOGGER.info("Session of user " + normalizedUsername + " has expired and the user has been logged out.");
         String msg = "Your session has expired. You have been logged out.";
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
         } else {
             FlashScopeMessaging.success(msg);
@@ -172,7 +172,7 @@ public class AuthenticationAction extends Action<Authenticated> {
     private CompletionStage<Result> callForbiddenDueToInactivityTimeout(String normalizedUsername) {
         LOGGER.info("User " + normalizedUsername + " has been logged out due to inactivity.");
         String msg = "You have been logged out due to inactivity.";
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
         } else {
             FlashScopeMessaging.success(msg);
@@ -183,7 +183,7 @@ public class AuthenticationAction extends Action<Authenticated> {
     private CompletionStage<Result> callForbiddenDueToAuthorization(String normalizedUsername, String urlPath) {
         String msg = "User " + normalizedUsername + " isn't allowed to access page " + urlPath + ".";
         LOGGER.warn(msg);
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return CompletableFuture.completedFuture(forbidden(msg));
         } else {
             RequestScopeMessaging.error(msg);

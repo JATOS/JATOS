@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Hibernate Entity and JSON model representing the status of a StudyResult. The status is used in JATOS status view and
+ * DB Entity and JSON model representing the status of a StudyResult. The status is used in JATOS status view and
  * has limited information of the StudyResult (just to give an overview).
  *
  * @author Kristian Lange

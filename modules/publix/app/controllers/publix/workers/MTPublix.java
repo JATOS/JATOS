@@ -27,7 +27,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
-import utils.common.HttpUtils;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -91,8 +91,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
     @Override
     public Result startStudy(Long studyId, Long batchId) throws PublixException {
         // Get MTurk query parameters
-        String mtWorkerId = HttpUtils.getQueryString(MT_WORKER_ID);
-        String mtAssignmentId = HttpUtils.getQueryString(MT_ASSIGNMENT_ID);
+        String mtWorkerId = Helpers.getQueryString(MT_WORKER_ID);
+        String mtAssignmentId = Helpers.getQueryString(MT_ASSIGNMENT_ID);
         LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
                 + batchId);
 
@@ -158,7 +158,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (HttpUtils.isAjax()) {
+        if (Helpers.isAjax()) {
             return ok(confirmationCode);
         } else {
             if (!successful) {
@@ -171,7 +171,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
     private String retrieveWorkerTypeFromQueryString()
             throws BadRequestPublixException {
-        String mtWorkerId = HttpUtils.getQueryString(MTPublix.MT_WORKER_ID);
+        String mtWorkerId = Helpers.getQueryString(MTPublix.MT_WORKER_ID);
         if (mtWorkerId != null) {
             return retrieveWorkerType();
         }

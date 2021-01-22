@@ -6,8 +6,7 @@ import javax.persistence.Entity;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * Model and DB entity of the concrete worker who originates from the MTurk
- * Sandbox.
+ * DB entity of the concrete worker who originates from the MTurk Sandbox.
  * 
  * @author Kristian Lange
  */

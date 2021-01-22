@@ -160,7 +160,7 @@ public class ImportExportService {
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
         if (currentStudy.isPresent() && !currentStudy.get().hasUser(loggedInUser)) {
-            String errorMsg = MessagesStrings.studyImportNotUser(currentStudy.get().getTitle());
+            String errorMsg = MessagesStrings.studyImportNotUser(uploadedStudy.getTitle());
             throw new ForbiddenException(errorMsg);
         }
 
