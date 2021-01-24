@@ -95,7 +95,8 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
             publixUtils.setUrlQueryParameter(studyResult);
             assertThat(studyResult.getUrlQueryParameters()).isEqualTo(
                     "{\"workerId\":\"123\",\"hitId\":\"4\",\"foo\":\"bar\",\"turkSubmitTo\":\"sandbox\","
-                            + "\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\",\"assignmentId\":\"123\"}");
+                            + "\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\",\"batchId\":\"3\","
+                            + "\"assignmentId\":\"123\"}");
         });
     }
 
