@@ -123,7 +123,7 @@ public class Study {
      * Ordered list of component of this study. The relationship is bidirectional.
      */
     @JsonView(JsonUtils.JsonForIO.class)
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderColumn(name = "componentList_order")
     @JoinColumn(name = "study_id")
     // Not using mappedBy because of

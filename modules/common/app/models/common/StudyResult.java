@@ -97,7 +97,7 @@ public class StudyResult {
      * List of ComponentResults that belongs to this StudyResult. This relationship is bidirectional.
      */
     @JsonIgnore
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderColumn(name = "componentResultList_order")
     @JoinColumn(name = "studyResult_id")
     // Not using mappedBy because of

@@ -369,11 +369,6 @@ public class StudyService {
      * the changes to the database. It also deletes the study's assets from the disk.
      */
     public void removeStudyInclAssets(Study study, User loggedInUser) throws IOException {
-        // Remove all study's components and their ComponentResults
-        for (Component component : Lists.newArrayList(study.getComponentList())) {
-            componentService.remove(component, loggedInUser);
-        }
-
         // Remove all study's batches and their StudyResults and GroupResults
         for (Batch batch : Lists.newArrayList(study.getBatchList())) {
             batchService.remove(batch, loggedInUser);
@@ -385,6 +380,7 @@ public class StudyService {
             userDao.update(user);
         }
 
+        // Remove study. This also removes all study's components and their ComponentResults via cascading.
         studyDao.remove(study);
 
         ioUtils.removeStudyAssetsDir(study.getDirName());
