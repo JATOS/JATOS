@@ -51,6 +51,8 @@ public class ComponentService {
     public Component clone(Component componentToBeCloned) {
         Component clone = new Component();
         clone.setStudy(componentToBeCloned.getStudy());
+        // Generate new UUID for clone
+        clone.setUuid(UUID.randomUUID().toString());
         clone.setTitle(componentToBeCloned.getTitle());
         clone.setHtmlFilePath(componentToBeCloned.getHtmlFilePath());
         clone.setReloadable(componentToBeCloned.isReloadable());
