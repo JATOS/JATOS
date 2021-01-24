@@ -71,12 +71,12 @@ public class ResultRemover {
     public void removeComponentResults(List<Long> componentResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = resultService.getComponentResults(componentResultIdList);
-        Set<Study> studies = new HashSet<>();
         checker.checkComponentResults(componentResultList, user, true);
-        componentResultList.forEach(this::removeComponentResultFromStudyResult);
         for (ComponentResult componentResult : componentResultList) {
             removeComponentResult(componentResult.getId());
         }
+
+        Set<Study> studies = new HashSet<>();
         componentResultList.forEach(cr -> studies.add(cr.getStudyResult().getStudy()));
         studies.forEach(study -> studyLogger.log(study, user, "Removed result data and files"));
     }
