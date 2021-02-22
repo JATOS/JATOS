@@ -207,9 +207,10 @@ var userTable = $('#userTable').DataTable({
             }
         }
     },
-    "dom": 'ftip',
+    "dom": 'lftip',
     "order": [[ 0, "asc" ]],
     "pageLength": 10,
+    "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
     "columnDefs": [
         {
             "visible": @{general.common.Common.isLdapAllowed() || general.common.Common.isOauthGoogleAllowed()},
