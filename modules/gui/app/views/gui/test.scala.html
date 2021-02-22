@@ -25,10 +25,11 @@
 <b>URL host + basepath</b>: @utils.common.Helpers.getRealBaseUrl(request)<br>
 <b>Local basepath</b>: @general.common.Common.getBasepath()<br>
 <b>Study assets root path</b>: @general.common.Common.getStudyAssetsRootPath()<br>
+<b>Result data max size</b>: @{utils.common.Helpers.humanReadableByteCountSI(general.common.Common.getResultDataMaxSize())}<br>
 <b>Result uploads allowed</b>: @general.common.Common.isResultUploadsEnabled()<br>
 <b>Result uploads path</b>: @general.common.Common.getResultUploadsPath()<br>
-<b>Result uploads max file size</b>: @(general.common.Common.getResultUploadsMaxFileSize() / (1000*1000)) MB<br>
-<b>Result uploads limit per study run</b>: @(general.common.Common.getResultUploadsLimitPerStudyRun() / (1000*1000)) MB<br>
+<b>Result uploads max file size</b>: @{utils.common.Helpers.humanReadableByteCountSI(general.common.Common.getResultUploadsMaxFileSize())}<br>
+<b>Result uploads limit per study run</b>: @{utils.common.Helpers.humanReadableByteCountSI(general.common.Common.getResultUploadsLimitPerStudyRun())}<br>
 <b>Study logs allowed</b>: @general.common.Common.isStudyLogsEnabled()<br>
 <b>Study logs path</b>: @general.common.Common.getStudyLogsPath()<br>
 <b>Uses in-memory DB</b>: @general.common.Common.isInMemoryDb()<br>
@@ -38,11 +39,13 @@
 <b>DB URL</b>: @general.common.Common.getDbDefaultUrl()<br>
 <b>DB driver</b>: @general.common.Common.getDbDefaultDriver()<br>
 <b>JPA unit</b>: @general.common.Common.getJpaDefault()<br>
+<b>Google OAuth allowed</b>: @general.common.Common.isOauthGoogleAllowed()<br>
 <b>LDAP URL</b>: @general.common.Common.getLdapUrl()<br>
 <b>LDAP base DN</b>: @general.common.Common.getLdapBasedn()<br>
 <b>LDAP timeout</b>: @general.common.Common.getLdapTimeout()<br>
-<b>Used memory</b>: @((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024)) MB<br>
-<b>Max memory</b>: @(Runtime.getRuntime.maxMemory() / (1024*1024)) MB
+<b>Max results DB query size</b>: @general.common.Common.getMaxResultsDbQuerySize()<br>
+<b>Used memory</b>: @{utils.common.Helpers.humanReadableByteCountSI(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())}<br>
+<b>Max memory</b>: @{utils.common.Helpers.humanReadableByteCountSI(Runtime.getRuntime.maxMemory())}
 </p>
 
 <h1>Tests</h1>
@@ -137,7 +140,7 @@ function testJsonSerialization() {
 function testJatosJsViaStudyPath() {
 	$.ajax({
 		type: 'GET',
-        url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos.js")}',
+        url: '@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos.js',
 		dataType: "text",
 		success: function(result) {
 			$('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
@@ -151,7 +154,7 @@ function testJatosJsViaStudyPath() {
 function testJatosJsViaAssetsPath() {
 	$.ajax({
 		type: 'GET',
-        url: '@{general.common.Common.getUrlWithBase("assets/javascripts/jatos.js")}',
+        url: '@{general.common.Common.getPlayHttpContext()}assets/javascripts/jatos.js',
 		dataType: "text",
 		success: function(result) {
 			$('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
@@ -165,7 +168,7 @@ function testJatosJsViaAssetsPath() {
 function testHeartbeatJs() {
 	$.ajax({
 		type: 'GET',
-        url: '@{general.common.Common.getUrlWithBase("publix/1/1/jatos-publix/javascripts/heartbeat.js")}',
+        url: '@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos-publix/javascripts/heartbeat.js',
 		dataType: "text",
 		success: function(result) {
 			$('#testHeartbeatJsResult').html('<font color="green">OK</font>');

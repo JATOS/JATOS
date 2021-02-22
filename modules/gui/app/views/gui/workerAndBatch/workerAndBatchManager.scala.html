@@ -1,5 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study,
-    jatosUrl: java.net.URL, allWorkersSize: Integer)
+    allWorkersSize: Integer, request: Http.Request)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -120,8 +120,8 @@
 @views.html.gui.workerAndBatch.workersModal(study)
 @views.html.gui.workerAndBatch.groupsModal(study)
 @views.html.gui.workerAndBatch.sessionModal(study)
-@views.html.gui.workerAndBatch.workerSetup(loggedInUser, study, jatosUrl)
-@views.html.gui.workerAndBatch.mTurkSourceCodeModal(study, jatosUrl)
+@views.html.gui.workerAndBatch.workerSetup(loggedInUser, study, request)
+@views.html.gui.workerAndBatch.mTurkSourceCodeModal(study, request)
 
 <script>
 

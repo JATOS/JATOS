@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, study: common.Study, jatosUrl: java.net.URL)
+@(loggedInUser: common.User, study: common.Study, request: Http.Request)
 
 <!-- Template worker setup -->
 <div id="workerSetupTemplate" class="panel-group workerSetupItem" role="tablist" style="display: none">
@@ -733,7 +733,7 @@ function showShowWorkerLinksPersonalSingleModal(workerIds, batch) {
     var title = "Links for Personal Single workers in batch '" + batch.title + "'";
     var urls = [];
     $.each(workerIds, function(i, workerId) {
-        urls.push("@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?"
+        urls.push("@utils.common.Helpers.getRealBaseUrl(request)publix/@study.getId()/start?"
             + "batchId=" + batch.id + "&personalSingleWorkerId=" + workerId);
     });
     var showRunButton = (urls.length == 1
@@ -764,7 +764,7 @@ function showShowWorkerLinksPersonalMultipleModal(workerIds, batch) {
     var title = "Links for Personal Multiple workers in batch '" + batch.title + "'";
     var urls = [];
     $.each(workerIds, function(i, workerId) {
-        urls.push("@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?"
+        urls.push("@utils.common.Helpers.getRealBaseUrl(request)publix/@study.getId()/start?"
             + "batchId=" + batch.id + "&personalMultipleWorkerId=" + workerId);
     });
     var showRunButton = (urls.length == 1
@@ -792,7 +792,7 @@ $('#batchList').on('click', '.generalMultipleWorkerSetup .linkButton', function(
 
 function showShowWorkerLinksGeneralSingleModal(batch) {
     var title = "Link for General Single workers in batch '" + batch.title + "'";
-    var url = "@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?" +
+    var url = "@utils.common.Helpers.getRealBaseUrl(request)publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalSingle";
     var preText = "This URL will start the run.";
     var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE");
@@ -807,7 +807,7 @@ function showShowWorkerLinksGeneralSingleModal(batch) {
 
 function showShowWorkerLinksGeneralMultipleModal(batch) {
     var title = "Link for General Multiple workers in batch '" + batch.title + "'";
-    var url = "@jatosUrl.toString()" + "@{general.common.Common.getPlayHttpContext()}publix/@study.getId()/start?" +
+    var url = "@utils.common.Helpers.getRealBaseUrl(request)publix/@study.getId()/start?" +
         "batchId=" + batch.id + "&generalMultiple";
     var preText = "This URL will start the run.";
     var showRunButton = batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE");

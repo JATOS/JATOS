@@ -244,7 +244,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             if (message != null) {
                 Controller.flash("info", PublixErrorMessages.studyFinishedWithMessage(message));
             }
-            return redirect(Common.getUrlWithBase("jatos/" + study.getId()));
+            return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId());
         }
     }
 

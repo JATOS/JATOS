@@ -172,7 +172,7 @@ checkJatosReleaseInfo();
 function checkJatosReleaseInfo() {
     var urlQueryParams = new URLSearchParams(window.location.search).toString();
     $.getJSON({
-        url: '@{general.common.Common.getUrlWithBase("jatos/releaseInfo")}?' + urlQueryParams,
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?' + urlQueryParams,
         success: function(releaseInfo) {
             $("#updateJatos").data("releaseInfo", releaseInfo);
             showJatosReleaseInfo(releaseInfo);
@@ -334,7 +334,7 @@ function updateAndRestart() {
     $("#updateJatosModal .modal-footer").hide();
     var backupAll = $('#updateJatosModal .backupAll').is(':checked');
     $.ajax({
-        url: '@{general.common.Common.getUrlWithBase("jatos/updateAndRestart")}?backupAll=' + backupAll,
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/updateAndRestart?backupAll=' + backupAll,
         timeout: 0, // Do not timeout
         success: function() {
             $('#updateJatosModal').modal('hide');

@@ -420,7 +420,7 @@ $('#sidebarStudyList').on('click', '.studyListItem', function(e) {
         $(this).find(".glyphicon-chevron-right, .glyphicon-chevron-down").toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
     } else {
         var clickedStudyId = $(this).attr('id').replace('sidebarStudy', "");
-        window.location.href = '@{general.common.Common.getUrlWithBase("jatos/")}' + clickedStudyId;
+        window.location.href = '@{general.common.Common.getPlayHttpContext()}jatos/' + clickedStudyId;
     }
 });
 

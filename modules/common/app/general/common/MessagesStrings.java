@@ -211,7 +211,7 @@ public class MessagesStrings {
     }
 
     public static String goToThisStudyLink(Long studyId) {
-        return "<a href=\"" + Common.getUrlWithBase("jatos/" + studyId) + "\">Go to this study.</a>";
+        return "<a href=\"" + Common.getPlayHttpContext() + "jatos/" + studyId + "\">Go to this study.</a>";
     }
 
     public static String componentExportFailure(Long componentId, String componentTitle) {

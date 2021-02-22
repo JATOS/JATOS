@@ -1,4 +1,4 @@
-@(study: common.Study, realBaseUrl: java.net.URL)
+@(study: common.Study, request: Http.Request)
 
 <!-- Mechanical Turk Source Code Modal Template -->
 <div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
@@ -100,12 +100,11 @@ function showMTSourceCodeModal(batchId) {
     var modal = $('#mtSourceCodeModalTemplate').clone();
     $(modal).removeAttr('id');
 
-    var host = "@{ realBaseUrl.getProtocol() + "://" + realBaseUrl.getHost()}";
-    var port = @{ realBaseUrl.getPort() };
-    var address = port > 0 ? host + ":" + port : host;
-    var studyPath = "@{ general.common.Common.getPlayHttpContext() + "publix/" + study.getId() + "/start" }";
+    var address = "@utils.common.Helpers.getRealBaseUrl(request)";
+    var studyPath = "publix/@study.getId()/start";
     var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
-    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=" + randomMturkWorkerId + "&assignmentId=def&turkSubmitTo=sandbox";
+    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=" + randomMturkWorkerId
+        + "&assignmentId=def&turkSubmitTo=sandbox";
 
     // Fill dummy variables in template source code
     $(modal).find('.mtSourceCode').text(function() {
