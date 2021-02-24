@@ -78,6 +78,7 @@ public class Common {
     private static String oauthGoogleClientId;
     private static boolean donationAllowed;
     private static boolean termsOfUseInfo;
+    private static String brandingUrl;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -132,6 +133,7 @@ public class Common {
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseInfo = config.getBoolean("jatos.termsOfUseInfo");
+        brandingUrl = config.getString("jatos.brandingUrl");
     }
 
     private String fillBasePath(Application application) {
@@ -433,5 +435,12 @@ public class Common {
      */
     public static boolean isTermsOfUseInfo() {
         return termsOfUseInfo;
+    }
+
+    /**
+     * URL where some static HTML can be found that can be shown instead of the default welcome message on the home page
+     */
+    public static String getBrandingUrl() {
+        return brandingUrl;
     }
 }

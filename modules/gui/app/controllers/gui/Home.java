@@ -1,11 +1,13 @@
 package controllers.gui;
 
+import com.google.common.base.Strings;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import general.common.Common;
 import general.common.JatosUpdater;
 import models.common.Study;
 import models.common.User;
@@ -13,6 +15,7 @@ import models.common.User.Role;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
+import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -30,6 +33,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -52,12 +56,13 @@ public class Home extends Controller {
     private final WorkerDao workerDao;
     private final LogFileReader logFileReader;
     private final JatosUpdater jatosUpdater;
+    private final WSClient ws;
 
     @Inject
     Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao, StudyResultDao studyResultDao, UserDao userDao,
             WorkerDao workerDao, LogFileReader logFileReader,
-            JatosUpdater jatosUpdater) {
+            JatosUpdater jatosUpdater, WSClient ws) {
         this.jsonUtils = jsonUtils;
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
@@ -67,6 +72,7 @@ public class Home extends Controller {
         this.workerDao = workerDao;
         this.logFileReader = logFileReader;
         this.jatosUpdater = jatosUpdater;
+        this.ws = ws;
     }
 
     /**
@@ -86,6 +92,24 @@ public class Home extends Controller {
     @Authenticated
     public Result home() {
         return home(Http.Status.OK);
+    }
+
+    /**
+     * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
+     */
+    @Transactional
+    @Authenticated
+    public CompletionStage<Result> branding() {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(notFound());
+        return ws.url(Common.getBrandingUrl()).get().thenApply(r -> {
+            String branding = r.getBody()
+                    .replaceAll("@JATOS_VERSION", Common.getJatosVersion())
+                    .replaceAll("@USER_NAME", loggedInUser.getName())
+                    .replaceAll("@USER_USERNAME", loggedInUser.getUsername());
+            if (branding.startsWith("404")) return notFound();
+            return ok(branding);
+        });
     }
 
     /**
