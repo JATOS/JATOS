@@ -77,7 +77,7 @@ public class Common {
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
     private static boolean donationAllowed;
-    private static boolean termsOfUseInfo;
+    private static String termsOfUseUrl;
     private static String brandingUrl;
 
     /**
@@ -132,7 +132,7 @@ public class Common {
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
-        termsOfUseInfo = config.getBoolean("jatos.termsOfUseInfo");
+        termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
     }
 
@@ -431,10 +431,10 @@ public class Common {
     }
 
     /**
-     * Should the GUI show a the Terms of Use info
+     * URL to the terms of use that will be shown in a link on the home page
      */
-    public static boolean isTermsOfUseInfo() {
-        return termsOfUseInfo;
+    public static String termsOfUseUrl() {
+        return termsOfUseUrl;
     }
 
     /**
