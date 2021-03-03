@@ -216,11 +216,9 @@ public class StudyService {
         if (study.getUuid() == null) {
             study.setUuid(UUID.randomUUID().toString());
         }
-        studyDao.create(study);
-
-        // Create components
         study.getComponentList().forEach(c -> componentService.createComponent(study, c));
-        study.getComponentList().forEach(componentDao::create);
+
+        studyDao.create(study);
 
         if (study.getBatchList().isEmpty()) {
             // Create default batch if we have no batch
