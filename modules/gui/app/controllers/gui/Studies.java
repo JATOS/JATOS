@@ -407,8 +407,9 @@ public class Studies extends Controller {
                 return notFound();
             }
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
+            Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, Optional.empty(), Optional.of("text/plain")));
+                    new HttpEntity.Streamed(source, contentLength, Optional.of("text/plain")));
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }
