@@ -1,6 +1,7 @@
 package utils.common;
 
 import general.common.Common;
+import org.apache.commons.io.FileUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.mvc.RequestHeader;
@@ -9,6 +10,7 @@ import play.mvc.Http;
 import scala.Option;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.management.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -16,6 +18,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -77,8 +82,11 @@ public class Helpers {
         Optional<String> referer = Controller.request().header("referer");
         boolean isHostLocalhost = host != null && (host.matches("localhost:?\\d*") || host.contains("127.0.0.1") || host
                 .contains("0.0.0.0") || host.equals("::1"));
-        boolean isRefererLocalhost = referer.map(
-                r -> r.matches("localhost:?\\d*") || r.contains("127.0.0.1") || r.contains("0.0.0.0") || r.equals("::1"))
+        boolean isRefererLocalhost = referer.map(r ->
+                r.matches("localhost:?\\d*")
+                        || r.contains("127.0.0.1")
+                        || r.contains("0.0.0.0")
+                        || r.equals("::1"))
                 .orElse(false);
         return isHostLocalhost || isRefererLocalhost;
     }
@@ -139,6 +147,44 @@ public class Helpers {
             ci.next();
         }
         return String.format("%.1f %cB", bytes / 1000.0, ci.current());
+    }
+
+    public static Map<String, String> getJVMInfo() {
+        Map<String, String> infos = new LinkedHashMap<>();
+
+        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+        infos.put("Uptime", "" + humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
+        infos.put("Name", runtimeBean.getName());
+        infos.put("PID", runtimeBean.getName().split("@")[0]);
+
+        OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
+        infos.put("OS name", "" + systemBean.getName());
+        infos.put("OS version", "" + systemBean.getVersion());
+        infos.put("System load average", "" + systemBean.getSystemLoadAverage());
+        infos.put("Available processors", "" + systemBean.getAvailableProcessors());
+
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        infos.put("Thread count", "" + threadBean.getThreadCount());
+        infos.put("Peak thread count", "" + threadBean.getPeakThreadCount());
+
+        infos.put("Total memory", humanReadableByteCountSI(Runtime.getRuntime().totalMemory()));
+        infos.put("Free memory", humanReadableByteCountSI(Runtime.getRuntime().freeMemory()));
+        infos.put("Used memory",
+                humanReadableByteCountSI(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+        infos.put("Max memory", humanReadableByteCountSI(Runtime.getRuntime().maxMemory()));
+
+        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
+        infos.put("Heap memory used", FileUtils.byteCountToDisplaySize(memoryBean.getHeapMemoryUsage().getUsed()));
+        infos.put("Non-heap memory used",
+                FileUtils.byteCountToDisplaySize(memoryBean.getNonHeapMemoryUsage().getUsed()));
+        return infos;
+    }
+
+    public static String humanReadableDuration(Duration duration) {
+        return duration.toString()
+                .substring(2)
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                .toLowerCase();
     }
 
 }

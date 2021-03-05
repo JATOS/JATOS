@@ -12,6 +12,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
+import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -42,7 +43,7 @@ public class Tests extends Controller {
     @Transactional
     @Authenticated
     public Result test(Http.Request request) {
-        return ok(views.html.gui.test.render(request));
+        return ok(views.html.gui.test.render(request, Helpers.getJVMInfo()));
     }
 
     @Transactional

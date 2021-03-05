@@ -1,4 +1,4 @@
-@(request: Http.Request)
+@(request: Http.Request, systemInfo: Map[String, String])
 <!DOCTYPE html>
 
 <html lang="en">
@@ -44,8 +44,13 @@
 <b>LDAP base DN</b>: @general.common.Common.getLdapBasedn()<br>
 <b>LDAP timeout</b>: @general.common.Common.getLdapTimeout()<br>
 <b>Max results DB query size</b>: @general.common.Common.getMaxResultsDbQuerySize()<br>
-<b>Used memory</b>: @{utils.common.Helpers.humanReadableByteCountSI(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())}<br>
-<b>Max memory</b>: @{utils.common.Helpers.humanReadableByteCountSI(Runtime.getRuntime.maxMemory())}
+</p>
+
+<h1>JVM info</h1>
+<p id="systemInfo">
+    @for((key, value) <- systemInfo){
+    <b>@key</b>: @value<br>
+    }
 </p>
 
 <h1>Tests</h1>
@@ -53,7 +58,7 @@
 <b>Correct URL host</b>: <span id="testRealHostUrlResult"></span><br>
 <b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
 <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
-<b>Acess internal cache</b>: <span id="testCacheResult"></span><br>
+<b>Access internal cache</b>: <span id="testCacheResult"></span><br>
 <b>Internal JSON serialization</b>: <span id="testJsonSerializationResult"></span><br>
 <b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
 <b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
