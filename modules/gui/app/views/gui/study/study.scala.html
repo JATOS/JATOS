@@ -334,6 +334,7 @@ $(document).ready(function() {
             $.ajax({
                 url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + componentId,
                 type : 'DELETE',
+                beforeSend: showWaitingModal,
                 success : function(result) {
                     showMessages(JSON.parse(result));
                     componentsTable.ajax.reload();
@@ -341,7 +342,8 @@ $(document).ready(function() {
                 },
                 error : function(err) {
                     showError(err.responseText);
-                }
+                },
+                complete: hideWaitingModal
             });
         });
     });
@@ -575,12 +577,14 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
         $.ajax({
             url : '@controllers.gui.routes.Studies.remove(study.getId())',
             type : 'DELETE',
+            beforeSend: showWaitingModal,
             success : function(result) {
                 window.location.replace('@controllers.gui.routes.Home.home()');
             },
             error : function(err) {
                 showError(err.responseText);
-            }
+            },
+            complete: hideWaitingModal
         });
     });
 });
