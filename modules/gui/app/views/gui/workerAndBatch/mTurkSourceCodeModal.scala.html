@@ -126,6 +126,11 @@ function showMTSourceCodeModal(batchId) {
         var mtSourceCode = $(modal).find('.mtSourceCode').text();
         navigator.clipboard.writeText(mtSourceCode);
     });
+
+    $(modal).on('click', '.clipboardButton', function(e) {
+        var text = $(this).parent().text();
+        navigator.clipboard.writeText(text);
+    });
 }
 
 // Select and highlights a text (can't use .select() on a tag that's not a textarea)
