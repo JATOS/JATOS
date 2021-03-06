@@ -313,13 +313,15 @@ $('#batchList').on('click', '.removeBatch', function() {
         $.ajax({
             url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id,
             type : 'DELETE',
+            beforeSend: showWaitingModal,
             success : function(result) {
                 showMessages(JSON.parse(result));
                 loadBatches();
             },
             error : function(err) {
                 showError(err.responseText);
-            }
+            },
+            complete: hideWaitingModal
         });
     });
 });
