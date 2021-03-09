@@ -1,4 +1,4 @@
-@(request: Http.Request, systemInfo: Map[String, String])
+@(request: Http.Request, systemInfo: Map[String, String], jvmInfo: Map[String, String])
 <!DOCTYPE html>
 
 <html lang="en">
@@ -19,7 +19,6 @@
 <h1>JATOS configuration</h1>
 <p>
 <b>Version</b>: @general.common.Common.getJatosVersion()<br>
-<b>Java</b>: @java.lang.System.getProperty("java.version")<br>
 <b>URL host</b>: @utils.common.Helpers.getRealHostUrl(request)<br>
 <b>URL basepath</b>: @general.common.Common.getPlayHttpContext()<br>
 <b>URL host + basepath</b>: @utils.common.Helpers.getRealBaseUrl(request)<br>
@@ -46,9 +45,16 @@
 <b>Max results DB query size</b>: @general.common.Common.getMaxResultsDbQuerySize()<br>
 </p>
 
-<h1>JVM info</h1>
+<h1>System info</h1>
 <p id="systemInfo">
     @for((key, value) <- systemInfo){
+    <b>@key</b>: @value<br>
+    }
+</p>
+
+<h1>JVM info</h1>
+<p id="jvmInfo">
+    @for((key, value) <- jvmInfo){
     <b>@key</b>: @value<br>
     }
 </p>

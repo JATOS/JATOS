@@ -150,34 +150,42 @@ public class Helpers {
     }
 
     public static Map<String, String> getJVMInfo() {
-        Map<String, String> infos = new LinkedHashMap<>();
+        Map<String, String> info = new LinkedHashMap<>();
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        infos.put("Uptime", "" + humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
-        infos.put("Name", runtimeBean.getName());
-        infos.put("PID", runtimeBean.getName().split("@")[0]);
-
-        OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
-        infos.put("OS name", "" + systemBean.getName());
-        infos.put("OS version", "" + systemBean.getVersion());
-        infos.put("System load average", "" + systemBean.getSystemLoadAverage());
-        infos.put("Available processors", "" + systemBean.getAvailableProcessors());
+        info.put("Uptime", "" + humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
+        info.put("Name", runtimeBean.getName());
+        info.put("PID", runtimeBean.getName().split("@")[0]);
+        info.put("Java name", runtimeBean.getVmName());
+        info.put("Java version", System.getProperty("java.version"));
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        infos.put("Thread count", "" + threadBean.getThreadCount());
-        infos.put("Peak thread count", "" + threadBean.getPeakThreadCount());
+        info.put("Thread count", "" + threadBean.getThreadCount());
+        info.put("Peak thread count", "" + threadBean.getPeakThreadCount());
 
-        infos.put("Total memory", humanReadableByteCountSI(Runtime.getRuntime().totalMemory()));
-        infos.put("Free memory", humanReadableByteCountSI(Runtime.getRuntime().freeMemory()));
-        infos.put("Used memory",
+        // Using Runtime.getRuntime()
+        info.put("Total memory", humanReadableByteCountSI(Runtime.getRuntime().totalMemory()));
+        info.put("Free memory", humanReadableByteCountSI(Runtime.getRuntime().freeMemory()));
+        info.put("Used memory",
                 humanReadableByteCountSI(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-        infos.put("Max memory", humanReadableByteCountSI(Runtime.getRuntime().maxMemory()));
+        info.put("Max memory", humanReadableByteCountSI(Runtime.getRuntime().maxMemory()));
 
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-        infos.put("Heap memory used", FileUtils.byteCountToDisplaySize(memoryBean.getHeapMemoryUsage().getUsed()));
-        infos.put("Non-heap memory used",
+        info.put("Heap memory used", FileUtils.byteCountToDisplaySize(memoryBean.getHeapMemoryUsage().getUsed()));
+        info.put("Non-heap memory used",
                 FileUtils.byteCountToDisplaySize(memoryBean.getNonHeapMemoryUsage().getUsed()));
-        return infos;
+        return info;
+    }
+
+    public static Map<String, String> getSystemInfo() {
+        Map<String, String> info = new LinkedHashMap<>();
+
+        OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
+        info.put("OS name", "" + systemBean.getName());
+        info.put("OS version", "" + systemBean.getVersion());
+        info.put("System load average", "" + systemBean.getSystemLoadAverage());
+        info.put("Available processors", "" + systemBean.getAvailableProcessors());
+        return info;
     }
 
     public static String humanReadableDuration(Duration duration) {

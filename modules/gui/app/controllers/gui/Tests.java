@@ -43,7 +43,7 @@ public class Tests extends Controller {
     @Transactional
     @Authenticated
     public Result test(Http.Request request) {
-        return ok(views.html.gui.test.render(request, Helpers.getJVMInfo()));
+        return ok(views.html.gui.test.render(request, Helpers.getSystemInfo(), Helpers.getJVMInfo()));
     }
 
     @Transactional
