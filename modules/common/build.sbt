@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   guice,
   "org.hibernate" % "hibernate-core" % "5.4.2.Final",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.9.8",
-  "mysql" % "mysql-connector-java" % "8.0.16",
+  "mysql" % "mysql-connector-java" % "8.0.23",
   "org.jsoup" % "jsoup" % "1.11.3",
   "commons-io" % "commons-io" % "2.6",
   "com.diffplug.durian" % "durian" % "3.4.0",
