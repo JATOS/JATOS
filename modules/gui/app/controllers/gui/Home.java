@@ -101,13 +101,13 @@ public class Home extends Controller {
     @Authenticated
     public CompletionStage<Result> branding() {
         User loggedInUser = authenticationService.getLoggedInUser();
-        if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(notFound());
+        if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
         return ws.url(Common.getBrandingUrl()).get().thenApply(r -> {
             String branding = r.getBody()
                     .replaceAll("@JATOS_VERSION", Common.getJatosVersion())
                     .replaceAll("@USER_NAME", loggedInUser.getName())
                     .replaceAll("@USER_USERNAME", loggedInUser.getUsername());
-            if (branding.startsWith("404")) return notFound();
+            if (branding.startsWith("404")) return noContent();
             return ok(branding);
         });
     }
