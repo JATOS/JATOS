@@ -108,7 +108,7 @@ public class Home extends Controller {
                     .replaceAll("@USER_NAME", loggedInUser.getName())
                     .replaceAll("@USER_USERNAME", loggedInUser.getUsername());
             if (branding.startsWith("404")) return noContent();
-            return ok(branding);
+            return ok(branding).withHeader("Cache-Control", "max-age=3600");
         });
     }
 
