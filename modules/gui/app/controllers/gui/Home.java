@@ -107,7 +107,7 @@ public class Home extends Controller {
                     .replaceAll("@JATOS_VERSION", Common.getJatosVersion())
                     .replaceAll("@USER_NAME", loggedInUser.getName())
                     .replaceAll("@USER_USERNAME", loggedInUser.getUsername());
-            if (branding.startsWith("404")) return noContent();
+            if (r.getStatus() == 404 || branding.startsWith("404")) return notFound();
             return ok(branding).withHeader("Cache-Control", "max-age=3600");
         });
     }
