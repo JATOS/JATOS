@@ -1335,7 +1335,7 @@ var jatos = {};
 		}
 
 		// If last component end study
-		var lastActiveComponent = jatos.componentList.reverse()
+		var lastActiveComponent = jatos.componentList.slice().reverse()
 			.find(function(component) { return component.active; });
 		if (jatos.componentPos >= lastActiveComponent.position) {
 			if (resultData) {
