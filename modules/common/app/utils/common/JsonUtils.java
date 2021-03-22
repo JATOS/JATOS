@@ -127,7 +127,7 @@ public class JsonUtils {
         initData.set("batchProperties", Json.mapper().readTree(batchProperties));
         initData.set("componentList", componentList);
         initData.set("componentProperties", Json.mapper().readTree(componentProperties));
-        initData.put("urlQueryParameters", urlQueryParameters);
+        initData.set("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
         return initData;
     }
 
