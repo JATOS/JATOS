@@ -43,7 +43,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     */
   val URL_STUDY_ASSETS = "study_assets"
 
-  val jatosPublixPattern: Regex = "(.*)(jatos-publix/javascripts/)(.*)".r
+  val jatosPublixPattern: Regex = "(.*)(jatos-publix)(.*)".r
 
   /**
     * Returns the study asset file that belongs to the study with the given study ID
@@ -56,7 +56,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     urlPath match {
       case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
       case "jatos-3.5.2.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
-      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix/javascripts", file)
+      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
         val study = studyDao.findById(studyId)
         if (study == null) {
