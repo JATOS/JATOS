@@ -133,6 +133,12 @@ var jatos = {};
 	jatos.channelOpeningBackoffTimeMin = 1000;
 	jatos.channelOpeningBackoffTimeMax = 120000; // 2 min
 	/**
+	 * Default config of the overlay that is shown when the component ended but
+	 * the httpLoop still has requests to send. See function jatos.showOverlay
+	 * for config options.
+	 */
+	jatos.waitSendDataOverlayConfig = { text: "Sending data. Please wait." };
+	/**
 	 * All batch/group session actions currently waiting for an response.
 	 * Maps sessionActionId -> timeout object
 	 */
@@ -151,7 +157,7 @@ var jatos = {};
 	/**
 	 * Version of the current group/batch session data. The version is
 	 * used to prevent concurrent changes of the data. Can be switch on/off
-     * by flags *SessionVersioning.
+	 * by flags *SessionVersioning.
 	 */
 	var batchSessionVersion;
 	var groupSessionVersion;
@@ -228,8 +234,8 @@ var jatos = {};
 	var leavingGroupDeferred;
 	var httpLoopDeferred;
 	/**
-     * Event fired when jatos.js is initialized (e.g. init data loaded and channels opened)
-     */
+	 * Event fired when jatos.js is initialized (e.g. init data loaded and channels opened)
+	 */
 	var jatosOnLoadEvent = new Event("jatosOnLoad");
 	/**
 	 * Callback function defined via jatos.onBatchSession
@@ -239,11 +245,11 @@ var jatos = {};
 	 * Callback function if jatos.js produces an error, defined via jatos.onError.
 	 */
 	var onJatosError;
-    /**
-     * Flag that determines if the 'beforeunload' warning should be shown
-     * by the browser to the worker if they attempt to reload or close the
-     * broser (tab)
-     */
+	/**
+	 * Flag that determines if the 'beforeunload' warning should be shown
+	 * by the browser to the worker if they attempt to reload or close the
+	 * broser (tab)
+	 */
 	var showBeforeUnloadWarning = true;
 
 	// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
@@ -267,7 +273,7 @@ var jatos = {};
 			done = false;
 		script.onload = script.onreadystatechange = function () {
 			if (!done && (!this.readyState || this.readyState == 'loaded' ||
-					this.readyState == 'complete')) {
+				this.readyState == 'complete')) {
 				done = true;
 				onSuccess();
 				script.onload = script.onreadystatechange = null;
@@ -289,13 +295,13 @@ var jatos = {};
 		// 4) Try to open the batch channel
 		// 5) Call readyForOnLoad
 		jatos.jQuery.when(
-				// Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-				jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
-				// Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
-				jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.js"),
-				// Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
-				jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.js")
-			)
+			// Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
+			jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
+			// Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
+			jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.js"),
+			// Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
+			jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.js")
+		)
 			.then(function () {
 				jatos.studyResultId = getUrlQueryParameter("srid");
 				readIdCookie();
@@ -304,7 +310,7 @@ var jatos = {};
 				heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
 				// Start httpLoop.js
 				httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
-				httpLoop.addEventListener('message', function(msg) { httpLoopListener(msg.data); }, false);
+				httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
 			})
 			.then(getInitData)
 			.then(openBatchChannelWithRetry)
@@ -318,11 +324,16 @@ var jatos = {};
 	 * Sends the given request to the httpLoop.js background worker.
 	 */
 	function sendToHttpLoop(request, onSuccess, onError) {
+		if (!initialized) {
+			console.error("jatos.js not yet initialized");
+			return jatos.jQuery.Deferred().reject();
+		}
+
 		var deferred = jatos.jQuery.Deferred();
-		deferred.done(function() {
+		deferred.done(function () {
 			callFunctionIfExist(onSuccess);
 		});
-		deferred.fail(function(err) {
+		deferred.fail(function (err) {
 			callingOnError(onError, err);
 		});
 
@@ -348,8 +359,8 @@ var jatos = {};
 		if (msg.status == 200) {
 			deferred.resolve();
 		} else {
-		    var errMsg = [msg.status, msg.statusText, msg.error]
-                    .filter(function(s) {return s;}).join(", ");
+			var errMsg = [msg.status, msg.statusText, msg.error]
+				.filter(function (s) { return s; }).join(", ");
 			deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg);
 		}
 
@@ -467,7 +478,7 @@ var jatos = {};
 		// Study properties
 		jatos.studyProperties = initData.studyProperties;
 		if (typeof jatos.studyProperties.jsonData != 'undefined' &&
-				jatos.studyProperties.jsonData !== null) {
+			jatos.studyProperties.jsonData !== null) {
 			jatos.studyJsonInput = jatos.jQuery
 				.parseJSON(jatos.studyProperties.jsonData);
 		} else {
@@ -482,7 +493,7 @@ var jatos = {};
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
 		if (typeof jatos.componentProperties.jsonData != 'undefined' &&
-				jatos.componentProperties.jsonData !== null) {
+			jatos.componentProperties.jsonData !== null) {
 			jatos.componentJsonInput = jatos.jQuery
 				.parseJSON(jatos.componentProperties.jsonData);
 		} else {
@@ -974,7 +985,7 @@ var jatos = {};
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
 			setChannelSendingTimeoutAndPromiseResolution(deferred, batchSessionTimeouts,
-				 sessionActionId, onSuccess, onFail);
+				sessionActionId, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
 			deferred.reject();
@@ -1005,9 +1016,12 @@ var jatos = {};
 	};
 
 	/**
+	 * DEPRECATED - Instead use the specific function's error callbacks or Promise functions
+	 * 
 	 * Defines callback function to be called if jatos.js produces an error, e.g. Ajax errors.
 	 */
 	jatos.onError = function (onError) {
+		console.warn("jatos.onError is deprecated - use the specific function's error callback or Promise function");
 		onJatosError = onError;
 	};
 
@@ -1126,6 +1140,11 @@ var jatos = {};
 	 * @return {Promise}
 	 */
 	jatos.downloadResultFile = function (param1, param2, param3, param4) {
+		if (!initialized) {
+			console.error("jatos.js not yet initialized");
+			return rejectedPromise();
+		}
+
 		var componentPos, filename, onSuccess, onError;
 		if (typeof param1 === 'number') {
 			componentPos = param1;
@@ -1247,6 +1266,11 @@ var jatos = {};
 	 * @param {optional function} onError - Callback function if fail
 	 */
 	jatos.startComponent = function (componentId, resultData, param3, param4) {
+		if (!initialized) {
+			console.error("jatos.js not yet initialized");
+			return;
+		}
+
 		var message, onError;
 		if (typeof param3 === 'string') {
 			message = param3;
@@ -1260,7 +1284,7 @@ var jatos = {};
 			return;
 		}
 		startingComponent = true;
-		
+
 		// Send result data and study session data before starting next component
 		if (resultData) jatos.appendResultData(resultData);
 		jatos.setStudySessionData(jatos.studySessionData);
@@ -1275,6 +1299,7 @@ var jatos = {};
 
 		// Wait for httpLoop.js to finish
 		if (isDeferredPending(httpLoopDeferred)) {
+			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
 			httpLoopDeferred.always(start);
 		} else {
 			start();
@@ -1336,7 +1361,7 @@ var jatos = {};
 
 		// If last component end study
 		var lastActiveComponent = jatos.componentList.slice().reverse()
-			.find(function(component) { return component.active; });
+			.find(function (component) { return component.active; });
 		if (jatos.componentPos >= lastActiveComponent.position) {
 			if (resultData) {
 				var onComplete = function () {
@@ -1376,7 +1401,7 @@ var jatos = {};
 	 */
 	jatos.startLastComponent = function (resultData, param2, param3) {
 		var lastActiveComponent = jatos.componentList.reverse()
-			.find(function(component) { return component.active; });
+			.find(function (component) { return component.active; });
 		jatos.startComponent(lastActiveComponent.id, resultData, param2, param3);
 	};
 
@@ -1911,7 +1936,7 @@ var jatos = {};
 
 		var deferred = jatos.jQuery.Deferred();
 		if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
-		
+
 		var sessionActionId = groupSessionCounter++;
 		var msgObj = {};
 		msgObj.action = "SESSION";
@@ -2164,11 +2189,19 @@ var jatos = {};
 	 * @return {Promise}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
+		if (!initialized) {
+			console.error("jatos.js not yet initialized");
+			return rejectedPromise();
+		}
 		if (endingStudy) {
 			callingOnError(onError, "Can end/abort study only once");
 			return rejectedPromise();
 		}
 		endingStudy = true;
+
+		if (isDeferredPending(httpLoopDeferred)) {
+			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
+		}
 
 		var url = getURL("../abort");
 		if (typeof message != 'undefined') {
@@ -2185,8 +2218,10 @@ var jatos = {};
 		deferred.done(function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 			heartbeatWorker.terminate();
+			httpLoop.terminate();
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
+			jatos.removeOverlay();
 		});
 
 		return deferred.promise();
@@ -2223,6 +2258,7 @@ var jatos = {};
 
 		// Wait for httpLoop.js to finish
 		if (isDeferredPending(httpLoopDeferred)) {
+			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
 			httpLoopDeferred.always(abort);
 		} else {
 			abort();
@@ -2255,6 +2291,11 @@ var jatos = {};
 	 * @return {Promise}
 	 */
 	jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
+		if (!initialized) {
+			console.error("jatos.js not yet initialized");
+			return rejectedPromise();
+		}
+
 		var resultData, successful, message, onSuccess, onError;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2277,6 +2318,10 @@ var jatos = {};
 
 		// Before finish send result data
 		if (resultData) jatos.appendResultData(resultData);
+
+		if (isDeferredPending(httpLoopDeferred)) {
+			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
+		}
 
 		var url = getURL("../end");
 		if (typeof successful == 'boolean' && typeof message == 'string') {
@@ -2304,8 +2349,10 @@ var jatos = {};
 		deferred.done(function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 			heartbeatWorker.terminate();
+			httpLoop.terminate();
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
+			jatos.removeOverlay();
 		});
 
 		return deferred.promise();
@@ -2316,10 +2363,10 @@ var jatos = {};
 	 * arround jatos.endStudyAjax. The first parameter is the URL and the other up to
 	 * 5 parameters are the same as in jatos.endStudyAjax.
 	 */
-	jatos.endStudyAndRedirect = function(url, param1, param2, param3, param4, param5) {
-		jatos.endStudyAjax(param1, param2, param3, param4, param5).done(function() {
+	jatos.endStudyAndRedirect = function (url, param1, param2, param3, param4, param5) {
+		jatos.endStudyAjax(param1, param2, param3, param4, param5).done(function () {
 			window.location.href = url;
-		 });
+		});
 	};
 
 	/**
@@ -2344,6 +2391,10 @@ var jatos = {};
 	 *			behaves like jatos.endStudyAjax
 	 */
 	jatos.endStudy = function (param1, param2, param3, param4) {
+		if (!initialized) {
+			callingOnError(null, "jatos.js not yet initialized");
+			return;
+		}
 		var resultData, successful, message, showEndPage;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2393,9 +2444,10 @@ var jatos = {};
 			}
 			window.location.href = url;
 		}
-		
+
 		// Wait for httpLoop.js to finish
 		if (isDeferredPending(httpLoopDeferred)) {
+			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
 			httpLoopDeferred.always(end);
 		} else {
 			end();
@@ -2410,13 +2462,14 @@ var jatos = {};
 		return new URL(path, window.location.href).toString() + "?srid=" + jatos.studyResultId;
 	}
 
-	jatos.getHttpLoopCounter = function() {
+	jatos.getHttpLoopCounter = function () {
 		return httpLoopCounter;
 	};
 
 	/**
+	 * DEPRECATED - Use jatos.log instead
+	 * 
 	 * Logs a message within the JATOS log on the server side.
-	 * DEPRECATED, use jatos.log instead.
 	 */
 	jatos.logError = function (logErrorMsg) {
 		console.warn("jatos.logError is deprecated - use jatos.log instead");
@@ -2427,8 +2480,10 @@ var jatos = {};
 	 * Logs a message within the JATOS log on the server side.
 	 */
 	jatos.log = function (logMsg) {
+		if (!initialized) return;
+
 		var request = {
-			url:  getURL("log"),
+			url: getURL("log"),
 			method: "POST",
 			data: logMsg,
 			contentType: "text/plain; charset=UTF-8",
@@ -2446,11 +2501,11 @@ var jatos = {};
 	jatos.catchAndLogErrors = function () {
 		window.addEventListener('error', function (e) {
 			jatos.log("Via 'error' event in " + e.filename + ":" +
-					e.lineno + " - " + e.message);
+				e.lineno + " - " + e.message);
 		});
 		window.addEventListener('unhandledrejection', function (e) {
 			jatos.log("Via 'unhandledrejection' event in " + e.filename + ":" +
-					e.lineno + " - " + e.message);
+				e.lineno + " - " + e.message);
 		});
 
 		var errorLog = console.error;
@@ -2513,7 +2568,7 @@ var jatos = {};
 	 * @param {boolean} show - If true the warning will be shown - if false a
 	 * 		previously added warning will be canceled
 	 */
-	jatos.showBeforeUnloadWarning = function(show) {
+	jatos.showBeforeUnloadWarning = function (show) {
 		showBeforeUnloadWarning = show;
 		if (show) {
 			window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
@@ -2523,41 +2578,109 @@ var jatos = {};
 	};
 
 	/**
+	 * Adds an overlay to the document that shows a text and an image underneath
+	 * in the center of the screen. By default the text is 'Please wait.' and the
+	 * image is an spinning wheel.
+	 * 
+	 * @param {object optional} config - Config object
+	 * @param {boolean optional} config.show - If true the overlay is shown - otherwise not.
+	 * 										   Default is true.
+	 * @param {string optional} config.text - Text to be shown. Default is "Please wait".
+	 * @param {string optional} config.imgUrl - URL of the image. Default is a spinning wheel.
+	 * @param {string optional} config.showImg - If true the image is shown - otherwise not.
+	 * 										     Default is true.
+	 * @param {string optional} config.style - Additional CSS styles
+	 */
+	jatos.showOverlay = function (config) {
+		if (config && typeof config.show == "boolean" && !config.show) return;
+
+		// Create div
+		var divStyle = 'color: black;' +
+			'font-family: Sans-Serif;' +
+			'font-size: 30px;' +
+			'letter-spacing: 2px;' +
+			'opacity: 0.6;' +
+			'text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;' +
+			'z-index: 9999;' +
+			'position: absolute;' +
+			'left: 50%;' +
+			'top: 50%;' +
+			'transform: translate(-50%, -50%);' +
+			'display: flex;' +
+			'align-items: center;' +
+			'justify-content: center;' +
+			'flex-direction: column;';
+		if (config && typeof config.style == "string") divStyle += ";" + config.style;
+		var div = document.createElement('div');
+		div.id = "jatosOverlay";
+		div.style.cssText = divStyle;
+
+		// Add Text
+		var text = (config && typeof config.text == "string") ? config.text : "Please wait";
+		var textElement = document.createTextNode(text);
+		div.appendChild(textElement);
+
+		// Add image
+		var showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
+		if (showImg) {
+			var imgUrl = (config && typeof config.imgUrl == "string") ? config.imgUrl
+				: "jatos-publix/images/waiting.gif";
+			var waitingImg = document.createElement('img');
+			waitingImg.src = imgUrl;
+			waitingImg.style.marginTop = "10px";
+			div.appendChild(waitingImg);
+		}
+
+		jatos.removeOverlay(); // remove old overlay
+		document.body.appendChild(div);
+	};
+
+	/**
+	 * Removes the overlay that was added by jatos.showOverlay before
+	 */
+	jatos.removeOverlay = function () {
+		var el = document.getElementById("jatosOverlay");
+		if (el) el.remove();
+	};
+
+	/**
 	 * Adds a button to the document that if pressed calls jatos.abortStudy.
 	 * By default this button is in the bottom-right corner but this and
 	 * other properties can be configured.
 	 * 
 	 * @param {object optional} config - Config object
-	 * 		text: Button text
-	 * 		confirm: Should the worker be asked for confirmation? Default true.
-	 * 		confirmText: Confirmation text
-	 * 		tooltip: Tooltip text
-	 * 		msg: Message to be send back to JATOS to be logged
-	 * 		style: Additional CSS styles
+	 * @param {string optional} config.text - Button text
+	 * @param {boolean optional} config.confirm - Should the worker be asked for confirmation?
+	 * 											  Default true.
+	 * @param {string optional} config.confirmText - Confirmation text
+	 * @param {string optional} config.tooltip - Tooltip text
+	 * @param {string optional} config.msg - Message to be send back to JATOS to be logged
+	 * @param {string optional} config.style - Additional CSS styles
+	 * @param {string optional} config.action - Which function should be called in the end
 	 */
 	jatos.addAbortButton = function (config) {
 		var buttonText = (config && typeof config.text == "string") ?
-				config.text : "Cancel";
+			config.text : "Cancel";
 		var confirm = (config && typeof config.confirm == "boolean") ?
-				config.confirm : true;
+			config.confirm : true;
 		var confirmText = (config && typeof config.confirmText == "string") ?
-				config.confirmText : "Do you really want to cancel this study?";
+			config.confirmText : "Do you really want to cancel this study?";
 		var tooltip = (config && typeof config.tooltip == "string") ?
-				config.tooltip : "Cancels this study and deletes all already submitted data";
+			config.tooltip : "Cancels this study and deletes all already submitted data";
 		var msg = (config && typeof config.msg == "string") ?
-				config.msg : "Worker decided to abort";
+			config.msg : "Worker decided to abort";
 		var style = 'color:black;' +
-				'font-family:Sans-Serif;' +
-				'font-size:20px;' +
-				'letter-spacing:2px;' +
-				'position:fixed;' +
-				'margin:2em 0 0 2em;' +
-				'bottom:1em;' +
-				'right:1em;' +
-				'opacity:0.6;' +
-				'z-index:100;' +
-				'cursor:pointer;' +
-				'text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;';
+			'font-family:Sans-Serif;' +
+			'font-size:20px;' +
+			'letter-spacing:2px;' +
+			'position:fixed;' +
+			'margin:2em 0 0 2em;' +
+			'bottom:1em;' +
+			'right:1em;' +
+			'opacity:0.6;' +
+			'z-index:9999;' +
+			'cursor:pointer;' +
+			'text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;';
 		if (config && typeof config.style == "string") style += ";" + config.style;
 
 		var text = document.createTextNode(buttonText);
@@ -2567,7 +2690,11 @@ var jatos = {};
 		buttonDiv.setAttribute("title", tooltip);
 		buttonDiv.addEventListener("click", function () {
 			if (!confirm || window.confirm(confirmText)) {
-				jatos.abortStudy(msg);
+				if (config && typeof config.action == "function") {
+					config.action(msg);
+				} else {
+					jatos.abortStudy(msg);
+				}
 			}
 		});
 
