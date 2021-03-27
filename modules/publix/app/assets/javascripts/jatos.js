@@ -133,7 +133,7 @@ var jatos = {};
 	jatos.channelOpeningBackoffTimeMin = 1000;
 	jatos.channelOpeningBackoffTimeMax = 120000; // 2 min
 	/**
-	 * Default config of the overlay that is shown when the component ended but
+	 * Config of the overlay that is shown when the component ended but
 	 * the httpLoop still has requests to send. See function jatos.showOverlay
 	 * for config options.
 	 */
@@ -2656,7 +2656,8 @@ var jatos = {};
 	 * @param {string optional} config.tooltip - Tooltip text
 	 * @param {string optional} config.msg - Message to be send back to JATOS to be logged
 	 * @param {string optional} config.style - Additional CSS styles
-	 * @param {string optional} config.action - Which function should be called in the end
+	 * @param {function optional} config.action - Which function should be called in the end
+	 * 											  Default is jatos.abortStudy
 	 */
 	jatos.addAbortButton = function (config) {
 		var buttonText = (config && typeof config.text == "string") ?
