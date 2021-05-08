@@ -5,13 +5,13 @@
 <table id="userTable" class="table top-buffer">
     <thead>
         <tr>
-            <th>Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user"></span></th>
-            <th>Active&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration."></span></th>
+            <th>Studies <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user"></span></th>
+            <th>Active <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration."></span></th>
             <th>Username</th>
             <th>Name</th>
-            <th>Last Login&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user"></span></th>
-            <th>Auth&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google"></span></th>
-            <th>Admin Rights&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies."></span></th>
+            <th>Last Login <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user"></span></th>
+            <th>Auth <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google"></span></th>
+            <th>Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies."></span></th>
             <th></th>
         </tr>
     </thead>
@@ -221,8 +221,8 @@ var userTable = $('#userTable').DataTable({
     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
     "columnDefs": [
         {
-            "visible": @{general.common.Common.isLdapAllowed() || general.common.Common.isOauthGoogleAllowed()},
-            "targets": 2
+            "targets": 2,
+            "visible": @{general.common.Common.isLdapAllowed() || general.common.Common.isOauthGoogleAllowed()}
         }
     ],
     "columns": [
@@ -232,6 +232,7 @@ var userTable = $('#userTable').DataTable({
             "orderable": false,
             "data": "studyCount",
             "render": function (data, type, full, meta) {
+                if (type === 'export') return data;
                 return '<button type="button" class="btn btn-admin collapseStudiesData" data-toggle="tooltip"' +
                     'data-placement="bottom" title="Show/hide studies">' +
                     '<span class="badge">' + data + '</span>&nbsp;' +
@@ -239,12 +240,13 @@ var userTable = $('#userTable').DataTable({
             }
         },
         {
+            "class": "activeUser",
             "data": null,
-            "defaultContent": '',
             "width": "1px",
             "orderable": false,
             "searchable": false,
             "render": function (data, type, full, meta) {
+                if (type === 'export') return data.active;
                 var buttonDiv = $('#activeToggleButtonDiv :first-child').clone();
                 setActiveButton(buttonDiv, data.active, data.username);
                 return buttonDiv.prop('outerHTML');
@@ -286,6 +288,7 @@ var userTable = $('#userTable').DataTable({
             "render": function (data, type, full, meta) {
                 var buttonDiv = $('#userAdminToggleButtonDiv :first-child').clone();
                 var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", data.roleList) >= 0;
+                if (type === 'export') return adminRole;
                 setAdminButton(buttonDiv, adminRole, data.username);
                 return buttonDiv.prop('outerHTML');
             }
@@ -342,8 +345,10 @@ var userTable = $('#userTable').DataTable({
                     "filename": function() { return "jatos_user_all_" + moment().format("YYYYMMDDHHmmss") },
                     "titleAttr": 'Export all user data',
                     "exportOptions": {
-                        "columns": '.username, .name, .lastLogin, .authMethod'
+                        "columns": '.username, .name, .activeUser, .studyCount, .lastLogin, .authMethod, .adminRole',
+                        "orthogonal": 'export'
                     },
+                    "trim": true,
                     "action": function(e, dt, node, config) {
                         $("ul.dropdown-menu").hide();
                         $('#waitingModal').modal('show');
