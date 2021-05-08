@@ -17,8 +17,10 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.CharacterIterator;
+import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -177,7 +179,7 @@ public class Helpers {
         return info;
     }
 
-    public static Map<String, String> getSystemInfo() {
+    public static Map<String, String> getOSInfo() {
         Map<String, String> info = new LinkedHashMap<>();
 
         OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
@@ -193,6 +195,10 @@ public class Helpers {
                 .substring(2)
                 .replaceAll("(\\d[HMS])(?!$)", "$1 ")
                 .toLowerCase();
+    }
+
+    public static String formatTimestamp(Date date) {
+        return date != null ? (new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")).format(date) : "never";
     }
 
 }

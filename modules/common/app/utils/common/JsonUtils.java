@@ -371,20 +371,6 @@ public class JsonUtils {
     }
 
     /**
-     * Returns a ArrayNode with the usual user fields plus from all studies
-     * where the user is member of the title and the number of members.
-     */
-    public JsonNode userData(List<User> userList) {
-        ArrayNode userArrayNode = Json.mapper().createArrayNode();
-        for (User user : userList) {
-            userArrayNode.add(userData(user));
-        }
-        ObjectNode userDataNode = Json.mapper().createObjectNode();
-        userDataNode.set(DATA, userArrayNode);
-        return userDataNode;
-    }
-
-    /**
      * Returns a JsonNode with the usual user fields plus from all studies where
      * the user is member of the title and the number of members.
      */

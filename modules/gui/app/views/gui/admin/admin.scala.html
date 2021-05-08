@@ -1,0 +1,605 @@
+@(request: Http.Request, loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
+
+<div id="adminToolbar" class="btn-toolbar" role="toolbar">
+    <div class="btn-group">
+        <button id="userManager" type="button" class="btn btn-admin" data-toggle="tooltip" data-placement="bottom"
+                title="Create, deactivate, or delete users; change their passwords">
+            <span class="glyphicon glyphicon-user"></span>&nbsp;User&nbsp;Manager
+        </button>
+        <button id="studyAdmin" type="button" class="btn btn-admin" data-toggle="tooltip" data-placement="bottom"
+                title="Information about all studies, like users, disk size, database size. Possibility to deactivate a study.">
+            <span class="glyphicon glyphicon-cog"></span>&nbsp;Studies
+        </button>
+    </div>
+
+    <div class="btn-group">
+        <div class="btn-group">
+            <button id="logs" type="button" class="btn btn-admin dropdown-toggle" data-toggle="dropdown">
+                <span class="glyphicon glyphicon-book"></span>&nbsp;Logs&nbsp;<span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a id="applicationLog" href="#">application.log</a></li>
+                <li><a id="loaderLog" href="#">loader.log</a></li>
+                <li><a id="updateLog" href="#">update.log</a></li>
+            </ul>
+        </div>
+        <button id="tests" type="button" class="btn btn-admin">
+            <span class="glyphicon glyphicon-check"></span>&nbsp;Tests
+        </button>
+        <button id="systemInfo" type="button" class="btn btn-admin">
+            <span class="glyphicon glyphicon-info-sign"></span>&nbsp;System Info
+        </button>
+    </div>
+</div>
+
+<div id="updateJatos" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
+    <p id="updateJatosMsg"></p>
+    <button class="btn btn-default updateJatosButton" role="button" style="display: none">Update</button>
+    <button class="btn btn-default releaseNotesButton" role="button" style="display: none">Release Notes</button>
+</div>
+
+<div id="jatosStatus" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
+    <div class="col-sm-3">
+        Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of studies (aka experiments) on this JATOS server"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+    <div class="col-sm-3">
+        Study Results&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all study results on this JATOS server - How many studies were run so far?"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+    <div class="col-sm-3">
+        Workers&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all workers (aka participants) of all studies on this JATOS server"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+    <div class="col-sm-3">
+        Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all users (aka experimenters) on this JATOS server"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+</div>
+
+<div id="jatosLastActivityStatus" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
+    <div class="col-sm-4">
+        Last User Activity&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Time of the last activity of any other user but the logged in one"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+    <div class="col-sm-4">
+        Last Worker Activity&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Time of the last activity of a worker"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+    <div class="col-sm-4">
+        Server Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Current time in JATOS"></span><br>
+        <span class="text-xl value"></span>
+    </div>
+</div>
+
+<!-- Update JATOS - release notes modal -->
+<div class="modal fade" id="releaseNotesModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Release Notes</h4>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="updateJatosButton confirmed btn btn-default">Update now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update JATOS - confirmation modal -->
+<div class="modal fade" id="updateJatosModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Update JATOS</h4>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <div class="waiting"><img src="@routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")"> please wait</div>
+                <p class="confirmationText"></p>
+                <div class="checkbox" style="display: none">
+                    <label><input type="checkbox" class="backupAll" checked> Back up current version</label>
+                    <span class="help-block">Backs up all files (including study assets, uploaded result files, logs, study logs, local database - but not a MySQL database) of the current JATOS into a folder named 'backup_x.x.x' (x.x.x = old version). This will use up disk space.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="canceled btn btn-default" data-dismiss="modal">No, this is too risky</button>
+                <button type="button" class="confirmed btn btn-default">I understand the risks, go on</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Modal -->
+<div class="modal fade" id="logModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Log (newest entries first)</h4>
+            </div>
+            <div class="modal-body">
+                <pre><code></code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System info Modal -->
+<div class="modal fade" id="systemInfoModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">System Info</h4>
+            </div>
+            <div class="modal-body">
+
+                <h2>JATOS configuration</h2>
+                <p>
+                    <b>Version</b>: @general.common.Common.getJatosVersion()<br>
+                    <b>URL host</b>: @utils.common.Helpers.getRealHostUrl(request)<br>
+                    <b>URL basepath</b>: @general.common.Common.getPlayHttpContext()<br>
+                    <b>URL host + basepath</b>: @utils.common.Helpers.getRealBaseUrl(request)<br>
+                    <b>Local basepath</b>: @general.common.Common.getBasepath()<br>
+                    <b>Study assets root path</b>: @general.common.Common.getStudyAssetsRootPath()<br>
+                    <b>Result data max size</b>:
+                    @{utils.common.Helpers.humanReadableByteCountSI(general.common.Common.getResultDataMaxSize())}<br>
+                    <b>Result uploads allowed</b>: @general.common.Common.isResultUploadsEnabled()<br>
+                    <b>Result uploads path</b>: @general.common.Common.getResultUploadsPath()<br>
+                    <b>Result uploads max file size</b>:
+                    @{utils.common.Helpers.humanReadableByteCountSI(general.common.Common.getResultUploadsMaxFileSize())}<br>
+                    <b>Result uploads limit per study run</b>:
+                    @{utils.common.Helpers.humanReadableByteCountSI(general.common.Common.getResultUploadsLimitPerStudyRun())}<br>
+                    <b>Study logs allowed</b>: @general.common.Common.isStudyLogsEnabled()<br>
+                    <b>Study logs path</b>: @general.common.Common.getStudyLogsPath()<br>
+                    <b>Uses in-memory DB</b>: @general.common.Common.isInMemoryDb()<br>
+                    <b>User session validation</b>: @general.common.Common.isUserSessionValidation()<br>
+                    <b>User session timeout</b>: @general.common.Common.getUserSessionTimeout()<br>
+                    <b>User session inactivity</b>: @general.common.Common.getUserSessionInactivity()<br>
+                    <b>DB URL</b>: @general.common.Common.getDbDefaultUrl()<br>
+                    <b>DB driver</b>: @general.common.Common.getDbDefaultDriver()<br>
+                    <b>JPA unit</b>: @general.common.Common.getJpaDefault()<br>
+                    <b>Google OAuth allowed</b>: @general.common.Common.isOauthGoogleAllowed()<br>
+                    <b>LDAP URL</b>: @general.common.Common.getLdapUrl()<br>
+                    <b>LDAP base DN</b>: @general.common.Common.getLdapBasedn()<br>
+                    <b>LDAP timeout</b>: @general.common.Common.getLdapTimeout()<br>
+                    <b>Max results DB query size</b>: @general.common.Common.getMaxResultsDbQuerySize()<br>
+                </p>
+
+                <h2>OS info</h2>
+                <p id="osInfo">
+                    @for((key, value) <- utils.common.Helpers.getOSInfo()){
+                    <b>@key</b>: @value<br>
+                    }
+                </p>
+
+                <h2>JVM info</h2>
+                <p id="jvmInfo">
+                    @for((key, value) <- utils.common.Helpers.getJVMInfo()){
+                    <b>@key</b>: @value<br>
+                    }
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tests Modal -->
+<div class="modal fade" id="testsModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Tests</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <b>Correct URL host</b>: <span id="testRealHostUrlResult"></span><br>
+                    <b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
+                    <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
+                    <b>Access internal cache</b>: <span id="testCacheResult"></span><br>
+                    <b>Internal JSON serialization</b>: <span id="testJsonSerializationResult"></span><br>
+                    <b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
+                    <b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
+                    <b>Read heartbeat.js</b>: <span id="testHeartbeatJsResult"></span><br>
+                    <b>Open WebSocket</b>: <span id="testWebSocketResult"></span><br>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+$('#userManager').click(function() {
+    window.location.href = '@controllers.gui.routes.Users.userManager()';
+});
+
+$('#studyAdmin').click(function() {
+    window.location.href = '@controllers.gui.routes.Admin.studyAdmin()';
+});
+
+checkJatosReleaseInfo();
+function checkJatosReleaseInfo() {
+    var urlQueryParams = new URLSearchParams(window.location.search).toString();
+    $.getJSON({
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?' + urlQueryParams,
+        success: function(releaseInfo) {
+            $("#updateJatos").data("releaseInfo", releaseInfo);
+            showJatosReleaseInfo(releaseInfo);
+        },
+        error: function () {
+            console.warn("Couldn't check for a JATOS update.");
+        }
+    });
+}
+
+function showJatosReleaseInfo(releaseInfo) {
+    switch (releaseInfo.currentUpdateState) {
+        case "SLEEPING":
+            showUpdateAvailable(releaseInfo);
+            break;
+        case "DOWNLOADING":
+            showInfo("JATOS is currently downloading an update.");
+            break;
+        case "DOWNLOADED":
+            showUpdateJatosModalDownloaded();
+            break;
+        case "MOVING":
+        case "RESTARTING":
+            showWarning("JATOS is currently restarting to finish an update. Please wait.");
+            break;
+        case "SUCCESS":
+            showInfo("JATOS was successfully updated to " + releaseInfo.currentVersionFull);
+            break;
+        case "FAILED":
+            showError("Something went wrong in an JATOS update. More information can be found in"
+                    + " the logs (<i>logs/update.log</i> and <i>logs/application.log</i>).");
+            break;
+        default:
+            showError("Unknown UpdateState " + releaseInfo.currentUpdateState);
+    }
+}
+
+function showUpdateAvailable(releaseInfo) {
+    var text;
+    var version = getVersionName(releaseInfo);
+    if (releaseInfo.isNewerVersion || !releaseInfo.isLatest) {
+        if (releaseInfo.isUpdateAllowed && !releaseInfo.isDifferentJava && releaseInfo.zipUrl) {
+            text = "Do you want to automatically update to version&nbsp;" + version + "?";
+            if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
+            $("#updateJatos button").show();
+        } else if (releaseInfo.isUpdateAllowed && releaseInfo.isDifferentJava && releaseInfo.zipJavaUrl) {
+            text = "Do you want to automatically update to version&nbsp;" + version + "?"
+                    + " The new JATOS needs a different version of Java than yours. So you'll need JATOS"
+                    + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
+            if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
+            $("#updateJatos button").show();
+        }
+    } else {
+        text = "Your JATOS (version&nbsp;" + releaseInfo.currentVersion + ") is up-to-date.";
+        $("#updateJatos .updateJatosButton").hide();
+        $("#updateJatos .releaseNotesButton").hide();
+    }
+    $("#updateJatosMsg").html(text);
+    $("#updateJatos").show();
+}
+
+$("#updateJatos .releaseNotesButton").click(function() {
+    var releaseInfo = $("#updateJatos").data("releaseInfo");
+    var version = getVersionName(releaseInfo);
+    $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
+    var releaseNodesClean = releaseInfo.releaseNotes.replace(/(\s|\n|\r|#)*Which variant(.|\n|\r)*/, "");
+    var releaseNotesHtml = new showdown.Converter().makeHtml(releaseNodesClean);
+    $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
+    $("#releaseNotesModal").modal('show');
+});
+
+function getVersionName(releaseInfo) {
+    return releaseInfo.isPrerelease ? releaseInfo.versionFull + " (pre-release)" : releaseInfo.versionFull;
+}
+
+function getFileSizeInMb(releaseInfo) {
+    var sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
+    return  Math.round(sizeInByte / 1024 / 1024);
+}
+
+$("#updateJatos .updateJatosButton, #releaseNotesModal .updateJatosButton").click(function() {
+    var releaseInfo = $("#updateJatos").data("releaseInfo");
+    var version = getVersionName(releaseInfo);
+    var fileSizeInMb = getFileSizeInMb(releaseInfo);
+    $("#releaseNotesModal").modal('hide');
+    removeAlerts("#updateJatosModal");
+    $("#updateJatosModal .modal-title").text("Update JATOS to " + version);
+    $("#updateJatosModal .confirmationText").html("First we are going to download the new release (it's " + fileSizeInMb
+            + "&nbsp;MB). Make sure you back up your data for the (unlikely) event that something goes wrong."
+            + " After the download is done you'll be asked again for confirmation.");
+    $("#updateJatosModal .confirmationText").show();
+    $("#updateJatosModal .waiting").hide();
+    $("#updateJatosModal .checkbox").hide();
+    $("#updateJatosModal .modal-footer").show();
+    $("#updateJatosModal button.canceled").unbind();
+    $("#updateJatosModal button.canceled").click(cancelUpdate);
+    $("#updateJatosModal button.confirmed").unbind();
+    $("#updateJatosModal button.confirmed").click(downloadJatos);
+    $("#updateJatosModal").modal('show');
+});
+
+function cancelUpdate() {
+    $.ajax({
+        url: '@controllers.gui.routes.Updates.cancelUpdate()',
+        error: function (err) {
+            showError(err.responseText)
+        }
+    });
+}
+
+function downloadJatos() {
+    var releaseInfo = $("#updateJatos").data("releaseInfo");
+    var fileSizeInMb = getFileSizeInMb(releaseInfo);
+    var version = getVersionName(releaseInfo);
+    $("#updateJatosModal .waiting").show();
+    $("#updateJatosModal .modal-title").text("Downloading " + version + " (" + fileSizeInMb + " MB)");
+    $("#updateJatosModal .confirmationText").hide();
+    $("#updateJatosModal .modal-footer").hide();
+    $.ajax({
+        url: '@controllers.gui.routes.Updates.downloadJatos()',
+        timeout: 0, // Do not timeout
+        success: function() {
+            showUpdateJatosModalDownloaded();
+        },
+        error: function (err) {
+            $('#updateJatosModal').modal('hide');
+            showError(err.responseText)
+        }
+    });
+}
+
+function showUpdateJatosModalDownloaded() {
+    var releaseInfo = $("#updateJatos").data("releaseInfo");
+    var version = getVersionName(releaseInfo);
+    $("#updateJatosModal .waiting").hide();
+    $("#updateJatosModal .checkbox").show();
+    $("#updateJatosModal .modal-title").text("Update & Restart");
+    $("#updateJatosModal .confirmationText").text("Downloaded. Now, do you really want to update to version "
+            + version + " and restart?");
+    $("#updateJatosModal .confirmationText").show();
+    $("#updateJatosModal .modal-footer").show();
+    $("#updateJatosModal button.canceled").unbind();
+    $("#updateJatosModal button.canceled").click(cancelUpdate);
+    $("#updateJatosModal button.confirmed").unbind();
+    $("#updateJatosModal button.confirmed").click(updateAndRestart);
+    $("#updateJatosModal").modal('show');
+}
+
+function updateAndRestart() {
+    var releaseInfo = $("#updateJatos").data("releaseInfo");
+    var version = getVersionName(releaseInfo);
+    $("#updateJatosModal .waiting").show();
+    $("#updateJatosModal .confirmationText").hide();
+    $("#updateJatosModal .checkbox").hide();
+    $("#updateJatosModal .modal-footer").hide();
+    var backupAll = $('#updateJatosModal .backupAll').is(':checked');
+    $.ajax({
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/updateAndRestart?backupAll=' + backupAll,
+        timeout: 0, // Do not timeout
+        success: function() {
+            $('#updateJatosModal').modal('hide');
+            showInfo("Restarting now to finish update to version " + version
+                    + ". It should take under a minute. Refresh this page every now and then.");
+        },
+        error: function (err) {
+            $('#updateJatosModal').modal('hide');
+            showError(err.responseText)
+        }
+    });
+}
+
+getJatosStatus();
+function getJatosStatus() {
+    $.getJSON({
+        url: '@controllers.gui.routes.Admin.status()',
+        success: function(status) {
+            $("#jatosStatus div:nth-child(1) .value").text(status.studyCount);
+            $("#jatosStatus div:nth-child(2) .value").text(status.studyResultCount);
+            $("#jatosStatus div:nth-child(3) .value").text(status.workerCount);
+            $("#jatosStatus div:nth-child(4) .value").text(status.userCount);
+            $("#jatosStatus").show();
+            $("#jatosLastActivityStatus div:nth-child(1) .value").text(status.lastUserActivityTime);
+            $("#jatosLastActivityStatus div:nth-child(2) .value").text(status.lastWorkerActivityTime);
+            $("#jatosLastActivityStatus div:nth-child(3) .value").text(status.serverTime);
+            $("#jatosLastActivityStatus").show();
+        },
+        error: function () {
+            console.warn("Couldn't get JATOS status.");
+        }
+    });
+}
+
+$('#applicationLog, #loaderLog, #updateLog').on('click', function() {
+    var filename = this.text;
+    $.ajax({
+        type: 'GET',
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/log?filename=" + filename,
+        success: function(result) {
+            $('#logModal').modal('show');
+            var filePath = "@{general.common.Common.getBasepath()}/logs/" + filename;
+            $('#logModal .modal-title').text(filePath + " (newest entries first)");
+            $('#logModal .modal-body pre code').text(result);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#adminToolbar').on('click', '#tests', function() {
+    $('#testsModal').modal('show');
+    testRealHostUrl();
+    testDatabase();
+    testStudyAssetsRootFolder();
+    testCache();
+    testJsonSerialization();
+    testJatosJsViaStudyPath();
+    testJatosJsViaAssetsPath();
+    testHeartbeatJs();
+    testWebSocket();
+});
+
+$('#adminToolbar').on('click', '#systemInfo', function() {
+    $('#systemInfoModal').modal('show');
+});
+
+function testRealHostUrl() {
+    var jatosHostUrl = "@utils.common.Helpers.getRealHostUrl(request)";
+    var browserUrl = window.location.origin;
+    if (jatosHostUrl == browserUrl) {
+        $('#testRealHostUrlResult').html('<font color="green">OK</font>');
+    } else if (jatosHostUrl.replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
+        $('#testRealHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
+    } else {
+        $('#testRealHostUrlResult').html('<font color="red">FAIL</font>');
+    }
+}
+
+function testDatabase() {
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testDatabase()',
+        success: function(result) {
+            $('#testDatabaseResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testDatabaseResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testStudyAssetsRootFolder() {
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testStudyAssetsRootFolder()',
+        success: function(result) {
+            $('#testStudyAssetsRootFolderResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testStudyAssetsRootFolderResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testCache() {
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testCache()',
+        success: function(result) {
+            $('#testCacheResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testCacheResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testJsonSerialization() {
+    $.ajax({
+        type: 'GET',
+        url: '@controllers.gui.routes.Tests.testJsonSerialization()',
+        success: function(result) {
+            $('#testJsonSerializationResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testJsonSerializationResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testJatosJsViaStudyPath() {
+    $.ajax({
+        type: 'GET',
+        url: '@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos.js',
+        dataType: "text",
+        success: function(result) {
+            $('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testJatosJsViaStudyPathResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testJatosJsViaAssetsPath() {
+    $.ajax({
+        type: 'GET',
+        url: '@{general.common.Common.getPlayHttpContext()}assets/javascripts/jatos.js',
+        dataType: "text",
+        success: function(result) {
+            $('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testJatosJsViaAssetsPathResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testHeartbeatJs() {
+    $.ajax({
+        type: 'GET',
+        url: '@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos-publix/javascripts/heartbeat.js',
+        dataType: "text",
+        success: function(result) {
+            $('#testHeartbeatJsResult').html('<font color="green">OK</font>');
+        },
+        error : function(err) {
+            $('#testHeartbeatJsResult').html('<font color="red">FAIL</font>');
+        }
+    });
+}
+
+function testWebSocket() {
+    var webSocket = new WebSocket(((
+            window.location.protocol === "https:") ? "wss://" : "ws://")
+            + window.location.host
+            + "@controllers.gui.routes.Tests.testWebSocket()");
+    webSocket.onerror = function () {
+        $('#testWebSocketResult').html('<font color="red">FAIL</font>');
+    };
+
+    webSocket.onmessage = function (event) {
+        if (event.data != "test message") {
+            $('#testWebSocketResult').html('<font color="red">FAIL</font>');
+        } else {
+            $('#testWebSocketResult').html('<font color="green">OK</font>');
+        }
+    };
+    webSocket.onopen = function (event) {
+        webSocket.send("test message");
+    };
+}
+
+</script>
+}

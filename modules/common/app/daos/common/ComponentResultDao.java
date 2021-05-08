@@ -2,6 +2,7 @@ package daos.common;
 
 import models.common.Component;
 import models.common.ComponentResult;
+import models.common.Study;
 import models.common.StudyResult;
 import play.db.jpa.JPAApi;
 
@@ -9,6 +10,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DAO for ComponentResult entity
@@ -83,6 +85,19 @@ public class ComponentResultDao extends AbstractDao {
                 .setMaxResults(max)
                 .setParameter("component", component)
                 .getResultList();
+    }
+
+    /**
+     * Returns data size (in Byte) that is occupied by the 'data' field of all component results belonging to the given
+     * study.
+     */
+    public Long sizeByStudy(Study study) {
+        Number result = (Number) jpa.em().createQuery(
+                "SELECT SUM(LENGTH(data)) FROM ComponentResult WHERE component_id IN :componentIds")
+                .setParameter("componentIds",
+                        study.getComponentList().stream().map(Component::getId).collect(Collectors.toList()))
+                .getSingleResult();
+        return result != null ? result.longValue() : 0;
     }
 
 }

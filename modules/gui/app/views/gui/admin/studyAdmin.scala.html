@@ -1,0 +1,158 @@
+@(request: Http.Request, loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
+
+<table id="studyAdminTable" class="table top-buffer">
+    <thead>
+    <tr>
+        <th>Active&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="A deactivated study cannot be started by participants anymore, but an already started study can be continued. The member users can still see and edit the study and export its result data."></span></th>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></th>
+        <th>Result Count&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></th>
+        <th>Study Assets Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the study assets folder of this study"></span></th>
+        <th>Result Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data stored in the database by this study"></span></th>
+        <th>Result File Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of all uploaded result files by this study"></span></th>
+        <th>Last Started&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="When was this study last started by a participant?"></span></th>
+    </tr>
+    </thead>
+</table>
+
+<!-- Template for active toggle button in a study row -->
+<div id="activeToggleButtonDiv" style="display: none">
+    <div class="tooltipWrapper" data-title="">
+        <button type="button" class="btn btn-default activeButton">
+            <span class="glyphicon glyphicon-ok"></span>
+        </button>
+    </div>
+</div>
+
+<script>
+var studyAdminTable;
+$(document).ready(function() {
+    studyAdminTable = $('#studyAdminTable').DataTable({
+        "ajax": {
+            "url" : '@controllers.gui.routes.Admin.allStudiesData()',
+            "dataSrc": "",
+            "beforeSend": showWaitingModal,
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText);
+                } else {
+                    showError("Cannot read study data.");
+                }
+            },
+            "complete": hideWaitingModal
+        },
+        "dom": 'lftip',
+        "order": [[ 6, "dsc" ]],
+        "pageLength": 10,
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        "columns": [
+            {
+                "data": null,
+                "defaultContent": '',
+                "width": "1%",
+                "orderable": false,
+                "searchable": false,
+                "render": function (data, type, full, meta) {
+                    var buttonDiv = $('#activeToggleButtonDiv :first-child').clone();
+                    setActiveButton(buttonDiv, data.active);
+                    return buttonDiv.prop('outerHTML');
+                }
+            },
+            {
+                "data": "id",
+                "width": "1%"
+            },
+            { "data": "title" },
+            {
+                "data": null,
+                'max-width': '20%',
+                "render": function (data, type, full, meta) {
+                    if (data.members.length < 4 ) {
+                        return data.members.join("<br>");
+                    } else {
+                        return '<a href="#" data-toggle="popover" data-trigger="focus" data-container="body" '
+                                + 'data-html="true" data-content="' + data.members.join("<br>") + '">show all</a>';
+                    }
+                }
+            },
+            {
+                "data": "studyResultCount",
+                "width": "1%"
+            },
+            {
+                "type": "num",
+                "data": {
+                    _: 'studyAssetsSize.display',
+                    sort: 'studyAssetsSize.bytes'
+                }
+            },
+            {
+                "type": "num",
+                "data": {
+                    _: 'resultDataSize.display',
+                    sort: 'resultDataSize.bytes'
+                }
+            },
+            {
+                "type": "num",
+                "data": {
+                    _: 'resultFileSize.display',
+                    sort: 'resultFileSize.bytes'
+                }
+            },
+            {
+                "data": "lastStarted",
+                "render": function (data, type, full, meta) {
+                    return (data) ? data : "never";
+                }
+            }
+        ],
+        "drawCallback": function( settings ) {
+            $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
+        }
+    });
+});
+
+function setActiveButton(buttonDiv, active) {
+    var button = $(buttonDiv).children("button:first");
+    if (active) {
+        button.removeClass('btn-default');
+        button.addClass('btn-admin');
+        button.addClass('active');
+        buttonDiv.attr('title', "Click to deactivate this study");
+        button.html($(button.html())
+                .removeClass('glyphicon-remove')
+                .addClass('glyphicon-ok').prop('outerHTML'));
+    } else {
+        button.removeClass('btn-admin');
+        button.removeClass('active');
+        button.addClass('btn-default');
+        buttonDiv.attr('title', "Click to activate this study");
+        button.html($(button.html())
+                .removeClass('glyphicon-ok')
+                .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+}
+
+$('#studyAdminTable tbody').on('click', '.activeButton', function() {
+    var button = this;
+    var tr = $(this).closest('tr');
+    var studyInfo = studyAdminTable.row(tr).data();
+    var active = $(this).hasClass('active');
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/properties/active?active=" + !active,
+        type : "POST",
+        success: function() {
+            setActiveButton($(button).parent(), !active);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+</script>
+}

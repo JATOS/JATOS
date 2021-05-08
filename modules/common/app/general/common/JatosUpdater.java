@@ -311,7 +311,7 @@ public class JatosUpdater {
 
         boolean notOlderThanAnHour = lastTimeAskedReleaseInfo != null && LocalTime.now().minusHours(1).isBefore(
                 lastTimeAskedReleaseInfo);
-        if (currentReleaseInfo != null && notOlderThanAnHour && !allowPreReleases && !currentReleaseInfo.isPrerelease) {
+        if (currentReleaseInfo != null && notOlderThanAnHour && !allowPreReleases && currentReleaseInfo.isLatest) {
             return CompletableFuture.completedFuture(currentReleaseInfo);
         }
         if (allowPreReleases) {

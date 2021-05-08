@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import models.common.workers.JatosWorker;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
 import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Set;
@@ -79,6 +80,17 @@ public class User {
     @ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
     private Set<Study> studyList = new HashSet<>();
 
+    /**
+     * Time of last successful login
+     */
+    private Timestamp lastLogin;
+
+    /**
+     * A user can be deactivated (by default they are active). If deactivated a user cannot login, but their studies
+     * can be still run by workers.
+     */
+    private boolean active = true;
+
     public User(String username, String name) {
         setUsername(username);
         this.name = name;
@@ -93,7 +105,7 @@ public class User {
      * 2) turn to lower case
      * 3) trim
      * 4) return the the composed form NFKC (combining character sequences are mapped to composites
-     *    (see https://stackoverflow.com/a/1598365/1278769)
+     * (see https://stackoverflow.com/a/1598365/1278769)
      */
     public static String normalizeUsername(String username) {
         if (username == null) return null;
@@ -196,6 +208,22 @@ public class User {
 
     public boolean hasStudy(Study study) {
         return this.studyList.contains(study);
+    }
+
+    public Timestamp getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(Timestamp lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override

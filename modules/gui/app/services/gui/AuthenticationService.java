@@ -35,7 +35,7 @@ import java.util.Hashtable;
 /**
  * Service class around authentication, session cookie and session cache handling. It works together with the
  * {@link Authentication} controller and the @Authenticated annotation defined in {@link AuthenticationAction}.
- * <p>
+ *
  * If a user is authenticated (same password as stored in the database) a user session ID is generated and stored in
  * Play's session cookie and in the the cache. With each subsequent request this session is checked in the
  * AuthenticationAction.
@@ -181,7 +181,8 @@ public class AuthenticationService {
      * with the given username to be logged-in. Does not authenticate the user (use
      * authenticate() for this).
      */
-    public void writeSessionCookieAndSessionCache(Http.Session session, String normalizedUsername, String remoteAddress) {
+    public void writeSessionCookieAndSessionCache(Http.Session session, String normalizedUsername,
+            String remoteAddress) {
         String sessionId = generateSessionId();
         userSessionCacheAccessor.setUserSessionId(normalizedUsername, remoteAddress, sessionId);
         session.put(SESSION_ID, sessionId);
@@ -218,7 +219,8 @@ public class AuthenticationService {
      * Deletes the session cookie and removes the cache entry. This is usual
      * done during a user logout.
      */
-    public void clearSessionCookieAndSessionCache(Http.Session session, String normalizedUsername, String remoteAddress) {
+    public void clearSessionCookieAndSessionCache(Http.Session session, String normalizedUsername,
+            String remoteAddress) {
         userSessionCacheAccessor.removeUserSessionId(normalizedUsername, remoteAddress);
         session.clear();
     }
@@ -265,6 +267,20 @@ public class AuthenticationService {
             // In case of any exception: timeout
             return true;
         }
+    }
+
+    /**
+     * Gets the time of the last activity of the given user
+     */
+    public Instant getLastSeen(String normalizedUsername) {
+        return userSessionCacheAccessor.getLastSeen(normalizedUsername);
+    }
+
+    /**
+     * Sets the time of the last activity of the given user
+     */
+    public void setLastSeen(String normalizedUsername) {
+        userSessionCacheAccessor.setLastSeen(normalizedUsername);
     }
 
 }

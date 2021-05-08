@@ -4,15 +4,14 @@ import akka.stream.javadsl.Flow;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import general.common.Common;
+import models.common.User;
 import play.cache.NamedCache;
 import play.cache.SyncCacheApi;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
-import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -25,7 +24,7 @@ import static controllers.gui.actionannotations.AuthenticationAction.Authenticat
  * Controller with endpoints used by /jatos/test. Each endpoint test a different
  * aspect of JATOS.
  *
- * @author Kristian Lange (2017)
+ * @author Kristian Lange
  */
 @GuiAccessLogging
 @Singleton
@@ -41,13 +40,13 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated
-    public Result test(Http.Request request) {
-        return ok(views.html.gui.test.render(request, Helpers.getSystemInfo(), Helpers.getJVMInfo()));
+    @Authenticated(User.Role.ADMIN)
+    public Result test() {
+        return ok(views.html.gui.admin.test.render());
     }
 
     @Transactional
-    @Authenticated
+    @Authenticated(User.Role.ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -58,7 +57,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Authenticated(User.Role.ADMIN)
     public Result testStudyAssetsRootFolder() {
         try {
             File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
@@ -78,7 +77,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Authenticated(User.Role.ADMIN)
     public Result testCache() {
         try {
             cache.set("test", "testValue");
@@ -93,7 +92,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Authenticated(User.Role.ADMIN)
     public Result testJsonSerialization() {
         try {
             JsonUtils.asStringForDB("{\"test\":\"test\"}");
@@ -104,7 +103,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Authenticated(User.Role.ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to client

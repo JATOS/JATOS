@@ -3,8 +3,22 @@
 # Order is important!
 # ~~~~
 
+# Admin controller
+GET      /jatos/admin                                                       @controllers.gui.Admin.administration(request: Request)
+GET      /jatos/status                                                      @controllers.gui.Admin.status()
+GET      /jatos/studyAdmin                                                  @controllers.gui.Admin.studyAdmin(request: Request)
+GET      /jatos/allStudiesData                                              @controllers.gui.Admin.allStudiesData()
+GET      /jatos/studiesData                                                 @controllers.gui.Admin.studiesDataByUser(username: String)
+GET      /jatos/log                                                         @controllers.gui.Admin.log(filename: String ?= "application.log", limit: Integer ?= -1)
+
+# Update controller
+GET      /jatos/releaseInfo                                                 @controllers.gui.Updates.getReleaseInfo(version:String ?= null, allowPreReleases:Boolean ?= false)
+GET      /jatos/cancelUpdate                                                @controllers.gui.Updates.cancelUpdate()
+GET      /jatos/downloadJatos                                               @controllers.gui.Updates.downloadJatos(dry:Boolean ?= false)
+GET      /jatos/updateAndRestart                                            @controllers.gui.Updates.updateAndRestart(backupAll:Boolean)
+
 # Tests controller
-GET      /jatos/test                                                        @controllers.gui.Tests.test(request: Request)
+GET      /jatos/test                                                        @controllers.gui.Tests.test()
 GET      /jatos/testDatabase                                                @controllers.gui.Tests.testDatabase()
 GET      /jatos/testStudyAssetsRootFolder                                   @controllers.gui.Tests.testStudyAssetsRootFolder()
 GET      /jatos/testCache                                                   @controllers.gui.Tests.testCache()
@@ -23,12 +37,6 @@ GET      /jatos                                                             @con
 GET      /jatos/                                                            @controllers.gui.Home.home()
 GET      /                                                                  @controllers.gui.Home.home()
 GET      /jatos/branding                                                    @controllers.gui.Home.branding()
-GET      /jatos/log                                                         @controllers.gui.Home.log(limit: Integer ?= 10000)
-GET      /jatos/releaseInfo                                                 @controllers.gui.Home.getReleaseInfo(version:String ?= null, allowPreReleases:Boolean ?= false)
-GET      /jatos/cancelUpdate                                                @controllers.gui.Home.cancelUpdate()
-GET      /jatos/downloadJatos                                               @controllers.gui.Home.downloadJatos(dry:Boolean ?= false)
-GET      /jatos/updateAndRestart                                            @controllers.gui.Home.updateAndRestart(backupAll:Boolean)
-GET      /jatos/status                                                      @controllers.gui.Home.status()
 
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager()
@@ -38,7 +46,8 @@ POST     /jatos/user/:username/profile                                      @con
 GET      /jatos/user/:username/userData                                     @controllers.gui.Users.singleUserData(username: String)
 POST     /jatos/user/passwordByUser                                         @controllers.gui.Users.changePasswordByAdmin(request: Request)
 POST     /jatos/user/passwordByAdmin                                        @controllers.gui.Users.changePasswordByUser(request: Request)
-POST     /jatos/user/:username/admin                                        @controllers.gui.Users.toggleAdmin(username: String, admin: Boolean)
+POST     /jatos/user/:username/properties/admin                             @controllers.gui.Users.toggleAdmin(username: String, admin: Boolean)
+POST     /jatos/user/:username/properties/active                            @controllers.gui.Users.toggleActive(username: String, active: Boolean)
 GET      /jatos/user/:username                                              @controllers.gui.Users.profile(username: String)
 # Play doesn't allow data in body in a DELETE request, so I use POST instead
 POST     /jatos/user/:username/delete                                       @controllers.gui.Users.remove(username: String)
@@ -54,7 +63,6 @@ GET      /jatos/:studyId/results                                            @con
 GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
 POST     /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove()
 GET      /jatos/studyResult/:studyResultId/componentResults                 @controllers.gui.StudyResults.tableDataComponentResultByStudyResult(studyResultId: Long)
-GET      /jatos/studyResults/status                                         @controllers.gui.StudyResults.status()
 GET      /jatos/:studyId/:componentId/tableData                             @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
 POST     /jatos/componentResult/delete                                      @controllers.gui.ComponentResults.remove(request: Request)
 GET      /jatos/componentResult/:componentResultId/data                     @controllers.gui.ComponentResults.tableDataComponentResultData(componentResultId: Long)
@@ -64,6 +72,7 @@ GET      /jatos/:studyId/:componentId/results                               @con
 POST     /jatos/study                                                       @controllers.gui.Studies.submitCreated()
 GET      /jatos/:studyId/properties                                         @controllers.gui.Studies.properties(studyId: Long)
 POST     /jatos/:studyId/properties                                         @controllers.gui.Studies.submitEdited(studyId: Long)
+POST     /jatos/:studyId/properties/active                                  @controllers.gui.Studies.toggleActive(studyId: Long, active: Boolean)
 POST     /jatos/:studyId/memberUser                                         @controllers.gui.Studies.toggleMemberUser(studyId: Long, username: String, isMember: Boolean)
 POST     /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.addAllMemberUsers(studyId: Long)
 DELETE   /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.removeAllMemberUsers(studyId: Long)

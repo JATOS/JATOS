@@ -116,7 +116,15 @@ public class AuthenticationAction extends Action<Authenticated> {
             return callForbiddenDueToInactivityTimeout(loggedInUser.getUsername());
         }
 
+        // Check user deactivated by admin
+        if (!loggedInUser.isActive()) {
+            authenticationService.clearSessionCookieAndSessionCache(
+                    ctx.session(), loggedInUser.getUsername(), ctx.request().remoteAddress());
+            return callForbiddenDueToUserDeactivated(loggedInUser.getUsername());
+        }
+
         authenticationService.refreshSessionCookie(ctx.session());
+        authenticationService.setLastSeen(loggedInUser.getUsername());
 
         // Check authorization
         if (!isAuthorized(loggedInUser)) {
@@ -176,6 +184,17 @@ public class AuthenticationAction extends Action<Authenticated> {
             return CompletableFuture.completedFuture(forbidden(msg));
         } else {
             FlashScopeMessaging.success(msg);
+            return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
+        }
+    }
+
+    private CompletionStage<Result> callForbiddenDueToUserDeactivated(String normalizedUsername) {
+        LOGGER.info("User " + normalizedUsername + " has been logged out because an admin deactivated this user.");
+        String msg = "Your user was deactivated by an admin.";
+        if (Helpers.isAjax()) {
+            return CompletableFuture.completedFuture(forbidden(msg));
+        } else {
+            FlashScopeMessaging.warning(msg);
             return CompletableFuture.completedFuture(redirect(controllers.gui.routes.Authentication.login()));
         }
     }

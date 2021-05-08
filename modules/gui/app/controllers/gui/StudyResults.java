@@ -335,15 +335,4 @@ public class StudyResults extends Controller {
         return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
     }
 
-    /**
-     * Ajax request
-     *
-     * Returns the last 5 finished and unfinished StudyResultStatus as JSON
-     */
-    @Transactional
-    @Authenticated(User.Role.ADMIN)
-    public Result status() {
-        return ok(JsonUtils.asJson(resultService.getStudyResultStatus()));
-    }
-
 }

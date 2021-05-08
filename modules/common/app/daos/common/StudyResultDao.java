@@ -7,15 +7,11 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static models.common.StudyResult.StudyState;
-
 /**
- * DAO for StudyResult entity
+ * DAO for StudyResult and StudyResultStatus
  *
  * @author Kristian Lange
  */
@@ -198,26 +194,32 @@ public class StudyResultDao extends AbstractDao {
                 .getResultList();
     }
 
-    public List<StudyResultStatus> findLastUnfinished(int count) {
+    /**
+     * Find the StudyResultStatus with the most recent startDate that belongs to the given study
+     */
+    public Optional<StudyResultStatus> findLastStarted(Study study) {
         String queryStr = "SELECT srs FROM StudyResultStatus srs "
-                + "WHERE srs.studyState in :studyStates "
+                + "WHERE srs.study = :study "
                 + "AND srs.startDate is not null "
-                + "AND srs.endDate is null "
                 + "ORDER BY srs.startDate desc";
-        TypedQuery<StudyResultStatus> query = jpa.em().createQuery(queryStr, StudyResultStatus.class);
-        query.setParameter("studyStates", Arrays.asList(StudyState.PRE, StudyState.STARTED, StudyState.DATA_RETRIEVED));
-        if (count != -1) query.setMaxResults(count);
-        return query.getResultList();
+        List<StudyResultStatus> resultList = jpa.em().createQuery(queryStr, StudyResultStatus.class)
+                .setParameter("study", study)
+                .setMaxResults(1)
+                .getResultList();
+        return !resultList.isEmpty() ? Optional.of(resultList.get(0)) : Optional.empty();
     }
 
-    public List<StudyResultStatus> findLastFinished(int count) {
+    /**
+     * Find the StudyResultStatus with the most recent lastSeen
+     */
+    public Optional<StudyResultStatus> findLastSeen() {
         String queryStr = "SELECT srs FROM StudyResultStatus srs "
-                + "WHERE srs.studyState in :studyStates "
-                + "ORDER BY srs.endDate desc";
-        TypedQuery<StudyResultStatus> query = jpa.em().createQuery(queryStr, StudyResultStatus.class);
-        query.setParameter("studyStates", Arrays.asList(StudyState.FINISHED, StudyState.FAIL, StudyState.ABORTED));
-        if (count != -1) query.setMaxResults(count);
-        return query.getResultList();
+                + "WHERE srs.lastSeenDate is not null "
+                + "ORDER BY srs.lastSeenDate desc";
+        List<StudyResultStatus> resultList = jpa.em().createQuery(queryStr, StudyResultStatus.class)
+                .setMaxResults(1)
+                .getResultList();
+        return !resultList.isEmpty() ? Optional.of(resultList.get(0)) : Optional.empty();
     }
 
 }

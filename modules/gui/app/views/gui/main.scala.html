@@ -262,10 +262,10 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
                     </a>
                 </li>
                 @if(loggedInUser.isAdmin()) {
-                <li data-toggle="tooltip" data-placement="bottom" title="Create or delete users and change their passwords">
-                    <a id="userManagerLink" href="@controllers.gui.routes.Users.userManager()">
-                        <span class="glyphicon glyphicon-user"></span>
-                        User Manager
+                <li>
+                    <a href="@controllers.gui.routes.Admin.administration()">
+                        <span class="glyphicon glyphicon-cog"></span>
+                        Administration
                     </a>
                 </li>
                 }

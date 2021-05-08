@@ -37,7 +37,12 @@ public class UserSession {
      * It is sorted so the oldest in the first position and the youngest in the
      * last.
      */
-    private final Instant[] loginTimes = {Instant.MIN, Instant.MIN, Instant.MIN, Instant.MIN};
+    private final Instant[] loginTimes = { Instant.MIN, Instant.MIN, Instant.MIN, Instant.MIN };
+
+    /**
+     * Time when the user did the last action
+     */
+    private Instant lastSeen = Instant.EPOCH;
 
     public UserSession(String username) {
         this.username = User.normalizeUsername(username);
@@ -67,6 +72,14 @@ public class UserSession {
         this.loginTimes[0] = loginTime;
         // Sort again so the oldest in the first position
         Arrays.sort(loginTimes);
+    }
+
+    public Instant getLastSeen() {
+        return lastSeen;
+    }
+
+    public void setLastSeen(Instant lastSeen) {
+        this.lastSeen = lastSeen;
     }
 
 }

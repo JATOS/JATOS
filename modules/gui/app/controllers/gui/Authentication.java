@@ -89,6 +89,7 @@ public class Authentication extends Controller {
         } else {
             authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername,
                     request.remoteAddress());
+            userService.setLastLogin(normalizedUsername);
             if (Helpers.isAjax()) {
                 return ok(" "); // jQuery.ajax cannot handle empty responses
             } else {
@@ -177,6 +178,7 @@ public class Authentication extends Controller {
         }
 
         authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername, request.remoteAddress());
+        userService.setLastLogin(normalizedUsername);
 
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }

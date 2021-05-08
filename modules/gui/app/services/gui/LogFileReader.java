@@ -1,13 +1,5 @@
 package services.gui;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-
-import javax.inject.Singleton;
-
-import org.apache.commons.io.input.ReversedLinesFileReader;
-
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.Status;
@@ -15,7 +7,12 @@ import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import general.common.Common;
-import general.common.MessagesStrings;
+import org.apache.commons.io.input.ReversedLinesFileReader;
+
+import javax.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * Class responsible for reading JATOS log files. It's not part of
@@ -33,7 +30,7 @@ public class LogFileReader {
     public Source<ByteString, ?> read(String filename, int lineLimit) {
         // Prepare a chunked text stream (I have no idea what I'm doing here -
         // https://www.playframework.com/documentation/2.5.x/JavaStream)
-        return Source.<ByteString>actorRef(lineLimit, OverflowStrategy.dropNew())
+        return Source.<ByteString>actorRef(256, OverflowStrategy.dropNew())
                 .mapMaterializedValue(sourceActor -> fillSource(sourceActor, filename, lineLimit));
     }
 
@@ -52,7 +49,7 @@ public class LogFileReader {
                 lineNumber++;
             }
         } catch (IOException e) {
-            sourceActor.tell(ByteString.fromString(MessagesStrings.COULDNT_OPEN_LOG), null);
+            sourceActor.tell(ByteString.fromString("Could not open log file '" + filename + "'"), null);
         } finally {
             sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
         }

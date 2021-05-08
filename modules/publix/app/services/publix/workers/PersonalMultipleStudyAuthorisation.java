@@ -20,6 +20,9 @@ public class PersonalMultipleStudyAuthorisation extends StudyAuthorisation<Perso
     @Override
     public void checkWorkerAllowedToStartStudy(PersonalMultipleWorker worker, Study study,
             Batch batch) throws ForbiddenPublixException {
+        if (!study.isActive()) {
+            throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
+        }
         if (!batch.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }

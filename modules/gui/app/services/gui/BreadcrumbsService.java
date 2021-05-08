@@ -22,7 +22,9 @@ public class BreadcrumbsService {
     public static final String HOME = "Home";
     public static final String RESULTS = "Results";
     public static final String WORKER_AND_BATCH_MANAGER = "Worker & Batch Manager";
+    public static final String ADMINISTRATION = "Administration";
     public static final String USER_MANAGER = "User Manager";
+    public static final String STUDIES = "Studies";
 
     public String generateForHome() {
         return generateForHome(null);
@@ -35,6 +37,19 @@ public class BreadcrumbsService {
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(HOME, "");
+        }
+        return asJson(breadcrumbs);
+    }
+
+    public String generateForAdministration(String last) {
+        Breadcrumbs breadcrumbs = new Breadcrumbs();
+        if (last != null) {
+            breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
+            breadcrumbs.addBreadcrumb(ADMINISTRATION, routes.Admin.administration().url());
+            breadcrumbs.addBreadcrumb(last, "");
+        } else {
+            breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
+            breadcrumbs.addBreadcrumb(ADMINISTRATION, "");
         }
         return asJson(breadcrumbs);
     }

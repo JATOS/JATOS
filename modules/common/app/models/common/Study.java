@@ -69,6 +69,13 @@ public class Study {
     private boolean locked = false;
 
     /**
+     * A deactivated study cannot be run by worker. A study can be deactivated by an admin, but not by the member users
+     * of the study (unless they are admin). It's meant to give admins the possibility to turn off studies that use to
+     * many resources. By default it's activated (true).
+     */
+    private boolean active = true;
+
+    /**
      * Is this study a group study (e.g. group members can send messages to each other)
      */
     @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
@@ -211,6 +218,14 @@ public class Study {
 
     public boolean isLocked() {
         return this.locked;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public boolean isGroupStudy() {

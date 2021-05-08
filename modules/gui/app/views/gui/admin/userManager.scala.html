@@ -2,22 +2,29 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<div class="btn-group">
-    <button id="createUserButton" type="button" class="btn btn-user">
-    New User <span class="glyphicon glyphicon-user"></span></button>
-</div>
-
 <table id="userTable" class="table top-buffer">
     <thead>
         <tr>
+            <th>Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user"></span></th>
+            <th>Active&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration."></span></th>
             <th>Username</th>
             <th>Name</th>
-            <th data-toggle="tooltip" data-placement="bottom" title="Authentication method, e.g. locally stored User or by LDAP">Auth</th>
-            <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can create/change/delete other users.">Admin Rights</th>
+            <th>Last Login&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user"></span></th>
+            <th>Auth&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google"></span></th>
+            <th>Admin Rights&nbsp;<span class="glyphicon glyphicon-info-sign gray-light"  data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies."></span></th>
             <th></th>
         </tr>
     </thead>
 </table>
+
+<!-- Template for active toggle button in User's row -->
+<div id="activeToggleButtonDiv" style="display: none">
+    <div class="tooltipWrapper" data-title="">
+        <button type="button" class="btn btn-default activeButton">
+            <span class="glyphicon glyphicon-ok"></span>
+        </button>
+    </div>
+</div>
 
 <!-- Template for admin toggle button in User's row -->
 <div id="userAdminToggleButtonDiv" style="display: none">
@@ -32,12 +39,12 @@
 <div id="userToolbarDiv" style="display: none">
     <div class="userBtnGroup btn-group" role="group">
         <div class="userChangePasswordTooltip btn-group" data-title="">
-            <button type="button" class="userChangePasswordButton btn btn-user">
+            <button type="button" class="userChangePasswordButton btn btn-admin">
                 Change Password <span class="glyphicon glyphicon-lock"></span>
             </button>
         </div>
         <div class="userDeleteTooltip btn-group" role="group" data-title="">
-            <button type="button" class="userDeleteButton btn btn-user">
+            <button type="button" class="userDeleteButton btn btn-admin">
                 Delete <span class="glyphicon glyphicon-remove"></span>
             </button>
         </div>
@@ -72,7 +79,7 @@
 
                     <div class="form-group row">
                         <label class="text-right col-xs-4">
-                            Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users."></span>
+                            Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can e.g. create/change/delete other users and deactivate studies."></span>
                         </label>
                         <div class="col-xs-8">
                             <input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
@@ -112,7 +119,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-user" value="Create">
+                    <input type="submit" class="confirmed btn btn-admin" value="Create">
                 </div>
             </form>
         </div>
@@ -149,7 +156,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-user" value="Change">
+                    <input type="submit" class="confirmed btn btn-admin" value="Change">
                 </div>
             </form>
         </div>
@@ -186,7 +193,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-user" value="Delete">
+                    <input type="submit" class="confirmed btn btn-admin" value="Delete">
                 </div>
             </form>
         </div>
@@ -199,6 +206,7 @@ var userTable = $('#userTable').DataTable({
     "ajax": {
         "type": "GET",
         "url" : '@controllers.gui.routes.Users.allUserData()',
+        "dataSrc": "",
         "error": function (err) {
             if (err.responseText) {
                 showError(err.responseText);
@@ -207,8 +215,8 @@ var userTable = $('#userTable').DataTable({
             }
         }
     },
-    "dom": 'lftip',
-    "order": [[ 0, "asc" ]],
+    "dom": 'B<br>lfrtip',
+    "order": [[ 2, "asc" ]],
     "pageLength": 10,
     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
     "columnDefs": [
@@ -218,14 +226,47 @@ var userTable = $('#userTable').DataTable({
         }
     ],
     "columns": [
-        { "data": "username" },
-        { "data": "name" },
         {
-            "class": "text-center",
-            "data": "authMethod",
+            "class": 'details-control studyCount',
+            "width": "1px",
+            "orderable": false,
+            "data": "studyCount",
+            "render": function (data, type, full, meta) {
+                return '<button type="button" class="btn btn-admin collapseStudiesData" data-toggle="tooltip"' +
+                    'data-placement="bottom" title="Show/hide studies">' +
+                    '<span class="badge">' + data + '</span>&nbsp;' +
+                    '<span class="glyphicon glyphicon-chevron-right"></span></button>';
+            }
+        },
+        {
+            "data": null,
+            "defaultContent": '',
             "width": "1px",
             "orderable": false,
             "searchable": false,
+            "render": function (data, type, full, meta) {
+                var buttonDiv = $('#activeToggleButtonDiv :first-child').clone();
+                setActiveButton(buttonDiv, data.active, data.username);
+                return buttonDiv.prop('outerHTML');
+            }
+        },
+        {
+            "class": "username",
+            "data": "username"
+        },
+        {
+            "class": "name",
+            "data": "name"
+        },
+        {
+            "class": "lastLogin",
+            "data": "lastLogin"
+        },
+        {
+            "class": "text-center authMethod",
+            "data": "authMethod",
+            "width": "1px",
+            "orderable": false,
             "render": function (authMethod, type, full, meta) {
                 switch(authMethod) {
                     case "@{common.User.AuthMethod.DB.name()}": return "local";
@@ -262,7 +303,62 @@ var userTable = $('#userTable').DataTable({
                 return toolbar.html();
             }
         }
-    ]
+    ],
+    "buttons": [
+        {
+            "text": '<span class="glyphicon glyphicon-user"></span>&nbsp;New&nbsp;User',
+            attr:  {
+                id: 'createUserButton'
+            },
+            "className": "btn btn-admin",
+            "titleAttr": 'Create a new user'
+        },
+        {
+            "extend": 'collection',
+            "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;<span class="caret"></span>',
+            "className": "btn btn-admin",
+            "titleAttr": 'Export table data',
+            "buttons": [
+                {
+                    "extend": 'csv',
+                    "text": "Usernames",
+                    "filename": function() { return "jatos_usernames_" + moment().format("YYYYMMDDHHmmss") },
+                    "titleAttr": 'Export usernames',
+                    "exportOptions": {
+                        "columns": '.username'
+                    },
+                    "action": function(e, dt, node, config) {
+                        $("ul.dropdown-menu").hide();
+                        $('#waitingModal').modal('show');
+                        setTimeout(function(){
+                            $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                            $('#waitingModal').modal('hide');
+                        }, 1000);
+                    }
+                },
+                {
+                    "extend": 'csv',
+                    "text": "All",
+                    "filename": function() { return "jatos_user_all_" + moment().format("YYYYMMDDHHmmss") },
+                    "titleAttr": 'Export all user data',
+                    "exportOptions": {
+                        "columns": '.username, .name, .lastLogin, .authMethod'
+                    },
+                    "action": function(e, dt, node, config) {
+                        $("ul.dropdown-menu").hide();
+                        $('#waitingModal').modal('show');
+                        setTimeout(function(){
+                            $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                            $('#waitingModal').modal('hide');
+                        }, 1000);
+                    }
+                }
+            ]
+        }
+    ],
+    "drawCallback": function( settings ) {
+        setButtonWidthToMax("button.collapseStudiesData");
+    }
 });
 
 $('#createUserButton').click(function(event) {
@@ -305,12 +401,116 @@ $("#createUserForm").submit(function(event) {
     });
 });
 
+$('#userTable tbody').on('click', 'td.details-control', function() {
+    var tr = $(this).closest('tr');
+    var row = userTable.row(tr);
+    if (row.child.isShown()) {
+        $('div.slider', row.child()).slideUp( function () {
+            row.child.hide();
+            tr.removeClass('shown');
+        });
+    } else {
+        var username = row.data().username;
+        $.ajax({
+            url : "@{general.common.Common.getPlayHttpContext()}jatos/studiesData?username=" + username,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+        }).done(function(result) {
+            var childRow = generateStudiesChildRow(result, username);
+            row.child(childRow).show();
+            tr.addClass('shown');
+            tr.next().addClass('info');
+            $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
+            $('div.slider', row.child()).slideDown();
+        }).fail(function(err) {
+            showError(err.responseText);
+        });
+    }
+    $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+            .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+});
+
+function generateStudiesChildRow(studiesData, username) {
+    var childRow = $('<div class="slider" style="display: none">'
+        + '<table class="table" cellpadding="10" cellspacing="0" border="0">'
+        + '<tr class="info header">'
+        + '<td><b>Study ID</b></td>'
+        + '<td><b>Study Title</b></td>'
+        + '<td><b>All Members <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></b></td>'
+        + '<td><b>Result Count <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></b></td>'
+        + '<td><b>Study Assets Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the study assets folder of this study"></span></b></td>'
+        + '<td><b>Result Data Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data stored in the database by this study"></span></b></td>'
+        + '<td><b>Result File Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of all uploaded result files by this study"></span></b></td>'
+        + '<td><b>Last Started <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="When was this study last started by a participant?"></span></b></td>'
+        + '</tr>'
+        + '</table>'
+        + '</div>');
+
+    if (studiesData.length == 0) {
+        var row = $('<tr class="info"><td colspan="8">empty</td></tr>');
+        childRow.find("tr").after(row);
+        return childRow;
+    }
+
+    studiesData.forEach(function(studyData) {
+        var memberList;
+        if (studyData.members.length < 4 ) {
+            memberList = studyData.members.join("<br>");
+        } else {
+            memberList = '<a href="#" data-toggle="popover" data-trigger="focus" data-container="body" '
+                    + 'data-html="true" data-content="' + studyData.members.join("<br>") + '">show all</a>';
+        }
+        var row = $('<tr class="info">'
+            + '<td>' + studyData.id + '</td>'
+            + '<td>' + studyData.title + '</td>'
+            + '<td>' + memberList + '</td>'
+            + '<td>' + studyData.studyResultCount + '</td>'
+            + '<td>' + studyData.studyAssetsSize.display + '</td>'
+            + '<td>' + studyData.resultDataSize.display + '</td>'
+            + '<td>' + studyData.resultFileSize.display + '</td>'
+            + '<td>' + studyData.lastStarted + '</td>'
+            + '</tr>');
+        childRow.find("tr").last().after(row);
+    });
+
+    return childRow;
+}
+
+function setActiveButton(buttonDiv, active, username) {
+    var button = $(buttonDiv).children("button:first");
+    if (active) {
+        button.removeClass('btn-default');
+        button.addClass('btn-admin');
+        button.addClass('active');
+        if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+            button.attr('disabled', true);
+            buttonDiv.attr('title', "It is not possible to deactivate user 'admin'.");
+        } else if (username == "@loggedInUser.getUsername()") {
+            button.attr('disabled', true);
+            buttonDiv.attr('title', "You cannot deactivate yourself. Only another user with admin rights can do it.");
+        } else {
+            buttonDiv.attr('title', "Click to deactivate this user");
+        }
+        button.html($(button.html())
+                .removeClass('glyphicon-remove')
+                .addClass('glyphicon-ok').prop('outerHTML'));
+    } else {
+        button.removeClass('btn-admin');
+        button.removeClass('active');
+        button.addClass('btn-default');
+        buttonDiv.attr('title', "Click to activate this user");
+        button.html($(button.html())
+                .removeClass('glyphicon-ok')
+                .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+}
+
 function setAdminButton(buttonDiv, adminRole, username) {
     var button = $(buttonDiv).children("button:first");
     if (adminRole) {
         button.addClass('adminRole');
         button.removeClass('btn-default');
-        button.addClass('btn-user');
+        button.addClass('btn-admin');
         // Special treatment of admin users
         if (username == "@services.gui.UserService.ADMIN_USERNAME") {
             button.attr('disabled', true);
@@ -326,7 +526,7 @@ function setAdminButton(buttonDiv, adminRole, username) {
                 .addClass('glyphicon-ok').prop('outerHTML'));
     } else {
         button.removeClass('adminRole');
-        button.removeClass('btn-user');
+        button.removeClass('btn-admin');
         button.addClass('btn-default');
         buttonDiv.attr('title', "Click to grant admin rights to this user");
         button.html($(button.html())
@@ -361,8 +561,24 @@ function setUserToolbar(toolbar, username, authMethod) {
         toolbar.find('.userChangePasswordButton').attr('disabled', true);
         toolbar.find('.userChangePasswordTooltip').attr('title', "Not a locally stored User (e.g. authenticated by LDAP or Google)");
     }
-
 }
+
+$('#userTable tbody').on('click', '.activeButton', function() {
+    var button = this;
+    var tr = $(this).closest('tr');
+    var user = userTable.row(tr).data();
+    var active = $(this).hasClass('active');
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/properties/active?active=" + !active,
+        type : "POST",
+        success: function() {
+            setActiveButton($(button).parent(), !active, user.username);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
 
 $('#userTable tbody').on('click', '.adminButton', function() {
     var button = this;
@@ -370,10 +586,10 @@ $('#userTable tbody').on('click', '.adminButton', function() {
     var user = userTable.row(tr).data();
     var adminRole = $(this).hasClass('adminRole');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/admin?admin=" + !adminRole,
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/properties/admin?admin=" + !adminRole,
         type : "POST",
         success: function(adminRole) {
-            setAdminButton($(button).parent(), adminRole);
+            setAdminButton($(button).parent(), adminRole, user.username);
         },
         error : function(err) {
             showError(err.responseText);

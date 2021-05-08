@@ -16,9 +16,7 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
@@ -200,34 +198,6 @@ public class ResultService {
             boolean isLastResult = (j + 1) >= resultList.size();
             if (!isLastPage || !isLastResult) {
                 sourceActor.tell(ByteString.fromString(",\n"), ActorRef.noSender());
-            }
-        }
-    }
-
-    /**
-     * Returns the last 5 finished and unfinished StudyResultStatus
-     */
-    public Map<String, Object> getStudyResultStatus() {
-        Map<String, Object> studyResultStatus = new HashMap<>();
-
-        List<StudyResultStatus> lastUnfinishedStudyResults = studyResultDao.findLastUnfinished(5);
-        fillUsers(lastUnfinishedStudyResults);
-        studyResultStatus.put("lastUnfinishedStudyResults", lastUnfinishedStudyResults);
-
-        List<StudyResultStatus> lastFinishedStudyResults = studyResultDao.findLastFinished(5);
-        fillUsers(lastFinishedStudyResults);
-        studyResultStatus.put("lastFinishedStudyResults", lastFinishedStudyResults);
-
-        return studyResultStatus;
-    }
-
-    /**
-     * Adds the user's name and username to the given list of StudyResultStatus
-     */
-    private void fillUsers(List<StudyResultStatus> lastUnfinishedStudyResults) {
-        for (StudyResultStatus srs : lastUnfinishedStudyResults) {
-            for (User user : srs.getStudy().getUserList()) {
-                srs.addUser(user.getName() + " (" + user.getUsername() + ")");
             }
         }
     }

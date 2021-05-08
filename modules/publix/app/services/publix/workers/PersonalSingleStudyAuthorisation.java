@@ -28,6 +28,9 @@ public class PersonalSingleStudyAuthorisation extends StudyAuthorisation<Persona
     @Override
     public void checkWorkerAllowedToStartStudy(PersonalSingleWorker worker, Study study,
             Batch batch) throws ForbiddenPublixException {
+        if (!study.isActive()) {
+            throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
+        }
         if (!batch.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }
