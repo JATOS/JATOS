@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.Application;
+import play.mvc.Http;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -79,6 +80,9 @@ public class Common {
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
+    private static boolean studyMembersAllowedToAddAllUsers;
+    private static boolean idCookiesSecure;
+    private static Http.Cookie.SameSite idCookiesSameSite;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -90,7 +94,8 @@ public class Common {
                     "^(?=.*?[A-Za-z])(?=.*?[0-9]).{2,}$"),
             Pair.of("At least one Latin letter, one number and one special character (#?!@$%^&*-).",
                     "^(?=.*?[A-Za-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{3,}$"),
-            Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special character (#?!@$%^&*-).",
+            Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special "
+                            + "character (#?!@$%^&*-).",
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
     @Inject
@@ -134,6 +139,9 @@ public class Common {
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
+        studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
+        idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
+        idCookiesSameSite = fillIdCookiesSameSite(config);
     }
 
     private String fillBasePath(Application application) {
@@ -206,6 +214,17 @@ public class Common {
             LOGGER.info("Couldn't get network MAC address for study log");
         }
         return macStr;
+    }
+
+    private Http.Cookie.SameSite fillIdCookiesSameSite(Config config) {
+        String idCookiesSameSiteRaw = config.getString("jatos.idCookies.sameSite");
+        if (idCookiesSameSiteRaw.equalsIgnoreCase("lax")) {
+            return Http.Cookie.SameSite.LAX;
+        } else if (idCookiesSameSiteRaw.equalsIgnoreCase("strict")) {
+            return Http.Cookie.SameSite.STRICT;
+        } else {
+            return null; // Play doesn't support SameSite.None yet
+        }
     }
 
     /**
@@ -442,5 +461,26 @@ public class Common {
      */
     public static String getBrandingUrl() {
         return brandingUrl;
+    }
+
+    /**
+     * If true, it's allowed to add all users that exist on this JATOS server to be added at once as members of a study
+     */
+    public static boolean isStudyMembersAllowedToAddAllUsers() {
+        return studyMembersAllowedToAddAllUsers;
+    }
+
+    /**
+     * If true, the ID cookies' secure attribute will be set
+     */
+    public static boolean isIdCookiesSecure() {
+        return idCookiesSecure;
+    }
+
+    /**
+     * Which SameSite attribute the ID cookies should set
+     */
+    public static Http.Cookie.SameSite getIdCookiesSameSite() {
+        return idCookiesSameSite;
     }
 }
