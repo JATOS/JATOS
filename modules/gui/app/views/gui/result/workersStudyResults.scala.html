@@ -123,7 +123,7 @@ $(document).ready(function() {
         },
         "dom": '<"pull-right"B>lfrtip',
         "order": [[ 2, "desc" ]],
-        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        "lengthMenu": [[10, 25, 50, 100, 250, 500, 1000, 2500, -1], [10, 25, 50, 100, 250, 500, 1000, 2500, "All"]],
         "pageLength": 10,
         "stateSave": true,
         "stateSaveParams": function (settings, data) {
@@ -247,6 +247,15 @@ $(document).ready(function() {
                 "text": "Select All",
                 "className": "btn btn-study",
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
+            },
+            {
+                "extends": "selectAll",
+                "text": "Select Visible",
+                "className": "btn btn-study",
+                "action": function(e, dt, node, config) {
+                    dt.rows({ page: 'current' }).select();
+                },
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_VISIBLE'
             },
             {
                 "extends": "selectAll",
