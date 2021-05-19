@@ -100,4 +100,21 @@ public class ComponentResultDao extends AbstractDao {
         return result != null ? result.longValue() : 0;
     }
 
+    /**
+     * Returns a list of component result IDs that belong to the given list of study result IDs. The order of the
+     * study results is kept, e.g. if the study result IDs are sr1, sr2, sr3 - then in the returned list are first all
+     * component result IDs of sr1, then all of sr2, and last all of sr3.
+     */
+    public List<Long> findIdsByStudyResultIds(List<Long> studyResultIds) {
+        // We need 'ORDER BY FIELD' to keep the order of the study results
+        @SuppressWarnings("unchecked")
+        List<Number> list = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr "
+                        + "WHERE cr.studyResult_id IN :ids "
+                        + "ORDER BY FIELD(cr.studyResult_id, :ids)")
+                .setParameter("ids", studyResultIds)
+                .getResultList();
+        return list.stream().map(Number::longValue).collect(Collectors.toList());
+    }
+
 }

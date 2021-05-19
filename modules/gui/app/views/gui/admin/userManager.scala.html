@@ -462,7 +462,8 @@ function generateStudiesChildRow(studiesData, username) {
         if (studyData.members.length < 4 ) {
             memberList = studyData.members.join("<br>");
         } else {
-            memberList = '<a href="#" data-toggle="popover" data-trigger="focus" data-container="body" '
+            memberList = '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
+                    + 'data-trigger="focus" data-container="body" '
                     + 'data-html="true" data-content="' + studyData.members.join("<br>") + '">show all</a>';
         }
         var row = $('<tr class="info">'

@@ -32,45 +32,72 @@
             <span class="glyphicon glyphicon-info-sign"></span>&nbsp;System Info
         </button>
     </div>
+
+    <div class="well well-sm pull-right">Server Time - <span class="serverTime text-xl"></span></div>
 </div>
 
-<div id="updateJatos" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
-    <p id="updateJatosMsg"></p>
+<div id="updateJatos" class="well text-center hidden-xs hidden-sm" style="display: none">
+    <div class="text-xl" id="updateJatosMsg"></div>
     <button class="btn btn-default updateJatosButton" role="button" style="display: none">Update</button>
     <button class="btn btn-default releaseNotesButton" role="button" style="display: none">Release Notes</button>
 </div>
 
-<div id="jatosStatus" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
-    <div class="col-sm-3">
-        Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of studies (aka experiments) on this JATOS server"></span><br>
-        <span class="text-xl value"></span>
-    </div>
-    <div class="col-sm-3">
-        Study Results&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all study results on this JATOS server - How many studies were run so far?"></span><br>
-        <span class="text-xl value"></span>
-    </div>
-    <div class="col-sm-3">
-        Workers&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all workers (aka participants) of all studies on this JATOS server"></span><br>
-        <span class="text-xl value"></span>
-    </div>
-    <div class="col-sm-3">
-        Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all users (aka experimenters) on this JATOS server"></span><br>
-        <span class="text-xl value"></span>
+<div id="jatosStatus" class="well text-center hidden-xs hidden-sm">
+    <div class="row">
+        <div class="col-sm-3">
+            Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of studies (aka experiments) on this JATOS server"></span><br>
+            <span class="text-xl value"></span>
+        </div>
+        <div class="col-sm-3">
+            Study Results&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all study results on this JATOS server - How many studies were run so far?"></span><br>
+            <span class="text-xl value"></span>
+        </div>
+        <div class="col-sm-3">
+            Workers&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all workers (aka participants) of all studies on this JATOS server"></span><br>
+            <span class="text-xl value"></span>
+        </div>
+        <div class="col-sm-3">
+            Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all users (aka experimenters) on this JATOS server"></span><br>
+            <span class="text-xl value"></span>
+        </div>
     </div>
 </div>
 
-<div id="jatosLastActivityStatus" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
-    <div class="col-sm-4">
-        Last User Activity&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Time of the last activity of any user other than the logged in one"></span><br>
-        <span class="text-xl value"></span>
-    </div>
-    <div class="col-sm-4">
-        Last Worker Activity&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Time of the last activity of any worker"></span><br>
-        <span class="text-xl value"></span>
-    </div>
-    <div class="col-sm-4">
-        Server Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Current time in JATOS"></span><br>
-        <span class="text-xl value"></span>
+<div id="jatosLatestUserAndStudyRunStatus" class="well hidden-xs hidden-sm" style="display: none">
+    <div class="row">
+        <div class="latestUsers col-sm-6">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the logged-in user)"></span></h3>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Username</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="latestStudyRuns col-sm-6">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h3 class="panel-title">Latest Study Runs&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 studies that were active last"></span></h3>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Study Name</th>
+                            <th>Members</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -429,15 +456,47 @@ function getJatosStatus() {
             $("#jatosStatus div:nth-child(3) .value").text(status.workerCount);
             $("#jatosStatus div:nth-child(4) .value").text(status.userCount);
             $("#jatosStatus").show();
-            $("#jatosLastActivityStatus div:nth-child(1) .value").text(status.lastUserActivityTime);
-            $("#jatosLastActivityStatus div:nth-child(2) .value").text(status.lastWorkerActivityTime);
-            $("#jatosLastActivityStatus div:nth-child(3) .value").text(status.serverTime);
-            $("#jatosLastActivityStatus").show();
+            $("#adminToolbar .serverTime").text(status.serverTime);
+            $("#jatosLatestUserAndStudyRunStatus .latestUsers .table > tbody:last-child").append(fillLatestUsers(status.latestUsers));
+            $("#jatosLatestUserAndStudyRunStatus .latestStudyRuns .table > tbody:last-child").append(fillLatestStudyRuns(status.latestStudyRuns));
+            $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
+            $("#jatosLatestUserAndStudyRunStatus").show();
         },
         error: function () {
             console.warn("Couldn't get JATOS status.");
         }
     });
+}
+
+function fillLatestUsers(latestUsers) {
+    var htmlArray = [];
+    latestUsers.forEach(function(e) {
+        htmlArray.push("<tr>");
+        htmlArray.push("<td>" + e.time + "</td>");
+        htmlArray.push("<td>" + e.username + "</td>");
+        htmlArray.push("</tr>");
+    });
+    return htmlArray.join("");
+}
+
+function fillLatestStudyRuns(latestStudyRuns) {
+    var htmlArray = [];
+    latestStudyRuns.forEach(function(e) {
+        var memberList;
+        if (e.members.length < 4 ) {
+            memberList = e.members.join("<br>");
+        } else {
+            memberList = '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
+                    + 'data-trigger="focus" data-container="body" '
+                    + 'data-html="true" data-placement="left" data-content="' + e.members.join("<br>") + '">show all</button>';
+        }
+        htmlArray.push("<tr>");
+        htmlArray.push("<td>" + e.time + "</td>");
+        htmlArray.push("<td>" + e.studyTitle + "</td>");
+        htmlArray.push("<td>" + memberList + "</td>");
+        htmlArray.push("</tr>");
+    });
+    return htmlArray.join("");
 }
 
 $('#applicationLog, #loaderLog, #updateLog').on('click', function() {

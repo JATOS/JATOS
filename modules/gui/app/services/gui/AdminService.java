@@ -79,21 +79,40 @@ public class AdminService {
     }
 
     /**
-     * Gets the time of the last activity of ALL users except the logged in one. If non of the users exist in the
-     * cache (never logged in) it returns Instant.EPOCH.
+     * Gets the last seen time of users that were active latest, except the logged in one. It is limited to 'limit'
+     * latest users. If non of the users exist in the cache (never logged in) it returns Instant.EPOCH.
      */
-    public Instant getLastUserActivityTime() {
+    public List<Map<String, String>> getLatestUsers(int limit) {
         List<String> normalizedUsernameList = userDao.findAll().stream()
                 .map(User::getUsername)
                 .filter(u -> !u.equals(authenticationService.getLoggedInUser().getUsername()))
                 .collect(Collectors.toList());
 
-        Instant lastSeen = Instant.EPOCH;
+        Map<String, Instant> lastSeenMap = new HashMap<>();
         for (String normalizedUsername : normalizedUsernameList) {
-            Instant l = userSessionCacheAccessor.getLastSeen(normalizedUsername);
-            if (l.isAfter(lastSeen)) lastSeen = l;
+            Instant lastSeen = userSessionCacheAccessor.getLastSeen(normalizedUsername);
+            lastSeenMap.put(normalizedUsername, lastSeen);
         }
-        return lastSeen;
+
+        List<Map<String, String>> lastSeenMapOrdered = lastSeenMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(limit)
+                .map(e -> ImmutableMap.of(
+                        "username", e.getKey(),
+                        "time", Helpers.formatTimestamp(Date.from(e.getValue()))))
+                .collect(Collectors.toList());
+        return lastSeenMapOrdered;
+    }
+
+    public List<Map<String, Object>> getLatestStudyRuns(int limit) {
+        // todo never?
+        return studyResultDao.findLastSeen(limit).stream()
+                .map(srs -> ImmutableMap.of(
+                        "studyTitle", srs.getStudy().getTitle(),
+                        "time", Helpers.formatTimestamp(srs.getLastSeenDate()),
+                        "members", srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
+                .collect(Collectors.toList());
+
     }
 
 }

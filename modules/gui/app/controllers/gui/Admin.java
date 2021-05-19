@@ -6,7 +6,6 @@ import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import general.common.JatosUpdater;
 import models.common.User;
 import models.common.User.Role;
 import play.db.jpa.Transactional;
@@ -42,14 +41,12 @@ public class Admin extends Controller {
     private final UserDao userDao;
     private final WorkerDao workerDao;
     private final LogFileReader logFileReader;
-    private final JatosUpdater jatosUpdater;
     private final AdminService adminService;
 
     @Inject
     Admin(AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao, StudyResultDao studyResultDao,
-            UserDao userDao, WorkerDao workerDao, LogFileReader logFileReader,
-            JatosUpdater jatosUpdater, AdminService adminService) {
+            UserDao userDao, WorkerDao workerDao, LogFileReader logFileReader, AdminService adminService) {
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
@@ -57,7 +54,6 @@ public class Admin extends Controller {
         this.userDao = userDao;
         this.workerDao = workerDao;
         this.logFileReader = logFileReader;
-        this.jatosUpdater = jatosUpdater;
         this.adminService = adminService;
     }
 
@@ -98,12 +94,8 @@ public class Admin extends Controller {
         map.put("workerCount", workerDao.count());
         map.put("userCount", userDao.count());
         map.put("serverTime", Helpers.formatTimestamp(new Date()));
-        map.put("lastUserActivityTime",
-                Helpers.formatTimestamp(Date.from(adminService.getLastUserActivityTime())));
-        String lastWorkerActivityTime = studyResultDao.findLastSeen().map(
-                studyResultStatus -> Helpers.formatTimestamp(studyResultStatus.getLastSeenDate())).orElse(
-                "never");
-        map.put("lastWorkerActivityTime", lastWorkerActivityTime);
+        map.put("latestUsers", adminService.getLatestUsers(10));
+        map.put("latestStudyRuns", adminService.getLatestStudyRuns(10));
         return ok(JsonUtils.asJson(map));
     }
 

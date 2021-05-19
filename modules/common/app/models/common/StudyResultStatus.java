@@ -1,14 +1,11 @@
 package models.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * DB Entity and JSON model representing the status of a StudyResult. The status is used in JATOS status view and
@@ -18,7 +15,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "StudyResult")
-@JsonPropertyOrder(value = { "id", "startDate", "lastSeenDate", "studyState", "userList" })
+@JsonPropertyOrder(value = { "id", "startDate", "lastSeenDate", "studyState" })
 public class StudyResultStatus {
 
     @Id
@@ -55,13 +52,6 @@ public class StudyResultStatus {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "study_id")
     private Study study;
-
-    /**
-     * List of user Strings containing the User's name and username of all Users that are members of the Study that this
-     * StudyResult belongs to.
-     */
-    @Transient
-    private List<String> users = new ArrayList<>();
 
     public StudyResultStatus() {
     }
@@ -112,19 +102,6 @@ public class StudyResultStatus {
 
     public void setStudy(Study study) {
         this.study = study;
-    }
-
-    public void setUsers(List<String> users) {
-        this.users = users;
-    }
-
-    public void addUser(String user) {
-        this.users.add(user);
-    }
-
-    @JsonGetter("users")
-    public List<String> getUsers() {
-        return users;
     }
 
     @Override

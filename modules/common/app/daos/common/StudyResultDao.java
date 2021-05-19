@@ -212,14 +212,13 @@ public class StudyResultDao extends AbstractDao {
     /**
      * Find the StudyResultStatus with the most recent lastSeen
      */
-    public Optional<StudyResultStatus> findLastSeen() {
+    public List<StudyResultStatus> findLastSeen(int limit) {
         String queryStr = "SELECT srs FROM StudyResultStatus srs "
                 + "WHERE srs.lastSeenDate is not null "
                 + "ORDER BY srs.lastSeenDate desc";
-        List<StudyResultStatus> resultList = jpa.em().createQuery(queryStr, StudyResultStatus.class)
-                .setMaxResults(1)
+        return jpa.em().createQuery(queryStr, StudyResultStatus.class)
+                .setMaxResults(limit)
                 .getResultList();
-        return !resultList.isEmpty() ? Optional.of(resultList.get(0)) : Optional.empty();
     }
 
 }

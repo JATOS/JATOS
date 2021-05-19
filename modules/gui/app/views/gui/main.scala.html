@@ -15,7 +15,7 @@
 <script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.5.1.min.js")"></script>
 <script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/moment.min.js")"></script>
 <script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/popper.min.js")"></script>
-<script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/ponyfill.min.js")"></script>
+<script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/web-streams-3.0.3-ponyfill.min.js")"></script>
 <script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/StreamSaver.min.js")"></script>
 <script src="@routes.Assets.versioned("lib/jatos-gui/showdown-1.9.0/showdown.min.js")"></script>
 <script src="@routes.Assets.versioned("lib/jatos-gui/ace-1.4.2/ace.js")"></script>
@@ -33,6 +33,7 @@
 
 <body>
 <script>
+
 function showSuccess(msg, insertAfterElem, allowHtml = false) {
     msg = allowHtml ? msg : $($.parseHTML(msg)).text();
     var html = '<div class="alert alert-success alert-dismissible" role="alert">'
@@ -476,9 +477,8 @@ $(document).on('show.bs.modal', '.modal', function() {
     }, 0);
 });
 
-
-
 function downloadFileStreaming(url, postData, filename) {
+
     // https://jimmywarting.github.io/StreamSaver.js/examples/fetch.html
     const fileStream = streamSaver.createWriteStream(filename);
     var init;
@@ -512,7 +512,7 @@ function downloadFileStreaming(url, postData, filename) {
         window.writer = fileStream.getWriter();
         const reader = res.body.getReader();
         const pump = function() {
-            reader.read().then(function (res) {
+            reader.read().then(function(res) {
                 if (res.done) {
                     writer.close();
                     hideWaitingModal();

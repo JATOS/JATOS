@@ -1,9 +1,5 @@
 package controllers.gui;
 
-import akka.NotUsed;
-import akka.actor.ActorRef;
-import akka.actor.Status;
-import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
@@ -29,10 +25,8 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
@@ -131,15 +125,8 @@ public class ComponentResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultService.fetchComponentResultsPaginatedAndWriteIntoActor(sourceActor, component);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
-        return ok().chunked(source).as("text/html; charset=utf-8");
+        Source<ByteString, ?> dataSource = resultService.streamComponentResults(component);
+        return ok().chunked(dataSource).as("text/html; charset=utf-8");
     }
 
     /**

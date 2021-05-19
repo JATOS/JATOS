@@ -1,9 +1,5 @@
 package controllers.gui;
 
-import akka.NotUsed;
-import akka.actor.ActorRef;
-import akka.actor.Status;
-import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
@@ -18,8 +14,6 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import models.common.*;
-import models.common.workers.MTSandboxWorker;
-import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -33,7 +27,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
@@ -200,14 +193,7 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultService.fetchStudyResultsByStudyPaginatedAndWriteIntoActor(sourceActor, study);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
+        Source<ByteString, ?> source = resultService.streamStudyResultsByStudy(study);
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
@@ -230,33 +216,7 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Source<ByteString, ?> source;
-        if (workerType.isEmpty()) {
-            source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                    .mapMaterializedValue(sourceActor -> {
-                        CompletableFuture.runAsync(() -> {
-                            resultService.fetchStudyResultsByBatchPaginatedAndWriteIntoActor(sourceActor, batch);
-                            sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                        });
-                        return sourceActor;
-                    });
-        } else {
-            source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                    .mapMaterializedValue(sourceActor -> {
-                        CompletableFuture.runAsync(() -> {
-                            resultService.fetchStudyResultsByBatchAndWorkerTypePaginatedAndWriteIntoActor(
-                                    sourceActor, batch, workerType.get());
-                            // If worker type is MT then add MTSandbox on top
-                            if (MTWorker.WORKER_TYPE.equals(workerType.get())) {
-                                resultService.fetchStudyResultsByBatchAndWorkerTypePaginatedAndWriteIntoActor(
-                                        sourceActor, batch, MTSandboxWorker.WORKER_TYPE);
-                            }
-                            sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                        });
-                        return sourceActor;
-                    });
-        }
-
+        Source<ByteString, ?> source = resultService.streamStudyResultsByBatch(workerType, batch);
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
@@ -278,14 +238,7 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultService.fetchStudyResultsByGroupPaginatedAndWriteIntoActor(sourceActor, groupResult);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
+        Source<ByteString, ?> source = resultService.streamStudyResultsByGroup(groupResult);
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
 
@@ -305,15 +258,7 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultService
-                                .fetchStudyResultsByWorkerPaginatedAndWriteIntoActor(sourceActor, worker, loggedInUser);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
+        Source<ByteString, ?> source = resultService.streamStudyResultsByWorker(loggedInUser, worker);
         return ok().chunked(source).as("text/html; charset=utf-8");
     }
 

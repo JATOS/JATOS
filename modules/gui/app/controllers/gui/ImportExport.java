@@ -1,10 +1,6 @@
 package controllers.gui;
 
-import akka.NotUsed;
-import akka.actor.ActorRef;
-import akka.actor.Status;
 import akka.stream.IOResult;
-import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -19,6 +15,7 @@ import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.*;
@@ -42,10 +39,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -63,7 +60,7 @@ public class ImportExport extends Controller {
     private final Checker checker;
     private final AuthenticationService authenticationService;
     private final ImportExportService importExportService;
-    private final ResultDataExporter resultDataExporter;
+    private final ResultService resultService;
     private final IOUtils ioUtils;
     private final JsonUtils jsonUtils;
     private final StudyDao studyDao;
@@ -74,7 +71,7 @@ public class ImportExport extends Controller {
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
             JsonUtils jsonUtils, AuthenticationService authenticationService, ImportExportService importExportService,
-            ResultDataExporter resultDataStringGenerator, StudyDao studyDao, ComponentDao componentDao,
+            ResultService resultService, StudyDao studyDao, ComponentDao componentDao,
             StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -82,7 +79,7 @@ public class ImportExport extends Controller {
         this.ioUtils = ioUtils;
         this.authenticationService = authenticationService;
         this.importExportService = importExportService;
-        this.resultDataExporter = resultDataStringGenerator;
+        this.resultService = resultService;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.studyResultDao = studyResultDao;
@@ -257,34 +254,28 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming
-     * <p>
      * Returns all result data of ComponentResults belonging to the given StudyResults. The StudyResults are specified
-     * by their IDs in the request's body. Returns the result data as text, each line a result data.
+     * by a list of IDs in the request's body. Returns the result data as text, each line a result data. Depending on
+     * the configuration it streams the results directly as a chunked response, or it first saves the results in a
+     * temporary file and only when all are written sends the file in a normal response. Both approaches use streaming
+     * to reduce memory usage.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfStudyResults(Http.Request request) {
+    public Result exportDataOfStudyResults(Http.Request request) throws IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> studyResultIdList = new ArrayList<>();
         request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
-
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultDataExporter.byStudyResultIds(sourceActor, studyResultIdList, loggedInUser);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
-        return ok().chunked(source).as("text/plain; charset=utf-8");
+        List<Long> componentResultIdList = componentResultDao.findIdsByStudyResultIds(studyResultIdList);
+        return exportResultData(loggedInUser, componentResultIdList);
     }
 
     /**
-     * Ajax request with chunked streaming
-     * <p>
-     * Returns all result data of ComponentResults. The ComponentResults are specified by their IDs in the request's
-     * body. Returns the result data as text, each line a result data.
+     * Returns all result data of the given ComponentResults. The ComponentResults are specified
+     * by a list of IDs in the request's body. Returns the result data as text, each line a result data. Depending on
+     * the configuration it streams the results directly as a chunked response, or it first saves the results in a
+     * temporary file and only when all are written sends the file in a normal response. Both approaches use streaming
+     * to reduce memory usage.
      */
     @Transactional
     @Authenticated
@@ -292,16 +283,18 @@ public class ImportExport extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
         request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+        return exportResultData(loggedInUser, componentResultIdList);
+    }
 
-        Source<ByteString, ?> source = Source.<ByteString>actorRef(256, OverflowStrategy.fail())
-                .mapMaterializedValue(sourceActor -> {
-                    CompletableFuture.runAsync(() -> {
-                        resultDataExporter.byComponentResultIds(sourceActor, componentResultIdList, loggedInUser);
-                        sourceActor.tell(new Status.Success(NotUsed.getInstance()), ActorRef.noSender());
-                    });
-                    return sourceActor;
-                });
-        return ok().chunked(source).as("text/plain; charset=utf-8");
+    private Result exportResultData(User loggedInUser, List<Long> componentResultIdList) {
+        if (Common.isResultDataExportUseTmpFile()) {
+            File tmpFile = resultService.getComponentResultDataAsTmpFile(loggedInUser, componentResultIdList);
+            return okFileStreamed(tmpFile, tmpFile::delete, "text/plain; charset=utf-8");
+        } else {
+            Source<ByteString, ?> dataSource = resultService.streamComponentResultData(loggedInUser,
+                    componentResultIdList);
+            return ok().chunked(dataSource).as("text/plain; charset=utf-8");
+        }
     }
 
     @Transactional
@@ -381,7 +374,8 @@ public class ImportExport extends Controller {
      * Helper function to allow an action after a file was sent (e.g. delete the file)
      */
     private Result okFileStreamed(final File file, final Runnable handler, final String contentType) {
-        final Source<ByteString, CompletionStage<IOResult>> fileSource = FileIO.fromFile(file);
+        final Source<ByteString, CompletionStage<IOResult>> fileSource = FileIO.fromFile(file)
+                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "));
         Source<ByteString, CompletionStage<IOResult>> wrap = fileSource.mapMaterializedValue(
                 action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
         return ok().streamed(wrap, Optional.of(file.length()), Optional.of(contentType));

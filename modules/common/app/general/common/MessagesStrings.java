@@ -107,6 +107,7 @@ public class MessagesStrings {
     public static final String RESULTS_SELECT_ALL = "Select all results (including the ones on different table pages)";
     public static final String RESULTS_SELECT_FILTERED = "Select only the filtered results (including the ones on "
             + "different table pages)";
+    public static final String RESULTS_SELECT_VISIBLE = "Select only the currently visible results on this page";
     public static final String RESULTS_DESELECT_ALL = "Deselect all results";
     public static final String RESULTS_EXPORT_DATA = "Result data are the actual data that are saved during a study run - "
             + "but does not include any metadata";

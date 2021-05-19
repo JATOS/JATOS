@@ -65,15 +65,18 @@ $(document).ready(function() {
                 "data": "id",
                 "width": "1%"
             },
-            { "data": "title" },
+            {
+                "data": "title",
+                "width": "30%"
+            },
             {
                 "data": null,
-                'max-width': '20%',
                 "render": function (data, type, full, meta) {
                     if (data.members.length < 4 ) {
                         return data.members.join("<br>");
                     } else {
-                        return '<a href="#" data-toggle="popover" data-trigger="focus" data-container="body" '
+                        return '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
+                                + 'data-trigger="focus" data-container="body" '
                                 + 'data-html="true" data-content="' + data.members.join("<br>") + '">show all</a>';
                     }
                 }
