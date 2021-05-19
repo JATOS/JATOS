@@ -328,6 +328,9 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
             <div class="modal-body">
                 ... might take a while depending on your internet connection and the JATOS server ... please be patient.
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default cancel">Cancel</button>
+            </div>
         </div>
     </div>
 </div>
@@ -338,6 +341,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 
 <script>
 var waitingModalTimeout;
+var downloadFileAbortController;
 var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());
 showMessages(messagesRequestScope);
 var messagesFlashScope = @Html(general.gui.FlashScopeMessaging.getAsJson());
@@ -347,8 +351,13 @@ var breadcrumbs = @Html(breadcrumbs);
 showBreadcrumbs(breadcrumbs);
 fillSidebar();
 
-function showWaitingModal() {
+function showWaitingModal(cancelable) {
     clearTimeout(waitingModalTimeout);
+    if (cancelable) {
+        $('#waitingModal .modal-footer').show();
+    } else {
+        $('#waitingModal .modal-footer').hide();
+    }
     waitingModalTimeout = setTimeout(function() { $('#waitingModal').modal('show') }, 2000);
 }
 
@@ -356,6 +365,11 @@ function hideWaitingModal() {
     clearTimeout(waitingModalTimeout);
     $('#waitingModal').modal('hide');
 }
+
+$('#waitingModal').on('click', '.cancel', function(e) {
+    downloadFileAbortController.abort();
+    hideWaitingModal();
+});
 
 function showMessages(messages, allowHtml = false) {
     if (messages != null) {
@@ -478,6 +492,7 @@ $(document).on('show.bs.modal', '.modal', function() {
 });
 
 function downloadFileStreaming(url, postData, filename) {
+    downloadFileAbortController = new AbortController();
 
     // https://jimmywarting.github.io/StreamSaver.js/examples/fetch.html
     const fileStream = streamSaver.createWriteStream(filename);
@@ -489,19 +504,24 @@ function downloadFileStreaming(url, postData, filename) {
                 'Content-Type': 'application/json'
             },
             cache: 'no-cache',
-            body: postData
+            body: postData,
+            signal: downloadFileAbortController.signal
         };
     } else {
-        init = { method: 'GET' };
+        init = {
+            method: 'GET',
+            signal: downloadFileAbortController.signal
+        };
     }
 
-    fetch(url, init).then(function(res) {
-        if (!res.ok) throw new Error(res.statusText);
-        return res;
-    }).then(function (res) {
+    fetch(url, init).then(function(response) {
+        if (!response.ok) throw new Error(response.statusText);
+        return response;
+    }).then(function (response) {
+
         // More optimized but only works in Chrome and Edge so far
-        if (window.WritableStream && res.body.pipeTo) {
-            return res.body.pipeTo(fileStream).then(hideWaitingModal)
+        if (window.WritableStream && response.body.pipeTo) {
+            return response.body.pipeTo(fileStream).then(hideWaitingModal)
             .catch(function(error) {
                 hideWaitingModal();
                 showError("Download failed (" + error + ")");
@@ -510,18 +530,22 @@ function downloadFileStreaming(url, postData, filename) {
 
         // Solution for FF (uses more memory)
         window.writer = fileStream.getWriter();
-        const reader = res.body.getReader();
+        const reader = response.body.getReader();
         const pump = function() {
-            reader.read().then(function(res) {
-                if (res.done) {
+            reader.read().then(function(response) {
+                if (response.done) {
                     writer.close();
                     hideWaitingModal();
                 } else {
-                    writer.write(res.value).then(pump);
+                    writer.write(response.value).then(pump);
                 }
+            }).catch(function(error) {
+                hideWaitingModal();
+                showError("Download failed (" + error + ")");
             });
         };
         pump();
+
     }).catch(function(error) {
         hideWaitingModal();
         showError("Download failed (" + error + ")");

@@ -461,7 +461,7 @@ $(document).ready(function() {
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
         $("ul.dropdown-menu").hide();
-        showWaitingModal();
+        showWaitingModal(true);
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -535,7 +535,7 @@ $(document).ready(function() {
 
     function exportSelectedResultFiles(e, dt, node, config, exportAll) {
         $("ul.dropdown-menu").hide();
-        showWaitingModal();
+        showWaitingModal(true);
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
