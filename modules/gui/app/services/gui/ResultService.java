@@ -301,6 +301,7 @@ public class ResultService {
             writer.flush();
             writer.close();
         } catch (IOException e) {
+            tmpFile.delete();
             throw new RuntimeException(e);
         }
         return tmpFile;
