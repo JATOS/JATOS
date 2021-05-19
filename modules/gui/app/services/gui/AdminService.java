@@ -105,7 +105,6 @@ public class AdminService {
     }
 
     public List<Map<String, Object>> getLatestStudyRuns(int limit) {
-        // todo never?
         return studyResultDao.findLastSeen(limit).stream()
                 .map(srs -> ImmutableMap.of(
                         "studyTitle", srs.getStudy().getTitle(),
