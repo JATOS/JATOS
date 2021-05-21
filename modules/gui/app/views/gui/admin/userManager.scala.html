@@ -416,6 +416,7 @@ $('#userTable tbody').on('click', 'td.details-control', function() {
         });
     } else {
         var username = row.data().username;
+        showWaitingModal();
         $.ajax({
             url : "@{general.common.Common.getPlayHttpContext()}jatos/studiesData?username=" + username,
             contentType: "application/json; charset=utf-8",
@@ -429,7 +430,7 @@ $('#userTable tbody').on('click', 'td.details-control', function() {
             $('div.slider', row.child()).slideDown();
         }).fail(function(err) {
             showError(err.responseText);
-        });
+        }).always(hideWaitingModal);
     }
     $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
             .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');

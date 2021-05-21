@@ -9,7 +9,9 @@ GET      /jatos/status                                                      @con
 GET      /jatos/studyAdmin                                                  @controllers.gui.Admin.studyAdmin(request: Request)
 GET      /jatos/allStudiesData                                              @controllers.gui.Admin.allStudiesData()
 GET      /jatos/studiesData                                                 @controllers.gui.Admin.studiesDataByUser(username: String)
-GET      /jatos/log                                                         @controllers.gui.Admin.log(filename: String ?= "application.log", limit: Integer ?= -1)
+GET      /jatos/listLogs                                                    @controllers.gui.Admin.listLogs()
+GET      /jatos/log                                                         @controllers.gui.Admin.logs(filename: String ?= "application.log", limit: Integer ?= -1, reverse: Boolean ?= true)
+GET      /jatos/logs/:filename                                              @controllers.gui.Admin.logs(filename: String, limit: Integer ?= -1, reverse: Boolean ?= false)
 
 # Update controller
 GET      /jatos/releaseInfo                                                 @controllers.gui.Updates.getReleaseInfo(version:String ?= null, allowPreReleases:Boolean ?= false)

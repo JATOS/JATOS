@@ -15,14 +15,13 @@
     </div>
 
     <div class="btn-group">
-        <div class="btn-group">
-            <button id="logs" type="button" class="btn btn-admin dropdown-toggle" data-toggle="dropdown">
+        <div id="logs" class="btn-group">
+            <button type="button" class="btn btn-admin dropdown-toggle" data-toggle="dropdown">
                 <span class="glyphicon glyphicon-book"></span>&nbsp;Logs&nbsp;<span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">
-                <li><a id="applicationLog" href="#">application.log</a></li>
-                <li><a id="loaderLog" href="#">loader.log</a></li>
-                <li><a id="updateLog" href="#">update.log</a></li>
+                <li><a id="applicationLog" href="@{general.common.Common.getPlayHttpContext()}jatos/logs/application.log">application.log</a></li>
+                <li><a id="listLogsButton" href="#">Show all logs</a></li>
             </ul>
         </div>
         <button id="tests" type="button" class="btn btn-admin">
@@ -63,40 +62,38 @@
     </div>
 </div>
 
-<div id="jatosLatestUserAndStudyRunStatus" class="well hidden-xs hidden-sm" style="display: none">
-    <div class="row">
-        <div class="latestUsers col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading text-center">
-                    <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the logged-in user)"></span></h3>
-                </div>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Username</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+<div class="row">
+    <div id="latestUsers" class="col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading text-center">
+                <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the logged-in user)"></span></h3>
             </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Username</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
-        <div class="latestStudyRuns col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading text-center">
-                    <h3 class="panel-title">Latest Study Runs&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 studies that were active last"></span></h3>
-                </div>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Study Name</th>
-                            <th>Members</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+    </div>
+    <div id="latestStudyRuns" class="col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading text-center">
+                <h3 class="panel-title">Latest Study Runs&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 studies that were active last"></span></h3>
             </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Study Name</th>
+                        <th>Members</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -145,6 +142,27 @@
     </div>
 </div>
 
+<!-- List logs directory Modal -->
+<div class="modal fade" id="listLogsModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Content of <i>logs</i> directory</h4>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <div class="list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Log Modal -->
 <div class="modal fade" id="logModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl">
@@ -153,7 +171,7 @@
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span><span class="sr-only">Close</span>
                 </button>
-                <h4 class="modal-title">Log (newest entries first)</h4>
+                <h4 class="modal-title">Log (reverse order)</h4>
             </div>
             <div class="modal-body">
                 <pre><code></code></pre>
@@ -457,10 +475,9 @@ function getJatosStatus() {
             $("#jatosStatus div:nth-child(4) .value").text(status.userCount);
             $("#jatosStatus").show();
             $("#adminToolbar .serverTime").text(status.serverTime);
-            $("#jatosLatestUserAndStudyRunStatus .latestUsers .table > tbody:last-child").append(fillLatestUsers(status.latestUsers));
-            $("#jatosLatestUserAndStudyRunStatus .latestStudyRuns .table > tbody:last-child").append(fillLatestStudyRuns(status.latestStudyRuns));
+            $("#latestUsers .table > tbody:last-child").append(fillLatestUsers(status.latestUsers));
+            $("#latestStudyRuns .table > tbody:last-child").append(fillLatestStudyRuns(status.latestStudyRuns));
             $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
-            $("#jatosLatestUserAndStudyRunStatus").show();
         },
         error: function () {
             console.warn("Couldn't get JATOS status.");
@@ -499,15 +516,54 @@ function fillLatestStudyRuns(latestStudyRuns) {
     return htmlArray.join("");
 }
 
-$('#applicationLog, #loaderLog, #updateLog').on('click', function() {
-    var filename = this.text;
+$('#listLogsButton').on('click', function() {
+    $.ajax({
+        url: "@controllers.gui.routes.Admin.listLogs()",
+        success: function(result) {
+            const logFiles = JSON.parse(result);
+            removeAlerts('#listLogsModal');
+            $('#listLogsModal .modal-body .list').html(generateListLogsHtml(logFiles));
+            var msg = "You can download the files or click on 'Show' (if available) to see them right away.";
+            showInfo(msg, '#listLogsModal .messages');
+            $('#listLogsModal').modal('show');
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+function generateListLogsHtml(logFiles) {
+    var listLogsHtml = [];
+    listLogsHtml.push("<ul>");
+    logFiles.forEach(function(filename) {
+        var url = "@{general.common.Common.getPlayHttpContext()}jatos/logs/" + filename;
+        var html = '<li><a href="' + url + '">' + filename + '</a>';
+        if (filename.includes(".log")) {
+            html += '&nbsp;<button type="button" class="btn btn-default btn-sm">Show</button>';
+        }
+        listLogsHtml.push(html + '</li>');
+    });
+    listLogsHtml.push("</ul>");
+    return listLogsHtml.join("");
+}
+
+$('#listLogsModal .modal-body').on('click', 'li a', function(event) {
+    event.preventDefault();
+    var url = $(this).attr("href");
+    download(url);
+});
+
+$('#listLogsModal .modal-body, #logs').on('click', 'li button, #applicationLog', function() {
+    event.preventDefault();
+    var filename = $(this).parent().find("a").text();
+    var url = $(this).parent().find("a").attr("href") + "?reverse=true";
     $.ajax({
         type: 'GET',
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/log?filename=" + filename,
+        url: url,
         success: function(result) {
             $('#logModal').modal('show');
-            var filePath = "@{general.common.Common.getBasepath()}/logs/" + filename;
-            $('#logModal .modal-title').text(filePath + " (newest entries first)");
+            $('#logModal .modal-title').text(filename + " (reverse order)");
             $('#logModal .modal-body pre code').text(result);
         },
         error : function(err) {
