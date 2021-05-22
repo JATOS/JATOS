@@ -139,9 +139,13 @@ $(document).ready(function() {
                 "visible": false,
                 "width": "1%"
             },
-            { "data": "startDate" },
+            {
+                "data": "startDate",
+                 "type": "date"
+            },
             {
                 "data": "endDate",
+                "type": "date",
                 "visible": false,
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "never";

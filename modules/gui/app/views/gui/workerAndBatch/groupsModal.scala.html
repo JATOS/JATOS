@@ -134,10 +134,12 @@ function generateGroupsTable(batch) {
             },
             {
                 "data": "startDate",
+                "type": "date",
                 "class": 'time'
             },
             {
                 "data": "endDate",
+                "type": "date",
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "not yet";
                 }

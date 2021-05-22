@@ -156,10 +156,12 @@ $(document).ready(function() {
             },
             {
                 "class": 'time',
-                "data": "startDate"
+                "data": "startDate",
+                "type": "date",
             },
             {
                 "data": "endDate",
+                "type": "date",
                 "visible": false,
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "never";
@@ -167,6 +169,7 @@ $(document).ready(function() {
             },
             {
                 "data": "lastSeenDate",
+                "type": "date",
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "never";
                 }
