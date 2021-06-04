@@ -1,14 +1,10 @@
 package controllers.publix
 
-import java.io.{File, IOException}
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
-
-import daos.common.{ComponentDao, StudyDao}
+import daos.common.{StudyDao, StudyResultDao}
 import exceptions.publix.{ForbiddenPublixException, NotFoundPublixException, PublixException}
 import general.common.{Common, MessagesStrings}
-import javax.inject.{Inject, Singleton}
 import play.api.Logger
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
@@ -16,6 +12,10 @@ import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
 import utils.common.{Helpers, IOUtils}
 
+import java.io.{File, IOException}
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
@@ -32,6 +32,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
                             idCookieService: IdCookieService,
                             jpa: JPAApi,
                             studyDao: StudyDao,
+                            studyResultDao: StudyResultDao,
                             assets: Assets) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -143,7 +144,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * Redirects to or shows the end page (either from study assets or default end page) after a study run finished.
     * Passes on the confirmationCode in case it's defined (either cookie or URL query parameter).
     */
-  def endPage(studyId: Long, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
+  def endPage(studyId: Long, srid: Long, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
     jpa.withTransaction(asJavaSupplier(() => {
       val study = studyDao.findById(studyId)
 
@@ -151,9 +152,11 @@ class StudyAssets @Inject()(components: ControllerComponents,
 
       else if (study.getEndRedirectUrl != null && study.getEndRedirectUrl.trim() != "") {
         // Redirect to URL specified in study properties
+        val studyResult = studyResultDao.findById(srid)
+        val endRedirectUrl = enhanceQueryStringInEndRedirectUrl(studyResult.getUrlQueryParameters, study.getEndRedirectUrl)
         confirmationCode match {
-          case Some(cc) => Redirect(study.getEndRedirectUrl, Map("confirmationCode" -> Seq(cc)))
-          case None => Redirect(study.getEndRedirectUrl)
+          case Some(cc) => Redirect(endRedirectUrl, Map("confirmationCode" -> Seq(cc)))
+          case None => Redirect(endRedirectUrl)
         }
 
       } else if (ioUtils.checkFileInStudyAssetsDirExists(study.getDirName, "endPage.html")) {
@@ -172,6 +175,38 @@ class StudyAssets @Inject()(components: ControllerComponents,
         }
       }
     }));
+  }
+
+  /**
+    * Exchange parameters in endRedirectUrl with the ones provided in urlQueryParameters.
+    *
+    * Example:
+    * Original study link: https://myjatosdomain/publix/1/start?batchId=1&personalSingleWorkerId=1234&SONA_ID=123abc
+    * urlQueryParameters: {"batchId": "1", "personalSingleWorkerId": "1234", "SONA_ID": "123abc"}
+    * endRedirectUrl: https://my.redirect.url/somepath?foo=100&survey_id=[SONA_ID]
+    * Will return: https://my.redirect.url/somepath?foo=100&survey_id=123abc
+    *
+    * @param urlQueryParameters URL query parameters from the original study run URL
+    * @param endRedirectUrl     URL that will be used to redirect
+    * @return
+    */
+  def enhanceQueryStringInEndRedirectUrl(urlQueryParameters: String, endRedirectUrl: String): String = {
+    val originalStudyLinkUrlQueryParameters = Json.parse(urlQueryParameters)
+    var newEndRedirectUrl = endRedirectUrl
+
+    "\\[(.*?)]".r.findAllIn(newEndRedirectUrl).foreach(m => {
+      val parameter = m.substring(1, m.length - 1) // remove squared brackets
+      (originalStudyLinkUrlQueryParameters \ parameter).asOpt[String] match {
+        case Some(value) => {
+          newEndRedirectUrl = newEndRedirectUrl.replace(m, Helpers.urlEncode(value))
+        }
+        case None => {
+          newEndRedirectUrl = newEndRedirectUrl.replace(m, "undefined")
+          logger.info(s".enhanceQueryStringInEndRedirectUrl: Could not find '$parameter' in original study link")
+        }
+      }
+    })
+    newEndRedirectUrl
   }
 
   private def confirmationCodeCookie(confirmationCode: String): Cookie = Cookie(

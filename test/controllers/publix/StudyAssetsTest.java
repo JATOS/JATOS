@@ -261,4 +261,42 @@ public class StudyAssetsTest {
         return route(fakeApplication, request);
     }
 
+    @Test
+    public void testEnhanceQueryParametersInEndRedirectUrl() {
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"abc123\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://foo.bar.com/study?id=123&survey_code=[SONA_ID]"))
+                .isEqualTo("https://foo.bar.com/study?id=123&survey_code=abc123");
+
+        // Multiple parameters
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"abc123\", \"foo-bar\":\"1a3-4b6-7c9\", \"uid\":\"123456\"}",
+                "https://foo.bar.com/study?id=123&survey_code=[SONA_ID]&another=[foo-bar]&uid=[uid]"))
+                .isEqualTo("https://foo.bar.com/study?id=123&survey_code=abc123&another=1a3-4b6-7c9&uid=123456");
+
+        // With URL encoding
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"%5BID%5D\":\"abc%20%2F%20123\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://foo.bar.com/study?id=123&survey_code=[%5BID%5D]"))
+                .isEqualTo("https://foo.bar.com/study?id=123&survey_code=abc%20%2F%20123");
+
+        // Empty query parameter
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://foo.bar.com/study?id=123&survey_code=[SONA_ID]"))
+                .isEqualTo("https://foo.bar.com/study?id=123&survey_code=");
+
+        // Missing query parameter
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://foo.bar.com/study?id=123&survey_code=[SONA_ID]"))
+                .isEqualTo("https://foo.bar.com/study?id=123&survey_code=undefined");
+
+        // Wrong parameter in endRedirectURL
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"abc123\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://foo.bar.com/study?id=123&survey_code=[WRONG_ID]"))
+                .isEqualTo("https://foo.bar.com/study?id=123&survey_code=undefined");
+    }
+
 }
