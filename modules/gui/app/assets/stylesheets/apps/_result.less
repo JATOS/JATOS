@@ -22,30 +22,66 @@ pre.details-data {
 div.DTTT { margin-bottom: 0.5em; float: right; }
 div.dataTables_wrapper { clear: both; }
 
-#resultsTable_filter,
-#componentResultsTable_filter {
+#resultsTable_upperToolbar,
+#resultsTable_lowerToolbar {
+    margin-top: 10px;
+    text-align: left;
+}
+
+#resultTable_refresh,
+#resultsTable_export,
+#resultsTable_delete,
+#resultsTable_length,
+#resultsTable_select,
+#resultsTable_search,
+#resultsTable_customize {
+    display: inline;
+}
+
+#resultsTable_export,
+#resultsTable_search {
+    margin-left: 50px;
+}
+
+#resultsTable_length {
+    margin-left: 10px;
+}
+
+#resultsTable_export label,
+#resultsTable_select label,
+#resultsTable_search label,
+#resultsTable_customize label {
+    font-weight: normal;
+}
+
+/* Sometimes DataTable SearchBuilder's 'Data', 'Condition', and 'Value' are not in-line when used with "stateSave" */
+.dtsb-data, .dtsb-condition, .dtsb-value {
+    display: inline-block !important;
+}
+.dtsb-searchBuilder {
+    padding: 10px;
     margin-top: 10px;
 }
 
-#componentResultsTable_wrapper .pagination > li.active > a {
-    color: @btn-component-color;
-    background-color: @btn-component-bg;
-    border-color: darken(@btn-component-bg, 5%);
+#resultsTable_wrapper .pagination > li > a {
+    background-color: white;
+    color: #333;
 }
-#componentResultsTable_wrapper .pagination > li.active > a:hover {
-    background-color: darken(@btn-component-bg, 10%);
+#resultsTable_wrapper .pagination > li > a:focus,
+#resultsTable_wrapper .pagination > li > a:hover,
+#resultsTable_wrapper .pagination > li > span:focus,
+#resultsTable_wrapper .pagination > li > span:hover {
+    color: #5a5a5a;
+    background-color: #eee;
+    border-color: #ddd;
 }
-#componentResultsTable_wrapper .pagination > li > a {
-    color: @btn-default-color;
-    background-color: @btn-default-bg;
-    border-color: darken(@btn-default-bg, 20%);
+#resultsTable_wrapper .pagination > .active > a {
+    color: white;
+    background-color: darkgray !Important;
+    border: solid 1px darkgray !Important;
 }
-#componentResultsTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
-    background-color: darken(@btn-default-bg, 10%);
+#resultsTable_wrapper .pagination > .active > a:hover {
+    background-color: darkgray !Important;
+    border: solid 1px darkgray;
 }
-#componentResultsTable_wrapper .pagination > li.disabled > a {
-    color: lighten(@btn-default-color, 20%);
-}
-#componentResultsTable_wrapper .pagination > li.next > a {
-    margin-right: 10px;
-}
+

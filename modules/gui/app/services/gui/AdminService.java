@@ -69,7 +69,7 @@ public class AdminService {
                     "bytes", resultFileSize));
             Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
             if (srsOpt.isPresent()) {
-                studyInfo.put("lastStarted", Helpers.formatTimestamp(srsOpt.get().getStartDate()));
+                studyInfo.put("lastStarted", Helpers.formatDate(srsOpt.get().getStartDate()));
             } else {
                 studyInfo.put("lastStarted", "never");
             }
@@ -99,7 +99,7 @@ public class AdminService {
                 .limit(limit)
                 .map(e -> ImmutableMap.of(
                         "username", e.getKey(),
-                        "time", Helpers.formatTimestamp(Date.from(e.getValue()))))
+                        "time", Helpers.formatDate(Date.from(e.getValue()))))
                 .collect(Collectors.toList());
         return lastSeenMapOrdered;
     }
@@ -108,7 +108,7 @@ public class AdminService {
         return studyResultDao.findLastSeen(limit).stream()
                 .map(srs -> ImmutableMap.of(
                         "studyTitle", srs.getStudy().getTitle(),
-                        "time", Helpers.formatTimestamp(srs.getLastSeenDate()),
+                        "time", Helpers.formatDate(srs.getLastSeenDate()),
                         "members", srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
                 .collect(Collectors.toList());
 

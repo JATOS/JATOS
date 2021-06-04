@@ -326,7 +326,7 @@ var userTable = $('#userTable').DataTable({
                 {
                     "extend": 'csv',
                     "text": "Usernames",
-                    "filename": function() { return "jatos_usernames_" + moment().format("YYYYMMDDHHmmss") },
+                    "filename": function() { return "jatos_usernames_" + getDateTimeYYYYMMDDHHmmss() },
                     "titleAttr": 'Export usernames',
                     "exportOptions": {
                         "columns": '.username'
@@ -343,7 +343,7 @@ var userTable = $('#userTable').DataTable({
                 {
                     "extend": 'csv',
                     "text": "All",
-                    "filename": function() { return "jatos_user_all_" + moment().format("YYYYMMDDHHmmss") },
+                    "filename": function() { return "jatos_user_all_" + getDateTimeYYYYMMDDHHmmss() },
                     "titleAttr": 'Export all user data',
                     "exportOptions": {
                         "columns": '.username, .name, .activeUser, .studyCount, .lastLogin, .authMethod, .adminRole',

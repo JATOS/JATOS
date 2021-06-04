@@ -92,8 +92,8 @@ public class Users extends Controller {
             userData.put("authMethod", user.getAuthMethod().name());
             userData.put("studyCount", user.getStudyList().size());
             userData.put("lastSeen",
-                    Helpers.formatTimestamp(Date.from(authenticationService.getLastSeen(user.getUsername()))));
-            userData.put("lastLogin", Helpers.formatTimestamp(user.getLastLogin()));
+                    Helpers.formatDate(Date.from(authenticationService.getLastSeen(user.getUsername()))));
+            userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
             allUserData.add(userData);
         }
         return ok(JsonUtils.asJson(allUserData));

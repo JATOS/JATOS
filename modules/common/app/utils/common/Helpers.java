@@ -197,7 +197,7 @@ public class Helpers {
                 .toLowerCase();
     }
 
-    public static String formatTimestamp(Date date) {
+    public static String formatDate(Date date) {
         return date != null ? (new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")).format(date) : "never";
     }
 

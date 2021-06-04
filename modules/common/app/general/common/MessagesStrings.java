@@ -103,7 +103,7 @@ public class MessagesStrings {
             + "JATOS.";
 
     // Results
-    public static final String RESULTS_COLUMN_VISIBILITY = "Show/hide columns";
+    public static final String RESULTS_CUSTOMIZATION = "Show/hide columns of this table";
     public static final String RESULTS_SELECT_ALL = "Select all results (including the ones on different table pages)";
     public static final String RESULTS_SELECT_FILTERED = "Select only the filtered results (including the ones on "
             + "different table pages)";

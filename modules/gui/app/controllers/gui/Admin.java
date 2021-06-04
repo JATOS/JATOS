@@ -131,7 +131,7 @@ public class Admin extends Controller {
         statusMap.put("studyResultCount", studyResultDao.count());
         statusMap.put("workerCount", workerDao.count());
         statusMap.put("userCount", userDao.count());
-        statusMap.put("serverTime", Helpers.formatTimestamp(new Date()));
+        statusMap.put("serverTime", Helpers.formatDate(new Date()));
         statusMap.put("latestUsers", adminService.getLatestUsers(10));
         statusMap.put("latestStudyRuns", adminService.getLatestStudyRuns(10));
         return ok(JsonUtils.asJson(statusMap));

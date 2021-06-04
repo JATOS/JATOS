@@ -2,26 +2,50 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<table id="componentResultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+<div id="resultsTable_upperToolbar" class="btn-toolbar" role="toolbar"></div>
+
+<div id="resultsTable_lowerToolbar">
+    <div id="resultsTable_select">
+        <label for="resultsTable_select">Select <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Select or deselect table rows (results)"></span>:</label>
+    </div>
+
+    <div id="resultsTable_search">
+        <label for="resultsTable_search">Filter <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table's content (metadata)"></span>:</label>
+        <div class="input-group">
+            <input type="search" class="form-control" placeholder="" autofocus>
+            <div class="input-group-btn">
+                <button type="button" class="btn btn-default regex" data-toggle="tooltip" data-placement="bottom" title="Filter by regular expression">RegEx</button>
+                <button type="button" class="btn btn-default caseSensitive" data-toggle="tooltip" data-placement="bottom" title="Filter case sensitive">Aa</button>
+            </div>
+        </div>
+        <a class="btn btn-default" role="button" data-toggle="collapse" href=".dtsb-searchBuilder" data-placement="bottom" title="Define complex filter criteria">Filter Builder&nbsp;<span class="caret"></span></a>
+    </div>
+
+    <div class="pull-right">
+        <div id="resultsTable_customize"></div>
+    </div>
+</div>
+
+<table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
     <thead>
         <tr>
             <!-- If you change something in the head, change it in the footer too! -->
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
-            <th>Comp. Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID"></span></th>
-            <th>Comp. ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the component this result belongs to"></span></th>
-            <th>Study Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study result this component result belongs to"></span></th>
-            <th>Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT"></span></th>
-            <th>End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT"></span></th>
-            <th>Duration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT"></span></th>
+            <th>Comp. Result ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID"></span></th>
+            <th>Comp. ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the component this result belongs to"></span></th>
+            <th>Study Result ID<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study result this component result belongs to"></span></th>
+            <th>Start Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT"></span></th>
+            <th>End Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT"></span></th>
+            <th>Duration <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT"></span></th>
             <th>Batch</th>
-            <th>Worker ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
-            <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
-            <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
-            <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
-            <th>Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data"></span></th>
-            <th>Files&nbsp;(Size)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
-            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
+            <th>Worker ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
+            <th>Worker Type <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
+            <th>Group ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
+            <th>State <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
+            <th>Data Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data"></span></th>
+            <th>Files (Size) <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
+            <th>Message <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
         </tr>
     </thead>
     <tfoot>
@@ -29,35 +53,23 @@
             <!-- If you change something in the footer, change it in the head too! -->
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
-            <th>Comp. Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID"></span></th>
-            <th>Comp. ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the component this result belongs to"></span></th>
-            <th>Study Result ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study result this component result belongs to"></span></th>
-            <th>Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT"></span></th>
-            <th>End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT"></span></th>
-            <th>Duration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT"></span></th>
+            <th>Comp. Result ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_RESULT_ID"></span></th>
+            <th>Comp. ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the component this result belongs to"></span></th>
+            <th>Study Result ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study result this component result belongs to"></span></th>
+            <th>Start Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME_COMPONENT"></span></th>
+            <th>End Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME_COMPONENT"></span></th>
+            <th>Duration <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION_COMPONENT"></span></th>
             <th>Batch</th>
-            <th>Worker ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
-            <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
-            <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
-            <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
-            <th>Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data"></span></th>
-            <th>Files&nbsp;(Size)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
-            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
+            <th>Worker ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
+            <th>Worker Type <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
+            <th>Group ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
+            <th>State <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_STATE"></span></th>
+            <th>Data Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data"></span></th>
+            <th>Files (Size) <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_FILES"></span></th>
+            <th>Message <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_COMPONENT_MESSAGES"></span></th>
         </tr>
     </tfoot>
 </table>
-
-<!-- Search / filter field with RegEx and Case button-->
-<div id="resultsTableSearch" style="display: none">
-    <label for="resultsTableSearch">Filter Results <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table's content (metadata) or search in the result data themselves"></span>:</label>
-    <div class="input-group">
-        <input type="search" class="form-control" placeholder="" autofocus>
-        <div class="input-group-btn">
-            <button type="button" class="btn btn-default regex" data-toggle="tooltip" data-placement="bottom" title="Treat as regular expression">RegEx</button>
-            <button type="button" class="btn btn-default caseSensitive" data-toggle="tooltip" data-placement="bottom" title="Search case sensitive">Aa</button>
-        </div>
-    </div>
-</div>
 
 <!-- Component result data Modal -->
 <div class="modal fade" id="componentResultDataModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
@@ -80,7 +92,7 @@ var studyId = @study.getId();
 
 var resultsTable;
 $(document).ready(function() {
-    resultsTable = $('#componentResultsTable').DataTable({
+    resultsTable = $('#resultsTable').DataTable({
         "ajax": {
             "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
             "dataType": "text",
@@ -97,7 +109,7 @@ $(document).ready(function() {
             },
             "complete": hideWaitingModal
         },
-        "dom": '<"pull-right"B>lfrtip',
+        "dom": 'lfrtip',
         "order": [[ 2, "desc" ]],
         "lengthMenu": [[10, 25, 50, 100, 250, 500, 1000, 2500, -1], [10, 25, 50, 100, 250, 500, 1000, 2500, "All"]],
         "pageLength": 10,
@@ -191,7 +203,7 @@ $(document).ready(function() {
                     var resultFiles = data.map(function(fileObj) {
                         var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + full.studyId + "/resultFiles/"
                             + full.studyResultId + "/" + full.id + "/" + fileObj.name;
-                        return '<a href="' + url + '" download>' + fileObj.name + '&nbsp;(' + fileObj.size + ')</a>';
+                        return '<a href="' + url + '" download>' + fileObj.name + ' (' + fileObj.size + ')</a>';
                     });
                     return resultFiles.join("<br>");
                 }
@@ -208,21 +220,12 @@ $(document).ready(function() {
             "selector": 'td:nth-child(2)'
         },
         buttons: [
-            {
-                text: "<span class='glyphicon glyphicon-refresh'></span>",
-                "className": "btn btn-component",
-                "titleAttr": 'Refresh results',
-                action: function ( e, dt, node, config ) {
-                    this.disable();
-                    resultsTable.ajax.reload();
-                    setTimeout(this.enable, 3000);
-                }
-            },
+
             {
                 "extend": "colvis",
                 "text": "Show/Hide Columns <span class='caret'></span>",
                 "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY',
+                "titleAttr": '@general.common.MessagesStrings.RESULTS_CUSTOMIZATION',
                 "columns": ':not(:last)'
             },
             {
@@ -258,112 +261,228 @@ $(document).ready(function() {
                 },
                 "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
             },
-            {
-                "extend": 'collection',
-                "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Results&nbsp;<span class="caret"></span>',
-                "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA',
-                "buttons": [
-                    {
-                        "text": "Selected",
-                        "action": exportSelectedResultData,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_DATA'
-                    },
-                    {
-                        "text": "All",
-                        "action": exportAllSelectedResultData,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
-                    }
-                ]
-            },
-            {
-                "extend": 'collection',
-                "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Files&nbsp;<span class="caret"></span>',
-                "className": "btn btn-component exportFilesButton",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
-                "buttons": [
-                    {
-                        "text": "Selected",
-                        "action": exportSelectedResultFiles,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
-                    },
-                    {
-                        "text": "All",
-                        "action": exportAllResultFiles,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
-                    }
-                ]
-            },
-            {
-                "extend": 'collection',
-                "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Metadata&nbsp;<span class="caret"></span>',
-                "className": "btn btn-component",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
-                "buttons": [
-                    {
-                        "extend": 'csv',
-                        "text": "Selected",
-                        "filename": function() { return "jatos_meta_" + moment().format("YYYYMMDDHHmmss") },
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
-                        "exportOptions": {
-                            "columns": ':nth-child(n+3):visible',
-                            "modifier": {
-                                "selected": true
-                            }
-                        },
-                        "action": function(e, dt, node, config) {
-                            $("ul.dropdown-menu").hide();
-                            $('#waitingModal').modal('show');
-                            setTimeout(function(){
-                                $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
-                                $('#waitingModal').modal('hide');
-                            }, 1000);
-                        }
-                    },
-                    {
-                        "extend": 'csv',
-                        "text": "All",
-                        "filename": function() { return "jatos_meta_" + moment().format("YYYYMMDDHHmmss") },
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
-                        "exportOptions": {
-                            "columns": ':nth-child(n+3):visible'
-                        },
-                        "action": function(e, dt, node, config) {
-                            $("ul.dropdown-menu").hide();
-                            $('#waitingModal').modal('show');
-                            setTimeout(function(){
-                                $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
-                                $('#waitingModal').modal('hide');
-                            }, 1000);
-                        }
-                    }
-                ]
-            },
-            {
-                "extend": 'collection',
-                "text": '<span class="glyphicon glyphicon-floppy-remove"></span>&nbsp;Delete&nbsp;<span class="caret"></span>',
-                "className": "btn btn-danger",
-                "buttons": [
-                    {
-                        "text": "Selected",
-                        "action": deleteSelectedResults,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-                    },
-                    {
-                        "text": "All",
-                        "action": deleteAllResults,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
-                    }
-                ]
+        ],
+        buttons: [],
+        searchBuilder: {
+            columns: ':not(:first-child):not(:nth-child(2)):not(th:contains(Files))'
+        },
+        language: {
+            "lengthMenu": "Show: _MENU_",
+            "searchBuilder": {
+                "clearAll": "Reset",
+                "title": "Custom Filter Builder",
+                "data": "Field"
             }
-        ]
+        }
     });
 
-    // Swap dataTables filter field with our own
-    $("#componentResultsTable_filter").empty();
-    $("#componentResultsTable_filter").append($("#resultsTableSearch"));
-    $("#resultsTableSearch").show();
-    $("#resultsTableSearch input").focus();
+    buildUpperToolbar();
+    buildLowerToolbar();
+
+    // Upper toolbar contains refresh, export, and delete button
+    function buildUpperToolbar() {
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'refreshButton',
+            buttons: [
+                {
+                    "text": "<span class='glyphicon glyphicon-refresh'></span>",
+                    "className": "btn btn-component",
+                    "titleAttr": 'Reload results and refresh the table',
+                    "action": function ( e, dt, node, config ) {
+                        this.disable();
+                        resultsTable.ajax.reload();
+                        setTimeout(this.enable, 3000);
+                    }
+                }
+            ]
+        });
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'exportButtonGroup',
+            buttons: [
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Results&nbsp;<span class="caret"></span>',
+                    "className": "btn btn-component",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA',
+                    "buttons": [
+                        {
+                            "text": "Selected",
+                            "action": exportSelectedResultData,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_DATA'
+                        },
+                        {
+                            "text": "All",
+                            "action": exportAllSelectedResultData,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                        }
+                    ]
+                },
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Files&nbsp;<span class="caret"></span>',
+                    "className": "btn btn-component exportFilesButton",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
+                    "buttons": [
+                        {
+                            "text": "Selected",
+                            "action": exportSelectedResultFiles,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
+                        },
+                        {
+                            "text": "All",
+                            "action": exportAllResultFiles,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
+                        }
+                    ]
+                },
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Metadata&nbsp;<span class="caret"></span>',
+                    "className": "btn btn-component",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
+                    "buttons": [
+                        {
+                            "extend": 'csv',
+                            "text": "Selected",
+                            "filename": function() { return "jatos_meta_" + getDateTimeYYYYMMDDHHmmss() },
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
+                            "exportOptions": {
+                                "columns": ':nth-child(n+3):visible',
+                                "modifier": {
+                                    "selected": true
+                                }
+                            },
+                            "action": function(e, dt, node, config) {
+                                $("ul.dropdown-menu").hide();
+                                $('#waitingModal').modal('show');
+                                setTimeout(function(){
+                                    $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                                    $('#waitingModal').modal('hide');
+                                }, 1000);
+                            }
+                        },
+                        {
+                            "extend": 'csv',
+                            "text": "All",
+                            "filename": function() { return "jatos_meta_" + getDateTimeYYYYMMDDHHmmss() },
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
+                            "exportOptions": {
+                                "columns": ':nth-child(n+3):visible'
+                            },
+                            "action": function(e, dt, node, config) {
+                                $("ul.dropdown-menu").hide();
+                                $('#waitingModal').modal('show');
+                                setTimeout(function(){
+                                    $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                                    $('#waitingModal').modal('hide');
+                                }, 1000);
+                            }
+                        }
+                    ]
+                }
+            ]
+        });
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'deleteButton',
+            buttons: [
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-floppy-remove"></span>&nbsp;Delete&nbsp;<span class="caret"></span>',
+                    "titleAttr": "Delete results from JATOS' database",
+                    "className": "btn btn-danger",
+                    "buttons": [
+                        {
+                            "text": "Selected",
+                            "action": deleteSelectedResults,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+                        },
+                        {
+                            "text": "All",
+                            "action": deleteAllResults,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+                        }
+                    ]
+                }
+            ]
+        });
+
+        resultsTable.buttons('refreshButton', null).containers()
+            .attr('id', 'resultTable_refresh')
+            .appendTo('#resultsTable_upperToolbar');
+        resultsTable.buttons('exportButtonGroup', null).containers()
+            .attr('id', 'resultTable_export')
+            .appendTo('#resultsTable_upperToolbar');
+        resultsTable.buttons('deleteButton', null).containers()
+            .attr('id', 'resultTable_delete')
+            .appendTo('#resultsTable_upperToolbar');
+        $('#resultsTable_upperToolbar').prependTo('#resultsTable_wrapper');
+    }
+
+    // Lower toolbar contains select buttons, filter/search, SearchBuilder, customization button, and table length
+    function buildLowerToolbar() {
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'selectButtonGroup',
+            buttons: [
+                {
+                    "extend": "selectAll",
+                    "text": "All",
+                    "className": "btn btn-default",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
+                },
+                {
+                    "extends": "selectAll",
+                    "text": "Visible",
+                    "className": "btn btn-default",
+                    "action": function(e, dt, node, config) {
+                        dt.rows().deselect();
+                        dt.rows({ page: 'current' }).select();
+                    },
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_VISIBLE'
+                },
+                {
+                    "extends": "selectAll",
+                    "text": "Filtered",
+                    "className": "btn btn-default",
+                    "action": function(e, dt, node, config) {
+                        dt.rows().deselect();
+                        dt.rows({ search: 'applied' }).select();
+                    },
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
+                },
+                {
+                    "extend": "selectNone",
+                    "text": "Deselect",
+                    "className": "btn btn-default",
+                    "action": function(e, dt, node, config) {
+                        dt.rows().deselect();
+                    },
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
+                }
+            ]
+        });
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'customizeButton',
+            buttons: [
+                {
+                    "extend": "colvis",
+                    "text": "Customize <span class='caret'></span>",
+                    "className": "btn btn-default",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_CUSTOMIZATION',
+                    "columns": ':not(:last)'
+                }
+            ]
+        });
+
+        $('#resultsTable_upperToolbar').after($('#resultsTable_lowerToolbar'));
+        resultsTable.buttons('selectButtonGroup', null).containers().appendTo('#resultsTable_select');
+        // Swap dataTables filter field with our own
+        $("#resultsTable_filter").empty();
+        $("#resultsTable_select").after($('#resultsTable_search'));
+        $("#resultsTable_lowerToolbar").after(resultsTable.searchBuilder.container());
+        $(".dtsb-searchBuilder").addClass("collapse panel panel-default");
+        resultsTable.buttons('customizeButton', null).containers().appendTo('#resultsTable_customize');
+        $('#resultsTable_customize').after($('#resultsTable_length'));
+    }
 
     // Necessary - otherwise the button doesn't work with manually selected rows
     resultsTable.on('draw', function() {
@@ -389,28 +508,26 @@ $(document).ready(function() {
         }
     });
 
-    $('#resultsTableSearch input').on('keyup click', searchResultTable);
+    $('#resultsTable_search input').on('keyup click', searchResultTable);
 
-    $('#resultsTableSearch button.regex, button.caseSensitive').on('click', function () {
+    $('#resultsTable_search button.regex, button.caseSensitive').on('click', function () {
         var button = $(this);
         if (button.hasClass('checked')) {
             button.removeClass('checked');
-            button.removeClass('btn-study');
-            button.addClass('btn-default');
+            button.removeClass('lightgrayBackground');
         } else {
             button.addClass('checked');
-            button.removeClass('btn-default');
-            button.addClass('btn-study');
+            button.addClass('lightgrayBackground');
         }
         searchResultTable();
     });
 
     function searchResultTable() {
         resultsTable.search(
-            $('#resultsTableSearch input').val(),
-            $('#resultsTableSearch .regex').hasClass('checked'),
-            !$('#resultsTableSearch .regex').hasClass('checked'),
-            !$('#resultsTableSearch .caseSensitive').hasClass('checked')
+            $('#resultsTable_search input').val(),
+            $('#resultsTable_search .regex').hasClass('checked'),
+            !$('#resultsTable_search .regex').hasClass('checked'),
+            !$('#resultsTable_search .caseSensitive').hasClass('checked')
         ).draw();
     }
 
@@ -431,7 +548,7 @@ $(document).ready(function() {
         });
     }
 
-    $('#componentResultsTable tbody').on('click', 'td.details-control', function() {
+    $('#resultsTable tbody').on('click', 'td.details-control', function() {
         var tr = $(this).closest('tr');
         var row = resultsTable.row(tr);
         if (row.child.isShown()) {
@@ -480,7 +597,7 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt";
+        var filename = "jatos_results_" + getDateTimeYYYYMMDDHHmmss() + ".txt";
         downloadFileStreaming(url, data, filename);
     }
 
@@ -554,7 +671,7 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfComponentResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss") + ".zip";
+        var filename = "jatos_resultfiles_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
         downloadFileStreaming(url, data, filename);
     }
 
@@ -567,7 +684,7 @@ $(document).ready(function() {
         return '<div class="slider" style="display: none"><p><pre class="details-data">' + resultData + showAllButton + '</pre></p></div>';
     }
 
-    $('#componentResultsTable tbody').on('click', '.showAllButton', function() {
+    $('#resultsTable tbody').on('click', '.showAllButton', function() {
         var componentResultId = resultsTable.row($(this).closest('tr').prev()).data().id;
         $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
         $.ajax({
