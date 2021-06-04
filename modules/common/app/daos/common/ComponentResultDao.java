@@ -92,12 +92,13 @@ public class ComponentResultDao extends AbstractDao {
      * study.
      */
     public Long sizeByStudy(Study study) {
+        if (study.getComponentList().isEmpty()) return 0L;
         Number result = (Number) jpa.em().createQuery(
                 "SELECT SUM(LENGTH(data)) FROM ComponentResult WHERE component_id IN :componentIds")
                 .setParameter("componentIds",
                         study.getComponentList().stream().map(Component::getId).collect(Collectors.toList()))
                 .getSingleResult();
-        return result != null ? result.longValue() : 0;
+        return result != null ? result.longValue() : 0L;
     }
 
     /**
