@@ -96,7 +96,7 @@ public class Users extends Controller {
             userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
             allUserData.add(userData);
         }
-        return ok(JsonUtils.asJson(allUserData));
+        return ok(jsonUtils.asJsonNode(allUserData));
     }
 
     /**

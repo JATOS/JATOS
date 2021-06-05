@@ -53,11 +53,13 @@ public class Admin extends Controller {
     private final WorkerDao workerDao;
     private final LogFileReader logFileReader;
     private final AdminService adminService;
+    private final JsonUtils jsonUtils;
 
     @Inject
     Admin(AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao, StudyResultDao studyResultDao,
-            UserDao userDao, WorkerDao workerDao, LogFileReader logFileReader, AdminService adminService) {
+            UserDao userDao, WorkerDao workerDao, LogFileReader logFileReader, AdminService adminService,
+            JsonUtils jsonUtils) {
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
@@ -66,6 +68,7 @@ public class Admin extends Controller {
         this.workerDao = workerDao;
         this.logFileReader = logFileReader;
         this.adminService = adminService;
+        this.jsonUtils = jsonUtils;
     }
 
     /**
@@ -91,7 +94,7 @@ public class Admin extends Controller {
                     .map(file -> file.getFileName().toString())
                     .sorted()
                     .collect(Collectors.toList());
-            return ok(JsonUtils.asJson(content));
+            return ok(jsonUtils.asJsonNode(content));
         }
     }
 
@@ -134,7 +137,7 @@ public class Admin extends Controller {
         statusMap.put("serverTime", Helpers.formatDate(new Date()));
         statusMap.put("latestUsers", adminService.getLatestUsers(10));
         statusMap.put("latestStudyRuns", adminService.getLatestStudyRuns(10));
-        return ok(JsonUtils.asJson(statusMap));
+        return ok(jsonUtils.asJsonNode(statusMap));
     }
 
     /**
@@ -154,7 +157,7 @@ public class Admin extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result allStudiesData() {
-        return ok(JsonUtils.asJson(adminService.getStudiesData(studyDao.findAll())));
+        return ok(jsonUtils.asJsonNode(adminService.getStudiesData(studyDao.findAll())));
     }
 
     /**
@@ -165,7 +168,7 @@ public class Admin extends Controller {
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
-        return ok(JsonUtils.asJson(adminService.getStudiesData(user.getStudyList())));
+        return ok(jsonUtils.asJsonNode(adminService.getStudiesData(user.getStudyList())));
     }
 
 }
