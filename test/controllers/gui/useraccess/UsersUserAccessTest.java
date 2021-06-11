@@ -79,6 +79,16 @@ public class UsersUserAccessTest {
     }
 
     @Test
+    public void callToggleActive() {
+        testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+        Call call = routes.Users.toggleActive(TestHelper.BLA_EMAIL, false);
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.POST);
+        userAccessTestHelpers.checkAccessGranted(call, Helpers.POST, testHelper.getAdmin());
+        testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    @Test
     public void callToggleAdmin() {
         testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
         Call call = routes.Users.toggleAdmin(TestHelper.BLA_EMAIL, true);

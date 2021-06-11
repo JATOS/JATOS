@@ -175,7 +175,8 @@ public class UserServiceTest {
         User userBla = new User();
         userBla.setUsername(TestHelper.BLA_EMAIL);
         userBla.setName("Bla Bla");
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, User.AuthMethod.DB));
+        jpaApi.withTransaction(
+                () -> userService.createAndPersistUser(userBla, "blaPassword", true, User.AuthMethod.DB));
 
         // Check that the user is stored in the DB properly
         jpaApi.withTransaction(() -> {
@@ -192,7 +193,8 @@ public class UserServiceTest {
         User userFoo = new User();
         userFoo.setUsername("foo@foo.org");
         userFoo.setName("Foo Foo");
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false, User.AuthMethod.DB));
+        jpaApi.withTransaction(
+                () -> userService.createAndPersistUser(userFoo, "fooPassword", false, User.AuthMethod.DB));
         jpaApi.withTransaction(() -> {
             User u = userDao.findByUsername(userFoo.getUsername());
             // It only has the USER role
@@ -213,7 +215,8 @@ public class UserServiceTest {
         userBla.setUsername(TestHelper.BLA_UPPER_CASE_EMAIL); // Mixed case email address
         userBla.setName("Bla Bla");
 
-        jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true, User.AuthMethod.DB));
+        jpaApi.withTransaction(
+                () -> userService.createAndPersistUser(userBla, "blaPassword", true, User.AuthMethod.DB));
 
         // Retrieve user with lower-case email
         jpaApi.withTransaction(() -> {
@@ -277,6 +280,26 @@ public class UserServiceTest {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    @Test
+    public void checkToggleActive() {
+        User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
+        testHelper.defineLoggedInUser(testHelper.getAdmin());
+
+        jpaApi.withTransaction(() -> {
+            try {
+                userService.toggleActive(TestHelper.BLA_EMAIL, false);
+            } catch (NotFoundException | ForbiddenException e) {
+                Fail.fail();
+            }
+        });
+        jpaApi.withTransaction(() -> {
+            User u = userDao.findByUsername(TestHelper.BLA_EMAIL);
+            assertThat(u.isActive()).isFalse();
+        });
+
+        testHelper.removeUser(userBla.getUsername());
     }
 
     /**

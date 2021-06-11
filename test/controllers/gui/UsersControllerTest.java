@@ -1,5 +1,6 @@
 package controllers.gui;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 import daos.common.UserDao;
 import general.TestHelper;
@@ -17,6 +18,7 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.libs.Json;
 import play.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
@@ -92,7 +94,28 @@ public class UsersControllerTest {
         Result result = call("GET", testHelper.getAdmin(), formMap, routes.Users.allUserData());
 
         assertThat(result.status()).isEqualTo(OK);
-        assertThat(result.contentType().get()).isEqualTo("application/json");
+        JsonNode json = Json.parse(contentAsString(result)).get(0);
+        assertThat(json.get("active").toString()).isNotEmpty();
+        assertThat(json.get("name").toString()).isNotEmpty();
+        assertThat(json.get("username").toString()).isNotEmpty();
+        assertThat(json.get("roleList").toString()).isNotEmpty();
+        assertThat(json.get("authMethod").toString()).isNotEmpty();
+        assertThat(json.get("studyCount").toString()).isNotEmpty();
+        assertThat(json.get("lastSeen").toString()).isNotEmpty();
+        assertThat(json.get("lastLogin").toString()).isNotEmpty();
+    }
+
+    @Test
+    public void callToggleActive() {
+        testHelper.createAndPersistUser("bla", "Bla", "bla");
+
+        Map<String, String> formMap = new HashMap<>();
+        Result result = call("POST", testHelper.getAdmin(), formMap, routes.Users.toggleActive("bla", false));
+
+        assertThat(result.status()).isEqualTo(OK);
+
+        // Clean-up
+        testHelper.removeUser("bla");
     }
 
     @Test
