@@ -178,7 +178,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
   }
 
   /**
-    * Exchange parameters in endRedirectUrl with the ones provided in urlQueryParameters.
+    * Exchange arguments in endRedirectUrl with the ones provided in urlQueryParameters.
     *
     * Example:
     * Original study link: https://myjatosdomain/publix/1/start?batchId=1&personalSingleWorkerId=1234&SONA_ID=123abc
@@ -186,8 +186,8 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * endRedirectUrl: https://my.redirect.url/somepath?foo=100&survey_id=[SONA_ID]
     * Will return: https://my.redirect.url/somepath?foo=100&survey_id=123abc
     *
-    * @param urlQueryParameters URL query parameters from the original study run URL
-    * @param endRedirectUrl     URL that will be used to redirect
+    * @param urlQueryParameters URL query parameters from the original study run URL (URL decoded)
+    * @param endRedirectUrl     URL that will be used to redirect (URL encoded)
     * @return
     */
   def enhanceQueryStringInEndRedirectUrl(urlQueryParameters: String, endRedirectUrl: String): String = {
@@ -195,7 +195,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     var newEndRedirectUrl = endRedirectUrl
 
     "\\[(.*?)]".r.findAllIn(newEndRedirectUrl).foreach(m => {
-      val parameter = m.substring(1, m.length - 1) // remove squared brackets
+      val parameter = Helpers.urlDecode(m.substring(1, m.length - 1)) // remove squared brackets and decode
       (originalStudyLinkUrlQueryParameters \ parameter).asOpt[String] match {
         case Some(value) => {
           newEndRedirectUrl = newEndRedirectUrl.replace(m, Helpers.urlEncode(value))
