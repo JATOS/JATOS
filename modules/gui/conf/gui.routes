@@ -10,7 +10,7 @@ GET      /jatos/studyAdmin                                                  @con
 GET      /jatos/allStudiesData                                              @controllers.gui.Admin.allStudiesData()
 GET      /jatos/studiesData                                                 @controllers.gui.Admin.studiesDataByUser(username: String)
 GET      /jatos/listLogs                                                    @controllers.gui.Admin.listLogs()
-GET      /jatos/log                                                         @controllers.gui.Admin.logs(filename: String ?= "application.log", limit: Integer ?= -1, reverse: Boolean ?= true)
+GET      /jatos/log                                                         @controllers.gui.Admin.log(limit: Integer ?= -1)
 GET      /jatos/logs/:filename                                              @controllers.gui.Admin.logs(filename: String, limit: Integer ?= -1, reverse: Boolean ?= false)
 
 # Update controller

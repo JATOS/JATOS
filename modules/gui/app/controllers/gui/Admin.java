@@ -99,6 +99,15 @@ public class Admin extends Controller {
     }
 
     /**
+     * For backward compatibility. Uses logs.
+     */
+    @Transactional
+    @Authenticated(Role.ADMIN)
+    public Result log(Integer lineLimit) {
+        return logs("application.log", lineLimit, true);
+    }
+
+    /**
      * Returns the log file specified by 'filename'. If 'reverse' is true, it returns the content of the file in
      * reverse order and as 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If the
      * log file can't be read it still returns with OK but instead of the file content with an error message.
