@@ -519,8 +519,7 @@ function fillLatestStudyRuns(latestStudyRuns) {
 $('#listLogsButton').on('click', function() {
     $.ajax({
         url: "@controllers.gui.routes.Admin.listLogs()",
-        success: function(result) {
-            const logFiles = JSON.parse(result);
+        success: function(logFiles) {
             removeAlerts('#listLogsModal');
             $('#listLogsModal .modal-body .list').html(generateListLogsHtml(logFiles));
             var msg = "You can download the files or click on 'Show' (if available) to see them right away.";
