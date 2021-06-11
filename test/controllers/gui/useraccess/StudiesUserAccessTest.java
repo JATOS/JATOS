@@ -97,14 +97,20 @@ public class StudiesUserAccessTest {
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
 
-    /**
-     * Test action Studies.toggleLock()
-     */
     @Test
     public void callToggleLock() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Call call = routes.Studies.toggleLock(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
+    }
+
+    @Test
+    public void callToggleActive() {
+        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+        Call call = routes.Studies.toggleActive(study.getId(), false);
+        userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.POST);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.POST);
     }
 
