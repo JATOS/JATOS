@@ -22,7 +22,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Service class mostly for Users controller. Handles everything around User.
@@ -66,13 +65,6 @@ public class UserService {
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.jpa = jpa;
-    }
-
-    /**
-     * Retrieves all users from the database.
-     */
-    public List<User> retrieveAllUsers() {
-        return userDao.findAll();
     }
 
     /**
