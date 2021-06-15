@@ -139,7 +139,7 @@ public class Helpers {
         return value;
     }
 
-    public static String humanReadableByteCountSI(long bytes) {
+    public static String humanReadableByteCount(long bytes) {
         if (-1000 < bytes && bytes < 1000) {
             return bytes + " B";
         }
@@ -166,11 +166,11 @@ public class Helpers {
         info.put("Peak thread count", "" + threadBean.getPeakThreadCount());
 
         // Using Runtime.getRuntime()
-        info.put("Total memory", humanReadableByteCountSI(Runtime.getRuntime().totalMemory()));
-        info.put("Free memory", humanReadableByteCountSI(Runtime.getRuntime().freeMemory()));
+        info.put("Total memory", humanReadableByteCount(Runtime.getRuntime().totalMemory()));
+        info.put("Free memory", humanReadableByteCount(Runtime.getRuntime().freeMemory()));
         info.put("Used memory",
-                humanReadableByteCountSI(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-        info.put("Max memory", humanReadableByteCountSI(Runtime.getRuntime().maxMemory()));
+                humanReadableByteCount(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+        info.put("Max memory", humanReadableByteCount(Runtime.getRuntime().maxMemory()));
 
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         info.put("Heap memory used", FileUtils.byteCountToDisplaySize(memoryBean.getHeapMemoryUsage().getUsed()));

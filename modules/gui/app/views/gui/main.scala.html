@@ -350,7 +350,7 @@ fillSidebar();
 
 function showWaitingModal(cancelable) {
     clearTimeout(waitingModalTimeout);
-    if (cancelable) {
+    if (typeof cancelable === 'boolean' && cancelable === true) {
         $('#waitingModal .modal-footer').show();
     } else {
         $('#waitingModal .modal-footer').hide();
@@ -364,7 +364,7 @@ function hideWaitingModal() {
 }
 
 $('#waitingModal').on('click', '.cancel', function(e) {
-    downloadFileAbortController.abort();
+    if (downloadFileAbortController) downloadFileAbortController.abort();
     hideWaitingModal();
 });
 

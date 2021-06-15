@@ -276,7 +276,7 @@ public class JsonUtils {
         }
         int dataSize = componentResult.getData() != null ?
                 componentResult.getData().getBytes(StandardCharsets.UTF_8).length : 0;
-        componentResultNode.put("dataSize", Helpers.humanReadableByteCountSI(dataSize));
+        componentResultNode.put("dataSize", Helpers.humanReadableByteCount(dataSize));
 
         // Add uploaded result files
         ArrayNode filesNode = componentResultNode.arrayNode();
@@ -303,7 +303,7 @@ public class JsonUtils {
         String fileSize = null;
         try {
             FileChannel fileChannel = FileChannel.open(filePath);
-            fileSize = Helpers.humanReadableByteCountSI(fileChannel.size());
+            fileSize = Helpers.humanReadableByteCount(fileChannel.size());
         } catch (IOException e) {
             LOGGER.warn("Cannot open file " + filePath);
         }

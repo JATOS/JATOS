@@ -46,27 +46,32 @@ public class AdminService {
     public List<Map<String, Object>> getStudiesData(Collection<Study> studyList) {
         List<Map<String, Object>> studies = new ArrayList<>();
         for (Study study : studyList) {
+            int studyResultCount = studyResultDao.countByStudy(study);
             Map<String, Object> studyInfo = new HashMap<>();
             studyInfo.put("id", study.getId());
             studyInfo.put("uuid", study.getUuid());
             studyInfo.put("title", study.getTitle());
             studyInfo.put("active", study.isActive());
-            studyInfo.put("studyResultCount", studyResultDao.countByStudy(study));
+            studyInfo.put("studyResultCount", studyResultCount);
             studyInfo.put("members",
                     study.getUserList().stream().map(User::toString).collect(Collectors.toList()));
             long studyAssetsDirSize = ioUtils.getStudyAssetsDirSize(study.getDirName());
             studyInfo.put("studyAssetsSize", ImmutableMap.of(
-                    "display", Helpers.humanReadableByteCountSI(studyAssetsDirSize),
+                    "display", Helpers.humanReadableByteCount(studyAssetsDirSize),
                     "bytes", studyAssetsDirSize));
             long resultDataSize = componentResultDao.sizeByStudy(study);
             studyInfo.put("resultDataSize", ImmutableMap.of(
-                    "display", Helpers.humanReadableByteCountSI(resultDataSize),
-                    "bytes", resultDataSize));
+                    "display", Helpers.humanReadableByteCount(resultDataSize),
+                    "bytes", resultDataSize,
+                    "perResult",
+                    studyResultCount != 0 ? Helpers.humanReadableByteCount(resultDataSize / studyResultCount) : "0 B"));
             long resultFileSize = studyResultDao.findAllByStudy(
                     study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
             studyInfo.put("resultFileSize", ImmutableMap.of(
-                    "display", Helpers.humanReadableByteCountSI(resultFileSize),
-                    "bytes", resultFileSize));
+                    "display", Helpers.humanReadableByteCount(resultFileSize),
+                    "bytes", resultFileSize,
+                    "perResult",
+                    studyResultCount != 0 ? Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B"));
             Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
             if (srsOpt.isPresent()) {
                 studyInfo.put("lastStarted", Helpers.formatDate(srsOpt.get().getStartDate()));
@@ -109,7 +114,8 @@ public class AdminService {
                 .map(srs -> ImmutableMap.of(
                         "studyTitle", srs.getStudy().getTitle(),
                         "time", Helpers.formatDate(srs.getLastSeenDate()),
-                        "members", srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
+                        "members",
+                        srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
                 .collect(Collectors.toList());
 
     }

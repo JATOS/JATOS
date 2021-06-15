@@ -9,10 +9,10 @@
         <th>ID</th>
         <th>Title</th>
         <th>Members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></th>
-        <th>Result Count&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></th>
         <th>Study Assets Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the study assets folder of this study"></span></th>
-        <th>Result Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data stored in the database by this study"></span></th>
-        <th>Result File Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of all uploaded result files by this study"></span></th>
+        <th>Result Count&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></th>
+        <th>Result Data Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data stored in the database by this study: total (per study result)"></span></th>
+        <th>Result File Size&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of all uploaded result files by this study: total (per study result)"></span></th>
         <th>Last Started&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="When was this study last started by a participant?"></span></th>
     </tr>
     </thead>
@@ -67,7 +67,10 @@ $(document).ready(function() {
             },
             {
                 "data": "title",
-                "width": "30%"
+                "width": "30%",
+                "render": function (data, type, full, meta) {
+                    return data.length > 50 ? data.substring(0, 47) + "..." : data;
+                }
             },
             {
                 "data": null,
@@ -82,10 +85,6 @@ $(document).ready(function() {
                 }
             },
             {
-                "data": "studyResultCount",
-                "width": "1%"
-            },
-            {
                 "type": "num",
                 "data": {
                     _: 'studyAssetsSize.display',
@@ -93,10 +92,17 @@ $(document).ready(function() {
                 }
             },
             {
+                "data": "studyResultCount",
+                "width": "1%"
+            },
+            {
                 "type": "num",
                 "data": {
                     _: 'resultDataSize.display',
                     sort: 'resultDataSize.bytes'
+                },
+                "render": function (data, type, full, meta) {
+                    return full.resultDataSize.display + " (" + full.resultDataSize.perResult + ")";
                 }
             },
             {
@@ -104,6 +110,9 @@ $(document).ready(function() {
                 "data": {
                     _: 'resultFileSize.display',
                     sort: 'resultFileSize.bytes'
+                },
+                "render": function (data, type, full, meta) {
+                    return full.resultFileSize.display + " (" + full.resultFileSize.perResult + ")";
                 }
             },
             {
@@ -125,14 +134,14 @@ function setActiveButton(buttonDiv, active) {
     if (active) {
         button.removeClass('btn-default');
         button.addClass('btn-admin');
-        button.addClass('active');
+        button.addClass('activeStudy');
         buttonDiv.attr('title', "Click to deactivate this study");
         button.html($(button.html())
                 .removeClass('glyphicon-remove')
                 .addClass('glyphicon-ok').prop('outerHTML'));
     } else {
         button.removeClass('btn-admin');
-        button.removeClass('active');
+        button.removeClass('activeStudy');
         button.addClass('btn-default');
         buttonDiv.attr('title', "Click to activate this study");
         button.html($(button.html())
@@ -145,7 +154,7 @@ $('#studyAdminTable').on('click', '.activeButton', function() {
     var button = this;
     var tr = $(this).closest('tr');
     var studyInfo = studyAdminTable.row(tr).data();
-    var active = $(this).hasClass('active');
+    var active = $(this).hasClass('activeStudy');
     $.ajax({
         url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/properties/active?active=" + !active,
         type : "POST",

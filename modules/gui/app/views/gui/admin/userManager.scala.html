@@ -219,12 +219,6 @@ var userTable = $('#userTable').DataTable({
     "order": [[ 2, "asc" ]],
     "pageLength": 10,
     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-    "columnDefs": [
-        {
-            "targets": 2,
-            "visible": @{general.common.Common.isLdapAllowed() || general.common.Common.isOauthGoogleAllowed()}
-        }
-    ],
     "columns": [
         {
             "class": 'details-control studyCount',
@@ -444,10 +438,10 @@ function generateStudiesChildRow(studiesData, username) {
         + '<td><b>Study ID</b></td>'
         + '<td style="width:30%;"><b>Study Title</b></td>'
         + '<td><b>All Members <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></b></td>'
-        + '<td><b>Result Count <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></b></td>'
         + '<td><b>Study Assets Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the study assets folder of this study"></span></b></td>'
-        + '<td><b>Result Data Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data stored in the database by this study"></span></b></td>'
-        + '<td><b>Result File Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of all uploaded result files by this study"></span></b></td>'
+        + '<td><b>Result Count <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></b></td>'
+        + '<td><b>Result Data Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of the result data stored in the database by this study: total (per study result)"></span></b></td>'
+        + '<td><b>Result File Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of all uploaded result files by this study: total (per study result)"></span></b></td>'
         + '<td><b>Last Started <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="When was this study last started by a participant?"></span></b></td>'
         + '</tr>'
         + '</table>'
@@ -460,6 +454,7 @@ function generateStudiesChildRow(studiesData, username) {
     }
 
     studiesData.forEach(function(studyData) {
+        var trimmedStudyTitle = studyData.title.length > 80 ? studyData.title.substring(0, 77) + "..." : studyData.title;
         var memberList;
         if (studyData.members.length < 4 ) {
             memberList = studyData.members.join("<br>");
@@ -470,12 +465,12 @@ function generateStudiesChildRow(studiesData, username) {
         }
         var row = $('<tr class="info">'
             + '<td>' + studyData.id + '</td>'
-            + '<td>' + studyData.title + '</td>'
+            + '<td>' + trimmedStudyTitle + '</td>'
             + '<td>' + memberList + '</td>'
-            + '<td>' + studyData.studyResultCount + '</td>'
             + '<td>' + studyData.studyAssetsSize.display + '</td>'
-            + '<td>' + studyData.resultDataSize.display + '</td>'
-            + '<td>' + studyData.resultFileSize.display + '</td>'
+            + '<td>' + studyData.studyResultCount + '</td>'
+            + '<td>' + studyData.resultDataSize.display + ' (' + studyData.resultDataSize.perResult + ')</td>'
+            + '<td>' + studyData.resultFileSize.display + ' (' + studyData.resultFileSize.perResult + ')</td>'
             + '<td>' + studyData.lastStarted + '</td>'
             + '</tr>');
         childRow.find("tr").last().after(row);
@@ -489,7 +484,7 @@ function setActiveButton(buttonDiv, active, username) {
     if (active) {
         button.removeClass('btn-default');
         button.addClass('btn-admin');
-        button.addClass('active');
+        button.addClass('activeUser');
         if (username == "@services.gui.UserService.ADMIN_USERNAME") {
             button.attr('disabled', true);
             buttonDiv.attr('title', "It is not possible to deactivate user 'admin'.");
@@ -504,7 +499,7 @@ function setActiveButton(buttonDiv, active, username) {
                 .addClass('glyphicon-ok').prop('outerHTML'));
     } else {
         button.removeClass('btn-admin');
-        button.removeClass('active');
+        button.removeClass('activeUser');
         button.addClass('btn-default');
         buttonDiv.attr('title', "Click to activate this user");
         button.html($(button.html())
@@ -575,7 +570,7 @@ $('#userTable tbody').on('click', '.activeButton', function() {
     var button = this;
     var tr = $(this).closest('tr');
     var user = userTable.row(tr).data();
-    var active = $(this).hasClass('active');
+    var active = $(this).hasClass('activeUser');
     $.ajax({
         url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/properties/active?active=" + !active,
         type : "POST",

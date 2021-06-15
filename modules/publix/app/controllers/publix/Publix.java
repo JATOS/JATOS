@@ -212,7 +212,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         }
 
         if (resultData.getBytes(StandardCharsets.UTF_8).length > Common.getResultDataMaxSize()) {
-            String maxSize = Helpers.humanReadableByteCountSI(Common.getResultDataMaxSize());
+            String maxSize = Helpers.humanReadableByteCount(Common.getResultDataMaxSize());
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
                     + "componentId " + component.getId() + " - " + "Result data size exceeds allowed " + maxSize);
             return badRequest("Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
