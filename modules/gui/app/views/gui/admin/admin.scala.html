@@ -71,7 +71,7 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Time</th>
+                        <th>Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Last time this user was active"></span></th>
                         <th>Username</th>
                     </tr>
                 </thead>
@@ -87,9 +87,9 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Time</th>
-                        <th>Study Name</th>
-                        <th>Members</th>
+                        <th>Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Time when this study run was last seen"></span></th>
+                        <th>Study Title</th>
+                        <th>Members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are members of this study"></span></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -335,11 +335,11 @@ function showUpdateAvailable(releaseInfo) {
     var version = getVersionName(releaseInfo);
     if (releaseInfo.isNewerVersion || !releaseInfo.isLatest) {
         if (releaseInfo.isUpdateAllowed && !releaseInfo.isDifferentJava && releaseInfo.zipUrl) {
-            text = "Do you want to automatically update to version&nbsp;" + version + "?";
+            text = "Do you want to update to version&nbsp;" + version + "?";
             if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
             $("#updateJatos button").show();
         } else if (releaseInfo.isUpdateAllowed && releaseInfo.isDifferentJava && releaseInfo.zipJavaUrl) {
-            text = "Do you want to automatically update to version&nbsp;" + version + "?"
+            text = "Do you want to update to version&nbsp;" + version + "?"
                     + " The new JATOS needs a different version of Java than yours. So you'll need JATOS"
                     + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
             if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
@@ -498,18 +498,21 @@ function fillLatestUsers(latestUsers) {
 
 function fillLatestStudyRuns(latestStudyRuns) {
     var htmlArray = [];
-    latestStudyRuns.forEach(function(e) {
+    latestStudyRuns.forEach(function(studyRun) {
+        var trimmedStudyTitle = studyRun.studyTitle.length > 50
+                ? studyRun.studyTitle.substring(0, 47) + "..."
+                : studyRun.studyTitle;
         var memberList;
-        if (e.members.length < 4 ) {
-            memberList = e.members.join("<br>");
+        if (studyRun.members.length < 4 ) {
+            memberList = studyRun.members.join("<br>");
         } else {
             memberList = '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
-                    + 'data-trigger="focus" data-container="body" '
-                    + 'data-html="true" data-placement="left" data-content="' + e.members.join("<br>") + '">show all</button>';
+                    + 'data-trigger="focus" data-container="body" data-html="true" data-placement="left" '
+                    + 'data-content="' + studyRun.members.join("<br>") + '">show all</button>';
         }
         htmlArray.push("<tr>");
-        htmlArray.push("<td>" + e.time + "</td>");
-        htmlArray.push("<td>" + e.studyTitle + "</td>");
+        htmlArray.push("<td>" + studyRun.time + "</td>");
+        htmlArray.push("<td>" + trimmedStudyTitle + "</td>");
         htmlArray.push("<td>" + memberList + "</td>");
         htmlArray.push("</tr>");
     });
