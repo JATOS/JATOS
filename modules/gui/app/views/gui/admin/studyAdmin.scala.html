@@ -100,9 +100,6 @@ $(document).ready(function() {
                 "data": {
                     _: 'resultDataSize.display',
                     sort: 'resultDataSize.bytes'
-                },
-                "render": function (data, type, full, meta) {
-                    return full.resultDataSize.display + " (" + full.resultDataSize.perResult + ")";
                 }
             },
             {
@@ -110,9 +107,6 @@ $(document).ready(function() {
                 "data": {
                     _: 'resultFileSize.display',
                     sort: 'resultFileSize.bytes'
-                },
-                "render": function (data, type, full, meta) {
-                    return full.resultFileSize.display + " (" + full.resultFileSize.perResult + ")";
                 }
             },
             {

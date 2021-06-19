@@ -60,18 +60,22 @@ public class AdminService {
                     "display", Helpers.humanReadableByteCount(studyAssetsDirSize),
                     "bytes", studyAssetsDirSize));
             long resultDataSize = componentResultDao.sizeByStudy(study);
+            String resultDataSizePerStudyResultCount = (studyResultCount != 0 ?
+                    Helpers.humanReadableByteCount(resultDataSize / studyResultCount) : "0 B");
+            String resultDataSizeDisplay = Helpers.humanReadableByteCount(resultDataSize) + " ("
+                    + resultDataSizePerStudyResultCount + ")";
             studyInfo.put("resultDataSize", ImmutableMap.of(
-                    "display", Helpers.humanReadableByteCount(resultDataSize),
-                    "bytes", resultDataSize,
-                    "perResult",
-                    studyResultCount != 0 ? Helpers.humanReadableByteCount(resultDataSize / studyResultCount) : "0 B"));
+                    "display", resultDataSizeDisplay,
+                    "bytes", resultDataSize));
             long resultFileSize = studyResultDao.findAllByStudy(
                     study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
+            String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
+                    Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B";
+            String resultFileSizeDisplay = Helpers.humanReadableByteCount(resultFileSize) + " ("
+                    + resultFileSizePerStudyResultCount + ")";
             studyInfo.put("resultFileSize", ImmutableMap.of(
-                    "display", Helpers.humanReadableByteCount(resultFileSize),
-                    "bytes", resultFileSize,
-                    "perResult",
-                    studyResultCount != 0 ? Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B"));
+                    "display", resultFileSizeDisplay,
+                    "bytes", resultFileSize));
             Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
             if (srsOpt.isPresent()) {
                 studyInfo.put("lastStarted", Helpers.formatDate(srsOpt.get().getStartDate()));
