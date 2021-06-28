@@ -9,6 +9,7 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -106,16 +107,28 @@ public class ComponentResultDao extends AbstractDao {
      * study results is kept, e.g. if the study result IDs are sr1, sr2, sr3 - then in the returned list are first all
      * component result IDs of sr1, then all of sr2, and last all of sr3.
      */
-    public List<Long> findIdsByStudyResultIds(List<Long> studyResultIds) {
-        // We need 'ORDER BY FIELD' to keep the order of the study results
+    public List<Long> findIdsByStudyResultIds(List<Long> orderedSrids) {
         @SuppressWarnings("unchecked")
-        List<Number> list = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr "
-                        + "WHERE cr.studyResult_id IN :ids "
-                        + "ORDER BY FIELD(cr.studyResult_id, :ids)")
-                .setParameter("ids", studyResultIds)
+        List<Object[]> unorderedDbResults = jpa.em()
+                .createNativeQuery("SELECT cr.studyResult_id, cr.id FROM ComponentResult cr "
+                        + "WHERE cr.studyResult_id IN :ids")
+                .setParameter("ids", orderedSrids)
                 .getResultList();
-        return list.stream().map(Number::longValue).collect(Collectors.toList());
+        // We have to ensure that the order of the srids of the crids that will be returned is the same as the order of
+        // the given srids.
+        // This is a inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
+        // - but it's not supported by H2.
+        List<Long> orderedComponentResultIds = new ArrayList<>();
+        for (Long orderedSrid : orderedSrids) {
+            for (Object[] dbResult : unorderedDbResults) {
+                long srid = ((Number) dbResult[0]).longValue();
+                long crid = ((Number) dbResult[1]).longValue();
+                if (srid == orderedSrid) {
+                    orderedComponentResultIds.add(crid);
+                }
+            }
+        }
+        return orderedComponentResultIds;
     }
 
 }
