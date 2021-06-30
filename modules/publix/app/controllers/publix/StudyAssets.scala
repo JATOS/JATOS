@@ -57,7 +57,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     urlPath match {
       case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
       case "jatos-3.5.2.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
-      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix/javascripts", file)
+      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
         val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseGet(null);
         if (studyResult == null) BadRequest("A study result " + studyResultUuid + " doesn't exist.")

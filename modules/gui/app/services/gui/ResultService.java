@@ -10,7 +10,6 @@ import daos.common.StudyResultDao;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.MessagesStrings;
-import models.common.*;
 import general.common.StudyLogger;
 import models.common.*;
 import models.common.workers.MTSandboxWorker;
@@ -28,10 +27,6 @@ import java.io.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
@@ -40,6 +35,8 @@ import java.util.Map;
  */
 @Singleton
 public class ResultService {
+
+    private static final Logger.ALogger LOGGER = Logger.of(ResultService.class);
 
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;

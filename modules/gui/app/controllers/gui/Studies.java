@@ -15,9 +15,7 @@ import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.StudyLogger;
 import general.gui.RequestScopeMessaging;
-import models.common.Component;
-import models.common.Study;
-import models.common.User;
+import models.common.*;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.data.Form;
@@ -396,7 +394,7 @@ public class Studies extends Controller {
         // Get StudyLink and redirect to jatos-publix: start study
         StudyLink sr = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getUrlWithBase("publix/" + sr.getId());
+        String runUrl = Common.getPlayHttpContext() + "publix/"  + sr.getId();
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 

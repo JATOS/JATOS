@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, study: common.Study, realBaseUrl: java.net.URL)
+@(loggedInUser: common.User, study: common.Study)
 
 <!-- Template study links setup (each batch has one)-->
 <div id="studyLinksSetupTemplate" class="slider panel-group studyLinksSetupItem" role="tablist" style="display: none">
@@ -417,7 +417,7 @@ function fillStudyLinksTable(batch, workerType) {
             {
                 "data": "studyLinkId",
                 "render": function(studyLinkId, type, row) {
-                    return '@realBaseUrl.toString()publix/' + studyLinkId
+                    return '@utils.common.Helpers.getRealBaseUrl(request)publix/' + studyLinkId
                         + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
                         + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button>';
                 }
@@ -587,7 +587,7 @@ function showStudyLinksDisplayPersonalSingleModal(studyLinkIdList, batch) {
     var title = "Study links for Personal Single workers in batch '" + batch.title + "'";
     var urls = [];
     $.each(studyLinkIdList, function(i, studyLinkId) {
-        urls.push("@realBaseUrl.toString()" + "publix/" + studyLinkId);
+        urls.push("@utils.common.Helpers.getRealBaseUrl(request)publix/" + studyLinkId);
     });
     var preText, postText;
     if (urls.length == 1) {
@@ -615,7 +615,7 @@ function showStudyLinksDisplayPersonalMultipleModal(studyLinkIdList, batch) {
     var title = "Study links for Personal Multiple workers in batch '" + batch.title + "'";
     var urls = [];
     $.each(studyLinkIdList, function(i, studyLinkId) {
-        urls.push("@realBaseUrl.toString()" + "publix/" + studyLinkId);
+        urls.push("@utils.common.Helpers.getRealBaseUrl(request)publix/" + studyLinkId);
     });
     var preText, postText;
     if (urls.length == 1) {
@@ -638,10 +638,10 @@ $('#batchTable').on('click', '.generalMultipleStudyLinksSetup .studyLinkButton',
 
 function showStudyLinkGeneralSingleModal(batch) {
     $.ajax({
-        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/generalSingleRun",
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalSingleRun",
         success: function(studyLinkId) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
-            var url = "@realBaseUrl.toString()" + "publix/" + studyLinkId;
+            var url = "@utils.common.Helpers.getRealBaseUrl(request)publix/" + studyLinkId;
             var preText = "This link will start the study.";
             var postText = "Copy & paste and hand it to your workers.";
             showStudyLinksDisplayModal(title, preText, [url], postText);
@@ -654,10 +654,10 @@ function showStudyLinkGeneralSingleModal(batch) {
 
 function showStudyLinkGeneralMultipleModal(batch) {
     $.ajax({
-        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/generalMultipleRun",
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalMultipleRun",
         success: function(studyLinkId) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
-            var url = "@realBaseUrl.toString()" + "publix/" + studyLinkId;
+            var url = "@utils.common.Helpers.getRealBaseUrl(request)publix/" + studyLinkId;
             var preText = "This URL will start the run.";
             var postText = "Copy & paste and hand it to your workers.";
             showStudyLinksDisplayModal(title, preText, [url], postText);

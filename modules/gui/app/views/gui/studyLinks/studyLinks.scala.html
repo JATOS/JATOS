@@ -1,5 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study,
-    realBaseUrl: java.net.URL, allWorkersSize: Integer)
+    allWorkersSize: Integer, request: Http.Request)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -117,8 +117,8 @@
 @views.html.gui.studyLinks.workersModal(study)
 @views.html.gui.studyLinks.groupsModal(study)
 @views.html.gui.studyLinks.sessionModal(study)
-@views.html.gui.studyLinks.studyLinksSetup(loggedInUser, study, realBaseUrl)
-@views.html.gui.studyLinks.mTurkSourceCodeModal(study, realBaseUrl)
+@views.html.gui.studyLinks.studyLinksSetup(loggedInUser, study)
+@views.html.gui.studyLinks.mTurkSourceCodeModal(study, request)
 
 <script>
 

@@ -97,13 +97,14 @@ $('#batchTable').on('click', '.mtWorkerSourceCode', function() {
 
 function showSourceCodeMTurkModal(batch) {
     $.ajax({
-        url: "@{general.common.Common.getUrlWithBase("jatos/" + study.getId() + "/batch/")}" + batch.id + "/mTurkRun",
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/mTurkRun",
         error : function(err) {
             showError(err.responseText);
         }
     }).done(function(studyLinkId) {
         var modal = $('#mtSourceCodeModalTemplate').clone();
         $(modal).removeAttr('id');
+    });
 
     var address = "@utils.common.Helpers.getRealBaseUrl(request)";
     var studyPath = "publix/@study.getId()/start";

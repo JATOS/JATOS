@@ -65,7 +65,6 @@ GET      /jatos/:studyId/results                                            @con
 GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
 POST     /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove()
 GET      /jatos/studyResult/:studyResultId/componentResults                 @controllers.gui.StudyResults.tableDataComponentResultByStudyResult(studyResultId: Long)
-GET      /jatos/studyResults/status                                         @controllers.gui.StudyResults.status()
 GET      /jatos/:studyId/:componentId/tableData                             @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
 POST     /jatos/componentResult/delete                                      @controllers.gui.ComponentResults.remove(request: Request)
 GET      /jatos/componentResult/:componentResultId/data                     @controllers.gui.ComponentResults.tableDataComponentResultData(componentResultId: Long)

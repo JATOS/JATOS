@@ -1,6 +1,7 @@
 package utils.common;
 
 import general.common.Common;
+import org.apache.commons.io.FileUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.mvc.RequestHeader;
@@ -9,13 +10,19 @@ import play.mvc.Http;
 import scala.Option;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.management.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.CharacterIterator;
+import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
+import java.time.Duration;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -77,8 +84,11 @@ public class Helpers {
         Optional<String> referer = Controller.request().header("referer");
         boolean isHostLocalhost = host != null && (host.matches("localhost:?\\d*") || host.contains("127.0.0.1") || host
                 .contains("0.0.0.0") || host.equals("::1"));
-        boolean isRefererLocalhost = referer.map(
-                r -> r.matches("localhost:?\\d*") || r.contains("127.0.0.1") || r.contains("0.0.0.0") || r.equals("::1"))
+        boolean isRefererLocalhost = referer.map(r ->
+                r.matches("localhost:?\\d*")
+                        || r.contains("127.0.0.1")
+                        || r.contains("0.0.0.0")
+                        || r.equals("::1"))
                 .orElse(false);
         return isHostLocalhost || isRefererLocalhost;
     }
@@ -129,7 +139,7 @@ public class Helpers {
         return value;
     }
 
-    public static String humanReadableByteCountSI(long bytes) {
+    public static String humanReadableByteCount(long bytes) {
         if (-1000 < bytes && bytes < 1000) {
             return bytes + " B";
         }
@@ -139,6 +149,56 @@ public class Helpers {
             ci.next();
         }
         return String.format("%.1f %cB", bytes / 1000.0, ci.current());
+    }
+
+    public static Map<String, String> getJVMInfo() {
+        Map<String, String> info = new LinkedHashMap<>();
+
+        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+        info.put("Uptime", "" + humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
+        info.put("Name", runtimeBean.getName());
+        info.put("PID", runtimeBean.getName().split("@")[0]);
+        info.put("Java name", runtimeBean.getVmName());
+        info.put("Java version", System.getProperty("java.version"));
+
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        info.put("Thread count", "" + threadBean.getThreadCount());
+        info.put("Peak thread count", "" + threadBean.getPeakThreadCount());
+
+        // Using Runtime.getRuntime()
+        info.put("Total memory", humanReadableByteCount(Runtime.getRuntime().totalMemory()));
+        info.put("Free memory", humanReadableByteCount(Runtime.getRuntime().freeMemory()));
+        info.put("Used memory",
+                humanReadableByteCount(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+        info.put("Max memory", humanReadableByteCount(Runtime.getRuntime().maxMemory()));
+
+        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
+        info.put("Heap memory used", FileUtils.byteCountToDisplaySize(memoryBean.getHeapMemoryUsage().getUsed()));
+        info.put("Non-heap memory used",
+                FileUtils.byteCountToDisplaySize(memoryBean.getNonHeapMemoryUsage().getUsed()));
+        return info;
+    }
+
+    public static Map<String, String> getOSInfo() {
+        Map<String, String> info = new LinkedHashMap<>();
+
+        OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
+        info.put("OS name", "" + systemBean.getName());
+        info.put("OS version", "" + systemBean.getVersion());
+        info.put("System load average", "" + systemBean.getSystemLoadAverage());
+        info.put("Available processors", "" + systemBean.getAvailableProcessors());
+        return info;
+    }
+
+    public static String humanReadableDuration(Duration duration) {
+        return duration.toString()
+                .substring(2)
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                .toLowerCase();
+    }
+
+    public static String formatDate(Date date) {
+        return date != null ? (new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")).format(date) : "never";
     }
 
 }

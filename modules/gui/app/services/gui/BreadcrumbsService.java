@@ -91,7 +91,7 @@ public class BreadcrumbsService {
         breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(),
-                routes.Batches.workerAndBatchManager(study.getId()).url());
+                routes.StudyLinks.studyLinks(study.getId()).url());
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");
         }
@@ -103,7 +103,7 @@ public class BreadcrumbsService {
         breadcrumbs.addBreadcrumb(HOME, routes.Home.home().url());
         breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(),
-                routes.Batches.workerAndBatchManager(study.getId()).url());
+                routes.StudyLinks.studyLinks(study.getId()).url());
         breadcrumbs.addBreadcrumb("Group " + groupResult.getId(), "");
         if (last != null) {
             breadcrumbs.addBreadcrumb(last, "");
