@@ -1,11 +1,10 @@
 package utils.common;
 
-import java.util.TimeZone;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
-
 import play.libs.Json;
+
+import java.util.TimeZone;
 
 /**
  * Custom Jackson JSON object mapper. Can be used via Json.mapper().

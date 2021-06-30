@@ -1,7 +1,8 @@
 package controllers.publix
 
-import javax.inject.Inject
 import play.api.http.HttpErrorHandler
+
+import javax.inject.Inject
 
 class Assets @Inject()(errorHandler: HttpErrorHandler,
                        assetsMetadata: controllers.AssetsMetadata

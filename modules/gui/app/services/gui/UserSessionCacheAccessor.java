@@ -8,7 +8,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Optional;
 
 /**

@@ -25,7 +25,6 @@ import services.publix.WorkerCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
-import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 

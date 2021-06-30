@@ -1,21 +1,17 @@
 package controllers.gui.actionannotations;
 
+import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import play.Logger;
+import play.Logger.ALogger;
+import play.mvc.*;
+import play.mvc.Http.Request;
+import services.gui.AuthenticationService;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
-
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import play.Logger;
-import play.Logger.ALogger;
-import play.mvc.Action;
-import play.mvc.Controller;
-import play.mvc.Http;
-import play.mvc.Http.Request;
-import play.mvc.Result;
-import play.mvc.With;
-import services.gui.AuthenticationService;
 
 /**
  * Annotation definition for Play actions: logging of each action call, e.g.

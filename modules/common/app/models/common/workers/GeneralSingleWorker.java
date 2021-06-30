@@ -1,11 +1,10 @@
 package models.common.workers;
 
-import java.util.List;
+import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-
-import play.data.validation.ValidationError;
+import java.util.List;
 
 /**
  * DB entity of the concrete Worker if a study is run as an General Single Worker. A General Single Worker is a worker

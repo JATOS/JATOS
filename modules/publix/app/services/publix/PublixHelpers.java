@@ -1,13 +1,13 @@
 package services.publix;
 
-import java.util.List;
-
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
+
+import java.util.List;
 
 /**
  * @author Kristian Lange

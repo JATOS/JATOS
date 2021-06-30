@@ -9,7 +9,6 @@ import exceptions.publix.{ForbiddenPublixException, PublixException}
 import group.GroupDispatcher.{JoinedGroup, LeftGroup, PoisonChannel, ReassignChannel}
 import group.GroupDispatcherRegistry.{Get, GetOrCreate, ItsThisOne}
 import group.{GroupAdministration, GroupChannelActor, GroupDispatcher}
-import javax.inject.{Inject, Named, Singleton}
 import models.common.workers._
 import models.common.{GroupResult, StudyResult}
 import play.api.Logger
@@ -17,8 +16,9 @@ import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 import services.publix.idcookie.IdCookieService
 import services.publix.workers._
-import services.publix.{PublixErrorMessages, PublixUtils, StudyAuthorisation}
+import services.publix.{PublixUtils, StudyAuthorisation}
 
+import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

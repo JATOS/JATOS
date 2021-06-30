@@ -1,17 +1,15 @@
 package models.common;
 
-import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Date;
-
-import javax.persistence.*;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.persistence.*;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.Date;
 
 /**
  * DB entity of a component result. It's used by JPA and JSON

@@ -4,11 +4,10 @@ import batch.BatchDispatcher;
 import batch.BatchDispatcherRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
-import group.GroupDispatcherRegistry;
 import group.GroupDispatcher;
+import group.GroupDispatcherRegistry;
 import models.common.workers.*;
 import play.libs.akka.AkkaGuiceSupport;
-import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.workers.*;
 

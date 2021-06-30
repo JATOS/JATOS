@@ -1,9 +1,9 @@
 package models.common.workers;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
  * DB entity of the concrete worker who originates from the MTurk Sandbox.

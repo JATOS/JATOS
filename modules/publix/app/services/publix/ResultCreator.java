@@ -3,7 +3,10 @@ package services.publix;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import models.common.*;
+import models.common.Component;
+import models.common.ComponentResult;
+import models.common.StudyLink;
+import models.common.StudyResult;
 import models.common.workers.Worker;
 
 import javax.inject.Inject;

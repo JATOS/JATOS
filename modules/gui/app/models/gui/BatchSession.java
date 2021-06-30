@@ -1,13 +1,13 @@
 package models.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Kristian Lange (2017)

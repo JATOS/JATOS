@@ -9,7 +9,6 @@ import batch.BatchChannelActor
 import batch.BatchDispatcher.PoisonChannel
 import batch.BatchDispatcherRegistry.{GetOrCreate, ItsThisOne}
 import exceptions.publix.PublixException
-import javax.inject.{Inject, Named, Singleton}
 import models.common.StudyResult
 import models.common.workers._
 import play.api.Logger
@@ -19,6 +18,7 @@ import services.publix.idcookie.IdCookieService
 import services.publix.workers._
 import services.publix.{PublixUtils, StudyAuthorisation}
 
+import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

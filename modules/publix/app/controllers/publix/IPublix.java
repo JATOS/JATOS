@@ -2,8 +2,8 @@ package controllers.publix;
 
 import exceptions.publix.PublixException;
 import models.common.Component;
-import models.common.StudyResult;
 import models.common.StudyLink;
+import models.common.StudyResult;
 import play.mvc.Http;
 import play.mvc.Result;
 

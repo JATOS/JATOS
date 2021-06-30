@@ -1,10 +1,10 @@
 package daos.common;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import models.common.Batch;
 import play.db.jpa.JPAApi;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * DAO of Batch entity

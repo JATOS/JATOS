@@ -1,14 +1,12 @@
 package models.common;
 
-import java.io.File;
-import java.sql.Timestamp;
-
-import javax.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
-
 import utils.common.JsonUtils;
+
+import javax.persistence.*;
+import java.io.File;
+import java.sql.Timestamp;
 
 /**
  * DB entity of a component. It's used by JPA and JSON marshaling.

@@ -9,9 +9,6 @@ import javax.inject.Singleton;
 import javax.persistence.Query;
 import java.util.List;
 import java.util.Optional;
-import java.util.Optional;
-
-import static models.common.StudyResult.StudyState;
 
 /**
  * DAO for StudyResult and StudyResultStatus

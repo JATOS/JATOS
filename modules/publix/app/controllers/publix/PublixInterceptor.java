@@ -3,15 +3,15 @@ package controllers.publix;
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
 import controllers.publix.workers.*;
 import daos.common.ComponentDao;
-import daos.common.StudyResultDao;
 import daos.common.StudyLinkDao;
+import daos.common.StudyResultDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.Component;
-import models.common.StudyResult;
 import models.common.StudyLink;
+import models.common.StudyResult;
 import models.common.workers.*;
 import play.Application;
 import play.Logger;
@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.UUID;
 
 /**
  * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)

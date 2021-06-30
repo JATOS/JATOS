@@ -1,21 +1,18 @@
 package models.gui;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.Strings;
+import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
-
-import general.common.MessagesStrings;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Model of study properties for UI (not persisted in DB). Only used together

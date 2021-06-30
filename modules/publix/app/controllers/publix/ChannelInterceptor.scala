@@ -1,11 +1,8 @@
 package controllers.publix
 
-import java.util.UUID
-
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging
 import daos.common.StudyResultDao
 import exceptions.publix.{BadRequestPublixException, ForbiddenPublixException, NotFoundPublixException, PublixException}
-import javax.inject.{Inject, Singleton}
 import models.common.workers._
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -13,6 +10,7 @@ import play.api.mvc._
 import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
 
+import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.concurrent.Future
 

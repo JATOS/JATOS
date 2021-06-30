@@ -27,7 +27,6 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

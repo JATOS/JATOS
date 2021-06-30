@@ -1,19 +1,15 @@
 package models.common.workers;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import general.common.MessagesStrings;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
-import play.data.validation.ValidationError;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DB entity of the concrete Worker for a Personal Multiple Run (worker for an external run that can be used multiple

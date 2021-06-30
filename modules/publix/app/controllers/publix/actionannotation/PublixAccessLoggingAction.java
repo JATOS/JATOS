@@ -1,11 +1,5 @@
 package controllers.publix.actionannotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.concurrent.CompletionStage;
-
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
@@ -14,6 +8,12 @@ import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Result;
 import play.mvc.With;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Annotation definition for Play actions: logging of each action call, e.g.

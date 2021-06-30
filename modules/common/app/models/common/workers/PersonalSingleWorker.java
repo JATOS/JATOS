@@ -1,18 +1,15 @@
 package models.common.workers;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import general.common.MessagesStrings;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-
-import general.common.MessagesStrings;
-import play.data.validation.ValidationError;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DB entity of the concrete Worker if a study is run as Personal Single Worker. This kind of worker is for an external

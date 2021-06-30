@@ -1,17 +1,16 @@
 package models.gui;
 
+import com.google.common.base.Strings;
+import general.common.MessagesStrings;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+import play.data.validation.ValidationError;
+import utils.common.JsonUtils;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.google.common.base.Strings;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
-import general.common.MessagesStrings;
-import play.data.validation.ValidationError;
-import utils.common.JsonUtils;
 
 /**
  * Model of batch properties for UI (not persisted in DB). Only used together

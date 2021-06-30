@@ -1,16 +1,14 @@
 package models.common.workers;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import models.common.User;
+import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.OneToOne;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import models.common.User;
-import play.data.validation.ValidationError;
+import java.util.List;
 
 /**
  * DB entity of the concrete Worker who originates from JATOS itself.

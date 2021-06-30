@@ -1,14 +1,13 @@
 package models.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
-
-import general.common.MessagesStrings;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Model used by the GUI to change a user's profile. So far it only contains the

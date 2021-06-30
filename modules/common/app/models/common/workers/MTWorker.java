@@ -1,15 +1,13 @@
 package models.common.workers;
 
-import java.util.List;
-import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-
-import play.data.validation.ValidationError;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * DB entity of the concrete worker who originates from the MTurk.
