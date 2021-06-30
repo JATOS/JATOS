@@ -84,7 +84,8 @@ public class GeneralSinglePublixUtilsTest extends PublixUtilsTest<GeneralSingleW
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             publixUtils.setUrlQueryParameter(studyResult);
             assertThat(studyResult.getUrlQueryParameters()).isEqualTo(
-                    "{\"foo\":\"bar\",\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\"}");
+                    "{\"pre\":\"\",\"generalSingle\":\"123\",\"foo\":\"bar\",\"para2\":\"1234567890\","
+                            + "\"para3\":\"i%20like%20gizmodo\",\"batchId\":\"3\"}");
         });
     }
 

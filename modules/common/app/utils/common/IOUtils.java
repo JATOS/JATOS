@@ -355,6 +355,20 @@ public class IOUtils {
     }
 
     /**
+     * Returns the disk size in Bytes of all files inside the given study assets directory. It does not count the size
+     * of directories themselves (e.g. on Linux each directory takes 4kB).
+     */
+    public long getStudyAssetsDirSize(String dirName) {
+        try {
+            Path path = getStudyAssetsDir(dirName).toPath();
+            if (!Files.exists(path)) return 0;
+            return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    /**
      * Renames a component's HTML file. This file can be in a sub-directory of the study assets directory.
      *
      * @param oldHtmlFilePath The current local file path within the study assets
@@ -400,10 +414,18 @@ public class IOUtils {
         return getResultUploadsDir(studyResultId) + File.separator + "comp-result_" + componentResultId;
     }
 
-    public long getResultUploadDirSize(Long studyResultId) throws IOException {
+    /**
+     * Returns the disk size in Bytes of all uploaded files belonging to the given study result ID. It does not count
+     * the size of directories themselves (e.g. on Linux each directory takes 4kB).
+     */
+    public long getResultUploadDirSize(Long studyResultId) {
         Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
         if (!Files.exists(path)) return 0;
-        return Files.walk(path).mapToLong(p -> p.toFile().length()).sum();
+        try {
+            return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
+        } catch (IOException e) {
+            return 0;
+        }
     }
 
     public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)

@@ -2,44 +2,14 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
 
-<div id="updateJatos" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
-    <p id="updateJatosMsg"></p>
-    <p>
-        <button class="btn btn-default updateJatosButton" role="button" style="display: none">Update</button>
-        <button class="btn btn-default releaseNotesButton" role="button" style="display: none">Release Notes</button>
-    </p>
-</div>
-
-<div class="jumbotron text-center hidden-xs hidden-sm">
-    <img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
-    <h1>JATOS</h1>
-    <p>Version @general.common.Common.getJatosVersion()</p>
-    <p>Simply set up your own online studies</p>
-    <p><a href="http://www.jatos.org/Whats-JATOS.html" class="btn btn-default" role="button" target="_blank">Learn more in our docs &raquo;</a></p>
-</div>
-
-<div id="jatosStatus" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
-    <div class="col-sm-2 col-md-offset-1 placeholder">Studies<br><span class="text-xl"></span></div>
-    <div class="col-sm-2 placeholder">Study Results<br><span class="text-xl"></span></div>
-    <div class="col-sm-2 placeholder">Workers<br><span class="text-xl"></span></div>
-    <div class="col-sm-2 placeholder">Users<br><span class="text-xl"></span></div>
-    <div class="col-sm-2 placeholder">Server Time<br><span class="text-xl"></span></div>
-</div>
-
-<div id="lastUnfinishedStudyRuns" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
-    <p>Which are the last 5 unfinished studies running right now?</p>
-    <div class="col-sm-3 placeholder">Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></div>
-    <div class="col-sm-3 placeholder">Last Seen&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></div>
-    <div class="col-sm-3 placeholder">State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></div>
-    <div class="col-sm-3 placeholder">Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></div>
-</div>
-
-<div id="lastFinishedStudyRuns" class="jumbotron placeholder text-center hidden-xs hidden-sm" style="display: none">
-    <p>Which are the last 5 finished studies?</p>
-    <div class="col-sm-3 placeholder">Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></div>
-    <div class="col-sm-3 placeholder">End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></div>
-    <div class="col-sm-3 placeholder">State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></div>
-    <div class="col-sm-3 placeholder">Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></div>
+<div id="branding" class="jumbotron hidden-xs hidden-sm" style="display: none">
+    <div style="text-align: center;">
+        <img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
+        <h1>JATOS</h1>
+        <p>Version @general.common.Common.getJatosVersion()</p>
+        <p>Simply set up your own online studies</p>
+        <p><a href="http://www.jatos.org/Whats-JATOS.html" class="btn btn-default" role="button" target="_blank">Learn more in our docs &raquo;</a></p>
+    </div>
 </div>
 
 @if(general.common.Common.isDonationAllowed()) {
@@ -62,288 +32,22 @@
     }
 </ul>
 
-<!-- Update JATOS - release notes modal -->
-<div class="modal fade" id="releaseNotesModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-                <h4 class="modal-title">Release Notes</h4>
-            </div>
-            <div class="modal-body">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" class="updateJatosButton confirmed btn btn-default">Update now</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Update JATOS - confirmation modal -->
-<div class="modal fade" id="updateJatosModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Update JATOS</h4>
-            </div>
-            <div class="modal-body">
-                <div class="messages"></div>
-                <div class="waiting"><img src="@routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")"> please wait</div>
-                <p class="confirmationText"></p>
-                <div class="checkbox" style="display: none">
-                    <label><input type="checkbox" class="backupAll" checked> Back up current version</label>
-                    <span class="help-block">Backs up all files (including study assets, uploaded result files, logs, study logs, local database - but not a MySQL database) of the current JATOS into a folder named 'backup_x.x.x' (x.x.x = old version). This will use up disk space.</span>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="canceled btn btn-default" data-dismiss="modal">No, this is too risky</button>
-                <button type="button" class="confirmed btn btn-default">I understand the risks, go on</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script type="text/javascript">
-var loggedInUserIsAdmin = @loggedInUser.isAdmin();
 
-@if(general.common.Common.isTermsOfUseInfo()) {
-showInfo('By using this web application you agree to the <a href="http://www.jatos.org/JATOS-server-during-the-COVID-19-pandemic.html">Terms of Use</a>.', null, true);
+@if(general.common.Common.termsOfUseUrl() != null && !general.common.Common.termsOfUseUrl().isEmpty()) {
+showInfo('By using this application you agree to the <a href="@general.common.Common.termsOfUseUrl()">Terms of Use</a>.', null, true);
 }
 
-if (loggedInUserIsAdmin) getJatosStatus();
-function getJatosStatus() {
-    $.getJSON({
-        url: '@controllers.gui.routes.Home.status()',
-        success: function(status) {
-            $("#jatosStatus div:nth-child(1) span").text(status.studyCount);
-            $("#jatosStatus div:nth-child(2) span").text(status.studyResultCount);
-            $("#jatosStatus div:nth-child(3) span").text(status.workerCount);
-            $("#jatosStatus div:nth-child(4) span").text(status.userCount);
-            $("#jatosStatus div:nth-child(5) span").text(status.serverTime);
-            $("#jatosStatus").show();
+loadBranding();
+function loadBranding() {
+    $.ajax({
+        url: '@{general.common.Common.getPlayHttpContext()}jatos/branding',
+        success: function(res) {
+            $('#branding').html(res);
+            $('#branding').show();
         },
         error: function () {
-            console.warn("Couldn't get JATOS status.");
-        }
-    });
-}
-
-if (loggedInUserIsAdmin) getStudyResultStatus();
-function getStudyResultStatus() {
-    $.getJSON({
-        url: '@controllers.gui.routes.StudyResults.status()',
-        success: function(status) {
-            fillStudyResultStateTable(status.lastUnfinishedStudyResults, "#lastUnfinishedStudyRuns");
-            fillStudyResultStateTable(status.lastFinishedStudyResults, "#lastFinishedStudyRuns");
-            $("#lastUnfinishedStudyRuns").show();
-            $("#lastFinishedStudyRuns").show();
-        },
-        error: function () {
-            console.warn("Couldn't get JATOS study result status.");
-        }
-    });
-}
-
-function fillStudyResultStateTable(srsList, elementId) {
-    srsList.forEach(function(srs) {
-        var userList;
-        if (srs.users.length == 1) {
-             userList = srs.users[0];
-        } else {
-            userList = srs.users[0] + '&nbsp;<button type="button" role="button" class="btn btn-sm btn-default" data-toggle="popover" data-placement="bottom" data-trigger="click" data-container="body" data-html="true" '
-                   + 'data-content="' + srs.users.join("<br>") + '">show all</button>';
-        }
-        var row = '<div class="col-sm-3 text-l">' + srs.startDate + '</div>';
-        if (srs.endDate) {
-            row += '<div class="col-sm-3 text-l">' + srs.endDate + '</div>';
-        } else {
-            var lastSeenDate = srs.lastSeenDate ? srs.lastSeenDate : "never";
-            row += '<div class="col-sm-3 text-l">' + lastSeenDate + '</div>';
-        }
-        row += '<div class="col-sm-3 text-l">' + srs.studyState + '</div>';
-        row += '<div class="col-sm-3 text-l">' + userList + '</div>';
-        $(elementId).append(row);
-    });
-    $('[data-toggle="popover"]').popover();
-}
-
-checkJatosReleaseInfo();
-function checkJatosReleaseInfo() {
-    var urlQueryParams = new URLSearchParams(window.location.search).toString();
-    $.getJSON({
-        url: '@{general.common.Common.getUrlWithBase("jatos/releaseInfo")}?' + urlQueryParams,
-        success: function(releaseInfo) {
-            $("#updateJatos").data("releaseInfo", releaseInfo);
-            showJatosReleaseInfo(releaseInfo);
-        },
-        error: function () {
-            console.warn("Couldn't check for a JATOS update.");
-        }
-    });
-}
-
-function showJatosReleaseInfo(releaseInfo) {
-    switch (releaseInfo.currentUpdateState) {
-        case "SLEEPING":
-            if (releaseInfo.isNewerVersion || !releaseInfo.isLatest) showUpdateAvailable(releaseInfo);
-            break;
-        case "DOWNLOADING":
-            showInfo("JATOS is currently downloading an update.");
-            break;
-        case "DOWNLOADED":
-            showUpdateJatosModalDownloaded();
-            break;
-        case "MOVING":
-        case "RESTARTING":
-            showWarning("JATOS is currently restarting to finish an update. Please wait.");
-            break;
-        case "SUCCESS":
-            showInfo("JATOS was successfully updated to " + releaseInfo.currentVersionFull);
-            break;
-        case "FAILED":
-            showError("Something went wrong in an JATOS update. More information can be found in"
-                    + " the logs (<i>logs/update.log</i> and <i>logs/application.log</i>).");
-            break;
-        default:
-            showError("Unknown UpdateState " + releaseInfo.currentUpdateState);
-    }
-}
-
-function showUpdateAvailable(releaseInfo) {
-    var text;
-    var version = getVersionName(releaseInfo);
-    if (releaseInfo.isUpdateAllowed && ! releaseInfo.isDifferentJava && releaseInfo.zipUrl && loggedInUserIsAdmin) {
-        text = "Do you want to automatically update to version&nbsp;" + version + "?";
-        if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
-        $("#updateJatos button").show();
-    } else if (releaseInfo.isUpdateAllowed && releaseInfo.isDifferentJava && releaseInfo.zipJavaUrl && loggedInUserIsAdmin) {
-        text = "Do you want to automatically update to version&nbsp;" + version + "?"
-                + " The new JATOS needs a different version of Java than yours. So you'll need JATOS"
-                + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
-        if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
-        $("#updateJatos button").show();
-    } else {
-        text = "A new JATOS version is available. Talk to your admin if you want to update to version&nbsp;" + version + ".";
-        if (releaseInfo.isLatest) text = "You're not using the latest JATOS version. " + text;
-        $("#updateJatos .updateJatosButton").hide();
-        $("#updateJatos .releaseNotesButton").show();
-    }
-    $("#updateJatosMsg").html(text);
-    $("#updateJatos").show();
-}
-
-$("#updateJatos .releaseNotesButton").click(function() {
-    var loggedInUserIsAdmin = @loggedInUser.isAdmin();
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
-    $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
-    var releaseNodesClean = releaseInfo.releaseNotes.replace(/(\s|\n|\r|#)*Which variant(.|\n|\r)*/, "");
-    var releaseNotesHtml = new showdown.Converter().makeHtml(releaseNodesClean);
-    $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
-    if (!loggedInUserIsAdmin) {
-        $("#releaseNotesModal .updateJatosButton").hide();
-    }
-    $("#releaseNotesModal").modal('show');
-});
-
-function getVersionName(releaseInfo) {
-    return releaseInfo.isPrerelease ? releaseInfo.versionFull + " (pre-release)" : releaseInfo.versionFull;
-}
-
-function getFileSizeInMb(releaseInfo) {
-    var sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
-    return  Math.round(sizeInByte / 1024 / 1024);
-}
-
-$("#updateJatos .updateJatosButton, #releaseNotesModal .updateJatosButton").click(function() {
-    $("#updateJatos").hide();
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
-    var fileSizeInMb = getFileSizeInMb(releaseInfo);
-    $("#releaseNotesModal").modal('hide');
-    removeAlerts("#updateJatosModal");
-    $("#updateJatosModal .modal-title").text("Update JATOS to " + version);
-    $("#updateJatosModal .confirmationText").html("First we are going to download the new release (it's " + fileSizeInMb
-            + "&nbsp;MB). Make sure you back up your data for the (unlikely) case that something goes wrong."
-            + " After the download is done you'll be asked again for confirmation.");
-    $("#updateJatosModal .confirmationText").show();
-    $("#updateJatosModal .waiting").hide();
-    $("#updateJatosModal .checkbox").hide();
-    $("#updateJatosModal .modal-footer").show();
-    $("#updateJatosModal button.canceled").unbind();
-    $("#updateJatosModal button.canceled").click(cancelUpdate);
-    $("#updateJatosModal button.confirmed").unbind();
-    $("#updateJatosModal button.confirmed").click(downloadJatos);
-    $("#updateJatosModal").modal('show');
-});
-
-function cancelUpdate() {
-    $.ajax({
-        url: '@controllers.gui.routes.Home.cancelUpdate()',
-        error: function (err) {
-            showError(err.responseText)
-        }
-    });
-}
-
-function downloadJatos() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var fileSizeInMb = getFileSizeInMb(releaseInfo);
-    var version = getVersionName(releaseInfo);
-    $("#updateJatosModal .waiting").show();
-    $("#updateJatosModal .modal-title").text("Downloading " + version + " (" + fileSizeInMb + " MB)");
-    $("#updateJatosModal .confirmationText").hide();
-    $("#updateJatosModal .modal-footer").hide();
-    $.ajax({
-        url: '@controllers.gui.routes.Home.downloadJatos()',
-        timeout: 0, // Do not timeout
-        success: function() {
-            showUpdateJatosModalDownloaded();
-        },
-        error: function (err) {
-            $('#updateJatosModal').modal('hide');
-            showError(err.responseText)
-        }
-    });
-}
-
-function showUpdateJatosModalDownloaded() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
-    $("#updateJatosModal .waiting").hide();
-    $("#updateJatosModal .checkbox").show();
-    $("#updateJatosModal .modal-title").text("Update & Restart");
-    $("#updateJatosModal .confirmationText").text("Downloaded. Now do you really want to update to version "
-            + version + " and restart?");
-    $("#updateJatosModal .confirmationText").show();
-    $("#updateJatosModal .modal-footer").show();
-    $("#updateJatosModal button.canceled").unbind();
-    $("#updateJatosModal button.canceled").click(cancelUpdate);
-    $("#updateJatosModal button.confirmed").unbind();
-    $("#updateJatosModal button.confirmed").click(updateAndRestart);
-    $("#updateJatosModal").modal('show');
-}
-
-function updateAndRestart() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
-    $("#updateJatosModal .waiting").show();
-    $("#updateJatosModal .confirmationText").hide();
-    $("#updateJatosModal .checkbox").hide();
-    $("#updateJatosModal .modal-footer").hide();
-    var backupAll = $('#updateJatosModal .backupAll').is(':checked');
-    $.ajax({
-        url: '@{general.common.Common.getUrlWithBase("jatos/updateAndRestart")}?backupAll=' + backupAll,
-        timeout: 0, // Do not timeout
-        success: function() {
-            $('#updateJatosModal').modal('hide');
-            showInfo("Restarting now to finish update to version " + version
-                    + ". It should take under a minute. Refresh this page every now and then.");
-        },
-        error: function (err) {
-            $('#updateJatosModal').modal('hide');
-            showError(err.responseText)
+            $('#branding').show();
         }
     });
 }

@@ -14,7 +14,10 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.StudyLogger;
-import models.common.*;
+import general.gui.RequestScopeMessaging;
+import models.common.Component;
+import models.common.Study;
+import models.common.User;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.data.Form;
@@ -103,7 +106,11 @@ public class Studies extends Controller {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkStandardForStudy(studyId, study, loggedInUser);
-
+        if (!study.isActive()) {
+            RequestScopeMessaging.warning(
+                    "This study was deactivated by an admin. Although you can still edit this study, it can't be run "
+                            + "by you nor by a participant. Please contact your admin.");
+        }
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study
@@ -202,6 +209,20 @@ public class Studies extends Controller {
             studyLogger.log(study, loggedInUser, "Unlocked study");
         }
         return ok(String.valueOf(study.isLocked()));
+    }
+
+    /**
+     * Ajax POST
+     * <p>
+     * Request to activate or deactivate a study. Can be done only by an admin.
+     */
+    @Transactional
+    @Authenticated(User.Role.ADMIN)
+    public Result toggleActive(Long studyId, Boolean active) {
+        Study study = studyDao.findById(studyId);
+        study.setActive(active);
+        studyDao.update(study);
+        return ok();
     }
 
     /**
@@ -306,6 +327,9 @@ public class Studies extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
         } catch (ForbiddenException | BadRequestException e) {
             jatosGuiExceptionThrower.throwAjax(e);
+        }
+        if (!Common.isStudyMembersAllowedToAddAllUsers()) {
+            return forbidden("It's not allowed to add all users at once in this JATOS.");
         }
 
         studyService.addAllUserMembers(study);
@@ -417,8 +441,9 @@ public class Studies extends Controller {
                 return notFound();
             }
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
+            Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, Optional.empty(), Optional.of("text/plain")));
+                    new HttpEntity.Streamed(source, contentLength, Optional.of("text/plain")));
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }

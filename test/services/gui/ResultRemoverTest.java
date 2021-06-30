@@ -25,7 +25,6 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.List;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -96,7 +95,7 @@ public class ResultRemoverTest {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 resultRemover.removeComponentResults(ids, admin);
-            } catch (BadRequestException | NotFoundException | ForbiddenException | IOException e) {
+            } catch (BadRequestException | NotFoundException | ForbiddenException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -127,7 +126,7 @@ public class ResultRemoverTest {
                 Fail.fail();
             } catch (NotFoundException e) {
                 assertThat(e.getMessage()).isEqualTo(MessagesStrings.componentResultNotExist(1111L));
-            } catch (ForbiddenException | BadRequestException | IOException e) {
+            } catch (ForbiddenException | BadRequestException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -155,7 +154,7 @@ public class ResultRemoverTest {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             try {
                 resultRemover.removeStudyResults(ids, admin);
-            } catch (BadRequestException | NotFoundException | ForbiddenException | IOException e) {
+            } catch (BadRequestException | NotFoundException | ForbiddenException e) {
                 throw new RuntimeException(e);
             }
         });

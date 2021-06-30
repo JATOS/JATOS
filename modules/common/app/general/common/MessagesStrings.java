@@ -103,10 +103,11 @@ public class MessagesStrings {
             + "JATOS.";
 
     // Results
-    public static final String RESULTS_COLUMN_VISIBILITY = "Show/hide columns";
+    public static final String RESULTS_CUSTOMIZATION = "Show/hide columns of this table";
     public static final String RESULTS_SELECT_ALL = "Select all results (including the ones on different table pages)";
     public static final String RESULTS_SELECT_FILTERED = "Select only the filtered results (including the ones on "
             + "different table pages)";
+    public static final String RESULTS_SELECT_VISIBLE = "Select only the currently visible results on this page";
     public static final String RESULTS_DESELECT_ALL = "Deselect all results";
     public static final String RESULTS_EXPORT_DATA = "Result data are the actual data that are saved during a study run - "
             + "but does not include any metadata";
@@ -124,8 +125,8 @@ public class MessagesStrings {
     public static final String RESULTS_DELETE = "Delete selected results";
     public static final String RESULTS_DELETE_ALL = "Delete all results";
     public static final String RESULTS_DATA = "Click on the › icon to open the result's data";
-    public static final String RESULTS_DATA_SELECTION = "Check the box to select this result data for export or "
-            + "deleting";
+    public static final String RESULTS_DATA_SELECTION = "Check the box to select this result for export or "
+            + "deleting. Use Shift and Ctrl keys for selecting multiple rows.";
     public static final String RESULTS_START_TIME = "Start of study (time according to the JATOS server)";
     public static final String RESULTS_START_TIME_COMPONENT = "Start of component (time according to the JATOS server)";
     public static final String RESULTS_END_TIME = "End of study (time according to the JATOS server)";
@@ -211,7 +212,7 @@ public class MessagesStrings {
     }
 
     public static String goToThisStudyLink(Long studyId) {
-        return "<a href=\"" + Common.getUrlWithBase("jatos/" + studyId) + "\">Go to this study.</a>";
+        return "<a href=\"" + Common.getPlayHttpContext() + "jatos/" + studyId + "\">Go to this study.</a>";
     }
 
     public static String componentExportFailure(Long componentId, String componentTitle) {

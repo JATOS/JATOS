@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.Application;
+import play.mvc.Http;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -77,7 +78,12 @@ public class Common {
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
     private static boolean donationAllowed;
-    private static boolean termsOfUseInfo;
+    private static String termsOfUseUrl;
+    private static String brandingUrl;
+    private static boolean studyMembersAllowedToAddAllUsers;
+    private static boolean idCookiesSecure;
+    private static Http.Cookie.SameSite idCookiesSameSite;
+    private static boolean resultDataExportUseTmpFile;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -89,7 +95,8 @@ public class Common {
                     "^(?=.*?[A-Za-z])(?=.*?[0-9]).{2,}$"),
             Pair.of("At least one Latin letter, one number and one special character (#?!@$%^&*-).",
                     "^(?=.*?[A-Za-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{3,}$"),
-            Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special character (#?!@$%^&*-).",
+            Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special "
+                            + "character (#?!@$%^&*-).",
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
     @Inject
@@ -131,7 +138,12 @@ public class Common {
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
-        termsOfUseInfo = config.getBoolean("jatos.termsOfUseInfo");
+        termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
+        brandingUrl = config.getString("jatos.brandingUrl");
+        studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
+        idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
+        idCookiesSameSite = fillIdCookiesSameSite(config);
+        resultDataExportUseTmpFile = config.getBoolean("jatos.resultData.export.useTmpFile");
     }
 
     private String fillBasePath(Application application) {
@@ -204,6 +216,17 @@ public class Common {
             LOGGER.info("Couldn't get network MAC address for study log");
         }
         return macStr;
+    }
+
+    private Http.Cookie.SameSite fillIdCookiesSameSite(Config config) {
+        String idCookiesSameSiteRaw = config.getString("jatos.idCookies.sameSite");
+        if (idCookiesSameSiteRaw.equalsIgnoreCase("lax")) {
+            return Http.Cookie.SameSite.LAX;
+        } else if (idCookiesSameSiteRaw.equalsIgnoreCase("strict")) {
+            return Http.Cookie.SameSite.STRICT;
+        } else {
+            return null; // Play doesn't support SameSite.None yet
+        }
     }
 
     /**
@@ -364,10 +387,6 @@ public class Common {
         return playHttpContext;
     }
 
-    public static String getUrlWithBase(String path) {
-        return playHttpContext + path;
-    }
-
     /**
      * If in update happened during last startup a message might be stored here
      */
@@ -433,9 +452,46 @@ public class Common {
     }
 
     /**
-     * Should the GUI show a the Terms of Use info
+     * URL to the terms of use that will be shown in a link on the home page
      */
-    public static boolean isTermsOfUseInfo() {
-        return termsOfUseInfo;
+    public static String termsOfUseUrl() {
+        return termsOfUseUrl;
+    }
+
+    /**
+     * URL where some static HTML can be found that can be shown instead of the default welcome message on the home page
+     */
+    public static String getBrandingUrl() {
+        return brandingUrl;
+    }
+
+    /**
+     * If true, it's allowed to add all users that exist on this JATOS server to be added at once as members of a study
+     */
+    public static boolean isStudyMembersAllowedToAddAllUsers() {
+        return studyMembersAllowedToAddAllUsers;
+    }
+
+    /**
+     * If true, the ID cookies' secure attribute will be set
+     */
+    public static boolean isIdCookiesSecure() {
+        return idCookiesSecure;
+    }
+
+    /**
+     * Which SameSite attribute the ID cookies should set
+     */
+    public static Http.Cookie.SameSite getIdCookiesSameSite() {
+        return idCookiesSameSite;
+    }
+
+    /**
+     * If true, result data that are fetched from the database are first stored in a temporary file and only if
+     * they are all gathered the file is sent to the browser. If false the result data are streamed directly from the
+     * database to the browser.
+     */
+    public static boolean isResultDataExportUseTmpFile() {
+        return resultDataExportUseTmpFile;
     }
 }

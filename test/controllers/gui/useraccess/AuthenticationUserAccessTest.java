@@ -18,15 +18,7 @@ import play.test.Helpers;
 import javax.inject.Inject;
 
 /**
- * Testing controller actions of Batches whether they have proper access
- * control: only the right user should be allowed to do the action. For most
- * actions only the denial of access is tested here - the actual function of the
- * action (that includes positive access) is tested in the specific test class.
- * <p>
- * JATOS actions mostly use its @Authenticated annotation (specified in
- * AuthenticationAction).
- *
- * @author Kristian Lange (2015 - 2017)
+ * Testing controller actions of Authentication
  */
 public class AuthenticationUserAccessTest {
 

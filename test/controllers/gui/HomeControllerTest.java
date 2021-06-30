@@ -1,20 +1,10 @@
 package controllers.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.OK;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.route;
-
-import javax.inject.Inject;
-
+import com.google.inject.Guice;
+import general.TestHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.inject.Guice;
-
-import general.TestHelper;
-import models.common.User;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -25,6 +15,13 @@ import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.BreadcrumbsService;
+
+import javax.inject.Inject;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.OK;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.route;
 
 /**
  * Testing actions of controller.gui.Home.
@@ -62,8 +59,7 @@ public class HomeControllerTest {
 
     @Test
     public void callHome() {
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -78,35 +74,16 @@ public class HomeControllerTest {
     }
 
     @Test
-    public void callLog() {
-        Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+    public void callSidebarStudyList() {
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Home.log(1000).url());
+                .uri(routes.Home.sidebarStudyList().url());
         Result result = route(fakeApplication, request);
 
         assertThat(result.status()).isEqualTo(OK);
-        assertThat(result.charset().get()).isEqualTo("utf-8");
-        assertThat(result.contentType().get()).isEqualTo("text/plain");
-        assertThat(result.body()).isNotNull();
-    }
-
-    @Test
-    public void callLogNotAsAdmin() {
-        User notAdminUser = testHelper.createAndPersistUser("bla", "Bla", "blapw");
-
-        Http.Session session = testHelper.mockSessionCookieandCache(notAdminUser);
-        RequestBuilder request = new RequestBuilder()
-                .method("GET")
-                .session(session)
-                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .uri(routes.Home.log(1000).url());
-        testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
-
-        testHelper.removeUser("bla");
     }
 
 }

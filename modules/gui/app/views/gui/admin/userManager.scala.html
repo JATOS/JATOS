@@ -1,0 +1,711 @@
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
+
+<table id="userTable" class="table top-buffer">
+    <thead>
+        <tr>
+            <th>Studies <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user"></span></th>
+            <th>Active <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration."></span></th>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Last Login <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user"></span></th>
+            <th>Auth <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google"></span></th>
+            <th>Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies."></span></th>
+            <th></th>
+        </tr>
+    </thead>
+</table>
+
+<!-- Template for active toggle button in User's row -->
+<div id="activeToggleButtonDiv" style="display: none">
+    <div class="tooltipWrapper" data-title="">
+        <button type="button" class="btn btn-default activeButton">
+            <span class="glyphicon glyphicon-ok"></span>
+        </button>
+    </div>
+</div>
+
+<!-- Template for admin toggle button in User's row -->
+<div id="userAdminToggleButtonDiv" style="display: none">
+    <div class="tooltipWrapper" data-title="">
+        <button type="button" class="btn btn-default adminButton">
+            <span class="glyphicon glyphicon-ok"></span>
+        </button>
+    </div>
+</div>
+
+<!-- Template for button toolbar in User's row -->
+<div id="userToolbarDiv" style="display: none">
+    <div class="userBtnGroup btn-group" role="group">
+        <div class="userChangePasswordTooltip btn-group" data-title="">
+            <button type="button" class="userChangePasswordButton btn btn-admin">
+                Change Password <span class="glyphicon glyphicon-lock"></span>
+            </button>
+        </div>
+        <div class="userDeleteTooltip btn-group" role="group" data-title="">
+            <button type="button" class="userDeleteButton btn btn-admin">
+                Delete <span class="glyphicon glyphicon-remove"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="createUserForm" method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">New User</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="messages"></div>
+                    <div class="form-group row">
+                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.USERNAME">Username</label>
+                        <div class="col-xs-8">
+                            <input type="text" class="form-control @models.gui.NewUserModel.USERNAME" name="@models.gui.NewUserModel.USERNAME">
+                            <span class="help-block">This will be the username.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.NAME">Name</label>
+                        <div class="col-xs-8">
+                            <input type="text" class="form-control @models.gui.NewUserModel.NAME" name="@models.gui.NewUserModel.NAME">
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="text-right col-xs-4">
+                            Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can e.g. create/change/delete other users and deactivate studies."></span>
+                        </label>
+                        <div class="col-xs-8">
+                            <input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
+                        </div>
+                    </div>
+
+
+                    <div class="form-group row" @if(!general.common.Common.isLdapAllowed()) {hidden}>
+                        <label class="text-right col-xs-4">
+                            LDAP <span class="glyphicon glyphicon-info-sign gray-light" title="Should this user be authenticated by your central LDAP service?"></span>
+                        </label>
+                        <div class="col-xs-8">
+                            <input type="checkbox" class="@models.gui.NewUserModel.AUTH_BY_LDAP" data-toggle="collapse" data-target=".passwordDiv" name="@models.gui.NewUserModel.AUTH_BY_LDAP" value="true">
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="@models.gui.NewUserModel.AUTH_BY_LDAP" value="false" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row passwordDiv collapse in">
+                        <label class="control-label col-xs-4" for="@models.gui.NewUserModel.PASSWORD">Password</label>
+                        <div class="col-xs-8">
+                            <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD" name="@models.gui.NewUserModel.PASSWORD" placeholder="Password" autocomplete="off">
+                            <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password" autocomplete="off">
+                        </div>
+                    </div>
+
+                    @if(!loggedInUser.isOauthGoogle()){
+                    <div class="form-group row">
+                        <label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.NewUserModel.ADMIN_PASSWORD">Your password</label>
+                        <div class="col-xs-5">
+                            <input type="password" class="form-control @models.gui.NewUserModel.ADMIN_PASSWORD" name="@models.gui.NewUserModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="confirmed btn btn-admin" value="Create">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="changePasswordForm" method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Change Password</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="messages"></div>
+                    <input type="hidden" class="form-control username" name="@models.gui.ChangePasswordModel.USERNAME" required>
+                    @if(!loggedInUser.isOauthGoogle()){
+                    <div class="form-group row">
+                        <label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.ChangePasswordModel.ADMIN_PASSWORD">Your password</label>
+                        <div class="col-xs-5">
+                            <input type="password" class="form-control @models.gui.ChangePasswordModel.ADMIN_PASSWORD" name="@models.gui.ChangePasswordModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
+                        </div>
+                    </div>
+                    }
+                    <div class="form-group row">
+                        <label class="control-label col-xs-4 newPasswordLabel" for="@models.gui.ChangePasswordModel.NEW_PASSWORD">New password</label>
+                        <div class="col-xs-5">
+                            <input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD" name="@models.gui.ChangePasswordModel.NEW_PASSWORD" placeholder="New password" autocomplete="off" required>
+                            <input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" name="@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" placeholder="Repeat the new password" autocomplete="off" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="confirmed btn btn-admin" value="Change">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete user confirmation  modal -->
+<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteUserForm" method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Confirm User Deletion</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="messages"></div>
+                    <p class="confirmationText"></p>
+                    @if(!loggedInUser.isOauthGoogle()){
+                    <div class="form-group row">
+                        <label class="control-label col-xs-6 passwordLabel" for="password">Your password</label>
+                        <div class="col-xs-5">
+                            <input type="password" class="form-control password" name="password" placeholder="Your password" autocomplete="off" required>
+                        </div>
+                    </div>
+                    } else {
+                    <div class="form-group row">
+                        <label class="control-label col-xs-6 usernameLabel" for="username">Your email</label>
+                        <div class="col-xs-5">
+                            <input type="text" class="form-control username" name="username" placeholder="Your email">
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="confirmed btn btn-admin" value="Delete">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+var userTable = $('#userTable').DataTable({
+    "ajax": {
+        "type": "GET",
+        "url" : '@controllers.gui.routes.Users.allUserData()',
+        "dataSrc": "",
+        "error": function (err) {
+            if (err.responseText) {
+                showError(err.responseText);
+            } else {
+                showError("Cannot read users data.");
+            }
+        }
+    },
+    "dom": 'B<br>lfrtip',
+    "order": [[ 2, "asc" ]],
+    "pageLength": 10,
+    "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+    "columns": [
+        {
+            "class": 'details-control studyCount',
+            "width": "1px",
+            "orderable": false,
+            "data": "studyCount",
+            "render": function (data, type, full, meta) {
+                if (type === 'export') return data;
+                return '<button type="button" class="btn btn-admin collapseStudiesData" data-toggle="tooltip"' +
+                    'data-placement="bottom" title="Show/hide studies">' +
+                    '<span class="badge">' + data + '</span>&nbsp;' +
+                    '<span class="glyphicon glyphicon-chevron-right"></span></button>';
+            }
+        },
+        {
+            "class": "activeUser",
+            "data": null,
+            "width": "1px",
+            "orderable": false,
+            "searchable": false,
+            "render": function (data, type, full, meta) {
+                if (type === 'export') return data.active;
+                var buttonDiv = $('#activeToggleButtonDiv :first-child').clone();
+                setActiveButton(buttonDiv, data.active, data.username);
+                return buttonDiv.prop('outerHTML');
+            }
+        },
+        {
+            "class": "username",
+            "data": "username"
+        },
+        {
+            "class": "name",
+            "data": "name"
+        },
+        {
+            "class": "lastLogin",
+            "data": "lastLogin",
+            "type": "date",
+        },
+        {
+            "class": "text-center authMethod",
+            "data": "authMethod",
+            "width": "1px",
+            "orderable": false,
+            "render": function (authMethod, type, full, meta) {
+                switch(authMethod) {
+                    case "@{common.User.AuthMethod.DB.name()}": return "local";
+                    case "@{common.User.AuthMethod.LDAP.name()}": return "LDAP";
+                    case "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}": return "Google";
+                    default: return "unknown";
+                }
+            }
+        },
+        {
+            "class": 'adminRole',
+            "data": null,
+            "defaultContent": '',
+            "width": "1px",
+            "orderable": false,
+            "searchable": false,
+            "render": function (data, type, full, meta) {
+                var buttonDiv = $('#userAdminToggleButtonDiv :first-child').clone();
+                var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", data.roleList) >= 0;
+                if (type === 'export') return adminRole;
+                setAdminButton(buttonDiv, adminRole, data.username);
+                return buttonDiv.prop('outerHTML');
+            }
+        },
+        {
+            "class": "toolbar",
+            "data": null,
+            "defaultContent": '',
+            "width": "1%",
+            "orderable": false,
+            "searchable": false,
+            "render": function (data, type, full, meta) {
+                var toolbar = $('#userToolbarDiv').clone().show();
+                setUserToolbar(toolbar, data.username, data.authMethod);
+                return toolbar.html();
+            }
+        }
+    ],
+    "buttons": [
+        {
+            "text": '<span class="glyphicon glyphicon-user"></span>&nbsp;New&nbsp;User',
+            attr:  {
+                id: 'createUserButton'
+            },
+            "className": "btn btn-admin",
+            "titleAttr": 'Create a new user'
+        },
+        {
+            "extend": 'collection',
+            "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;<span class="caret"></span>',
+            "className": "btn btn-admin",
+            "titleAttr": 'Export table data',
+            "buttons": [
+                {
+                    "extend": 'csv',
+                    "text": "Usernames",
+                    "filename": function() { return "jatos_usernames_" + getDateTimeYYYYMMDDHHmmss() },
+                    "titleAttr": 'Export usernames',
+                    "exportOptions": {
+                        "columns": '.username'
+                    },
+                    "action": function(e, dt, node, config) {
+                        $("ul.dropdown-menu").hide();
+                        $('#waitingModal').modal('show');
+                        setTimeout(function(){
+                            $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                            $('#waitingModal').modal('hide');
+                        }, 1000);
+                    }
+                },
+                {
+                    "extend": 'csv',
+                    "text": "All",
+                    "filename": function() { return "jatos_user_all_" + getDateTimeYYYYMMDDHHmmss() },
+                    "titleAttr": 'Export all user data',
+                    "exportOptions": {
+                        "columns": '.username, .name, .activeUser, .studyCount, .lastLogin, .authMethod, .adminRole',
+                        "orthogonal": 'export'
+                    },
+                    "trim": true,
+                    "action": function(e, dt, node, config) {
+                        $("ul.dropdown-menu").hide();
+                        $('#waitingModal').modal('show');
+                        setTimeout(function(){
+                            $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                            $('#waitingModal').modal('hide');
+                        }, 1000);
+                    }
+                }
+            ]
+        }
+    ],
+    "drawCallback": function( settings ) {
+        setButtonWidthToMax("button.collapseStudiesData");
+    }
+});
+
+$('#createUserButton').click(function(event) {
+    removeAlerts("#createUserModal");
+    removeFormErrors("#createUserModal");
+    $('#createUserModal .@models.gui.NewUserModel.USERNAME').val('');
+    $('#createUserModal .@models.gui.NewUserModel.NAME').val('');
+    $('#createUserModal .@models.gui.NewUserModel.PASSWORD').val('');
+    $('#createUserModal .@models.gui.NewUserModel.PASSWORD_REPEAT').val('');
+    $('#createUserModal .@models.gui.NewUserModel.ADMIN_ROLE').prop('checked', false);
+    $('#createUserModal .@models.gui.NewUserModel.AUTH_BY_LDAP').prop('checked', false);
+    $('#createUserModal .passwordDiv').addClass('in');
+    $('#createUserModal .adminPasswordLabel').text("Password of user @loggedInUser.getUsername()");
+    $('#createUserModal .@models.gui.NewUserModel.ADMIN_PASSWORD').val('');
+    $('#createUserModal').modal('show');
+});
+
+$("#createUserForm").submit(function(event) {
+    event.preventDefault();
+    $.ajax({
+        type: 'POST',
+        url: "@controllers.gui.routes.Users.create()",
+        data: $('#createUserForm').serialize(),
+        success: function(response) {
+            removeAlerts("#createUserModal");
+            removeFormErrors("#createUserModal");
+            $('#createUserModal').modal('hide');
+            userTable.ajax.reload();
+        },
+        error: function(response) {
+            removeAlerts("#createUserModal");
+            removeFormErrors("#createUserModal");
+            showWarning("User wasn't created", "#createUserModal .messages");
+            if (isJson(response.responseText)) {
+                showFormErrors("#createUserModal", response);
+            } else {
+                showModalError("#createUserModal .messages", response);
+            }
+        }
+    });
+});
+
+$('#userTable tbody').on('click', 'td.details-control', function() {
+    var tr = $(this).closest('tr');
+    var row = userTable.row(tr);
+    if (row.child.isShown()) {
+        $('div.slider', row.child()).slideUp( function () {
+            row.child.hide();
+            tr.removeClass('shown');
+        });
+    } else {
+        var username = row.data().username;
+        showWaitingModal();
+        $.ajax({
+            url : "@{general.common.Common.getPlayHttpContext()}jatos/studiesData?username=" + username,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+        }).done(function(result) {
+            var childRow = generateStudiesChildRow(result, username);
+            row.child(childRow).show();
+            tr.addClass('shown');
+            tr.next().addClass('info');
+            $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
+            $('div.slider', row.child()).slideDown();
+        }).fail(function(err) {
+            showError(err.responseText);
+        }).always(hideWaitingModal);
+    }
+    $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+            .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+});
+
+function generateStudiesChildRow(studiesData, username) {
+    var childRow = $('<div class="slider" style="display: none">'
+        + '<table class="table" cellpadding="10" cellspacing="0" border="0">'
+        + '<tr class="info header">'
+        + '<td><b>Study ID</b></td>'
+        + '<td style="width:30%;"><b>Study Title</b></td>'
+        + '<td><b>All Members <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="All users who are member of this study"></span></b></td>'
+        + '<td><b>Study Assets Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of study assets folder"></span></b></td>'
+        + '<td><b>Result Count <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of study results"></span></b></td>'
+        + '<td><b>Result Data Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of result data: total for all study runs (average per result in brackets)"></span></b></td>'
+        + '<td><b>Result File Size <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Size of uploaded result files: total for all study runs (average per result in brackets)"></span></b></td>'
+        + '<td><b>Last Started <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="When was this study last started by a participant?"></span></b></td>'
+        + '</tr>'
+        + '</table>'
+        + '</div>');
+
+    if (studiesData.length == 0) {
+        var row = $('<tr class="info"><td colspan="8">empty</td></tr>');
+        childRow.find("tr").after(row);
+        return childRow;
+    }
+
+    studiesData.forEach(function(studyData) {
+        var trimmedStudyTitle = studyData.title.length > 80 ? studyData.title.substring(0, 77) + "..." : studyData.title;
+        var memberList;
+        if (studyData.members.length < 4 ) {
+            memberList = studyData.members.join("<br>");
+        } else {
+            memberList = '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
+                    + 'data-trigger="focus" data-container="body" '
+                    + 'data-html="true" data-content="' + studyData.members.join("<br>") + '">show all</a>';
+        }
+        var row = $('<tr class="info">'
+            + '<td>' + studyData.id + '</td>'
+            + '<td>' + trimmedStudyTitle + '</td>'
+            + '<td>' + memberList + '</td>'
+            + '<td>' + studyData.studyAssetsSize.display + '</td>'
+            + '<td>' + studyData.studyResultCount + '</td>'
+            + '<td>' + studyData.resultDataSize.display + '</td>'
+            + '<td>' + studyData.resultFileSize.display + '</td>'
+            + '<td>' + studyData.lastStarted + '</td>'
+            + '</tr>');
+        childRow.find("tr").last().after(row);
+    });
+
+    return childRow;
+}
+
+function setActiveButton(buttonDiv, active, username) {
+    var button = $(buttonDiv).children("button:first");
+    if (active) {
+        button.removeClass('btn-default');
+        button.addClass('btn-admin');
+        button.addClass('activeUser');
+        if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+            button.attr('disabled', true);
+            buttonDiv.attr('title', "It is not possible to deactivate user 'admin'.");
+        } else if (username == "@loggedInUser.getUsername()") {
+            button.attr('disabled', true);
+            buttonDiv.attr('title', "You cannot deactivate yourself. Only another user with admin rights can do it.");
+        } else {
+            buttonDiv.attr('title', "Click to deactivate this user");
+        }
+        button.html($(button.html())
+                .removeClass('glyphicon-remove')
+                .addClass('glyphicon-ok').prop('outerHTML'));
+    } else {
+        button.removeClass('btn-admin');
+        button.removeClass('activeUser');
+        button.addClass('btn-default');
+        buttonDiv.attr('title', "Click to activate this user");
+        button.html($(button.html())
+                .removeClass('glyphicon-ok')
+                .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+}
+
+function setAdminButton(buttonDiv, adminRole, username) {
+    var button = $(buttonDiv).children("button:first");
+    if (adminRole) {
+        button.addClass('adminRole');
+        button.removeClass('btn-default');
+        button.addClass('btn-admin');
+        // Special treatment of admin users
+        if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+            button.attr('disabled', true);
+            buttonDiv.attr('title', "User admin's admin rights can't be removed.");
+        } else if (username == "@loggedInUser.getUsername()") {
+            button.attr('disabled', true);
+            buttonDiv.attr('title', "You can't remove your own admin rights. Only another user with admin rights can do it.");
+        } else {
+            buttonDiv.attr('title', "Click to remove admin rights from this user");
+        }
+        button.html($(button.html())
+                .removeClass('glyphicon-remove')
+                .addClass('glyphicon-ok').prop('outerHTML'));
+    } else {
+        button.removeClass('adminRole');
+        button.removeClass('btn-admin');
+        button.addClass('btn-default');
+        buttonDiv.attr('title', "Click to grant admin rights to this user");
+        button.html($(button.html())
+                .removeClass('glyphicon-ok')
+                .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+}
+
+function setUserToolbar(toolbar, username, authMethod) {
+    // Add delete user button
+    if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+        toolbar.find('.userDeleteButton').attr('disabled', true);
+        toolbar.find('.userDeleteTooltip').attr('title', "It's not possible to delete the admin user.");
+    } else if (username == "@loggedInUser.getUsername()") {
+        toolbar.find('.userDeleteButton').attr('disabled', true);
+        toolbar.find('.userDeleteTooltip').attr('title', "You cannot delete your user here - but you can delete yourself in the user page (click on your username in the JATOS header).");
+    } else {
+        toolbar.find('.userDeleteTooltip').attr('title', "Delete this user from JATOS");
+    }
+
+    // Add change password button
+    if (username == "@services.gui.UserService.ADMIN_USERNAME") {
+        if ("@loggedInUser.getUsername()" != "@services.gui.UserService.ADMIN_USERNAME") {
+            toolbar.find('.userChangePasswordButton').attr('disabled', true);
+            toolbar.find('.userChangePasswordTooltip').attr('title', "Only user admin can change their own password.");
+        } else {
+            toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
+        }
+    } else if (authMethod == "@{common.User.AuthMethod.DB.name()}") {
+        toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
+    } else {
+        toolbar.find('.userChangePasswordButton').attr('disabled', true);
+        toolbar.find('.userChangePasswordTooltip').attr('title', "Not a locally stored User (e.g. authenticated by LDAP or Google)");
+    }
+}
+
+$('#userTable tbody').on('click', '.activeButton', function() {
+    var button = this;
+    var tr = $(this).closest('tr');
+    var user = userTable.row(tr).data();
+    var active = $(this).hasClass('activeUser');
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/properties/active?active=" + !active,
+        type : "POST",
+        success: function() {
+            setActiveButton($(button).parent(), !active, user.username);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#userTable tbody').on('click', '.adminButton', function() {
+    var button = this;
+    var tr = $(this).closest('tr');
+    var user = userTable.row(tr).data();
+    var adminRole = $(this).hasClass('adminRole');
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/properties/admin?admin=" + !adminRole,
+        type : "POST",
+        success: function(adminRole) {
+            setAdminButton($(button).parent(), adminRole, user.username);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#userTable').on('click', '.userChangePasswordButton', function() {
+    var tr = $(this).closest("tr");
+    var user = userTable.row(tr).data();
+    $('#changePasswordForm').data(user);
+    removeAlerts("#changePasswordModal");
+    removeFormErrors("#changePasswordModal");
+    $('#changePasswordModal .@models.gui.ChangePasswordModel.USERNAME').val(user.username);
+    $('#changePasswordModal .modal-title').text("Change password for " + user.name + "(" + user.username + ")");
+    $('#changePasswordModal .adminPasswordLabel').text("@loggedInUser.getUsername()'s password");
+    $('#changePasswordModal .@models.gui.ChangePasswordModel.ADMIN_PASSWORD').val('');
+    $('#changePasswordModal .newPasswordLabel').text("New password for user " + user.username);
+    $('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD').val('');
+    $('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT').val('');
+    $('#changePasswordModal').modal('show');
+});
+
+$("#changePasswordForm").submit(function(event) {
+    event.preventDefault();
+    var user = $(this).data(user);
+    $.ajax({
+        type: 'POST',
+        url: "@controllers.gui.routes.Users.changePasswordByAdmin()",
+        data: $('#changePasswordForm').serialize(),
+        success: function(response) {
+            removeAlerts("#changePasswordModal");
+            removeFormErrors("#changePasswordModal");
+            $('#changePasswordModal').modal('hide');
+        },
+        error: function(response) {
+            removeAlerts("#changePasswordModal");
+            removeFormErrors("#changePasswordModal");
+            showWarning("Password wasn't changed", "#changePasswordModal .messages");
+            if (isJson(response.responseText)) {
+                showFormErrors("#changePasswordModal", response);
+            } else {
+                showModalError("#changePasswordModal .messages", response);
+            }
+        }
+    });
+});
+
+$('#userTable tbody').on('click', '.userDeleteButton', function() {
+    var tr = $(this).closest("tr");
+    var user = userTable.row(tr).data();
+    $('#deleteUserForm').data(user);
+    removeAlerts("#deleteUserModal");
+    removeFormErrors("#deleteUserModal");
+    $('#deleteUserModal .modal-title').text("Delete " + user.username + " (" + user.name + ")");
+    $('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml(user));
+    @if(!loggedInUser.isOauthGoogle()) {
+    $('#deleteUserModal .password').val('');
+    $('#deleteUserModal .passwordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
+    } else {
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address");
+    }
+    $('#deleteUserModal .password').val('');
+    $('#deleteUserModal').modal('show');
+});
+
+function generateUserDeleteConfirmationHtml(user) {
+    var confirmationText = "<p>You are about to delete the user <b>" + user.username + " (" + user.name + ")</b>. "
+            + "All studies with this user as the only user will be deleted too.</p>";
+    // Only add the studies that have a user size of 1 (means this user is the only
+    // member and the study would be abandoned after user deletion) .
+    var studyList = "";
+    $.each(user.studyList, function(index, study) {
+        if (study.userSize === 1) {
+            studyList += "<li>" + study.title + " (ID: " + study.id + ")</li>";
+        }
+    });
+    if (studyList !== "") {
+        confirmationText += "<p><b>This would automatically delete the following studies with all their results</b>.";
+        confirmationText += "<ul>" + studyList + "</ul>";
+    }
+    confirmationText += "<p><b>This can't be undone.</b></p>";
+    return confirmationText;
+}
+
+$('#deleteUserForm').submit(function(event) {
+    event.preventDefault();
+    var user = $('#deleteUserForm').data(user);
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/delete",
+        type : 'POST',
+        data: $('#deleteUserForm').serialize(),
+        success : function(result) {
+            removeAlerts("#deleteUserModal");
+            removeFormErrors("#deleteUserModal");
+            $('#deleteUserModal').modal('hide');
+            userTable.ajax.reload();
+            fillSidebar();
+        },
+        error : function(response) {
+            removeAlerts("#deleteUserModal");
+            removeFormErrors("#deleteUserModal");
+            showWarning("User wasn't deleted", "#deleteUserModal .messages");
+            if (isJson(response.responseText)) {
+                showFormErrors("#deleteUserModal", response);
+            } else {
+                showModalError("#deleteUserModal .messages", response);
+            }
+        }
+    });
+});
+
+</script>
+
+}

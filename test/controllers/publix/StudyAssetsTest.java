@@ -261,4 +261,43 @@ public class StudyAssetsTest {
         return route(fakeApplication, request);
     }
 
+    @Test
+    public void testEnhanceQueryParametersInEndRedirectUrl() {
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"abc123\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://end.redirect-url.com.com/study?id=123&survey_code=[SONA_ID]"))
+                .isEqualTo("https://end.redirect-url.com.com/study?id=123&survey_code=abc123");
+
+        // Multiple parameters
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"abc123\", \"foo-bar\":\"1a3\", \"uid\":\"123456\"}",
+                "https://end.redirect-url.com.com/study?id=123&survey_code=[SONA_ID]&another=[foo-bar]&uid=[uid]"))
+                .isEqualTo("https://end.redirect-url.com.com/study?id=123&survey_code=abc123&another=1a3&uid=123456");
+
+        // With URL encoding
+        // Problem here: space can be encoded as + or %20 (https://stackoverflow.com/questions/1634271)
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"[ID]\":\"abc / 123\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://end.redirect-url.com.com/study?id=123&survey_code=[%5BID%5D]"))
+                .isEqualTo("https://end.redirect-url.com.com/study?id=123&survey_code=abc+%2F+123");
+
+        // Empty query parameter
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://end.redirect-url.com.com/study?id=123&survey_code=[SONA_ID]"))
+                .isEqualTo("https://end.redirect-url.com.com/study?id=123&survey_code=");
+
+        // Missing query parameter
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://end.redirect-url.com.com/study?id=123&survey_code=[SONA_ID]"))
+                .isEqualTo("https://end.redirect-url.com.com/study?id=123&survey_code=undefined");
+
+        // Wrong parameter in endRedirectURL
+        assertThat(studyAssets.enhanceQueryStringInEndRedirectUrl(
+                "{\"foo\":\"bar\", \"SONA_ID\":\"abc123\", \"foo-bar\":\"1a3-4b6-7c9\"}",
+                "https://end.redirect-url.com.com/study?id=123&survey_code=[WRONG_ID]"))
+                .isEqualTo("https://end.redirect-url.com.com/study?id=123&survey_code=undefined");
+    }
+
 }

@@ -20,7 +20,8 @@ import utils.common.HashUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.List;
+import java.sql.Timestamp;
+import java.util.Date;
 
 /**
  * Service class mostly for Users controller. Handles everything around User.
@@ -64,13 +65,6 @@ public class UserService {
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.jpa = jpa;
-    }
-
-    /**
-     * Retrieves all users from the database.
-     */
-    public List<User> retrieveAllUsers() {
-        return userDao.findAll();
     }
 
     /**
@@ -160,6 +154,19 @@ public class UserService {
         userDao.update(user);
     }
 
+    public void toggleActive(String normalizedUsername, boolean active) throws NotFoundException, ForbiddenException {
+        User user = retrieveUser(normalizedUsername);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        if (user.equals(loggedInUser)) {
+            throw new ForbiddenException("A user is not allowed to deactivate themselves.");
+        }
+        if (user.getUsername().equals(ADMIN_USERNAME)) {
+            throw new ForbiddenException("It is not possible to deactivate user 'admin'.");
+        }
+        user.setActive(active);
+        userDao.update(user);
+    }
+
     /**
      * Adds or removes ADMIN role of the user with the given username and persists the change. It the parameter admin
      * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
@@ -183,6 +190,12 @@ public class UserService {
         }
         userDao.update(user);
         return user.isAdmin();
+    }
+
+    public void setLastLogin(String normalizedUsername) {
+        User user = userDao.findByUsername(normalizedUsername);
+        user.setLastLogin(new Timestamp(new Date().getTime()));
+        userDao.update(user);
     }
 
     /**

@@ -35,8 +35,7 @@ import java.util.Map;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static play.mvc.Http.Status.OK;
-import static play.mvc.Http.Status.SEE_OTHER;
+import static play.mvc.Http.Status.*;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
@@ -359,6 +358,22 @@ public class StudiesControllerTest {
 
         assertThat(result.status()).isEqualTo(OK);
         assertThat(contentAsString(result)).contains("true");
+    }
+
+    @Test
+    public void callToggleActive() {
+        testHelper.createAndPersistUser("bla", "Bla", "bla");
+
+        Study study = testHelper.createAndPersistExampleStudy(injector, "bla");
+        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        RequestBuilder request = new RequestBuilder()
+                .method("POST")
+                .session(session)
+                .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
+                .uri(routes.Studies.toggleActive(study.getId(), false).url());
+        Result result = route(fakeApplication, request);
+
+        assertThat(result.status()).isEqualTo(OK);
     }
 
     /**

@@ -1,0 +1,116 @@
+/*
+ * Define user button
+ */
+@btn-admin-color:   #ffffff;
+@btn-admin-bg:      #b17632;
+@btn-admin-border:  #8e5e28;
+@btn-admin-active:  #996529;
+
+.btn-admin {
+  color: @btn-admin-color;
+  background-color: @btn-admin-bg;
+  border-color: @btn-admin-border;
+}
+
+.btn-admin:hover,
+.btn-admin:focus,
+.btn-admin:active,
+.btn-admin.active,
+.open .dropdown-toggle.btn-admin {
+  color: @btn-admin-color;
+  background-color: @btn-admin-active;
+  border-color: @btn-admin-border;
+}
+
+.btn-admin:active,
+.btn-admin.active,
+.open .dropdown-toggle.btn-admin {
+  background-image: none;
+}
+
+.btn-admin.disabled,
+.btn-admin[disabled],
+fieldset[disabled] .btn-admin,
+.btn-admin.disabled:hover,
+.btn-admin[disabled]:hover,
+fieldset[disabled] .btn-admin:hover,
+.btn-admin.disabled:focus,
+.btn-admin[disabled]:focus,
+fieldset[disabled] .btn-admin:focus,
+.btn-admin.disabled:active,
+.btn-admin[disabled]:active,
+fieldset[disabled] .btn-admin:active,
+.btn-admin.disabled.active,
+.btn-admin[disabled].active,
+fieldset[disabled] .btn-admin.active {
+  background-color: @btn-admin-bg;
+  border-color: @btn-admin-border;
+}
+
+.btn-admin .badge {
+  color: @btn-admin-bg;
+  background-color: @btn-admin-color;
+}
+
+/*
+ * No wrapping in button group
+ */
+.userBtnGroup {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    user-select: none;
+}
+
+/*
+ * DataTables
+ */
+.table tbody > tr > td.adminRole {
+    text-align: center;
+    user-select: none;
+}
+#adminToolbar,
+#createUserButton {
+    margin-bottom: 20px;
+}
+#userTable_wrapper div.dataTables_filter,
+#studyAdminTable_wrapper div.dataTables_filter {
+    display: inline-block;
+    float: right;
+}
+#userTable_wrapper div.dataTables_length,
+#studyAdminTable_wrapper div.dataTables_length {
+    display: inline-block;
+}
+#userTable_wrapper .pagination > li.active > a ,
+#studyAdminTable_wrapper .pagination > li.active > a {
+    color: @btn-admin-color;
+    background-color: @btn-admin-bg;
+    border-color: darken(@btn-admin-bg, 5%);
+}
+#userTable_wrapper .pagination > li.active > a:hover,
+#studyAdminTable_wrapper .pagination > li.active > a:hover {
+    background-color: darken(@btn-admin-bg, 10%);
+}
+#userTable_wrapper .pagination > li > a,
+#studyAdminTable_wrapper .pagination > li > a {
+    color: @btn-default-color;
+    background-color: @btn-default-bg;
+    border-color: darken(@btn-default-bg, 20%);
+}
+#userTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover,
+#studyAdminTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
+    background-color: darken(@btn-default-bg, 10%);
+}
+#userTable_wrapper .pagination > li.disabled > a,
+#studyAdminTable_wrapper .pagination > li.disabled > a {
+    color: lighten(@btn-default-color, 20%);
+}
+#userTable_wrapper .pagination > li.next > a,
+#studyAdminTable_wrapper .pagination > li.next > a {
+    margin-right: 10px;
+}
+#userTable_wrapper tr.info td {
+    background-color: #f5f5f5;
+}

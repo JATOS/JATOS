@@ -125,8 +125,7 @@
         <th></th>
     </tr>
     </thead>
-    <tbody class="sortable">
-    </tbody>
+    <tbody></tbody>
 </table>
 
 <!-- Template for active button in Component's row -->
@@ -230,12 +229,12 @@ $(document).ready(function() {
         "columns": [
             {
                 "class": 'componentDragButton',
-                "data": null,
+                "data": "position",
                 "defaultContent": '',
                 "width": "1px",
                 "render": function (data, type, full, meta) {
                     var button = $('#componentDragButtonDiv button:first-child').clone();
-                    button.html(button.html() + data.position);
+                    button.html(button.html() + data);
                     button.attr('title', "Use this button to drag and drop this component to a new position");
                     return button.prop('outerHTML');
                 }
@@ -276,9 +275,11 @@ $(document).ready(function() {
         "createdRow": function(row, data, index) {
             setRowActive($(row), data.active);
         },
-        "order" : [],
         "language": {
             "emptyTable": "No components yet - go to 'Components' and then 'New', to add new components"
+        },
+        rowReorder: {
+            "dataSrc": "position"
         }
     });
 
@@ -289,6 +290,23 @@ $(document).ready(function() {
         if ($(".componentResults").length > 1) {
             setButtonWidthToMax(".componentResults");
         }
+    });
+
+    componentsTable.on('row-reordered', function (e, details, edit) {
+        var componentId = edit.triggerRow.data().id;
+        var newPosition = edit.triggerRow.data().position;
+        $.ajax({
+            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() + "/componentOrder"
+                    + "?componentId=" + componentId + "&newPosition=" + newPosition,
+            type : "POST",
+            success : function(response) {
+                componentsTable.ajax.reload();
+                fillSidebar();
+            },
+            error : function(err) {
+                showError(err.responseText);
+            }
+        });
     });
 
     $('#componentsTable tbody').on('click', '.runComponent', function() {
@@ -334,6 +352,7 @@ $(document).ready(function() {
             $.ajax({
                 url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + componentId,
                 type : 'DELETE',
+                beforeSend: showWaitingModal,
                 success : function(result) {
                     showMessages(JSON.parse(result));
                     componentsTable.ajax.reload();
@@ -341,7 +360,8 @@ $(document).ready(function() {
                 },
                 error : function(err) {
                     showError(err.responseText);
-                }
+                },
+                complete: hideWaitingModal
             });
         });
     });
@@ -392,41 +412,6 @@ $(document).ready(function() {
                     .addClass('glyphicon-remove').prop('outerHTML'));
         }
     }
-
-    $("tbody.sortable").sortable({
-        items: "> tr",
-        handle: '.dragButton',
-        // Interferes with dragging - need to overwrite since default it button
-        cancel: '',
-        helper: function(e, tr) {
-            var $originals = tr.children();
-            var $helper = tr.clone();
-            $helper.children().each(function(index) {
-                // Set helper cell sizes to match the original sizes
-                $(this).width($originals.eq(index).width());
-            });
-            return $helper;
-        },
-        zIndex: 9999,
-    });
-
-});
-
-$("tbody.sortable").on("sortstop", function(event, ui) {
-    var componentId = getComponentId(ui.item);
-    var newPosition = ui.item.index() + 1;
-    $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() + "/componentOrder"
-                + "?componentId=" + componentId + "&newPosition=" + newPosition,
-        type : "POST",
-        success : function(response) {
-            componentsTable.ajax.reload();
-            fillSidebar();
-        },
-        error : function(err) {
-            showError(err.responseText);
-        }
-    });
 });
 
 function getComponentId(element) {
@@ -439,21 +424,6 @@ function getComponentTitle(element) {
     var tr = $(element).closest('tr');
     var rowData = componentsTable.row(tr).data();
     return rowData.title;
-}
-
-function ajaxChangeComponentOrder(componentId, direction, tr) {
-    $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() + "/changeComponentOrder"
-                + "?componentId=" + componentId + "&direction=" + direction,
-        type : "POST",
-        success : function(response) {
-            componentsTable.ajax.reload();
-            fillSidebar();
-        },
-        error : function(err) {
-            showError(err.responseText);
-        }
-    });
 }
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
@@ -481,7 +451,7 @@ function setLockButton(locked) {
         $('#lockStudy').html('Unlocked');
         $('#lockStudy').addClass('btn-study');
         $('#lockStudy').removeClass('btn-warning');
-        $("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
+        $("#lockStudy").attr("title", "Press to lock this study and prohibit changes. Your workers can still run the study.");
     }
 }
 
@@ -499,8 +469,7 @@ $('#studyToolbar').on('click', '#studyLinksButton', function() {
 
 $('#studyToolbar').on('click', '#exportStudy', function() {
     showWaitingModal();
-    var url = '@controllers.gui.routes.ImportExport.exportStudy(study.getId())';
-    downloadWithPost(url);
+    download('@controllers.gui.routes.ImportExport.exportStudy(study.getId())');
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
@@ -514,12 +483,14 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
         $.ajax({
             url : '@controllers.gui.routes.Studies.remove(study.getId())',
             type : 'DELETE',
+            beforeSend: showWaitingModal,
             success : function(result) {
                 window.location.replace('@controllers.gui.routes.Home.home()');
             },
             error : function(err) {
                 showError(err.responseText);
-            }
+            },
+            complete: hideWaitingModal
         });
     });
 });

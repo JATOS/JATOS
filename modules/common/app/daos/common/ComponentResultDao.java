@@ -2,14 +2,16 @@ package daos.common;
 
 import models.common.Component;
 import models.common.ComponentResult;
+import models.common.Study;
 import models.common.StudyResult;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DAO for ComponentResult entity
@@ -84,6 +86,49 @@ public class ComponentResultDao extends AbstractDao {
                 .setMaxResults(max)
                 .setParameter("component", component)
                 .getResultList();
+    }
+
+    /**
+     * Returns data size (in Byte) that is occupied by the 'data' field of all component results belonging to the given
+     * study.
+     */
+    public Long sizeByStudy(Study study) {
+        if (study.getComponentList().isEmpty()) return 0L;
+        Number result = (Number) jpa.em().createQuery(
+                "SELECT SUM(LENGTH(data)) FROM ComponentResult WHERE component_id IN :componentIds")
+                .setParameter("componentIds",
+                        study.getComponentList().stream().map(Component::getId).collect(Collectors.toList()))
+                .getSingleResult();
+        return result != null ? result.longValue() : 0L;
+    }
+
+    /**
+     * Returns a list of component result IDs that belong to the given list of study result IDs. The order of the
+     * study results is kept, e.g. if the study result IDs are sr1, sr2, sr3 - then in the returned list are first all
+     * component result IDs of sr1, then all of sr2, and last all of sr3.
+     */
+    public List<Long> findIdsByStudyResultIds(List<Long> orderedSrids) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> unorderedDbResults = jpa.em()
+                .createNativeQuery("SELECT cr.studyResult_id, cr.id FROM ComponentResult cr "
+                        + "WHERE cr.studyResult_id IN :ids")
+                .setParameter("ids", orderedSrids)
+                .getResultList();
+        // We have to ensure that the order of the srids of the crids that will be returned is the same as the order of
+        // the given srids.
+        // This is a inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
+        // - but it's not supported by H2.
+        List<Long> orderedComponentResultIds = new ArrayList<>();
+        for (Long orderedSrid : orderedSrids) {
+            for (Object[] dbResult : unorderedDbResults) {
+                long srid = ((Number) dbResult[0]).longValue();
+                long crid = ((Number) dbResult[1]).longValue();
+                if (srid == orderedSrid) {
+                    orderedComponentResultIds.add(crid);
+                }
+            }
+        }
+        return orderedComponentResultIds;
     }
 
 }

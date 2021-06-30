@@ -80,7 +80,8 @@ public class GeneralMultiplePublixUtilsTest extends PublixUtilsTest<GeneralMulti
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             publixUtils.setUrlQueryParameter(studyResult);
             assertThat(studyResult.getUrlQueryParameters()).isEqualTo(
-                    "{\"foo\":\"bar\",\"para2\":\"1234567890\",\"para3\":\"i%20like%20gizmodo\"}");
+                    "{\"generalMultiple\":\"abc\",\"foo\":\"bar\",\"para2\":\"1234567890\","
+                            + "\"para3\":\"i%20like%20gizmodo\",\"batchId\":\"3\"}");
         });
     }
 

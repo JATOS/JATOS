@@ -283,7 +283,7 @@ public class JsonUtils {
         }
         int dataSize = componentResult.getData() != null ?
                 componentResult.getData().getBytes(StandardCharsets.UTF_8).length : 0;
-        componentResultNode.put("dataSize", Helpers.humanReadableByteCountSI(dataSize));
+        componentResultNode.put("dataSize", Helpers.humanReadableByteCount(dataSize));
 
         // Add uploaded result files
         ArrayNode filesNode = componentResultNode.arrayNode();
@@ -310,7 +310,7 @@ public class JsonUtils {
         String fileSize = null;
         try {
             FileChannel fileChannel = FileChannel.open(filePath);
-            fileSize = Helpers.humanReadableByteCountSI(fileChannel.size());
+            fileSize = Helpers.humanReadableByteCount(fileChannel.size());
         } catch (IOException e) {
             LOGGER.warn("Cannot open file " + filePath);
         }
@@ -375,20 +375,6 @@ public class JsonUtils {
         userNode.put("username", user.getUsername());
         userNode.put("isMember", study.hasUser(user));
         return userNode;
-    }
-
-    /**
-     * Returns a ArrayNode with the usual user fields plus from all studies
-     * where the user is member of the title and the number of members.
-     */
-    public JsonNode userData(List<User> userList) {
-        ArrayNode userArrayNode = Json.mapper().createArrayNode();
-        for (User user : userList) {
-            userArrayNode.add(userData(user));
-        }
-        ObjectNode userDataNode = Json.mapper().createObjectNode();
-        userDataNode.set(DATA, userArrayNode);
-        return userDataNode;
     }
 
     /**

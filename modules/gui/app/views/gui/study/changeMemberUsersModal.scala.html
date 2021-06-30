@@ -30,11 +30,13 @@
                                 </div>
                             </div>
                             <div class="btn-group">
+                                @if(general.common.Common.isStudyMembersAllowedToAddAllUsers()) {
                                 <button id="addAllMemberButton" type="button" class="btn btn-primary"
                                     data-toggle="tooltip" data-placement="bottom"
                                     title="Give all users access to this study">
                                     Add All
                                 </button>
+                                }
                                 <button id="removeAllMemberButton" type="button" class="btn btn-primary"
                                     data-toggle="tooltip" data-placement="bottom"
                                     title="Remove access rights to this study from all users except yourself">

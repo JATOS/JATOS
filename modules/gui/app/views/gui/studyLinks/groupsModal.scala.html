@@ -95,6 +95,9 @@ function generateGroupsTable(batch) {
         "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "pageLength": 10,
         "stateSave": true,
+        "stateSaveParams": function (settings, data) {
+            data.search.search = "";
+        },
         "pagingType": "simple_numbers",
         buttons: [
             {
@@ -131,10 +134,12 @@ function generateGroupsTable(batch) {
             },
             {
                 "data": "startDate",
+                "type": "date",
                 "class": 'time'
             },
             {
                 "data": "endDate",
+                "type": "date",
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "not yet";
                 }

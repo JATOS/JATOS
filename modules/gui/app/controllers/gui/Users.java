@@ -29,10 +29,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.naming.NamingException;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 /**
- * Controller with actions concerning users
+ * Controller with actions concerning users (incl. user manager)
  *
  * @author Kristian Lange
  */
@@ -72,9 +72,8 @@ public class Users extends Controller {
     @Authenticated(Role.ADMIN)
     public Result userManager() {
         User loggedInUser = authenticationService.getLoggedInUser();
-        String breadcrumbs = breadcrumbsService.generateForHome(BreadcrumbsService.USER_MANAGER);
-        return ok(views.html.gui.user.userManager.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost()));
+        String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
+        return ok(views.html.gui.admin.userManager.render(loggedInUser, breadcrumbs, Helpers.isLocalhost()));
     }
 
     /**
@@ -83,8 +82,40 @@ public class Users extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result allUserData() {
-        List<User> userList = userService.retrieveAllUsers();
-        return ok(jsonUtils.userData(userList));
+        List<Map<String, Object>> allUserData = new ArrayList<>();
+        for (User user : userDao.findAll()) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("active", user.isActive());
+            userData.put("name", user.getName());
+            userData.put("username", user.getUsername());
+            userData.put("roleList", user.getRoleList());
+            userData.put("authMethod", user.getAuthMethod().name());
+            userData.put("studyCount", user.getStudyList().size());
+            userData.put("lastSeen",
+                    Helpers.formatDate(Date.from(authenticationService.getLastSeen(user.getUsername()))));
+            userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
+            allUserData.add(userData);
+        }
+        return ok(jsonUtils.asJsonNode(allUserData));
+    }
+
+    /**
+     * Ajax POST
+     * <p>
+     * Request to activate or deactivate a user.
+     */
+    @Transactional
+    @Authenticated(Role.ADMIN)
+    public Result toggleActive(String usernameOfUserToChange, Boolean active) {
+        try {
+            String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
+            userService.toggleActive(normalizedUsernameOfUserToChange, active);
+        } catch (NotFoundException e) {
+            return badRequest(e.getMessage());
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        }
+        return ok();
     }
 
     /**
@@ -118,7 +149,7 @@ public class Users extends Controller {
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
-        return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs, Helpers.isLocalhost()));
+        return ok(views.html.gui.admin.profile.render(loggedInUser, breadcrumbs, Helpers.isLocalhost()));
     }
 
     /**

@@ -301,19 +301,15 @@ public class IdCookieAccessor {
 
         // Put new IdCookie into Response
         String cookieValue = idCookieSerialiser.asCookieValueString(newIdCookie);
-        Http.Cookie cookie = builder(newIdCookie.getName(), cookieValue)
+        Http.CookieBuilder cookieBuilder = builder(newIdCookie.getName(), cookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
-                .withSecure(false)
                 .withHttpOnly(false)
-                // https://github.com/JATOS/JATOS/issues/208
-                // Safari + MTurk does not work with LAX: https://bugs.webkit.org/show_bug.cgi?id=194906
-                // Safari sees start study -> start component as a cross-side redirect although it's not
-                // We can't use SameSite.NONE: 1) not supported by Play yet, 2) needs secure flag true (only via HTTPS)
-                // Older browsers default to None - recent browsers to LAX
-//                .withSameSite(SameSite.LAX)
                 .withPath(Common.getPlayHttpContext())
-                .build();
-        Publix.response().setCookie(cookie);
+                .withSecure(Common.isIdCookiesSecure());
+        // https://github.com/JATOS/JATOS/issues/208
+        // https://github.com/JATOS/JATOS/issues/231
+        if (Common.getIdCookiesSameSite() != null) cookieBuilder.withSameSite(Common.getIdCookiesSameSite());
+        Publix.response().setCookie(cookieBuilder.build());
 
         idCookieCollection.put(newIdCookie);
 

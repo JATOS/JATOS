@@ -144,7 +144,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
-                return redirect(routes.StudyAssets.endPage(study.getId(), new Some<>(confirmationCode)));
+                return redirect(routes.StudyAssets.endPage(study.getId(), studyResultId, new Some<>(confirmationCode)));
             }
         }
     }

@@ -119,7 +119,7 @@ public class PublixUtils {
                 }
 
             } else {
-                // The prior component is a different one than the one to be started: just finish it
+                // The previous component is a different one than the one to be started: just finish the old one
                 finishComponentResult(lastResult, ComponentState.FINISHED, message);
             }
         }

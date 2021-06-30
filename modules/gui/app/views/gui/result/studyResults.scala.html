@@ -2,6 +2,30 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
+<div id="resultsTable_upperToolbar" class="btn-toolbar" role="toolbar"></div>
+
+<div id="resultsTable_lowerToolbar">
+    <div id="resultsTable_select">
+        <label for="resultsTable_select">Select <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Select or deselect table rows (results)"></span>:</label>
+    </div>
+
+    <div id="resultsTable_search">
+        <label for="resultsTable_search">Filter <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table's content (metadata)"></span>:</label>
+        <div class="input-group">
+            <input type="search" class="form-control" placeholder="" autofocus>
+            <div class="input-group-btn">
+                <button type="button" class="btn btn-default regex" data-toggle="tooltip" data-placement="bottom" title="Filter by regular expression">RegEx</button>
+                <button type="button" class="btn btn-default caseSensitive" data-toggle="tooltip" data-placement="bottom" title="Filter case sensitive">Aa</button>
+            </div>
+        </div>
+        <a class="btn btn-default" role="button" data-toggle="collapse" href=".dtsb-searchBuilder" data-placement="bottom" title="Define complex filter criteria">Filter Builder&nbsp;<span class="caret"></span></a>
+    </div>
+
+    <div class="pull-right">
+        <div id="resultsTable_customize"></div>
+    </div>
+</div>
+
 <!-- Results table -->
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
     <thead>
@@ -10,19 +34,19 @@
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
             <th>Result ID</th>
-            <th>Study Link ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
-            <th>Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></th>
-            <th>End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME"></span></th>
-            <th>Last Seen&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></th>
-            <th>Duration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION"></span></th>
+            <th>Study Link ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
+            <th>Start Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></th>
+            <th>End Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME"></span></th>
+            <th>Last Seen <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></th>
+            <th>Duration <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION"></span></th>
             <th>Batch</th>
-            <th>Worker ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
-            <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
-            <th>MTurk Worker ID (Confirmation Code)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
-            <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
-            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
-            <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
-            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
+            <th>Worker ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
+            <th>Worker Type <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
+            <th>MTurk Worker ID (Confirmation Code) <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
+            <th>Group ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
+            <th>Files <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
+            <th>State <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
+            <th>Message <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
         </tr>
     </thead>
     <tfoot>
@@ -31,34 +55,22 @@
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
             <th>Result ID</th>
-            <th>Study Link ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
-            <th>Start Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></th>
-            <th>End Time&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME"></span></th>
-            <th>Last Seen&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></th>
-            <th>Duration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION"></span></th>
+            <th>Study Link ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
+            <th>Start Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></th>
+            <th>End Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME"></span></th>
+            <th>Last Seen <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_LAST_SEEN_TIME"></span></th>
+            <th>Duration <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DURATION"></span></th>
             <th>Batch</th>
-            <th>Worker ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
-            <th>Worker Type&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
-            <th>MTurk Worker ID (Confirmation Code)&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
-            <th>Group ID&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
-            <th>Files&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
-            <th>State&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
-            <th>Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
+            <th>Worker ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_ID"></span></th>
+            <th>Worker Type <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_WORKER_TYPE"></span></th>
+            <th>MTurk Worker ID (Confirmation Code) <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE"></span></th>
+            <th>Group ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_GROUP_ID"></span></th>
+            <th>Files <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_FILES"></span></th>
+            <th>State <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_STATE"></span></th>
+            <th>Message <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_STUDY_MESSAGES"></span></th>
         </tr>
     </tfoot>
 </table>
-
-<!-- Search / filter field with RegEx and Case button-->
-<div id="resultsTableSearch" style="display: none">
-    <label for="resultsTableSearch">Filter Results <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="You can filter for table's content (metadata) or search in the result data themselves"></span>:</label>
-    <div class="input-group">
-        <input type="search" class="form-control" placeholder="" autofocus>
-        <div class="input-group-btn">
-            <button type="button" class="btn btn-default regex" data-toggle="tooltip" data-placement="bottom" title="Treat as regular expression">RegEx</button>
-            <button type="button" class="btn btn-default caseSensitive" data-toggle="tooltip" data-placement="bottom" title="Search case sensitive">Aa</button>
-        </div>
-    </div>
-</div>
 
 <!-- Component result data Modal -->
 <div class="modal fade" id="componentResultDataModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
@@ -75,7 +87,6 @@
         </div>
     </div>
 </div>
-
 
 <script type="text/javascript">
 var studyId = @study.getId();
@@ -99,11 +110,14 @@ $(document).ready(function() {
             },
             "complete": hideWaitingModal
         },
-        "dom": '<"pull-right"B>lfrtip',
+        "dom": 'lfrtip',
         "order": [[ 2, "desc" ]],
-        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "lengthMenu": [[10, 25, 50, 100, 250, 500, 1000, 2500, -1], [10, 25, 50, 100, 250, 500, 1000, 2500, "All"]],
         "pageLength": 10,
         "stateSave": true,
+        "stateSaveParams": function (settings, data) {
+            data.search.search = "";
+        },
         "columns": [
             {
                 "class": 'details-control',
@@ -134,9 +148,13 @@ $(document).ready(function() {
                 "visible": false,
                 "width": "1%"
             },
-            { "data": "startDate" },
+            {
+                "data": "startDate",
+                 "type": "date"
+            },
             {
                 "data": "endDate",
+                "type": "date",
                 "visible": false,
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "never";
@@ -144,6 +162,7 @@ $(document).ready(function() {
             },
             {
                 "data": "lastSeenDate",
+                "type": "date",
                 "render": function (data, type, full, meta) {
                     return (data) ? data : "never";
                 }
@@ -164,16 +183,15 @@ $(document).ready(function() {
                         'href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             },
-            {   "data": "worker.workerType",
+            {
+                "data": "worker.workerType",
                 "render": getUIWorkerTypeWithGlyphicon
             },
             {
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    var mtWorkerId = (full.worker.mtWorkerId) ?
-                            full.worker.mtWorkerId : "none";
-                    var confirmationCode = (full.confirmationCode) ?
-                            full.confirmationCode : "none";
+                    var mtWorkerId = (full.worker.mtWorkerId) ? full.worker.mtWorkerId : "none";
+                    var confirmationCode = (full.confirmationCode) ? full.confirmationCode : "none";
                     return mtWorkerId + "<br>(" + confirmationCode + ")";
                 }
             },
@@ -208,152 +226,227 @@ $(document).ready(function() {
             "style": 'multi',
             "selector": 'td:nth-child(2)'
         },
-        buttons: [
-            {
-                "text": "<span class='glyphicon glyphicon-refresh'></span>",
-                "className": "btn btn-study",
-                "titleAttr": 'Refresh results',
-                "action": function ( e, dt, node, config ) {
-                    this.disable();
-                    resultsTable.ajax.reload();
-                    setTimeout(this.enable, 3000);
-                }
-            },
-            {
-                "extend": "colvis",
-                "text": "Show/Hide Columns <span class='caret'></span>",
-                "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY',
-                "columns": ':not(:last)'
-            },
-            {
-                "extend": "selectAll",
-                "text": "Select All",
-                "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
-            },
-            {
-                "extends": "selectAll",
-                "text": "Select Filtered",
-                "className": "btn btn-study",
-                "action": function(e, dt, node, config) {
-                    dt.rows({ search: 'applied' }).select();
-                },
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
-            },
-            {
-                "extend": "selectNone",
-                "text": "Deselect All",
-                "className": "btn btn-study",
-                "action": function(e, dt, node, config) {
-                    dt.rows().deselect();
-                },
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
-            },
-            {
-                "extend": 'collection',
-                "text": 'Export Results <span class="caret"></span>',
-                "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA',
-                "buttons": [
-                    {
-                        "text": "Selected",
-                        "action": exportSelectedResultData,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_DATA'
-                    },
-                    {
-                        "text": "All",
-                        "action": exportAllResultData,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
-                    }
-                ]
-            },
-            {
-                "extend": 'collection',
-                "text": 'Export Files <span class="caret"></span>',
-                "className": "btn btn-study exportFilesButton",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
-                "buttons": [
-                    {
-                        "text": "Selected",
-                        "action": exportSelectedResultFiles,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
-                    },
-                    {
-                        "text": "All",
-                        "action": exportAllResultFiles,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
-                    }
-                ]
-            },
-            {
-                "extend": 'collection',
-                "text": 'Export Metadata <span class="caret"></span>',
-                "className": "btn btn-study",
-                "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
-                "buttons": [
-                    {
-                        "extend": 'csv',
-                        "text": "Selected",
-                        "filename": function() { return "jatos_meta_" + moment().format("YYYYMMDDHHmmss") },
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
-                        "exportOptions": {
-                            "columns": ':nth-child(n+3):visible',
-                            "modifier": {
-                                "selected": true
-                            }
-                        },
-                        "action": function(e, dt, node, config) {
-                            $('#waitingModal').modal('show');
-                            setTimeout(function(){
-                                $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
-                                $('#waitingModal').modal('hide');
-                            }, 1000);
-                        }
-                    },
-                    {
-                        "extend": 'csv',
-                        "text": "All",
-                        "filename": function() { return "jatos_meta_" + moment().format("YYYYMMDDHHmmss") },
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
-                        "exportOptions": {
-                            "columns": ':nth-child(n+3):visible'
-                        },
-                        "action": function(e, dt, node, config) {
-                            $('#waitingModal').modal('show');
-                            setTimeout(function(){
-                                $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
-                                $('#waitingModal').modal('hide');
-                            }, 1000);
-                        }
-                    }
-                ]
-            },
-            {
-                "extend": 'collection',
-                "text": 'Delete <span class="caret"></span>',
-                "className": "btn btn-danger",
-                "buttons": [
-                    {
-                        "text": "Selected",
-                        "action": deleteSelectedResults,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-                    },
-                    {
-                        "text": "All",
-                        "action": deleteAllResults,
-                        "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
-                    }
-                ]
+        buttons: [],
+        searchBuilder: {
+            columns: ':not(:first-child):not(:nth-child(2)):not(th:contains(Files))'
+        },
+        language: {
+            "lengthMenu": "Show: _MENU_",
+            "searchBuilder": {
+                "clearAll": "Reset",
+                "title": "Custom Filter Builder",
+                "data": "Field"
             }
-        ]
+        }
     });
 
-    // Swap dataTables filter field with our own
-    $("#resultsTable_filter").empty();
-    $("#resultsTable_filter").append($("#resultsTableSearch"));
-    $("#resultsTableSearch").show();
-    $("#resultsTableSearch input").focus();
+    buildUpperToolbar();
+    buildLowerToolbar();
+
+    // Upper toolbar contains refresh, export, and delete button
+    function buildUpperToolbar() {
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'refreshButton',
+            buttons: [
+                {
+                    "text": "<span class='glyphicon glyphicon-refresh'></span>",
+                    "className": "btn btn-study",
+                    "titleAttr": 'Reload results and refresh the table',
+                    "action": function ( e, dt, node, config ) {
+                        this.disable();
+                        resultsTable.ajax.reload();
+                        setTimeout(this.enable, 3000);
+                    }
+                }
+            ]
+        });
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'exportButtonGroup',
+            buttons: [
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export Results&nbsp;<span class="caret"></span>',
+                    "className": "btn btn-study",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA',
+                    "buttons": [
+                        {
+                            "text": "Selected",
+                            "action": exportSelectedResultData,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_DATA'
+                        },
+                        {
+                            "text": "All",
+                            "action": exportAllResultData,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+                        }
+                    ]
+                },
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Files&nbsp;<span class="caret"></span>',
+                    "className": "btn btn-study exportFilesButton",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
+                    "buttons": [
+                        {
+                            "text": "Selected",
+                            "action": exportSelectedResultFiles,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
+                        },
+                        {
+                            "text": "All",
+                            "action": exportAllResultFiles,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
+                        }
+                    ]
+                },
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Metadata&nbsp;<span class="caret"></span>',
+                    "className": "btn btn-study",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
+                    "buttons": [
+                        {
+                            "extend": 'csv',
+                            "text": "Selected",
+                            "filename": function() { return "jatos_meta_" + getDateTimeYYYYMMDDHHmmss() },
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
+                            "exportOptions": {
+                                "columns": ':nth-child(n+3):visible',
+                                "modifier": {
+                                    "selected": true
+                                }
+                            },
+                            "action": function(e, dt, node, config) {
+                                $("ul.dropdown-menu").hide();
+                                $('#waitingModal').modal('show');
+                                setTimeout(function(){
+                                    $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                                    $('#waitingModal').modal('hide');
+                                }, 1000);
+                            }
+                        },
+                        {
+                            "extend": 'csv',
+                            "text": "All",
+                            "filename": function() { return "jatos_meta_" + getDateTimeYYYYMMDDHHmmss() },
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
+                            "exportOptions": {
+                                "columns": ':nth-child(n+3):visible'
+                            },
+                            "action": function(e, dt, node, config) {
+                                $("ul.dropdown-menu").hide();
+                                $('#waitingModal').modal('show');
+                                setTimeout(function(){
+                                    $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                                    $('#waitingModal').modal('hide');
+                                }, 1000);
+                            }
+                        }
+                    ]
+                }
+            ]
+        });
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'deleteButton',
+            buttons: [
+                {
+                    "extend": 'collection',
+                    "text": '<span class="glyphicon glyphicon-floppy-remove"></span>&nbsp;Delete&nbsp;<span class="caret"></span>',
+                    "titleAttr": "Delete results from JATOS' database",
+                    "className": "btn btn-danger",
+                    "buttons": [
+                        {
+                            "text": "Selected",
+                            "action": deleteSelectedResults,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+                        },
+                        {
+                            "text": "All",
+                            "action": deleteAllResults,
+                            "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
+                        }
+                    ]
+                }
+            ]
+        });
+
+        resultsTable.buttons('refreshButton', null).containers()
+            .attr('id', 'resultTable_refresh')
+            .appendTo('#resultsTable_upperToolbar');
+        resultsTable.buttons('exportButtonGroup', null).containers()
+            .attr('id', 'resultTable_export')
+            .appendTo('#resultsTable_upperToolbar');
+        resultsTable.buttons('deleteButton', null).containers()
+            .attr('id', 'resultTable_delete')
+            .appendTo('#resultsTable_upperToolbar');
+        $('#resultsTable_upperToolbar').prependTo('#resultsTable_wrapper');
+    }
+
+    // Lower toolbar contains select buttons, filter/search, SearchBuilder, customization button, and table length
+    function buildLowerToolbar() {
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'selectButtonGroup',
+            buttons: [
+                {
+                    "extend": "selectAll",
+                    "text": "All",
+                    "className": "btn btn-default",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
+                },
+                {
+                    "extends": "selectAll",
+                    "text": "Visible",
+                    "className": "btn btn-default",
+                    "action": function(e, dt, node, config) {
+                        dt.rows().deselect();
+                        dt.rows({ page: 'current' }).select();
+                    },
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_VISIBLE'
+                },
+                {
+                    "extends": "selectAll",
+                    "text": "Filtered",
+                    "className": "btn btn-default",
+                    "action": function(e, dt, node, config) {
+                        dt.rows().deselect();
+                        dt.rows({ search: 'applied' }).select();
+                    },
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
+                },
+                {
+                    "extend": "selectNone",
+                    "text": "Deselect",
+                    "className": "btn btn-default",
+                    "action": function(e, dt, node, config) {
+                        dt.rows().deselect();
+                    },
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
+                }
+            ]
+        });
+        new $.fn.dataTable.Buttons(resultsTable, {
+            name: 'customizeButton',
+            buttons: [
+                {
+                    "extend": "colvis",
+                    "text": "Customize <span class='caret'></span>",
+                    "className": "btn btn-default",
+                    "titleAttr": '@general.common.MessagesStrings.RESULTS_CUSTOMIZATION',
+                    "columns": ':not(:last)'
+                }
+            ]
+        });
+
+        $('#resultsTable_upperToolbar').after($('#resultsTable_lowerToolbar'));
+        resultsTable.buttons('selectButtonGroup', null).containers().appendTo('#resultsTable_select');
+        // Swap dataTables filter field with our own
+        $("#resultsTable_filter").remove();
+        $("#resultsTable_select").after($('#resultsTable_search'));
+        $("#resultsTable_lowerToolbar").after(resultsTable.searchBuilder.container());
+        $(".dtsb-searchBuilder").addClass("collapse panel panel-default");
+        resultsTable.buttons('customizeButton', null).containers().appendTo('#resultsTable_customize');
+        $('#resultsTable_customize').after($('#resultsTable_length'));
+    }
 
     resultsTable.on('draw', function() {
         // Necessary - otherwise the button doesn't work with manually selected rows
@@ -380,28 +473,26 @@ $(document).ready(function() {
         }
     });
 
-    $('#resultsTableSearch input').on('keyup click', searchResultTable);
+    $('#resultsTable_search input').on('keyup click', searchResultTable);
 
-    $('#resultsTableSearch button.regex, button.caseSensitive').on('click', function () {
+    $('#resultsTable_search button.regex, button.caseSensitive').on('click', function () {
         var button = $(this);
         if (button.hasClass('checked')) {
             button.removeClass('checked');
-            button.removeClass('btn-study');
-            button.addClass('btn-default');
+            button.removeClass('lightgrayBackground');
         } else {
             button.addClass('checked');
-            button.removeClass('btn-default');
-            button.addClass('btn-study');
+            button.addClass('lightgrayBackground');
         }
         searchResultTable();
     });
 
     function searchResultTable() {
         resultsTable.search(
-            $('#resultsTableSearch input').val(),
-            $('#resultsTableSearch .regex').hasClass('checked'),
-            !$('#resultsTableSearch .regex').hasClass('checked'),
-            !$('#resultsTableSearch .caseSensitive').hasClass('checked')
+            $('#resultsTable_search input').val(),
+            $('#resultsTable_search .regex').hasClass('checked'),
+            !$('#resultsTable_search .regex').hasClass('checked'),
+            !$('#resultsTable_search .caseSensitive').hasClass('checked')
         ).draw();
     }
 
@@ -418,16 +509,6 @@ $(document).ready(function() {
         if (resultsTable.rows().data().toArray().find(function(studyResult) { return studyResult.hasResultFiles })) {
             resultsTable.buttons(['.exportFilesButton']).enable();
         }
-    }
-
-    function getMTWorkerId(data, type, full, meta) {
-        if (data.MTSandboxWorker) {
-            return data.MTSandboxWorker.mtWorkerId;
-        }
-        if (data.MTWorker) {
-            return data.MTWorker.mtWorkerId;
-        }
-        return "none";
     }
 
     $('#resultsTable tbody').on('click', 'td.details-control', function() {
@@ -458,7 +539,8 @@ $(document).ready(function() {
     });
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
-        showWaitingModal();
+        $("ul.dropdown-menu").hide();
+        showWaitingModal(true);
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -473,8 +555,8 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportDataOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_results_" + moment().format("YYYYMMDDHHmmss") + ".txt";
-        downloadWithPost(url, data, filename);
+        var filename = "jatos_results_" + getDateTimeYYYYMMDDHHmmss() + ".txt";
+        downloadFileStreaming(url, data, filename);
     }
 
     function exportAllResultData(e, dt, node, config, ) {
@@ -482,6 +564,7 @@ $(document).ready(function() {
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
+        $("ul.dropdown-menu").hide();
         showWaitingModal();
         var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
@@ -530,12 +613,9 @@ $(document).ready(function() {
         deleteSelectedResults(e, dt, node, config, true);
     }
 
-    function exportAllResultFiles(e, dt, node, config) {
-        exportSelectedResultFiles(e, dt, node, config, true);
-    }
-
     function exportSelectedResultFiles(e, dt, node, config, exportAll) {
-        showWaitingModal();
+        $("ul.dropdown-menu").hide();
+        showWaitingModal(true);
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
@@ -550,8 +630,12 @@ $(document).ready(function() {
 
         var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfStudyResults()';
         var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_resultfiles_" + moment().format("YYYYMMDDHHmmss") + ".zip";
-        downloadWithPost(url, data, filename);
+        var filename = "jatos_resultfiles_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
+        downloadFileStreaming(url, data, filename);
+    }
+
+    function exportAllResultFiles(e, dt, node, config) {
+        exportSelectedResultFiles(e, dt, node, config, true);
     }
 
     function generateComponentResultsChildRow(componentResults, studyResultId) {
@@ -572,7 +656,7 @@ $(document).ready(function() {
             + '</div>');
 
         if (componentResults.length == 0) {
-            var row = $('<tr class="info"><td colspan="8">empty</td></tr>');
+            var row = $('<tr class="info"><td colspan="9">empty</td></tr>');
             childRow.find("tr").after(row);
             return childRow;
         }

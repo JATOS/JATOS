@@ -1,12 +1,11 @@
 package general
 
-import java.io.File
-
 import general.common.{Common, JatosUpdater}
-import javax.inject.Inject
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
+import java.io.File
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -15,10 +14,14 @@ import scala.concurrent.Future
   *
   * @author Kristian Lange
   */
-class OnStartStop @Inject()(lifecycle: ApplicationLifecycle, environment: play.Environment, jatosUpdater: JatosUpdater) {
+class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
+                            environment: play.Environment,
+                            jatosUpdater: JatosUpdater,
+                            mySQLCharsetFix: MySQLCharsetFix) {
 
   private val logger = Logger(this.getClass)
 
+  mySQLCharsetFix.run()
   checkUpdate()
   checkStudyAssetsRootDir()
 

@@ -98,9 +98,8 @@ public class StudyLinks extends Controller {
 
         int allWorkersSize = study.getBatchList().stream().mapToInt(b -> b.getWorkerList().size()).sum();
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
-        URL realBaseUrl = Helpers.getRealBaseUrl(request);
         return ok(views.html.gui.studyLinks.studyLinks.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost(), study, realBaseUrl, allWorkersSize));
+                breadcrumbs, Helpers.isLocalhost(), study, allWorkersSize, request));
     }
 
     /**

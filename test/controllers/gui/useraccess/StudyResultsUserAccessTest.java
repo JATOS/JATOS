@@ -71,7 +71,7 @@ public class StudyResultsUserAccessTest {
     @Test
     public void callStudysStudyResults() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.StudyResults.studysStudyResults(study.getId(), Option.empty());
+        Call call = routes.StudyResults.studysStudyResults(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -82,7 +82,7 @@ public class StudyResultsUserAccessTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         Call call = routes.StudyResults.batchesStudyResults(
-                study.getId(), batch.getId(), Option.apply(JatosWorker.WORKER_TYPE), Option.empty());
+                study.getId(), batch.getId(), Option.apply(JatosWorker.WORKER_TYPE));
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -91,7 +91,7 @@ public class StudyResultsUserAccessTest {
     @Test
     public void callWorkersStudyResults() {
         User admin = testHelper.getAdmin();
-        Call call = routes.StudyResults.workersStudyResults(admin.getWorker().getId(), Option.empty());
+        Call call = routes.StudyResults.workersStudyResults(admin.getWorker().getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
@@ -105,7 +105,7 @@ public class StudyResultsUserAccessTest {
     @Test
     public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Call call = routes.StudyResults.tableDataByStudy(study.getId(), Option.empty());
+        Call call = routes.StudyResults.tableDataByStudy(study.getId());
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -116,7 +116,7 @@ public class StudyResultsUserAccessTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         Call call = routes.StudyResults
-                .tableDataByBatch(study.getId(), batch.getId(), Option.apply(JatosWorker.WORKER_TYPE), Option.empty());
+                .tableDataByBatch(study.getId(), batch.getId(), Option.apply(JatosWorker.WORKER_TYPE));
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(), Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
@@ -124,7 +124,7 @@ public class StudyResultsUserAccessTest {
 
     @Test
     public void callTableDataByWorker() {
-        Call call = routes.StudyResults.tableDataByWorker(1L, Option.empty());
+        Call call = routes.StudyResults.tableDataByWorker(1L);
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }

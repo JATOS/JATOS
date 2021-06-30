@@ -54,16 +54,18 @@
 /*
  * Component table
  */
-.table tbody>tr>td{
-	vertical-align: middle;
-}
-.table tbody>tr>td.activeComponent {
+#componentsTable tbody > tr > td.activeComponent {
 	text-align: center;
 	user-select: none;
 }
-.table tbody>tr>td.componentDragButton {
+#componentsTable tbody > tr > td.componentDragButton {
 	text-align: center;
 	user-select: none;
+}
+/* Hide sort arrows */
+#componentsTable > thead > tr > th[class*='sort']:before,
+#componentsTable > thead > tr > th[class*='sort']:after {
+    content: '' !important;
 }
 
 /*

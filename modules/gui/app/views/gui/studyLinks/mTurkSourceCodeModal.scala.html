@@ -1,4 +1,4 @@
-@(study: common.Study, realBaseUrl: java.net.URL)
+@(study: common.Study, request: Http.Request)
 
 <!-- Mechanical Turk Source Code Modal Template -->
 <div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
@@ -105,40 +105,38 @@ function showSourceCodeMTurkModal(batch) {
         var modal = $('#mtSourceCodeModalTemplate').clone();
         $(modal).removeAttr('id');
 
-        var host = "@{ realBaseUrl.getProtocol() + "://" + realBaseUrl.getHost()}";
-        var port = @{ realBaseUrl.getPort() };
-        var address = port > 0 ? host + ":" + port : host;
-        var studyPath = "@{ general.common.Common.getPlayHttpContext()}publix/" + studyLinkId;
-        var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
-        var mturkSandboxUrl = address + studyPath + "?workerId=" + randomMturkWorkerId + "&assignmentId=def&turkSubmitTo=sandbox";
+    var address = "@utils.common.Helpers.getRealBaseUrl(request)";
+    var studyPath = "publix/@study.getId()/start";
+    var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
+    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=" + randomMturkWorkerId
+        + "&assignmentId=def&turkSubmitTo=sandbox";
 
-        $(modal).find('.modal-title').text("Source Code for MTurk for batch '" + batch.title + "'");
+    $(modal).find('.modal-title').text("Source Code for MTurk for batch '" + batch.title + "'");
 
-        // Fill dummy variables in template source code
-        $(modal).find('.mtSourceCode').text(function() {
-            return $(this).text()
-                .replace("addressDummy", address)
-                .replace("studyPathDummy", studyPath)
-                .replace("batchIdDummy", batch.id);
-        });
-        $(modal).find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
-            + '(<a target="_blank" href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk">more information</a>):<br>'
-            + '<div><i>' + mturkSandboxUrl + '</i>'
-            + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
-            + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button></div>');
+    // Fill dummy variables in template source code
+    $(modal).find('.mtSourceCode').text(function() {
+        return $(this).text()
+            .replace("addressDummy", address)
+            .replace("studyPathDummy", studyPath)
+            .replace("batchIdDummy", batch.id);
+    });
+    $(modal).find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
+        + '(<a target="_blank" href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk">more information</a>):<br>'
+        + '<div><i>' + mturkSandboxUrl + '</i>'
+        + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
+        + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button></div>');
 
-        $(modal).modal('show');
+    $(modal).modal('show');
 
-        // Select and copy to clipboard by button
-        $(modal).on('click', '.copyToClipboardButton', function(e) {
-            var mtSourceCode = $(modal).find('.mtSourceCode').text();
-            navigator.clipboard.writeText(mtSourceCode);
-        });
+    // Select and copy to clipboard by button
+    $(modal).on('click', '.copyToClipboardButton', function(e) {
+        var mtSourceCode = $(modal).find('.mtSourceCode').text();
+        navigator.clipboard.writeText(mtSourceCode);
+    });
 
-        $(modal).on('click', '.clipboardButton', function(e) {
-            var text = $(this).parent().text();
-            navigator.clipboard.writeText(text);
-        });
+    $(modal).on('click', '.clipboardButton', function(e) {
+        var text = $(this).parent().text();
+        navigator.clipboard.writeText(text);
     });
 }
 

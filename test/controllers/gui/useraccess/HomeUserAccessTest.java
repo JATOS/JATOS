@@ -25,8 +25,6 @@ import javax.inject.Inject;
  * <p>
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
- *
- * @author Kristian Lange (2015 - 2017)
  */
 public class HomeUserAccessTest {
 
@@ -69,17 +67,15 @@ public class HomeUserAccessTest {
     }
 
     @Test
-    public void callSidebarStudyList() {
-        Call call = routes.Home.sidebarStudyList();
+    public void callBranding() {
+        Call call = routes.Home.branding();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 
     @Test
-    public void callLog() {
-        Call call = routes.Home.log(1000);
+    public void callSidebarStudyList() {
+        Call call = routes.Home.sidebarStudyList();
         userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-        userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call, Helpers.GET);
         userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, testHelper.getAdmin());
     }
 

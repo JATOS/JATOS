@@ -7,7 +7,6 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 

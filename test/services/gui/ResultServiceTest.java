@@ -12,6 +12,7 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
+import models.common.workers.Worker;
 import org.fest.assertions.Fail;
 import org.junit.After;
 import org.junit.Before;
@@ -25,6 +26,7 @@ import play.inject.guice.GuiceApplicationLoader;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -325,7 +327,7 @@ public class ResultServiceTest {
         // Must be empty
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, admin.getWorker());
+            List<StudyResult> studyResultList = getAllowedStudyResultList(admin, admin.getWorker());
             assertThat(studyResultList.size()).isEqualTo(0);
         });
     }
@@ -337,7 +339,7 @@ public class ResultServiceTest {
         // Don't add any results
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, admin.getWorker());
+            List<StudyResult> studyResultList = getAllowedStudyResultList(admin, admin.getWorker());
             assertThat(studyResultList).isEmpty();
         });
     }
@@ -352,11 +354,22 @@ public class ResultServiceTest {
         jpaApi.withTransaction(() -> {
             User testUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            List<StudyResult> studyResultList = resultService.getAllowedStudyResultList(admin, testUser.getWorker());
+            List<StudyResult> studyResultList = getAllowedStudyResultList(admin, testUser.getWorker());
             assertThat(studyResultList).isEmpty();
         });
 
         testHelper.removeUser(TestHelper.BLA_EMAIL);
+    }
+
+    /**
+     * Generate the list of StudyResults that belong to the given Worker and that the given user is allowed to see. A
+     * user is allowed if the study that the StudyResult belongs too has this user.
+     */
+    private List<StudyResult> getAllowedStudyResultList(User user, Worker worker) {
+        // Check for studyResult != null should not be necessary but it lead to an NPE at least once
+        return worker.getStudyResultList().stream().filter(
+                studyResult -> studyResult != null && studyResult.getStudy().hasUser(user)).collect(
+                Collectors.toList());
     }
 
 }

@@ -22,6 +22,9 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
     @Override
     public void checkWorkerAllowedToStartStudy(Http.Request request, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
+        if (!study.isActive()) {
+            throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
+        }
         if (!batch.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }

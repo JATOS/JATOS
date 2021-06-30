@@ -1,43 +1,87 @@
+table.dataTable tbody tr.selected {
+    color: white !important;
+    background-color: #888 !important;
+}
+
+table.dataTable tbody tr.selected a:hover {
+    color: #ccc !important;
+}
 
 pre.details-data {
-	white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
-	white-space: -pre-wrap;      /* Opera 4-6 */
-	white-space: -o-pre-wrap;    /* Opera 7 */
-	white-space: pre-wrap;       /* css-3 */
-	word-wrap: break-word;       /* Internet Explorer 5.5+ */
-	word-break: break-all;
+    white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    white-space: pre-wrap;       /* css-3 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    word-break: break-all;
 }
 .borderless td {
-	border: none !important;
+    border: none !important;
 }
 
 div.DTTT { margin-bottom: 0.5em; float: right; }
 div.dataTables_wrapper { clear: both; }
 
-#resultsTable_filter,
-#componentResultsTable_filter {
-	margin-top: 10px;
+#resultsTable_upperToolbar,
+#resultsTable_lowerToolbar {
+    margin-top: 10px;
+    text-align: left;
 }
 
-#componentResultsTable_wrapper .pagination > li.active > a {
-    color: @btn-component-color;
-    background-color: @btn-component-bg;
-    border-color: darken(@btn-component-bg, 5%);
+#resultTable_refresh,
+#resultsTable_export,
+#resultsTable_delete,
+#resultsTable_length,
+#resultsTable_select,
+#resultsTable_search,
+#resultsTable_customize {
+    display: inline;
 }
-#componentResultsTable_wrapper .pagination > li.active > a:hover {
-    background-color: darken(@btn-component-bg, 10%);
+
+#resultsTable_export,
+#resultsTable_search {
+    margin-left: 50px;
 }
-#componentResultsTable_wrapper .pagination > li > a {
-    color: @btn-default-color;
-    background-color: @btn-default-bg;
-    border-color: darken(@btn-default-bg, 20%);
+
+#resultsTable_length {
+    margin-left: 10px;
 }
-#componentResultsTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
-    background-color: darken(@btn-default-bg, 10%);
+
+#resultsTable_export label,
+#resultsTable_select label,
+#resultsTable_search label,
+#resultsTable_customize label {
+    font-weight: normal;
 }
-#componentResultsTable_wrapper .pagination > li.disabled > a {
-    color: lighten(@btn-default-color, 20%);
+
+/* Sometimes DataTable SearchBuilder's 'Data', 'Condition', and 'Value' are not in-line when used with "stateSave" */
+.dtsb-data, .dtsb-condition, .dtsb-value {
+    display: inline-block !important;
 }
-#componentResultsTable_wrapper .pagination > li.next > a {
-    margin-right: 10px;
+.dtsb-searchBuilder {
+    padding: 10px;
+    margin-top: 10px;
 }
+
+#resultsTable_wrapper .pagination > li > a {
+    background-color: white;
+    color: #333;
+}
+#resultsTable_wrapper .pagination > li > a:focus,
+#resultsTable_wrapper .pagination > li > a:hover,
+#resultsTable_wrapper .pagination > li > span:focus,
+#resultsTable_wrapper .pagination > li > span:hover {
+    color: #5a5a5a;
+    background-color: #eee;
+    border-color: #ddd;
+}
+#resultsTable_wrapper .pagination > .active > a {
+    color: white;
+    background-color: darkgray !Important;
+    border: solid 1px darkgray !Important;
+}
+#resultsTable_wrapper .pagination > .active > a:hover {
+    background-color: darkgray !Important;
+    border: solid 1px darkgray;
+}
+

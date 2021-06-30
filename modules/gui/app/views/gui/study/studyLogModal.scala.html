@@ -106,17 +106,9 @@ function showStudyLogRaw() {
 
 $('#studyLogDownload').on('click', function() {
     showWaitingModal();
-    // Use download.js (http://danml.com/download.html) to get the result data and offer them
-    // as download to the user. download.js allows to use an Ajax call and error handling.
-    $.ajax({
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/log?limit=-1&download=true",
-        type : 'GET',
-        success: download.bind(true, "text/plain", "jatos_studylog_@{study.getUuid()}.log"),
-        error : function(err) {
-            showError("Download of study log failed", "#studyLogModal .messages");
-        },
-        complete: hideWaitingModal
-    });
+    var url = '@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/log?limit=-1&download=true';
+    var filename = "jatos_studylog_@{study.getUuid()}.log";
+    downloadFileStreaming(url, "", filename);
 });
 
 

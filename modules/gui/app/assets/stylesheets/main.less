@@ -13,6 +13,9 @@ a:focus {
 .gray-light {
     color: #aaa;
 }
+.lightgrayBackground {
+    background: lightgray;
+}
 
 .noWrap {
     white-space: nowrap;
@@ -31,6 +34,10 @@ a:focus {
     &:extend(.btn-default all);
     margin: 0 5px;
     color: #888 !important;
+}
+
+.popover {
+    max-width: 100%;
 }
 
 
@@ -259,6 +266,9 @@ table.dataTable tbody tr.selected {
 table.dataTable tbody tr.selected a {
     color: white;
 }
+table.dataTable tbody > tr > td {
+    vertical-align: middle;
+}
 .dropdown-menu > .active > a,
 .dropdown-menu > .active > a:focus,
 .dropdown-menu > .active > a:hover {
@@ -274,7 +284,7 @@ table.dataTable tbody tr.selected a {
 }
 
 @import 'apps/_study.less';         // Study related views
-@import 'apps/_user.less';          // User related views
+@import 'apps/_admin.less';         // Admin related views
 @import 'apps/_studyLinks.less';    // Study links and Batch related views
 @import 'apps/_result.less';        // Results views
 @import 'apps/_edit.less';          // Edit forms

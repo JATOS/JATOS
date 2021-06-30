@@ -47,6 +47,10 @@ public class PublixErrorMessages {
 		return "For the batch (ID: " + batchId + ") the maximum number of workers is already reached.";
 	}
 
+	public static String studyDeactivated(Long studyId) {
+		return "The study (ID: " + studyId + ") was deactivated by an admin.";
+	}
+
 	public static String batchInactive(Long batchId) {
 		return "The batch (ID: " + batchId + ") is inactive.";
 	}

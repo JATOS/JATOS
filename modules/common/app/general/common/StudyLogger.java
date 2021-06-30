@@ -1,11 +1,9 @@
 package general.common;
 
-import akka.NotUsed;
-import akka.actor.ActorRef;
-import akka.actor.Status;
-import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
+import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
+import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.*;
 import models.common.workers.Worker;
@@ -16,14 +14,15 @@ import play.libs.Json;
 import utils.common.HashUtils;
 
 import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created while the study is
@@ -245,15 +244,19 @@ public class StudyLogger {
      * @param entryLimit number of max entries will be read from the log
      */
     public Source<ByteString, ?> readLogFile(Study study, int entryLimit) {
-        // Prepare a chunked text stream (I have no idea what I'm doing here -
-        // https://www.playframework.com/documentation/2.5.x/JavaStream)
-        return Source.<ByteString>actorRef(256, OverflowStrategy.fail()).mapMaterializedValue(
-                sourceActor -> fillSourceWithLogFile(sourceActor, getPath(study), entryLimit));
+        return StreamConverters.asOutputStream()
+                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
+                .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
+                    Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+                    Errors.rethrow().run(() -> streamLogFile(writer, getPath(study), entryLimit));
+                    Errors.rethrow().run(writer::flush);
+                    Errors.rethrow().run(writer::close);
+                }));
     }
 
-    private Object fillSourceWithLogFile(ActorRef sourceActor, String filePath, int lineLimit) {
+    private void streamLogFile(Writer writer, String filePath, int lineLimit) throws IOException {
         File logFile = new File(filePath);
-        sourceActor.tell(ByteString.fromString("["), null);
+        writer.write("[");
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.ISO_8859_1)) {
             String nextLine = reader.readLine();
             int lineNumber = 1;
@@ -268,19 +271,17 @@ public class StudyLogger {
                 if (hasNextLine(nextLine, lineLimit, lineNumber)) {
                     currentLine += ",";
                 }
-                sourceActor.tell(ByteString.fromString(currentLine), null);
+                writer.write(currentLine);
             }
             if (nextLine != null) {
-                sourceActor.tell(ByteString.fromString(",\"" + MessagesStrings.LOG_CUT + "\""), null);
+                writer.write(",\"" + MessagesStrings.LOG_CUT + "\"");
             }
         } catch (Exception e) {
-            sourceActor.tell(ByteString.fromString("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\""), null);
+            writer.write("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\"");
             LOGGER.error("Couldn't open study log " + filePath);
         } finally {
-            sourceActor.tell(ByteString.fromString("]"), null);
-            sourceActor.tell(new Status.Success(NotUsed.getInstance()), null);
+            writer.write("]");
         }
-        return NotUsed.getInstance();
     }
 
     private boolean hasNextLine(String nextLine, int lineLimit, int lineNumber) {
