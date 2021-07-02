@@ -55,9 +55,7 @@
 
 &lt;script&gt;
   // Hint: What&#39;s called an study in JATOS is called a survey in MT
-  var address = &quot;addressDummy&quot;;
-  var studyPath = &quot;studyPathDummy&quot;;
-  var batchId = &quot;batchIdDummy&quot;;
+  var studyLink = &quot;studyLinkDummy&quot;;
   var query = document.URL.split(&#39;?&#39;)[1];
 
   window.onload = function() {
@@ -71,7 +69,7 @@
       // Show accepted HIT
       document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
       document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
-      var studyUrlHref = address + studyPath + &quot;?batchId=&quot; + batchId + &quot;&&quot; + query;
+      var studyUrlHref = studyLink + &quot;?&quot; + query;
       var studyUrlText = &quot;link to HIT&quot;;
     }
     document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
@@ -92,38 +90,36 @@
 var studyId = @study.getId();
 
 $('#batchTable').on('click', '.mtWorkerSourceCode', function() {
-    showSourceCodeMTurkModal(getBatchData(this));
-});
-
-function showSourceCodeMTurkModal(batch) {
+    var batch = getBatchData(this);
     $.ajax({
         url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/mTurkRun",
         error : function(err) {
             showError(err.responseText);
         }
     }).done(function(studyLinkId) {
-        var modal = $('#mtSourceCodeModalTemplate').clone();
-        $(modal).removeAttr('id');
+        showSourceCodeMTurkModal(batch, studyLinkId);
     });
+});
 
-    var address = "@utils.common.Helpers.getRealBaseUrl(request)";
+function showSourceCodeMTurkModal(batch, studyLinkId) {
+    var modal = $('#mtSourceCodeModalTemplate').clone();
+    $(modal).removeAttr('id');
+
+    var studyLink = "@{utils.common.Helpers.getRealBaseUrl(request)}publix/" + studyLinkId;
+
     var studyPath = "publix/@study.getId()/start";
     var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
-    var mturkSandboxUrl = address + studyPath + "?batchId=" + batchId + "&workerId=" + randomMturkWorkerId
-        + "&assignmentId=def&turkSubmitTo=sandbox";
+    var sandboxStudyLink = studyLink + "?workerId=" + randomMturkWorkerId + "&assignmentId=def&turkSubmitTo=sandbox";
 
     $(modal).find('.modal-title').text("Source Code for MTurk for batch '" + batch.title + "'");
 
     // Fill dummy variables in template source code
     $(modal).find('.mtSourceCode').text(function() {
-        return $(this).text()
-            .replace("addressDummy", address)
-            .replace("studyPathDummy", studyPath)
-            .replace("batchIdDummy", batch.id);
+        return $(this).text().replace("studyLinkDummy", studyLink);
     });
     $(modal).find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
         + '(<a target="_blank" href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk">more information</a>):<br>'
-        + '<div><i>' + mturkSandboxUrl + '</i>'
+        + '<div><i>' + sandboxStudyLink + '</i>'
         + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
         + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button></div>');
 
