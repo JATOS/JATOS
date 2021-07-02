@@ -495,9 +495,9 @@ public class StudyLinks extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        StudyLink sr = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
+        StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
-        return ok(sr.getId());
+        return ok(studyLink.getId());
     }
 
     /**
