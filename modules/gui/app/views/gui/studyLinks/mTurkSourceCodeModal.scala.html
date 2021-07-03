@@ -109,7 +109,7 @@ function showSourceCodeMTurkModal(batch, studyLinkId) {
 
     var studyPath = "publix/@study.getId()/start";
     var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
-    var sandboxStudyLink = studyLink + "?workerId=" + randomMturkWorkerId + "&assignmentId=def&turkSubmitTo=sandbox";
+    var sandboxStudyLink = studyLink + "?workerId=" + randomMturkWorkerId + "&assignmentId=123&turkSubmitTo=sandbox";
 
     $(modal).find('.modal-title').text("Source Code for MTurk for batch '" + batch.title + "'");
 
