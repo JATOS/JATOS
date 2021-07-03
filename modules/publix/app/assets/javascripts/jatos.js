@@ -2193,10 +2193,6 @@ var jatos = {};
 		}
 		endingStudy = true;
 
-		if (isDeferredPending(httpLoopDeferred)) {
-			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-		}
-
 		var url = getURL("../abort");
 		if (typeof message != 'undefined') {
 			url = url + "?message=" + message;
@@ -2209,14 +2205,19 @@ var jatos = {};
 			retryWait: jatos.httpRetryWait
 		};
 		var deferred = sendToHttpLoop(request, onSuccess, onError);
+		setTimeout(function () {
+			if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
+				jatos.showOverlay(jatos.waitSendDataOverlayConfig);
+			}
+		}, 1000);
 		deferred.done(function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 			heartbeatWorker.terminate();
 			httpLoop.terminate();
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
-			jatos.removeOverlay();
 		});
+		deferred.always(jatos.removeOverlay);
 
 		return deferred.promise();
 	};
@@ -2313,10 +2314,6 @@ var jatos = {};
 		// Before finish send result data
 		if (resultData) jatos.appendResultData(resultData);
 
-		if (isDeferredPending(httpLoopDeferred)) {
-			setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-		}
-
 		var url = getURL("../end");
 		if (typeof successful == 'boolean' && typeof message == 'string') {
 			url = url + "?" + jatos.jQuery.param({
@@ -2340,14 +2337,19 @@ var jatos = {};
 			retryWait: jatos.httpRetryWait
 		};
 		var deferred = sendToHttpLoop(request, onSuccess, onError);
+		setTimeout(function () {
+			if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
+				jatos.showOverlay(jatos.waitSendDataOverlayConfig);
+			}
+		}, 1000);
 		deferred.done(function () {
 			window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
 			heartbeatWorker.terminate();
 			httpLoop.terminate();
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
-			jatos.removeOverlay();
 		});
+		deferred.always(jatos.removeOverlay);
 
 		return deferred.promise();
 	};
