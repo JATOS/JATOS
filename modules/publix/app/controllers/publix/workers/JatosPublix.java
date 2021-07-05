@@ -94,14 +94,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
         String componentUuid = null;
         JatosRun jatosRun = publixUtils.fetchJatosRunFromSession(request);
-        Http.Session session = request.session().removing("jatos_run");
         switch (jatosRun) {
             case RUN_STUDY:
                 componentUuid = publixUtils.retrieveFirstActiveComponent(study).getUuid();
                 break;
             case RUN_COMPONENT_START:
-                componentUuid = session.getOptional("run_component_uuid").orElse("unknown");
-                session = request.session().removing("run_component_uuid");
+                componentUuid = request.session().getOptional("run_component_uuid").orElse("unknown");
                 break;
             case RUN_COMPONENT_FINISHED:
                 throw new ForbiddenPublixException("This study was never started in JATOS.");
@@ -121,7 +119,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         studyLogger.log(studyLink, "Started study run with " + JatosWorker.UI_WORKER_TYPE + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor
                 .startComponent(studyResult.getUuid(), componentUuid, null))
-                .withSession(session);
+                .removingFromSession(request, "jatos_run")
+                .removingFromSession(request, "run_component_uuid");
     }
 
     @Override
@@ -134,7 +133,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
-        // Check if it's a single component show or a whole study show
+        // Check if it's a single component run or a whole study run
         JatosRun jatosRun = idCookie.getJatosRun();
         switch (jatosRun) {
             case RUN_STUDY:
@@ -162,7 +161,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                     .finishStudy(studyResult.getUuid(), false, e.getMessage()));
         }
         idCookieService.writeIdCookie(studyResult, componentResult, jatosRun);
-        return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava();
+        return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava()
+                .removingFromSession(request, "jatos_run")
+                .removingFromSession(request, "run_component_uuid");
     }
 
     @Override
