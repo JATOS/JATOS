@@ -28,7 +28,7 @@ GET     /publix/:studyResultUuid/group/leave                        @controllers
 ### Static resources ###
 
 # Study assets
-GET     /publix/:studyId/endPage.html                    @controllers.publix.StudyAssets.endPage(studyId: Long, srid: Long, confirmationCode: Option[String])
+GET     /publix/:studyResultUuid/endPage.html            @controllers.publix.StudyAssets.endPage(studyResultUuid: String, confirmationCode: Option[String])
 GET     /publix/:studyResultUuid/:componentUuid/*file    @controllers.publix.StudyAssets.viaStudyPath(studyResultUuid: String, componentUuid: String, file: String)
 GET     /study_assets_root/*file                         @controllers.publix.StudyAssets.viaAssetsPath(file)
 GET     /study_assets/*file                              @controllers.publix.StudyAssets.viaAssetsPath(file)

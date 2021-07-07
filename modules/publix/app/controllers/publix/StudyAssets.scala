@@ -1,15 +1,15 @@
 package controllers.publix
 
 import daos.common.{StudyDao, StudyResultDao}
-import exceptions.publix.{ForbiddenPublixException, NotFoundPublixException, PublixException}
+import exceptions.publix.{BadRequestPublixException, ForbiddenPublixException, NotFoundPublixException, PublixException}
 import general.common.{Common, MessagesStrings}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
-import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
+import services.publix.{PublixErrorMessages, PublixHelpers}
 import utils.common.{Helpers, IOUtils}
 
 import java.io.{File, IOException}
@@ -21,8 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
 /**
-  * Manages web-access to files in the external study assets directories (outside of JATOS'
-  * packed Jar).
+  * Manages web-access to files in the external study assets directories (outside of JATOS' packed Jar).
   *
   * @author Kristian Lange
   */
@@ -39,19 +38,15 @@ class StudyAssets @Inject()(components: ControllerComponents,
 
   private val URL_PATH_SEPARATOR = "/"
 
-  /**
-    * Identifying part of any URL that indicates an access to the study assets directories.
-    */
-  val URL_STUDY_ASSETS = "study_assets"
-
   val jatosPublixPattern: Regex = "(.*)(jatos-publix)(.*)".r
 
   /**
-    * Returns the study asset file that belongs to the study with the given study resutl UUID
+    * Returns the study asset file that belongs to the study with the given study result UUID
     * and has the given relative path within the study assets folder. In difference to
     * the viaAssetsPath method it is not necessary to add the prefix 'study_assets' or the study
     * assets folder name (because it's retrieved from the DB).
-    * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
+    * Additionally this method can be used to get jatos.js and other JavaScript files from JATOS.
+    * The parameter componentUuid is never used but can't be removed.
     */
   def viaStudyPath(studyResultUuid: String, componentUuid: String, urlPath: String): Action[AnyContent] =
     urlPath match {
@@ -59,32 +54,9 @@ class StudyAssets @Inject()(components: ControllerComponents,
       case "jatos-3.5.2.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
       case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
-        val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseGet(null);
+        val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseGet(null)
         if (studyResult == null) BadRequest("A study result " + studyResultUuid + " doesn't exist.")
         viaAssetsPath(studyResult.getStudy.getDirName + URL_PATH_SEPARATOR + urlPath)
-      }))
-    }
-
-  /**
-    * @deprecated since JATOS 3.6.1
-    * Returns the study asset file that belongs to the study with the given study ID
-    * and has the given relative path within the study assets folder. In difference to
-    * the viaAssetsPath method it is not necessary to add the prefix 'study_assets' or the study
-    * assets folder name (because it's retrieved from the DB).
-    * Additionally this method can be used to get jatos.js and other javascripts from JATOS.
-    */
-  @deprecated
-  def viaStudyPath(studyId: Long, arbitrary: Object, urlPath: String): Action[AnyContent] =
-    urlPath match {
-      case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
-      case "jatos-3.5.2.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
-      case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)
-      case _ => jpa.withTransaction(asJavaSupplier(() => {
-        val study = studyDao.findById(studyId)
-        if (study == null) {
-          BadRequest(MessagesStrings.studyNotExist(studyId))
-        }
-        viaAssetsPath(study.getDirName + URL_PATH_SEPARATOR + urlPath)
       }))
     }
 
@@ -165,27 +137,33 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * Redirects to or shows the end page (either from study assets or default end page) after a study run finished.
     * Passes on the confirmationCode in case it's defined (either cookie or URL query parameter).
     */
-  def endPage(studyId: Long, srid: Long, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
+  def endPage(studyResultUuid: String, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
     jpa.withTransaction(asJavaSupplier(() => {
-      val study = studyDao.findById(studyId)
+      val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseGet(null)
+      if (studyResult == null) {
+        throw new BadRequestPublixException("A study result " + studyResultUuid + " doesn't exist.")
+      }
+      else if (!PublixHelpers.studyDone(studyResult)) {
+        throw new BadRequestPublixException("The study result " + studyResultUuid + " isn't finished yet.")
+      }
 
-      if (study == null) BadRequest(MessagesStrings.studyNotExist(studyId))
-
-      else if (study.getEndRedirectUrl != null && study.getEndRedirectUrl.trim() != "") {
+      else if (studyResult.getStudy.getEndRedirectUrl != null && studyResult.getStudy.getEndRedirectUrl.trim() != "") {
         // Redirect to URL specified in study properties
-        val studyResult = studyResultDao.findById(srid)
-        val endRedirectUrl = enhanceQueryStringInEndRedirectUrl(studyResult.getUrlQueryParameters, study.getEndRedirectUrl)
+        val endRedirectUrl = enhanceQueryStringInEndRedirectUrl(studyResult.getUrlQueryParameters,
+          studyResult.getStudy.getEndRedirectUrl)
         confirmationCode match {
           case Some(cc) => Redirect(endRedirectUrl, Map("confirmationCode" -> Seq(cc)))
           case None => Redirect(endRedirectUrl)
         }
 
-      } else if (ioUtils.checkFileInStudyAssetsDirExists(study.getDirName, "endPage.html")) {
+      } else if (ioUtils.checkFileInStudyAssetsDirExists(studyResult.getStudy.getDirName, "endPage.html")) {
         // Redirect to endPage.html from study assets
         confirmationCode match {
-          case Some(cc) => Ok.sendFile(ioUtils.getExistingFileInStudyAssetsDir(study.getDirName, "endPage.html"))
+          case Some(cc) => Ok.sendFile(ioUtils
+            .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
             .withCookies(confirmationCodeCookie(cc)).bakeCookies()
-          case None => Ok.sendFile(ioUtils.getExistingFileInStudyAssetsDir(study.getDirName, "endPage.html"))
+          case None => Ok.sendFile(ioUtils
+            .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
         }
 
       } else {
@@ -195,7 +173,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
           case None => Ok(views.html.publix.endPage.render())
         }
       }
-    }));
+    }))
   }
 
   /**
