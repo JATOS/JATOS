@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Controller for all actions regarding study links, batches and workers within the JATOS GUI.
+ * Controller for all actions regarding study links, batches, and workers within the JATOS GUI.
  *
  * @author Kristian Lange
  */
@@ -102,8 +102,8 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns the Batch belonging to the given study as JSON. It
-     * includes the count of its StudyResults.
+     * GET request that returns Batch data belonging to the given study as JSON. It includes the count of its
+     * StudyResults and GroupResults.
      */
     @Transactional
     @Authenticated
@@ -124,9 +124,8 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns all Batches of the given study as JSON. It
-     * includes the count of their StudyResults, count of their GroupResults, and the count of their
-     * Workers.
+     * GET request that returns the data of all Batches of the given study as JSON. It includes the count of their
+     * StudyResults, count of their GroupResults, and the count of their Workers.
      */
     @Transactional
     @Authenticated
@@ -148,7 +147,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns a list of groups that belong to a batch as JSON
+     * GET request that returns data of all groups that belong to the given batch as JSON
      */
     @Transactional
     @Authenticated
@@ -169,7 +168,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request to submit created Batch
+     * POST request to submit a newly created Batch
      */
     @Transactional
     @Authenticated
@@ -194,7 +193,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request to get the batch session data as String
+     * GET request that returns the batch session data as String
      */
     @Transactional
     @Authenticated
@@ -214,7 +213,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request to get the group session data as String
+     * GET request that returns the group session data as String
      */
     @Transactional
     @Authenticated
@@ -234,7 +233,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request to submit changed batch session data
+     * POST request to submit changed batch session data
      */
     @Transactional
     @Authenticated
@@ -264,7 +263,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request to submit changed group session data
+     * POST request to submit changed group session data
      */
     @Transactional
     @Authenticated
@@ -294,7 +293,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request to toggle the group state FIXED / STARTED
+     * GET request to toggle the group state FIXED / STARTED
      */
     @Transactional
     @Authenticated
@@ -314,7 +313,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request to get BatchProperties as JSON
+     * GET request that returns Batch properties as JSON
      */
     @Transactional
     @Authenticated
@@ -334,7 +333,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request to submit changed BatchProperties
+     * POST request to submit changed Batch properties
      */
     @Transactional
     @Authenticated
@@ -365,7 +364,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request: Request to change the property 'active' of the given batch.
+     * POST request to toggle the property 'active' of the given batch.
      */
     @Transactional
     @Authenticated
@@ -390,7 +389,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request: Request to allow or deny a worker type in a batch.
+     * POST request to allow or deny a worker type in a batch.
      */
     @Transactional
     @Authenticated
@@ -421,7 +420,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request to remove a Batch
+     * DELETE request to remove a Batch
      */
     @Transactional
     @Authenticated
@@ -443,7 +442,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST request: Creates either Personal Single or Personal Multiple study links and their corresponding
+     * POST request that creates either Personal Single or Personal Multiple study links and their corresponding
      * workers.
      */
     @Transactional
@@ -476,7 +475,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request: returns study link ID for the given worker type (possible types are GeneralMultipleWorker,
+     * GET request that returns a study link ID for the given worker type (possible types are GeneralMultipleWorker,
      * GeneralSingleWorker, MTWorker). This ID is used on the client side to generate the study link. Since for the
      * 'General' workers only one study link is necessary per batch and worker type it only creates one if it is not
      * already stored in the StudyLink table.
@@ -501,7 +500,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns a JSON object use in the Study Links page with a list of data aggregated from
+     * GET request that returns a JSON object use in the Study Links page with a list of data aggregated from
      * StudyLink, Worker and Batch
      */
     @Transactional
@@ -528,7 +527,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns a JSON object used in the Study Links page to fill the study links table for the
+     * GET request that returns a JSON object used in the Study Links page to fill the study links table for the
      * Personal type workers
      */
     @Transactional
@@ -549,7 +548,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * Ajax POST: Request to change the property 'active' of a StudyLink.
+     * POST request to change the property 'active' of a StudyLink.
      */
     @Transactional
     @Authenticated

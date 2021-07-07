@@ -86,9 +86,7 @@ public class Home extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Returns a list of all studies and their components belonging to the
+     * GET request that returns a list of all studies and their components belonging to the
      * logged-in user for use in the GUI's sidebar.
      */
     @Transactional

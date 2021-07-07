@@ -158,10 +158,8 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax POST request
-     * <p>
-     * Removes all StudyResults specified in the parameter. The parameter is a comma separated list of StudyResults
-     * IDs as a String. Removing a StudyResult always removes it's ComponentResults.
+     * POST request that removes all StudyResults specified in the parameter. The parameter is a comma separated list of
+     * StudyResults IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Transactional
     @Authenticated
@@ -178,9 +176,7 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (reduces memory usage)
-     *
-     * Returns StudyResults of a study in JSON format.
+     * GET request that returns StudyResults of a study in JSON format. It streams in chunks (reduces memory usage)
      */
     @Transactional
     @Authenticated
@@ -198,10 +194,8 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (reduces memory usage)
-     *
-     * Returns all StudyResults of a Batch in JSON format. As an additional parameter the worker type can
-     * be specified and the results will only be of this type.
+     * GET that returns all StudyResults of a Batch in JSON format. As an additional parameter the worker type can
+     * be specified and the results will only be of this type. It streams in chunks (reduces memory usage)
      */
     @Transactional
     @Authenticated
@@ -221,9 +215,7 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (reduces memory usage)
-     *
-     * Returns all StudyResults of a group in JSON format.
+     * GET request that returns all StudyResults of a group in JSON format. It streams in chunks (reduces memory usage)
      */
     @Transactional
     @Authenticated
@@ -243,9 +235,7 @@ public class StudyResults extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (reduces memory usage)
-     *
-     * Returns all StudyResults belonging to a worker as JSON.
+     * GET request that returns all StudyResults belonging to a worker as JSON. Streams in chunks (reduces memory usage)
      */
     @Transactional
     @Authenticated

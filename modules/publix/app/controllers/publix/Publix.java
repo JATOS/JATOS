@@ -40,8 +40,7 @@ import static play.libs.Files.TemporaryFile;
 import static play.mvc.Http.Request;
 
 /**
- * Abstract controller class for all controllers that implement the IPublix
- * interface. It defines common methods and constants.
+ * Abstract parent controller class for all worker type Publix classes
  *
  * @author Kristian Lange
  */
@@ -302,7 +301,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
-                return redirect(routes.StudyAssets.endPage(study.getId(), studyResult.getId(), Option.empty()));
+                return redirect(routes.StudyAssets.endPage(studyResult.getUuid(), Option.empty()));
             }
         }
     }

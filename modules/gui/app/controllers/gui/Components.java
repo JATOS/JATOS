@@ -69,7 +69,8 @@ public class Components extends Controller {
     }
 
     /**
-     * Shows a single component. It uses a JatosWorker and redirects to Publix.startStudy().
+     * Runs a single component (in opposite to the whole study). Uses a JatosWorker and the given batch. Redirects
+     * to /publix/studyLinkId.
      */
     @Transactional
     @Authenticated
@@ -96,16 +97,16 @@ public class Components extends Controller {
         }
 
         // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix: start study
-        StudyLink sr = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
+        StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getPlayHttpContext() + "publix/" + sr.getId();
+        String runUrl = Common.getPlayHttpContext() + "publix/" + studyLink.getId();
         return redirect(runUrl)
                 .addingToSession(request, "jatos_run", "RUN_COMPONENT_START")
                 .addingToSession(request, "run_component_uuid", component.getUuid());
     }
 
     /**
-     * Ajax POST request: Handles the post request of the form to create a new Component.
+     * POST request: Handles the post request of the form to create a new Component.
      */
     @Transactional
     @Authenticated
@@ -124,7 +125,7 @@ public class Components extends Controller {
     }
 
     /**
-     * Ajax GET requests for getting the properties of a Component.
+     * GET requests for getting the properties of a Component.
      */
     @Transactional
     @Authenticated
@@ -144,7 +145,7 @@ public class Components extends Controller {
     }
 
     /**
-     * Handles the post of the edit form.
+     * POST request that handles update of component properties
      */
     @Transactional
     @Authenticated
@@ -168,9 +169,7 @@ public class Components extends Controller {
     }
 
     /**
-     * Ajax POST
-     *
-     * Request to change the property 'active' of a component.
+     * POST Request to change the property 'active' of a component.
      */
     @Transactional
     @Authenticated
@@ -187,9 +186,7 @@ public class Components extends Controller {
     }
 
     /**
-     * Ajax request
-     *
-     * Clone a component.
+     * GET request to clone a component.
      */
     @Transactional
     @Authenticated
@@ -205,9 +202,7 @@ public class Components extends Controller {
     }
 
     /**
-     * Ajax request
-     *
-     * Remove a component.
+     * DELETE request to remove a component.
      */
     @Transactional
     @Authenticated

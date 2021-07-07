@@ -71,18 +71,15 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
     }
 
     /**
-     * {@inheritDoc}<br>
-     * <br>
-     * <p>
+     * {@inheritDoc}
+     *
      * Only a general single run or a personal single run has the special
      * StudyState PRE. Only with the corresponding workers (GeneralSingleWorker
      * and PersonalSingleWorker) it's possible to have a preview of the study.
-     * To get into the preview mode one has to add 'pre' to the URL query
-     * string. In the preview mode a worker can start the study (with 'pre') and
-     * start the first active component as often as he wants. The study result switches
-     * into 'STARTED' and back to normal behavior by starting the study without
-     * the 'pre' in the query string or by going on and start a component
-     * different then the first.
+     * To get into the preview mode the Study's 'allowPreview' flag has to be set.
+     * In the preview mode a worker can start the first active component as often
+     * as they want. As soon as the worker goes on and starts another component
+     * the study result switches into 'STARTED' and back to normal behavior.
      */
     @Override
     public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {

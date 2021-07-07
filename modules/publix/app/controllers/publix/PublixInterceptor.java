@@ -27,27 +27,13 @@ import javax.inject.Singleton;
 import java.io.IOException;
 
 /**
- * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)
- * and forwards them to one of the implementations of the API (all extend
- * Publix). Each implementation deals with different workers (e.g. workers from
+ * Interceptor for Publix: handles all requests for JATOS' public API (Publix) and forwards them to one of the
+ * implementations of the API (all extend Publix). Each implementation deals with different workers (e.g. workers from
  * MechTurk, Personal Multiple workers).
- * <p>
- * When a study is started the implementation to use is determined by parameters
- * in the request's query string. Then the worker type is put into JATOS' ID
- * cookie (IdCookie) and used in subsequent requests of the same study run.
- * <p>
- * 1. Requests coming from Jatos' UI run (if clicked on run study/component
- * button) run will be forwarded to JatosPublix. They use JatosWorker.<br>
- * 2. Requests coming from a Personal Single run will be forwarded to
- * PersonalSinglePublix. They use PersonalSingleWorker.<br>
- * 3. Requests coming from a Personal Multiple run will be forwarded to
- * PersonalMultiplePublix. They use PersonalMultipleWorker.<br>
- * 4. Requests coming from an General Single run will be forwarded to
- * GeneralSinglePublix. They use the GeneralSingleWorker.<br>
- * 5. Requests coming from an General Multiple run will be forwarded to
- * GeneralMultiplePublix. They use the GeneralMultipleWorker.<br>
- * 6. Requests coming from MechTurk or MechTurk Sandbox will be forwarded to
- * MTPublix. They use MTWorker and MTSandboxWorker.<br>
+ *
+ * A study run starts by calling the 'run' endpoint with the study link ID. The study link ID determines the worker type
+ * and which Publix implementation will be called. All subsequent requests of this study run need at least the study
+ * result UUID and often the component UUID too.
  *
  * @author Kristian Lange
  */
@@ -75,8 +61,7 @@ public class PublixInterceptor extends Controller {
     public Result run(Http.Request request, String studyLinkId) throws PublixException {
         LOGGER.info(".run: studyLinkId " + studyLinkId);
         StudyLink studyLink = studyLinkDao.findById(studyLinkId);
-        if (studyLink == null) throw new BadRequestPublixException("This study run does not exist");
-
+        if (studyLink == null) throw new BadRequestPublixException("No study link provided");
         if (!studyLink.isActive()) throw new ForbiddenPublixException("This study link is inactive");
 
         switch (studyLink.getWorkerType()) {
@@ -162,8 +147,7 @@ public class PublixInterceptor extends Controller {
     }
 
     @Transactional
-    public Result setStudySessionData(Http.Request request, String studyResultUuid)
-            throws PublixException {
+    public Result setStudySessionData(Http.Request request, String studyResultUuid) throws PublixException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
         LOGGER.info(".setStudySessionData: studyResultId " + studyResult.getId());
 

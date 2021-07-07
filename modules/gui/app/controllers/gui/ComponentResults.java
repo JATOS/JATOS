@@ -87,9 +87,7 @@ public class ComponentResults extends Controller {
     }
 
     /**
-     * Ajax POST request
-     * <p>
-     * Removes all ComponentResults specified in the parameter. The parameter is
+     * POST request that removes all ComponentResults specified in the parameter. The parameter is
      * a comma separated list of ComponentResult IDs as a String.
      */
     @Transactional
@@ -108,9 +106,7 @@ public class ComponentResults extends Controller {
     }
 
     /**
-     * Ajax request with chunked streaming (reduces memory usage)
-     *
-     * Returns all ComponentResults as JSON for a given component.
+     * GET request that returns all ComponentResults as JSON for a given component. It streams the data as chunks (reduces memory usage)
      */
     @Transactional
     @Authenticated

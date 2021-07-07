@@ -39,8 +39,6 @@ public class GeneralMultiplePublix extends Publix<GeneralMultipleWorker> impleme
 
     private static final ALogger LOGGER = Logger.of(GeneralMultiplePublix.class);
 
-    public static final String GENERALMULTIPLE = "generalMultiple";
-
     private final PublixUtils publixUtils;
     private final GeneralMultipleStudyAuthorisation studyAuthorisation;
     private final ResultCreator resultCreator;

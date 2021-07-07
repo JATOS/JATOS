@@ -77,7 +77,7 @@ public class Users extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns a list of all users as JSON
+     * GET request: Returns a list of all users as JSON
      */
     @Transactional
     @Authenticated(Role.ADMIN)
@@ -100,9 +100,7 @@ public class Users extends Controller {
     }
 
     /**
-     * Ajax POST
-     * <p>
-     * Request to activate or deactivate a user.
+     * POST request to activate or deactivate a user.
      */
     @Transactional
     @Authenticated(Role.ADMIN)
@@ -119,9 +117,7 @@ public class Users extends Controller {
     }
 
     /**
-     * Ajax POST
-     * <p>
-     * Request to add or remove the ADMIN role from a user.
+     * POST request to add or remove the ADMIN role from a user.
      */
     @Transactional
     @Authenticated(Role.ADMIN)
@@ -153,7 +149,7 @@ public class Users extends Controller {
     }
 
     /**
-     * Ajax GET request: Returns data of the user that belongs to the given username
+     * GET request that returns data of the user that belongs to the given username
      */
     @Transactional
     @Authenticated

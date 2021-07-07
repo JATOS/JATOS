@@ -7,7 +7,7 @@ import javax.persistence.*;
 import java.util.Objects;
 
 /**
- * DB entity of a study run.
+ * DB entity of a study link that can be used to run a study.
  *
  * @author Kristian Lange
  */

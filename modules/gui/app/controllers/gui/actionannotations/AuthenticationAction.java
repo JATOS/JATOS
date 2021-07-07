@@ -30,28 +30,31 @@ import java.util.concurrent.CompletionStage;
 /**
  * This class defines the @Authenticated annotation used in JATOS GUI
  * controllers. It checks Play's session cookie and the cached user session.
- * Additionally it does authorization. It has several layers of security:
- * <p>
+ * Additionally it does authorization. It sets the user's lastSeen time.
+ * It has several layers of security:
+ *
  * 1) First it checks if an username is in Play's session cookie and if this username
  * belongs to a user in the database.
- * <p>
+ *
  * 2) We check whether the session ID stored in Play's session cookie is the
  * same as stored in the UserSession in the cache. After a user logs out this
  * session ID is deleted in the cache and from the session cookie and thus
  * subsequent log-ins will fail.
- * <p>
+ *
  * 3) Check if the session timed out. The time span is defined in the
  * application.conf.
- * <p>
+ *
  * 4) Check if the session timed out due to inactivity of the user. With each
  * request by the user the time of last activity gets refreshed in the session.
- * <p>
+ *
  * 5) Check if the logged-in user has the proper Role needed to access this
  * page. This Role is an optional parameter in the @Authenticated annotation.
- * <p>
+ *
+ * 6) It checks if the user was deactivated by an admin.
+ *
  * The @Authenticated annotation does not check the user's password. This is
  * done once during login (class {@link Authentication}).
- * <p>
+ *
  * IMPORTANT: Since this annotation accesses the database the annotated method
  * has to be within a transaction. This means the @Transactional annotation has
  * to be BEFORE the @Authenticated annotation.

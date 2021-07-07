@@ -34,11 +34,11 @@ import javax.inject.Singleton;
  * Implementation of JATOS' public API for studies and components that are
  * started via JATOS' UI (run study or run component). A JATOS run is done by a
  * JatosWorker.
- * <p>
+ *
  * Between the UI and Publix a session variable is used to pass on the
  * information whether it is a study run or a component run. In case it is a
  * component run there is a second session variable which contains the component
- * ID.
+ * UUID.
  *
  * @author Kristian Lange
  */

@@ -10,9 +10,9 @@ import play.mvc.Result;
 import java.io.IOException;
 
 /**
- * Interface to all *Publix classes. With these API methods studies and components (running in the
+ * Interface to all Publix classes. With these API methods studies and components (running in the
  * browser) can communicate (e.g. start, finish components/studies, retrieve/persist data, join a group) with the JATOS
- * server (running on the server side).
+ * server.
  *
  * Group and batch channel are handled by the ChannelInterceptor.
  *
@@ -40,9 +40,6 @@ public interface IPublix {
      *
      * Returns the init data provided by jatos.js to the experimenters code: study's properties, component's properties,
      * and study's session data.
-     *
-     * Hint: Study session data are individual for each study run and determined by the study running in the browser.
-     * The study session data are different from Play's session and stored within the study results.
      */
     Result getInitData(Http.Request request, StudyResult studyResult, Component component)
             throws PublixException, IOException;
@@ -70,7 +67,7 @@ public interface IPublix {
      *
      * Persists the submitted data in the ComponentResult specified by the given study and component ID.
      * PUT: Already submitted data will be overwritten.
-     * POST: Keeps the current data and appends to the end.
+     * POST: Keeps the current data and appends the new data to the end.
      */
     Result submitOrAppendResultData(Http.Request request, StudyResult studyResult, Component component, boolean append)
             throws PublixException;

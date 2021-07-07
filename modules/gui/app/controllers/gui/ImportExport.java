@@ -87,10 +87,8 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Checks whether this is a legitimate study import, whether the study or its directory already exists. The actual
-     * import happens in importStudyConfirmed(). Returns JSON.
+     * POST request that checks whether this is a legitimate study import, whether the study or its directory already
+     * exists. The actual import happens in importStudyConfirmed(). Returns JSON.
      */
     @Transactional
     @Authenticated
@@ -120,9 +118,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Actual import of study and its study assets directory. Always subsequent of an importStudy() call.
+     * POST request that does Actual import of study and its study assets directory. Always subsequent of an importStudy() call.
      */
     @Transactional
     @Authenticated
@@ -142,9 +138,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Export a study. Returns a .zip file that contains the study asset directory and the study as JSON as a .jas
+     * GET request that exports a study. Returns a .zip file that contains the study asset directory and the study as JSON as a .jas
      * file.
      */
     @Transactional
@@ -174,9 +168,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Export of a component. Returns a .jac file with the component in JSON.
+     * GET request that exports a component. Returns a .jac file with the component in JSON.
      */
     @Transactional
     @Authenticated
@@ -205,10 +197,8 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Checks whether this is a legitimate component import. The actual import happens in importComponentConfirmed().
-     * Returns JSON with the results.
+     * POST request that checks whether this is a legitimate component import. The actual import happens in
+     * importComponentConfirmed(). Returns JSON with the results.
      */
     @Transactional
     @Authenticated
@@ -230,9 +220,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Actual import of component.
+     * POST request that actually imports a component.
      */
     @Transactional
     @Authenticated

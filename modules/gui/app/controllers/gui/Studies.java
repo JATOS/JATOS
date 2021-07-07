@@ -122,7 +122,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST request of the form to create a new study.
+     * POST request to create a new study.
      */
     @Transactional
     @Authenticated
@@ -145,7 +145,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax GET request that gets the study properties as JSON.
+     * GET request that returns the study properties as JSON.
      */
     @Transactional
     @Authenticated
@@ -159,7 +159,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST request of the edit form to change the properties of a study.
+     * POST request to update study properties
      */
     @Transactional
     @Authenticated
@@ -188,9 +188,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST request
-     * <p>
-     * Swap the locked field of a study.
+     * POST request to swap the locked field of a study.
      */
     @Transactional
     @Authenticated
@@ -210,9 +208,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST
-     * <p>
-     * Request to activate or deactivate a study. Can be done only by an admin.
+     * POST request to activate or deactivate a study. Can be done only by an admin.
      */
     @Transactional
     @Authenticated(User.Role.ADMIN)
@@ -224,9 +220,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax DELETE request
-     * <p>
-     * Remove a study
+     * DELETE request to remove a study
      */
     @Transactional
     @Authenticated
@@ -250,9 +244,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Clones a study.
+     * GET request to clones a study.
      */
     @Transactional
     @Authenticated
@@ -276,7 +268,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax GET request that gets all users and whether they are admin of this study as a JSON array.
+     * GET request that gets all users and whether they are admin of this study as a JSON array.
      */
     @Transactional
     @Authenticated
@@ -293,7 +285,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST request that adds or removes a member user from a study
+     * POST request that adds or removes a member user from a study
      */
     @Transactional
     @Authenticated
@@ -314,7 +306,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST request that adds all users as members to a study
+     * POST request that adds all users as members to a study
      */
     @Transactional
     @Authenticated
@@ -335,7 +327,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax DELETE request that removes all member users from a study
+     * DELETE request that removes all member users from a study
      */
     @Transactional
     @Authenticated
@@ -352,9 +344,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax POST request
-     * <p>
-     * Change the oder of components within a study.
+     * POST request to change the oder of components within a study.
      */
     @Transactional
     @Authenticated
@@ -374,8 +364,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Runs the study with the given study ID, in the batch with the given batch ID while using a JatosWorker.
-     * It redirects to Publix.startStudy() action.
+     * Runs the whole study. Uses a JatosWorker and the given batch. Redirects to /publix/studyLinkId.
      */
     @Transactional
     @Authenticated
@@ -392,16 +381,14 @@ public class Studies extends Controller {
         }
 
         // Get StudyLink and redirect to jatos-publix: start study
-        StudyLink sr = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
+        StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getPlayHttpContext() + "publix/"  + sr.getId();
+        String runUrl = Common.getPlayHttpContext() + "publix/"  + studyLink.getId();
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 
     /**
-     * Ajax request
-     * <p>
-     * Returns all Components of the given study as JSON.
+     * GET request that returns all component data of the given study as JSON.
      */
     @Transactional
     @Authenticated
@@ -418,7 +405,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax request
+     * GET request
      *
      * @param studyId    study's ID
      * @param entryLimit It cuts the log after the number of lines given in entryLimit
@@ -448,9 +435,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Ajax GET request
-     * <p>
-     * Returns a list of all workers as JSON that belong to this study.
+     * GET request that returns all worker data that belong to this study as JSON
      */
     @Transactional
     @Authenticated
