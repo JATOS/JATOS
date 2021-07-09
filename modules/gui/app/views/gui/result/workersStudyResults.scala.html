@@ -161,7 +161,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     return '<button type="button" class="btn btn-default selectCheckbox" data-toggle="tooltip"' +
                         'data-placement="bottom" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION">' +
-                        '<span class="glyphicon glyphicon-minus"></span></button>';
+                        '<span class="glyphicon glyphicon-unchecked"></span></button>';
                 }
             },
             {
@@ -232,7 +232,7 @@ $(document).ready(function() {
                 "visible": false,
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    return data ? '<span class="glyphicon glyphicon-ok"/>' : '<span class="glyphicon glyphicon-minus"/>';
+                    return data ? '<span class="glyphicon glyphicon-ok"/>' : '<span class="glyphicon glyphicon-unchecked"/>';
                 }
             },
             { "data": "studyState" },
@@ -480,7 +480,7 @@ $(document).ready(function() {
         if (type == "row") {
             resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
                 $(selectedRow).find('.selectCheckbox').removeClass('btn-default').addClass('btn-study');
-                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-minus').addClass('glyphicon-ok');
+                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-unchecked').addClass('glyphicon-ok');
             });
         }
     });
@@ -489,7 +489,7 @@ $(document).ready(function() {
         if (type == "row") {
             resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
                 $(selectedRow).find('.selectCheckbox').removeClass('btn-study').addClass('btn-default');
-                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-minus');
+                $(selectedRow).find('.selectCheckbox .glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-unchecked');
             });
         }
     });
