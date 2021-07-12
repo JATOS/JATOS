@@ -36,7 +36,7 @@ public class ResultCreator {
      */
     public StudyResult createStudyResult(StudyLink studyLink, Worker worker) {
         StudyResult studyResult = new StudyResult(studyLink, worker);
-        if (studyResult.getStudy().isAllowPreview()) {
+        if (studyResult.getStudy().isAllowPreview() && PublixHelpers.isPreviewWorker(worker)) {
             studyResult.setStudyState(StudyResult.StudyState.PRE);
         } else {
             studyResult.setStudyState(StudyResult.StudyState.STARTED);

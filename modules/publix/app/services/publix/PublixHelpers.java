@@ -5,6 +5,8 @@ import models.common.ComponentResult.ComponentState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
+import models.common.workers.GeneralSingleWorker;
+import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 
 /**
@@ -57,6 +59,11 @@ public class PublixHelpers {
                 || ComponentState.ABORTED == state
                 || ComponentState.FAIL == state
                 || ComponentState.RELOADED == state;
+    }
+
+    public static boolean isPreviewWorker(Worker worker) {
+        return worker instanceof PersonalSingleWorker
+                || worker instanceof GeneralSingleWorker;
     }
 
 }
