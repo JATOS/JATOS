@@ -131,8 +131,8 @@ public class Helpers {
     /**
      * Gets the value of to the given key in request's query string and trims whitespace.
      */
-    public static String getQueryString(String key) {
-        String value = Http.Context.current().request().getQueryString(key);
+    public static String getQueryString(Http.Request request, String key) {
+        String value = request.getQueryString(key);
         if (value != null) {
             value = value.trim();
         }
