@@ -74,6 +74,9 @@ public class GeneralSingleCookieService {
         return latestCookieItemFromStudy.getRight();
     }
 
+    /**
+     * Returns a list of Pairs of study UUID and worker ID
+     */
     private Pair<String, Long> fetchCookieItem(String cookieItemStr) {
         String[] uuidAndWorker = cookieItemStr.split(COOKIE_TUPLE_DELIMITER);
         if (uuidAndWorker.length != 2) {
