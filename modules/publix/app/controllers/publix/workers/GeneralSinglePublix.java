@@ -105,9 +105,9 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
                     + " worker", worker);
         } else {
             worker = publixUtils.retrieveWorker(workerId);
-            if (worker == null) throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+            if (worker == null) throw new ForbiddenPublixException("A worker with ID " + workerId + " doesn't exist");
             studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
-            studyResult = worker.getLastStudyResult().orElseThrow(() -> new InternalServerErrorPublixException(
+            studyResult = worker.getLastStudyResult().orElseThrow(() -> new ForbiddenPublixException(
                     "Repeated study run but couldn't find last study result"));
             if (!idCookieService.hasIdCookie(studyResult.getId())) {
                 publixUtils.finishOldestStudyResult();
