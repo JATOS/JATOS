@@ -145,6 +145,10 @@
                     New Study Links
                     <span class="glyphicon glyphicon-link"></span>
                 </button>
+                <button type="button" class="btn btn-worker refreshButton" data-toggle="tooltip"
+                        data-placement="bottom" title="Refresh table">
+                    <span class='glyphicon glyphicon-refresh'></span>
+                </button>
                 <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
                     <thead>
                     <tr>
@@ -502,6 +506,10 @@ $('#studyLinksModal').on('click', '.activeStudyLinkButton', function() {
             showError(err.responseText);
         }
     });
+});
+
+$('#studyLinksModal').on('click', '.refreshButton', function(e) {
+    studyLinksTable.ajax.reload();
 });
 
 $('#studyLinksModal').on('click', '.newStudyLinksButton', function(e) {
