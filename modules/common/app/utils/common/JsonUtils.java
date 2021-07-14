@@ -273,6 +273,7 @@ public class JsonUtils {
                 componentResult.getStartDate(), componentResult.getEndDate()));
         componentResultNode.put("studyResultId", componentResult.getStudyResult().getId());
         componentResultNode.put("studyLinkId", componentResult.getStudyResult().getStudyLinkId());
+        componentResultNode.put("studyResultUuid", componentResult.getStudyResult().getUuid());
         String groupResultId = getGroupResultId(componentResult.getStudyResult());
         componentResultNode.put("groupResultId", groupResultId);
         componentResultNode.put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());

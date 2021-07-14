@@ -34,6 +34,7 @@
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
             <th>Result ID</th>
+            <th>UUID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of results between different JATOS instances"></span></th>
             <th>Study Link ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
             <th>Start Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></th>
             <th>End Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME"></span></th>
@@ -55,6 +56,7 @@
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA"></span></th>
             <th><span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_DATA_SELECTION"></span></th>
             <th>Result ID</th>
+            <th>UUID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of results between different JATOS instances"></span></th>
             <th>Study Link ID <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="ID of the study link that was used to run this study"></span></th>
             <th>Start Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_START_TIME"></span></th>
             <th>End Time <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="@general.common.MessagesStrings.RESULTS_END_TIME"></span></th>
@@ -141,6 +143,11 @@ $(document).ready(function() {
             },
             {
                 "data": "id",
+                "width": "1%"
+            },
+            {
+                "data": "uuid",
+                "visible": false,
                 "width": "1%"
             },
             {
