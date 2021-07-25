@@ -1,4 +1,5 @@
-@(studyList: List[common.Study], loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+@(studyList: List[common.Study], freshlyLoggedIn: Boolean, loggedInUser: common.User, breadcrumbs: String,
+    localhost: Boolean)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
 
@@ -42,6 +43,9 @@ loadBranding();
 function loadBranding() {
     $.ajax({
         url: '@{general.common.Common.getPlayHttpContext()}jatos/branding',
+        @if(freshlyLoggedIn) {
+        headers: { 'Cache-Control': 'max-age=0' },
+        }
         success: function(res) {
             $('#branding').html(res);
             $('#branding').show();
