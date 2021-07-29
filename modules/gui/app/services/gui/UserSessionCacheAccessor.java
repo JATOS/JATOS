@@ -77,18 +77,17 @@ public class UserSessionCacheAccessor {
     }
 
     /**
-     * Gets the time of the last activity of the given user. If the user doesn't exist in the cache returns
-     * Instant.EPOCH.
+     * Gets the time of the last activity of the given user.
      */
-    public Instant getLastSeen(String normalizedUsername) {
+    public Optional<Instant> getLastSeen(String normalizedUsername) {
         Optional<Object> cacheOptional = cache.getOptional(normalizedUsername);
         // This is weird! Getting the Optional<UserSession> directly without instanceof sometimes leads to
         // 'java.lang.ClassCastException: java.lang.String cannot be cast to models.gui.UserSession'
         if (cacheOptional.isPresent() && cacheOptional.get() instanceof UserSession) {
             UserSession userSession = (UserSession) cacheOptional.get();
-            return userSession.getLastSeen();
+            return Optional.of(userSession.getLastSeen());
         } else {
-            return Instant.EPOCH;
+            return Optional.empty();
         }
     }
 

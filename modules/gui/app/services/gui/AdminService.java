@@ -89,7 +89,7 @@ public class AdminService {
 
     /**
      * Gets the last seen time of users that were active latest, except the logged in one. It is limited to 'limit'
-     * latest users. If non of the users exist in the cache (never logged in) it returns Instant.EPOCH.
+     * latest users.
      */
     public List<Map<String, String>> getLatestUsers(int limit) {
         List<String> normalizedUsernameList = userDao.findAll().stream()
@@ -99,8 +99,8 @@ public class AdminService {
 
         Map<String, Instant> lastSeenMap = new HashMap<>();
         for (String normalizedUsername : normalizedUsernameList) {
-            Instant lastSeen = userSessionCacheAccessor.getLastSeen(normalizedUsername);
-            lastSeenMap.put(normalizedUsername, lastSeen);
+            Optional<Instant> lastSeenOptional = userSessionCacheAccessor.getLastSeen(normalizedUsername);
+            lastSeenOptional.ifPresent(lastSeen -> lastSeenMap.put(normalizedUsername, lastSeen));
         }
 
         List<Map<String, String>> lastSeenMapOrdered = lastSeenMap.entrySet().stream()

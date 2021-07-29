@@ -29,7 +29,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.naming.NamingException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Controller with actions concerning users (incl. user manager)
@@ -91,8 +94,6 @@ public class Users extends Controller {
             userData.put("roleList", user.getRoleList());
             userData.put("authMethod", user.getAuthMethod().name());
             userData.put("studyCount", user.getStudyList().size());
-            userData.put("lastSeen",
-                    Helpers.formatDate(Date.from(authenticationService.getLastSeen(user.getUsername()))));
             userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
             allUserData.add(userData);
         }

@@ -270,13 +270,6 @@ public class AuthenticationService {
     }
 
     /**
-     * Gets the time of the last activity of the given user
-     */
-    public Instant getLastSeen(String normalizedUsername) {
-        return userSessionCacheAccessor.getLastSeen(normalizedUsername);
-    }
-
-    /**
      * Sets the time of the last activity of the given user
      */
     public void setLastSeen(String normalizedUsername) {

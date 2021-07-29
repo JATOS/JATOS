@@ -486,6 +486,10 @@ function getJatosStatus() {
 }
 
 function fillLatestUsers(latestUsers) {
+    if (latestUsers.length == 0) {
+        return '<tr><td class="text-center" colspan="2">no data yet</td></tr>';
+    }
+
     var htmlArray = [];
     latestUsers.forEach(function(e) {
         htmlArray.push("<tr>");
