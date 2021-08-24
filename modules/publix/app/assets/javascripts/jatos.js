@@ -2204,6 +2204,7 @@ var jatos = {};
 			retry: jatos.httpRetry,
 			retryWait: jatos.httpRetryWait
 		};
+		jatos.showBeforeUnloadWarning(false);
 		var deferred = sendToHttpLoop(request, onSuccess, onError);
 		setTimeout(function () {
 			if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
@@ -2310,10 +2311,10 @@ var jatos = {};
 			return rejectedPromise();
 		}
 		endingStudy = true;
-
+		
 		// Before finish send result data
 		if (resultData) jatos.appendResultData(resultData);
-
+		
 		var url = getURL("../end");
 		if (typeof successful == 'boolean' && typeof message == 'string') {
 			url = url + "?" + jatos.jQuery.param({
@@ -2336,6 +2337,7 @@ var jatos = {};
 			retry: jatos.httpRetry,
 			retryWait: jatos.httpRetryWait
 		};
+		jatos.showBeforeUnloadWarning(false);
 		var deferred = sendToHttpLoop(request, onSuccess, onError);
 		setTimeout(function () {
 			if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
@@ -2524,6 +2526,7 @@ var jatos = {};
 	 * @param {object} obj - Object to which the IDs will be added
 	 */
 	jatos.addJatosIds = function (obj) {
+		obj.studyLinkId = jatos.studyLinkId;
 		obj.studyId = jatos.studyId;
 		obj.studyTitle = jatos.studyProperties.title;
 		obj.batchId = jatos.batchId;
@@ -2533,7 +2536,6 @@ var jatos = {};
 		obj.componentTitle = jatos.componentProperties.title;
 		obj.workerId = jatos.workerId;
 		obj.studyResultId = jatos.studyResultId;
-		obj.studyLinkId = jatos.studyLinkId;
 		obj.componentResultId = jatos.componentResultId;
 		obj.groupResultId = jatos.groupResultId;
 		obj.groupMemberId = jatos.groupMemberId;
