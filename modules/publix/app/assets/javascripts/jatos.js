@@ -2814,4 +2814,64 @@ var jatos = {};
 		throw new Error("Unable to copy obj! Its type isn't supported.");
 	}
 
+	jatos.initCondArrWithCondCountMapSpecified = function (conditionCountMap, conditionArrayName) {
+	    var conditionArray = [];
+        // Fill the array with conditions according to the counters
+        for (let condition in conditionCounts) {
+          // Get the count of each condition
+          particularConditionCount = conditionCountMap[condition];
+          fillArrayWithValues(conditionArray, condition , particularConditionCount);
+        }
+        initialiseConditionArray(conditionArray, conditionArrayName);
+	}
+
+    jatos.initCondArrWithNoOfCondSpecified = function (noOfCondition, noOfParticipants, conditionArrayName) {
+        var conditionArray = [];
+        // Fill the array with conditions according to the counters
+        for (let condition = 1; condition <= noOfCondition; condition++) {
+          fillArrayWithValues(conditionArray, condition , noOfParticipants);
+        }
+        initialiseConditionArray(conditionArray, conditionArrayName);
+    }
+
+    function initialiseConditionArray(conditionArray, conditionArrayName) {
+        // Check if '<conditionArrayName>' is available as input to this method
+        var conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
+        // Check if '<conditionArrayName>' condition is not already in the batch session
+        if (!jatos.batchSession.defined("/"+conditionArrayName)) {
+            // Put the conditionArray in the batch session
+            jatos.batchSession.set(conditionArrayName, conditionArray).fail(function () {
+                  jatos.initialiseConditionArray(); // If it fails: try again
+            })
+        }
+    }
+
+    function fillArrayWithValues(array, value, count) {
+        for (var i = 0; i < count; i++) {
+            array.push(value);
+        }
+    }
+
+    jatos.getNextRandomCondition = function (conditionArrayName) {
+        // Check if '<conditionArrayName>' is available as input to this method
+        var conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
+        // Get the still available conditions from the Batch Session
+        var conditions = jatos.batchSession.get(conditionArrayName);
+        // If no more condition available throw an error
+        if (conditions.length == 0) {
+            $('p').text("Error: max number of workers reached.");
+            throw "Max number of workers reached.";
+        }
+        // Get a random condition
+        var randomIndex = Math.floor(Math.random() * conditions.length);
+        var randomCondition = conditions[randomIndex];
+        // Delete the choosen condition from the array
+        conditions.splice(randomIndex, 1);
+        // Set the changed condition array in the Batch Session.
+        jatos.batchSession.set(conditionArrayName, conditions).fail(function () {
+            randomCondition = jatos.getNextRandomCondition(); // If it fails: try again
+        });
+        return randomCondition;
+    }
+
 })();
