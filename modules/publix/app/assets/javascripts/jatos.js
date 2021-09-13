@@ -2814,10 +2814,16 @@ var jatos = {};
 		throw new Error("Unable to copy obj! Its type isn't supported.");
 	}
 
+    /**
+	 * Initialize condition array for block randomazation
+	 * with
+	 * @param {object} conditionCountMap - Map containing group name condition(version Of components) name and corresponding no. of subjects
+     * @param {string optional} conditionArrayName - name of condition Array
+	 */
 	jatos.initCondArrWithCondCountMapSpecified = function (conditionCountMap, conditionArrayName) {
 	    var conditionArray = [];
         // Fill the array with conditions according to the counters
-        for (let condition in conditionCounts) {
+        for (let condition in conditionCountMap) {
           // Get the count of each condition
           particularConditionCount = conditionCountMap[condition];
           fillArrayWithValues(conditionArray, condition , particularConditionCount);
@@ -2825,10 +2831,17 @@ var jatos = {};
         initialiseConditionArray(conditionArray, conditionArrayName);
 	}
 
-    jatos.initCondArrWithNoOfCondSpecified = function (noOfCondition, noOfParticipants, conditionArrayName) {
+    /**
+	 * Initialize condition array for block randomazation
+	 * with
+	 * @param {number} noOfConditions - no. of conditions(version Of components)
+	 * @param {number} noOfParticipants - no. of subjects in each condition(version Of components)
+     * @param {string optional} conditionArrayName - name of condition Array
+	 */
+    jatos.initCondArrWithNoOfCondSpecified = function (noOfConditions, noOfParticipants, conditionArrayName) {
         var conditionArray = [];
         // Fill the array with conditions according to the counters
-        for (let condition = 1; condition <= noOfCondition; condition++) {
+        for (let condition = 1; condition <= noOfConditions; condition++) {
           fillArrayWithValues(conditionArray, condition , noOfParticipants);
         }
         initialiseConditionArray(conditionArray, conditionArrayName);
@@ -2852,6 +2865,11 @@ var jatos = {};
         }
     }
 
+    /**
+	 * get next random group and update the condition array for block randomazation
+	 * with
+     * @param {string optional} conditionArrayName - name of condition Array
+	 */
     jatos.getNextRandomCondition = function (conditionArrayName) {
         // Check if '<conditionArrayName>' is available as input to this method
         var conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
