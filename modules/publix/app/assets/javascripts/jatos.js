@@ -2818,11 +2818,11 @@ var jatos = {};
 	 * Initialize condition array for block randomazation
 	 * with
 	 * @param {object} conditionCountMap - Map containing group name condition(version Of components) name and corresponding no. of subjects
-     * @param {string optional} conditionArrayName - name of condition Array
+	 * @param {string optional} conditionArrayName - name of condition Array
 	 */
 	jatos.initCondArrWithCondCountMapSpecified = function (conditionCountMap, conditionArrayName) {
 	    var conditionArray = [];
-        // Fill the array with conditions according to the counters
+	    // Fill the array with conditions according to the counters
         for (let condition in conditionCountMap) {
           // Get the count of each condition
           let particularConditionCount = conditionCountMap[condition];
