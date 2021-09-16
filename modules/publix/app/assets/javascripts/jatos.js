@@ -2849,7 +2849,7 @@ var jatos = {};
 
     function initialiseConditionArray(conditionArray, conditionArrayName) {
         // Check if '<conditionArrayName>' is available as input to this method
-        var conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
+        conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
         // Check if '<conditionArrayName>' condition is not already in the batch session
         if (!jatos.batchSession.defined("/"+conditionArrayName)) {
             // Put the conditionArray in the batch session
