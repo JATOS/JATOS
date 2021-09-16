@@ -2825,7 +2825,7 @@ var jatos = {};
         // Fill the array with conditions according to the counters
         for (let condition in conditionCountMap) {
           // Get the count of each condition
-          particularConditionCount = conditionCountMap[condition];
+          let particularConditionCount = conditionCountMap[condition];
           fillArrayWithValues(conditionArray, condition , particularConditionCount);
         }
         initialiseConditionArray(conditionArray, conditionArrayName);
@@ -2872,24 +2872,23 @@ var jatos = {};
 	 */
     jatos.getNextRandomCondition = function (conditionArrayName) {
         // Check if '<conditionArrayName>' is available as input to this method
-        var conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
+        conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
         // Get the still available conditions from the Batch Session
         var conditions = jatos.batchSession.get(conditionArrayName);
-        // If no more condition available throw an error
-        if (conditions.length == 0) {
-            $('p').text("Error: max number of workers reached.");
-            throw "Max number of workers reached.";
-        }
-        // Get a random condition
-        var randomIndex = Math.floor(Math.random() * conditions.length);
-        var randomCondition = conditions[randomIndex];
-        // Delete the choosen condition from the array
-        conditions.splice(randomIndex, 1);
-        // Set the changed condition array in the Batch Session.
-        jatos.batchSession.set(conditionArrayName, conditions).fail(function () {
-            randomCondition = jatos.getNextRandomCondition(); // If it fails: try again
-        });
-        return randomCondition;
+        // If no more condition available then return
+		if (conditions.length == 0) {
+			return;
+		}
+		// Get a random condition
+		var randomIndex = Math.floor(Math.random() * conditions.length);
+		var randomCondition = conditions[randomIndex];
+		// Delete the choosen condition from the array
+		conditions.splice(randomIndex, 1);
+		// Set the changed condition array in the Batch Session.
+		jatos.batchSession.set(conditionArrayName, conditions).fail(function () {
+			randomCondition = jatos.getNextRandomCondition(); // If it fails: try again
+		});
+		return randomCondition;
     }
 
 })();
