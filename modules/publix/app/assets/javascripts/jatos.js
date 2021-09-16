@@ -2836,7 +2836,7 @@ var jatos = {};
 	 * with
 	 * @param {number} noOfConditions - no. of conditions(version Of components)
 	 * @param {number} noOfParticipants - no. of subjects in each condition(version Of components)
-     * @param {string optional} conditionArrayName - name of condition Array
+	 * @param {string optional} conditionArrayName - name of condition Array
 	 */
     jatos.initCondArrWithNoOfCondSpecified = function (noOfConditions, noOfParticipants, conditionArrayName) {
         var conditionArray = [];
@@ -2868,7 +2868,7 @@ var jatos = {};
     /**
 	 * get next random group and update the condition array for block randomazation
 	 * with
-     * @param {string optional} conditionArrayName - name of condition Array
+	 * @param {string optional} conditionArrayName - name of condition Array
 	 */
     jatos.getNextRandomCondition = function (conditionArrayName) {
         // Check if '<conditionArrayName>' is available as input to this method
@@ -2886,7 +2886,7 @@ var jatos = {};
 		conditions.splice(randomIndex, 1);
 		// Set the changed condition array in the Batch Session.
 		jatos.batchSession.set(conditionArrayName, conditions).fail(function () {
-			randomCondition = jatos.getNextRandomCondition(); // If it fails: try again
+		    randomCondition = jatos.getNextRandomCondition(); // If it fails: try again
 		});
 		return randomCondition;
     }
