@@ -20,6 +20,8 @@
  * Licensed under the MIT license.
  */
 
+/* global jQuery, jsonpatch, jsonpointer */
+
 var jatos = {};
 
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
@@ -30,7 +32,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.6.1";
+	jatos.version = "3.7.1";
 	/**
 	 * How long in ms should JATOS wait before retrying the HTTP call.
 	 */
@@ -456,7 +458,7 @@ var jatos = {};
 		try {
 			jatos.studySessionData = JSON.parse(initData.studySessionData);
 		} catch (e) {
-			callingOnError(null, error);
+			callingOnError(null, e.stack || e);
 		}
 
 		// Study properties
@@ -564,7 +566,7 @@ var jatos = {};
 		batchChannel = new WebSocket(
 			((window.location.protocol === "https:") ? "wss://" : "ws://") +
 			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/batch/open");
-		batchChannel.onopen = function (event) {
+		batchChannel.onopen = function () {
 			batchChannelHeartbeat();
 			batchChannelClosedCheck();
 			// The actual batch channel opening is done when we have the 
@@ -1238,12 +1240,12 @@ var jatos = {};
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
 	 * 
 	 * Either without message:
-	 * @param {number} componentIdOrUuid - ID or UUID of the component to start
+	 * @param {string|number} componentIdOrUuid - ID or UUID of the component to start
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional function} onError - Callback function if fail
 	 * 
 	 * Or with message:
-	 * @param {number} componentIdOrUuid - ID or UUID of the component to start
+	 * @param {string|number} componentIdOrUuid - ID or UUID of the component to start
 	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
 	 * @param {optional string} message - Message that should be logged (max 255 chars)
 	 * @param {optional function} onError - Callback function if fail
@@ -1255,8 +1257,8 @@ var jatos = {};
         }
 
 		var message, onError, componentUuid;
-		if (typeof componentIdOrUuid !== 'string') {
-			componentUuid = getComponentUuidFromId(componentId);
+		if (typeof componentIdOrUuid === 'number') {
+			componentUuid = jatos.componentList.find(c => c.id == componentIdOrUuid).uuid;
 		} else {
 			componentUuid = componentIdOrUuid;
 		}
@@ -1293,12 +1295,6 @@ var jatos = {};
 			start();
 		}
 	};
-
-	function getComponentUuidFromId(id) {
-		for (var i = 0; i < jatos.componentList.length; ++i) {
-			if (jatos.componentList[i].id == id) return jatos.componentList[i].uuid;
-		}
-	}
 
 	/**
 	 * Starts the component with the given position (position of the first
@@ -1473,7 +1469,7 @@ var jatos = {};
 		groupChannel = new WebSocket(
 			((window.location.protocol === "https:") ? "wss://" : "ws://") +
 			window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join");
-		groupChannel.onopen = function (event) {
+		groupChannel.onopen = function () {
 			groupChannelHeartbeat();
 			groupChannelClosedCheck();
 			// The actual group channel opening is done when we have the current
@@ -1974,8 +1970,8 @@ var jatos = {};
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			groupFixedTimeout = setChannelSendingTimeoutAndPromiseResolution(
-				sendingGroupFixedDeferred, onSuccess, onFail);
+			// groupFixedTimeout = setChannelSendingTimeoutAndPromiseResolution(
+			// 	sendingGroupFixedDeferred, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
 			sendingGroupFixedDeferred.reject();
