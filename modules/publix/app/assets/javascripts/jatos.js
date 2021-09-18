@@ -1316,6 +1316,9 @@ var jatos = {};
 	 */
 	jatos.startComponentByPos = function (componentPos, resultData, param3, param4) {
 		if (isInvalidComponentPosition(componentPos)) {
+			var onError;
+			if (typeof param3 === 'function') onError = param3;
+			else if (typeof param4 === 'function') onError = param4;
 			callingOnError(onError, "Component position does not exist");
 			return;
 		}
@@ -1390,10 +1393,8 @@ var jatos = {};
 	 * @param {optional function} onError - Callback function if fail
 	 */
 	jatos.startLastComponent = function (resultData, param2, param3) {
-		var lastActiveComponent = jatos.componentList.reverse()
-			.find(function (component) { return component.active; });
-		var lastComponentUuid = jatos.componentList[i].uuid;
-		jatos.startComponent(lastComponentUuid, resultData, param2, param3);
+		var lastActiveComponent = jatos.componentList.reverse().find(c => c.active);
+		jatos.startComponent(lastActiveComponent.uuid, resultData, param2, param3);
 	};
 
 	/**
@@ -1970,14 +1971,35 @@ var jatos = {};
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			// groupFixedTimeout = setChannelSendingTimeoutAndPromiseResolution(
-			// 	sendingGroupFixedDeferred, onSuccess, onFail);
+			setGroupFixedTimeoutAndPromiseResolution(sendingGroupFixedDeferred,
+				onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
 			sendingGroupFixedDeferred.reject();
 		}
 		return sendingGroupFixedDeferred.promise();
 	};
+
+	 function setGroupFixedTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
+		var timeoutId = setTimeout(() => {
+			callFunctionIfExist(onFail, "Timeout sending message");
+			deferred.reject("Timeout sending message");
+		}, jatos.channelSendingTimeoutTime);
+
+		// Create a new timeout object with a cancel function
+		groupFixedTimeout = {
+			cancel: () => {
+				clearTimeout(timeoutId);
+				callFunctionIfExist(onSuccess, "success");
+				deferred.resolve("success");
+			}
+		};
+
+		// Always clean up and delete the timeout obj after the deferred is resolved
+		deferred.always(() => groupFixedTimeout = null);
+	}
+
+
 
 	/**
 	 * Returns true if this study run joined a group and false otherwise. It doesn't
