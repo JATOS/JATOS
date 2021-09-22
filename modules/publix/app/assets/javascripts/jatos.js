@@ -2820,7 +2820,7 @@ var jatos = {};
 	 jatos.assignment = {};
 
 	/**
-	 * Initialize condition array for block randomazation
+	 * Initialize condition array for block randomization
 	 * @param {object} conditionConfig
 	 * containing
 	 * conditions - Map containing group name condition(version Of components) name and corresponding no. of subjects
@@ -2854,7 +2854,7 @@ var jatos = {};
 
 
 	/**
-	 * get next random group and update the condition array for block randomazation
+	 * get next random group and update the condition array for block randomization
 	 * @param {string optional} conditionArrayName - name of condition Array
 	 */
 	jatos.assignment.next = function () {
@@ -2917,7 +2917,7 @@ var jatos = {};
 		}
 	}
 
-	function fillConditionArrayForConditionsObj(conditionArray, conditions) {
+	function fillConditionArrayForConditionsObj(randomCondition) {
 		if (jatos.batchSession.defined("/conditionConfig")) {
 			let conditions = jatos.batchSession.get("conditionConfig").conditions;
 			if(conditions && conditions.length !=0 && conditions[randomCondition] instanceof Object) {
