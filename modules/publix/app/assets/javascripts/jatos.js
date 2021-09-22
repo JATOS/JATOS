@@ -2917,7 +2917,7 @@ var jatos = {};
 		}
 	}
 
-	function fillConditionArrayForConditionsObj(randomCondition) {
+	function getNextConditionObject(randomCondition) {
 		if (jatos.batchSession.defined("/conditionConfig")) {
 			let conditions = jatos.batchSession.get("conditionConfig").conditions;
 			if(conditions && conditions.length !=0 && conditions[randomCondition] instanceof Object) {
