@@ -2830,4 +2830,117 @@ var jatos = {};
 		throw new Error("Unable to copy obj! Its type isn't supported.");
 	}
 
+	/**
+	 * Object contains all condition assignment functions
+	 */
+	 jatos.assignment = {};
+
+	/**
+	 * Initialize condition array for block randomization
+	 * @param {object} conditionConfig
+	 * containing
+	 * conditions - Map containing group name condition(version Of components) name and corresponding no. of subjects
+	 * numberOfConditions - no. of conditions(version Of components)
+	 * numberOfWorkers - no. of subjects in each condition(version Of components)
+	 * conditionArrayName - name of condition Array
+	 */
+	jatos.assignment.init = function (conditionConfig) {
+		var conditionArray = [];
+		if(conditionConfig.conditions && conditionConfig.conditions.length != 0) {
+			fillConditionArrayForConditionsObj(conditionArray, conditionConfig.conditions);
+		} else {
+			// Fill the array with conditions according to the counters
+			for (let condition = 1; condition <= conditionConfig.numberOfConditions; condition++) {
+				fillArrayWithValues(conditionArray, condition , conditionConfig.numberOfWorkers);
+			}
+		}
+		jatos.batchSession.set("conditionConfig", conditionConfig);
+		initialiseConditionArray(conditionArray, conditionConfig.conditionArrayName);
+	}
+
+	/**
+	 * Check if any next condition is available
+	 */
+	jatos.assignment.hasNext = function () {
+		let conditionArrayName = getConditionArrayName();
+		let conditionArray = jatos.batchSession.get(conditionArrayName);
+		// If next condition available then return True else if no more condition available then return False
+		return (conditionArray.length != 0) ;
+	}
+
+
+	/**
+	 * get next random group and update the condition array for block randomization
+	 * @param {string optional} conditionArrayName - name of condition Array
+	 */
+	jatos.assignment.next = function () {
+		let conditionArrayName = getConditionArrayName();
+		let conditionArray = jatos.batchSession.get(conditionArrayName);
+		// If no more condition available then return
+		if (conditionArray.length == 0) {
+			return;
+		}
+		// Get a random condition
+		var randomIndex = Math.floor(Math.random() * conditionArray.length);
+		var randomCondition = conditionArray[randomIndex];
+		// Delete the choosen condition from the array
+		conditionArray.splice(randomIndex, 1);
+		// Set the changed condition array in the Batch Session.
+		jatos.batchSession.set(conditionArrayName, conditionArray).fail(function () {
+			randomCondition = jatos.assignment.next(conditionArrayName); // If it fails: try again
+		});
+		return getNextConditionObject(randomCondition);
+	}
+
+	function initialiseConditionArray(conditionArray, conditionArrayName) {
+		// Check if '<conditionArrayName>' is available as input to this method
+		conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
+		// Check if '<conditionArrayName>' condition is not already in the batch session
+		if (!jatos.batchSession.defined("/"+conditionArrayName)) {
+			// Put the conditionArray in the batch session
+			jatos.batchSession.set(conditionArrayName, conditionArray).fail(function () {
+				initialiseConditionArray(conditionArray, conditionArrayName); // If it fails: try again
+			})
+		}
+	}
+
+	function getConditionArrayName() {
+		let conditionArrayName;
+		if (jatos.batchSession.defined("/conditionConfig")) {
+			// Put the conditionArray in the batch session
+			conditionArrayName = jatos.batchSession.get("conditionConfig").conditionArrayName;
+		}
+		// Check if '<conditionArrayName>' is available as input to this method
+		return (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
+	}
+
+	function fillArrayWithValues(array, value, count) {
+		for (let i = 0; i < count; i++) {
+			array.push(value);
+		}
+	}
+
+	function fillConditionArrayForConditionsObj(conditionArray, conditions) {
+		// Fill the array with conditions according to the counters
+		for (let condition in conditions) {
+			// Get the count of each condition
+			let particularConditionCount = conditions[condition];
+			if(particularConditionCount instanceof Object) {
+				particularConditionCount.conditionName = condition;
+				particularConditionCount = particularConditionCount.numberOfWorkers;
+			}
+			fillArrayWithValues(conditionArray, condition , particularConditionCount);
+		}
+	}
+
+	function getNextConditionObject(randomCondition) {
+		if (jatos.batchSession.defined("/conditionConfig")) {
+			let conditions = jatos.batchSession.get("conditionConfig").conditions;
+			if(conditions && conditions.length !=0 && conditions[randomCondition] instanceof Object) {
+				return conditions[randomCondition];
+			}
+		}
+		return randomCondition;
+	}
+
 })();
