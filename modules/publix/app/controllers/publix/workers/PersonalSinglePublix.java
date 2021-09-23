@@ -76,7 +76,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         PersonalSingleWorker worker = (PersonalSingleWorker) studyLink.getWorker();
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         // There are 5 possibilities
         // 1. Preview study, first call -> create StudyResult, call finishOldestStudyResult

@@ -30,6 +30,7 @@ import static play.test.Helpers.route;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class AdminControllerTest {
 
     @Inject
@@ -61,7 +62,7 @@ public class AdminControllerTest {
 
     @Test
     public void callAdministration() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -77,7 +78,7 @@ public class AdminControllerTest {
 
     @Test
     public void callListLogs() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -92,7 +93,7 @@ public class AdminControllerTest {
     @Test
     public void callLogs() {
         Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+                .mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -106,7 +107,7 @@ public class AdminControllerTest {
 
     @Test
     public void callStatus() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -127,7 +128,7 @@ public class AdminControllerTest {
 
     @Test
     public void callStudyAdmin() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -143,7 +144,7 @@ public class AdminControllerTest {
 
     @Test
     public void callAllStudiesData() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -158,7 +159,7 @@ public class AdminControllerTest {
 
     @Test
     public void callStudiesDataByUser() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)

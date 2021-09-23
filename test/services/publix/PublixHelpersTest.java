@@ -6,12 +6,9 @@ import daos.common.UserDao;
 import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import general.TestHelper;
-import models.common.ComponentResult;
+import models.common.*;
 import models.common.ComponentResult.ComponentState;
-import models.common.Study;
-import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
-import models.common.User;
 import models.common.workers.JatosWorker;
 import org.junit.After;
 import org.junit.Before;
@@ -21,6 +18,7 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import general.ResultTestHelper;
 import services.gui.UserService;
 
 import javax.inject.Inject;
@@ -32,6 +30,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings({ "OptionalGetWithoutIsPresent", "deprecation" })
 public class PublixHelpersTest {
 
     private Injector injector;
@@ -46,11 +45,14 @@ public class PublixHelpersTest {
     private ResultCreator resultCreator;
 
     @Inject
+    private ResultTestHelper resultTestHelper;
+
+    @Inject
     private UserDao userDao;
 
     // The worker is not important here
     @Inject
-    private PublixUtils<JatosWorker> publixUtils;
+    private PublixUtils publixUtils;
 
     @Before
     public void startApp() throws Exception {
@@ -78,8 +80,8 @@ public class PublixHelpersTest {
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator
-                    .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyResult studyResult = resultCreator.createStudyResult(studyLink, admin.getWorker());
 
             // Study results in state FINISHED, ABORTED, or FAIL must return true
             studyResult.setStudyState(StudyState.FINISHED);
@@ -111,7 +113,8 @@ public class PublixHelpersTest {
             assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study)).isFalse();
 
             // Create a result for the admin's worker
-            resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            resultCreator.createStudyResult(studyLink, admin.getWorker());
 
             assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study)).isTrue();
         });
@@ -126,8 +129,8 @@ public class PublixHelpersTest {
 
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyResult studyResult = resultCreator.createStudyResult(studyLink, admin.getWorker());
 
             // FINISHED, ABORTED, FAIL must return true
             studyResult.setStudyState(StudyState.FINISHED);
@@ -160,8 +163,8 @@ public class PublixHelpersTest {
 
             // Create a study result and start a component to get a component result
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator
-                    .createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyResult studyResult = resultCreator.createStudyResult(studyLink, admin.getWorker());
 
             ComponentResult componentResult;
             try {

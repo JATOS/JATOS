@@ -70,7 +70,7 @@ public class BatchesControllerTest {
         JsonNode jsonNode = Json.mapper()
                 .readTree("{\"comment\": \"test comment\",\"amount\": 10}");
         Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+                .mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyJson(jsonNode)
@@ -92,7 +92,7 @@ public class BatchesControllerTest {
         JsonNode jsonNode = Json.mapper()
                 .readTree("{\"comment\": \"test comment\",\"amount\": 10}");
         Http.Session session = testHelper
-                .mockSessionCookieandCache(testHelper.getAdmin());
+                .mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method("POST")
                 .session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
                 .bodyJson(jsonNode)

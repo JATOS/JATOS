@@ -33,6 +33,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class UserServiceTest {
 
     private Injector injector;

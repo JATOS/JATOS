@@ -23,8 +23,6 @@ import play.inject.guice.GuiceApplicationLoader;
 
 import javax.inject.Inject;
 
-import java.io.IOException;
-
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
@@ -32,6 +30,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange (2017)
  */
+@SuppressWarnings("deprecation")
 public class BatchServiceTest {
 
     private Injector injector;
@@ -86,7 +85,7 @@ public class BatchServiceTest {
      * Tests BatchService.clone: creates a new Batch with most of the values of
      * the given Batch
      */
-    // @Test
+    @Test
     public void checkClone() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
@@ -97,7 +96,7 @@ public class BatchServiceTest {
         GeneralSingleWorker generalSingleWorker = new GeneralSingleWorker();
 
         Batch batch = createDummyBatch(study);
-        batch.setId(1111l);
+        batch.setId(1111L);
         batch.setUuid("123-uid-456");
         batch.addWorker(mtWorker);
         batch.addWorker(mtSandboxWorker);
@@ -201,11 +200,7 @@ public class BatchServiceTest {
         // Remove the batch
         jpaApi.withTransaction(() -> {
             Batch b = batchDao.findById(batch.getId());
-            try {
-                batchService.remove(b, testHelper.getAdmin());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            batchService.remove(b, testHelper.getAdmin());
         });
 
         // Check the removal

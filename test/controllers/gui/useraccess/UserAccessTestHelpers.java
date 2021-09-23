@@ -56,7 +56,7 @@ public class UserAccessTestHelpers {
     }
 
     public void checkAccessGranted(Call call, String method, User user, String bodyText) {
-        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        Http.Session session = testHelper.mockSessionCookieAndCache(user);
         RequestBuilder request = new RequestBuilder()
                 .method(method)
                 .session(session)
@@ -79,7 +79,7 @@ public class UserAccessTestHelpers {
     public void checkDeniedAccessDueToAuthorization(Call call, String method) {
         // Persist User without ADMIN role
         User user = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
-        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        Http.Session session = testHelper.mockSessionCookieAndCache(user);
 
         RequestBuilder request = new RequestBuilder()
                 .method(method)
@@ -137,7 +137,7 @@ public class UserAccessTestHelpers {
      * session for authentication.
      */
     public void checkThatCallIsForbidden(Call call, String method, User user, String bodyText, String errorMsg) {
-        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        Http.Session session = testHelper.mockSessionCookieAndCache(user);
         RequestBuilder request = new RequestBuilder()
                 .method(method)
                 .session(session)

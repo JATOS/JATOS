@@ -90,10 +90,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         JatosWorker worker = publixUtils.retrieveLoggedInUser(request).getWorker();
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         String componentUuid = null;
-        JatosRun jatosRun = publixUtils.fetchJatosRunFromSession(request);
+        JatosRun jatosRun = publixUtils.fetchJatosRunFromSession(request.session());
         switch (jatosRun) {
             case RUN_STUDY:
                 componentUuid = publixUtils.retrieveFirstActiveComponent(study).getUuid();
@@ -130,7 +130,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         JatosWorker worker = (JatosWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         // Check if it's a single component run or a whole study run
@@ -171,7 +171,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         JatosWorker worker = (JatosWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
@@ -197,7 +197,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         JatosWorker worker = (JatosWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);

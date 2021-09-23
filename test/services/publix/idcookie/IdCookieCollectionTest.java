@@ -41,8 +41,8 @@ public class IdCookieCollectionTest {
     @Test
     public void checkAdd() throws IdCookieAlreadyExistsException {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
-        idCookieCollection.add(createIdCookie(1l, 0));
-        idCookieCollection.add(createIdCookie(2l, 1));
+        idCookieCollection.add(createIdCookie(1L, 0));
+        idCookieCollection.add(createIdCookie(2L, 1));
         assertThat(idCookieCollection.size()).isEqualTo(2);
     }
 
@@ -50,19 +50,19 @@ public class IdCookieCollectionTest {
     public void checkAddIdCookieAlreadyExistsException()
             throws IdCookieAlreadyExistsException {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
-        idCookieCollection.add(createIdCookie(1l, 0));
-        idCookieCollection.add(createIdCookie(1l, 1));
+        idCookieCollection.add(createIdCookie(1L, 0));
+        idCookieCollection.add(createIdCookie(1L, 1));
     }
 
     @Test
     public void checkPut() throws IdCookieCollectionFullException {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
         assertThat(idCookieCollection.size()).isEqualTo(0);
-        idCookieCollection.put(createIdCookie(1l, 0));
+        idCookieCollection.put(createIdCookie(1L, 0));
         assertThat(idCookieCollection.size()).isEqualTo(1);
-        idCookieCollection.put(createIdCookie(2l, 1));
+        idCookieCollection.put(createIdCookie(2L, 1));
         assertThat(idCookieCollection.size()).isEqualTo(2);
-        idCookieCollection.put(createIdCookie(2l, 2));
+        idCookieCollection.put(createIdCookie(2L, 2));
         assertThat(idCookieCollection.size()).isEqualTo(2);
     }
 
@@ -70,9 +70,9 @@ public class IdCookieCollectionTest {
     public void checkPutOverwrite() throws IdCookieCollectionFullException {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
         assertThat(idCookieCollection.size()).isEqualTo(0);
-        idCookieCollection.put(createIdCookie(1l, 0));
+        idCookieCollection.put(createIdCookie(1L, 0));
         assertThat(idCookieCollection.size()).isEqualTo(1);
-        idCookieCollection.put(createIdCookie(1l, 0));
+        idCookieCollection.put(createIdCookie(1L, 0));
         assertThat(idCookieCollection.size()).isEqualTo(1);
     }
 
@@ -89,7 +89,7 @@ public class IdCookieCollectionTest {
     public void checkRemove() throws IdCookieCollectionFullException {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
         assertThat(idCookieCollection.size()).isEqualTo(0);
-        IdCookieModel idCookie1 = createIdCookie(1l, 0);
+        IdCookieModel idCookie1 = createIdCookie(1L, 0);
         idCookieCollection.put(idCookie1);
         assertThat(idCookieCollection.size()).isEqualTo(1);
         idCookieCollection.remove(idCookie1);
@@ -130,11 +130,11 @@ public class IdCookieCollectionTest {
     @Test
     public void checkFindWithStudyResultId() throws IdCookieCollectionFullException {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
-        assertThat(idCookieCollection.findWithStudyResultId(1l)).isNull();
+        assertThat(idCookieCollection.findWithStudyResultId(1L)).isNull();
 
-        IdCookieModel idCookie = createIdCookie(1l, 0);
+        IdCookieModel idCookie = createIdCookie(1L, 0);
         idCookieCollection.put(idCookie);
-        assertThat(idCookieCollection.findWithStudyResultId(1l)).isEqualTo(idCookie);
+        assertThat(idCookieCollection.findWithStudyResultId(1L)).isEqualTo(idCookie);
     }
 
 }

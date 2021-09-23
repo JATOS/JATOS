@@ -21,7 +21,6 @@ import javax.inject.Inject;
 import javax.naming.CommunicationException;
 import javax.naming.InvalidNameException;
 import javax.naming.NamingException;
-import java.net.MalformedURLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -34,6 +33,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class AuthenticationServiceTest {
 
     @Inject

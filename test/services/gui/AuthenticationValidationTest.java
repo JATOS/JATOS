@@ -35,6 +35,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class AuthenticationValidationTest {
 
     private static final Lang defaultLang = new Lang(java.util.Locale.getDefault());

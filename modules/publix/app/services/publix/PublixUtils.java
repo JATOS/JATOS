@@ -1,7 +1,10 @@
 package services.publix;
 
 import controllers.publix.workers.JatosPublix;
-import daos.common.*;
+import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
+import daos.common.StudyResultDao;
+import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.*;
 import general.common.StudyLogger;
@@ -36,13 +39,10 @@ public class PublixUtils {
     private final ResultCreator resultCreator;
     private final IdCookieService idCookieService;
     private final GroupAdministration groupAdministration;
-    protected final PublixErrorMessages errorMessages;
-    private final StudyDao studyDao;
     private final StudyResultDao studyResultDao;
     private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
     private final WorkerDao workerDao;
-    private final BatchDao batchDao;
     private final UserDao userDao;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
@@ -51,20 +51,16 @@ public class PublixUtils {
     public PublixUtils(ResultCreator resultCreator,
             IdCookieService idCookieService,
             GroupAdministration groupAdministration,
-            PublixErrorMessages errorMessages, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentDao componentDao,
             ComponentResultDao componentResultDao, WorkerDao workerDao,
-            BatchDao batchDao, UserDao userDao, StudyLogger studyLogger, IOUtils ioUtils) {
+            UserDao userDao, StudyLogger studyLogger, IOUtils ioUtils) {
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.groupAdministration = groupAdministration;
-        this.errorMessages = errorMessages;
-        this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
         this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
         this.workerDao = workerDao;
-        this.batchDao = batchDao;
         this.userDao = userDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
@@ -243,31 +239,6 @@ public class PublixUtils {
         }
     }
 
-    public StudyResult retrieveStudyResult(Worker worker, Study study, Long studyResultId)
-            throws ForbiddenPublixException, BadRequestPublixException {
-        if (studyResultId == null) {
-            throw new ForbiddenPublixException(
-                    "error retrieving study result ID");
-        }
-        StudyResult studyResult = studyResultDao.findById(studyResultId);
-        if (studyResult == null) {
-            throw new BadRequestPublixException(PublixErrorMessages.STUDY_RESULT_DOESN_T_EXIST);
-        }
-        // Check that the given worker actually did this study result
-        if (!worker.getStudyResultList().contains(studyResult)) {
-            throw new ForbiddenPublixException(PublixErrorMessages.workerNeverDidStudy(worker, study.getId()));
-        }
-        // Check that this study result belongs to the given study
-        if (!studyResult.getStudy().getId().equals(study.getId())) {
-            throw new ForbiddenPublixException(PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
-        }
-        // Check that this study result isn't finished
-        if (PublixHelpers.studyDone(studyResult)) {
-            throw new ForbiddenPublixException(PublixErrorMessages.workerFinishedStudyAlready(worker, study.getId()));
-        }
-        return studyResult;
-    }
-
     /**
      * Returns an Optional of the last ComponentResult's component (of the given StudyResult.
      */
@@ -318,23 +289,6 @@ public class PublixUtils {
     }
 
     /**
-     * Returns an Optional to the next active component in the list of components that
-     * correspond to the ComponentResults of the given StudyResult.
-     */
-    public Optional<Component> retrieveNextActiveComponent(StudyResult studyResult)
-            throws InternalServerErrorPublixException {
-        Component current = retrieveLastComponent(studyResult).orElseThrow(() ->
-                new InternalServerErrorPublixException(
-                        "Couldn't find the last running component."));
-        Optional<Component> next = studyResult.getStudy().getNextComponent(current);
-        // Find next active component or null if study has no more components
-        while (next.isPresent() && !next.get().isActive()) {
-            next = studyResult.getStudy().getNextComponent(next.get());
-        }
-        return next;
-    }
-
-    /**
      * Returns the component with the given component ID that belongs to the
      * given study.
      *
@@ -363,36 +317,6 @@ public class PublixUtils {
         return component;
     }
 
-    public Component retrieveComponentByPosition(Long studyId, Integer position)
-            throws NotFoundPublixException, BadRequestPublixException {
-        Study study = retrieveStudy(studyId);
-        if (position == null) {
-            throw new BadRequestPublixException(
-                    PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
-        }
-        Component component;
-        try {
-            component = study.getComponent(position);
-        } catch (IndexOutOfBoundsException e) {
-            throw new NotFoundPublixException(
-                    PublixErrorMessages.noComponentAtPosition(study.getId(), position));
-        }
-        return component;
-    }
-
-    /**
-     * Returns the study corresponding to the given study ID. It throws an
-     * NotFoundPublixException if there is no such study.
-     */
-    public Study retrieveStudy(Long studyId) throws NotFoundPublixException {
-        Study study = studyDao.findById(studyId);
-        if (study == null) {
-            throw new NotFoundPublixException(
-                    PublixErrorMessages.studyNotExist(studyId));
-        }
-        return study;
-    }
-
     /**
      * Checks if this component belongs to this study and throws an
      * BadRequestPublixException if it doesn't.
@@ -416,18 +340,6 @@ public class PublixUtils {
     }
 
     /**
-     * Retrieves batch from database. If the batch doesn't exist it throws an
-     * NotFoundPublixException.
-     */
-    public Batch retrieveBatch(Long batchId) throws NotFoundPublixException {
-        Batch batch = batchDao.findById(batchId);
-        if (batch == null) {
-            throw new NotFoundPublixException(PublixErrorMessages.batchNotExist(batchId));
-        }
-        return batch;
-    }
-
-    /**
      * Sets the StudyResult's StudyState to STARTED if the study is currently in
      * state PRE and the study result moved away from the first active component (this
      * means the given componentId isn't the first component's one).
@@ -445,12 +357,11 @@ public class PublixUtils {
      * Get query string parameters from the calling URL and put them into the field
      * urlQueryParameters in StudyResult as a JSON string.
      */
-    public StudyResult setUrlQueryParameter(Http.Request request, StudyResult studyResult) {
+    public void setUrlQueryParameter(Http.Request request, StudyResult studyResult) {
         Map<String, String> queryMap = new HashMap<>();
         request.queryString().forEach((k, v) -> queryMap.put(k, v[0]));
         String parameter = JsonUtils.asJson(queryMap);
         studyResult.setUrlQueryParameters(parameter);
-        return studyResult;
     }
 
     /**
@@ -497,9 +408,9 @@ public class PublixUtils {
     /**
      * Retrieves the JatosRun object that maps to the jatos run parameter in the session.
      */
-    public JatosPublix.JatosRun fetchJatosRunFromSession(Http.Request request)
+    public JatosPublix.JatosRun fetchJatosRunFromSession(Http.Session session)
             throws ForbiddenPublixException, BadRequestPublixException {
-        String sessionValue = request.session().getOptional("jatos_run")
+        String sessionValue = session.getOptional("jatos_run")
                 .orElseThrow(() -> new ForbiddenPublixException("This study or component was never started in JATOS."));
 
         try {

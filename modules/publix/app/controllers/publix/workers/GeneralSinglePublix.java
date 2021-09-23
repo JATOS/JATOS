@@ -7,7 +7,6 @@ import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
 import models.common.*;
@@ -97,7 +96,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
         Worker worker;
         if (workerId == null) {
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
-            studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
             publixUtils.finishOldestStudyResult();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
             generalSingleCookieService.set(study, worker);
@@ -106,7 +105,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
         } else {
             worker = publixUtils.retrieveWorker(workerId);
             if (worker == null) throw new ForbiddenPublixException("A worker with ID " + workerId + " doesn't exist");
-            studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
             studyResult = worker.getLastStudyResult().orElseThrow(() -> new ForbiddenPublixException(
                     "Repeated study run but couldn't find last study result"));
             if (!idCookieService.hasIdCookie(studyResult.getId())) {

@@ -6,6 +6,7 @@ import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import general.ResultTestHelper;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.ComponentResult;
@@ -35,6 +36,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class ResultServiceTest {
 
     private Injector injector;
@@ -77,13 +79,6 @@ public class ResultServiceTest {
     public void simpleCheck() {
         int a = 1 + 1;
         assertThat(a).isEqualTo(2);
-    }
-
-    private void checkForProperResultIdList(List<Long> resultIdList) {
-        assertThat(resultIdList.size() == 3);
-        assertThat(resultIdList.contains(1L));
-        assertThat(resultIdList.contains(2L));
-        assertThat(resultIdList.contains(3L));
     }
 
     @Test

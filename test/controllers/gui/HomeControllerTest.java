@@ -59,7 +59,7 @@ public class HomeControllerTest {
 
     @Test
     public void callHome() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -75,7 +75,7 @@ public class HomeControllerTest {
 
     @Test
     public void callSidebarStudyList() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)

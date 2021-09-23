@@ -102,7 +102,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
                     + " exists already in JATOS. But the existing worker is of type " + worker.getWorkerType()
                     + " while your study link is for type " + studyLink.getWorkerType() + ".");
         }
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
@@ -126,7 +126,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         MTWorker worker = (MTWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         String confirmationCode;
         if (!PublixHelpers.studyDone(studyResult)) {

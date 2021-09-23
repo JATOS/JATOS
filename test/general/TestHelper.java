@@ -1,7 +1,6 @@
 package general;
 
 import com.google.inject.Injector;
-import controllers.gui.Authentication;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -44,14 +43,13 @@ import static play.test.Helpers.route;
 /**
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class TestHelper {
 
     public static final String WWW_EXAMPLE_COM = "www.example.com";
 
     public static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
-
-    public static final String BLA_USERNAME = "bla";
 
     public static final String BLA_EMAIL = "bla@bla.org";
 
@@ -77,9 +75,6 @@ public class TestHelper {
 
     @Inject
     private BatchService batchService;
-
-    @Inject
-    private Authentication authentication;
 
     @Inject
     private AuthenticationService authenticationService;
@@ -179,8 +174,7 @@ public class TestHelper {
 
     public Study importExampleStudy(Injector injector) throws IOException {
         File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
-        File tempUnzippedStudyDir = Files.createTempDirectory(
-                "JatosImport_" + UUID.randomUUID().toString()).toFile();
+        File tempUnzippedStudyDir = Files.createTempDirectory("JatosImport_" + UUID.randomUUID()).toFile();
         ZipUtil.unzip(studyZip, tempUnzippedStudyDir);
         File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
                 IOUtils.STUDY_FILE_SUFFIX);
@@ -188,11 +182,13 @@ public class TestHelper {
         UploadUnmarshaller<Study> uploadUnmarshaller = injector
                 .getInstance(StudyUploadUnmarshaller.class);
         Study importedStudy = uploadUnmarshaller.unmarshalling(studyFile);
+        //noinspection ResultOfMethodCallIgnored
         studyFile.delete();
 
         File[] dirArray = ioUtils.findDirectories(tempUnzippedStudyDir);
         ioUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
 
+        //noinspection ResultOfMethodCallIgnored
         tempUnzippedStudyDir.delete();
 
         // Every study has a default batch
@@ -200,29 +196,14 @@ public class TestHelper {
         return importedStudy;
     }
 
-    public void removeStudy(Long studyId) {
-        jpaApi.withTransaction(() -> {
+    public void removeAllStudies() {
+        jpaApi.withTransaction(() -> studyDao.findAll().forEach(study -> {
             try {
-                Study study = studyDao.findById(studyId);
-                if (study != null) {
-                    studyService.removeStudyInclAssets(study, getAdmin());
-                }
+                studyService.removeStudyInclAssets(study, getAdmin());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
-    }
-
-    public void removeAllStudies() {
-        jpaApi.withTransaction(() -> {
-            studyDao.findAll().forEach(study -> {
-                try {
-                    studyService.removeStudyInclAssets(study, getAdmin());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-        });
+        }));
     }
 
     /**
@@ -261,7 +242,7 @@ public class TestHelper {
      */
     public void mockContext() {
         Cookies cookies = mock(Cookies.class);
-        mockContext(cookies, null);
+        mockContext(cookies);
     }
 
     /**
@@ -271,7 +252,7 @@ public class TestHelper {
     public void mockContext(Cookie cookie) {
         Cookies cookies = mock(Cookies.class);
         when(cookies.get(cookie.name())).thenReturn(cookie);
-        mockContext(cookies, null);
+        mockContext(cookies);
     }
 
     /**
@@ -281,31 +262,23 @@ public class TestHelper {
     public void mockContext(List<Cookie> cookieList) {
         Cookies cookies = mock(Cookies.class);
         when(cookies.iterator()).thenReturn(cookieList.iterator());
-        mockContext(cookies, null);
+        mockContext(cookies);
     }
 
-    /**
-     * Mocks Play's Http.Context with URL query string parameters
-     */
-    public void mockContext(Map<String, String[]> queryString) {
-        Cookies cookies = mock(Cookies.class);
-        mockContext(cookies, queryString);
-    }
-
-    private void mockContext(Cookies cookies, Map<String, String[]> queryString) {
+    private void mockContext(Cookies cookies) {
         Map<String, String> flashData = Collections.emptyMap();
         Map<String, Object> argData = Collections.emptyMap();
         Long id = 2L;
         RequestHeader header = mock(RequestHeader.class);
         Http.Request request = mock(Http.Request.class);
         when(request.cookies()).thenReturn(cookies);
-        when(request.queryString()).thenReturn(queryString);
+        when(request.queryString()).thenReturn(null);
         Http.Context context = new Http.Context(id, header, request, flashData, flashData, argData,
                 Helpers.contextComponents());
         Http.Context.current.set(context);
     }
 
-    public Http.Session mockSessionCookieandCache(User user) {
+    public Http.Session mockSessionCookieAndCache(User user) {
         Http.Session session = new Http.Session(new HashMap<>());
         authenticationService.writeSessionCookieAndSessionCache(session, user.getUsername(), WWW_EXAMPLE_COM);
         return session;

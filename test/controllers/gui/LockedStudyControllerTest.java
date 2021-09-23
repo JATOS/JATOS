@@ -104,7 +104,7 @@ public class LockedStudyControllerTest {
      * HTTP status 403.
      */
     private void checkForbiddenBecauseLocked(Call call, String method) {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder().method(method)
                 .session(session)
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
@@ -325,7 +325,7 @@ public class LockedStudyControllerTest {
         });
 
         // Export the two result data from the StudyResult
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method(Helpers.POST)
                 .session(session)

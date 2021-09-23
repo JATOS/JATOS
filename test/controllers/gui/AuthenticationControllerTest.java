@@ -1,24 +1,12 @@
 package controllers.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static play.mvc.Http.Status.OK;
-import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.route;
-
-import javax.inject.Inject;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Guice;
+import controllers.gui.Authentication.Login;
+import general.TestHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Guice;
-
-import controllers.gui.Authentication.Login;
-import general.TestHelper;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -31,11 +19,22 @@ import play.test.Helpers;
 import services.gui.AuthenticationService;
 import services.gui.UserService;
 
+import javax.inject.Inject;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.SEE_OTHER;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.route;
+
 /**
  * Testing controller.Authentication
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class AuthenticationControllerTest {
 
     @Inject
@@ -67,7 +66,7 @@ public class AuthenticationControllerTest {
      */
     @Test
     public void callLogin() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -86,7 +85,7 @@ public class AuthenticationControllerTest {
      */
     @Test
     public void callLogout() {
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -97,7 +96,7 @@ public class AuthenticationControllerTest {
         // Check that it redirects to the login page
         assertThat(result.status()).isEqualTo(SEE_OTHER);
         assertThat(result.redirectLocation().get()).contains("login");
-        assertThat(!result.session().containsKey(AuthenticationService.SESSION_USERNAME));
+        assertThat(!result.session().getOptional(AuthenticationService.SESSION_USERNAME).isPresent());
     }
 
     /**
@@ -108,13 +107,15 @@ public class AuthenticationControllerTest {
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .remoteAddress(TestHelper.WWW_EXAMPLE_COM)
-                .bodyForm(ImmutableMap.of(Login.USERNAME, UserService.ADMIN_USERNAME, Login.PASSWORD, UserService.ADMIN_PASSWORD))
+                .bodyForm(ImmutableMap.of(Login.USERNAME, UserService.ADMIN_USERNAME, Login.PASSWORD,
+                        UserService.ADMIN_PASSWORD))
                 .uri(controllers.gui.routes.Authentication.authenticate().url());
         Result result = route(fakeApplication, request);
 
         // Successful login leads to a redirect and the user's email is in the session
         assertEquals(303, result.status());
-        assertEquals(UserService.ADMIN_USERNAME, result.session().get(AuthenticationService.SESSION_USERNAME));
+        assertEquals(UserService.ADMIN_USERNAME,
+                result.session().getOptional(AuthenticationService.SESSION_USERNAME).get());
     }
 
     /**
@@ -151,7 +152,7 @@ public class AuthenticationControllerTest {
 
         // Successful login leads to a redirect and the user's email is in the session
         assertEquals(303, result.status());
-        assertEquals("einstein", result.session().get(AuthenticationService.SESSION_USERNAME));
+        assertEquals("einstein", result.session().getOptional(AuthenticationService.SESSION_USERNAME).get());
     }
 
     /**

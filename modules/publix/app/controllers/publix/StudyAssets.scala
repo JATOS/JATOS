@@ -1,6 +1,6 @@
 package controllers.publix
 
-import daos.common.{StudyDao, StudyResultDao}
+import daos.common.StudyResultDao
 import exceptions.publix.{BadRequestPublixException, ForbiddenPublixException, NotFoundPublixException, PublixException}
 import general.common.{Common, MessagesStrings}
 import play.api.Logger
@@ -30,7 +30,6 @@ class StudyAssets @Inject()(components: ControllerComponents,
                             ioUtils: IOUtils,
                             idCookieService: IdCookieService,
                             jpa: JPAApi,
-                            studyDao: StudyDao,
                             studyResultDao: StudyResultDao,
                             assets: Assets) extends AbstractController(components) {
 

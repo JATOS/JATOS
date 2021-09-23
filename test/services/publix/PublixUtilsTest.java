@@ -2,9 +2,10 @@ package services.publix;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import controllers.publix.workers.JatosPublix;
 import daos.common.*;
-import daos.common.worker.WorkerDao;
 import exceptions.publix.*;
+import general.ResultTestHelper;
 import general.TestHelper;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -20,8 +21,8 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Http;
 import play.mvc.Http.Cookie;
-import services.gui.BatchService;
 import services.gui.StudyService;
 import services.gui.UserService;
 import services.publix.idcookie.IdCookieCollection;
@@ -33,7 +34,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -42,7 +42,8 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
-public abstract class PublixUtilsTest<T extends Worker> {
+@SuppressWarnings({ "deprecation", "OptionalGetWithoutIsPresent" })
+public class PublixUtilsTest {
 
     protected Injector injector;
 
@@ -53,7 +54,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     protected JPAApi jpaApi;
 
     @Inject
-    protected PublixUtils<T> publixUtils;
+    protected PublixUtils publixUtils;
 
     @Inject
     protected IdCookieService idCookieService;
@@ -63,6 +64,9 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     @Inject
     protected ResultCreator resultCreator;
+
+    @Inject
+    protected ResultTestHelper resultTestHelper;
 
     @Inject
     protected UserDao userDao;
@@ -80,16 +84,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     protected StudyResultDao studyResultDao;
 
     @Inject
-    protected WorkerDao workerDao;
-
-    @Inject
-    protected BatchDao batchDao;
-
-    @Inject
     protected StudyService studyService;
-
-    @Inject
-    protected BatchService batchService;
 
     @Before
     public void startApp() throws Exception {
@@ -170,8 +165,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     /**
      * Test PublixUtils.startComponent(): after starting a second component in
-     * the same study run, the first component result should be finished
-     * automatically
+     * the same study run, the first component result should be finished automatically
      */
     @Test
     public void checkStartComponentFinishPriorComponentResult() {
@@ -238,7 +232,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Start the first and second component
         long studyResultId = jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyResult studyResult = resultCreator.createStudyResult(studyLink, admin.getWorker());
             study.setLinearStudy(true);
             try {
                 publixUtils.startComponent(study.getComponent(1), studyResult);
@@ -287,7 +282,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Start the first component
         long studyResultId = jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyResult studyResult = resultCreator.createStudyResult(studyLink, admin.getWorker());
             study.getFirstComponent().get().setReloadable(false);
             try {
                 publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
@@ -334,8 +330,8 @@ public abstract class PublixUtilsTest<T extends Worker> {
         // Create a StudyResult and study session data.
         long studyResultId = jpaApi.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
+            StudyLink studyLink = resultTestHelper.fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyResult studyResult = resultCreator.createStudyResult(studyLink, admin.getWorker());
             studyResult.setStudySessionData("{\"test\":\"test\"}");
             studyResultDao.update(studyResult);
             return studyResult.getId();
@@ -377,7 +373,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and the first 2 components and both times set result data
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentAndSetData(study, studyResultId, 1, "test data 1");
         startComponentAndSetData(study, studyResultId, 2, "test data 2");
 
@@ -419,7 +415,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         // Start a study and the first 2 components and both times set result
         // data
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentAndSetData(study, studyResultId, 1, "test data 1");
         startComponentAndSetData(study, studyResultId, 2, "test data 2");
 
@@ -558,148 +554,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Checks the normal functioning of PublixUtils.retrieveStudyResult():
-     * should return the correct study result
-     */
-    @Test
-    public void checkRetrieveStudyResult() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long studyResultId1 = createStudyResult(study);
-        long studyResultId2 = createStudyResult(study);
-
-        jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult1 = studyResultDao.findById(studyResultId1);
-            StudyResult studyResult2 = studyResultDao.findById(studyResultId2);
-
-            StudyResult persistedStudyResult1;
-            try {
-                persistedStudyResult1 = publixUtils.retrieveStudyResult(
-                        admin.getWorker(), study, studyResultId1);
-                assertThat(persistedStudyResult1).isEqualTo(studyResult1);
-                StudyResult persistedStudyResult2 =
-                        publixUtils.retrieveStudyResult(admin.getWorker(), study, studyResultId2);
-                assertThat(persistedStudyResult2).isEqualTo(studyResult2);
-            } catch (PublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Tests PublixUtils.retrieveStudyResult(): It should throw an
-     * ForbiddenPublixException if the requested study result doesn't belong to
-     * the given study
-     */
-    @Test
-    public void checkRetrieveStudyResultNotFromThisStudy() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long studyResultId1 = createStudyResult(study);
-
-        // We need a second study
-        Study clone = createClone(study);
-
-        jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-
-            try {
-                publixUtils.retrieveStudyResult(admin.getWorker(), clone, studyResultId1);
-                Fail.fail();
-            } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
-            } catch (BadRequestPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Tests PublixUtils.retrieveStudyResult(): Any study result is associated
-     * with a worker. If the wrong worker wants to retrieve the result a
-     * ForbiddenPublixException must be thrown.
-     */
-    @Test
-    public void checkRetrieveStudyResultNotFromThisWorker() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long studyResultId1 = createStudyResult(study);
-
-        // Create another worker (type is not important here)
-        Worker worker = jpaApi.withTransaction(() -> {
-            JatosWorker w = new JatosWorker();
-            workerDao.create(w);
-            return w;
-        });
-
-        jpaApi.withTransaction(() -> {
-            try {
-                publixUtils.retrieveStudyResult(worker, study, studyResultId1);
-                Fail.fail();
-            } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                        .workerNeverDidStudy(worker, study.getId()));
-            } catch (BadRequestPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Tests PublixUtils.retrieveStudyResult(): should throw a
-     * BadRequestPublixException if the study result isn't present in the DB
-     */
-    @Test
-    public void checkRetrieveStudyResultNeverDidStudy() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        // Never started any study
-        jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            try {
-                publixUtils.retrieveStudyResult(admin.getWorker(), study, 1L);
-                Fail.fail();
-            } catch (BadRequestPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(
-                        PublixErrorMessages.STUDY_RESULT_DOESN_T_EXIST);
-            } catch (ForbiddenPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Tests PublixUtils.retrieveStudyResult(): should throw a
-     * ForbiddenPublixException if the study result is already done
-     */
-    @Test
-    public void checkRetrieveStudyResultAlreadyFinished() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long studyResultId1 = createStudyResultAndStartFirstComponent(study);
-
-        jpaApi.withTransaction(() -> {
-            StudyResult studyResult1 = studyResultDao.findById(studyResultId1);
-            publixUtils.finishStudyResult(true, null, studyResult1);
-        });
-
-        jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            try {
-                publixUtils.retrieveStudyResult(admin.getWorker(), study, studyResultId1);
-                Fail.fail();
-            } catch (ForbiddenPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.workerFinishedStudyAlready(
-                        admin.getWorker(), study.getId()));
-            } catch (BadRequestPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
      * Tests PublixUtils.retrieveLastComponent(): check that the last component
      * is returned
      */
@@ -708,7 +562,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and its first two components
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentByPosition(1, study, studyResultId);
         startComponentByPosition(2, study, studyResultId);
 
@@ -728,7 +582,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     public void checkRetrieveLastComponentEmpty() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
 
         // Check that component is empty
         jpaApi.withTransaction(() -> {
@@ -746,7 +600,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and its first two components
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentByPosition(1, study, studyResultId);
         long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
@@ -770,7 +624,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and its first two components
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentByPosition(1, study, studyResultId);
         long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
@@ -798,7 +652,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and its first two components
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentByPosition(1, study, studyResultId);
         long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
@@ -826,7 +680,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Start a study and its first two components
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
         startComponentByPosition(1, study, studyResultId);
         long componentResultId2 = startComponentByPosition(2, study, studyResultId);
 
@@ -902,60 +756,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
             } catch (NotFoundPublixException e) {
                 assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
                         .studyHasNoActiveComponents(s.getId()));
-            }
-        });
-    }
-
-    /**
-     * Test PublixUtils.retrieveNextActiveComponent(): normal functioning
-     */
-    @Test
-    public void checkRetrieveNextActiveComponent() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long studyResultId = createStudyResultAndStartFirstComponent(study);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                StudyResult studyResult = studyResultDao.findById(studyResultId);
-                Optional<Component> component =
-                        publixUtils.retrieveNextActiveComponent(studyResult);
-                assertThat(component.isPresent()).isTrue();
-                // Next component is the 2nd
-                assertThat(component.get()).isEqualTo(study.getComponent(2));
-            } catch (InternalServerErrorPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Test PublixUtils.retrieveNextActiveComponent(): no next active component
-     * can be found
-     */
-    @Test
-    public void checkRetrieveNextActiveComponentNotFound() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        // Set all component to not active
-        jpaApi.withTransaction(() -> {
-            for (Component component : study.getComponentList()) {
-                component.setActive(false);
-                componentDao.update(component);
-            }
-        });
-
-        long studyResultId = createStudyResultAndStartFirstComponent(study);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                StudyResult studyResult = studyResultDao.findById(studyResultId);
-                Optional<Component> component =
-                        publixUtils.retrieveNextActiveComponent(studyResult);
-                // Since all components are not active it should not be present
-                assertThat(component.isPresent()).isFalse();
-            } catch (InternalServerErrorPublixException e) {
-                throw new RuntimeException(e);
             }
         });
     }
@@ -1054,100 +854,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * Test retrieveComponentByPosition(): normal functioning
-     */
-    @Test
-    public void checkRetrieveComponentByPosition() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                Component component = publixUtils.retrieveComponentByPosition(study.getId(), 1);
-                assertThat(component).isEqualTo(study.getFirstComponent().get());
-            } catch (PublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Test retrieveComponentByPosition(): if the position parameter must is
-     * null a BadRequestPublixException must be thrown
-     */
-    @Test
-    public void checkRetrieveComponentByPositionNull() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                publixUtils.retrieveComponentByPosition(study.getId(), null);
-                Fail.fail();
-            } catch (BadRequestPublixException e) {
-                assertThat(e.getMessage())
-                        .isEqualTo(PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
-            } catch (PublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Test retrieveComponentByPosition(): if there is no component at this
-     * position an NotFoundPublixException should be thrown
-     */
-    @Test
-    public void checkRetrieveComponentByPositionWrong() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                publixUtils.retrieveComponentByPosition(study.getId(), 999);
-                Fail.fail();
-            } catch (NotFoundPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                        .noComponentAtPosition(study.getId(), 999));
-            } catch (BadRequestPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Test PublixUtils.retrieveStudy(): normal functioning
-     */
-    @Test
-    public void checkRetrieveStudy() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                Study retrievedStudy = publixUtils.retrieveStudy(study.getId());
-                assertThat(retrievedStudy).isEqualTo(study);
-            } catch (NotFoundPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Test PublixUtils.retrieveStudy(): if a study with this ID doesn't exist
-     * in DB a NotFoundPublixException should be thrown
-     */
-    @Test
-    public void checkRetrieveStudyNotFound() {
-        testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                publixUtils.retrieveStudy(999L);
-                Fail.fail();
-            } catch (NotFoundPublixException e) {
-                assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.studyNotExist(999L));
-            }
-        });
-    }
-
-    /**
      * PublixUtils.checkComponentBelongsToStudy(): normal functioning - if the
      * component belongs to the study the method should just return
      */
@@ -1240,94 +946,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
     }
 
     /**
-     * PublixUtils.retrieveBatchByIdOrDefault(): get default batch if batch ID
-     * is -1
-     */
-    @Test
-    public void checkRetrieveBatchByIdOrDefaultDefault() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            Batch retrievedBatch;
-            try {
-                retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(-1L, study);
-            } catch (NotFoundPublixException e) {
-                throw new RuntimeException(e);
-            }
-            assertThat(retrievedBatch).isEqualTo(study.getDefaultBatch());
-        });
-    }
-
-    /**
-     * PublixUtils.retrieveBatchByIdOrDefault(): get batch specified by ID
-     */
-    @Test
-    public void checkRetrieveBatchByIdOrDefaultById() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long batchId = jpaApi.withTransaction(() -> {
-            Batch batch2 = batchService.clone(study.getDefaultBatch());
-            batch2.setTitle("Test Title");
-            batchService.createAndPersistBatch(batch2, study, testHelper.getAdmin());
-            return batch2.getId();
-        });
-
-        jpaApi.withTransaction(() -> {
-            Batch batch = batchDao.findById(batchId);
-            Batch retrievedBatch;
-            try {
-                retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(batch.getId(), study);
-            } catch (NotFoundPublixException e) {
-                throw new RuntimeException(e);
-            }
-            assertThat(retrievedBatch).isEqualTo(batch);
-        });
-    }
-
-    /**
-     * PublixUtils.retrieveBatch(): get batch specified by ID
-     */
-    @Test
-    public void checkRetrieveBatch() {
-        Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        long batchId = jpaApi.withTransaction(() -> {
-            Batch batch2 = batchService.clone(study.getDefaultBatch());
-            batch2.setTitle("Test Title");
-            batchService.createAndPersistBatch(batch2, study, testHelper.getAdmin());
-            return batch2.getId();
-        });
-
-        jpaApi.withTransaction(() -> {
-            try {
-                Batch batch = batchDao.findById(batchId);
-                Batch retrievedBatch = publixUtils.retrieveBatch(batch.getId());
-                assertThat(retrievedBatch).isEqualTo(batch);
-            } catch (NotFoundPublixException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * PublixUtils.retrieveBatch(): if a batch with the specified ID doesn't
-     * exist throw an ForbiddenPublixException
-     */
-    @Test
-    public void checkRetrieveBatchFail() {
-        testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-        jpaApi.withTransaction(() -> {
-            try {
-                publixUtils.retrieveBatch(999L);
-                Fail.fail();
-            } catch (NotFoundPublixException e) {
-                // Just an exception is fine
-            }
-        });
-    }
-
-    /**
      * PublixUtils.setPreStudyStateByComponentId(): should set study result's to
      * STARTED only and only if the state is originally in PRE and it is not the
      * first active component
@@ -1336,7 +954,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     public void checkSetPreStudyStateByComponentId() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        long studyResultId = createStudyResult(study);
+        long studyResultId = resultTestHelper.createStudyResult(study).getId();
 
         jpaApi.withTransaction(() -> {
             try {
@@ -1344,26 +962,22 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
                 // PRE && first (active) => stays in PRE
                 studyResult.setStudyState(StudyState.PRE);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                        study.getFirstComponent().get().getId());
+                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getFirstComponent().get());
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
 
                 // STARTED && first => keeps state
                 studyResult.setStudyState(StudyState.STARTED);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                        study.getFirstComponent().get().getId());
+                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getFirstComponent().get());
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 
                 // PRE && second => changes to STARTED
                 studyResult.setStudyState(StudyState.PRE);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                        study.getComponent(2).getId());
+                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getComponent(2));
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 
                 // STARTED && second => keeps state
                 studyResult.setStudyState(StudyState.STARTED);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study,
-                        study.getComponent(2).getId());
+                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getComponent(2));
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
             } catch (NotFoundPublixException e) {
                 throw new RuntimeException(e);
@@ -1371,11 +985,27 @@ public abstract class PublixUtilsTest<T extends Worker> {
         });
     }
 
+    @Test
+    public void checkRetrieveJatosRunFromSession() throws ForbiddenPublixException, BadRequestPublixException {
+        testHelper.mockContext();
+        Http.Context.current().session().put("jatos_run", JatosPublix.JatosRun.RUN_STUDY.name());
+
+        JatosPublix.JatosRun jatosRun = publixUtils.fetchJatosRunFromSession(Http.Context.current().session());
+
+        assertThat(jatosRun).isEqualTo(JatosPublix.JatosRun.RUN_STUDY);
+    }
+
+    @Test(expected = ForbiddenPublixException.class)
+    public void checkRetrieveJatosRunFromSessionFail() throws ForbiddenPublixException, BadRequestPublixException {
+        testHelper.mockContext();
+
+        publixUtils.fetchJatosRunFromSession(Http.Context.current().session());
+        Fail.fail();
+    }
+
     private long createStudyResultAndStartFirstComponent(Study study) {
         return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
+            StudyResult studyResult = resultTestHelper.createStudyResult(study);
             try {
                 publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
             } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
@@ -1395,15 +1025,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
             } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
                 throw new RuntimeException(e);
             }
-        });
-    }
-
-    protected long createStudyResult(Study study) {
-        return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            StudyResult studyResult = resultCreator.createStudyResult(study,
-                    study.getDefaultBatch(), admin.getWorker());
-            return studyResult.getId();
         });
     }
 

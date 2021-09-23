@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Objects;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -38,6 +39,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings({ "deprecation", "OptionalGetWithoutIsPresent" })
 public class ImportExportServiceTest {
 
     private Injector injector;
@@ -163,6 +165,7 @@ public class ImportExportServiceTest {
 
         // Clean-up
         if (componentFile.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             componentFile.delete();
         }
     }
@@ -177,11 +180,7 @@ public class ImportExportServiceTest {
         // Remove the last component (so we can import it again later on)
         Study studyWithoutLast = jpaApi.withTransaction(() -> {
             Study s = studyDao.findById(study.getId());
-            try {
-                componentService.remove(s.getLastComponent().get(), testHelper.getAdmin());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            componentService.remove(s.getLastComponent().get(), testHelper.getAdmin());
             return s;
         });
 
@@ -229,6 +228,7 @@ public class ImportExportServiceTest {
 
         // Clean-up
         if (componentFile.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             componentFile.delete();
         }
     }
@@ -264,7 +264,7 @@ public class ImportExportServiceTest {
         importStudyConfirmed(node);
 
         // Check properties and assets of imported study
-        checkPropertiesAndAssets("basic_example_study");
+        checkPropertiesAndAssets();
     }
 
     /**
@@ -315,7 +315,7 @@ public class ImportExportServiceTest {
         importStudyConfirmed(node);
 
         // Check properties and assets of imported study
-        checkPropertiesAndAssets("basic_example_study");
+        checkPropertiesAndAssets();
     }
 
     /**
@@ -595,7 +595,7 @@ public class ImportExportServiceTest {
         return studyFileCopy;
     }
 
-    private void checkPropertiesAndAssets(String dirName) {
+    private void checkPropertiesAndAssets() {
         jpaApi.withTransaction(() -> {
             List<Study> studyList = studyDao.findAll();
             User admin = testHelper.getAdmin();
@@ -603,7 +603,7 @@ public class ImportExportServiceTest {
             Study importedStudy = studyList.get(0);
             try {
                 checkPropertiesOfBasicExampleStudy(importedStudy, admin);
-                checkAssetsOfBasicExampleStudy(importedStudy, dirName);
+                checkAssetsOfBasicExampleStudy(importedStudy, "basic_example_study_copy.zip");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -629,7 +629,7 @@ public class ImportExportServiceTest {
 
         // Check the number of files and directories in the study assets
         String[] fileList = ioUtils.getStudyAssetsDir(study.getDirName()).list();
-        assertThat(fileList.length).isEqualTo(11);
+        assertThat(Objects.requireNonNull(fileList).length).isEqualTo(11);
     }
 
     private Study getAlteredStudy() throws IOException {

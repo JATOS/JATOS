@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
+import general.ResultTestHelper;
 import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
@@ -20,16 +21,18 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Http;
 import services.publix.PublixErrorMessages;
-import services.publix.ResultCreator;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class GeneralSingleStudyAuthorisationTest {
 
     private Injector injector;
@@ -38,13 +41,13 @@ public class GeneralSingleStudyAuthorisationTest {
     private TestHelper testHelper;
 
     @Inject
+    private ResultTestHelper resultTestHelper;
+
+    @Inject
     private JPAApi jpaApi;
 
     @Inject
     private WorkerDao workerDao;
-
-    @Inject
-    private ResultCreator resultCreator;
 
     @Inject
     private GeneralSingleStudyAuthorisation studyAuthorisation;
@@ -70,16 +73,17 @@ public class GeneralSingleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         GeneralSingleWorker worker = new GeneralSingleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
+            StudyResult studyResult = resultTestHelper.createStudyResult(batch, worker, StudyState.STARTED);
             studyResult.setStudyState(StudyState.STARTED);
         });
 
-        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Test
@@ -87,26 +91,27 @@ public class GeneralSingleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         GeneralSingleWorker worker = new GeneralSingleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         // Does start if there is an StudyResult which is in state PRE
-        createStudyResult(study, batch, worker, StudyState.PRE);
+        resultTestHelper.createStudyResult(batch, worker, StudyState.PRE);
 
-        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(session, worker, study, batch);
     }
 
     @Test
     public void checkWorkerAllowedToDoStudyWrongWorkerType() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
         Batch batch = study.getDefaultBatch();
         GeneralSingleWorker worker = new GeneralSingleWorker();
+        Http.Session session = new Http.Session(new HashMap<>());
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
@@ -117,34 +122,25 @@ public class GeneralSingleStudyAuthorisationTest {
     @Test
     public void checkWorkerAllowedToDoStudyFinishedStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
         Batch batch = study.getDefaultBatch();
         study.getDefaultBatch().addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         GeneralSingleWorker worker = new GeneralSingleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
+            StudyResult studyResult = resultTestHelper.createStudyResult(batch, worker, StudyState.STARTED);
             studyResult.setStudyState(StudyState.FINISHED);
         });
 
         // General single workers can't repeat the same study
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
-    }
-
-    private StudyResult createStudyResult(Study study, Batch batch,
-            GeneralSingleWorker worker, StudyState studyState) {
-        return jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
-            studyResult.setStudyState(studyState);
-            return studyResult;
-        });
     }
 
 }

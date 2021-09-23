@@ -86,7 +86,7 @@ public class ComponentsControllerTest {
     public void callRunComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -115,7 +115,7 @@ public class ComponentsControllerTest {
             componentDao.update(study.getComponent(1));
         });
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -132,7 +132,7 @@ public class ComponentsControllerTest {
     public void callProperties() throws IOException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -183,7 +183,7 @@ public class ComponentsControllerTest {
         form.put(ComponentProperties.COMMENTS, "Comments test test.");
         form.put(ComponentProperties.JSON_DATA, "{}");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -211,7 +211,7 @@ public class ComponentsControllerTest {
         form.put(ComponentProperties.COMMENTS, "Comments test test.");
         form.put(ComponentProperties.JSON_DATA, "{}");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -239,7 +239,7 @@ public class ComponentsControllerTest {
         form.put(ComponentProperties.JSON_DATA, "{");
         form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -264,7 +264,7 @@ public class ComponentsControllerTest {
     public void callChangeProperty() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -279,7 +279,7 @@ public class ComponentsControllerTest {
     public void callCloneComponent() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -294,7 +294,7 @@ public class ComponentsControllerTest {
     public void callRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("DELETE")
                 .session(session)

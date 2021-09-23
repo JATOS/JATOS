@@ -614,7 +614,7 @@ public class UsersControllerTest {
     }
 
     private Result call(String method, User user, Map<String, String> formMap, Call call) {
-        Http.Session session = testHelper.mockSessionCookieandCache(user);
+        Http.Session session = testHelper.mockSessionCookieAndCache(user);
         RequestBuilder request = new RequestBuilder()
                 .method(method)
                 .session(session)

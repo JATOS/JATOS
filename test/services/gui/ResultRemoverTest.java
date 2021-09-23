@@ -2,12 +2,12 @@ package services.gui;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import general.ResultTestHelper;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.ComponentResult;
@@ -34,6 +34,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class ResultRemoverTest {
 
     private Injector injector;
@@ -55,9 +56,6 @@ public class ResultRemoverTest {
 
     @Inject
     private UserDao userDao;
-
-    @Inject
-    private StudyDao studyDao;
 
     @Inject
     private StudyResultDao studyResultDao;

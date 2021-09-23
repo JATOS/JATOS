@@ -101,7 +101,6 @@ function run() {
  * https://github.com/jimmywarting/FormData/blob/master/FormData.js
  */
 (function () {
-	/* global FormData self Blob File */
 	/* eslint-disable no-inner-declarations */
 
 	if (typeof Blob !== 'undefined' && (typeof FormData === 'undefined' || !FormData.prototype.keys)) {
@@ -262,7 +261,7 @@ function run() {
 			 * @param   {string=}          filename  filename to use with blob
 			 * @return  {undefined}
 			 */
-			append(name, value, filename) {
+			append() {
 				ensureArgs(arguments, 2)
 				var [a, s, d] = normalizeArgs.apply(null, arguments)
 				this._data.push([a, s, d])
@@ -387,7 +386,7 @@ function run() {
 			 * @param   {string=}   filename  Filename (optional)
 			 * @return  {undefined}
 			 */
-			set(name, value, filename) {
+			set(name) {
 				ensureArgs(arguments, 2)
 				name = String(name)
 				const result = []

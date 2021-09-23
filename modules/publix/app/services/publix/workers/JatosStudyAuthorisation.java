@@ -19,10 +19,10 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
+public class JatosStudyAuthorisation extends StudyAuthorisation {
 
     @Override
-    public void checkWorkerAllowedToStartStudy(Http.Request request, Worker worker, Study study, Batch batch)
+    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
         if (!study.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
@@ -31,11 +31,11 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }
         checkMaxTotalWorkers(batch, worker);
-        checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Http.Request request, Worker worker, Study study, Batch batch)
+    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
         // Do not check for worker type - Jatos worker is always allowed
         User user = ((JatosWorker) worker).getUser();
@@ -44,7 +44,7 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
         // User has to be logged in
-        String username = request.session().getOptional(JatosPublix.SESSION_USERNAME).orElse("");
+        String username = session.getOrDefault(JatosPublix.SESSION_USERNAME, "");
         if (!user.getUsername().equals(username)) {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }

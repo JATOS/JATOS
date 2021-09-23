@@ -5,10 +5,10 @@ import com.google.inject.Injector;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
+import general.ResultTestHelper;
 import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
-import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalMultipleWorker;
 import org.fest.assertions.Fail;
@@ -20,16 +20,18 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Http;
 import services.publix.PublixErrorMessages;
-import services.publix.ResultCreator;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class PersonalMultipleStudyAuthorisationTest {
 
     private Injector injector;
@@ -38,13 +40,13 @@ public class PersonalMultipleStudyAuthorisationTest {
     private TestHelper testHelper;
 
     @Inject
+    private ResultTestHelper resultTestHelper;
+
+    @Inject
     private JPAApi jpaApi;
 
     @Inject
     private WorkerDao workerDao;
-
-    @Inject
-    private ResultCreator resultCreator;
 
     @Inject
     private PersonalMultipleStudyAuthorisation studyAuthorisation;
@@ -70,11 +72,12 @@ public class PersonalMultipleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         PersonalMultipleWorker worker = new PersonalMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
-        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Test
@@ -82,12 +85,13 @@ public class PersonalMultipleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         PersonalMultipleWorker worker = new PersonalMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
@@ -100,23 +104,15 @@ public class PersonalMultipleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         PersonalMultipleWorker worker = new PersonalMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         // State of study has no influence. Personal multiple workers can do
         // studies multiple times (we create a StudyResult just in case)
-        createStudyResult(study, batch, worker, StudyState.FINISHED);
-        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-    }
-
-    private StudyResult createStudyResult(Study study, Batch batch, PersonalMultipleWorker worker,
-            StudyState studyState) {
-        return jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
-            studyResult.setStudyState(studyState);
-            return studyResult;
-        });
+        resultTestHelper.createStudyResult(batch, worker, StudyState.FINISHED);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
 }

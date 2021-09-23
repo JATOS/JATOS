@@ -4,7 +4,6 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import play.mvc.Http;
 import services.publix.PublixErrorMessages;
@@ -20,10 +19,10 @@ import java.util.Optional;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalSingleStudyAuthorisation extends StudyAuthorisation<PersonalSingleWorker> {
+public class PersonalSingleStudyAuthorisation extends StudyAuthorisation {
 
     @Override
-    public void checkWorkerAllowedToStartStudy(Http.Request request, Worker worker, Study study, Batch batch)
+    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
         if (!study.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
@@ -38,11 +37,11 @@ public class PersonalSingleStudyAuthorisation extends StudyAuthorisation<Persona
             throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
         checkMaxTotalWorkers(batch, worker);
-        checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Http.Request request, Worker worker, Study study, Batch batch)
+    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
         // Check if worker type is allowed
         if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {

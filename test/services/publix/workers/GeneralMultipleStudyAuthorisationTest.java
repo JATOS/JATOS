@@ -8,9 +8,11 @@ import exceptions.publix.PublixException;
 import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
+import models.common.StudyLink;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.GeneralMultipleWorker;
+import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import org.fest.assertions.Fail;
 import org.junit.After;
@@ -21,22 +23,29 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Http;
+import general.ResultTestHelper;
 import services.publix.PublixErrorMessages;
 import services.publix.ResultCreator;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class GeneralMultipleStudyAuthorisationTest {
 
     private Injector injector;
 
     @Inject
     private TestHelper testHelper;
+
+    @Inject
+    private ResultTestHelper resultTestHelper;
 
     @Inject
     private JPAApi jpaApi;
@@ -71,11 +80,12 @@ public class GeneralMultipleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(GeneralMultipleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         GeneralMultipleWorker worker = new GeneralMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
-        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Test
@@ -83,12 +93,13 @@ public class GeneralMultipleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         GeneralMultipleWorker worker = new GeneralMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
@@ -101,23 +112,15 @@ public class GeneralMultipleStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(GeneralMultipleWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         GeneralMultipleWorker worker = new GeneralMultipleWorker();
         jpaApi.withTransaction(() -> workerDao.create(worker));
 
         // State of study has no influence. General multiple workers can do
         // studies multiple times (we create a StudyResult just in case)
-        createStudyResult(study, batch, worker, StudyState.FINISHED);
-        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-    }
-
-    private StudyResult createStudyResult(Study study, Batch batch,
-            GeneralMultipleWorker worker, StudyState studyState) {
-        return jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
-            studyResult.setStudyState(studyState);
-            return studyResult;
-        });
+        resultTestHelper.createStudyResult(batch, worker, StudyState.FINISHED);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
 }

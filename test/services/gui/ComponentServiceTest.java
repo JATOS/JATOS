@@ -31,6 +31,7 @@ import static org.fest.assertions.Assertions.assertThat;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings({ "OptionalGetWithoutIsPresent", "deprecation" })
 public class ComponentServiceTest {
 
     private Injector injector;
@@ -192,6 +193,7 @@ public class ComponentServiceTest {
 
         // Create subfolder
         File subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder");
+        //noinspection ResultOfMethodCallIgnored
         subfolder.mkdir();
         assertThat(subfolder.exists());
 
@@ -264,6 +266,7 @@ public class ComponentServiceTest {
         assertThat(htmlFile.exists());
 
         // Remove current HTML file
+        //noinspection ResultOfMethodCallIgnored
         htmlFile.delete();
         assertThat(!htmlFile.exists());
 

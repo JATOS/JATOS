@@ -92,7 +92,7 @@ public class StudiesControllerTest {
     public void callStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -122,7 +122,7 @@ public class StudiesControllerTest {
 
         User admin = testHelper.getAdmin();
 
-        Http.Session session = testHelper.mockSessionCookieandCache(admin);
+        Http.Session session = testHelper.mockSessionCookieAndCache(admin);
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -169,7 +169,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.JSON_DATA, "{");
 
         User admin = testHelper.getAdmin();
-        Http.Session session = testHelper.mockSessionCookieandCache(admin);
+        Http.Session session = testHelper.mockSessionCookieAndCache(admin);
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -205,7 +205,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.DIR_NAME, study.getDirName());
         formMap.put(StudyProperties.JSON_DATA, "{}");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -227,7 +227,7 @@ public class StudiesControllerTest {
     public void callProperties() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -280,7 +280,7 @@ public class StudiesControllerTest {
         formMap.put(StudyProperties.GROUP_STUDY, "true");
         formMap.put(StudyProperties.LINEAR_STUDY_FLOW, "true");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -320,7 +320,7 @@ public class StudiesControllerTest {
         // The dir we want to point DIR_NAME to has to exist
         ioUtils.createStudyAssetsDir("dirName_submitEdited");
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -348,7 +348,7 @@ public class StudiesControllerTest {
     @Test
     public void callToggleLock() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -365,7 +365,7 @@ public class StudiesControllerTest {
         testHelper.createAndPersistUser("bla", "Bla", "bla");
 
         Study study = testHelper.createAndPersistExampleStudy(injector, "bla");
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -382,7 +382,7 @@ public class StudiesControllerTest {
     @Test
     public void callRemove() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("DELETE")
                 .session(session)
@@ -398,7 +398,7 @@ public class StudiesControllerTest {
     @Test
     public void callCloneStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -415,7 +415,7 @@ public class StudiesControllerTest {
     @Test
     public void callMemberUsers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -438,7 +438,7 @@ public class StudiesControllerTest {
         User someUser = testHelper.createAndPersistUser("bla", "Bla", "blapw");
 
         // Add someUser as member to study
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -476,7 +476,7 @@ public class StudiesControllerTest {
         testHelper.createAndPersistUser("bar", "Bar", "barpw");
 
         // Add all users as members to study
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -512,7 +512,7 @@ public class StudiesControllerTest {
 
         // Remove admin as last member from study must lead to HTTP status
         // FORBIDDEN
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -531,7 +531,7 @@ public class StudiesControllerTest {
 
         // Adding a user that doesn't exist in th DB leads to HTTP status
         // NOT_FOUND
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -551,7 +551,7 @@ public class StudiesControllerTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         // Move first component to second position
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("POST")
                 .session(session)
@@ -583,7 +583,7 @@ public class StudiesControllerTest {
     public void callRunStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -602,7 +602,7 @@ public class StudiesControllerTest {
     public void callTableDataByStudy() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)
@@ -621,7 +621,7 @@ public class StudiesControllerTest {
     @Test
     public void callStudyLog() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
 
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
@@ -640,7 +640,7 @@ public class StudiesControllerTest {
     @Test
     public void callStudyLogDownload() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
 
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
@@ -660,7 +660,7 @@ public class StudiesControllerTest {
     public void callAllWorkers() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-        Http.Session session = testHelper.mockSessionCookieandCache(testHelper.getAdmin());
+        Http.Session session = testHelper.mockSessionCookieAndCache(testHelper.getAdmin());
         RequestBuilder request = new RequestBuilder()
                 .method("GET")
                 .session(session)

@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 abstract class GroupChannel[A <: Worker](components: ControllerComponents,
                                          publixUtils: PublixUtils,
                                          studyAuthorisation:
-                                         StudyAuthorisation[A]) extends AbstractController(components) {
+                                         StudyAuthorisation) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -64,7 +64,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().session.asJava, worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
 
     if (studyResult.getHistoryGroupResult != null) {
@@ -112,7 +112,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.session.asJava, worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
 
     if (studyResult.getHistoryGroupResult != null) {
@@ -144,7 +144,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.session.asJava, worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null) {

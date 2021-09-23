@@ -70,7 +70,7 @@ public class GeneralMultiplePublix extends Publix<GeneralMultipleWorker> impleme
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         GeneralMultipleWorker worker = workerCreator.createAndPersistGeneralMultipleWorker(batch);
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);

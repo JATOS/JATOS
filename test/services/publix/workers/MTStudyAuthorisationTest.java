@@ -5,10 +5,10 @@ import com.google.inject.Injector;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
+import general.ResultTestHelper;
 import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
-import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
@@ -21,22 +21,27 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Http;
 import services.publix.PublixErrorMessages;
-import services.publix.ResultCreator;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class MTStudyAuthorisationTest {
 
     private Injector injector;
 
     @Inject
     private TestHelper testHelper;
+
+    @Inject
+    private ResultTestHelper resultTestHelper;
 
     @Inject
     private JPAApi jpaApi;
@@ -46,9 +51,6 @@ public class MTStudyAuthorisationTest {
 
     @Inject
     private MTStudyAuthorisation studyAuthorisation;
-
-    @Inject
-    private ResultCreator resultCreator;
 
     @Before
     public void startApp() throws Exception {
@@ -80,9 +82,10 @@ public class MTStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study, batch);
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(session, mtWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(session, mtSandboxWorker, study, batch);
     }
 
     @Test
@@ -99,10 +102,11 @@ public class MTStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         // MTWorker and MTSandboxWorker are allowed to start again
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study, batch);
-        studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(session, mtWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(session, mtSandboxWorker, study, batch);
     }
 
     @Test
@@ -120,11 +124,12 @@ public class MTStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
-        createStudyResult(study, batch, mtWorker, StudyState.STARTED);
+        resultTestHelper.createStudyResult(batch, mtWorker, StudyState.STARTED);
 
-        studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
-        studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, mtWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, mtSandboxWorker, study, batch);
     }
 
     @Test
@@ -142,10 +147,11 @@ public class MTStudyAuthorisationTest {
         });
         batch.removeAllowedWorkerType(MTWorker.WORKER_TYPE);
         batch.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, mtWorker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
@@ -155,7 +161,7 @@ public class MTStudyAuthorisationTest {
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, mtSandboxWorker, study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
@@ -169,6 +175,7 @@ public class MTStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+        Http.Session session = new Http.Session(new HashMap<>());
 
         MTWorker mtWorker = new MTWorker();
         MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
@@ -179,16 +186,8 @@ public class MTStudyAuthorisationTest {
         batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 
         // MTWorker and MTSandboxWorkers can repeat the same study
-        studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
-        studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study, batch);
-    }
-
-    private StudyResult createStudyResult(Study study, Batch batch, MTWorker mtWorker, StudyState studyState) {
-        return jpaApi.withTransaction(() -> {
-            StudyResult studyResult = resultCreator.createStudyResult(study, batch, mtWorker);
-            studyResult.setStudyState(studyState);
-            return studyResult;
-        });
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, mtWorker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, mtSandboxWorker, study, batch);
     }
 
 }

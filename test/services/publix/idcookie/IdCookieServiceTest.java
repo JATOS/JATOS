@@ -2,7 +2,7 @@ package services.publix.idcookie;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import daos.common.UserDao;
+import controllers.publix.workers.JatosPublix.JatosRun;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.InternalServerErrorPublixException;
 import general.TestHelper;
@@ -16,12 +16,10 @@ import org.junit.Before;
 import org.junit.Test;
 import play.ApplicationLoader;
 import play.Environment;
-import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
-import services.gui.UserService;
-import services.publix.ResultCreator;
+import general.ResultTestHelper;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -40,19 +38,13 @@ public class IdCookieServiceTest {
     private TestHelper testHelper;
 
     @Inject
-    private JPAApi jpaApi;
-
-    @Inject
     private IdCookieService idCookieService;
 
     @Inject
     private IdCookieTestHelper idCookieTestHelper;
 
     @Inject
-    private ResultCreator resultCreator;
-
-    @Inject
-    private UserDao userDao;
+    private ResultTestHelper resultTestHelper;
 
     @Before
     public void startApp() throws Exception {
@@ -152,31 +144,32 @@ public class IdCookieServiceTest {
         testHelper.mockContext(cookieList);
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        StudyResult studyResult = createAndPersistStudyResult(study);
+        StudyResult studyResult = resultTestHelper.createStudyResult(study);
 
         User admin = testHelper.getAdmin();
-        idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(), studyResult);
+        idCookieService.writeIdCookie(studyResult, JatosRun.RUN_STUDY);
 
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
         assertThat(idCookie).isNotNull();
         // Check naming
-        assertThat(idCookie.getName()).startsWith(IdCookieModel.ID_COOKIE_NAME + "_");
+        assertThat(idCookie.getName()).isEqualTo(IdCookieModel.ID_COOKIE_NAME + "_0");
+
         // Check proper ID cookie values
-        assertThat(idCookie.getBatchId()).isEqualTo(studyResult.getBatch().getId());
-        assertThat(idCookie.getComponentId()).isNull();
-        assertThat(idCookie.getComponentPosition()).isNull();
-        assertThat(idCookie.getComponentResultId()).isNull();
-        assertThat(idCookie.getCreationTime()).isGreaterThan(0L);
-        assertThat(idCookie.getGroupResultId()).isNull();
         assertThat(idCookie.getIndex()).isEqualTo(0);
-        assertThat(idCookie.getJatosRun()).isNull();
-        assertThat(idCookie.getName()).isEqualTo("JATOS_IDS_0");
+        assertThat(idCookie.getCreationTime()).isGreaterThan(0L);
         assertThat(idCookie.getStudyAssets()).isEqualTo("basic_example_study");
-        assertThat(idCookie.getStudyId()).isEqualTo(study.getId());
-        assertThat(idCookie.getStudyResultId()).isEqualTo(studyResult.getId());
+        assertThat(idCookie.getUrlBasePath()).isEqualTo("/somepath/");
+        assertThat(idCookie.getJatosRun()).isEqualTo(JatosRun.RUN_STUDY);
         assertThat(idCookie.getWorkerId()).isEqualTo(admin.getWorker().getId());
         assertThat(idCookie.getWorkerType()).isEqualTo(JatosWorker.WORKER_TYPE);
-        assertThat(idCookie.getUrlBasePath()).isEqualTo("/somepath/");
+        assertThat(idCookie.getBatchId()).isEqualTo(studyResult.getBatch().getId());
+        assertThat(idCookie.getGroupResultId()).isNull();
+        assertThat(idCookie.getStudyId()).isEqualTo(study.getId());
+        assertThat(idCookie.getStudyResultId()).isEqualTo(studyResult.getId());
+        assertThat(idCookie.getStudyResultUuid()).isEqualTo(studyResult.getUuid());
+        assertThat(idCookie.getComponentId()).isNull();
+        assertThat(idCookie.getComponentResultId()).isNull();
+        assertThat(idCookie.getComponentPosition()).isNull();
     }
 
     /**
@@ -187,7 +180,7 @@ public class IdCookieServiceTest {
     public void checkWriteIdCookieOverwriteWithSameId()
             throws InternalServerErrorPublixException, BadRequestPublixException {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        StudyResult studyResult = createAndPersistStudyResult(study);
+        StudyResult studyResult = resultTestHelper.createStudyResult(study);
 
         IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(studyResult.getId());
         IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222L);
@@ -196,8 +189,7 @@ public class IdCookieServiceTest {
         cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
         testHelper.mockContext(cookieList);
 
-        User admin = testHelper.getAdmin();
-        idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(), studyResult);
+        idCookieService.writeIdCookie(studyResult, JatosRun.RUN_STUDY);
 
         // Check that the old IdCookie for the study result ID 1l is overwritten
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
@@ -221,10 +213,9 @@ public class IdCookieServiceTest {
         testHelper.mockContext(cookieList);
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        StudyResult studyResult = createAndPersistStudyResult(study);
+        StudyResult studyResult = resultTestHelper.createStudyResult(study);
 
-        User admin = testHelper.getAdmin();
-        idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(), studyResult);
+        idCookieService.writeIdCookie(studyResult, JatosRun.RUN_STUDY);
 
         // Check that a new IdCookie is written
         IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
@@ -247,11 +238,10 @@ public class IdCookieServiceTest {
         testHelper.mockContext(cookieList);
 
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-        StudyResult studyResult = createAndPersistStudyResult(study);
+        StudyResult studyResult = resultTestHelper.createStudyResult(study);
 
         try {
-            User admin = testHelper.getAdmin();
-            idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(), studyResult);
+            idCookieService.writeIdCookie(studyResult, JatosRun.RUN_STUDY);
             Fail.fail();
         } catch (InternalServerErrorPublixException e) {
             // check throwing is enough
@@ -287,7 +277,7 @@ public class IdCookieServiceTest {
     public void checkMaxIdCookiesReachedMaxReached() throws InternalServerErrorPublixException {
         // Create max IdCookies
         List<Cookie> cookieList = new ArrayList<>();
-        for (long i = 1l; i < (IdCookieCollection.MAX_ID_COOKIES + 1); i++) {
+        for (long i = 1L; i < (IdCookieCollection.MAX_ID_COOKIES + 1); i++) {
             IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
             cookieList.add(idCookieTestHelper.buildCookie(idCookie));
         }
@@ -359,7 +349,7 @@ public class IdCookieServiceTest {
         testHelper.mockContext(cookieList);
 
         Long studyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
-        assertThat(studyResultId).isEqualTo(1l);
+        assertThat(studyResultId).isEqualTo(1L);
     }
 
     /**
@@ -372,13 +362,6 @@ public class IdCookieServiceTest {
 
         Long studyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
         assertThat(studyResultId).isNull();
-    }
-
-    private StudyResult createAndPersistStudyResult(Study study) {
-        return jpaApi.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            return resultCreator.createStudyResult(study, study.getDefaultBatch(), admin.getWorker());
-        });
     }
 
 }

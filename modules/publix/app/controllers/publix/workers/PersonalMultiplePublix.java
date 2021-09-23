@@ -66,7 +66,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> imple
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         PersonalMultipleWorker worker = (PersonalMultipleWorker) studyLink.getWorker();
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);

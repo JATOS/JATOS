@@ -1,5 +1,6 @@
 package services.publix.workers;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import controllers.publix.workers.JatosPublix;
@@ -21,6 +22,8 @@ import play.mvc.Http;
 import services.publix.PublixErrorMessages;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -55,20 +58,19 @@ public class JatosStudyAuthorisationTest {
 
     @Test
     public void checkWorkerAllowedToDoStudy() throws ForbiddenPublixException {
-        testHelper.mockContext();
         User admin = testHelper.getAdmin();
-        Http.Context.current().session().put(JatosPublix.SESSION_USERNAME, admin.getUsername());
-
+        Http.Session session = new Http.Session(ImmutableMap.of(JatosPublix.SESSION_USERNAME, admin.getUsername()));
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
 
-        studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(session, admin.getWorker(), study, batch);
     }
 
     @Test
     public void checkWorkerAllowedToDoStudyWrongWorkerType() {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         User admin = testHelper.getAdmin();
+        Http.Session session = new Http.Session(ImmutableMap.of(JatosPublix.SESSION_USERNAME, admin.getUsername()));
 
         // Remove Jatos worker from allowed worker types
         Batch batch = study.getDefaultBatch();
@@ -76,7 +78,7 @@ public class JatosStudyAuthorisationTest {
 
         // Study doesn't allow this worker type
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, admin.getWorker(), study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
@@ -90,12 +92,12 @@ public class JatosStudyAuthorisationTest {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         User admin = testHelper.getAdmin();
-
         study.removeUser(admin);
+        Http.Session session = new Http.Session(ImmutableMap.of(JatosPublix.SESSION_USERNAME, admin.getUsername()));
 
         // User has to be a user of this study
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, admin.getWorker(), study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(
@@ -105,15 +107,14 @@ public class JatosStudyAuthorisationTest {
 
     @Test
     public void checkWorkerAllowedToDoStudyNotLoggedIn() {
-        testHelper.mockContext();
-
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         Batch batch = study.getDefaultBatch();
         User admin = testHelper.getAdmin();
+        Http.Session session = new Http.Session(ImmutableMap.of());
 
         // User has to be logged in
         try {
-            studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study, batch);
+            studyAuthorisation.checkWorkerAllowedToDoStudy(session, admin.getWorker(), study, batch);
             Fail.fail();
         } catch (PublixException e) {
             assertThat(e.getMessage()).isEqualTo(

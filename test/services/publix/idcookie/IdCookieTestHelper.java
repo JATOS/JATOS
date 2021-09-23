@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -39,6 +40,7 @@ public class IdCookieTestHelper {
         idCookie.setStudyAssets("test_study_assets");
         idCookie.setStudyId(1L);
         idCookie.setStudyResultId(1L);
+        idCookie.setStudyResultUuid(UUID.randomUUID().toString());
         idCookie.setWorkerId(1L);
         idCookie.setWorkerType(JatosWorker.WORKER_TYPE);
         idCookie.setUrlBasePath("/somepath/");

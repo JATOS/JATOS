@@ -51,7 +51,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
     protected final JPAApi jpa;
     protected final PublixUtils publixUtils;
-    protected final StudyAuthorisation<T> studyAuthorisation;
+    protected final StudyAuthorisation studyAuthorisation;
     protected final GroupChannel<T> groupChannel;
     protected final IdCookieService idCookieService;
     protected final PublixErrorMessages errorMessages;
@@ -63,7 +63,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     protected final IOUtils ioUtils;
 
     public Publix(JPAApi jpa, PublixUtils publixUtils,
-            StudyAuthorisation<T> studyAuthorisation, GroupChannel<T> groupChannel,
+            StudyAuthorisation studyAuthorisation, GroupChannel<T> groupChannel,
             IdCookieService idCookieService, PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils, ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
@@ -105,7 +105,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
         ComponentResult componentResult;
         try {
@@ -130,7 +130,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         String studySessionData = request.body().asText();
         studyResult.setStudySessionData(studySessionData);
         studyResultDao.update(studyResult);
@@ -150,7 +150,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
@@ -194,7 +194,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
@@ -248,7 +248,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         Component component = null;
         if (componentId != null) {
@@ -264,7 +264,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
@@ -286,7 +286,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
@@ -311,7 +311,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         String msg = request.body().asText().replaceAll("\\R+", " ").replaceAll("\\s+", " ");
         LOGGER.info("Logging from client: studyResult " + studyResult.getId() + ", "
                 + "batchId " + batch.getId() + ", "

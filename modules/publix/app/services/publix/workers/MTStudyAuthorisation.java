@@ -17,10 +17,10 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
+public class MTStudyAuthorisation extends StudyAuthorisation {
 
     @Override
-    public void checkWorkerAllowedToStartStudy(Http.Request request, Worker worker, Study study, Batch batch)
+    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
         if (!study.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
@@ -29,11 +29,11 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }
         checkMaxTotalWorkers(batch, worker);
-        checkWorkerAllowedToDoStudy(request, worker, study, batch);
+        checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Http.Request request, Worker worker, Study study, Batch batch)
+    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch)
             throws ForbiddenPublixException {
         // Check if worker type is allowed
         if (!batch.hasAllowedWorkerType(MTWorker.WORKER_TYPE)) {

@@ -14,9 +14,9 @@ import models.common.workers._
 import play.api.Logger
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
+import services.publix.StudyAuthorisation
 import services.publix.idcookie.IdCookieService
 import services.publix.workers._
-import services.publix.{PublixUtils, StudyAuthorisation}
 
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.Await
@@ -27,8 +27,7 @@ import scala.concurrent.duration._
   * each worker type.
   */
 abstract class BatchChannel[A <: Worker](components: ControllerComponents,
-                                         publixUtils: PublixUtils,
-                                         studyAuthorisation: StudyAuthorisation[A])
+                                         studyAuthorisation: StudyAuthorisation)
   extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -61,7 +60,7 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().session.asJava, worker, study, batch)
 
     // Get the BatchDispatcher that will handle this batch.
     val batchDispatcher = getOrCreateBatchDispatcher(batch.getId)
@@ -96,37 +95,31 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
 
 @Singleton
 class JatosBatchChannel @Inject()(components: ControllerComponents,
-                                  publixUtils: PublixUtils,
                                   studyAuthorisation: JatosStudyAuthorisation)
-  extends BatchChannel[JatosWorker](components, publixUtils, studyAuthorisation)
+  extends BatchChannel[JatosWorker](components, studyAuthorisation)
 
 @Singleton
 class PersonalSingleBatchChannel @Inject()(components: ControllerComponents,
-                                           publixUtils: PublixUtils,
                                            studyAuthorisation: PersonalSingleStudyAuthorisation)
-  extends BatchChannel[PersonalSingleWorker](components, publixUtils, studyAuthorisation)
+  extends BatchChannel[PersonalSingleWorker](components, studyAuthorisation)
 
 @Singleton
 class PersonalMultipleBatchChannel @Inject()(components: ControllerComponents,
-                                             publixUtils: PublixUtils,
                                              studyAuthorisation: PersonalMultipleStudyAuthorisation)
-  extends BatchChannel[PersonalMultipleWorker](components, publixUtils, studyAuthorisation)
+  extends BatchChannel[PersonalMultipleWorker](components, studyAuthorisation)
 
 @Singleton
 class GeneralSingleBatchChannel @Inject()(components: ControllerComponents,
-                                          publixUtils: PublixUtils,
                                           studyAuthorisation: GeneralSingleStudyAuthorisation)
-  extends BatchChannel[GeneralSingleWorker](components, publixUtils, studyAuthorisation)
+  extends BatchChannel[GeneralSingleWorker](components, studyAuthorisation)
 
 @Singleton
 class GeneralMultipleBatchChannel @Inject()(components: ControllerComponents,
-                                            publixUtils: PublixUtils,
                                             studyAuthorisation: GeneralMultipleStudyAuthorisation)
-  extends BatchChannel[GeneralMultipleWorker](components, publixUtils, studyAuthorisation)
+  extends BatchChannel[GeneralMultipleWorker](components, studyAuthorisation)
 
 // Handles both MTWorker and MTSandboxWorker
 @Singleton
 class MTBatchChannel @Inject()(components: ControllerComponents,
-                               publixUtils: PublixUtils,
                                studyAuthorisation: MTStudyAuthorisation)
-  extends BatchChannel[MTWorker](components, publixUtils, studyAuthorisation)
+  extends BatchChannel[MTWorker](components, studyAuthorisation)
