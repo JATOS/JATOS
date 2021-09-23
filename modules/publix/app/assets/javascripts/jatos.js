@@ -2815,7 +2815,7 @@ var jatos = {};
 	}
 
 	/**
-	 * Object contains all batch session functions
+	 * Object contains all condition assignment functions
 	 */
 	 jatos.assignment = {};
 
