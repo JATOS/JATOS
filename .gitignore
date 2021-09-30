@@ -29,3 +29,7 @@ sbt-ui.sbtold
 org.eclipse.core.resources.prefs
 org.scala-ide.sdt.core.prefs
 /conf/development.conf
+.eslintrc.js
+package.json
+jatos.mv.db
+jatos.trace.db
