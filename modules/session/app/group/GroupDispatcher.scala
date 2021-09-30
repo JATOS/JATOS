@@ -6,6 +6,7 @@ import general.ChannelRegistry
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
 import group.GroupDispatcherRegistry.Unregister
+
 import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json.Reads._
@@ -91,6 +92,7 @@ object GroupDispatcher {
     val All, AllButSender, SenderOnly, Unknown = Value
   }
 
+  //noinspection TypeAnnotation
   object GroupAction extends Enumeration {
     type GroupAction = Value
     val Joined = Value("JOINED") // Signals to every group member that a new member joined
@@ -107,6 +109,7 @@ object GroupDispatcher {
   /**
     * Strings used as keys in the group action JSON
     */
+  //noinspection TypeAnnotation
   object GroupActionJsonKey extends Enumeration {
     type GroupActionKey = Value
     // Action (mandatory for an action GroupMsg)
@@ -158,9 +161,9 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   private val channelRegistry = new ChannelRegistry
 
-  override def postStop() = dispatcherRegistry ! Unregister(groupResultId)
+  override def postStop(): Unit = dispatcherRegistry ! Unregister(groupResultId)
 
-  def receive = {
+  def receive: Receive = {
     case groupMsg: GroupMsg =>
       // We got a GroupMsg from a client
       handleGroupMsg(groupMsg)
@@ -189,7 +192,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * GroupMsg. It can be an group action msg, a direct msg (to a particular member) or a
     * broadcast msg to everyone in the group.
     */
-  private def handleGroupMsg(msg: GroupMsg) = {
+  private def handleGroupMsg(msg: GroupMsg): Unit = {
     logger.debug(s".handleGroupMsg: groupResultId $groupResultId, groupMsg " +
         s"${Json.stringify(msg.json)}")
 
@@ -216,13 +219,13 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * Registers the given channel and sends an OPENED action group message to everyone in this
     * group.
     */
-  private def registerChannel(studyResultId: Long) = {
+  private def registerChannel(studyResultId: Long): Unit = {
     logger.debug(s".registerChannel: groupResultId $groupResultId, studyResultId $studyResultId")
     channelRegistry.register(studyResultId, sender)
     val msg1 = actionMsgBuilder.build(groupResultId, studyResultId,
-      channelRegistry, true, GroupAction.Opened, TellWhom.SenderOnly)
+      channelRegistry, includeSessionData = true, GroupAction.Opened, TellWhom.SenderOnly)
     val msg2 = actionMsgBuilder.build(groupResultId, studyResultId,
-      channelRegistry, false, GroupAction.Opened, TellWhom.AllButSender)
+      channelRegistry, includeSessionData = false, GroupAction.Opened, TellWhom.AllButSender)
     tellActionMsg(List(msg1, msg2))
   }
 
@@ -230,7 +233,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * Unregisters the given channel and sends an CLOSED action group message to everyone in this
     * group. Then if the group is now empty it sends a PoisonPill to this GroupDispatcher itself.
     */
-  private def unregisterChannel(studyResultId: Long) = {
+  private def unregisterChannel(studyResultId: Long): Unit = {
     logger.debug(s".unregisterChannel: groupResultId $groupResultId, studyResultId $studyResultId")
 
     // Only unregister GroupChannelActor if it's the one from the sender (there
@@ -239,7 +242,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
         && channelRegistry.getChannel(studyResultId).get == sender) {
       channelRegistry.unregister(studyResultId)
       val msg = actionMsgBuilder.build(groupResultId, studyResultId,
-        channelRegistry, false, GroupAction.Closed, TellWhom.AllButSender)
+        channelRegistry, includeSessionData = false, GroupAction.Closed, TellWhom.AllButSender)
       tellActionMsg(List(msg))
     }
 
@@ -250,7 +253,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Forwards this ReassignChannel message to the right group channel.
     */
-  private def reassignChannel(reassignChannel: ReassignChannel) = {
+  private def reassignChannel(reassignChannel: ReassignChannel): Unit = {
     logger.debug(s".reassignChannel: groupResultId $groupResultId, studyResultId " +
         s"${reassignChannel.studyResultId}")
     val groupChannelOption = channelRegistry.getChannel(reassignChannel.studyResultId)
@@ -271,7 +274,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * to the sender (GroupChannel service) if the GroupChannelActor wasn't handled by this
     * GroupDispatcher.
     */
-  private def poisonChannel(poison: PoisonChannel) = {
+  private def poisonChannel(poison: PoisonChannel): Unit = {
     logger.debug(s".poisonGroupChannel: groupResultId $groupResultId, studyResultId " +
         s"${poison.studyResultId}")
     val groupChannelOption = channelRegistry.getChannel(poison.studyResultId)
@@ -286,10 +289,10 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * Send the JOINED group action message to all group members. Who's joined the group is
     * specified in the given JoinedGroup object.
     */
-  private def joined(studyResultId: Long) {
+  private def joined(studyResultId: Long): Unit = {
     logger.debug(s".joined: groupResultId $groupResultId studyResultId $studyResultId")
     val msg = actionMsgBuilder.build(groupResultId, studyResultId,
-      channelRegistry, false, GroupAction.Joined, TellWhom.AllButSender)
+      channelRegistry, includeSessionData = false, GroupAction.Joined, TellWhom.AllButSender)
     tellAllButSender(msg)
   }
 
@@ -297,9 +300,9 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * Send the LEFT group action message to all group members. Who's left is specified by the
     * StudyResult.
     */
-  private def left(studyResultId: Long) = {
+  private def left(studyResultId: Long): Unit = {
     logger.debug(s".left: groupResultId $groupResultId, studyResultId $studyResultId")
-    val msg = actionMsgBuilder.build(groupResultId, studyResultId, channelRegistry, false,
+    val msg = actionMsgBuilder.build(groupResultId, studyResultId, channelRegistry, includeSessionData = false,
       GroupAction.Left, TellWhom.AllButSender)
     tellAllButSender(msg)
   }
@@ -307,7 +310,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message only to the recipient specified by the given study result ID.
     */
-  private def tellRecipientOnly(msg: GroupMsg, recipientStudyResultId: Long) {
+  private def tellRecipientOnly(msg: GroupMsg, recipientStudyResultId: Long): Unit = {
     logger.debug(s".tellRecipientOnly: groupResultId $groupResultId, recipientStudyResultId " +
         s"$recipientStudyResultId, msg ${Json.stringify(msg.json)}")
     val groupChannel = channelRegistry.getChannel(recipientStudyResultId)
@@ -321,7 +324,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     }
   }
 
-  private def tellActionMsg(msgList: List[GroupMsg]) = {
+  private def tellActionMsg(msgList: List[GroupMsg]): Unit = {
     msgList.foreach(msg =>
       msg.tellWhom match {
         case TellWhom.All => tellAll(msg)
@@ -335,7 +338,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message to everyone in channelRegistry.
     */
-  private def tellAll(msg: GroupMsg) = {
+  private def tellAll(msg: GroupMsg): Unit = {
     logger.debug(s".tellAll: groupResultId $groupResultId, msg ${Json.stringify(msg.json)}")
     for (actorRef <- channelRegistry.getAllChannels)
       actorRef ! msg
@@ -344,7 +347,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message to everyone in the group registry except the sender of this message.
     */
-  private def tellAllButSender(msg: GroupMsg) = {
+  private def tellAllButSender(msg: GroupMsg): Unit = {
     logger.debug(s".tellAllButSender: groupResultId $groupResultId, " +
         s"msg ${Json.stringify(msg.json)}")
     for (actorRef <- channelRegistry.getAllChannels)
@@ -354,7 +357,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message only to the sender.
     */
-  private def tellSenderOnly(msg: GroupMsg) = {
+  private def tellSenderOnly(msg: GroupMsg): Unit = {
     logger.debug(s".tellSenderOnly: groupResultId $groupResultId, msg ${Json.stringify(msg.json)}")
     sender ! msg
   }
@@ -362,7 +365,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message only to the sender.
     */
-  private def tellSenderOnly(msg: Any) = {
+  private def tellSenderOnly(msg: Any): Unit = {
     logger.debug(s".tellSenderOnly: groupResultId $groupResultId, msg $msg")
     sender ! msg
   }
