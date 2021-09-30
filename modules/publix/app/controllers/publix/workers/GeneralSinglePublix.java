@@ -104,10 +104,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
                     + " worker", worker);
         } else {
             worker = publixUtils.retrieveWorker(workerId);
-            if (worker == null) throw new ForbiddenPublixException("A worker with ID " + workerId + " doesn't exist");
+            if (worker == null) {
+                throw new ForbiddenPublixException("This study was run in this browser already. Although a worker with "
+                        + "ID " + workerId + " doesn't exist. Probably it was run on a different JATOS.");
+            }
             studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
             studyResult = worker.getLastStudyResult().orElseThrow(() -> new ForbiddenPublixException(
-                    "Repeated study run but couldn't find last study result"));
+                    "This study was run in this browser already. Although JATOS couldn't find the study result."));
             if (!idCookieService.hasIdCookie(studyResult.getId())) {
                 publixUtils.finishOldestStudyResult();
                 generalSingleCookieService.set(study, worker);
