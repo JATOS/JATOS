@@ -13,6 +13,7 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class UserDao extends AbstractDao {
 

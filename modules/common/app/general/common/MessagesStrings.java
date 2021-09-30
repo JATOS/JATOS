@@ -19,12 +19,12 @@ public class MessagesStrings {
     // General
     public static final String MISSING_TITLE = "Missing title";
     public static final String TITLE_TOO_LONG = "Title too long";
-    public static final String MISSING_FILE_PATH = "Missing file path";
     public static final String MISSING_NAME = "Missing name";
     public static final String NAME_TOO_LONG = "Name too long";
     public static final String MISSING_USERNAME = "Missing username";
     public static final String USERNAME_TOO_LONG = "Username too long";
-    public static final String USERNAME_INVALID = "Username invalid (only alphabetic characters, numbers and -_@.+&'=~)";
+    public static final String USERNAME_INVALID = "Username invalid (only alphabetic characters, numbers and -_@"
+            + ".+&'=~)";
     public static final String MISSING_DIR_NAME = "Missing directory name";
     public static final String DIR_NAME_TOO_LONG = "Directory name too long";
     public static final String INVALID_DIR_NAME = "Invalid directory name";
@@ -39,7 +39,6 @@ public class MessagesStrings {
     public static final String COMMENT_TOO_LONG = "Comment too long";
     public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path or filename. Remember to "
             + "use '/' as folder separator, and to include the file extension. You can leave it empty for now.";
-    public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";
     public static final String STUDY_AT_LEAST_ONE_USER = "A study needs at least one user.";
     public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
     public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
@@ -64,13 +63,10 @@ public class MessagesStrings {
             + " you can try again.";
     public static final String WRONG_PASSWORD = "Wrong password";
     public static final String WRONG_USERNAME = "Wrong username";
-    public static final String NOT_ALLOWED_TO_CHANGE_PASSWORDS = "You are not allowed to change passwords.";
     public static final String NOT_ALLOWED_TO_DELETE_USER = "You are not allowed to delete this user.";
-    public static final String WRONG_OLD_PASSWORD = "Wrong old password";
     public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
     public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
     public static final String THIS_USERNAME_IS_ALREADY_REGISTERED = "This username is already registered.";
-    public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
     public static final String COULDNT_OPEN_LOG = "Error: Could not open log file";
     public static final String LOG_CUT = "--- Log is cut here. Download it to get the whole file. ---";
     public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE = "Sorry, it's not possible to remove "
@@ -78,7 +74,6 @@ public class MessagesStrings {
     public static final String NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS = "It's not possible to remove 'admin's admin "
             + "rights.";
     public static final String NOT_ALLOWED_DELETE_ADMIN = "It's not possible to remove user 'admin'.";
-    public static final String NOT_ALLOWED_CHANGE_PW_ADMIN = "It's not possible to change 'admin's password.";
 
     // Export / import
     public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
@@ -93,7 +88,6 @@ public class MessagesStrings {
     public static final String IMPORT_OF_STUDY_FAILED = "Import of study failed";
     public static final String IMPORT_OF_COMPONENT_FAILED = "Import of component failed";
     public static final String NO_RESULTS_SELECTED = "No results selected";
-    public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
     public static final String TOO_NEW_STUDY_VERSION = "This study is from an newer version of JATOS. Try updating "
             + "your JATOS.";
     public static final String UNSUPPORTED_STUDY_VERSION = "This study is from an unsupported version of JATOS.";
@@ -109,15 +103,19 @@ public class MessagesStrings {
             + "different table pages)";
     public static final String RESULTS_SELECT_VISIBLE = "Select only the currently visible results on this page";
     public static final String RESULTS_DESELECT_ALL = "Deselect all results";
-    public static final String RESULTS_EXPORT_DATA = "Result data are the actual data that are saved during a study run - "
-            + "but does not include any metadata";
-    public static final String RESULTS_EXPORT_SELECTED_DATA = "Export selected results as a text file to your local file system";
+    public static final String RESULTS_EXPORT_DATA =
+            "Result data are the actual data that are saved during a study run - "
+                    + "but does not include any metadata";
+    public static final String RESULTS_EXPORT_SELECTED_DATA = "Export selected results as a text file to your local "
+            + "file system";
     public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
     public static final String RESULTS_EXPORT_FILES = "Result files that were uploaded during a study run";
-    public static final String RESULTS_EXPORT_SELECTED_FILES = "Export selected result files as a .zip to your local file system";
+    public static final String RESULTS_EXPORT_SELECTED_FILES = "Export selected result files as a .zip to your local "
+            + "file system";
     public static final String RESULTS_EXPORT_ALL_FILES = "Export all result files as a .zip to your local file system";
-    public static final String RESULTS_EXPORT_METADATA = "Metadata are all data that are not result data, e.g. Result ID, "
-            + "Start Time, State";
+    public static final String RESULTS_EXPORT_METADATA =
+            "Metadata are all data that are not result data, e.g. Result ID, "
+                    + "Start Time, State";
     public static final String RESULTS_EXPORT_ALL_METADATA = "Export all metadata as a CSV file to your local file "
             + "system";
     public static final String RESULTS_EXPORT_SELECTED_METADATA = "Export seleceted metadata as a CSV file to your "
@@ -148,7 +146,6 @@ public class MessagesStrings {
     public static final String RESULTS_FILES = "Are there any uploaded result files? "
             + "Open the component results to actually see them.";
     public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
-    public static final String RESULTS_NUMBER_COMPONENT_RESULTS = "Current number of component results";
     public static final String RESULTS_STUDY_STATE =
             "Current state of this study's run, like " + StudyState.allStatesAsString();
     public static final String RESULTS_STUDY_MESSAGES = "Message that occured during the run of this study";
@@ -158,15 +155,9 @@ public class MessagesStrings {
     public static final String RESULTS_COMPONENT_MESSAGES = "Message that occured during the run of this component";
 
     // Other
-    public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to"
-            + " run this study. You should change this in this study's properties before you run it from Mechanical "
-            + "Turk.";
-    public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
     public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
     public static final String COMPONENT_DELETED_BUT_FILES_NOT = "Component deleted, but all files (e.g. its HTML "
             + "file) in study assets remain untouched.";
-    public static final String PROBLEM_GENERATING_BREADCRUMBS = "Problem generating breadcrumbs";
-    public static final String BATCH_DELETED = "Batch successfully deleted";
 
     public static String workerNotExist(Long workerId) {
         return workerNotExist(String.valueOf(workerId));
@@ -189,7 +180,7 @@ public class MessagesStrings {
                 + title + "\" (" + studyId + ").";
     }
 
-    public static String studyImportNotUser(String studyTitle) {
+    public static String studyImportNotUser() {
         return "The study you're trying to upload already exists but you aren't a user of it. "
                 + "You can always import this study in another JATOS instance "
                 + "(e.g. <a href=\"http://www.jatos.org/Installation.html\">"
@@ -271,14 +262,6 @@ public class MessagesStrings {
         return "An result with ID \"" + resultIdStr + "\" doesn't exist.";
     }
 
-    public static String resultIdMalformed(String resultIdStr) {
-        return "The result ID \"" + resultIdStr + "\" is malformed.";
-    }
-
-    public static String studyResultNotFromWorker(Long studyResultId, Long workerId) {
-        return "Study result (ID " + studyResultId + ") doesn't belong to worker (ID " + workerId + ")";
-    }
-
     public static String studyResultNotExist(Long studyResultId) {
         return "A study result with ID " + studyResultId + " doesn't exist.";
     }
@@ -300,20 +283,8 @@ public class MessagesStrings {
         return "Study \"" + title + "\" (" + studyId + ") is locked. Unlock it if you want to make changes.";
     }
 
-    public static String studyCreationOfPersonalSingleRunFailed(Long studyId) {
-        return "The creation of a Personal Single Run for study " + studyId + " failed.";
-    }
-
-    public static String studyCreationOfPersonalMultipleRunFailed(Long studyId) {
-        return "The creation of a Personal Multiple Run for study " + studyId + " failed.";
-    }
-
     public static String couldntGeneratePathToFileOrDir(String fileStr) {
         return "Couldn't generate path to file or directory \"" + fileStr + "\".";
-    }
-
-    public static String couldntGenerateStudyAssetsDir(String path) {
-        return "Couldn't generate path to study assets' directory (" + path + ").";
     }
 
     public static String pathNotAbsolute(String path) {
@@ -336,12 +307,6 @@ public class MessagesStrings {
         return "Study assets' directory (" + dirName + ") couldn't be created because it already exists.";
     }
 
-    public static String studyAssetsDirExistsBelongsToDifferentStudy(String dirName) {
-        return "The uploaded study assets' directory \"" + dirName
-                + "\" already exists but belongs to another study. Try renaming"
-                + " the study assets' directory name in the study properties.";
-    }
-
     public static String studyAssetsDirNotRenamed(String oldDirName, String newDirName) {
         return "Couldn't rename study assets' directory from \"" + oldDirName + "\" to \"" + newDirName + "\".";
     }
@@ -362,10 +327,6 @@ public class MessagesStrings {
 
     public static String htmlFileNotRenamed(String oldFilePath, String newFilePath) {
         return "Couldn't rename HTML file from \"" + oldFilePath + "\" to \"" + newFilePath + "\".";
-    }
-
-    public static String fileNotUploaded(String fileName) {
-        return "Couldn't upload file \"" + fileName + "\".";
     }
 
     public static String batchNotExist(Long batchId) {

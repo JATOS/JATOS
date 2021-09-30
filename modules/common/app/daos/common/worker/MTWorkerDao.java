@@ -15,6 +15,7 @@ import java.util.Optional;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class MTWorkerDao extends WorkerDao {
 

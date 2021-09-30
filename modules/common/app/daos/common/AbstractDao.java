@@ -11,6 +11,7 @@ import play.db.jpa.JPAApi;
  * 
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public abstract class AbstractDao {
 

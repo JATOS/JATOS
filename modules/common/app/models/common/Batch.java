@@ -250,11 +250,7 @@ public class Batch {
     }
 
     public void removeAllWorkers(List<Worker> workerList) {
-        this.workerList.removeAll(workerList);
-    }
-
-    public boolean hasWorker(Worker worker) {
-        return workerList.contains(worker);
+        workerList.forEach(this.workerList::remove);
     }
 
     public String getComments() {

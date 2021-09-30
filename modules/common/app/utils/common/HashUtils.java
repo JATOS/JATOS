@@ -39,7 +39,7 @@ public class HashUtils {
     }
 
     /**
-     * Calculates hash for the given file. Converts the byte array into an String of hexadecimal characters.
+     * Calculates hash for the given file. Converts the byte array into a String of hexadecimal characters.
      */
     public static String getHash(Path file, String hashFunction) throws IOException {
         try {

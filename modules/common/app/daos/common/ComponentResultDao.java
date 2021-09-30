@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class ComponentResultDao extends AbstractDao {
 

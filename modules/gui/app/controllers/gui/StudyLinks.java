@@ -37,6 +37,7 @@ import java.util.Map;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class StudyLinks extends Controller {
@@ -165,6 +166,7 @@ public class StudyLinks extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
+        assert dataAsJson != null;
         return ok(dataAsJson);
     }
 

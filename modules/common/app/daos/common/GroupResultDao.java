@@ -17,6 +17,7 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class GroupResultDao extends AbstractDao {
 

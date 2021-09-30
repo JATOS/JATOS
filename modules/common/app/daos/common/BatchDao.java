@@ -11,6 +11,7 @@ import javax.inject.Singleton;
  * 
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class BatchDao extends AbstractDao {
 
