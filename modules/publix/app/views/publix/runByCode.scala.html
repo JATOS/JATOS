@@ -1,0 +1,71 @@
+@main("JATOS") {
+
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+label {
+    color: #999;
+    font-family: Sans-Serif;
+    font-size: 20px;
+}
+
+input[type=text], select {
+  font-size: 20px;
+  padding: 12px 20px;
+  margin: 12px 0;
+  border: 1px solid #999;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  color: white;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  padding: 12px 20px;
+  margin: 12px 0;
+  background-color: #337ab7;
+  border: 1px solid #2e6da4;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  filter: brightness(0.8);
+}
+
+.wrapper {
+  height: 100%;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+<div class="wrapper">
+    <div class="center">
+        <form onsubmit="run(event)">
+            <label for="studyLinkId">Enter your code and press Run:</label><br>
+            <input type="text" id="studyLinkId" name="studyLinkId" autofocus required minlength="11" maxlength="11">
+            <input type="submit" name="submit" value="Run"/>
+        </form>
+    </div>
+</div>
+
+<script>
+    function run(event) {
+        event.preventDefault();
+        const studyLinkId = document.getElementById("studyLinkId").value;
+        window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyLinkId;
+    }
+</script>
+}

@@ -37,6 +37,7 @@ import java.io.IOException;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 @PublixAccessLogging
 public class PublixInterceptor extends Controller {
@@ -58,10 +59,15 @@ public class PublixInterceptor extends Controller {
     }
 
     @Transactional
+    public Result runByCode() {
+        return ok(views.html.publix.runByCode.render());
+    }
+
+    @Transactional
     public Result run(Http.Request request, String studyLinkId) throws PublixException {
         LOGGER.info(".run: studyLinkId " + studyLinkId);
         StudyLink studyLink = studyLinkDao.findById(studyLinkId);
-        if (studyLink == null) throw new BadRequestPublixException("No study link provided");
+        if (studyLink == null) throw new BadRequestPublixException("No valid study link");
         if (!studyLink.isActive()) throw new ForbiddenPublixException("This study link is inactive");
 
         switch (studyLink.getWorkerType()) {
