@@ -39,6 +39,7 @@ import java.util.Map;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Users extends Controller {
@@ -323,7 +324,7 @@ public class Users extends Controller {
                     return forbidden(MessagesStrings.WRONG_PASSWORD);
                 }
             } catch (NamingException e) {
-                LOGGER.warn("LDAP problems - " + e.toString());
+                LOGGER.warn("LDAP problems - " + e);
                 return internalServerError(MessagesStrings.LDAP_PROBLEMS);
             }
         } else {

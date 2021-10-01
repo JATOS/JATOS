@@ -20,6 +20,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Updates extends Controller {

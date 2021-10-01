@@ -45,6 +45,7 @@ import java.util.*;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Studies extends Controller {

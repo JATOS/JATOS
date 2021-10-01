@@ -3,13 +3,9 @@ package general.publix;
 import batch.BatchDispatcher;
 import batch.BatchDispatcherRegistry;
 import com.google.inject.AbstractModule;
-import com.google.inject.TypeLiteral;
 import group.GroupDispatcher;
 import group.GroupDispatcherRegistry;
-import models.common.workers.*;
 import play.libs.akka.AkkaGuiceSupport;
-import services.publix.StudyAuthorisation;
-import services.publix.workers.*;
 
 /**
  * Configuration of Guice dependency injection for Publix module

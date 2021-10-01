@@ -7,7 +7,6 @@ import play.mvc.Http;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class NotFoundPublixException extends PublixException {
 
 	public NotFoundPublixException(String message) {

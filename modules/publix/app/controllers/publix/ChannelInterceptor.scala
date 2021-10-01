@@ -19,6 +19,7 @@ import scala.concurrent.Future
   * several purposes: exception handling, final WebSocket creation, and matching to the right
   * worker type.
   */
+//noinspection ScalaDeprecation
 @Singleton
 @PublixAccessLogging
 class ChannelInterceptor @Inject()(components: ControllerComponents,

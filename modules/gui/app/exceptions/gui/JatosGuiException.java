@@ -10,7 +10,6 @@ import play.mvc.Result;
  * 
  * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class JatosGuiException extends Exception {
 
 	private final Result simpleResult;

@@ -26,6 +26,7 @@ import static controllers.gui.actionannotations.AuthenticationAction.Authenticat
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Tests extends Controller {

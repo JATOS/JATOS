@@ -30,6 +30,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Home extends Controller {

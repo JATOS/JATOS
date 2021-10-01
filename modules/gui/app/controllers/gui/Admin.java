@@ -41,6 +41,7 @@ import java.util.stream.Stream;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Admin extends Controller {

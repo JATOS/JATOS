@@ -25,6 +25,7 @@ import scala.util.matching.Regex
   *
   * @author Kristian Lange
   */
+//noinspection ScalaDeprecation
 @Singleton
 class StudyAssets @Inject()(components: ControllerComponents,
                             ioUtils: IOUtils,
@@ -78,7 +79,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
         // https://www.playframework.com/documentation/2.7.x/AssetsOverview#Range-requests-support
         RangeResult.ofFile(file, request.headers.get(RANGE), Option.empty)
       } else {
-        Ok.sendFile(file, true).withHeaders("Cache-Control" -> "private")
+        Ok.sendFile(file, inline = true).withHeaders("Cache-Control" -> "private")
       }
     } catch {
       case e: PublixException =>
@@ -195,13 +196,11 @@ class StudyAssets @Inject()(components: ControllerComponents,
     "\\[(.*?)]".r.findAllIn(newEndRedirectUrl).foreach(m => {
       val parameter = Helpers.urlDecode(m.substring(1, m.length - 1)) // remove squared brackets and decode
       (originalStudyLinkUrlQueryParameters \ parameter).asOpt[String] match {
-        case Some(value) => {
+        case Some(value) =>
           newEndRedirectUrl = newEndRedirectUrl.replace(m, Helpers.urlEncode(value))
-        }
-        case None => {
+        case None =>
           newEndRedirectUrl = newEndRedirectUrl.replace(m, "undefined")
           logger.info(s".enhanceQueryStringInEndRedirectUrl: Could not find '$parameter' in original study link")
-        }
       }
     })
     newEndRedirectUrl

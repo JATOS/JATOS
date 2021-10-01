@@ -7,7 +7,6 @@ import play.mvc.Http;
  * 
  * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class BadRequestPublixException extends PublixException {
 
 	public BadRequestPublixException(String message) {

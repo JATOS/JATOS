@@ -191,8 +191,8 @@ public class ImportExportService {
             LOGGER.error(".importStudyConfirmed: " + "JSON is malformed");
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
-        Boolean overwriteStudysProperties = json.findPath("overwriteStudysProperties").asBoolean();
-        Boolean overwriteStudysDir = json.findPath("overwriteStudysDir").asBoolean();
+        boolean overwriteStudysProperties = json.findPath("overwriteStudysProperties").asBoolean();
+        boolean overwriteStudysDir = json.findPath("overwriteStudysDir").asBoolean();
         boolean keepCurrentDirName = json.findPath("keepCurrentDirName").booleanValue();
         boolean renameDir = json.findPath("renameDir").booleanValue();
 

@@ -33,6 +33,7 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class StudyResults extends Controller {

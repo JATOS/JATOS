@@ -33,6 +33,7 @@ import java.security.GeneralSecurityException;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Authentication extends Controller {

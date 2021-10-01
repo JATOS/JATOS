@@ -3,7 +3,6 @@ package services.gui;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import daos.common.BatchDao;
-import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
@@ -46,7 +45,6 @@ public class StudyService {
     private final BatchService batchService;
     private final ComponentService componentService;
     private final StudyDao studyDao;
-    private final ComponentDao componentDao;
     private final BatchDao batchDao;
     private final UserDao userDao;
     private final WorkerDao workerDao;
@@ -56,12 +54,11 @@ public class StudyService {
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            ComponentDao componentDao, BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
+            BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
             StudyLogger studyLogger, AuthenticationService authenticationService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
-        this.componentDao = componentDao;
         this.batchDao = batchDao;
         this.userDao = userDao;
         this.workerDao = workerDao;

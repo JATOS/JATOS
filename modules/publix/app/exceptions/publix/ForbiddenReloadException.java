@@ -6,7 +6,6 @@ package exceptions.publix;
  * 
  * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class ForbiddenReloadException extends Exception {
 
 	public ForbiddenReloadException(String message) {

@@ -28,6 +28,7 @@ import java.util.Date;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class UserService {
 

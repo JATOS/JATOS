@@ -160,7 +160,7 @@ public class IdCookieAccessor {
     private int getCookieIndex(String name) throws IdCookieMalformedException {
         String lastChar = name.substring(name.length() - 1);
         try {
-            return Integer.valueOf(lastChar);
+            return Integer.parseInt(lastChar);
         } catch (NumberFormatException e) {
             throw new IdCookieMalformedException(PublixErrorMessages
                     .couldntExtractIndexFromIdCookieName(name));

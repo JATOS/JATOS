@@ -10,23 +10,12 @@ import models.common.workers.Worker;
 public class PublixErrorMessages {
 
 	public static final String ABANDONED_STUDY_BY_COOKIE = "Closed by JATOS: Too many unfinished studies open in the same browser.";
-	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String IDCOOKIE_COLLECTION_FULL = "Can't generate a new ID cookie due to max number is reached. This should never happen.";
 	public static final String IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND = "Max number of ID cookies is reached but a new index was requested.";
-	public static final String STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY = "Study result doesn't belong to this study.";
-	public static final String STUDY_RESULT_DOESN_T_EXIST = "Study result doesn't exist.";
-
-	public static String workerNeverDidStudy(Worker worker, Long studyId) {
-		return "Worker " + worker.getId() + " never did study " + studyId + ".";
-	}
 
 	public static String workerNotAllowedStudy(Worker worker, Long studyId) {
 		return "Worker " + worker.getId() + " is not allowed to do study " + studyId + ".";
-	}
-
-	public static String workerFinishedStudyAlready(Worker worker, Long studyId) {
-		return "Worker " + worker.getId() + " finished study " + studyId + " already.";
 	}
 
 	public static String workerNotExist(String workerIdStr) {
@@ -37,10 +26,6 @@ public class PublixErrorMessages {
 			Long batchId) {
 		return "It's not allowed to run this study (ID: " + studyId + ") in this batch (ID: " + batchId
 				+ ") with a worker of type \"" + workerType + "\".";
-	}
-
-	public static String batchNotExist(Long batchId) {
-		return "A batch with ID " + batchId + " doesn't exist.";
 	}
 
 	public static String batchMaxTotalWorkerReached(Long batchId) {
@@ -85,14 +70,6 @@ public class PublixErrorMessages {
 
 	public static String componentNotActive(Long studyId, Long componentId) {
 		return "Component with ID " + componentId + " in study with ID " + studyId + " is not active.";
-	}
-
-	public static String noComponentAtPosition(Long studyId, Integer position) {
-		return "There is no component at position " + position + " in study " + studyId + ".";
-	}
-
-	public static String studyNotExist(Long studyId) {
-		return "An study with ID " + studyId + " doesn't exist.";
 	}
 
 	public static String studyFinishedWithMessage(String message) {

@@ -32,6 +32,7 @@ import java.io.IOException;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Components extends Controller {

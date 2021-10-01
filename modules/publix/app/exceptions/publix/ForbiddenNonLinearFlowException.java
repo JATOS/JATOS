@@ -5,7 +5,6 @@ package exceptions.publix;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class ForbiddenNonLinearFlowException extends Exception {
 
 	public ForbiddenNonLinearFlowException(String message) {

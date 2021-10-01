@@ -8,7 +8,6 @@ import play.mvc.Http;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public abstract class PublixException extends Exception {
 
     private int httpStatus = Http.Status.BAD_REQUEST; // default is BadRequest
