@@ -161,6 +161,8 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         }
 
         String postedResultData = request.body().asText();
+        if (postedResultData == null) return badRequest("Result data empty");
+
         String resultData;
         if (append) {
             String currentResultData = componentResult.get().getData();
