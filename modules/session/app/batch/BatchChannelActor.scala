@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
   * @author Kristian Lange (2017)
   */
 object BatchChannelActor {
-  def props(out: ActorRef, studyResultId: Long, batchDispatcher: ActorRef) =
+  def props(out: ActorRef, studyResultId: Long, batchDispatcher: ActorRef): Props =
     Props(new BatchChannelActor(out, studyResultId, batchDispatcher))
 }
 
@@ -31,13 +31,13 @@ class BatchChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
                                   batchDispatcher: ActorRef) extends Actor {
 
-  override def preStart() = batchDispatcher ! RegisterChannel(studyResultId)
+  override def preStart(): Unit = batchDispatcher ! RegisterChannel(studyResultId)
 
-  override def postStop() = batchDispatcher ! UnregisterChannel(studyResultId)
+  override def postStop(): Unit = batchDispatcher ! UnregisterChannel(studyResultId)
 
-  val pong = Json.obj("heartbeat" -> "pong")
+  val pong: JsObject = Json.obj("heartbeat" -> "pong")
 
-  def receive = {
+  def receive: Receive = {
     case msg: JsObject if msg.keys.contains("heartbeat") =>
       // If we receive a heartbeat ping, answer directly with a pong
       out ! pong

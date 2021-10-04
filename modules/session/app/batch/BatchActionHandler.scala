@@ -18,6 +18,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   *
   * @author Kristian Lange
   */
+//noinspection ScalaDeprecation
 @Singleton
 class BatchActionHandler @Inject()(jpa: JPAApi,
                                    batchDao: BatchDao,

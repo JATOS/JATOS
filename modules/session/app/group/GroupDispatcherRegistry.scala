@@ -60,7 +60,7 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
     * running and keeps its internal state (incl registered channels).
     */
   override val supervisorStrategy: OneForOneStrategy =
-    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, true) {
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, loggingEnabled = true) {
       case _: Exception => Resume
     }
 

@@ -3,12 +3,14 @@ package batch
 import akka.actor.SupervisorStrategy.Resume
 import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy}
 import batch.BatchDispatcherRegistry.{GetOrCreate, ItsThisOne, Unregister}
+
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.collection.mutable
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * A BatchDispatcherRegistry is an Akka Actor that keeps track of all BatchDispatcher Actors.
@@ -52,8 +54,8 @@ class BatchDispatcherRegistry @Inject()(actorSystem: ActorSystem,
     * stopping. This means that even if a BatchDispatcher throws an Exceptions it continues
     * running and keeps its internal state (incl registered channels).
     */
-  override val supervisorStrategy =
-    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, true) {
+  override val supervisorStrategy: OneForOneStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, loggingEnabled = true) {
       case _: Exception => Resume
     }
 
@@ -62,7 +64,7 @@ class BatchDispatcherRegistry @Inject()(actorSystem: ActorSystem,
     */
   private val dispatcherMap = mutable.HashMap[Long, ActorRef]()
 
-  def receive = {
+  def receive: Receive = {
     case GetOrCreate(batchId: Long) =>
       // Someone wants to know the Dispatcher to a particular ID
       // If it doesn't exist, create a new one.

@@ -28,7 +28,7 @@ class ChannelRegistry {
   def register(studyResultId: Long, channel: ActorRef): ActorRef = channelMap.put(studyResultId,
     channel)
 
-  def unregister(studyResultId: Long) = Option(channelMap.remove(studyResultId))
+  def unregister(studyResultId: Long): Option[ActorRef] = Option(channelMap.remove(studyResultId))
 
   def getChannel(studyResultId: Long): Option[ActorRef] = Option(channelMap.get(studyResultId))
 
@@ -40,6 +40,6 @@ class ChannelRegistry {
 
   def getAllChannels: mutable.Set[ActorRef] = channelMap.values.asScala
 
-  def getStudyResult(channel: ActorRef) = Option(channelMap.getKey(channel))
+  def getStudyResult(channel: ActorRef): Option[Long] = Option(channelMap.getKey(channel))
 
 }

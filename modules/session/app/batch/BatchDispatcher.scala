@@ -64,6 +64,7 @@ object BatchDispatcher {
   /**
     * Strings used as keys in the batch action JSON
     */
+  //noinspection TypeAnnotation
   object BatchActionJsonKey extends Enumeration {
     type BatchActionKey = Value
     // Action (mandatory for an BatchMsg)
@@ -86,6 +87,7 @@ object BatchDispatcher {
     * All possible batch actions a batch action message can have. They are
     * used as values in JSON message's action field.
     */
+  //noinspection TypeAnnotation
   object BatchAction extends Enumeration {
     type BatchAction = Value
     val Opened = Value("OPENED") // Signals the opening of a batch channel
@@ -113,9 +115,9 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   private val channelRegistry = new ChannelRegistry
 
-  override def postStop() = dispatcherRegistry ! Unregister(batchId)
+  override def postStop(): Unit = dispatcherRegistry ! Unregister(batchId)
 
-  def receive = {
+  def receive: Receive = {
     case actionMsg: BatchMsg => handleActionMsg(actionMsg)
     case RegisterChannel(studyResultId: Long) => registerChannel(studyResultId)
     case UnregisterChannel(studyResultId: Long) => unregisterChannel(studyResultId)
@@ -125,7 +127,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Handles batch actions originating from a client
     */
-  private def handleActionMsg(actionMsg: BatchMsg) = {
+  private def handleActionMsg(actionMsg: BatchMsg): Unit = {
     logger.debug(s".handleActionMsg: batchId $batchId, " +
         s"studyResultId ${channelRegistry.getStudyResult(sender).get}, " +
         s"actionMsg ${Json.stringify(actionMsg.json)}")
@@ -136,7 +138,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Registers the given channel in the channelRegistry and send an OPENED msg back to the sender
     */
-  private def registerChannel(studyResultId: Long) = {
+  private def registerChannel(studyResultId: Long): Unit = {
     logger.debug(s".registerChannel: batchId $batchId, studyResultId $studyResultId")
     channelRegistry.register(studyResultId, sender)
     tellActionMsg(List(actionMsgBuilder.buildSessionData(
@@ -147,7 +149,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * Unregisters the given channel and sends an CLOSED action batch message to everyone in this
     * batch. Then if the batch is now empty it sends a PoisonPill to this BatchDispatcher itself.
     */
-  private def unregisterChannel(studyResultId: Long) {
+  private def unregisterChannel(studyResultId: Long): Unit = {
     logger.debug(s".unregisterChannel: batchId $batchId, studyResultId $studyResultId")
 
     // Only unregister BatchChannelActor if it's the one from the sender (there
@@ -167,7 +169,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     * about it. Also send false back to the sender (BatchChannel service) if the
     * BatchChannelActor wasn't handled by this BatchDispatcher.
     */
-  private def poisonChannel(poisonChannel: PoisonChannel) = {
+  private def poisonChannel(poisonChannel: PoisonChannel): Unit = {
     val studyResultId = poisonChannel.studyResultId
     logger.debug(s".poisonChannel: batchId $batchId, studyResultId $studyResultId")
     val channelOption = channelRegistry.getChannel(studyResultId)
@@ -178,7 +180,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     else tellSenderOnly(false)
   }
 
-  private def tellActionMsg(msgList: List[BatchMsg]) = {
+  private def tellActionMsg(msgList: List[BatchMsg]): Unit = {
     msgList.foreach(msg =>
       msg.tellWhom match {
         case TellWhom.All => tellAll(msg)
@@ -191,7 +193,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message to everyone in batch channelRegistry.
     */
-  private def tellAll(msg: BatchMsg) = {
+  private def tellAll(msg: BatchMsg): Unit = {
     logger.debug(s".tellAll: batchId $batchId, msg ${Json.stringify(msg.json)}")
     for (actorRef <- channelRegistry.getAllChannels) {
       actorRef ! msg
@@ -201,7 +203,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message only to the sender.
     */
-  private def tellSenderOnly(msg: BatchMsg) = {
+  private def tellSenderOnly(msg: BatchMsg): Unit = {
     logger.debug(s".tellSenderOnly: batchId $batchId, msg ${Json.stringify(msg.json)}")
     sender ! msg
   }
@@ -209,7 +211,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message only to the sender.
     */
-  private def tellSenderOnly(msg: Any) = {
+  private def tellSenderOnly(msg: Any): Unit = {
     logger.debug(s".tellSenderOnly: batchId $batchId, msg $msg")
     sender ! msg
   }

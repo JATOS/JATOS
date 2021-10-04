@@ -20,6 +20,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   *
   * @author Kristian Lange (2017)
   */
+//noinspection ScalaDeprecation
 @Singleton
 class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
 

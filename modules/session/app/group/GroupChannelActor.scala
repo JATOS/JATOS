@@ -32,13 +32,13 @@ class GroupChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
                                   var groupDispatcher: ActorRef) extends Actor {
 
-  val pong = Json.obj("heartbeat" -> "pong")
+  val pong: JsObject = Json.obj("heartbeat" -> "pong")
 
-  override def preStart() = groupDispatcher ! RegisterChannel(studyResultId)
+  override def preStart(): Unit = groupDispatcher ! RegisterChannel(studyResultId)
 
-  override def postStop() = groupDispatcher ! UnregisterChannel(studyResultId)
+  override def postStop(): Unit = groupDispatcher ! UnregisterChannel(studyResultId)
 
-  def receive = {
+  def receive: Receive = {
     case msg: JsObject if msg.keys.contains("heartbeat") =>
       // If we receive a heartbeat ping, answer directly with a pong
       out ! pong

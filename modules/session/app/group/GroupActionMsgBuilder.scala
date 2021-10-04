@@ -20,6 +20,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   *
   * @author Kristian Lange
   */
+//noinspection ScalaDeprecation
 @Singleton
 class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDao) {
 
