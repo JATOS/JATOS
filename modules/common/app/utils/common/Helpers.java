@@ -2,6 +2,8 @@ package utils.common;
 
 import general.common.Common;
 import org.apache.commons.io.FileUtils;
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.mvc.RequestHeader;
@@ -20,10 +22,7 @@ import java.text.CharacterIterator;
 import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author Kristian Lange
@@ -199,6 +198,25 @@ public class Helpers {
 
     public static String formatDate(Date date) {
         return date != null ? (new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")).format(date) : "never";
+    }
+
+    /**
+     * Initialize all given objects that are loaded lazily in a Hibernate object
+     */
+    public static void initializeAndUnproxy(Object... objs) {
+        Arrays.stream(objs).forEach(Helpers::initializeAndUnproxy);
+    }
+
+    /**
+     * Initialize an object that is loaded lazily in a Hibernate object
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T initializeAndUnproxy(T obj) {
+        Hibernate.initialize(obj);
+        if (obj instanceof HibernateProxy) {
+            obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer().getImplementation();
+        }
+        return obj;
     }
 
 }

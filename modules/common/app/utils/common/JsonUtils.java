@@ -118,7 +118,7 @@ public class JsonUtils {
     public JsonNode initData(Batch batch, StudyResult studyResult, Study study, Component component)
             throws IOException {
         String studyProperties = asJsonForPublix(study);
-        String batchProperties = asJsonForPublix(batch);
+        String batchProperties = asJsonForPublix(Helpers.initializeAndUnproxy(batch));
         ArrayNode componentList = getComponentListForInitData(study);
         String componentProperties = asJsonForPublix(component);
         String studySessionData = studyResult.getStudySessionData();
@@ -213,7 +213,7 @@ public class JsonUtils {
         ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
 
         // Add worker
-        ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(studyResult.getWorker()));
+        ObjectNode workerNode = Json.mapper().valueToTree(Helpers.initializeAndUnproxy(studyResult.getWorker()));
         studyResultNode.set("worker", workerNode);
 
         // Add extra variables
@@ -527,7 +527,7 @@ public class JsonUtils {
     public JsonNode workersForTableData(Set<Worker> workerSet, Study study) {
         ArrayNode workerArrayNode = Json.mapper().createArrayNode();
         for (Worker worker : workerSet) {
-            ObjectNode workerNode = Json.mapper().valueToTree(initializeAndUnproxy(worker));
+            ObjectNode workerNode = Json.mapper().valueToTree(Helpers.initializeAndUnproxy(worker));
 
             List<Batch> batchList = worker.getBatchList().stream()
                     .filter(b -> study.getBatchList().contains(b))
@@ -612,16 +612,6 @@ public class JsonUtils {
             // database Hibernate doesn't use the type JatosWorker
             workerNode.put("username", "unknown (probably deleted)");
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T initializeAndUnproxy(T obj) {
-        Hibernate.initialize(obj);
-        if (obj instanceof HibernateProxy) {
-            obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
-                    .getImplementation();
-        }
-        return obj;
     }
 
     /**

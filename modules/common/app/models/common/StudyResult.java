@@ -98,7 +98,7 @@ public class StudyResult {
      * Batch this StudyResult belongs to. This relationship is unidirectional.
      */
     @JsonIgnore
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "batch_id")
     private Batch batch;
 
