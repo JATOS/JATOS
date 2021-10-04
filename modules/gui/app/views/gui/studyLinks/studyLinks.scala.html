@@ -195,9 +195,11 @@ $(document).ready(function() {
                 $(row).find('.groupsButton').attr('disabled', true);
             }
         },
-        "initComplete": function( settings, json ) {
+        "drawCallback": function( settings ) {
             setButtonWidthToMax("#batchTable .batchResultsButton");
             setButtonWidthToMax("#batchTable .groupsButton");
+        },
+        "initComplete": function( settings, json ) {
             $(".collapseStudyLinksSetup")[0].click();
         }
     });
