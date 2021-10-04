@@ -9,6 +9,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
+import utils.common.Helpers
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
@@ -181,10 +182,13 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     // Set Http.Context used in Play with Java. Needed by IdCookieService
     play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
-    jpa.withTransaction(asJavaSupplier(() => {
-
       try {
-        val studyResult = fetchStudyResult(studyResultUuid)
+        val studyResult = jpa.withTransaction(asJavaSupplier(() => {
+          val studyResult = fetchStudyResult(studyResultUuid)
+          Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getBatch, studyResult.getActiveGroupResult,
+            studyResult.getActiveGroupResult.getActiveMemberList)
+          studyResult
+        }))
         studyResult.getWorkerType match {
           case JatosWorker.WORKER_TYPE => jatosGroupChannel.reassign(studyResult)
           case PersonalSingleWorker.WORKER_TYPE => personalSingleGroupChannel.reassign(studyResult)
@@ -206,7 +210,6 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
           logger.error(".reassignGroup: Exception during reassigning a group channel", e)
           InternalServerError
       }
-    }))
   }
 
   /**

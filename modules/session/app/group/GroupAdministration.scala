@@ -21,6 +21,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   *
   * @author Kristian Lange (2015 - 2019)
   */
+//noinspection ScalaDeprecation
 @Singleton
 class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
                                     groupResultDao: GroupResultDao,
@@ -83,13 +84,12 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     * @return Either with String if error or a GroupResult if success
     */
   def reassign(studyResult: StudyResult, batch: Batch): Either[String, GroupResult] = {
-    val currentGroupResult = studyResult.getActiveGroupResult
-    if (currentGroupResult == null) {
-      return Left(s"The study result with ID ${studyResult.getId} isn't member in any group.")
-    }
+    jpa.withTransaction(asJavaSupplier(() => {
+      val currentGroupResult = studyResult.getActiveGroupResult
+      if (currentGroupResult == null) {
+        return Left(s"The study result with ID ${studyResult.getId} isn't member in any group.")
+      }
 
-    // We need this transaction here because later on in the GroupDispatcher the updated data are needed
-    val differentGroupResult = jpa.withTransaction(asJavaSupplier(() => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch).asScala
       // Don't reassign to the same group again
       allGroupMaxNotReached -= currentGroupResult
@@ -107,11 +107,10 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
       groupResultDao.update(currentGroupResult)
       groupResultDao.update(differentGroupResult)
       studyResultDao.update(studyResult)
-      differentGroupResult
-    }))
 
-    checkAndFinishGroup(currentGroupResult)
-    Right(differentGroupResult)
+      checkAndFinishGroup(currentGroupResult)
+      Right(differentGroupResult)
+    }))
   }
 
   /**
