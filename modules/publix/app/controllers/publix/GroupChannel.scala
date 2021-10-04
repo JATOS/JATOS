@@ -125,7 +125,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     groupAdministration.reassign(studyResult, batch) match {
       case Left(msg) =>
         logger.info(s".reassign: $msg")
-        return Forbidden(msg)
+        return NoContent
       case Right(differentGroupResult) =>
         reassignGroupChannel(studyResult, currentGroupResult, differentGroupResult)
         logger.info(s".reassign: studyResult ${studyResult.getId}, workerId ${worker.getId} reassigned from group" +
