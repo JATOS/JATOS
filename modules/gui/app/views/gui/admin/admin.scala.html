@@ -44,16 +44,25 @@
 <div id="jatosStatus" class="well text-center">
     <div class="row">
         <div class="col-sm-3">
-            Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of studies (aka experiments) on this JATOS server"></span><br>
-            <span class="text-xl value"></span>
+            Studies&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of studies (aka experiments) on this JATOS server. First is the number of currently stored studies and in brackets is the total number studies (including the deleted ones)."></span><br>
+            <span class="text-xl">
+                <span class="current"></span>
+                (<span class="total"></span>)
+            </span>
         </div>
         <div class="col-sm-3">
-            Study Results&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all study results on this JATOS server - How many studies were run so far?"></span><br>
-            <span class="text-xl value"></span>
+            Study Results&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all study results on this JATOS server - How many studies were run so far? First is the number of currently stored study results and in brackets is the total number of study results (including the deleted ones)."></span><br>
+            <span class="text-xl">
+                <span class="current"></span>
+                (<span class="total"></span>)
+            </span>
         </div>
         <div class="col-sm-3">
-            Workers&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all workers (aka participants) of all studies on this JATOS server"></span><br>
-            <span class="text-xl value"></span>
+            Workers&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all workers (aka participants) of all studies on this JATOS server. First is the number of currently stored workers and in brackets is the total number of workers (including the deleted ones)."></span><br>
+            <span class="text-xl">
+                <span class="current"></span>
+                (<span class="total"></span>)
+            </span>
         </div>
         <div class="col-sm-3">
             Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Number of all users (aka experimenters) on this JATOS server"></span><br>
@@ -457,9 +466,12 @@ function getJatosStatus() {
     $.getJSON({
         url: '@controllers.gui.routes.Admin.status()',
         success: function(status) {
-            $("#jatosStatus div:nth-child(1) .value").text(status.studyCount);
-            $("#jatosStatus div:nth-child(2) .value").text(status.studyResultCount);
-            $("#jatosStatus div:nth-child(3) .value").text(status.workerCount);
+            $("#jatosStatus div:nth-child(1) .current").text(status.studyCount);
+            $("#jatosStatus div:nth-child(1) .total").text(status.studyCountTotal);
+            $("#jatosStatus div:nth-child(2) .current").text(status.studyResultCount);
+            $("#jatosStatus div:nth-child(2) .total").text(status.studyResultCountTotal);
+            $("#jatosStatus div:nth-child(3) .current").text(status.workerCount);
+            $("#jatosStatus div:nth-child(3) .total").text(status.workerCountTotal);
             $("#jatosStatus div:nth-child(4) .value").text(status.userCount);
             $("#jatosStatus").show();
             $("#adminToolbar .serverTime").text(status.serverTime);

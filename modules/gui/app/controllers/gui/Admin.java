@@ -141,8 +141,11 @@ public class Admin extends Controller {
     public Result status() {
         Map<String, Object> statusMap = new HashMap<>();
         statusMap.put("studyCount", studyDao.count());
+        statusMap.put("studyCountTotal", studyDao.countTotal());
         statusMap.put("studyResultCount", studyResultDao.count());
+        statusMap.put("studyResultCountTotal", studyResultDao.countTotal());
         statusMap.put("workerCount", workerDao.count());
+        statusMap.put("workerCountTotal", workerDao.countTotal());
         statusMap.put("userCount", userDao.count());
         statusMap.put("serverTime", Helpers.formatDate(new Date()));
         statusMap.put("latestUsers", adminService.getLatestUsers(10));

@@ -62,6 +62,14 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
+     * Returns the total number of StudyResults (including the deleted ones)
+     */
+    public int countTotal() {
+        Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM StudyResult").getSingleResult();
+        return result.intValue();
+    }
+
+    /**
      * Returns the number of StudyResults belonging to the given study.
      */
     public int countByStudy(Study study) {
