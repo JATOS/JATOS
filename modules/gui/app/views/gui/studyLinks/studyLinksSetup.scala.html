@@ -404,6 +404,9 @@ function fillStudyLinksTable(batch, workerType) {
                 "render": function (data, type, full, meta) {
                     var button = $('#studyLinkActiveButtonDiv button:first-child').clone();
                     setStudyLinkRowActive(button, data.active);
+                    if (["FINISHED", "ABORTED", "FAIL"].includes(full.studyResultState)) {
+                        button.prop("disabled", true);
+                    }
                     return button.prop('outerHTML');
                 }
             },
