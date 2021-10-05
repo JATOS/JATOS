@@ -590,7 +590,7 @@ public class JsonUtils {
                 if (lastStudyResult.isPresent()) {
                     studyLinkDataNode.put("studyResultState", lastStudyResult.get().getStudyState().name());
                 } else {
-                    studyLinkDataNode.put("studyResultState", "none yet");
+                    studyLinkDataNode.put("studyResultState", (String) null);
                 }
             }
             arrayNode.add(studyLinkDataNode);

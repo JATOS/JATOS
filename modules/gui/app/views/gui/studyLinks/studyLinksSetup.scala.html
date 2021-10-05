@@ -404,7 +404,7 @@ function fillStudyLinksTable(batch, workerType) {
                 "render": function (data, type, full, meta) {
                     var button = $('#studyLinkActiveButtonDiv button:first-child').clone();
                     setStudyLinkRowActive(button, data.active);
-                    if (["FINISHED", "ABORTED", "FAIL"].includes(full.studyResultState)) {
+                    if (full.studyResultState !== null) {
                         button.prop("disabled", true);
                     }
                     return button.prop('outerHTML');
@@ -427,7 +427,10 @@ function fillStudyLinksTable(batch, workerType) {
             },
             {
                 "data": "studyResultState",
-                "width": "20%"
+                "width": "20%",
+                "render": function (data, type, full, meta) {
+                    return data !== null ? data : "not yet";
+                }
             }
         ],
         "createdRow": function(row, data, index) {
@@ -468,7 +471,7 @@ function setStudyLinkRowActive(button, active) {
         button.addClass('activeStudyLink');
         button.removeClass('btn-default');
         button.addClass('btn-worker');
-        button.attr('title', "Click to deactivate this study link");
+        button.attr('title', "Click to deactivate this study link (only possible if not yet used)");
         button.html($(button.html())
                 .removeClass('glyphicon-remove')
                 .addClass('glyphicon-ok').prop('outerHTML'));
@@ -477,7 +480,7 @@ function setStudyLinkRowActive(button, active) {
         button.removeClass('activeStudyLink');
         button.removeClass('btn-worker');
         button.addClass('btn-default');
-        button.attr('title', "Click to activate this study link");
+        button.attr('title', "Click to activate this study link (only possible if not yet used)");
         button.html($(button.html())
                 .removeClass('glyphicon-ok')
                 .addClass('glyphicon-remove').prop('outerHTML'));
