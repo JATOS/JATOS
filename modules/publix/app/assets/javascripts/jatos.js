@@ -692,6 +692,9 @@ var jatos = {};
 			batchSessionVersion = batchMsg.version;
 			// Batch channel opening is only done when we have the batch session version
 			openingBatchChannelDeferred.resolve();
+		} else {
+			callingOnError(null, "Batch channel opening failed: version missing");
+			openingBatchChannelDeferred.reject();
 		}
 		if (typeof batchMsg.action != 'undefined') {
 			handleBatchAction(batchMsg);
@@ -1647,6 +1650,9 @@ var jatos = {};
 			groupSessionVersion = groupMsg.sessionVersion;
 			// Group joining is only done after the session version is received
 			openingGroupChannelDeferred.resolve();
+		} else {
+			callingOnError(null, "Group channel opening failed: version missing");
+			openingGroupChannelDeferred.reject();
 		}
 	}
 
@@ -2831,116 +2837,117 @@ var jatos = {};
 	}
 
 	/**
-	 * Object contains all condition assignment functions
+	 * Object containing all condition assignment functions
 	 */
-	 jatos.assignment = {};
+	jatos.assignment = {};
 
 	/**
 	 * Initialize condition array for block randomization
-	 * @param {object} conditionConfig
-	 * containing
-	 * conditions - Map containing group name condition(version Of components) name and corresponding no. of subjects
-	 * numberOfConditions - no. of conditions(version Of components)
-	 * numberOfWorkers - no. of subjects in each condition(version Of components)
-	 * conditionArrayName - name of condition Array
+	 * TODO either config.conditions or config.numberOfConditions and config.numberOfWorkers
+	 * 
+	 * @param {object} config containing conditions - Object containing condition configuration
+	 * @param {object optional} config.conditions - todo 
+	 * @param {number optional} config.conditions.numberOfWorkers - todo 
+	 * @param {object optional} config.conditions.content - todo
+	 * @param {number optional} config.numberOfConditions - Number of conditions
+	 * @param {number optional} config.numberOfWorkers - Number of workers in each condition
+	 * @param {string optional} config.assignmentsFieldName - Key name of the conditions in the
+	 * 														batch session. By default 'assignments'
+	 * 														will be used.
 	 */
-	jatos.assignment.init = function (conditionConfig) {
-		var conditionArray = [];
-		if(conditionConfig.conditions && conditionConfig.conditions.length != 0) {
-			fillConditionArrayForConditionsObj(conditionArray, conditionConfig.conditions);
-		} else {
-			// Fill the array with conditions according to the counters
-			for (let condition = 1; condition <= conditionConfig.numberOfConditions; condition++) {
-				fillArrayWithValues(conditionArray, condition , conditionConfig.numberOfWorkers);
+	jatos.assignment.init = function (config) {
+		if (!config) return; // todo log error
+
+		const assignmentsFieldName = getAssignmentsFieldName(config.assignmentsFieldName);
+		// Check if already initialized
+		if (jatos.batchSession.defined("/" + assignmentsFieldName)) return;
+		
+		let weightedConditions = [];
+		if (config.conditions && Object.keys(config.conditions).length != 0) {
+			// We have a conditions object
+			// Fill the weightedConditions with conditions according to condition counts
+			for (const [conditionName, conditionValue] of Object.entries(config.conditions)) {
+				let numberOfWorkers;
+				if (typeof conditionValue == "number") {
+					numberOfWorkers = conditionValue;
+				} else if (typeof conditionValue == "object" && conditionValue.numberOfWorkers
+					&& typeof conditionValue.numberOfWorkers == "number") {
+					numberOfWorkers = conditionValue.numberOfWorkers;
+				} else {
+
+				}
+				fillArrayWithValues(weightedConditions, conditionName, numberOfWorkers);
 			}
+			
+		} else if (config.numberOfConditions && typeof config.numberOfConditions == "number"
+			&& config.numberOfWorkers && typeof config.numberOfWorkers == "number") {
+			// Fill weightedConditions according to config.numberOfConditions and config.numberOfWorkers
+			for (let condition = 1; condition <= config.numberOfConditions; condition++) {
+				fillArrayWithValues(weightedConditions, condition, config.numberOfWorkers);
+			}
+		} else {
+			// todo log error
+			return;
 		}
-		jatos.batchSession.set("conditionConfig", conditionConfig);
-		initialiseConditionArray(conditionArray, conditionConfig.conditionArrayName);
+
+		var assignments = { "config" : config, "weightedConditions": weightedConditions };
+		jatos.batchSession.set(assignmentsFieldName, assignments)
+			.catch(() => console.log("jatos.assignment.init - Batch Session synchronization failed")); // todo
+	}
+
+	function getAssignmentsFieldName(assignmentsFieldName) {
+		return (assignmentsFieldName && typeof assignmentsFieldName == "string")
+			? assignmentsFieldName : "assignments";
+	}
+
+	function fillArrayWithValues(array, value, count) {
+		for (let i = 0; i < count; i++) {
+			array.push(value.toString());
+		}
 	}
 
 	/**
-	 * Check if any next condition is available
-	 */
-	jatos.assignment.hasNext = function () {
-		let conditionArrayName = getConditionArrayName();
-		let conditionArray = jatos.batchSession.get(conditionArrayName);
-		// If next condition available then return True else if no more condition available then return False
-		return (conditionArray.length != 0) ;
+     * Check if a next condition is available
+     */
+	jatos.assignment.hasNext = function (assignmentsFieldName) {
+		assignmentsFieldName = getAssignmentsFieldName(assignmentsFieldName);
+		let weightedConditions = jatos.batchSession.find(`/${assignmentsFieldName}/weightedConditions`);
+		// todo what if not exists?
+		return (weightedConditions.length != 0);
 	}
 
 
 	/**
 	 * get next random group and update the condition array for block randomization
-	 * @param {string optional} conditionArrayName - name of condition Array
+	 * @param {string optional} assignmentsFieldName - name of condition Array
 	 */
-	jatos.assignment.next = function () {
-		let conditionArrayName = getConditionArrayName();
-		let conditionArray = jatos.batchSession.get(conditionArrayName);
-		// If no more condition available then return
-		if (conditionArray.length == 0) {
-			return;
-		}
+	jatos.assignment.next = async function (assignmentsFieldName) {
+		// todo what if not yet initialized
+		assignmentsFieldName = getAssignmentsFieldName(assignmentsFieldName);
+		let assignments = jatos.batchSession.get(assignmentsFieldName);
+		let weightedConditions = assignments.weightedConditions;
+		// If no more condition available just return
+		if (weightedConditions.length == 0) return;
+		
 		// Get a random condition
-		var randomIndex = Math.floor(Math.random() * conditionArray.length);
-		var randomCondition = conditionArray[randomIndex];
+		let randomIndex = Math.floor(Math.random() * weightedConditions.length);
+		let randomCondition = weightedConditions[randomIndex];
 		// Delete the choosen condition from the array
-		conditionArray.splice(randomIndex, 1);
+		weightedConditions.splice(randomIndex, 1);
+
 		// Set the changed condition array in the Batch Session.
-		jatos.batchSession.set(conditionArrayName, conditionArray).fail(function () {
-			randomCondition = jatos.assignment.next(conditionArrayName); // If it fails: try again
-		});
-		return getNextConditionObject(randomCondition);
-	}
-
-	function initialiseConditionArray(conditionArray, conditionArrayName) {
-		// Check if '<conditionArrayName>' is available as input to this method
-		conditionArrayName = (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
-		// Check if '<conditionArrayName>' condition is not already in the batch session
-		if (!jatos.batchSession.defined("/"+conditionArrayName)) {
-			// Put the conditionArray in the batch session
-			jatos.batchSession.set(conditionArrayName, conditionArray).fail(function () {
-				initialiseConditionArray(conditionArray, conditionArrayName); // If it fails: try again
+		let result;
+		await jatos.batchSession.remove(`/${assignmentsFieldName}/weightedConditions/${randomIndex}`)
+			.then(() => {
+				// Return condition object from config if exists and else the random condition
+				let conditions = assignments.config.conditions;
+				result = (conditions && typeof conditions[randomCondition] == "object") ?
+					conditions[randomCondition] : randomCondition;
 			})
-		}
-	}
-
-	function getConditionArrayName() {
-		let conditionArrayName;
-		if (jatos.batchSession.defined("/conditionConfig")) {
-			// Put the conditionArray in the batch session
-			conditionArrayName = jatos.batchSession.get("conditionConfig").conditionArrayName;
-		}
-		// Check if '<conditionArrayName>' is available as input to this method
-		return (conditionArrayName && typeof conditionArrayName == "string") ? conditionArrayName : "conditionArray";
-	}
-
-	function fillArrayWithValues(array, value, count) {
-		for (let i = 0; i < count; i++) {
-			array.push(value);
-		}
-	}
-
-	function fillConditionArrayForConditionsObj(conditionArray, conditions) {
-		// Fill the array with conditions according to the counters
-		for (let condition in conditions) {
-			// Get the count of each condition
-			let particularConditionCount = conditions[condition];
-			if(particularConditionCount instanceof Object) {
-				particularConditionCount.conditionName = condition;
-				particularConditionCount = particularConditionCount.numberOfWorkers;
-			}
-			fillArrayWithValues(conditionArray, condition , particularConditionCount);
-		}
-	}
-
-	function getNextConditionObject(randomCondition) {
-		if (jatos.batchSession.defined("/conditionConfig")) {
-			let conditions = jatos.batchSession.get("conditionConfig").conditions;
-			if(conditions && conditions.length !=0 && conditions[randomCondition] instanceof Object) {
-				return conditions[randomCondition];
-			}
-		}
-		return randomCondition;
+			.catch(function () {
+				result = jatos.assignment.next(assignmentsFieldName); // If it fails: try again
+			});
+		return result;
 	}
 
 })();
