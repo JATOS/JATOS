@@ -12,6 +12,7 @@ import general.common.Common;
 import general.common.MessagesStrings;
 import general.common.StudyLogger;
 import models.common.*;
+import models.common.workers.JatosWorker;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
@@ -152,14 +153,14 @@ public class ResultService {
     private void fetchStudyResultsByBatchPaginated(Writer writer, Batch batch) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
         int resultCount = jpaApi.withTransaction(entityManager -> {
-            return studyResultDao.countByBatch(batch);
+            return studyResultDao.countByBatch(batch, JatosWorker.WORKER_TYPE);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
             jpaApi.withTransaction(entityManager -> {
-                List<StudyResult> resultList = studyResultDao.findAllByBatch(batch, first, maxDbQuerySize);
+                List<StudyResult> resultList = studyResultDao.findAllByBatch(batch, JatosWorker.WORKER_TYPE, first, maxDbQuerySize);
                 Errors.rethrow().run(() -> writeStudyResults(writer, isLastPage, resultList));
             });
         }

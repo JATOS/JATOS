@@ -12,8 +12,6 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Hibernate;
-import org.hibernate.proxy.HibernateProxy;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Json;
@@ -502,8 +500,7 @@ public class JsonUtils {
      * the 'resultCount', the number of ComponentResults of this component so
      * far. Intended for use in JATOS' GUI.
      */
-    public JsonNode allComponentsForUI(List<Component> componentList,
-            List<Integer> resultCountList) {
+    public JsonNode allComponentsForUI(List<Component> componentList, List<Integer> resultCountList) {
         ArrayNode arrayNode = Json.mapper().createArrayNode();
         // int i = 1;
         for (int i = 0; i < componentList.size(); i++) {
@@ -547,7 +544,7 @@ public class JsonUtils {
     }
 
     public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,
-            Long personalSingleLinkCount, Long personalMultipleLinkCount) {
+            Integer personalSingleLinkCount, Integer personalMultipleLinkCount) {
         ObjectNode studyLinkSetupData = Json.mapper().createObjectNode();
         studyLinkSetupData.set("studyResultCountsPerWorker", asJsonNode(studyResultCountsPerWorker));
         studyLinkSetupData.put("personalSingleLinkCount", personalSingleLinkCount);

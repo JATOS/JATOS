@@ -35,6 +35,7 @@ public class WorkerService {
         return study.getBatchList().stream()
                 .map(Batch::getWorkerList)
                 .flatMap(Collection::stream)
+                .filter(w -> !w.getWorkerType().equals(JatosWorker.WORKER_TYPE))
                 .collect(Collectors.toSet());
     }
 

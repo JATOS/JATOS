@@ -39,12 +39,13 @@ public class StudyLinkDao extends AbstractDao {
         return jpa.em().find(StudyLink.class, id);
     }
 
-    public Long countByBatchAndWorkerType(Batch batch, String workerType) {
+    public int countByBatchAndWorkerType(Batch batch, String workerType) {
         String queryStr = "SELECT count(*) FROM StudyLink sr WHERE sr.batch = :batch AND sr.workerType = :workerType";
-        return (Long) jpa.em().createQuery(queryStr)
+        Number result = (Number) jpa.em().createQuery(queryStr)
                 .setParameter("batch", batch)
                 .setParameter("workerType", workerType)
                 .getSingleResult();
+        return result.intValue();
     }
 
     public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, String workerType) {

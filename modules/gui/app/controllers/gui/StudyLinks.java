@@ -10,6 +10,7 @@ import exceptions.gui.JatosGuiException;
 import general.gui.RequestScopeMessaging;
 import models.common.*;
 import models.common.GroupResult.GroupState;
+import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.gui.BatchProperties;
@@ -96,8 +97,7 @@ public class StudyLinks extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
-        int allWorkersSize = study.getBatchList().stream().mapToInt(b -> b.getWorkerList().size()).sum()
-                - study.getUserList().size(); // Do not count Jatos workers
+        Integer allWorkersSize = study.getBatchList().stream().mapToInt(batchDao::countWorkersWithoutJatosWorker).sum();
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
         return ok(views.html.gui.studyLinks.studyLinks.render(loggedInUser,
                 breadcrumbs, Helpers.isLocalhost(), study, allWorkersSize, request));
@@ -120,7 +120,7 @@ public class StudyLinks extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Integer resultCount = studyResultDao.countByBatch(batch);
+        Integer resultCount = studyResultDao.countByBatch(batch, JatosWorker.WORKER_TYPE);
         Integer groupCount = groupResultDao.countByBatch(batch);
         return ok(jsonUtils.getBatchByStudyForUI(batch, resultCount, groupCount));
     }
@@ -142,7 +142,7 @@ public class StudyLinks extends Controller {
 
         List<Batch> batchList = study.getBatchList();
         List<Integer> resultCountList = new ArrayList<>();
-        batchList.forEach(batch -> resultCountList.add(studyResultDao.countByBatch(batch)));
+        batchList.forEach(batch -> resultCountList.add(studyResultDao.countByBatch(batch, JatosWorker.WORKER_TYPE)));
         List<Integer> groupCountList = new ArrayList<>();
         batchList.forEach(batch -> groupCountList.add(groupResultDao.countByBatch(batch)));
         return ok(jsonUtils.allBatchesByStudyForUI(batchList, resultCountList, groupCountList));
@@ -519,10 +519,9 @@ public class StudyLinks extends Controller {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
-        Map<String, Integer> studyResultCountsPerWorker =
-                workerService.retrieveStudyResultCountsPerWorker(batch);
-        Long personalSingleLinkCount = studyLinkDao.countByBatchAndWorkerType(batch, PersonalSingleWorker.WORKER_TYPE);
-        Long personalMultipleLinkCount = studyLinkDao
+        Map<String, Integer> studyResultCountsPerWorker = workerService.retrieveStudyResultCountsPerWorker(batch);
+        Integer personalSingleLinkCount = studyLinkDao.countByBatchAndWorkerType(batch, PersonalSingleWorker.WORKER_TYPE);
+        Integer personalMultipleLinkCount = studyLinkDao
                 .countByBatchAndWorkerType(batch, PersonalMultipleWorker.WORKER_TYPE);
         JsonNode studyLinksSetupData = jsonUtils.studyLinksSetupData(batch, studyResultCountsPerWorker,
                 personalSingleLinkCount, personalMultipleLinkCount);

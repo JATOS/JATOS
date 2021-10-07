@@ -80,12 +80,15 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of StudyResults belonging to the given batch.
+     * Returns the number of StudyResults belonging to the given batch but excludes results from the given
+     * workerTypeToBeExcluded.
      */
-    public int countByBatch(Batch batch) {
-        String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch_id = :batchId";
-        Query query = jpa.em().createNativeQuery(queryStr).setParameter("batchId", batch.getId());
-        Number result = (Number) query.getSingleResult();
+    public int countByBatch(Batch batch, String workerTypeToBeExcluded) {
+        Number result = (Number) jpa.em().createQuery("SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch=:batch "
+                        + "AND sr.worker.class!=:workerType")
+                .setParameter("batch", batch)
+                .setParameter("workerType", workerTypeToBeExcluded)
+                .getSingleResult();
         return result.intValue();
     }
 
@@ -95,7 +98,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public int countByWorker(Worker worker, User user) {
         Number result = (Number) jpa.em().createQuery("SELECT COUNT(*) FROM StudyResult sr WHERE sr.worker = :worker "
-                + "AND sr.study IN (SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)")
+                        + "AND sr.study IN (SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)")
                 .setParameter("worker", worker)
                 .setParameter("username", user.getUsername())
                 .getSingleResult();
@@ -153,16 +156,19 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns paginated StudyResults that belong to the given Batch.
+     * Returns paginated StudyResults that belong to the given Batch but excludes results from the given
+     * workerTypeToBeExcluded.
      *
      * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
      * (https://stackoverflow.com/a/2826512/1278769)
      */
-    public List<StudyResult> findAllByBatch(Batch batch, int first, int max) {
-        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch", StudyResult.class)
+    public List<StudyResult> findAllByBatch(Batch batch, String workerTypeToBeExcluded, int first, int max) {
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
+                        + "AND NOT sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)", StudyResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("batch", batch)
+                .setParameter("workerType", workerTypeToBeExcluded)
                 .getResultList();
     }
 
@@ -174,7 +180,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public List<StudyResult> findAllByBatchAndWorkerType(Batch batch, String workerType, int first, int max) {
         return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
-                + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)", StudyResult.class)
+                        + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)", StudyResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("batch", batch)
@@ -191,7 +197,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public List<StudyResult> findAllByWorker(Worker worker, User user, int first, int max) {
         return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.worker = :worker AND sr.study IN "
-                + "(SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)", StudyResult.class)
+                        + "(SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)", StudyResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("worker", worker)
@@ -205,7 +211,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public List<StudyResult> findAllByGroup(GroupResult groupResult, int first, int max) {
         return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.activeGroupResult = :group "
-                + "OR sr.historyGroupResult = :group", StudyResult.class)
+                        + "OR sr.historyGroupResult = :group", StudyResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("group", groupResult)
