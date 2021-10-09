@@ -19,6 +19,7 @@ import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.stream.Collectors;
 
 /**
  * This class deals with legacy style study run links and translates them to study links.
@@ -80,7 +81,10 @@ public class LegacyStudyRuns extends Controller {
                 throw new BadRequestPublixException("Unknown worker type");
 
         }
-        return redirect(routes.PublixInterceptor.run(studyLink.getId()));
+        String queryString = request.queryString().entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue()[0])
+                .collect(Collectors.joining("&", "?", ""));
+        return redirect(routes.PublixInterceptor.run(studyLink.getId()).url() + queryString);
     }
 
     /**
