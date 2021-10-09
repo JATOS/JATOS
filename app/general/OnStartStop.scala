@@ -3,6 +3,7 @@ package general
 import general.common.{Common, JatosUpdater}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+import services.gui.StudyLinkService
 
 import java.io.File
 import javax.inject.Inject
@@ -17,13 +18,16 @@ import scala.concurrent.Future
 class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             environment: play.Environment,
                             jatosUpdater: JatosUpdater,
-                            mySQLCharsetFix: MySQLCharsetFix) {
+                            mySQLCharsetFix: MySQLCharsetFix,
+                            studyLinkService: StudyLinkService) {
 
   private val logger = Logger(this.getClass)
 
   mySQLCharsetFix.run()
   checkUpdate()
   checkStudyAssetsRootDir()
+  studyLinkService.createStudyLinksForExistingPersonalWorkers()
+
 
   logger.info("JATOS started")
   if (environment.isProd) {
@@ -40,7 +44,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   /**
     * Logs eventual update messages from the loader script and notify JatosUpdater
     */
-  private def checkUpdate() {
+  private def checkUpdate(): Unit = {
     if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
       case "success" =>
         jatosUpdater.setUpdateStateSuccess()
@@ -60,7 +64,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   /**
     * Check whether studies assets root directory exists and create if not.
     */
-  private def checkStudyAssetsRootDir() {
+  private def checkStudyAssetsRootDir(): Unit = {
     val studyAssetsRoot = new File(Common.getStudyAssetsRootPath)
     val success = studyAssetsRoot.mkdirs
     if (success) logger.info(".checkStudyAssetsRootDir: Created study assets root directory " +

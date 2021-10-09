@@ -39,6 +39,12 @@ public class StudyLinkDao extends AbstractDao {
         return jpa.em().find(StudyLink.class, id);
     }
 
+    public int countAll() {
+        Number result = (Number) jpa.em().createQuery("SELECT count(*) FROM StudyLink")
+                .getSingleResult();
+        return result.intValue();
+    }
+
     public int countByBatchAndWorkerType(Batch batch, String workerType) {
         String queryStr = "SELECT count(*) FROM StudyLink sr WHERE sr.batch = :batch AND sr.workerType = :workerType";
         Number result = (Number) jpa.em().createQuery(queryStr)
