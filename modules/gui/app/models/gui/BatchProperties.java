@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
+import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
@@ -24,7 +25,8 @@ import java.util.Set;
  * 
  * @author Kristian Lange (2015)
  */
-public class BatchProperties {
+@Constraints.Validate
+public class BatchProperties implements Constraints.Validatable<List<ValidationError>> {
 
 	public static final String ID = "id";
 	public static final String TITLE = "title";
@@ -221,6 +223,7 @@ public class BatchProperties {
 		return id + " " + title;
 	}
 
+	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
 		if (title == null || title.trim().isEmpty()) {
