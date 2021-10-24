@@ -1,7 +1,7 @@
 @(study: common.Study, request: Http.Request)
 
 <!-- Mechanical Turk Source Code Modal Template -->
-<div class="modal fade" id="mtSourceCodeModalTemplate" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="mtSourceCodeModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog" style="display: none">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -9,6 +9,7 @@
                 <h4 class="modal-title">Source Code for Mechanical Turk</h4>
             </div>
             <div class="modal-body">
+                <div class="messages"></div>
                 <p><b>Copy & paste</b> this code into the '<i>source</i>' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
                 <p class="simulation"></p>
                 <p><button class="btn btn-worker copyToClipboardButton">Copy to Clipboard&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button></p>
@@ -99,40 +100,42 @@ $('#batchTable').on('click', '.mtWorkerSourceCode', function() {
 });
 
 function showSourceCodeMTurkModal(batch, studyLinkId) {
-    var modal = $('#mtSourceCodeModalTemplate').clone();
-    $(modal).removeAttr('id');
-
     var studyLink = "@{utils.common.Helpers.getRealBaseUrl(request)}publix/" + studyLinkId;
 
     var studyPath = "publix/@study.getId()/start";
     var randomMturkWorkerId = Math.floor(Math.random() * 1000000);
     var sandboxStudyLink = studyLink + "?workerId=" + randomMturkWorkerId + "&assignmentId=123&turkSubmitTo=sandbox";
 
-    $(modal).find('.modal-title').text("Source Code for MTurk for batch '" + batch.title + "'");
+    $('#mtSourceCodeModal').find('.modal-title').text("Source Code for MTurk for batch '" + batch.title + "'");
 
     // Fill dummy variables in template source code
-    $(modal).find('.mtSourceCode').text(function() {
+    $('#mtSourceCodeModal').find('.mtSourceCode').text(function() {
         return $(this).text().replace("studyLinkDummy", studyLink);
     });
-    $(modal).find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
+    $('#mtSourceCodeModal').find('.simulation').html("To try it out you can imitate an MTurk Sandbox worker by using "
         + '(<a target="_blank" href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk">more information</a>):<br>'
         + '<div><i>' + sandboxStudyLink + '</i>'
         + '<button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">'
-        + '<span class="glyphicon glyphicon-duplicate gray-light"></span></button></div>');
+        + '<span class="glyphicon glyphicon-duplicate"></span></button></div>');
 
-    $(modal).modal('show');
+    removeAlerts("#mtSourceCodeModal");
+    if (!batch.allowedWorkerTypes.includes("@common.workers.MTWorker.WORKER_TYPE")) {
+        showWarning(`Worker type @common.workers.MTWorker.UI_WORKER_TYPE is currently not allowed in this batch`, "#mtSourceCodeModal .messages");
+    }
 
-    // Select and copy to clipboard by button
-    $(modal).on('click', '.copyToClipboardButton', function(e) {
-        var mtSourceCode = $(modal).find('.mtSourceCode').text();
-        navigator.clipboard.writeText(mtSourceCode);
-    });
-
-    $(modal).on('click', '.clipboardButton', function(e) {
-        var text = $(this).parent().text();
-        navigator.clipboard.writeText(text);
-    });
+    $('#mtSourceCodeModal').modal('show');
 }
+
+// Select and copy to clipboard by button
+$('#mtSourceCodeModal').on('click', '.copyToClipboardButton', function(e) {
+    var mtSourceCode = $('#mtSourceCodeModal').find('.mtSourceCode').text();
+    navigator.clipboard.writeText(mtSourceCode);
+});
+
+$('#mtSourceCodeModal').on('click', '.clipboardButton', function(e) {
+    var text = $(this).parent().text();
+    navigator.clipboard.writeText(text);
+});
 
 // Select and highlights a text (can't use .select() on a tag that's not a textarea)
 function selectText(textElement) {

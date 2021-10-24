@@ -36,6 +36,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String LOCKED = "locked";
     public static final String LINEAR_STUDY_FLOW = "linearStudy";
     public static final String END_REDIRECT_URL = "endRedirectUrl";
+    public static final String PRE_RUN_MSG = "preRunMsg";
     public static final String ALLOW_PREVIEW = "allowPreview";
 
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
@@ -107,6 +108,11 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
      * endPage will be shown.
      */
     private String endRedirectUrl;
+
+    /**
+     * Will be shown to the worker on the pre-run page
+     */
+    private String preRunMsg;
 
     public void setStudyId(Long studyId) {
         this.studyId = studyId;
@@ -220,6 +226,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         this.endRedirectUrl = endRedirectUrl;
     }
 
+    public String getPreRunMsg() {
+        return preRunMsg;
+    }
+
+    public void setPreRunMsg(String preRunMsg) {
+        this.preRunMsg = preRunMsg;
+    }
+
     @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
@@ -258,6 +272,9 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         }
         if (endRedirectUrl != null && !Jsoup.isValid(endRedirectUrl, Whitelist.none())) {
             errorList.add(new ValidationError(END_REDIRECT_URL, MessagesStrings.NO_HTML_ALLOWED));
+        }
+        if (preRunMsg != null && !Jsoup.isValid(preRunMsg, Whitelist.none())) {
+            errorList.add(new ValidationError(PRE_RUN_MSG, MessagesStrings.NO_HTML_ALLOWED));
         }
         return errorList.isEmpty() ? null : errorList;
     }

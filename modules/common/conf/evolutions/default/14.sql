@@ -11,6 +11,7 @@ CREATE TABLE `StudyLink` (
 ) DEFAULT CHARSET=utf8;
 
 ALTER TABLE `Study` ADD `allowPreview` tinyint(1) DEFAULT 0;
+ALTER TABLE `Study` ADD `preRunMsg` varchar(1000) DEFAULT NULL;
 ALTER TABLE `StudyResult` ADD `uuid` varchar(255);
 ALTER TABLE `StudyResult` ADD `studyLink_id` varchar(255) DEFAULT NULL;
 

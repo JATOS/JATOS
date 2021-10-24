@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Kristian Lange
@@ -128,14 +129,23 @@ public class Helpers {
     }
 
     /**
-     * Gets the value of to the given key in request's query string and trims whitespace.
+     * Gets the value of to the given parameter in request's query string and trims whitespace.
      */
-    public static String getQueryString(Http.Request request, String key) {
-        String value = request.getQueryString(key);
+    public static String getQueryParameter(Http.Request request, String parameter) {
+        String value = request.getQueryString(parameter);
         if (value != null) {
             value = value.trim();
         }
         return value;
+    }
+
+    /**
+     * Returns the whole query string of the given Request including '?'.
+     */
+    public static String getQueryString(Http.Request request) {
+        return request.queryString().entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue()[0])
+                .collect(Collectors.joining("&", "?", ""));
     }
 
     public static String humanReadableByteCount(long bytes) {

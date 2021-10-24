@@ -53,6 +53,15 @@ public class StudyResultDao extends AbstractDao {
         return !studyResult.isEmpty() ? Optional.of(studyResult.get(0)) : Optional.empty();
     }
 
+    public Optional<StudyResult> findByStudyLinkId(String studyLinkId) {
+        List<StudyResult> studyResult = jpa.em()
+                .createQuery("SELECT sr FROM StudyResult sr WHERE sr.studyLinkId =:studyLinkId", StudyResult.class)
+                .setParameter("studyLinkId", studyLinkId)
+                .setMaxResults(1)
+                .getResultList();
+        return !studyResult.isEmpty() ? Optional.of(studyResult.get(0)) : Optional.empty();
+    }
+
     /**
      * Returns the number of StudyResult rows
      */

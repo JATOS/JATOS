@@ -19,7 +19,6 @@ import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.stream.Collectors;
 
 /**
  * This class deals with legacy style study run links and translates them to study links.
@@ -81,10 +80,7 @@ public class LegacyStudyRuns extends Controller {
                 throw new BadRequestPublixException("Unknown worker type");
 
         }
-        String queryString = request.queryString().entrySet().stream()
-                .map(e -> e.getKey() + "=" + e.getValue()[0])
-                .collect(Collectors.joining("&", "?", ""));
-        return redirect(routes.PublixInterceptor.run(studyLink.getId()).url() + queryString);
+        return redirect(routes.PublixInterceptor.run(studyLink.getId()).url() + Helpers.getQueryString(request));
     }
 
     /**
@@ -94,33 +90,33 @@ public class LegacyStudyRuns extends Controller {
      */
     private String getWorkerTypeFromQuery(Http.Request request) throws BadRequestPublixException {
         // Check for Personal Single Worker
-        String personalSingleWorkerId = Helpers.getQueryString(request, "personalSingleWorkerId");
+        String personalSingleWorkerId = Helpers.getQueryParameter(request, "personalSingleWorkerId");
         if (personalSingleWorkerId != null) {
             return PersonalSingleWorker.WORKER_TYPE;
         }
         // Check for Personal Multiple Worker
-        String pmWorkerId = Helpers.getQueryString(request, "personalMultipleWorkerId");
+        String pmWorkerId = Helpers.getQueryParameter(request, "personalMultipleWorkerId");
         if (pmWorkerId != null) {
             return PersonalMultipleWorker.WORKER_TYPE;
         }
         // Check for General Single Worker
-        String generalSingle = Helpers.getQueryString(request, "generalSingle");
+        String generalSingle = Helpers.getQueryParameter(request, "generalSingle");
         if (generalSingle != null) {
             return GeneralSingleWorker.WORKER_TYPE;
         }
         // Check for General Multiple Worker
-        String generalMultiple = Helpers.getQueryString(request, "generalMultiple");
+        String generalMultiple = Helpers.getQueryParameter(request, "generalMultiple");
         if (generalMultiple != null) {
             return GeneralMultipleWorker.WORKER_TYPE;
         }
         // Check for MT worker and MT Sandbox worker
-        String mtWorkerId = Helpers.getQueryString(request, "workerId");
-        String mtAssignmentId = Helpers.getQueryString(request, "assignmentId");
+        String mtWorkerId = Helpers.getQueryParameter(request, "workerId");
+        String mtAssignmentId = Helpers.getQueryParameter(request, "assignmentId");
         if (mtWorkerId != null && mtAssignmentId != null) {
             return retrieveMTWorkerType(request);
         }
         // Check for MT (sandbox) requester preview link
-        String mtMode = Helpers.getQueryString(request, "mode");
+        String mtMode = Helpers.getQueryParameter(request, "mode");
         if ("requester-preview".equals(mtMode)) {
             throw new BadRequestPublixException("You cannot start a study from a MTurk requester preview");
         }
@@ -159,10 +155,10 @@ public class LegacyStudyRuns extends Controller {
         String workerIdStr;
         switch (workerType) {
             case PersonalSingleWorker.WORKER_TYPE:
-                workerIdStr = Helpers.getQueryString(request, "personalSingleWorkerId");
+                workerIdStr = Helpers.getQueryParameter(request, "personalSingleWorkerId");
                 break;
             case PersonalMultipleWorker.WORKER_TYPE:
-                workerIdStr = Helpers.getQueryString(request, "personalMultipleWorkerId");
+                workerIdStr = Helpers.getQueryParameter(request, "personalMultipleWorkerId");
                 break;
             default:
                 throw new BadRequestPublixException("Unknown worker type");

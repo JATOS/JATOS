@@ -7,7 +7,7 @@
 
 GET     /publix/:studyId/start                                      @controllers.publix.LegacyStudyRuns.transformToStudyLink(request: Request, studyId: Long, batchId: Long)
 
-GET     /publix/run                                                 @controllers.publix.PublixInterceptor.runByCode()
+GET     /publix/run                                                 @controllers.publix.PublixInterceptor.preRun(request: Request, code: String ?= null)
 GET     /publix/:studyLinkId                                        @controllers.publix.PublixInterceptor.run(request: Request, studyLinkId: String)
 GET     /publix/:studyResultUuid/end                                @controllers.publix.PublixInterceptor.finishStudy(request: Request, studyResultUuid: String, successful: Boolean ?= true, message: String ?= null)
 GET     /publix/:studyResultUuid/abort                              @controllers.publix.PublixInterceptor.abortStudy(request: Request, studyResultUuid: String, message: String ?= null)

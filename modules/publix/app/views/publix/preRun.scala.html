@@ -1,0 +1,113 @@
+@(studyLinkId: String, validStudyLink: Boolean, queryString: String, preRunMsg: String, errMsg: String)
+
+@main("JATOS") {
+
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+.wrapper {
+  height: 100%;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.msg {
+    color: #999;
+    font-family: Sans-Serif;
+    font-size: 26px;
+    margin: 0 50px;
+}
+
+input[type=text], select {
+  font-size: 20px;
+  padding: 12px 20px;
+  margin: 12px 0 0 0;
+  border: 1px solid #999;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit], button {
+  color: white;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  padding: 12px 20px;
+  margin: 12px 0 0 0;
+  background-color: #337ab7;
+  border: 1px solid #2e6da4;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover, button:hover {
+  filter: brightness(0.8);
+}
+
+
+
+</style>
+
+<div class="wrapper">
+    <div class="center">
+        <div class="msg"></div>
+        <div id="confirm" style="display: none;">
+            <div class="center">
+                <button id="runButton" type="button">&nbsp;▶&nbsp;</button>
+            </div>
+        </div>
+        <div id="enterStudyLinkId" style="display: none;">
+            <form class="center" onsubmit="run(event)">
+                <input type="text" id="studyLinkId" name="studyLinkId" autofocus required minlength="11" maxlength="11">
+                <input type="submit" name="submit" value="&nbsp;▶&nbsp;">
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const studyLinkId = "@studyLinkId";
+    const validStudyLink = @validStudyLink;
+    const preRunMsg = `@Html(preRunMsg)`.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    const errMsg = "@errMsg";
+
+    if (validStudyLink) {
+        document.querySelector('#confirm').style.display = 'block';
+        if (preRunMsg) {
+            document.querySelector('.msg').innerHTML = preRunMsg;
+        }
+        document.querySelector('#runButton').addEventListener('click', function() {
+            event.preventDefault();
+            window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyLinkId + "@Html(queryString)";
+        });
+    }
+
+    if (!studyLinkId) {
+        document.querySelector('.msg').innerHTML = "Enter your code and press the ▶ button";
+        document.querySelector('#enterStudyLinkId').style.display = 'block';
+    }
+
+    if (errMsg) {
+        document.querySelector('.msg').innerHTML = errMsg;
+    }
+
+    function run(event) {
+        event.preventDefault();
+        const studyLinkId = document.querySelector("#studyLinkId").value;
+        window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyLinkId + "@Html(queryString)";
+    }
+
+
+
+</script>
+}

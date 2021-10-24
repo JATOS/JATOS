@@ -50,7 +50,14 @@
                     <div class="form-group row">
                         <label class="control-label col-xs-2" for="studyComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
                         <div class="col-xs-10">
-                            <textarea rows="3" class="form-control @models.gui.StudyProperties.COMMENTS" id="studyComments" name="@models.gui.StudyProperties.COMMENTS" placeholder="Your comments"></textarea>
+                            <textarea rows="2" class="form-control @models.gui.StudyProperties.COMMENTS" id="studyComments" name="@models.gui.StudyProperties.COMMENTS" placeholder="Your comments"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="control-label col-xs-2" for="preRunMsg">Pre-run Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="This message can be shown to the worker before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent workers to prematurely start the study. "></span></label>
+                        <div class="col-xs-10">
+                            <textarea rows="2" class="form-control @models.gui.StudyProperties.PRE_RUN_MSG" id="preRunMsg" name="@models.gui.StudyProperties.PRE_RUN_MSG" placeholder=""></textarea>
                         </div>
                     </div>
 
@@ -190,6 +197,8 @@ function fillStudyPropertiesForm(properties) {
     $('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').val(comments);
     var endRedirectUrl = (properties['@models.gui.StudyProperties.END_REDIRECT_URL']) ? properties['@models.gui.StudyProperties.END_REDIRECT_URL'] : "";
     $('#studyPropertiesModal .@models.gui.StudyProperties.END_REDIRECT_URL').val(endRedirectUrl);
+    var preRunMsg = (properties['@models.gui.StudyProperties.PRE_RUN_MSG']) ? properties['@models.gui.StudyProperties.PRE_RUN_MSG'] : "";
+    $('#studyPropertiesModal .@models.gui.StudyProperties.PRE_RUN_MSG').val(preRunMsg);
     if (!studyJsonDataEditor) setupStudyJsonDataEditor();
     try {
         var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";

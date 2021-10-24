@@ -1,5 +1,6 @@
 package controllers.publix;
 
+import com.google.common.base.Strings;
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
 import controllers.publix.workers.*;
 import daos.common.ComponentDao;
@@ -20,20 +21,22 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixHelpers;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Interceptor for Publix: handles all requests for JATOS' public API (Publix) and forwards them to one of the
  * implementations of the API (all extend Publix). Each implementation deals with different workers (e.g. workers from
- * MechTurk, Personal Multiple workers).
+ * MTurk, Personal Multiple workers).
  *
- * A study run starts by calling the 'run' endpoint with the study link ID. The study link ID determines the worker type
- * and which Publix implementation will be called. All subsequent requests of this study run need at least the study
- * result UUID and often the component UUID too.
+ * A study run starts with the 'run' method that takes the study link ID as a parameter. The study link ID determines
+ * the worker type and which Publix implementation will be called. All subsequent requests of this study run need at
+ * least the study result UUID and often the component UUID too.
  *
  * @author Kristian Lange
  */
@@ -58,9 +61,40 @@ public class PublixInterceptor extends Controller {
         this.application = application;
     }
 
+    /**
+     * Shows a page prior to a study run with different purpose.
+     * 1. Lets worker enter the study link ID
+     * 2. Takes the study link ID as a query parameter. An individual text defined in the study properties can be shown.
+     * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
+     */
     @Transactional
-    public Result runByCode() {
-        return ok(views.html.publix.runByCode.render());
+    public Result preRun(Http.Request request, String studyLinkId) {
+        String preRunMsg = null;
+        String errMsg = null;
+        boolean validStudyLink = false;
+
+        if (!Strings.isNullOrEmpty(studyLinkId)) {
+            StudyLink studyLink = studyLinkDao.findById(studyLinkId);
+            if (studyLink != null) {
+                validStudyLink = true;
+                preRunMsg = studyLink.getBatch().getStudy().getPreRunMsg();
+
+                String workerType = studyLink.getWorkerType();
+                if (workerType.equals(PersonalSingleWorker.WORKER_TYPE)
+                        || workerType.equals(GeneralSingleWorker.WORKER_TYPE)) {
+                    Optional<StudyResult> srOptional = studyResultDao.findByStudyLinkId(studyLinkId);
+                    if (srOptional.isPresent() && !srOptional.get().getStudyState().equals(
+                            StudyResult.StudyState.PRE)) {
+                        validStudyLink = false;
+                        errMsg = "This study link is valid only once.";
+                    }
+                }
+            } else {
+                errMsg = "No valid study code";
+            }
+        }
+        return ok(views.html.publix.preRun.render(studyLinkId, validStudyLink, Helpers.getQueryString(request),
+                preRunMsg, errMsg));
     }
 
     @Transactional

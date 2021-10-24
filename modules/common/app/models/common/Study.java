@@ -125,6 +125,12 @@ public class Study {
     private String endRedirectUrl;
 
     /**
+     * Will be shown to the worker on the pre-run page
+     */
+    @JsonView({ JsonUtils.JsonForIO.class })
+    private String preRunMsg;
+
+    /**
      * List of users that are users of this study (have access rights). The relationship is bidirectional.
      */
     @JsonIgnore
@@ -268,6 +274,22 @@ public class Study {
         this.jsonData = JsonUtils.asStringForDB(jsonData);
     }
 
+    public String getEndRedirectUrl() {
+        return endRedirectUrl;
+    }
+
+    public void setEndRedirectUrl(String endRedirectUrl) {
+        this.endRedirectUrl = endRedirectUrl;
+    }
+
+    public String getPreRunMsg() {
+        return preRunMsg;
+    }
+
+    public void setPreRunMsg(String preRunMsg) {
+        this.preRunMsg = preRunMsg;
+    }
+
     public void setUserList(Set<User> userList) {
         this.userList = userList;
     }
@@ -380,14 +402,6 @@ public class Study {
     @JsonIgnore
     public List<Batch> getDefaultBatchList() {
         return Lists.newArrayList(this.batchList.get(0));
-    }
-
-    public String getEndRedirectUrl() {
-        return endRedirectUrl;
-    }
-
-    public void setEndRedirectUrl(String endRedirectUrl) {
-        this.endRedirectUrl = endRedirectUrl;
     }
 
     @Override
