@@ -6,6 +6,7 @@ import play.api.inject.ApplicationLifecycle
 import services.gui.StudyLinkService
 
 import java.io.File
+import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,23 +24,46 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
 
   private val logger = Logger(this.getClass)
 
-  mySQLCharsetFix.run()
-  checkUpdate()
-  checkStudyAssetsRootDir()
-  studyLinkService.createStudyLinksForExistingPersonalWorkers()
 
+  if (!isPortInUse) start()
+  else println(s"Error - Could not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}")
 
-  logger.info("JATOS started")
-  if (environment.isProd) {
-    println("started")
-    println(s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
-      s"browser's address bar")
+  private def start(): Unit = {
+    mySQLCharsetFix.run()
+    checkUpdate()
+    checkStudyAssetsRootDir()
+    studyLinkService.createStudyLinksForExistingPersonalWorkers()
+
+    logger.info("JATOS started")
+
+    if (environment.isProd) {
+      println("started")
+      println(s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
+        s"browser's address bar")
+    }
   }
 
   lifecycle.addStopHook(() => Future {
     logger.info("JATOS shutdown")
     if (environment.isProd) println("JATOS stopped")
   })
+
+  /**
+    * Check if the address (IP:port) is already in use
+    * https://stackoverflow.com/a/48828373/1278769
+    */
+  private def isPortInUse: Boolean = {
+    var socket: ServerSocket = null
+    try {
+      socket = new ServerSocket()
+      socket.setReuseAddress(false) // setReuseAddress(false) is required only on OSX
+      socket.bind(new InetSocketAddress(InetAddress.getByName(Common.getJatosHttpAddress), Common.getJatosHttpPort), 1)
+      false
+    } catch {
+      case _: BindException =>
+        true
+    } finally if (socket != null) socket.close()
+  }
 
   /**
     * Logs eventual update messages from the loader script and notify JatosUpdater
