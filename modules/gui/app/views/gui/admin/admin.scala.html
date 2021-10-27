@@ -501,6 +501,10 @@ function fillLatestUsers(latestUsers) {
 }
 
 function fillLatestStudyRuns(latestStudyRuns) {
+    if (latestStudyRuns.length == 0) {
+        return '<tr><td class="text-center" colspan="3">no data yet</td></tr>';
+    }
+
     var htmlArray = [];
     latestStudyRuns.forEach(function(studyRun) {
         var trimmedStudyTitle = studyRun.studyTitle.length > 50
