@@ -85,6 +85,8 @@ input[type=submit]:hover, button:hover {
         document.querySelector('#confirm').style.display = 'block';
         if (preRunMsg) {
             document.querySelector('.msg').innerHTML = preRunMsg;
+        } else {
+            document.querySelector('.msg').innerHTML = "By pressing on the ' ▶ ' button you will start the experiment.";
         }
         document.querySelector('#runButton').addEventListener('click', function() {
             event.preventDefault();
