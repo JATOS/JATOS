@@ -48,7 +48,7 @@ public class BatchDao extends AbstractDao {
 						+ ")")
 				.setParameter("batchId", batch.getId())
 				.getSingleResult();
-		return result.intValue();
+		return result != null ? result.intValue() : 0;
 	}
 
 }

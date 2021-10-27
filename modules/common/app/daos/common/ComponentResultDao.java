@@ -54,7 +54,7 @@ public class ComponentResultDao extends AbstractDao {
         String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.component=:component";
         Query query = jpa.em().createQuery(queryStr);
         Number result = (Number) query.setParameter("component", component).getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -64,7 +64,7 @@ public class ComponentResultDao extends AbstractDao {
         String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.studyResult=:studyResult";
         Query query = jpa.em().createQuery(queryStr);
         Number result = (Number) query.setParameter("studyResult", studyResult).getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     public List<ComponentResult> findAllByComponent(Component component) {

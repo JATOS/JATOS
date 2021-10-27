@@ -60,7 +60,7 @@ public class UserDao extends AbstractDao {
      */
     public int count() {
         Number result = (Number) jpa.em().createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
 }

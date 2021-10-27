@@ -67,7 +67,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public int count() {
         Number result = (Number) jpa.em().createQuery("SELECT COUNT(sr) FROM StudyResult sr").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -75,7 +75,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public int countTotal() {
         Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM StudyResult").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -85,7 +85,7 @@ public class StudyResultDao extends AbstractDao {
         String queryStr = "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.study=:study";
         Query query = jpa.em().createQuery(queryStr);
         Number result = (Number) query.setParameter("study", study).getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -98,7 +98,7 @@ public class StudyResultDao extends AbstractDao {
                 .setParameter("batch", batch)
                 .setParameter("workerType", workerTypeToBeExcluded)
                 .getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -111,7 +111,7 @@ public class StudyResultDao extends AbstractDao {
                 .setParameter("worker", worker)
                 .setParameter("username", user.getUsername())
                 .getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -122,7 +122,7 @@ public class StudyResultDao extends AbstractDao {
                 + "OR sr.historyGroupMember_id = :groupId";
         Query query = jpa.em().createNativeQuery(queryStr).setParameter("groupId", groupResult.getId());
         Number result = (Number) query.getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -135,7 +135,7 @@ public class StudyResultDao extends AbstractDao {
                 .setParameter("batchId", batch.getId())
                 .setParameter("workerType", workerType);
         Number result = (Number) query.getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     public List<StudyResult> findAllByStudy(Study study) {

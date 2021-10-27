@@ -76,7 +76,7 @@ public class StudyDao extends AbstractDao {
      */
     public int count() {
         Number result = (Number) jpa.em().createQuery("SELECT COUNT(s) FROM Study s").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -84,7 +84,7 @@ public class StudyDao extends AbstractDao {
      */
     public int countTotal() {
         Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM Study").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
 }

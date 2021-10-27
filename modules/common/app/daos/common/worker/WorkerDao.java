@@ -49,7 +49,7 @@ public class WorkerDao extends AbstractDao {
      */
     public int count() {
         Number result = (Number) jpa.em().createQuery("SELECT COUNT(w) FROM Worker w").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**
@@ -57,7 +57,7 @@ public class WorkerDao extends AbstractDao {
      */
     public int countTotal() {
         Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM Worker").getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
 }

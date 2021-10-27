@@ -57,7 +57,7 @@ public class GroupResultDao extends AbstractDao {
         String queryStr = "SELECT COUNT(*) FROM GroupResult gr WHERE gr.batch=:batch";
         Query query = jpa.em().createQuery(queryStr).setParameter("batch", batch);
         Number result = (Number) query.getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     /**

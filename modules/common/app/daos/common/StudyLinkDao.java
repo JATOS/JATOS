@@ -42,7 +42,7 @@ public class StudyLinkDao extends AbstractDao {
     public int countAll() {
         Number result = (Number) jpa.em().createQuery("SELECT count(*) FROM StudyLink")
                 .getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     public int countByBatchAndWorkerType(Batch batch, String workerType) {
@@ -51,7 +51,7 @@ public class StudyLinkDao extends AbstractDao {
                 .setParameter("batch", batch)
                 .setParameter("workerType", workerType)
                 .getSingleResult();
-        return result.intValue();
+        return result != null ? result.intValue() : 0;
     }
 
     public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, String workerType) {
