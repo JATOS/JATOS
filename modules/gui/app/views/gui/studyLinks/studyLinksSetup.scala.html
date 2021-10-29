@@ -458,19 +458,16 @@ function fillStudyLinksTable(batch, workerType) {
             {
                 "data": "studyLinkId",
                 "render": function(studyLinkId, type, row) {
-                    return `<span class="directLink">
+                    return `<div class="directLink">
                         <span>@utils.common.Helpers.getRealBaseUrl(request)publix/${studyLinkId}</span>
-                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">
-                        <span class="glyphicon glyphicon-duplicate"></span></button>
-                        <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link.">
-                        <span class="glyphicon glyphicon-qrcode"></span></button>
-                        </span><span class="confirmLink" style="display: none">
+                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
+                        <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
+                        </div>
+                        <div class="confirmLink">
                         <span>@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=${studyLinkId}</span>
-                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">
-                        <span class="glyphicon glyphicon-duplicate"></span></button>
-                        <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link.">
-                        <span class="glyphicon glyphicon-qrcode"></span></button>
-                        </span>`;
+                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
+                        <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
+                        </div>`;
                 }
             },
             {
@@ -502,12 +499,12 @@ function fillStudyLinksTable(batch, workerType) {
 }
 
 function showDirectOrConfirmStudyLink() {
-    if ($('button.directLink').hasClass('active')) {
-        $('span.directLink').show();
-        $('span.confirmLink').hide();
+    if ($('th button.directLink').hasClass('active')) {
+        $('td div.directLink').removeClass('hideKeepWidth');
+        $('td div.confirmLink').addClass('hideKeepWidth');
     } else {
-        $('span.directLink').hide();
-        $('span.confirmLink').show();
+        $('td div.directLink').addClass('hideKeepWidth');
+        $('td div.confirmLink').removeClass('hideKeepWidth');
     }
 }
 
@@ -760,25 +757,13 @@ function showStudyLinkGeneralMultipleModal(batch) {
 }
 
 function showStudyLinksDisplayModal(title, preText, studyLinkIds, postText, warning) {
-    var directLinkUrls = studyLinkIds.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/' + l);
-    var confirmLinkUrls = studyLinkIds.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=' + l);
-
     var htmlPreText =
         `<div class="btn-group btn-toggle">
             <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
             <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a pre-run page. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
         </div>
         <p>${preText}</p>`;
-    var htmlUrl = `<div class="well linkUrls">
-        <span class="directLink">${directLinkUrls.join('<br>\n')}</span>
-        <span class="confirmLink" style="display: none">${confirmLinkUrls.join('<br>\n')}</span>`;
-    if (studyLinkIds.length == 1) {
-        htmlUrl = htmlUrl + `<button type="button" class="btn qrCodeButton btn-xs pull-right" data-toggle="tooltip" title="Show QR code for this link.">
-            QR code&nbsp;<span class="glyphicon glyphicon-qrcode"></span></button>`;
-    }
-    htmlUrl = htmlUrl + `<button type="button" class="btn clipboardButton btn-xs pull-right" data-toggle="tooltip" title="Copy this link to the clipboard.">
-        Copy&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button>`;
-    htmlUrl = htmlUrl + `</div>`;
+    var htmlUrl = '<div class="well linkUrls">' + generateStudyLinksHtml(studyLinkIds) + '</div>';
 
     removeAlerts("#studyLinksDisplayModal");
     if (warning) showWarning(warning, "#studyLinksDisplayModal .messages");
@@ -788,17 +773,29 @@ function showStudyLinksDisplayModal(title, preText, studyLinkIds, postText, warn
     $('#studyLinksDisplayModal').find('.modal-title').text(title);
     $('#studyLinksDisplayModal').find('.content').html(content);
     $('#studyLinksDisplayModal').modal('show');
-    showDirectOrConfirmStudyLink();
+    //showDirectOrConfirmStudyLink();
     $('#studyLinksDisplayModal .btn-toggle').click(toggleDirectAndConfirmLink);
 }
 
+function generateStudyLinksHtml(studyLinkIds) {
+    var directLinkUrls = studyLinkIds.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/' + l);
+    var confirmLinkUrls = studyLinkIds.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=' + l);
+    var qrButtonHtml = "";
+    if (studyLinkIds.length == 1) {
+        qrButtonHtml = `<button type="button" class="btn qrCodeButton btn-xs pull-right" data-toggle="tooltip" title="Show QR code for this link.">QR code&nbsp;<span class="glyphicon glyphicon-qrcode"></span></button>`;
+    }
+    var clipboardButtonHtml = `<button type="button" class="btn clipboardButton btn-xs pull-right" data-toggle="tooltip" title="Copy this link to the clipboard.">Copy&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button>`;
+    return `<div class="directLink"><span>${directLinkUrls.join('<br>\n')}</span>${qrButtonHtml}${clipboardButtonHtml}</div>
+        <div class="confirmLink hideKeepWidth"><span>${confirmLinkUrls.join('<br>\n')}</span>${qrButtonHtml}${clipboardButtonHtml}</div>`;
+}
+
 $('#studyLinksDisplayModal, #studyLinksModal').on('click', '.clipboardButton', function(e) {
-    var text = $(this).parent().find('td, span:visible').text();
+    var text = $(this).parent().find('span').text();
     navigator.clipboard.writeText(text);
 });
 
 $('#studyLinksDisplayModal, #studyLinksModal').on('click', '.qrCodeButton', function(e) {
-    var url = $(this).parent().find('span:visible').text();
+    var url = $(this).parent().find('span').text();
     showQRCode(url);
 });
 
@@ -821,6 +818,7 @@ function showQRCode(url) {
 
 $('#studyLinksModal .btn-toggle').click(toggleDirectAndConfirmLink);
 
+// This function has to work in #studyLinksDisplayModal and #studyLinksModal
 function toggleDirectAndConfirmLink(e) {
     e.stopPropagation();
 
@@ -831,11 +829,15 @@ function toggleDirectAndConfirmLink(e) {
     $(this).find('.btn').toggleClass('btn-default');
 
     if ($(this).find('button.directLink').hasClass('active')) {
-        $(this).parents('.modal').find('span.directLink').show();
-        $(this).parents('.modal').find('span.confirmLink').hide();
+        $(this).parents('.modal').find('div.directLink').removeClass('hideKeepWidth');
+        $(this).parents('.modal').find('.linkUrls div.directLink button').addClass('pull-right');
+        $(this).parents('.modal').find('div.confirmLink').addClass('hideKeepWidth');
+        $(this).parents('.modal').find('.linkUrls div.confirmLink button').removeClass('pull-right');
     } else {
-        $(this).parents('.modal').find('span.directLink').hide();
-        $(this).parents('.modal').find('span.confirmLink').show();
+        $(this).parents('.modal').find('div.directLink').addClass('hideKeepWidth');
+        $(this).parents('.modal').find('.linkUrls div.directLink button').removeClass('pull-right');
+        $(this).parents('.modal').find('div.confirmLink').removeClass('hideKeepWidth');
+        $(this).parents('.modal').find('.linkUrls div.confirmLink button').addClass('pull-right');
     }
 }
 
