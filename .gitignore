@@ -33,3 +33,4 @@ org.scala-ide.sdt.core.prefs
 package.json
 jatos.mv.db
 jatos.trace.db
+node_modules
