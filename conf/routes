@@ -10,7 +10,7 @@ GET     /favicon-16x16.png                 controllers.Assets.at(path="/public",
 GET     /favicon-32x32.png                 controllers.Assets.at(path="/public", file="favicon-32x32.png")
 GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
 GET     /assets/javascripts/jatos.js       controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.js")
-GET     /assets/javascripts/jatos-3.5.2.js controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos-3.5.2.js")
+GET     /assets/javascripts/jatos.js.map   controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.js.map")
 GET     /assets/*file                      controllers.Assets.at(path="/public", file)
 GET     /assets/*file                      controllers.Assets.versioned(path="/public", file: Asset)
 
