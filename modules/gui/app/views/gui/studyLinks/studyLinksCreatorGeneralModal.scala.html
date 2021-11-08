@@ -23,7 +23,7 @@
                                 </ul>
                             </div>
                         </div>
-                        <div class="allowedTypesInfo col-xs-offset-5 col-xs-7">
+                        <div class="allowedWorkerTypesInfo col-xs-offset-5 col-xs-7">
                             <!-- filled dynamically -->
                         </div>
                     </div>
@@ -69,7 +69,7 @@ $('#studyLinksCreatorGeneralButton').click(function(event) {
         if (index == 0) {
             $('#studyLinksCreatorGeneralModal .chooseBatch button:first').text(batch.title);
             $('#studyLinksCreatorGeneralModal .chooseBatch button:first').data(batch);
-            showAllowedTypesInfo(batch);
+            showAllowedWorkerTypesInfo(batch);
         }
     });
 
@@ -89,19 +89,18 @@ $('#studyLinksCreatorGeneralButton').click(function(event) {
 $('#studyLinksCreatorGeneralModal .dropdown-menu').on('click', 'a', function(e) {
     $(this).closest('.btn-group').find('button:first').html($(this).html());
     $(this).closest('.btn-group').find('button:first').data($(this).data());
-    if ($(this).data().allowedTypes) {
-        showAllowedTypesInfo($(this).data());
+    if ($(this).data().allowedWorkerTypes) {
+        showAllowedWorkerTypesInfo($(this).data());
     }
 });
 
-function showAllowedTypesInfo(currentBatch) {
-    var allowedTypes = [];
-    $.each(currentBatch.allowedTypes, function(index, allowedType) {
-        allowedTypes.push(getUIWorkerTypeWithGlyphicon(allowedType));
-    });
+function showAllowedWorkerTypesInfo(currentBatch) {
+    var allowedWorkerTypes = currentBatch.allowedWorkerTypes
+            .filter(t => t !== '@common.workers.JatosWorker.WORKER_TYPE')
+            .map(getUIWorkerTypeWithGlyphicon);
     var html = 'In batch "' + currentBatch.title + '"'
-        + ' the currently allowed types are: ' + allowedTypes.join(", ");
-    $("#studyLinksCreatorGeneralModal .allowedTypesInfo").html(html);
+        + ' the currently allowed types are: ' + allowedWorkerTypes.join(", ");
+    $("#studyLinksCreatorGeneralModal .allowedWorkerTypesInfo").html(html);
 }
 
 $('#studyLinksCreatorGeneralModal').on('click', '.confirmed', function(e) {
