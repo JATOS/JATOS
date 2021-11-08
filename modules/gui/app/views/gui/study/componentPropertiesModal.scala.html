@@ -69,7 +69,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                     <input type="submit" name="@controllers.gui.Components.EDIT_SUBMIT_NAME" class="confirmed btn btn-component @controllers.gui.Components.EDIT_SAVE" value="@controllers.gui.Components.EDIT_SAVE">
-                    <button type="button" class="confirmed btn btn-component @controllers.gui.Components.EDIT_SAVE_AND_RUN">@controllers.gui.Components.EDIT_SAVE_AND_RUN</button>
                 </div>
             </form>
         </div>
@@ -112,7 +111,6 @@ $('#studyToolbar').on('click', '#createComponentLink', function() {
     $('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').hide();
     if (!componentJsonDataEditor) setupComponentJsonDataEditor();
     $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
-    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Create & Run");
     $('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
     $("#componentPropertiesForm").attr("action", "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/component");
     $('#componentPropertiesModal').modal('show');
@@ -142,9 +140,7 @@ function fillComponentPropertiesForm(properties) {
         componentJsonDataEditor.getSession().setValue("");
     }
     $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Save");
-    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Save & Run");
     $('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", studyLocked);
-    $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').attr("disabled", studyLocked);
     if (studyLocked) {
         showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#componentPropertiesModal .messages");
     }
@@ -195,15 +191,14 @@ $("#componentPropertiesForm .prettyButton").click(function(event) {
     }
 });
 
-$("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_RUN, .@controllers.gui.Components.EDIT_SAVE', function(event) {
+$("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE', function(event) {
     event.preventDefault();
 
     var oldFileName = $('#componentPropertiesModal').data()['@models.gui.ComponentProperties.HTML_FILE_PATH'];
     var oldFileExists = $('#componentPropertiesModal').data()['@models.gui.ComponentProperties.HTML_FILE_EXISTS'];
     var newFileName = $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val().trim();
-    var saveAndRun = $(event.target).hasClass("@controllers.gui.Components.EDIT_SAVE_AND_RUN");
     if (oldFileName === undefined || !oldFileExists || oldFileName == newFileName) {
-        submitComponentPropertiesForm(saveAndRun);
+        submitComponentPropertiesForm();
     } else {
         var htmlText = "<p>The HTML file linked to this component will be renamed from <b>" + oldFileName + "</b> to <b>" + newFileName + "</b>.</p>";
         $('#htmlFileNameConfirmationModal .modal-body .modalText').html(htmlText);
@@ -214,12 +209,12 @@ $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAV
             // Put the checkbox result into the properties form
             var keepHtmlFileName = $('#htmlFileNameConfirmationModal .keepHtmlFileName').prop('checked');
             $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_RENAME').prop('checked', !keepHtmlFileName);
-            submitComponentPropertiesForm(saveAndRun);
+            submitComponentPropertiesForm();
         });
     }
 });
 
-function submitComponentPropertiesForm(saveAndRun) {
+function submitComponentPropertiesForm() {
     // Put JSON from editor into textarea to let it be picked up by form.serialize
     var jsonData = componentJsonDataEditor.getSession().getValue();
     $("#componentPropertiesModal textarea.@models.gui.ComponentProperties.JSON_DATA").val(jsonData);
@@ -228,15 +223,11 @@ function submitComponentPropertiesForm(saveAndRun) {
         url : $("#componentPropertiesForm").attr("action"),
         data : $('#componentPropertiesForm').serialize(),
         success : function(response) {
-            if (saveAndRun) {
-                window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/" + response + "/run";
-            } else {
-                removeAlerts("#componentPropertiesModal");
-                removeFormErrors("#componentPropertiesModal");
-                $('#componentPropertiesModal').modal('hide');
-                fillSidebar();
-                componentsTable.ajax.reload();
-            }
+            removeAlerts("#componentPropertiesModal");
+            removeFormErrors("#componentPropertiesModal");
+            $('#componentPropertiesModal').modal('hide');
+            fillSidebar();
+            componentsTable.ajax.reload();
         },
         error : function(response) {
             removeAlerts("#componentPropertiesModal");

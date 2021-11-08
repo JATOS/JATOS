@@ -39,7 +39,6 @@ public class Components extends Controller {
 
     public static final String EDIT_SUBMIT_NAME = "action";
     public static final String EDIT_SAVE = "save";
-    public static final String EDIT_SAVE_AND_RUN = "saveAndRun";
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
