@@ -131,7 +131,7 @@
 
 <!-- Study link Modal (Personal Single or Personal Multiple) -->
 <div id="studyLinksModal" class="modal fade" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xxl">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
@@ -161,7 +161,7 @@
                     <tr>
                         <th data-toggle="tooltip" data-placement="bottom" title="Activate / inactivate this study link - only activated links can be used to run this study">Active</th>
                         <th data-toggle="tooltip" data-placement="bottom" title="ID of the worker that belongs to this study link">Worker&nbsp;ID</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="">Study&nbsp;Code</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="This code, handed to workers, can be used in the /publix/run page to start the study.">Study&nbsp;Code</th>
                         <th>Study&nbsp;Links
                             <div class="btn-group btn-toggle">
                                 <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
@@ -169,7 +169,8 @@
                             </div>
                         </th>
                         <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of study link">Comment</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last.">Study&nbsp;Result&nbsp;State</th>
+                        <th class="state" data-toggle="tooltip" data-placement="bottom" title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last.">Study&nbsp;Result&nbsp;State</th>
+                        <th class="results" data-toggle="tooltip" data-placement="bottom" title="">Study Results</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -394,9 +395,13 @@ $('#batchTable').on('click', '.studyLinksButton', function(e) {
     if ($(this).parents('.personalSingleStudyLinksSetup').length) {
         workerType = "@common.workers.PersonalSingleWorker.WORKER_TYPE";
         workerTypeUI = "@common.workers.PersonalSingleWorker.UI_WORKER_TYPE";
+        $('#studyLinksModal th.state').text('Study Result State');
+        $('#studyLinksModal th.results').text('Study Result');
     } else if ($(this).parents('.personalMultipleStudyLinksSetup').length) {
         workerType = "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
         workerTypeUI = "@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE";
+        $('#studyLinksModal th.state').text('Study Result State (latest)');
+        $('#studyLinksModal th.results').text('Study Results');
     }
 
     $('#studyLinksModal .modal-title').text(`Study links for worker type ${workerTypeUI} in batch '${batch.title}'`);
@@ -435,11 +440,8 @@ function fillStudyLinksTable(batch, workerType) {
                 "orderable": false,
                 "width": "1px",
                 "render": function (data, type, full, meta) {
-                    var button = $('#studyLinkActiveButtonDiv button:first-child').clone();
-                    setStudyLinkRowActive(button, data.active);
-                    if (full.studyResultState !== null && full.studyResultState !== "PRE") {
-                        button.prop("disabled", true);
-                    }
+                    const button = $('#studyLinkActiveButtonDiv button:first-child').clone();
+                    setStudyLinkRowActive(button, data.active, data.studyResultState);
                     return button.prop('outerHTML');
                 }
             },
@@ -447,7 +449,7 @@ function fillStudyLinksTable(batch, workerType) {
                 "data": "workerId",
                 "width": "1%"
             },
-                        {
+            {
                 "data": "studyLinkId",
                 "render": function(studyLinkId, type, row) {
                     return `<span>${studyLinkId}</span>
@@ -479,10 +481,26 @@ function fillStudyLinksTable(batch, workerType) {
                 "render": function (data, type, full, meta) {
                     return data !== null ? data : "not yet";
                 }
+            },
+            {
+                "data": "workerId",
+                "orderable": false,
+                "width": "1%",
+                "render": function (data, type, full, meta) {
+                    const isPersonalMultiple = $('#studyLinksModal').data('workerType') == "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
+                    const name = isPersonalMultiple ? "Results" : "Result";
+                    const count = isPersonalMultiple ? full.studyResultCount : "";
+                    const button = `<a type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip"
+                        data-placement="bottom" title="Shows study results of this worker"
+                        href="@{general.common.Common.getPlayHttpContext()}jatos/worker/${data}/results">${name}
+                        <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+                        title="Number of study results that belong to this worker">${count}</span></a>`;
+                    return full.studyResultState !== null ? button : "";
+                }
             }
         ],
         "createdRow": function(row, data, index) {
-            setStudyLinkRowActive($(row).find('.activeStudyLinkButton'), data.active);
+            setStudyLinkRowActive($(row).find('.activeStudyLinkButton'), data.active, data.studyResultState);
         },
         "order": [[ 1, "desc" ]],
         "autoWidth": false,
@@ -494,7 +512,10 @@ function fillStudyLinksTable(batch, workerType) {
             "emptyTable": "No links yet",
             "search": "Search:"
         },
-        "drawCallback": showDirectOrConfirmStudyLink
+        "drawCallback": function( settings ) {
+            showDirectOrConfirmStudyLink();
+            setButtonWidthToMax("#studyLinksModal .workerResultsButton");
+        }
     });
 }
 
@@ -523,26 +544,30 @@ function toggleTablePagination() {
     $('#studyLinksModal .dataTables_paginate').toggle(!hidePaging);
 }
 
-function setStudyLinkRowActive(button, active) {
-    var studyLinkRow = $(button).closest('tr');
+function setStudyLinkRowActive(button, active, studyResultState) {
     if (active) {
-        studyLinkRow.removeClass("grayout");
         button.addClass('activeStudyLink');
         button.removeClass('btn-default');
         button.addClass('btn-worker');
-        button.attr('title', "Click to deactivate this study link (only possible if not yet used)");
+        button.attr('title', "Click to deactivate this study link");
         button.html($(button.html())
                 .removeClass('glyphicon-remove')
                 .addClass('glyphicon-ok').prop('outerHTML'));
     } else {
-        studyLinkRow.addClass("grayout");
         button.removeClass('activeStudyLink');
         button.removeClass('btn-worker');
         button.addClass('btn-default');
-        button.attr('title', "Click to activate this study link (only possible if not yet used)");
+        button.attr('title', "Click to activate this study link");
         button.html($(button.html())
                 .removeClass('glyphicon-ok')
                 .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+    const isPersonalSingle = $('#studyLinksModal').data('workerType') == "@common.workers.PersonalSingleWorker.WORKER_TYPE";
+    if (isPersonalSingle && studyResultState !== null && studyResultState !== "PRE") {
+        button.prop("disabled", true);
+        button.attr('title', "This link was already used and can't be deactivated.");
+        button.addClass("grayout");
+        return
     }
 }
 
@@ -558,7 +583,7 @@ $('#studyLinksModal').on('click', '.activeStudyLinkButton', function() {
                 + "/studyLink/" + studyLinkId + "?active=" + !active,
         type : "POST",
         success: function(active) {
-            setStudyLinkRowActive($(button), active);
+            setStudyLinkRowActive($(button), active, rowData.studyResultState);
         },
         error : function(err) {
             showError(err.responseText);
@@ -567,7 +592,9 @@ $('#studyLinksModal').on('click', '.activeStudyLinkButton', function() {
 });
 
 $('#studyLinksModal').on('click', '.refreshButton', function(e) {
+    $("#studyLinksModal .refreshButton").prop('disabled', true);
     studyLinksTable.ajax.reload();
+    setTimeout(() => $("#studyLinksModal .refreshButton").prop('disabled', false), 3000);
 });
 
 $('#studyLinksModal').on('click', '.oneNewStudyLinkButton', function(e) {

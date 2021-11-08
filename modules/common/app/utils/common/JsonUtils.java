@@ -589,6 +589,8 @@ public class JsonUtils {
                 } else {
                     studyLinkDataNode.put("studyResultState", (String) null);
                 }
+
+                studyLinkDataNode.put("studyResultCount", worker.getStudyResultList().size());
             }
             arrayNode.add(studyLinkDataNode);
         }
