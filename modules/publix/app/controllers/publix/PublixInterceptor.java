@@ -34,9 +34,9 @@ import java.util.Optional;
  * implementations of the API (all extend Publix). Each implementation deals with different workers (e.g. workers from
  * MTurk, Personal Multiple workers).
  *
- * A study run starts with the 'run' method that takes the study link ID as a parameter. The study link ID determines
- * the worker type and which Publix implementation will be called. All subsequent requests of this study run need at
- * least the study result UUID and often the component UUID too.
+ * A study run starts with the 'run' method that takes the study link ID (called study code in the GUI) as a parameter.
+ * The study link ID determines the worker type and which Publix implementation will be called. All subsequent requests
+ * of this study run need at least the study result UUID and often the component UUID too.
  *
  * @author Kristian Lange
  */
@@ -63,7 +63,7 @@ public class PublixInterceptor extends Controller {
 
     /**
      * Shows a page prior to a study run with different purpose.
-     * 1. Lets worker enter the study link ID
+     * 1. Lets worker enter the study link ID (called study code in the GUI)
      * 2. Takes the study link ID as a query parameter. An individual text defined in the study properties can be shown.
      * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
      */
