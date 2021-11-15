@@ -16,13 +16,13 @@
                 <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
                     <thead>
                         <tr>
-                            <th>Group ID</th>
+                            <th>Group ID <span class="glyphicon sortLogo gray-light"/></th>
                             <th data-toggle="tooltip" data-placement="top" title="A fixed group can't have new members join">Fixed</th>
                             <th data-toggle="tooltip" data-placement="top" title="All currently active workers (click on the workers to get to their results page)">Active Workers</th>
                             <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group (click on the workers to get to their results page)">Past Workers</th>
-                            <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server)</th>
-                            <th data-toggle="tooltip" data-placement="top" title="">End Time (Server)</th>
-                            <th data-toggle="tooltip" data-placement="top" title="Current state of the group">Group State</th>
+                            <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server) <span class="glyphicon sortLogo gray-light"/></th>
+                            <th data-toggle="tooltip" data-placement="top" title="">End Time (Server) <span class="glyphicon sortLogo gray-light"/></th>
+                            <th data-toggle="tooltip" data-placement="top" title="Current state of the group">Group State <span class="glyphicon sortLogo gray-light"/></th>
                             <th class="groupSessionDataColumn"></th>
                         </tr>
                     </thead>
@@ -114,6 +114,7 @@ function generateGroupsTable(batch) {
             },
             {
                 "data": "groupState",
+                "orderable": false,
                 "render": function (data, type, full, meta) {
                     var button = $('#groupFixedButtonDiv button:first-child').clone();
                     setFixedGroupButton(button, data);
@@ -122,10 +123,12 @@ function generateGroupsTable(batch) {
             },
             {
                 "data": "activeWorkerList",
+                "orderable": false,
                 "render": renderWorkerColumn
             },
             {
                 "data": "historyWorkerList",
+                "orderable": false,
                 "render": renderWorkerColumn
             },
             {
@@ -145,6 +148,7 @@ function generateGroupsTable(batch) {
                 "width": "1%"
             },
             {
+                "orderable": false,
                 "render" : renderGroupButtonBarColumn
             }
         ],

@@ -268,6 +268,45 @@ a:focus {
 /*
  * General Datatables stuff
  */
+table.dataTable {
+  margin-top: 30px !important;
+}
+/* Hide default sorting icon and use our own */
+table.dataTable thead .sorting:before,
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_desc:before,
+table.dataTable thead .sorting_asc_disabled:before,
+table.dataTable thead .sorting_desc_disabled:before {
+  right: 0 !important;
+  content: "" !important;
+}
+table.dataTable thead .sorting:after,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_desc:after,
+table.dataTable thead .sorting_asc_disabled:after,
+table.dataTable thead .sorting_desc_disabled:after {
+  right: 0 !important;
+  content: "" !important;
+}
+table.dataTable thead th {
+    position: relative;
+    background-image: none !important;
+    white-space: nowrap;
+}
+table.dataTable thead th.sorting .sortLogo,
+table.dataTable thead th.sorting_asc .sortLogo,
+table.dataTable thead th.sorting_desc .sortLogo {
+    font-family: 'Glyphicons Halflings' !important;
+}
+table.dataTable thead th.sorting .sortLogo:after {
+    content: "\e150" !important;
+}
+table.dataTable thead th.sorting_asc .sortLogo:after {
+    content: "\e155" !important;
+}
+table.dataTable thead th.sorting_desc .sortLogo:after {
+    content: "\e156" !important;
+}
 table.dataTable tbody tr.selected {
     color: black !important;
     background-color: #aaa !important;

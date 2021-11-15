@@ -139,37 +139,21 @@
             </div>
             <div class="modal-body">
                 <div class="messages"></div>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-worker oneNewStudyLinkButton" data-toggle="tooltip"
-                            data-placement="bottom" title="Shortcut to create just one study link without comment">
-                        <span class="glyphicon glyphicon-plus"></span>
-                        <span class="glyphicon glyphicon-link"></span>
-                    </button>
-                    <button type="button" class="btn btn-worker newStudyLinksButton" data-toggle="tooltip"
-                            data-placement="bottom" title="Create new study links">
-                        <span class="glyphicon glyphicon-plus"></span>
-                        New Study Links
-                        <span class="glyphicon glyphicon-link"></span>
-                    </button>
-                </div>
-                <button type="button" class="btn btn-worker refreshButton" data-toggle="tooltip"
-                        data-placement="bottom" title="Refresh table">
-                    <span class='glyphicon glyphicon-refresh'></span>
-                </button>
                 <table class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
                     <thead>
                     <tr>
                         <th data-toggle="tooltip" data-placement="bottom" title="Activate / inactivate this study link - only activated links can be used to run this study">Active</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="ID of the worker that belongs to this study link">Worker&nbsp;ID</th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="This code, handed to workers, can be used in the /publix/run page to start the study.">Study&nbsp;Code</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="ID of the worker that belongs to this study link">Worker&nbsp;ID <span class="glyphicon sortLogo gray-light"/></th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="This code, handed to workers, can be used in the /publix/run page to start the study.">Study&nbsp;Code <span class="glyphicon sortLogo gray-light"/></th>
                         <th>Study&nbsp;Links
                             <div class="btn-group btn-toggle">
                                 <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
                                 <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a pre-run page. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
                             </div>
+                            &nbsp;<span class="glyphicon sortLogo gray-light"/>
                         </th>
-                        <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of study link">Comment</th>
-                        <th class="state" data-toggle="tooltip" data-placement="bottom" title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last.">Study&nbsp;Result&nbsp;State</th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of study link">Comment <span class="glyphicon sortLogo gray-light"/></th>
+                        <th data-toggle="tooltip" data-placement="bottom" title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last."><span class="state">Study&nbsp;Result&nbsp;State</span> <span class="glyphicon sortLogo gray-light"/></th>
                         <th class="results" data-toggle="tooltip" data-placement="bottom" title="">Study Results</th>
                     </tr>
                     </thead>
@@ -395,12 +379,12 @@ $('#batchTable').on('click', '.studyLinksButton', function(e) {
     if ($(this).parents('.personalSingleStudyLinksSetup').length) {
         workerType = "@common.workers.PersonalSingleWorker.WORKER_TYPE";
         workerTypeUI = "@common.workers.PersonalSingleWorker.UI_WORKER_TYPE";
-        $('#studyLinksModal th.state').text('Study Result State');
+        $('#studyLinksModal th .state').text('Study Result State');
         $('#studyLinksModal th.results').text('Study Result');
     } else if ($(this).parents('.personalMultipleStudyLinksSetup').length) {
         workerType = "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
         workerTypeUI = "@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE";
-        $('#studyLinksModal th.state').text('Study Result State (latest)');
+        $('#studyLinksModal th .state').text('Study Result State (latest)');
         $('#studyLinksModal th.results').text('Study Results');
     }
 
@@ -433,6 +417,8 @@ function fillStudyLinksTable(batch, workerType) {
         "initComplete": toggleTablePagination,
         "pageLength": paginationLength,
         "dom": 'ftip',
+        "dom": "<'row'<'col-sm-6 buttons'B><'col-sm-6'f>>" + "<'row'<'col-sm-12't>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        "buttons": [],
         "columns": [
             {
                 "data": null,
@@ -507,7 +493,6 @@ function fillStudyLinksTable(batch, workerType) {
         "pageLength": 10,
         "pagingType": "simple_numbers",
         "lengthChange": false,
-        "info": false,
         "language": {
             "emptyTable": "No links yet",
             "search": "Search:"
@@ -517,6 +502,43 @@ function fillStudyLinksTable(batch, workerType) {
             setButtonWidthToMax("#studyLinksModal .workerResultsButton");
         }
     });
+
+    new $.fn.dataTable.Buttons(studyLinksTable, {
+        name: 'createButtonGroup',
+        buttons: [
+            {
+                text: '<span class="glyphicon glyphicon-plus"></span> <span class="glyphicon glyphicon-link"></span>',
+                "className": 'btn btn-worker oneNewStudyLinkButton',
+                "titleAttr": 'Shortcut to create just one study link without comment'
+            },
+            {
+                text: '<span class="glyphicon glyphicon-plus"></span> New Study Links <span class="glyphicon glyphicon-link"></span>',
+                "className": 'btn btn-worker newStudyLinksButton',
+                "titleAttr": 'Create new study links'
+            }
+        ]
+    });
+    new $.fn.dataTable.Buttons(studyLinksTable, {
+        name: 'refreshButton',
+        buttons: [
+            {
+                text: "<span class='glyphicon glyphicon-refresh'></span>",
+                "className": "btn btn-worker",
+                "titleAttr": 'Refresh',
+                action: function ( e, dt, node, config ) {
+                    this.disable();
+                    studyLinksTable.ajax.reload();
+                    setTimeout(this.enable, 3000);
+                }
+            }
+        ]
+    });
+    studyLinksTable.buttons('createButtonGroup', null).containers()
+            .attr('id', 'studyLinksTable_create')
+            .appendTo('.buttons');
+    studyLinksTable.buttons('refreshButton', null).containers()
+            .attr('id', 'studyLinksTable_refresh')
+            .appendTo('.buttons');
 }
 
 function showDirectOrConfirmStudyLink() {

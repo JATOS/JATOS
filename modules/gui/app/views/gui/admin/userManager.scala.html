@@ -5,13 +5,13 @@
 <table id="userTable" class="table top-buffer">
     <thead>
         <tr>
-            <th>Studies <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user"></span></th>
-            <th>Active <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration."></span></th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Last Login <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user"></span></th>
-            <th>Auth <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google"></span></th>
-            <th>Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies."></span></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user">Studies <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration.">Active</th>
+            <th>Username <span class="glyphicon sortLogo gray-light"/></th>
+            <th>Name <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user">Last Login <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google">Auth <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies.">Admin Rights <span class="glyphicon sortLogo gray-light"/></th>
             <th></th>
         </tr>
     </thead>
@@ -223,7 +223,6 @@ var userTable = $('#userTable').DataTable({
         {
             "class": 'details-control studyCount',
             "width": "1px",
-            "orderable": false,
             "data": "studyCount",
             "render": function (data, type, full, meta) {
                 if (type === 'export') return data;
@@ -263,7 +262,6 @@ var userTable = $('#userTable').DataTable({
             "class": "text-center authMethod",
             "data": "authMethod",
             "width": "1px",
-            "orderable": false,
             "render": function (authMethod, type, full, meta) {
                 switch(authMethod) {
                     case "@{common.User.AuthMethod.DB.name()}": return "local";
