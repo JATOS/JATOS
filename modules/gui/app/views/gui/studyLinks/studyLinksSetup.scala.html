@@ -742,12 +742,12 @@ function showStudyLinksDisplayPersonalModal(studyLinkIds, batch) {
     }
     var preText, postText;
     if (studyLinkIds.length == 1) {
-        preText = `<span class="directLink">This link will start the study directly.</span>
-            <span class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</span>`;
+        preText = `<div class="directLink">This link will start the study directly.</div>
+            <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
         postText = "Copy & paste and hand it to your worker.";
     } else {
-        preText = `<span class="directLink">Each of these links will start the study directly.</span>
-            <span class="confirmLink">Each of these links will start the study but first ask the worker for confirmation (by pressing a button).</span>`;
+        preText = `<div class="directLink">Each of these links will start the study directly.</div>
+            <div class="confirmLink">Each of these links will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
         postText = "Copy & paste and hand them to your workers.";
     }
     var warning;
@@ -770,8 +770,8 @@ function showStudyLinkGeneralSingleModal(batch) {
         url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalSingleRun",
         success: function(studyLinkId) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
-            var preText = `<span class="directLink">This link will start the study directly.</span>
-                <span class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</span>`;
+            var preText = `<div class="directLink">This link will start the study directly.</div>
+                <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
             var postText = "Copy & paste and hand it to your workers.";
             var warning;
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE")) {
@@ -790,8 +790,8 @@ function showStudyLinkGeneralMultipleModal(batch) {
         url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalMultipleRun",
         success: function(studyLinkId) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
-            var preText = `<span class="directLink">This link will start the study directly.</span>
-                <span class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</span>`;
+            var preText = `<div class="directLink">This link will start the study directly.</div>
+                <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
             var postText = "Copy & paste and hand it to your workers.";
             var warning;
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE")) {
@@ -821,8 +821,8 @@ function showStudyLinksDisplayModal(title, preText, studyLinkIds, postText, warn
     var content = htmlPreText + htmlUrl + htmlPostText;
     $('#studyLinksDisplayModal').find('.modal-title').text(title);
     $('#studyLinksDisplayModal').find('.content').html(content);
+    $('#studyLinksDisplayModal div.confirmLink').addClass('hideKeepWidth');
     $('#studyLinksDisplayModal').modal('show');
-    //showDirectOrConfirmStudyLink();
     $('#studyLinksDisplayModal .btn-toggle').click(toggleDirectAndConfirmLink);
 }
 
