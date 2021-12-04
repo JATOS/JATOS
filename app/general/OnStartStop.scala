@@ -24,23 +24,20 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
 
   private val logger = Logger(this.getClass)
 
+  mySQLCharsetFix.run()
+  checkUpdate()
+  checkStudyAssetsRootDir()
+  studyLinkService.createStudyLinksForExistingPersonalWorkers()
 
-  if (!isPortInUse) start()
-  else println(s"Error - Could not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}")
-
-  private def start(): Unit = {
-    mySQLCharsetFix.run()
-    checkUpdate()
-    checkStudyAssetsRootDir()
-    studyLinkService.createStudyLinksForExistingPersonalWorkers()
-
+  if (!environment.isProd) {
     logger.info("JATOS started")
-
-    if (environment.isProd) {
-      println("started")
-      println(s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
-        s"browser's address bar")
-    }
+  } else if (!isPortInUse) {
+    logger.info("JATOS started")
+    println("started")
+    println(s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
+      s"browser's address bar")
+  } else {
+    println(s"Error - Could not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}")
   }
 
   lifecycle.addStopHook(() => Future {
