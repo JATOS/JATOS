@@ -2,12 +2,13 @@ package group
 
 import java.sql.Timestamp
 import java.util.Date
-
 import daos.common.{GroupResultDao, StudyResultDao}
+
 import javax.inject.{Inject, Singleton}
 import models.common.GroupResult.GroupState
 import models.common.{Batch, GroupResult, StudyResult}
 import play.db.jpa.JPAApi
+import utils.common.Helpers
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters.asJavaSupplier
@@ -37,8 +38,10 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     jpa.withTransaction(asJavaSupplier(() => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
       val groupMaxNotReached =
-        if (allGroupMaxNotReached.isEmpty) groupResultDao.create(new GroupResult(batch))
-        else allGroupMaxNotReached.get(0)
+        if (allGroupMaxNotReached.isEmpty) {
+          Helpers.initializeAndUnproxy(batch)
+          groupResultDao.create(new GroupResult(batch))
+        } else allGroupMaxNotReached.get(0)
 
       groupMaxNotReached.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(groupMaxNotReached)
