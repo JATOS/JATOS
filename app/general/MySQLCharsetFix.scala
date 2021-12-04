@@ -60,7 +60,8 @@ class MySQLCharsetFix @Inject()(db: Database) {
         s"AND T.table_name = '$tableName'")
       if (result.next()) {
         val charSet = result.getString("character_set_name")
-        if (charSet.toLowerCase == "utf8" && !tableName.contains("play_evolutions")) {
+        if (charSet.toLowerCase.contains("utf8") && charSet.toLowerCase != "utf8mb4"
+            && !tableName.contains("play_evolutions")) {
           batch += s"ALTER TABLE `$tableName` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
         }
       }
