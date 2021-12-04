@@ -70,7 +70,7 @@ public class Components extends Controller {
 
     /**
      * Runs a single component (in opposite to the whole study). Uses a JatosWorker and the given batch. Redirects
-     * to /publix/studyLinkId.
+     * to /publix/studyCode.
      */
     @Transactional
     @Authenticated
@@ -99,7 +99,7 @@ public class Components extends Controller {
         // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix: start study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getPlayHttpContext() + "publix/" + studyLink.getId();
+        String runUrl = Common.getPlayHttpContext() + "publix/" + studyLink.getStudyCode();
         return redirect(runUrl)
                 .addingToSession(request, "jatos_run", "RUN_COMPONENT_START")
                 .addingToSession(request, "run_component_uuid", component.getUuid());

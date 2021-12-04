@@ -365,7 +365,7 @@ public class Studies extends Controller {
     }
 
     /**
-     * Runs the whole study. Uses a JatosWorker and the given batch. Redirects to /publix/studyLinkId.
+     * Runs the whole study. Uses a JatosWorker and the given batch. Redirects to /publix/studyCode.
      */
     @Transactional
     @Authenticated
@@ -384,7 +384,7 @@ public class Studies extends Controller {
         // Get StudyLink and redirect to jatos-publix: start study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getPlayHttpContext() + "publix/"  + studyLink.getId();
+        String runUrl = Common.getPlayHttpContext() + "publix/"  + studyLink.getStudyCode();
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 

@@ -68,13 +68,13 @@ public class PublixInterceptor extends Controller {
      * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
      */
     @Transactional
-    public Result preRun(Http.Request request, String studyLinkId) {
+    public Result preRun(Http.Request request, String studyCode) {
         String preRunMsg = null;
         String errMsg = null;
         boolean validStudyLink = false;
 
-        if (!Strings.isNullOrEmpty(studyLinkId)) {
-            StudyLink studyLink = studyLinkDao.findById(studyLinkId);
+        if (!Strings.isNullOrEmpty(studyCode)) {
+            StudyLink studyLink = studyLinkDao.findByStudyCode(studyCode);
             if (studyLink != null) {
                 validStudyLink = true;
                 preRunMsg = studyLink.getBatch().getStudy().getPreRunMsg();
@@ -82,7 +82,7 @@ public class PublixInterceptor extends Controller {
                 String workerType = studyLink.getWorkerType();
                 if (workerType.equals(PersonalSingleWorker.WORKER_TYPE)
                         || workerType.equals(GeneralSingleWorker.WORKER_TYPE)) {
-                    Optional<StudyResult> srOptional = studyResultDao.findByStudyLinkId(studyLinkId);
+                    Optional<StudyResult> srOptional = studyResultDao.findByStudyCode(studyCode);
                     if (srOptional.isPresent() && !srOptional.get().getStudyState().equals(
                             StudyResult.StudyState.PRE)) {
                         validStudyLink = false;
@@ -93,14 +93,14 @@ public class PublixInterceptor extends Controller {
                 errMsg = "No valid study code";
             }
         }
-        return ok(views.html.publix.preRun.render(studyLinkId, validStudyLink, Helpers.getQueryString(request),
+        return ok(views.html.publix.preRun.render(studyCode, validStudyLink, Helpers.getQueryString(request),
                 preRunMsg, errMsg));
     }
 
     @Transactional
-    public Result run(Http.Request request, String studyLinkId) throws PublixException {
-        LOGGER.info(".run: studyLinkId " + studyLinkId);
-        StudyLink studyLink = studyLinkDao.findById(studyLinkId);
+    public Result run(Http.Request request, String studyCode) throws PublixException {
+        LOGGER.info(".run: studyCode " + studyCode);
+        StudyLink studyLink = studyLinkDao.findByStudyCode(studyCode);
         if (studyLink == null) throw new BadRequestPublixException("No valid study link");
         if (!studyLink.isActive()) throw new ForbiddenPublixException("This study link is inactive");
 

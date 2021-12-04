@@ -16,7 +16,7 @@ import java.util.Objects;
 public class StudyLink {
 
     @Id
-    private String id;
+    private String studyCode;
 
     /**
      * The Batch this study link belongs to
@@ -52,17 +52,17 @@ public class StudyLink {
     }
 
     public StudyLink(Batch batch, String workerType) {
-        this.id = RandomStringUtils.randomAlphanumeric(11);
+        this.studyCode = RandomStringUtils.randomAlphanumeric(11);
         this.workerType = workerType;
         this.batch = batch;
     }
 
-    public String getId() {
-        return id;
+    public String getStudyCode() {
+        return studyCode;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setStudyCode(String studyCode) {
+        this.studyCode = studyCode;
     }
 
     public Batch getBatch() {
@@ -104,12 +104,12 @@ public class StudyLink {
 
         StudyLink studyLink = (StudyLink) o;
 
-        return Objects.equals(id, studyLink.id);
+        return Objects.equals(studyCode, studyLink.studyCode);
     }
 
     @Override
     public int hashCode() {
-        return id != null ? id.hashCode() : 0;
+        return studyCode != null ? studyCode.hashCode() : 0;
     }
 
 }

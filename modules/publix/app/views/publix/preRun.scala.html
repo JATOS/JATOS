@@ -1,4 +1,4 @@
-@(studyLinkId: String, validStudyLink: Boolean, queryString: String, preRunMsg: String, errMsg: String)
+@(studyCode: String, validStudyLink: Boolean, queryString: String, preRunMsg: String, errMsg: String)
 
 @main("JATOS") {
 
@@ -66,9 +66,9 @@ input[type=submit]:hover, button:hover {
                 <button id="runButton" type="button">&nbsp;▶&nbsp;</button>
             </div>
         </div>
-        <div id="enterStudyLinkId" style="display: none;">
+        <div id="enterStudyCode" style="display: none;">
             <form class="center" onsubmit="run(event)">
-                <input type="text" id="studyLinkId" name="studyLinkId" autofocus required minlength="11" maxlength="11">
+                <input type="text" id="studyCode" name="studyCode" autofocus required minlength="11" maxlength="11">
                 <input type="submit" name="submit" value="&nbsp;▶&nbsp;">
             </form>
         </div>
@@ -76,7 +76,7 @@ input[type=submit]:hover, button:hover {
 </div>
 
 <script>
-    const studyLinkId = "@studyLinkId";
+    const studyCode = "@studyCode";
     const validStudyLink = @validStudyLink;
     const preRunMsg = `@Html(preRunMsg)`.replace(/(?:\r\n|\r|\n)/g, '<br>');
     const errMsg = "@errMsg";
@@ -90,13 +90,13 @@ input[type=submit]:hover, button:hover {
         }
         document.querySelector('#runButton').addEventListener('click', function() {
             event.preventDefault();
-            window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyLinkId + "@Html(queryString)";
+            window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyCode + "@Html(queryString)";
         });
     }
 
-    if (!studyLinkId) {
+    if (!studyCode) {
         document.querySelector('.msg').innerHTML = "Enter your code and press the ▶ button";
-        document.querySelector('#enterStudyLinkId').style.display = 'block';
+        document.querySelector('#enterStudyCode').style.display = 'block';
     }
 
     if (errMsg) {
@@ -105,8 +105,8 @@ input[type=submit]:hover, button:hover {
 
     function run(event) {
         event.preventDefault();
-        const studyLinkId = document.querySelector("#studyLinkId").value;
-        window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyLinkId + "@Html(queryString)";
+        const studyCode = document.querySelector("#studyCode").value;
+        window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyCode + "@Html(queryString)";
     }
 
 

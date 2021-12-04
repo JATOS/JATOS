@@ -110,7 +110,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         idCookieService.writeIdCookie(studyResult, jatosRun);
 
         String username = request.session().getOptional(JatosPublix.SESSION_USERNAME).orElse("unknown");
-        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
+        LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "

@@ -74,7 +74,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> imple
         idCookieService.writeIdCookie(studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
-        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
+        LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "

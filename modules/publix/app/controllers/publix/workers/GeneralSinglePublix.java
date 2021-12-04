@@ -24,6 +24,7 @@ import services.publix.WorkerCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -120,11 +121,12 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
         publixUtils.setUrlQueryParameter(request, studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
-        LOGGER.info(".startStudy: studyLinkId " + studyLink.getId() + ", "
+        LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
-                + "workerId " + worker.getId());
+                + "workerId " + worker.getId() + ", "
+                + "preview " + study.isAllowPreview());
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyResult.getUuid(), firstComponent.getUuid(), null));
     }

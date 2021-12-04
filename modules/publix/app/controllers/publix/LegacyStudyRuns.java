@@ -80,7 +80,7 @@ public class LegacyStudyRuns extends Controller {
                 throw new BadRequestPublixException("Unknown worker type");
 
         }
-        return redirect(routes.PublixInterceptor.run(studyLink.getId()).url() + Helpers.getQueryString(request));
+        return redirect(routes.PublixInterceptor.run(studyLink.getStudyCode()).url() + Helpers.getQueryString(request));
     }
 
     /**

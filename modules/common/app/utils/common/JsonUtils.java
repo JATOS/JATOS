@@ -121,7 +121,7 @@ public class JsonUtils {
         String componentProperties = asJsonForPublix(component);
         String studySessionData = studyResult.getStudySessionData();
         String urlQueryParameters = studyResult.getUrlQueryParameters();
-        String studyLinkId = studyResult.getStudyLinkId();
+        String studyCode = studyResult.getStudyCode();
 
         ObjectNode initData = Json.mapper().createObjectNode();
         initData.put("studySessionData", studySessionData);
@@ -130,7 +130,7 @@ public class JsonUtils {
         initData.set("componentList", componentList);
         initData.set("componentProperties", Json.mapper().readTree(componentProperties));
         initData.put("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
-        initData.put("studyLinkId", studyLinkId);
+        initData.put("studyCode", studyCode);
         return initData;
     }
 
@@ -216,7 +216,7 @@ public class JsonUtils {
 
         // Add extra variables
         studyResultNode.put("studyId", studyResult.getStudy().getId());
-        studyResultNode.put("studyLinkId", studyResult.getStudyLinkId());
+        studyResultNode.put("studyCode", studyResult.getStudyCode());
         studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
         studyResultNode.put("batchTitle", studyResult.getBatch().getTitle());
         String duration;
@@ -270,7 +270,7 @@ public class JsonUtils {
         componentResultNode.put("duration", getDurationPretty(
                 componentResult.getStartDate(), componentResult.getEndDate()));
         componentResultNode.put("studyResultId", componentResult.getStudyResult().getId());
-        componentResultNode.put("studyLinkId", componentResult.getStudyResult().getStudyLinkId());
+        componentResultNode.put("studyCode", componentResult.getStudyResult().getStudyCode());
         componentResultNode.put("studyResultUuid", componentResult.getStudyResult().getUuid());
         String groupResultId = getGroupResultId(componentResult.getStudyResult());
         componentResultNode.put("groupResultId", groupResultId);
@@ -559,7 +559,7 @@ public class JsonUtils {
 
         for (StudyLink studyLink : studyLinkList) {
             ObjectNode studyLinkDataNode = Json.mapper().createObjectNode();
-            studyLinkDataNode.put("studyLinkId", studyLink.getId());
+            studyLinkDataNode.put("studyCode", studyLink.getStudyCode());
             studyLinkDataNode.put("active", studyLink.isActive());
 
             if (studyLink.getWorker() != null) {

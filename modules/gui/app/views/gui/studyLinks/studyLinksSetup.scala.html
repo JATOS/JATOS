@@ -436,23 +436,23 @@ function fillStudyLinksTable(batch, workerType) {
                 "width": "1%"
             },
             {
-                "data": "studyLinkId",
-                "render": function(studyLinkId, type, row) {
-                    return `<span>${studyLinkId}</span>
+                "data": "studyCode",
+                "render": function(studyCode, type, row) {
+                    return `<span>${studyCode}</span>
                         <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">
                         <span class="glyphicon glyphicon-duplicate"></span></button>`;
                 }
             },
             {
-                "data": "studyLinkId",
-                "render": function(studyLinkId, type, row) {
+                "data": "studyCode",
+                "render": function(studyCode, type, row) {
                     return `<div class="directLink">
-                        <span>@utils.common.Helpers.getRealBaseUrl(request)publix/${studyLinkId}</span>
+                        <span>@utils.common.Helpers.getRealBaseUrl(request)publix/${studyCode}</span>
                         <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
                         <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
                         </div>
                         <div class="confirmLink">
-                        <span>@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=${studyLinkId}</span>
+                        <span>@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=${studyCode}</span>
                         <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
                         <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
                         </div>`;
@@ -599,10 +599,10 @@ $('#studyLinksModal').on('click', '.activeStudyLinkButton', function() {
     var active = $(button).hasClass('activeStudyLink');
     var tr = $(button).closest('tr');
     var rowData = studyLinksTable.row(tr).data();
-    var studyLinkId = rowData.studyLinkId;
+    var studyCode = rowData.studyCode;
     $.ajax({
         url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id
-                + "/studyLink/" + studyLinkId + "?active=" + !active,
+                + "/studyLink/" + studyCode + "?active=" + !active,
         type : "POST",
         success: function(active) {
             setStudyLinkRowActive($(button), active, rowData.studyResultState);
@@ -694,12 +694,12 @@ function postGetLinksPersonal(url, studyLinksDisplayModal, batch) {
         contentType: "application/json; charset=utf-8",
         dataType: 'text',
         data: JSON.stringify(jsonData),
-        success: function(studyLinkIds) {
+        success: function(studyCodes) {
             if (studyLinksTable) {
                 loadStudyLinksSetup(batch.id);
                 studyLinksTable.ajax.reload();
             }
-            studyLinksDisplayModal($.parseJSON(studyLinkIds), batch);
+            studyLinksDisplayModal($.parseJSON(studyCodes), batch);
         },
         error : function(err) {
             showError(err.responseText);
@@ -729,7 +729,7 @@ $('#batchTable').on('click', '.personalMultipleStudyLinksSetup .studyLinkButton'
     showStudyLinksDisplayPersonalModal(workerIds, batch);
 });
 
-function showStudyLinksDisplayPersonalModal(studyLinkIds, batch) {
+function showStudyLinksDisplayPersonalModal(studyCodes, batch) {
     var title;
     var workerType = $('#studyLinksModal').data('workerType');
     var workerTypeUI;
@@ -741,7 +741,7 @@ function showStudyLinksDisplayPersonalModal(studyLinkIds, batch) {
         workerTypeUI = "@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE";
     }
     var preText, postText;
-    if (studyLinkIds.length == 1) {
+    if (studyCodes.length == 1) {
         preText = `<div class="directLink">This link will start the study directly.</div>
             <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
         postText = "Copy & paste and hand it to your worker.";
@@ -754,7 +754,7 @@ function showStudyLinksDisplayPersonalModal(studyLinkIds, batch) {
     if (!batch.allowedWorkerTypes.includes(workerType)) {
         warning = `Worker type ${workerTypeUI} is currently not allowed in this batch`;
     }
-    showStudyLinksDisplayModal(title, preText, studyLinkIds, postText, warning);
+    showStudyLinksDisplayModal(title, preText, studyCodes, postText, warning);
 }
 
 $('#batchTable').on('click', '.generalSingleStudyLinksSetup .studyLinkButton', function() {
@@ -768,7 +768,7 @@ $('#batchTable').on('click', '.generalMultipleStudyLinksSetup .studyLinkButton',
 function showStudyLinkGeneralSingleModal(batch) {
     $.ajax({
         url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalSingleRun",
-        success: function(studyLinkId) {
+        success: function(studyCode) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
                 <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
@@ -777,7 +777,7 @@ function showStudyLinkGeneralSingleModal(batch) {
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE")) {
                 warning = `Worker type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE is currently not allowed in this batch`;
             }
-            showStudyLinksDisplayModal(title, preText, [studyLinkId], postText, warning);
+            showStudyLinksDisplayModal(title, preText, [studyCode], postText, warning);
         },
         error : function(err) {
             showError(err.responseText);
@@ -788,7 +788,7 @@ function showStudyLinkGeneralSingleModal(batch) {
 function showStudyLinkGeneralMultipleModal(batch) {
     $.ajax({
         url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalMultipleRun",
-        success: function(studyLinkId) {
+        success: function(studyCode) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
                 <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
@@ -797,7 +797,7 @@ function showStudyLinkGeneralMultipleModal(batch) {
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE")) {
                 warning = `Worker type @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE is currently not allowed in this batch`;
             }
-            showStudyLinksDisplayModal(title, preText, [studyLinkId], postText, warning);
+            showStudyLinksDisplayModal(title, preText, [studyCode], postText, warning);
         },
         error : function(err) {
             showError(err.responseText);
@@ -805,14 +805,14 @@ function showStudyLinkGeneralMultipleModal(batch) {
     });
 }
 
-function showStudyLinksDisplayModal(title, preText, studyLinkIds, postText, warning) {
+function showStudyLinksDisplayModal(title, preText, studyCodes, postText, warning) {
     var htmlPreText =
         `<div class="btn-group btn-toggle">
             <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
             <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a pre-run page. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
         </div>
         <p>${preText}</p>`;
-    var htmlUrl = '<div class="well linkUrls">' + generateStudyLinksHtml(studyLinkIds) + '</div>';
+    var htmlUrl = '<div class="well linkUrls">' + generateStudyLinksHtml(studyCodes) + '</div>';
 
     removeAlerts("#studyLinksDisplayModal");
     if (warning) showWarning(warning, "#studyLinksDisplayModal .messages");
@@ -826,11 +826,11 @@ function showStudyLinksDisplayModal(title, preText, studyLinkIds, postText, warn
     $('#studyLinksDisplayModal .btn-toggle').click(toggleDirectAndConfirmLink);
 }
 
-function generateStudyLinksHtml(studyLinkIds) {
-    var directLinkUrls = studyLinkIds.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/' + l);
-    var confirmLinkUrls = studyLinkIds.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=' + l);
+function generateStudyLinksHtml(studyCodes) {
+    var directLinkUrls = studyCodes.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/' + l);
+    var confirmLinkUrls = studyCodes.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=' + l);
     var qrButtonHtml = "";
-    if (studyLinkIds.length == 1) {
+    if (studyCodes.length == 1) {
         qrButtonHtml = `<button type="button" class="btn qrCodeButton btn-xs pull-right" data-toggle="tooltip" title="Show QR code for this link.">QR code&nbsp;<span class="glyphicon glyphicon-qrcode"></span></button>`;
     }
     var clipboardButtonHtml = `<button type="button" class="btn clipboardButton btn-xs pull-right" data-toggle="tooltip" title="Copy this link to the clipboard.">Copy&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button>`;

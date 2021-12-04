@@ -453,7 +453,7 @@ window.jatos = {};
 		// Query string parameters of the URL that starts the study
 		jatos.urlQueryParameters = initData.urlQueryParameters;
 
-		jatos.studyLinkId = initData.studyLinkId;
+		jatos.studyCode = initData.studyCode;
 	}
 
 	/**
@@ -2511,7 +2511,7 @@ window.jatos = {};
 	 * @param {object} obj - Object to which the IDs will be added
 	 */
 	jatos.addJatosIds = function (obj) {
-		obj.studyLinkId = jatos.studyLinkId;
+		obj.studyCode = jatos.studyCode;
 		obj.studyId = jatos.studyId;
 		obj.studyTitle = jatos.studyProperties.title;
 		obj.batchId = jatos.batchId;

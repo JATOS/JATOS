@@ -465,16 +465,16 @@ public class StudyLinks extends Controller {
         JsonNode json = request.body().asJson();
         String comment = json.findPath("comment").asText().trim();
         int amount = json.findPath("amount").asInt();
-        List<String> studyLinkIdList;
+        List<String> studyCodeList;
         try {
-            studyLinkIdList = studyLinkService.createAndPersistStudyLinks(comment, amount, batch, workerType);
+            studyCodeList = studyLinkService.createAndPersistStudyLinks(comment, amount, batch, workerType);
         } catch (BadRequestException e) {
             return badRequest(e.getMessage());
         } catch (Throwable e) {
             return internalServerError();
         }
 
-        return ok(jsonUtils.asJsonNode(studyLinkIdList));
+        return ok(jsonUtils.asJsonNode(studyCodeList));
     }
 
     /**
@@ -499,7 +499,7 @@ public class StudyLinks extends Controller {
 
         StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
-        return ok(studyLink.getId());
+        return ok(studyLink.getStudyCode());
     }
 
     /**
@@ -554,11 +554,11 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyLinkId, Boolean active) throws JatosGuiException {
+    public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        StudyLink studyLink = studyLinkDao.findById(studyLinkId);
+        StudyLink studyLink = studyLinkDao.findByStudyCode(studyCode);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);

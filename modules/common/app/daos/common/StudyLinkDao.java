@@ -35,13 +35,12 @@ public class StudyLinkDao extends AbstractDao {
         merge(studyLink);
     }
 
-    public StudyLink findById(String id) {
-        return jpa.em().find(StudyLink.class, id);
+    public StudyLink findByStudyCode(String studyCode) {
+        return jpa.em().find(StudyLink.class, studyCode);
     }
 
     public int countAll() {
-        Number result = (Number) jpa.em().createQuery("SELECT count(*) FROM StudyLink")
-                .getSingleResult();
+        Number result = (Number) jpa.em().createQuery("SELECT count(*) FROM StudyLink").getSingleResult();
         return result != null ? result.intValue() : 0;
     }
 

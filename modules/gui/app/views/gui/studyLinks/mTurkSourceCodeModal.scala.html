@@ -94,13 +94,13 @@ $('#batchTable').on('click', '.mtWorkerSourceCode', function() {
         error : function(err) {
             showError(err.responseText);
         }
-    }).done(function(studyLinkId) {
-        showSourceCodeMTurkModal(batch, studyLinkId);
+    }).done(function(studyCode) {
+        showSourceCodeMTurkModal(batch, studyCode);
     });
 });
 
-function showSourceCodeMTurkModal(batch, studyLinkId) {
-    var studyLink = "@{utils.common.Helpers.getRealBaseUrl(request)}publix/" + studyLinkId;
+function showSourceCodeMTurkModal(batch, studyCode) {
+    var studyLink = "@{utils.common.Helpers.getRealBaseUrl(request)}publix/" + studyCode;
 
     var studyPath = "publix/@study.getId()/start";
     var randomMturkWorkerId = Math.floor(Math.random() * 1000000);

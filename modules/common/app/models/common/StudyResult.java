@@ -33,8 +33,8 @@ public class StudyResult {
      * We don't need the whole StudyLink object and therefore we only get the ID here
      */
     @JsonIgnore
-    @Column(name = "studyLink_id")
-    private String studyLinkId;
+    @Column(name = "studyLink_studyCode")
+    private String studyCode;
 
     /**
      * Time and date when the study was started on the server.
@@ -156,7 +156,7 @@ public class StudyResult {
     public StudyResult(StudyLink studyLink, Worker worker) {
         this.uuid = UUID.randomUUID().toString();
         this.startDate = new Timestamp(new Date().getTime());
-        this.studyLinkId = studyLink.getId();
+        this.studyCode = studyLink.getStudyCode();
         this.batch = studyLink.getBatch();
         this.study = batch.getStudy();
         this.worker = worker;
@@ -189,12 +189,12 @@ public class StudyResult {
         this.uuid = uuid;
     }
 
-    public String getStudyLinkId() {
-        return studyLinkId;
+    public String getStudyCode() {
+        return studyCode;
     }
 
-    public void setStudyLinkId(String studyLinkId) {
-        this.studyLinkId = studyLinkId;
+    public void setStudyCode(String studyCode) {
+        this.studyCode = studyCode;
     }
 
     public void setStartDate(Timestamp startDate) {

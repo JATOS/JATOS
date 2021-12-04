@@ -54,7 +54,7 @@ public class StudyLogger {
     private static final String HASH_FUNCTION = "hashFunction";
     private static final String USER_NAME = "userName";
     private static final String WORKER_ID = "workerId";
-    private static final String STUDYLINK_ID = "studyLinkId";
+    private static final String STUDYCODE = "studyCode";
     private static final String BATCH_ID = "batchId";
     private static final String DATA_HASH = "dataHash";
     private static final String FILE_HASH = "fileHash";
@@ -168,7 +168,7 @@ public class StudyLogger {
         ObjectNode jsonObj = Json.newObject();
         jsonObj.put(MSG, msg);
         jsonObj.put(BATCH_ID, studyLink.getBatch().getId());
-        jsonObj.put(STUDYLINK_ID, studyLink.getId());
+        jsonObj.put(STUDYCODE, studyLink.getStudyCode());
         jsonObj.put(WORKER_ID, worker.getId());
         log(studyLink.getBatch().getStudy(), null, jsonObj);
     }

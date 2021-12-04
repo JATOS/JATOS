@@ -47,7 +47,7 @@ public class StudyLinkService {
             throws BadRequestException {
         amount = Math.max(amount, 1);
 
-        List<String> studyLinkIdList = new ArrayList<>();
+        List<String> studyCodeList = new ArrayList<>();
         while (amount > 0) {
             Worker worker;
             switch (workerType) {
@@ -66,12 +66,12 @@ public class StudyLinkService {
 
             StudyLink studyLink = new StudyLink(batch, worker);
             studyLinkDao.create(studyLink);
-            studyLinkIdList.add(studyLink.getId());
+            studyCodeList.add(studyLink.getStudyCode());
 
             batchDao.update(batch);
             amount--;
         }
-        return studyLinkIdList;
+        return studyCodeList;
     }
 
     /**

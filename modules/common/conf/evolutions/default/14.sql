@@ -2,18 +2,18 @@
 
 # --- !Ups
 CREATE TABLE `StudyLink` (
-  `id` varchar(255) NOT NULL,
+  `studyCode` varchar(255) NOT NULL,
   `workerType` varchar(255) DEFAULT NULL,
   `batch_id` bigint(20) DEFAULT NULL,
   `worker_id` bigint(20) DEFAULT NULL,
   `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`studyCode`)
 ) DEFAULT CHARSET=utf8;
 
 ALTER TABLE `Study` ADD `allowPreview` tinyint(1) DEFAULT 0;
 ALTER TABLE `Study` ADD `preRunMsg` varchar(1000) DEFAULT NULL;
 ALTER TABLE `StudyResult` ADD `uuid` varchar(255);
-ALTER TABLE `StudyResult` ADD `studyLink_id` varchar(255) DEFAULT NULL;
+ALTER TABLE `StudyResult` ADD `studyLink_studyCode` varchar(255) DEFAULT NULL;
 
 ALTER TABLE `StudyLink` ADD KEY `FK1j7tlwiv7tdfkb4671qfrxwi` (`batch_id`);
 ALTER TABLE `StudyLink` ADD KEY `FK40p56yjtyha180u11l8al3xbv` (`worker_id`);

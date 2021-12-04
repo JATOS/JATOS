@@ -106,7 +106,7 @@ GET      /jatos/:studyId/batch/:batchId/generalMultipleRun                  @con
 GET      /jatos/:studyId/batch/:batchId/mTurkRun                            @controllers.gui.StudyLinks.createGeneralRun(studyId: Long, batchId: Long, workerType = "MT")
 GET      /jatos/:studyId/batch/:batchId/studyLinksSetupData                 @controllers.gui.StudyLinks.studyLinksSetupData(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/studyLinksData                      @controllers.gui.StudyLinks.studyLinksData(studyId: Long, batchId: Long, workerType: String)
-POST     /jatos/:studyId/batch/:batchId/studyLink/:studyLinkId              @controllers.gui.StudyLinks.toggleStudyLinkActive(studyId: Long, batchId: Long, studyLinkId: String, active: Boolean)
+POST     /jatos/:studyId/batch/:batchId/studyLink/:studyCode                @controllers.gui.StudyLinks.toggleStudyLinkActive(studyId: Long, batchId: Long, studyCode: String, active: Boolean)
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.StudyLinks.removeBatch(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.StudyLinks.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.StudyLinks.batchesByStudy(studyId: Long)
