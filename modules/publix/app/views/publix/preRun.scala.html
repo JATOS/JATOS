@@ -37,7 +37,7 @@ input[type=text], select {
   box-sizing: border-box;
 }
 
-input[type=submit], button {
+input[type=submit], .runButton {
   color: white;
   font-size: 20px;
   font-weight: 400;
@@ -63,7 +63,7 @@ input[type=submit]:hover, button:hover {
         <div class="msg"></div>
         <div id="confirm" style="display: none;">
             <div class="center">
-                <button id="runButton" type="button">&nbsp;▶&nbsp;</button>
+                <button type="button" class="runButton">&nbsp;▶&nbsp;</button>
             </div>
         </div>
         <div id="enterStudyCode" style="display: none;">
@@ -86,16 +86,16 @@ input[type=submit]:hover, button:hover {
         if (preRunMsg) {
             document.querySelector('.msg').innerHTML = preRunMsg;
         } else {
-            document.querySelector('.msg').innerHTML = "By pressing on the ' ▶ ' button you will start the experiment.";
+            document.querySelector('.msg').innerHTML = 'Press &nbsp;▶&nbsp; to start the experiment';
         }
-        document.querySelector('#runButton').addEventListener('click', function() {
+        document.querySelector('.runButton').addEventListener('click', function() {
             event.preventDefault();
             window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyCode + "@Html(queryString)";
         });
     }
 
     if (!studyCode) {
-        document.querySelector('.msg').innerHTML = "Enter your code and press the ▶ button";
+        document.querySelector('.msg').innerHTML = "Enter your code and press the &nbsp;▶&nbsp; button";
         document.querySelector('#enterStudyCode').style.display = 'block';
     }
 
