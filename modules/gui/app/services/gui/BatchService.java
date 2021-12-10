@@ -207,7 +207,7 @@ public class BatchService {
     /**
      * Gets the batch with given ID from the database or if the batchId is -1
      * returns the default batch of this study. If the batch doesn't exist it throws an
-     * NotFoundPublixException.
+     * NotFoundException.
      */
     public Batch fetchBatch(Long batchId, Study study) throws NotFoundException {
         if (batchId == -1) {

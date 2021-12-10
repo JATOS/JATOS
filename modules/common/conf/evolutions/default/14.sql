@@ -1,4 +1,4 @@
-# --- Add table StudyLink, add `allowPreview` to table Study and `uuid` to StudyResult
+# --- Add table StudyLink, add 'allowPreview' and 'preRunMsg' to table Study and 'uuid' to StudyResult
 
 # --- !Ups
 CREATE TABLE `StudyLink` (

@@ -40,6 +40,7 @@ import java.util.UUID;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("ResultOfMethodCallIgnored")
 @Singleton
 public class ImportExportService {
 
@@ -383,14 +384,13 @@ public class ImportExportService {
         if (unzippedStudyDirName == null || unzippedStudyDirName.trim().isEmpty()) {
             return null;
         }
-        File unzippedStudyDir = new File(IOUtils.TMP_DIR, unzippedStudyDirName);
-        return unzippedStudyDir;
+        return new File(IOUtils.TMP_DIR, unzippedStudyDirName);
     }
 
     private File unzipUploadedFile(File file) throws IOException {
         File destDir;
         try {
-            destDir = new File(IOUtils.TMP_DIR, "JatosImport_" + UUID.randomUUID().toString());
+            destDir = new File(IOUtils.TMP_DIR, "JatosImport_" + UUID.randomUUID());
             ZipUtil.unzip(file, destDir);
         } catch (IOException e) {
             LOGGER.warn(".unzipUploadedFile: unzipping failed", e);
