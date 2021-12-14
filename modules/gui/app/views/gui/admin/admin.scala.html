@@ -267,7 +267,6 @@
                     <b>Internal JSON serialization</b>: <span id="testJsonSerializationResult"></span><br>
                     <b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
                     <b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
-                    <b>Read heartbeat.js</b>: <span id="testHeartbeatJsResult"></span><br>
                     <b>Open WebSocket</b>: <span id="testWebSocketResult"></span><br>
                 </p>
             </div>
@@ -591,7 +590,6 @@ $('#adminToolbar').on('click', '#tests', function() {
     testJsonSerialization();
     testJatosJsViaStudyPath();
     testJatosJsViaAssetsPath();
-    testHeartbeatJs();
     testWebSocket();
 });
 
@@ -687,20 +685,6 @@ function testJatosJsViaAssetsPath() {
         },
         error : function(err) {
             $('#testJatosJsViaAssetsPathResult').html('<font color="red">FAIL</font>');
-        }
-    });
-}
-
-function testHeartbeatJs() {
-    $.ajax({
-        type: 'GET',
-        url: '@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos-publix/javascripts/heartbeat.js',
-        dataType: "text",
-        success: function(result) {
-            $('#testHeartbeatJsResult').html('<font color="green">OK</font>');
-        },
-        error : function(err) {
-            $('#testHeartbeatJsResult').html('<font color="red">FAIL</font>');
         }
     });
 }
