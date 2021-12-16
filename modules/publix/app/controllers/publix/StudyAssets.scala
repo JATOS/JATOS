@@ -155,8 +155,9 @@ class StudyAssets @Inject()(components: ControllerComponents,
           case Some(cc) => Redirect(endRedirectUrl, Map("confirmationCode" -> Seq(cc)))
           case None => Redirect(endRedirectUrl)
         }
+      }
 
-      } else if (ioUtils.checkFileInStudyAssetsDirExists(studyResult.getStudy.getDirName, "endPage.html")) {
+      else if (ioUtils.checkFileInStudyAssetsDirExists(studyResult.getStudy.getDirName, "endPage.html")) {
         // Redirect to endPage.html from study assets
         confirmationCode match {
           case Some(cc) => Ok.sendFile(ioUtils
@@ -165,8 +166,9 @@ class StudyAssets @Inject()(components: ControllerComponents,
           case None => Ok.sendFile(ioUtils
             .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
         }
+      }
 
-      } else {
+      else {
         // Return default end page
         confirmationCode match {
           case Some(cc) => Ok(views.html.publix.confirmationCode.render(cc))
