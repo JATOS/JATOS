@@ -35,6 +35,16 @@ public class ComponentResultDao extends AbstractDao {
         merge(componentResult);
     }
 
+    /**
+     * Only update the 'data' field and leave all else untouched
+     */
+    public void updateData(Long id, String data) {
+        jpa.em().createQuery("UPDATE ComponentResult cr SET cr.data = :data WHERE cr.id = :id")
+                .setParameter("id", id)
+                .setParameter("data", data)
+                .executeUpdate();
+    }
+
     public void remove(ComponentResult componentResult) {
         super.remove(componentResult);
     }

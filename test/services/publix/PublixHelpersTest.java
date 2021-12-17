@@ -186,8 +186,6 @@ public class PublixHelpersTest {
             // Not done if
             componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
             assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
-            componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-            assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
             componentResult.setComponentState(ComponentState.STARTED);
             assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
         });

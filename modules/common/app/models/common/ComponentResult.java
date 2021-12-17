@@ -40,12 +40,12 @@ public class ComponentResult {
 
 
     /**
-     * State of this component run (it actual should be called ComponentResultState)
+     * State of this component run (it actually should be called ComponentResultState)
      */
     public enum ComponentState {
         STARTED, // Component was started
         DATA_RETRIEVED, // Component's jsonData were retrieved
-        RESULTDATA_POSTED, // Result data were posted
+        RESULTDATA_POSTED, // Not used anymore but kept to ensure proper JPA enum mapping
         FINISHED, // Component was finished
         RELOADED, // Component was reloaded
         ABORTED, // Component aborted by worker

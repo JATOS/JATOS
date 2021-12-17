@@ -125,15 +125,13 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     }
 
     @Override
-    public Result setStudySessionData(Request request, StudyResult studyResult)
-            throws PublixException {
+    public Result setStudySessionData(Request request, StudyResult studyResult) throws PublixException {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         String studySessionData = request.body().asText();
-        studyResult.setStudySessionData(studySessionData);
-        studyResultDao.update(studyResult);
+        studyResultDao.updateStudySessionData(studyResult.getId(), studySessionData);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -178,9 +176,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             return badRequest("Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
         }
 
-        componentResult.get().setData(resultData);
-        componentResult.get().setComponentState(ComponentState.RESULTDATA_POSTED);
-        componentResultDao.update(componentResult.get());
+        componentResultDao.updateData(componentResult.get().getId(), resultData);
         studyLogger.logResultDataStoring(componentResult.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
@@ -303,7 +299,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
-                return redirect(routes.StudyAssets.endPage(studyResult.getUuid(), Option.<String>empty()));
+                return redirect(routes.StudyAssets.endPage(studyResult.getUuid(), Option.empty()));
             }
         }
     }

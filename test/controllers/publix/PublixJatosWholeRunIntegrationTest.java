@@ -193,7 +193,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check response
         assertThat(result.status()).isEqualTo(OK);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.RESULTDATA_POSTED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.DATA_RETRIEVED);
 
         // Check componentResult
         assertThat(firstComponentResult.getData()).isEqualTo("That's a test result data.");
@@ -208,7 +208,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check response
         assertThat(result.status()).isEqualTo(OK);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.RESULTDATA_POSTED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.DATA_RETRIEVED);
 
         // Check componentResult
         assertThat(firstComponentResult.getData()).isEqualTo(
@@ -224,7 +224,7 @@ public class PublixJatosWholeRunIntegrationTest {
 
         // Check response
         assertThat(result.status()).isEqualTo(OK);
-        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.RESULTDATA_POSTED);
+        checkStates(studyResult, StudyState.DATA_RETRIEVED, firstComponentResult, ComponentState.DATA_RETRIEVED);
 
         // Check componentResult
         assertThat(studyResult.getStudySessionData()).isEqualTo("That's our session data.");

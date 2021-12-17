@@ -32,6 +32,16 @@ public class StudyResultDao extends AbstractDao {
         merge(studyResult);
     }
 
+    /**
+     * Only update the 'studySessionData' field and leave everything else untouched
+     */
+    public void updateStudySessionData(Long id, String studySessionData) {
+        jpa.em().createQuery("UPDATE StudyResult sr SET sr.studySessionData = :ssd WHERE sr.id = :id")
+                .setParameter("id", id)
+                .setParameter("ssd", studySessionData)
+                .executeUpdate();
+    }
+
     public void remove(StudyResult studyResult) {
         super.remove(studyResult);
     }
