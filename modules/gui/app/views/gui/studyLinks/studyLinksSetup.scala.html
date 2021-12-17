@@ -445,18 +445,7 @@ function fillStudyLinksTable(batch, workerType) {
             },
             {
                 "data": "studyCode",
-                "render": function(studyCode, type, row) {
-                    return `<div class="directLink">
-                        <span>@utils.common.Helpers.getRealBaseUrl(request)publix/${studyCode}</span>
-                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
-                        <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
-                        </div>
-                        <div class="confirmLink">
-                        <span>@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=${studyCode}</span>
-                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
-                        <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
-                        </div>`;
-                }
+                "render": renderStudyLink
             },
             {
                 "data": "comment",
@@ -469,20 +458,10 @@ function fillStudyLinksTable(batch, workerType) {
                 }
             },
             {
-                "data": "workerId",
+                "data": null,
                 "orderable": false,
                 "width": "1%",
-                "render": function (data, type, full, meta) {
-                    const isPersonalMultiple = $('#studyLinksModal').data('workerType') == "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
-                    const name = isPersonalMultiple ? "Results" : "Result";
-                    const count = isPersonalMultiple ? full.studyResultCount : "";
-                    const button = `<a type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip"
-                        data-placement="bottom" title="Shows study results of this worker"
-                        href="@{general.common.Common.getPlayHttpContext()}jatos/worker/${data}/results">${name}
-                        <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-                        title="Number of study results that belong to this worker">${count}</span></a>`;
-                    return full.studyResultState !== null ? button : "";
-                }
+                "render": renderWorkerResultsButton
             }
         ],
         "createdRow": function(row, data, index) {
@@ -499,7 +478,7 @@ function fillStudyLinksTable(batch, workerType) {
         },
         "drawCallback": function( settings ) {
             showDirectOrConfirmStudyLink();
-            setButtonWidthToMax("#studyLinksModal .workerResultsButton");
+            setWorkerResultsButtonWidthToMax();
         }
     });
 
@@ -539,6 +518,44 @@ function fillStudyLinksTable(batch, workerType) {
     studyLinksTable.buttons('refreshButton', null).containers()
             .attr('id', 'studyLinksTable_refresh')
             .appendTo('.buttons');
+
+    function renderStudyLink(studyCode, type, row) {
+        return `<div class="directLink">
+            <span>@utils.common.Helpers.getRealBaseUrl(request)publix/${studyCode}</span>
+            <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
+            <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
+            </div>
+            <div class="confirmLink">
+            <span>@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=${studyCode}</span>
+            <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
+            <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
+            </div>`;
+    }
+
+    function renderWorkerResultsButton(data, type, full) {
+        const isPersonalMultiple = $('#studyLinksModal').data('workerType') == "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
+        const name = isPersonalMultiple ? "Results" : "Result";
+        const count = isPersonalMultiple ? full.studyResultCount : "";
+        const button = `<a type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip"
+            data-placement="bottom" title="Shows study results of this worker"
+            href="@{general.common.Common.getPlayHttpContext()}jatos/worker/${full.workerId}/results">${name}
+            <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+            title="Number of study results that belong to this worker">${count}</span></a>`;
+        return full.studyResultState !== null ? button : "";
+    }
+
+    function setWorkerResultsButtonWidthToMax() {
+        // That's an ugly hack: just using datatables "drawCallback" doesn't work. For some reason the
+        // buttons have an width of near 0. Here we wait until the first button has a width of > 1 and
+        // only then trigger the button resizing.
+        var buttons = $("#studyLinksModal .workerResultsButton");
+        if (!(buttons && buttons.length && $(buttons[0]).width() > 1)) {
+            window.requestAnimationFrame(setWorkerResultsButtonWidthToMax);
+        } else {
+            setButtonWidthToMax("#studyLinksModal .workerResultsButton");
+            studyLinksTable.columns.adjust();
+        }
+    };
 }
 
 function showDirectOrConfirmStudyLink() {
