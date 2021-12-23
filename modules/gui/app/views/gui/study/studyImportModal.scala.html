@@ -56,6 +56,9 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
         error : function(err) {
             hideWaitingModal();
             showError(err.responseText);
+        },
+        complete: function() {
+            $("#importStudyBrowser")[0].value = '';
         }
     });
 });
