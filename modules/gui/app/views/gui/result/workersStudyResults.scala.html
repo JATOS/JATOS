@@ -339,7 +339,7 @@ $(document).ready(function() {
                                 }
                             },
                             "action": function(e, dt, node, config) {
-                                $("ul.dropdown-menu").hide();
+                                $(".dt-button-collection").hide();
                                 $('#waitingModal').modal('show');
                                 setTimeout(function(){
                                     $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
@@ -356,7 +356,7 @@ $(document).ready(function() {
                                 "columns": ':nth-child(n+3):visible'
                             },
                             "action": function(e, dt, node, config) {
-                                $("ul.dropdown-menu").hide();
+                                $(".dt-button-collection").hide();
                                 $('#waitingModal').modal('show');
                                 setTimeout(function(){
                                     $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
@@ -562,7 +562,7 @@ $(document).ready(function() {
     });
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
-        $("ul.dropdown-menu").hide();
+        $(".dt-button-collection").hide();
         showWaitingModal(true);
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
@@ -587,7 +587,7 @@ $(document).ready(function() {
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
-        $("ul.dropdown-menu").hide();
+        $(".dt-button-collection").hide();
         showWaitingModal();
         var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
@@ -638,7 +638,7 @@ $(document).ready(function() {
     }
 
     function exportSelectedResultFiles(e, dt, node, config, exportAll) {
-        $("ul.dropdown-menu").hide();
+        $(".dt-button-collection").hide();
         showWaitingModal(true);
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
