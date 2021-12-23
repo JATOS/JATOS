@@ -142,26 +142,24 @@ public class ResultRemover {
      * Remove ComponentResult from its StudyResult and then remove itself. Removes result upload files.
      */
     private void removeComponentResult(long componentResultId) {
-        jpa.withTransaction(entityManager -> {
-            ComponentResult componentResult = componentResultDao.findById(componentResultId);
-            StudyResult studyResult = componentResult.getStudyResult();
-            if (studyResult == null) {
-                LOGGER.error(".removeComponentResult: StudyResult is null - but a ComponentResult always belongs to a "
-                        + "StudyResult (ComponentResult's ID is " + componentResult.getId() + ")");
-                componentResultDao.remove(componentResult);
-                return;
-            }
-
-            studyResult.removeComponentResult(componentResult);
-            studyResultDao.update(studyResult);
-            try {
-                // Remove componentResult's upload dir
-                ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
-            } catch (IOException e) {
-                LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
-            }
+        ComponentResult componentResult = componentResultDao.findById(componentResultId);
+        StudyResult studyResult = componentResult.getStudyResult();
+        if (studyResult == null) {
+            LOGGER.error(".removeComponentResult: StudyResult is null - but a ComponentResult always belongs to a "
+                    + "StudyResult (ComponentResult's ID is " + componentResult.getId() + ")");
             componentResultDao.remove(componentResult);
-        });
+            return;
+        }
+
+        studyResult.removeComponentResult(componentResult);
+        studyResultDao.update(studyResult);
+        try {
+            // Remove componentResult's upload dir
+            ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
+        } catch (IOException e) {
+            LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
+        }
+        componentResultDao.remove(componentResult);
     }
 
     /**
@@ -170,40 +168,37 @@ public class ResultRemover {
      * GroupResult and then remove StudyResult itself. Removes result upload files.
      */
     private void removeStudyResult(long studyResultId) {
-        jpa.withTransaction(entityManager -> {
-            StudyResult studyResult = studyResultDao.findById(studyResultId);
+        StudyResult studyResult = studyResultDao.findById(studyResultId);
 
-            // Remove all component results of this study result
-            studyResult.getComponentResultList().forEach(componentResultDao::remove);
+        // Remove all component results of this study result
+        studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
-            // Remove study result from worker
-            Worker worker = studyResult.getWorker();
-            worker.removeStudyResult(studyResult);
-            workerDao.update(worker);
+        // Remove study result from worker
+        Worker worker = studyResult.getWorker();
+        worker.removeStudyResult(studyResult);
+        workerDao.update(worker);
 
-            // Remove studyResult as member from group result
-            GroupResult activeGroupResult = studyResult.getActiveGroupResult();
-            if (activeGroupResult != null) {
-                activeGroupResult.removeActiveMember(studyResult);
-                updateOrRemoveGroupResult(activeGroupResult);
-            }
-            GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
-            if (historyGroupResult != null) {
-                historyGroupResult.removeHistoryMember(studyResult);
-                updateOrRemoveGroupResult(historyGroupResult);
-            }
+        // Remove studyResult as member from group result
+        GroupResult activeGroupResult = studyResult.getActiveGroupResult();
+        if (activeGroupResult != null) {
+            activeGroupResult.removeActiveMember(studyResult);
+            updateOrRemoveGroupResult(activeGroupResult);
+        }
+        GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
+        if (historyGroupResult != null) {
+            historyGroupResult.removeHistoryMember(studyResult);
+            updateOrRemoveGroupResult(historyGroupResult);
+        }
 
-            try {
-                // Remove studyResult's upload dir
-                ioUtils.removeResultUploadsDir(studyResultId);
-            } catch (IOException e) {
-                LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
-            }
+        try {
+            // Remove studyResult's upload dir
+            ioUtils.removeResultUploadsDir(studyResultId);
+        } catch (IOException e) {
+            LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
+        }
 
-            // Remove studyResult
-            studyResultDao.remove(studyResult);
-        });
-
+        // Remove studyResult
+        studyResultDao.remove(studyResult);
     }
 
     /**
