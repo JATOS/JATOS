@@ -761,11 +761,11 @@ function showStudyLinksDisplayPersonalModal(studyCodes, batch) {
     if (studyCodes.length == 1) {
         preText = `<div class="directLink">This link will start the study directly.</div>
             <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
-        postText = "Copy & paste and hand it to your worker.";
+        postText = `Or use the study code '${studyCodes[0]}'.<br>Copy & paste and hand it to your worker.`;
     } else {
         preText = `<div class="directLink">Each of these links will start the study directly.</div>
             <div class="confirmLink">Each of these links will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
-        postText = "Copy & paste and hand them to your workers.";
+        postText = `Copy & paste and hand them to your workers.`;
     }
     var warning;
     if (!batch.allowedWorkerTypes.includes(workerType)) {
@@ -789,7 +789,7 @@ function showStudyLinkGeneralSingleModal(batch) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
                 <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
-            var postText = "Copy & paste and hand it to your workers.";
+            var postText = `Or use the study code '${studyCode}'.<br>Copy & paste and hand it to your workers.`;
             var warning;
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE")) {
                 warning = `Worker type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE is currently not allowed in this batch`;
@@ -809,7 +809,7 @@ function showStudyLinkGeneralMultipleModal(batch) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
                 <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
-            var postText = "Copy & paste and hand it to your workers.";
+            var postText = `Or use the study code '${studyCode}'.<br>Copy & paste and hand it to your workers.`;
             var warning;
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE")) {
                 warning = `Worker type @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE is currently not allowed in this batch`;
