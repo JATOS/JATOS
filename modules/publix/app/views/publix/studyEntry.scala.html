@@ -1,4 +1,4 @@
-@(studyCode: String, validStudyLink: Boolean, queryString: String, preRunMsg: String, errMsg: String)
+@(studyCode: String, validStudyLink: Boolean, queryString: String, studyEntryMsg: String, errMsg: String)
 
 @main("JATOS") {
 
@@ -78,13 +78,13 @@ input[type=submit]:hover, button:hover {
 <script>
     const studyCode = "@studyCode";
     const validStudyLink = @validStudyLink;
-    const preRunMsg = `@Html(preRunMsg)`.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    const studyEntryMsg = `@Html(studyEntryMsg)`.replace(/(?:\r\n|\r|\n)/g, '<br>');
     const errMsg = "@errMsg";
 
     if (validStudyLink) {
         document.querySelector('#confirm').style.display = 'block';
-        if (preRunMsg) {
-            document.querySelector('.msg').innerHTML = preRunMsg;
+        if (studyEntryMsg) {
+            document.querySelector('.msg').innerHTML = studyEntryMsg;
         } else {
             document.querySelector('.msg').innerHTML = 'Press &nbsp;▶&nbsp; to start the experiment';
         }

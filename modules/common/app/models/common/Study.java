@@ -125,10 +125,10 @@ public class Study {
     private String endRedirectUrl;
 
     /**
-     * Will be shown to the worker on the pre-run page
+     * Will be shown to the worker on the Study Entry page
      */
     @JsonView({ JsonUtils.JsonForIO.class })
-    private String preRunMsg;
+    private String studyEntryMsg;
 
     /**
      * List of users that are users of this study (have access rights). The relationship is bidirectional.
@@ -282,12 +282,12 @@ public class Study {
         this.endRedirectUrl = endRedirectUrl;
     }
 
-    public String getPreRunMsg() {
-        return preRunMsg;
+    public String getStudyEntryMsg() {
+        return studyEntryMsg;
     }
 
-    public void setPreRunMsg(String preRunMsg) {
-        this.preRunMsg = preRunMsg;
+    public void setStudyEntryMsg(String studyEntryMsg) {
+        this.studyEntryMsg = studyEntryMsg;
     }
 
     public void setUserList(Set<User> userList) {

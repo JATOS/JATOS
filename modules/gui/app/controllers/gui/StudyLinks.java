@@ -478,7 +478,7 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * GET request that returns a study link ID for the given worker type (possible types are GeneralMultipleWorker,
+     * GET request that returns a study code for the given worker type (possible types are GeneralMultipleWorker,
      * GeneralSingleWorker, MTWorker). This ID is used on the client side to generate the study link. Since for the
      * 'General' workers only one study link is necessary per batch and worker type it only creates one if it is not
      * already stored in the StudyLink table.

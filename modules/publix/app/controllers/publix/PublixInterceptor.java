@@ -34,9 +34,9 @@ import java.util.Optional;
  * implementations of the API (all extend Publix). Each implementation deals with different workers (e.g. workers from
  * MTurk, Personal Multiple workers).
  *
- * A study run starts with the 'run' method that takes the study link ID (called study code in the GUI) as a parameter.
- * The study link ID determines the worker type and which Publix implementation will be called. All subsequent requests
- * of this study run need at least the study result UUID and often the component UUID too.
+ * A study run starts with the 'run' method that takes the study code as a parameter. The study code is the ID for a
+ * StudyLink. The StudyLink determines the worker type and which Publix implementation will be called. All subsequent
+ * requests of this study run need at least the study result UUID and often the component UUID too.
  *
  * @author Kristian Lange
  */
@@ -62,14 +62,14 @@ public class PublixInterceptor extends Controller {
     }
 
     /**
-     * Shows a page prior to a study run with different purpose.
-     * 1. Lets worker enter the study link ID (called study code in the GUI)
-     * 2. Takes the study link ID as a query parameter. An individual text defined in the study properties can be shown.
+     * Shows the Study Entry page prior to a study run.
+     * 1. Lets worker enter the study code
+     * 2. Takes the study code as a query parameter. An text shown can be customized in the study properties.
      * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
      */
     @Transactional
-    public Result preRun(Http.Request request, String studyCode) {
-        String preRunMsg = null;
+    public Result studyEntry(Http.Request request, String studyCode) {
+        String studyEntryMsg = null;
         String errMsg = null;
         boolean validStudyLink = false;
 
@@ -77,7 +77,7 @@ public class PublixInterceptor extends Controller {
             StudyLink studyLink = studyLinkDao.findByStudyCode(studyCode);
             if (studyLink != null) {
                 validStudyLink = true;
-                preRunMsg = studyLink.getBatch().getStudy().getPreRunMsg();
+                studyEntryMsg = studyLink.getBatch().getStudy().getStudyEntryMsg();
 
                 String workerType = studyLink.getWorkerType();
                 if (workerType.equals(PersonalSingleWorker.WORKER_TYPE)
@@ -93,8 +93,8 @@ public class PublixInterceptor extends Controller {
                 errMsg = "No valid study code";
             }
         }
-        return ok(views.html.publix.preRun.render(studyCode, validStudyLink, Helpers.getQueryString(request),
-                preRunMsg, errMsg));
+        return ok(views.html.publix.studyEntry.render(studyCode, validStudyLink, Helpers.getQueryString(request),
+                studyEntryMsg, errMsg));
     }
 
     @Transactional

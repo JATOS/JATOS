@@ -148,7 +148,7 @@
                         <th>Study&nbsp;Links
                             <div class="btn-group btn-toggle">
                                 <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
-                                <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a pre-run page. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
+                                <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
                             </div>
                             &nbsp;<span class="glyphicon sortLogo gray-light"/>
                         </th>
@@ -826,7 +826,7 @@ function showStudyLinksDisplayModal(title, preText, studyCodes, postText, warnin
     var htmlPreText =
         `<div class="btn-group btn-toggle">
             <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
-            <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a pre-run page. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
+            <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
         </div>
         <p>${preText}</p>`;
     var htmlUrl = '<div class="well linkUrls">' + generateStudyLinksHtml(studyCodes) + '</div>';
