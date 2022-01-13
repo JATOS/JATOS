@@ -38,10 +38,8 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     jpa.withTransaction(asJavaSupplier(() => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
       val groupMaxNotReached =
-        if (allGroupMaxNotReached.isEmpty) {
-          Helpers.initializeAndUnproxy(batch)
-          groupResultDao.create(new GroupResult(batch))
-        } else allGroupMaxNotReached.get(0)
+        if (allGroupMaxNotReached.isEmpty) groupResultDao.create(new GroupResult(batch))
+        else allGroupMaxNotReached.get(0)
 
       groupMaxNotReached.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(groupMaxNotReached)

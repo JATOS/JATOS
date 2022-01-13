@@ -119,49 +119,52 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
         // Set Http.Context used in Play with Java. Needed by IdCookieService
         play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
-        jpa.withTransaction(asJavaSupplier(() => {
-          try {
+        try {
+          val studyResult = jpa.withTransaction(asJavaSupplier(() => {
             val studyResult = fetchStudyResult(studyResultUuid)
-            studyResult.getWorkerType match {
-              case JatosWorker.WORKER_TYPE =>
-                jatosGroupChannel.join(studyResult)
-                Right(jatosGroupChannel.open(studyResult))
-              case PersonalSingleWorker.WORKER_TYPE =>
-                personalSingleGroupChannel.join(studyResult)
-                Right(personalSingleGroupChannel.open(studyResult))
-              case PersonalMultipleWorker.WORKER_TYPE =>
-                personalMultipleGroupChannel.join(studyResult)
-                Right(personalMultipleGroupChannel.open(studyResult))
-              case GeneralSingleWorker.WORKER_TYPE =>
-                generalSingleGroupChannel.join(studyResult)
-                Right(generalSingleGroupChannel.open(studyResult))
-              case GeneralMultipleWorker.WORKER_TYPE =>
-                generalMultipleGroupChannel.join(studyResult)
-                Right(generalMultipleGroupChannel.open(studyResult))
-              case MTSandboxWorker.WORKER_TYPE =>
-                mTGroupChannel.join(studyResult)
-                Right(mTGroupChannel.open(studyResult))
-              case MTWorker.WORKER_TYPE =>
-                mTGroupChannel.join(studyResult)
-                Right(mTGroupChannel.open(studyResult))
-              case _ => Left(Results.BadRequest)
-            }
-          } catch {
-            // Due to returning a WebSocket we can't throw a PublixExceptions like with other publix endpoints
-            case e: NotFoundPublixException =>
-              logger.info(s".join: ${e.getMessage}")
-              Left(Results.NotFound)
-            case e: ForbiddenPublixException =>
-              logger.info(s".join: ${e.getMessage}")
-              Left(Results.Forbidden)
-            case e: BadRequestPublixException =>
-              logger.info(s".join: ${e.getMessage}")
-              Left(Results.BadRequest)
-            case e: Exception =>
-              logger.error(".join: Exception during opening of group channel", e)
-              Left(Results.InternalServerError)
+            Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getBatch, studyResult.getActiveGroupResult,
+              studyResult.getStudy.getUserList, studyResult.getHistoryGroupResult)
+            studyResult
+          }))
+          studyResult.getWorkerType match {
+            case JatosWorker.WORKER_TYPE =>
+              jatosGroupChannel.join(studyResult)
+              Right(jatosGroupChannel.open(studyResult))
+            case PersonalSingleWorker.WORKER_TYPE =>
+              personalSingleGroupChannel.join(studyResult)
+              Right(personalSingleGroupChannel.open(studyResult))
+            case PersonalMultipleWorker.WORKER_TYPE =>
+              personalMultipleGroupChannel.join(studyResult)
+              Right(personalMultipleGroupChannel.open(studyResult))
+            case GeneralSingleWorker.WORKER_TYPE =>
+              generalSingleGroupChannel.join(studyResult)
+              Right(generalSingleGroupChannel.open(studyResult))
+            case GeneralMultipleWorker.WORKER_TYPE =>
+              generalMultipleGroupChannel.join(studyResult)
+              Right(generalMultipleGroupChannel.open(studyResult))
+            case MTSandboxWorker.WORKER_TYPE =>
+              mTGroupChannel.join(studyResult)
+              Right(mTGroupChannel.open(studyResult))
+            case MTWorker.WORKER_TYPE =>
+              mTGroupChannel.join(studyResult)
+              Right(mTGroupChannel.open(studyResult))
+            case _ => Left(Results.BadRequest)
           }
-        }))
+        } catch {
+          // Due to returning a WebSocket we can't throw a PublixExceptions like with other publix endpoints
+          case e: NotFoundPublixException =>
+            logger.info(s".join: ${e.getMessage}")
+            Left(Results.NotFound)
+          case e: ForbiddenPublixException =>
+            logger.info(s".join: ${e.getMessage}")
+            Left(Results.Forbidden)
+          case e: BadRequestPublixException =>
+            logger.info(s".join: ${e.getMessage}")
+            Left(Results.BadRequest)
+          case e: Exception =>
+            logger.error(".join: Exception during opening of group channel", e)
+            Left(Results.InternalServerError)
+        }
       })
     }
 
@@ -182,34 +185,34 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     // Set Http.Context used in Play with Java. Needed by IdCookieService
     play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
-      try {
-        val studyResult = jpa.withTransaction(asJavaSupplier(() => {
-          val studyResult = fetchStudyResult(studyResultUuid)
-          Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getBatch, studyResult.getActiveGroupResult,
-            studyResult.getActiveGroupResult.getActiveMemberList)
-          studyResult
-        }))
-        studyResult.getWorkerType match {
-          case JatosWorker.WORKER_TYPE => jatosGroupChannel.reassign(studyResult)
-          case PersonalSingleWorker.WORKER_TYPE => personalSingleGroupChannel.reassign(studyResult)
-          case PersonalMultipleWorker.WORKER_TYPE => personalMultipleGroupChannel.reassign(studyResult)
-          case GeneralSingleWorker.WORKER_TYPE => generalSingleGroupChannel.reassign(studyResult)
-          case GeneralMultipleWorker.WORKER_TYPE => generalMultipleGroupChannel.reassign(studyResult)
-          case MTSandboxWorker.WORKER_TYPE => mTGroupChannel.reassign(studyResult)
-          case MTWorker.WORKER_TYPE => mTGroupChannel.reassign(studyResult)
-          case _ => Results.BadRequest
-        }
-      } catch {
-        case e: ForbiddenPublixException =>
-          logger.info(s".reassignGroup: ${e.getMessage}")
-          Forbidden
-        case e: BadRequestPublixException =>
-          logger.info(s".reassignGroup: ${e.getMessage}")
-          BadRequest
-        case e: Exception =>
-          logger.error(".reassignGroup: Exception during reassigning a group channel", e)
-          InternalServerError
+    try {
+      val studyResult = jpa.withTransaction(asJavaSupplier(() => {
+        val studyResult = fetchStudyResult(studyResultUuid)
+        Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getBatch, studyResult.getActiveGroupResult,
+          studyResult.getActiveGroupResult.getActiveMemberList)
+        studyResult
+      }))
+      studyResult.getWorkerType match {
+        case JatosWorker.WORKER_TYPE => jatosGroupChannel.reassign(studyResult)
+        case PersonalSingleWorker.WORKER_TYPE => personalSingleGroupChannel.reassign(studyResult)
+        case PersonalMultipleWorker.WORKER_TYPE => personalMultipleGroupChannel.reassign(studyResult)
+        case GeneralSingleWorker.WORKER_TYPE => generalSingleGroupChannel.reassign(studyResult)
+        case GeneralMultipleWorker.WORKER_TYPE => generalMultipleGroupChannel.reassign(studyResult)
+        case MTSandboxWorker.WORKER_TYPE => mTGroupChannel.reassign(studyResult)
+        case MTWorker.WORKER_TYPE => mTGroupChannel.reassign(studyResult)
+        case _ => Results.BadRequest
       }
+    } catch {
+      case e: ForbiddenPublixException =>
+        logger.info(s".reassignGroup: ${e.getMessage}")
+        Forbidden
+      case e: BadRequestPublixException =>
+        logger.info(s".reassignGroup: ${e.getMessage}")
+        BadRequest
+      case e: Exception =>
+        logger.error(".reassignGroup: Exception during reassigning a group channel", e)
+        InternalServerError
+    }
   }
 
   /**
