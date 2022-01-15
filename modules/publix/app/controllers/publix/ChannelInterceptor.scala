@@ -92,15 +92,6 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
       })
     }
 
-  @throws[ForbiddenPublixException]
-  @throws[BadRequestPublixException]
-  private def fetchStudyResult(uuid: String) = {
-    if (uuid == null || uuid == "undefined") throw new ForbiddenPublixException("Error getting study result UUID")
-    val srOptional = studyResultDao.findByUuid(uuid)
-    if (!srOptional.isPresent) throw new BadRequestPublixException("Study result " + uuid + " doesn't exist.")
-    srOptional.get()
-  }
-
   /**
     * HTTP type: WebSocket
     *
@@ -120,12 +111,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
         play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
         try {
-          val studyResult = jpa.withTransaction(asJavaSupplier(() => {
-            val studyResult = fetchStudyResult(studyResultUuid)
-            Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getBatch, studyResult.getActiveGroupResult,
-              studyResult.getStudy.getUserList, studyResult.getHistoryGroupResult)
-            studyResult
-          }))
+          val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
           studyResult.getWorkerType match {
             case JatosWorker.WORKER_TYPE =>
               jatosGroupChannel.join(studyResult)
@@ -186,12 +172,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
     try {
-      val studyResult = jpa.withTransaction(asJavaSupplier(() => {
-        val studyResult = fetchStudyResult(studyResultUuid)
-        Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getBatch, studyResult.getActiveGroupResult,
-          studyResult.getActiveGroupResult.getActiveMemberList)
-        studyResult
-      }))
+      val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
       studyResult.getWorkerType match {
         case JatosWorker.WORKER_TYPE => jatosGroupChannel.reassign(studyResult)
         case PersonalSingleWorker.WORKER_TYPE => personalSingleGroupChannel.reassign(studyResult)
@@ -254,6 +235,34 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
           logger.error(".leaveGroup: Exception during leaving a group channel", e)
           InternalServerError
       }
+    }))
+  }
+
+  @throws[ForbiddenPublixException]
+  @throws[BadRequestPublixException]
+  private def fetchStudyResult(uuid: String) = {
+    if (uuid == null || uuid == "undefined") throw new ForbiddenPublixException("Error getting study result UUID")
+    val srOptional = studyResultDao.findByUuid(uuid)
+    if (!srOptional.isPresent) throw new BadRequestPublixException("Study result " + uuid + " doesn't exist.")
+    srOptional.get()
+  }
+
+  @throws[ForbiddenPublixException]
+  @throws[BadRequestPublixException]
+  private def fetchStudyResultAndInitLazy(uuid: String) = {
+    jpa.withTransaction(asJavaSupplier(() => {
+      val studyResult = fetchStudyResult(uuid)
+      Helpers.initializeAndUnproxy(studyResult.getBatch, studyResult.getHistoryGroupResult)
+      if (studyResult.getStudy != null) {
+        Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getStudy.getUserList)
+      }
+      if (studyResult.getActiveGroupResult != null) {
+        Helpers.initializeAndUnproxy(studyResult.getActiveGroupResult, studyResult.getActiveGroupResult.getActiveMemberList)
+      }
+      if (studyResult.getWorker != null) {
+        Helpers.initializeAndUnproxy(studyResult.getWorker.getStudyResultList)
+      }
+      studyResult
     }))
   }
 
