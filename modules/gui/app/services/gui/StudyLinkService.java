@@ -92,6 +92,7 @@ public class StudyLinkService {
                         StudyLink studyLink = new StudyLink(batch, worker);
                         studyLinkDao.create(studyLink);
                         studyLinkCounter++;
+                        LOGGER.info("Created study link " + studyLinkCounter);
                     }
                 }
             }
