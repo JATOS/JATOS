@@ -26,7 +26,7 @@ var ajax;
  * Web workers callback function. In the event's data must be an array with the
  * study result's UUID and optionally the heartbeat's period.
  */
-onmessage = function(e) {
+this.onmessage = function(e) {
 	var studyResultUuid = e.data[0];
 	period = (typeof e.data[1] === 'undefined') ? periodDefault : e.data[1];
 	url = "../../../../" + studyResultUuid + "/heartbeat";

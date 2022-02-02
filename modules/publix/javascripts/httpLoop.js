@@ -25,7 +25,11 @@
 var requests = [];
 var running = false;
 
-onmessage = function (request) {
+this.onmessage = function (request) {
+	if (!request.data) {
+		console.error("Empty request.data");
+		return;
+	}
 	requests.push(request.data);
 	if (!running) {
 		running = true;
