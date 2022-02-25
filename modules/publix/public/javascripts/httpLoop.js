@@ -25,7 +25,7 @@
 var requests = [];
 var running = false;
 
-self.onmessage = function (request) {
+onmessage = function (request) {
 	if (!request.data) {
 		console.error("Empty request.data");
 		return;

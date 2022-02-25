@@ -1,7 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2021
+ * Author Kristian Lange 2014 - 2022
  * Licensed under Apache License 2.0
  * 
  * Uses plugin jquery.ajax-retry:
@@ -20,9 +20,9 @@
  * Licensed under the MIT license.
  */
 
-/* global jatos, jquery, jsonpatch, jsonpointer */
+/* global jsonpatch, jsonpointer */
 
-window.jatos = {};
+var jatos = {};
 
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
@@ -254,28 +254,65 @@ window.jatos = {};
 	 */
 	var showBeforeUnloadWarning = true;
 
-	// Put jquery in jatos.jQuery to avoid conflicts with a component's jQuery version.
-	jatos.jQuery = jquery.noConflict();
-	jatos.jQuery.ajaxSetup({
-		cache: true
+	// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
+	// a component's jQuery version. Afterwards call initJatos.
+	jatos.jQuery = {};
+	getScript('jatos-publix/javascripts/jquery-3.5.1.min.js', function () {
+		jatos.jQuery = jQuery.noConflict(true);
+		jatos.jQuery.ajaxSetup({
+			cache: true
+		});
+		initJatos();
 	});
-	initJatos();
+
+	/**
+	 * Adds a <script> element into HTML's head and call success function when loaded
+	 */
+	function getScript(url, onSuccess) {
+		var script = document.createElement('script');
+		script.src = url;
+		var head = document.getElementsByTagName('head')[0],
+			done = false;
+		script.onload = script.onreadystatechange = function () {
+			if (!done && (!this.readyState || this.readyState == 'loaded' ||
+				this.readyState == 'complete')) {
+				done = true;
+				onSuccess();
+				script.onload = script.onreadystatechange = null;
+				head.removeChild(script);
+			}
+		};
+		head.appendChild(script);
+	}
 
 	/**
 	 * Initialising jatos.js
 	 */
 	function initJatos() {
-		// Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-		jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js")
+
+		// "There is a natural order to this world, and those who try to upend it do not fare well."
+		// 1) Load additional scripts
+		// 2) Do more init stuff that doesn't involve HTTP requests
+		// 3) Get init data from JATOS server
+		// 4) Try to open the batch channel
+		// 5) Call readyForOnLoad
+		jatos.jQuery.when(
+			// Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
+			jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
+			// Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
+			jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.min.js"),
+			// Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
+			jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.min.js")
+		)
 		.then(function () {
 			// Get studyResultUuid from URL path
 			jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
 			readIdCookie();
 			// Start heartbeat.js (the general one - not the channel one)
-			heartbeatWorker = new Worker(new URL("./heartbeat.js", import.meta.url));
+            heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
 			heartbeatWorker.postMessage([jatos.studyResultUuid]);
 			// Start httpLoop.js
-			httpLoop = new Worker(new URL("./httpLoop.js", import.meta.url));
+            httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
 			httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
 		})
 		.then(getInitData)
