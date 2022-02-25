@@ -2,6 +2,7 @@ package general.common;
 
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigValueType;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.Logger.ALogger;
@@ -13,10 +14,7 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
@@ -73,8 +71,10 @@ public class Common {
     private static String jatosUpdateMsg;
     private static String jatosHttpAddress;
     private static int jatosHttpPort;
-    private static String ldapBasedn;
     private static String ldapUrl;
+    private static List<String> ldapBaseDn;
+    private static String ldapAdminDn;
+    private static String ldapAdminPassword;
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
     private static boolean donationAllowed;
@@ -134,7 +134,13 @@ public class Common {
         if (jatosHttpAddress.equals("0.0.0.0")) jatosHttpAddress = "127.0.0.1"; // Fix localhost IP
         jatosHttpPort = config.getInt("play.server.http.port");
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
-        ldapBasedn = config.getString("jatos.user.authentication.ldap.basedn");
+        if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.STRING) {
+            ldapBaseDn = Collections.singletonList(config.getString("jatos.user.authentication.ldap.basedn"));
+        } else if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.LIST) {
+            ldapBaseDn = config.getStringList("jatos.user.authentication.ldap.basedn");
+        }
+        ldapAdminDn = config.getString("jatos.user.authentication.ldap.admin.dn");
+        ldapAdminPassword = config.getString("jatos.user.authentication.ldap.admin.password");
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
@@ -416,14 +422,32 @@ public class Common {
     }
 
     /**
-     * LDAP base DN (Distinguished Name)
+     * LDAP base DNs (Distinguished Name)
      */
-    public static String getLdapBasedn() {
-        return ldapBasedn;
+    public static List<String> getLdapBaseDn() {
+        return ldapBaseDn;
+    }
+
+    /**
+     * LDAP admin DN (Distinguished Name) - the admin user is used to search for the actual user that wants to log in
+     */
+    public static String getLdapAdminDn() {
+        return ldapAdminDn;
+    }
+
+    /**
+     * LDAP admin password
+     */
+    public static String getLdapAdminPassword() {
+        return ldapAdminPassword;
     }
 
     public static boolean isLdapAllowed() {
-        return !Strings.isNullOrEmpty(ldapUrl) && !Strings.isNullOrEmpty(ldapBasedn);
+        return !Strings.isNullOrEmpty(ldapUrl);
+    }
+
+    public static boolean isLdapAutoCreate() {
+        return true;
     }
 
     /**

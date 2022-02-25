@@ -18,11 +18,7 @@ import utils.common.HashUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.naming.AuthenticationException;
-import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -30,7 +26,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Hashtable;
 
 /**
  * Service class around authentication, session cookie and session cache handling. It works together with the
@@ -77,27 +72,27 @@ public class AuthenticationService {
 
     private final UserDao userDao;
     private final UserSessionCacheAccessor userSessionCacheAccessor;
+    private final LdapAuthentication ldapAuthentication;
 
     @Inject
-    AuthenticationService(UserDao userDao, UserSessionCacheAccessor userSessionCacheAccessor) {
+    AuthenticationService(UserDao userDao, UserSessionCacheAccessor userSessionCacheAccessor,
+            LdapAuthentication ldapAuthentication) {
         this.userDao = userDao;
         this.userSessionCacheAccessor = userSessionCacheAccessor;
+        this.ldapAuthentication = ldapAuthentication;
     }
 
     /**
-     * Authenticates the user specified by the username with the given password.
+     * Authenticates the user with the given password.
      */
-    public boolean authenticate(String normalizedUsername, String password) throws NamingException {
-        if (password == null) return false;
-
-        User user = userDao.findByUsername(normalizedUsername);
-        if (user == null) return false;
+    public boolean authenticate(User user, String password) throws NamingException {
+        if (user == null || password == null) return false;
 
         switch (user.getAuthMethod()) {
             case LDAP:
-                return authenticateViaLdap(normalizedUsername, password);
+                return ldapAuthentication.authenticate(user.getUsername(), password);
             case DB:
-                return authenticateViaDb(normalizedUsername, password);
+                return authenticateViaDb(user.getUsername(), password);
             default:
                 throw new UnsupportedOperationException("Unsupported auth method " + user.getAuthMethod().name());
         }
@@ -106,29 +101,6 @@ public class AuthenticationService {
     private boolean authenticateViaDb(String normalizedUsername, String password) {
         String passwordHash = HashUtils.getHashMD5(password);
         return userDao.authenticate(normalizedUsername, passwordHash);
-    }
-
-    /**
-     * Authenticated via an external LDAP server and throws an NamingException if the LDAP server can't be reached or
-     * the the LDAP URL or Base DN is wrong.
-     */
-    private boolean authenticateViaLdap(String normalizedUsername, String password) throws NamingException {
-        Hashtable<String, String> props = new Hashtable<>();
-        props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        props.put(Context.SECURITY_AUTHENTICATION, "simple");
-        props.put(Context.SECURITY_PRINCIPAL, "uid=" + normalizedUsername + "," + Common.getLdapBasedn());
-        props.put(Context.SECURITY_CREDENTIALS, password);
-        props.put(Context.PROVIDER_URL, Common.getLdapUrl());
-        props.put("com.sun.jndi.ldap.read.timeout", String.valueOf(Common.getLdapTimeout()));
-        props.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(Common.getLdapTimeout()));
-        DirContext context;
-        try {
-            context = new InitialDirContext(props);
-            context.close();
-            return true;
-        } catch (AuthenticationException e) {
-            return false;
-        }
     }
 
     /**

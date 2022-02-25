@@ -179,7 +179,7 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         String adminPassword = form.get().getAdminPassword();
         if (!loggedInUser.isOauthGoogle()
-                && !authenticationService.authenticate(loggedInUser.getUsername(), adminPassword)) {
+                && !authenticationService.authenticate(loggedInUser, adminPassword)) {
             form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, "Wrong password"));
             return forbidden(form.errorsAsJson());
         }
@@ -249,9 +249,8 @@ public class Users extends Controller {
 
         // Authenticate loggedInUser
         if (!loggedInUser.isOauthGoogle()) {
-            String adminUsername = loggedInUser.getUsername();
             String adminPassword = form.get().getAdminPassword();
-            if (!authenticationService.authenticate(adminUsername, adminPassword)) {
+            if (!authenticationService.authenticate(loggedInUser, adminPassword)) {
                 form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, "Wrong password"));
                 return forbidden(form.errorsAsJson());
             }
@@ -287,7 +286,7 @@ public class Users extends Controller {
 
         // Check old password
         String oldPassword = form.get().getOldPassword();
-        if (!authenticationService.authenticate(normalizedUsernameOfUserToChange, oldPassword)) {
+        if (!authenticationService.authenticate(loggedInUser, oldPassword)) {
             form = form.withError(new ValidationError(ChangePasswordModel.OLD_PASSWORD, "Wrong password"));
             return forbidden(form.errorsAsJson());
         }
@@ -320,7 +319,7 @@ public class Users extends Controller {
         if (!loggedInUser.isOauthGoogle()) {
             try {
                 String password = requestData.get("password");
-                if (!authenticationService.authenticate(normalizedLoggedInUsername, password)) {
+                if (!authenticationService.authenticate(loggedInUser, password)) {
                     return forbidden(MessagesStrings.WRONG_PASSWORD);
                 }
             } catch (NamingException e) {

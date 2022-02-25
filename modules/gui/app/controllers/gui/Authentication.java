@@ -80,7 +80,8 @@ public class Authentication extends Controller {
 
         boolean authenticated;
         try {
-            authenticated = authenticationService.authenticate(normalizedUsername, password);
+            User user = userDao.findByUsername(normalizedUsername);
+            authenticated = authenticationService.authenticate(user, password);
         } catch (NamingException e) {
             return returnInternalServerErrorDueToLdapProblems(loginForm, e);
         }
