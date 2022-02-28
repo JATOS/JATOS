@@ -48,7 +48,7 @@ public class GeneralSingleCookieService {
     private static final String COOKIE_LIST_DELIMITER = "&";
 
     /**
-     * Returns the worker ID of the GeneralSingleWorker that belongs to the given study - or null, if it doesn't exists.
+     * Returns the worker ID of the GeneralSingleWorker that belongs to the given study - or null, if it doesn't exist.
      * If the study was run before the study UUID has been stored together with the worker ID in the cookie.
      */
     public Long fetchWorkerIdByStudy(Study study) {

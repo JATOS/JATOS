@@ -80,8 +80,7 @@ public class PublixInterceptor extends Controller {
                 studyEntryMsg = studyLink.getBatch().getStudy().getStudyEntryMsg();
 
                 String workerType = studyLink.getWorkerType();
-                if (workerType.equals(PersonalSingleWorker.WORKER_TYPE)
-                        || workerType.equals(GeneralSingleWorker.WORKER_TYPE)) {
+                if (workerType.equals(PersonalSingleWorker.WORKER_TYPE)) {
                     Optional<StudyResult> srOptional = studyResultDao.findByStudyCode(studyCode);
                     if (srOptional.isPresent() && !srOptional.get().getStudyState().equals(
                             StudyResult.StudyState.PRE)) {

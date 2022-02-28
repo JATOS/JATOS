@@ -30,8 +30,7 @@ public class GeneralSingleStudyAuthorisation extends StudyAuthorisation {
         if (!batch.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }
-        // General Single Runs are used only once - don't start if worker has a
-        // study result (although it is in state PRE)
+        // General Single Runs are used only once - don't start if worker has a study result (except it is in state PRE)
         Optional<StudyResult> first = worker.getFirstStudyResult();
         if (first.isPresent() && first.get().getStudyState() != StudyResult.StudyState.PRE) {
             throw new ForbiddenPublixException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
