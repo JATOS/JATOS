@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
 import exceptions.publix.{ForbiddenPublixException, PublixException}
-import group.GroupDispatcher.{JoinedGroup, LeftGroup, PoisonChannel, ReassignChannel}
+import group.GroupDispatcher.{JoinedGroup, LeftGroup, PoisonChannel, PoisonEmptyDispatcher, ReassignChannel}
 import group.GroupDispatcherRegistry.{Get, GetOrCreate, ItsThisOne}
 import group.{GroupAdministration, GroupChannelActor, GroupDispatcher}
 import models.common.workers._
@@ -181,6 +181,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     val groupDispatcherOption = getDispatcher(groupResult.getId)
     if (groupDispatcherOption.isDefined) {
       groupDispatcherOption.get ! PoisonChannel(studyResult.getId)
+      groupDispatcherOption.get ! PoisonEmptyDispatcher
       sendLeftMsg(studyResult, groupResult)
     }
   }

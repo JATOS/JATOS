@@ -86,6 +86,8 @@ object GroupDispatcher {
     */
   case class PoisonChannel(studyResultId: Long)
 
+  case class PoisonEmptyDispatcher()
+
 
   object TellWhom extends Enumeration {
     type TellWhom = Value
@@ -185,6 +187,8 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     case p: PoisonChannel =>
       // Comes from GroupChannel service: close a group channel
       poisonChannel(p)
+    case PoisonEmptyDispatcher =>
+      poisonEmptyDispatcher()
   }
 
   /**
@@ -245,9 +249,6 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
         channelRegistry, includeSessionData = false, GroupAction.Closed, TellWhom.AllButSender)
       tellActionMsg(List(msg))
     }
-
-    // Tell this dispatcher to kill itself if it has no more members
-    if (channelRegistry.isEmpty) self ! PoisonPill
   }
 
   /**
@@ -279,10 +280,16 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
         s"${poison.studyResultId}")
     val groupChannelOption = channelRegistry.getChannel(poison.studyResultId)
     if (groupChannelOption.nonEmpty) {
-      groupChannelOption.get forward poison
+      groupChannelOption.get ! GroupMsg(Json.obj(GroupActionJsonKey.Action.toString -> GroupAction.Closed))
+      groupChannelOption.get ! poison
       tellSenderOnly(true)
     }
     else tellSenderOnly(false)
+  }
+
+  private def poisonEmptyDispatcher(): Unit = {
+    // Tell this dispatcher to kill itself if it has no more members
+    if (channelRegistry.isEmpty) self ! PoisonPill
   }
 
   /**

@@ -74,7 +74,7 @@ public class PublixUtils {
     }
 
     public ComponentResult startComponent(Component component, StudyResult studyResult)
-            throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
+            throws ForbiddenReloadException, ForbiddenNonLinearFlowException, NotFoundPublixException {
         return startComponent(component, studyResult, null);
     }
 
@@ -83,7 +83,7 @@ public class PublixUtils {
      * or an exception but never null.
      */
     public ComponentResult startComponent(Component component, StudyResult studyResult, String message)
-            throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
+            throws ForbiddenReloadException, ForbiddenNonLinearFlowException, NotFoundPublixException {
         // Deal with the last component
         Optional<ComponentResult> lastResultOpt = studyResult.getLastComponentResult();
         if (lastResultOpt.isPresent()) {
@@ -103,7 +103,7 @@ public class PublixUtils {
 
             if (lastComponent.equals(component)) {
                 // The component to be started is the same as the last one
-                if (component.isReloadable()) {
+                if (component.isReloadable() || isFirstComponentInPreviewStudy(lastResult)) {
                     // Reload is allowed
                     finishComponentResult(lastResult, ComponentState.RELOADED, message);
                 } else {
@@ -265,7 +265,7 @@ public class PublixUtils {
      * doesn't have to be of the given Component.
      */
     public ComponentResult retrieveStartedComponentResult(Component component, StudyResult studyResult)
-            throws ForbiddenReloadException, ForbiddenNonLinearFlowException {
+            throws ForbiddenReloadException, ForbiddenNonLinearFlowException, NotFoundPublixException {
         Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
         // Start the component if it was never started or if it's a reload of the component
         return current.isPresent() ? current.get() : startComponent(component, studyResult);
@@ -341,16 +341,29 @@ public class PublixUtils {
 
     /**
      * Sets the StudyResult's StudyState to STARTED if the study is currently in
-     * state PRE and the study result moved away from the first active component (this
-     * means the given componentId isn't the first component's one).
+     * state PRE and the study result moved away from the first active component
      */
-    public void setPreStudyStateByComponentId(StudyResult studyResult, Study study, Component component)
-            throws NotFoundPublixException {
+    public void setPreStudyState(ComponentResult componentResult) throws NotFoundPublixException {
+        StudyResult studyResult = componentResult.getStudyResult();
+        Component component = componentResult.getComponent();
+        Study study = component.getStudy();
         if (studyResult.getStudyState() == StudyState.PRE
                 && !retrieveFirstActiveComponent(study).getId().equals(component.getId())) {
             studyResult.setStudyState(StudyState.STARTED);
         }
         studyResultDao.update(studyResult);
+    }
+
+    /**
+     * Returns true if the Study that belongs to the given ComponentResult allows previews and the component that
+     * belongs to the given ComponentResult is the first active component in the study.
+     */
+    public boolean isFirstComponentInPreviewStudy(ComponentResult componentResult) throws NotFoundPublixException {
+        StudyResult studyResult = componentResult.getStudyResult();
+        Component component = componentResult.getComponent();
+        Study study = component.getStudy();
+        return (studyResult.getStudyState() == StudyResult.StudyState.PRE
+                && retrieveFirstActiveComponent(study).equals(component));
     }
 
     /**

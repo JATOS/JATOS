@@ -85,7 +85,6 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     public Result startComponent(Request request, StudyResult studyResult, Component component, String message)
             throws PublixException {
         Study study = studyResult.getStudy();
-        publixUtils.setPreStudyStateByComponentId(studyResult, study, component);
 
         ComponentResult componentResult;
         try {
@@ -95,6 +94,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
                     .finishStudy(studyResult.getUuid(), false, e.getMessage()));
         }
 
+        publixUtils.setPreStudyState(componentResult);
         idCookieService.writeIdCookie(studyResult, componentResult);
         return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava();
     }

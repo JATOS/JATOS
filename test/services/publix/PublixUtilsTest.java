@@ -962,22 +962,22 @@ public class PublixUtilsTest {
 
                 // PRE && first (active) => stays in PRE
                 studyResult.setStudyState(StudyState.PRE);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getFirstComponent().get());
+                publixUtils.setPreStudyState(studyResult, study, study.getFirstComponent().get());
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
 
                 // STARTED && first => keeps state
                 studyResult.setStudyState(StudyState.STARTED);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getFirstComponent().get());
+                publixUtils.setPreStudyState(studyResult, study, study.getFirstComponent().get());
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 
                 // PRE && second => changes to STARTED
                 studyResult.setStudyState(StudyState.PRE);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getComponent(2));
+                publixUtils.setPreStudyState(studyResult, study, study.getComponent(2));
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 
                 // STARTED && second => keeps state
                 studyResult.setStudyState(StudyState.STARTED);
-                publixUtils.setPreStudyStateByComponentId(studyResult, study, study.getComponent(2));
+                publixUtils.setPreStudyState(studyResult, study, study.getComponent(2));
                 assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
             } catch (NotFoundPublixException e) {
                 throw new RuntimeException(e);

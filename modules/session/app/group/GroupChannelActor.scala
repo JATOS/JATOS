@@ -21,7 +21,7 @@ import play.api.libs.json.{JsObject, Json}
   * UnregisterChannel message. A GroupChannelActor can, if it's told to, reassign itself to a
   * different GroupDispatcher.
   *
-  * @author Kristian Lange (2015 - 2018)
+  * @author Kristian Lange
   */
 object GroupChannelActor {
   def props(out: ActorRef, studyResultId: Long, groupDispatcher: ActorRef): Props =

@@ -139,7 +139,17 @@ var jatos = {};
 	 * the httpLoop still has requests to send. See function jatos.showOverlay
 	 * for config options.
 	 */
-	jatos.waitSendDataOverlayConfig = { text: "Sending data. Please wait." };
+	jatos.waitSendDataOverlayConfig = {
+		text: "Sending data. Please wait."
+	};
+	/**
+	 * Overlay config if the study run got invalidated by JATOS closing
+	 * the batch channel.
+	 */
+	jatos.studyRunInvalidOverlayConfig = {
+		text: "This study run is invalid.",
+		showImg: false
+	};
 	/**
 	 * All batch/group session actions currently waiting for an response.
 	 * Maps sessionActionId -> timeout object
@@ -224,6 +234,7 @@ var jatos = {};
 	var jatosOnLoadEventFired = false;
 	var startingComponent = false;
 	var endingStudy = false;
+	var studyRunInvalid = false;
 	/**
 	 * jQuery.Deferred objects: can hold state pending, resolved, or rejected
 	 */
@@ -557,6 +568,10 @@ var jatos = {};
 		if (batchChannel && batchChannel.readyState != batchChannel.CLOSED) {
 			return rejectedPromise();
 		}
+		if (studyRunInvalid) {
+			callingOnError(null, "This study run is invalid.");
+			return rejectedPromise();
+		}
 		if (isDeferredPending(openingBatchChannelDeferred)) {
 			callingOnError(null, "Can open only one batch channel.");
 			return rejectedPromise();
@@ -690,11 +705,10 @@ var jatos = {};
 		}
 		if (typeof batchMsg.version != 'undefined') {
 			batchSessionVersion = batchMsg.version;
-			// Batch channel opening is only done when we have the batch session version
-			openingBatchChannelDeferred.resolve();
-		} else {
-			callingOnError(null, "Batch channel opening failed: version missing");
-			openingBatchChannelDeferred.reject();
+			if (isDeferredPending(openingBatchChannelDeferred)) {
+				// Batch channel opening is only done when we have the batch session version
+				openingBatchChannelDeferred.resolve();
+			}
 		}
 		if (typeof batchMsg.action != 'undefined') {
 			handleBatchAction(batchMsg);
@@ -728,6 +742,12 @@ var jatos = {};
 					callingOnError(null, "Batch session got 'SESSION_FAIL' " +
 						"with nonexistent ID " + batchMsg.id);
 				}
+				break;
+			case "CLOSED":
+				clearInterval(batchChannelClosedCheckTimer);
+				studyRunInvalid = true;
+				console.info("Batch channel closed by JATOS server");
+				jatos.showOverlay(jatos.studyRunInvalidOverlayConfig);
 				break;
 			case "ERROR":
 				callingOnError(null, batchMsg.errorMsg);
@@ -960,6 +980,10 @@ var jatos = {};
 			callingOnError(onFail, "Can send only one batch session patch at a time");
 			return rejectedPromise();
 		}
+		if (studyRunInvalid) {
+			callingOnError(onFail, "This study run is invalid.");
+			return rejectedPromise();
+		}
 
 		var deferred = jatos.jQuery.Deferred();
 		if (jatos.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
@@ -1048,6 +1072,10 @@ var jatos = {};
 	 * POST for appendResultData.
 	 */
 	function submitOrAppendResultData(resultData, append, onSuccess, onError) {
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
+			return rejectedPromise();
+		}
 		var httpMethod = append ? "POST" : "PUT";
 		if (resultData === Object(resultData)) {
 			resultData = JSON.stringify(resultData);
@@ -1078,6 +1106,10 @@ var jatos = {};
 	 * @return {Promise}
 	 */
 	jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
+			return rejectedPromise();
+		}
 		if (typeof filename !== "string" || 0 === filename.length) {
 			callingOnError(onError, "No filename specified");
 			return rejectedPromise();
@@ -1132,7 +1164,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
 		}
-
+		
 		var componentPos, filename, onSuccess, onError;
 		if (typeof param1 === 'number') {
 			componentPos = param1;
@@ -1145,6 +1177,10 @@ var jatos = {};
 			onError = param3;
 		} else {
 			callingOnError(onError, "Unknown first parameter");
+			return rejectedPromise();
+		}
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
 			return rejectedPromise();
 		}
 		if (typeof filename !== "string" || 0 === filename.length) {
@@ -1258,7 +1294,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return;
 		}
-
+		
 		var message, onError, componentUuid;
 		if (typeof componentIdOrUuid === 'number') {
 			componentUuid = jatos.componentList.find(c => c.id == componentIdOrUuid).uuid;
@@ -1271,7 +1307,11 @@ var jatos = {};
 		} else if (typeof param3 === 'function') {
 			onError = param3;
 		}
-
+		
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
+			return;
+		}
 		if (startingComponent) {
 			callingOnError(onError, "Can start only one component at the same time");
 			return;
@@ -1454,6 +1494,10 @@ var jatos = {};
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
 		if (groupChannel && groupChannel.readyState != groupChannel.CLOSED) {
+			return rejectedPromise();
+		}
+		if (studyRunInvalid) {
+			callingOnError(groupChannelCallbacks.onError, "This study run is invalid.");
 			return rejectedPromise();
 		}
 		if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -1648,11 +1692,10 @@ var jatos = {};
 		}
 		if (typeof groupMsg.sessionVersion != 'undefined') {
 			groupSessionVersion = groupMsg.sessionVersion;
-			// Group joining is only done after the session version is received
-			openingGroupChannelDeferred.resolve();
-		} else {
-			callingOnError(null, "Group channel opening failed: version missing");
-			openingGroupChannelDeferred.reject();
+			if (isDeferredPending(openingGroupChannelDeferred)) {
+				// Group joining is only done after the session version is received
+				openingGroupChannelDeferred.resolve();
+			}
 		}
 	}
 
@@ -1676,9 +1719,12 @@ var jatos = {};
 				// onMemberClose
 				// Some member closed its group channel
 				// (onClose callback function is handled during groupChannel.onclose)
-				if (groupMsg.memberId != jatos.groupMemberId) {
+				if (typeof groupMsg.memberId != 'undefined' && groupMsg.memberId != jatos.groupMemberId) {
 					callFunctionIfExist(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
 					callFunctionIfExist(groupChannelCallbacks.onUpdate);
+				} else {
+					clearInterval(groupChannelClosedCheckTimer);
+					console.info("Group channel closed by JATOS server");
 				}
 				break;
 			case "JOINED":
@@ -1930,6 +1976,10 @@ var jatos = {};
 			callingOnError(onFail, "Can send only one group session patch at a time");
 			return rejectedPromise();
 		}
+		if (studyRunInvalid) {
+			callingOnError(onFail, "This study run is invalid.");
+			return rejectedPromise();
+		}
 
 		var deferred = jatos.jQuery.Deferred();
 		if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
@@ -1968,6 +2018,10 @@ var jatos = {};
 		}
 		if (isDeferredPending(sendingGroupFixedDeferred)) {
 			callingOnError(onFail, "Can fix group only once");
+			return rejectedPromise();
+		}
+		if (studyRunInvalid) {
+			callingOnError(onFail, "This study run is invalid.");
 			return rejectedPromise();
 		}
 
@@ -2120,6 +2174,10 @@ var jatos = {};
 			callingOnError(onFail, "Group channel not open");
 			return rejectedPromise();
 		}
+		if (studyRunInvalid) {
+			callingOnError(onFail, "This study run is invalid.");
+			return rejectedPromise();
+		}
 
 		reassigningGroupDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
@@ -2171,6 +2229,10 @@ var jatos = {};
 			callingOnError(onError, "Can leave only once");
 			return rejectedPromise();
 		}
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
+			return rejectedPromise();
+		}
 
 		leavingGroupDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
@@ -2206,7 +2268,11 @@ var jatos = {};
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
 		if (!initialized) {
-			console.error("jatos.js not yet initialized");
+			callingOnError(onError, "jatos.js not yet initialized");
+			return rejectedPromise();
+		}
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
 			return rejectedPromise();
 		}
 		if (endingStudy) {
@@ -2255,6 +2321,10 @@ var jatos = {};
 	jatos.abortStudy = function (message, showEndPage) {
 		if (typeof showEndPage !== "undefined" && !showEndPage) {
 			return jatos.abortStudyAjax(message);
+		}
+		if (studyRunInvalid) {
+			callingOnError(null, "This study run is invalid.");
+			return;
 		}
 
 		if (endingStudy) {
@@ -2313,7 +2383,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
 		}
-
+		
 		var resultData, successful, message, onSuccess, onError;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2327,7 +2397,11 @@ var jatos = {};
 			onSuccess = param3;
 			onError = param4;
 		}
-
+		
+		if (studyRunInvalid) {
+			callingOnError(onError, "This study run is invalid.");
+			return rejectedPromise();
+		}
 		if (endingStudy) {
 			callingOnError(onError, "Can end/abort study only once");
 			return rejectedPromise();
@@ -2415,6 +2489,11 @@ var jatos = {};
 			callingOnError(null, "jatos.js not yet initialized");
 			return;
 		}
+		if (studyRunInvalid) {
+			callingOnError(null, "This study run is invalid.");
+			return;
+		}
+		
 		var resultData, successful, message, showEndPage;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;

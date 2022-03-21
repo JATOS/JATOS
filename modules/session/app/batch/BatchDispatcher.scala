@@ -1,8 +1,6 @@
 package batch
 
-import javax.inject.Inject
-
-import akka.actor.{Actor, ActorRef, PoisonPill}
+import akka.actor.{Actor, ActorRef}
 import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher._
 import batch.BatchDispatcherRegistry.Unregister
@@ -10,6 +8,8 @@ import com.google.inject.assistedinject.Assisted
 import general.ChannelRegistry
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
+
+import javax.inject.Inject
 
 /**
   * A BatchDispatcher is an Akka Actor responsible for distributing messages (BatchMsg) within a
@@ -157,9 +157,6 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     val channelOption = channelRegistry.getChannel(studyResultId)
     if (channelOption.isDefined && channelOption.get == sender)
       channelRegistry.unregister(studyResultId)
-
-    // Tell this dispatcher to kill itself if it has no more members
-    if (channelRegistry.isEmpty) self ! PoisonPill
   }
 
   /**
@@ -174,6 +171,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     logger.debug(s".poisonChannel: batchId $batchId, studyResultId $studyResultId")
     val channelOption = channelRegistry.getChannel(studyResultId)
     if (channelOption.nonEmpty) {
+      channelOption.get ! BatchMsg(Json.obj(BatchActionJsonKey.Action.toString -> BatchAction.Closed))
       channelOption.get ! poisonChannel
       tellSenderOnly(true)
     }
