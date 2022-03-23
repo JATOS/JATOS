@@ -2,11 +2,13 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.7.3"
+version := "3.7.4"
 organization := "org.jatos"
 scalaVersion := "2.11.12"
 maintainer := "lange.kristian@gmail.com"
 packageName in Universal := "jatos"
+packageName in Docker := "jatos/jatos"
+dockerAliases ++= Seq(dockerAlias.value.withTag(Option("latest")))
 
 libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "2.26.0" % "test",
