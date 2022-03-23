@@ -84,6 +84,9 @@ public class Common {
     private static boolean idCookiesSecure;
     private static Http.Cookie.SameSite idCookiesSameSite;
     private static boolean resultDataExportUseTmpFile;
+    private static boolean showStudyAssetsSizeInStudyAdmin;
+    private static boolean showResultDataSizeInStudyAdmin;
+    private static boolean showResultFileSizeInStudyAdmin;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -150,6 +153,9 @@ public class Common {
         idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
         idCookiesSameSite = fillIdCookiesSameSite(config);
         resultDataExportUseTmpFile = config.getBoolean("jatos.resultData.export.useTmpFile");
+        showStudyAssetsSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showStudyAssetsSize");
+        showResultDataSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultDataSize");
+        showResultFileSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultFileSize");
     }
 
     private String fillBasePath(Application application) {
@@ -446,10 +452,6 @@ public class Common {
         return !Strings.isNullOrEmpty(ldapUrl);
     }
 
-    public static boolean isLdapAutoCreate() {
-        return true;
-    }
-
     /**
      * Read timeout for the LDAP server
      */
@@ -517,5 +519,26 @@ public class Common {
      */
     public static boolean isResultDataExportUseTmpFile() {
         return resultDataExportUseTmpFile;
+    }
+
+    /**
+     * If false, the study assets folder size won't be calculated for the study admin page. Sometimes the filesystem is too slow to allow this.
+     */
+    public static boolean showStudyAssetsSizeInStudyAdmin() {
+        return showStudyAssetsSizeInStudyAdmin;
+    }
+
+    /**
+     * If false, the result data size won't be calculated for the study admin page. Sometime the database is too slow to allow this.
+     */
+    public static boolean showResultDataSizeInStudyAdmin() {
+        return showResultDataSizeInStudyAdmin;
+    }
+
+    /**
+     * If false, the study result file size won't be calculated for the study admin page. Sometimes the filesystem is too slow to allow this.
+     */
+    public static boolean showResultFileSizeInStudyAdmin() {
+        return showResultFileSizeInStudyAdmin;
     }
 }

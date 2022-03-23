@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
+import general.common.Common;
 import models.common.Study;
 import models.common.StudyResultStatus;
 import models.common.User;
@@ -55,27 +56,45 @@ public class AdminService {
             studyInfo.put("studyResultCount", studyResultCount);
             studyInfo.put("members",
                     study.getUserList().stream().map(User::toString).collect(Collectors.toList()));
-            long studyAssetsDirSize = ioUtils.getStudyAssetsDirSize(study.getDirName());
-            studyInfo.put("studyAssetsSize", ImmutableMap.of(
-                    "display", Helpers.humanReadableByteCount(studyAssetsDirSize),
-                    "bytes", studyAssetsDirSize));
-            long resultDataSize = componentResultDao.sizeByStudy(study);
-            String resultDataSizePerStudyResultCount = (studyResultCount != 0 ?
-                    Helpers.humanReadableByteCount(resultDataSize / studyResultCount) : "0 B");
-            String resultDataSizeDisplay = Helpers.humanReadableByteCount(resultDataSize) + " ("
-                    + resultDataSizePerStudyResultCount + ")";
-            studyInfo.put("resultDataSize", ImmutableMap.of(
-                    "display", resultDataSizeDisplay,
-                    "bytes", resultDataSize));
-            long resultFileSize = studyResultDao.findAllByStudy(
-                    study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
-            String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
-                    Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B";
-            String resultFileSizeDisplay = Helpers.humanReadableByteCount(resultFileSize) + " ("
-                    + resultFileSizePerStudyResultCount + ")";
-            studyInfo.put("resultFileSize", ImmutableMap.of(
-                    "display", resultFileSizeDisplay,
-                    "bytes", resultFileSize));
+            if (Common.showStudyAssetsSizeInStudyAdmin()) {
+                long studyAssetsDirSize = ioUtils.getStudyAssetsDirSize(study.getDirName());
+                studyInfo.put("studyAssetsSize", ImmutableMap.of(
+                        "display", Helpers.humanReadableByteCount(studyAssetsDirSize),
+                        "bytes", studyAssetsDirSize));
+            } else {
+                studyInfo.put("studyAssetsSize", ImmutableMap.of(
+                        "display", "disabled",
+                        "bytes", 0));
+            }
+            if (Common.showResultDataSizeInStudyAdmin()) {
+                long resultDataSize = componentResultDao.sizeByStudy(study);
+                String resultDataSizePerStudyResultCount = (studyResultCount != 0 ?
+                        Helpers.humanReadableByteCount(resultDataSize / studyResultCount) : "0 B");
+                String resultDataSizeDisplay = Helpers.humanReadableByteCount(resultDataSize) + " ("
+                        + resultDataSizePerStudyResultCount + ")";
+                studyInfo.put("resultDataSize", ImmutableMap.of(
+                        "display", resultDataSizeDisplay,
+                        "bytes", resultDataSize));
+            } else {
+                studyInfo.put("resultDataSize", ImmutableMap.of(
+                        "display", "disabled",
+                        "bytes", 0));
+            }
+            if (Common.showResultFileSizeInStudyAdmin()) {
+                long resultFileSize = studyResultDao.findAllByStudy(
+                        study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
+                String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
+                        Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B";
+                String resultFileSizeDisplay = Helpers.humanReadableByteCount(resultFileSize) + " ("
+                        + resultFileSizePerStudyResultCount + ")";
+                studyInfo.put("resultFileSize", ImmutableMap.of(
+                        "display", resultFileSizeDisplay,
+                        "bytes", resultFileSize));
+            } else {
+                studyInfo.put("resultFileSize", ImmutableMap.of(
+                        "display", "disabled",
+                        "bytes", 0));
+            }
             Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
             if (srsOpt.isPresent()) {
                 studyInfo.put("lastStarted", Helpers.formatDate(srsOpt.get().getStartDate()));
