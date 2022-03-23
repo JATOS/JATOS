@@ -222,10 +222,11 @@ var userTable = $('#userTable').DataTable({
     "columns": [
         {
             "class": 'details-control studyCount',
+            "type": "num",
             "width": "1px",
             "data": "studyCount",
             "render": function (data, type, full, meta) {
-                if (type === 'export') return data;
+                if (type === 'export' || type === 'sort') return data;
                 return '<button type="button" class="btn btn-admin collapseStudiesData" data-toggle="tooltip"' +
                     'data-placement="bottom" title="Show/hide studies">' +
                     '<span class="badge">' + data + '</span>&nbsp;' +
