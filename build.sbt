@@ -34,7 +34,6 @@ dockerCommands := Seq(
   ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
   ExecCmd("RUN", "chmod", "u+x", "loader.sh"),
   Cmd("VOLUME", "/opt/docker/logs"),
-  Cmd("RUN", "bash -l -c 'echo export JATOS_SECRET=$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1) >> /etc/bash.bashrc'"),
   Cmd("USER", "daemon"),
   ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
