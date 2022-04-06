@@ -11,36 +11,36 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <div class="form-group">
-                        <div class="col-xs-2"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
-                        <div class="col-xs-10">
+                        <div class="col-xs-3"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
+                        <div class="col-xs-9">
                             <p class="@models.gui.ComponentProperties.ID"></p>
                         </div>
                     </div>
                     <div class="form-group">
-                        <div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of components between different JATOS instances"></span></p></div>
-                        <div class="col-xs-10">
+                        <div class="col-xs-3"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of components between different JATOS instances"></span></p></div>
+                        <div class="col-xs-9">
                             <p class="@models.gui.ComponentProperties.UUID"></p>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-xs-2" for="componentTitle">Title</label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="componentTitle">Title&nbsp;<sup>*</sup></label>
+                        <div class="col-xs-9">
                             <input type="text" class="form-control @models.gui.ComponentProperties.TITLE" id="componentTitle" name="@models.gui.ComponentProperties.TITLE" placeholder="Your component title">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="text-right col-xs-2">
+                        <label class="text-right col-xs-3">
                             Allow reload <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="If this box is not checked reloading this component's page will lead to an error and subsequent ending of the whole study."></span>
                         </label>
-                        <div class="col-xs-10">
+                        <div class="col-xs-9">
                             <input type="checkbox" class="@models.gui.ComponentProperties.RELOADABLE" name="@models.gui.ComponentProperties.RELOADABLE" value="true">
                             <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
                             <input type="hidden" name="@models.gui.ComponentProperties.RELOADABLE" value="false" />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-xs-2" for="@models.gui.ComponentProperties.HTML_FILE_PATH">HTML file path&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study's assets. Use '/' as a directory separator - even on MS Windows."></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="@models.gui.ComponentProperties.HTML_FILE_PATH">HTML file path&nbsp;<sup>*</sup>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study's assets. Use '/' as a directory separator - even on MS Windows."></span></label>
+                        <div class="col-xs-9">
                             <div class="input-group" id="htmlFilePath">
                                 <span class="input-group-addon">/@study.getDirName()/</span>
                                 <input type="text" class="form-control @models.gui.ComponentProperties.HTML_FILE_PATH" id="@models.gui.ComponentProperties.HTML_FILE_PATH" name="@models.gui.ComponentProperties.HTML_FILE_PATH" placeholder="Path to the actual HTML file">
@@ -50,16 +50,16 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-xs-2" for="componentComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="componentComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
+                        <div class="col-xs-9">
                             <textarea rows="3" class="form-control @models.gui.ComponentProperties.COMMENTS" id="componentComments" name="@models.gui.ComponentProperties.COMMENTS" placeholder="Your comments"></textarea>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-xs-2" for="componentJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
+                        <label class="control-label col-xs-3" for="componentJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
                             <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
                         </label>
-                        <div class="col-xs-10">
+                        <div class="col-xs-9">
                             <div class="form-control @models.gui.ComponentProperties.JSON_DATA" id="componentJsonData"></div>
                             <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
                             <textarea class="@models.gui.ComponentProperties.JSON_DATA" name="@models.gui.ComponentProperties.JSON_DATA" hidden></textarea>

@@ -11,36 +11,36 @@
                     <div class="messages"></div>
 
                     <div class="form-group row">
-                        <div class="col-xs-2"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
-                        <div class="col-xs-10">
+                        <div class="col-xs-3"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance"></span></p></div>
+                        <div class="col-xs-9">
                             <p class="@models.gui.StudyProperties.STUDY_ID"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of studies between different JATOS instances"></span></p></div>
-                        <div class="col-xs-10">
+                        <div class="col-xs-3"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of studies between different JATOS instances"></span></p></div>
+                        <div class="col-xs-9">
                             <p class="@models.gui.StudyProperties.UUID"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="studyTitle">Title</label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="studyTitle">Title&nbsp;<sup>*</sup></label>
+                        <div class="col-xs-9">
                             <input type="text" class="form-control @models.gui.StudyProperties.TITLE" id="studyTitle" name="@models.gui.StudyProperties.TITLE" placeholder="Your study title">
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="@models.gui.StudyProperties.DESCRIPTION">Description&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Explain what your study is doing. In case you want to use the Mechanical Turk, this description will be shown to the participants."></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="@models.gui.StudyProperties.DESCRIPTION">Description&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Explain what your study is doing. In case you want to use the Mechanical Turk, this description will be shown to the participants."></span></label>
+                        <div class="col-xs-9">
                             <textarea rows="3" class="form-control @models.gui.StudyProperties.DESCRIPTION" id="@models.gui.StudyProperties.DESCRIPTION" name="@models.gui.StudyProperties.DESCRIPTION" placeholder="Your description"></textarea>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="@models.gui.StudyProperties.DIR_NAME">Study assets' directory name&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="@models.gui.StudyProperties.DIR_NAME">Study assets' directory name&nbsp;<sup>*</sup>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."></span></label>
+                        <div class="col-xs-9">
                             <input type="text" class="form-control @models.gui.StudyProperties.DIR_NAME" id="@models.gui.StudyProperties.DIR_NAME" name="@models.gui.StudyProperties.DIR_NAME" placeholder="Study assets' directory name">
                             <input type="checkbox" class="@models.gui.StudyProperties.DIR_RENAME" name="@models.gui.StudyProperties.DIR_RENAME" value="true" hidden>
                             <input type="hidden" name="@models.gui.StudyProperties.DIR_RENAME" value="false" />
@@ -48,31 +48,31 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="studyComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="studyComments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?"></span></label>
+                        <div class="col-xs-9">
                             <textarea rows="2" class="form-control @models.gui.StudyProperties.COMMENTS" id="studyComments" name="@models.gui.StudyProperties.COMMENTS" placeholder="Your comments"></textarea>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="studyEntryMsg">Study Entry Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="This message can be shown to the worker before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent workers to prematurely start the study. "></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="studyEntryMsg">Study Entry Message&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="This message can be shown to the worker before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent workers to prematurely start the study. "></span></label>
+                        <div class="col-xs-9">
                             <textarea rows="2" class="form-control @models.gui.StudyProperties.STUDY_ENTRY_MSG" id="studyEntryMsg" name="@models.gui.StudyProperties.STUDY_ENTRY_MSG" placeholder=""></textarea>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="endRedirectUrl">End Redirect URL&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="To which URL should JATOS redirect to after a run of this study finished. If left empty a default page will be shown."></span></label>
-                        <div class="col-xs-10">
+                        <label class="control-label col-xs-3" for="endRedirectUrl">End Redirect URL&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="To which URL should JATOS redirect to after a run of this study finished. If left empty a default page will be shown."></span></label>
+                        <div class="col-xs-9">
                             <input type="text" class="form-control @models.gui.StudyProperties.END_REDIRECT_URL" id="endRedirectUrl" name="@models.gui.StudyProperties.END_REDIRECT_URL" placeholder="https://">
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label class="control-label col-xs-2" for="studyJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
+                        <label class="control-label col-xs-3" for="studyJsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. You can also leave it empty if not needed."></span><br>
                             <button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
                         </label>
-                        <div class="col-xs-10">
+                        <div class="col-xs-9">
                             <div class="form-control @models.gui.StudyProperties.JSON_DATA" id="studyJsonData"></div>
                             <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
                             <textarea class="@models.gui.StudyProperties.JSON_DATA" name="@models.gui.StudyProperties.JSON_DATA" hidden></textarea>
@@ -80,10 +80,10 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="text-right col-xs-2">
+                        <label class="text-right col-xs-3">
                             Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?"></span>
                         </label>
-                        <div class="col-xs-10">
+                        <div class="col-xs-9">
                             <input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY" value="true">
                             <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
                             <input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
@@ -91,10 +91,10 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="text-right col-xs-2">
+                        <label class="text-right col-xs-3">
                             Linear study<br>flow <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should the study flow be linear only?&#10;This still allows reloading of components.&#10;Uncheck this box if you want to jump to an earlier component."></span>
                         </label>
-                        <div class="col-xs-10">
+                        <div class="col-xs-9">
                             <input type="checkbox" class="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" name="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" value="true">
                             <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
                             <input type="hidden" name="@models.gui.StudyProperties.LINEAR_STUDY_FLOW" value="false" />
@@ -102,11 +102,11 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="text-right col-xs-2">
+                        <label class="text-right col-xs-3">
                             Allow preview <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip"
                             title="Allows a preview of the study run (only with @common.workers.PersonalSingleWorker.UI_WORKER_TYPE or @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers): If previews are allowed a study link can be used multiple times by the worker as long as the run stays in the first component. As soon as the second component is started the usual worker restrictions apply."></span>
                         </label>
-                        <div class="col-xs-10">
+                        <div class="col-xs-9">
                             <input type="checkbox" class="@models.gui.StudyProperties.ALLOW_PREVIEW" name="@models.gui.StudyProperties.ALLOW_PREVIEW" value="true">
                             <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
                             <input type="hidden" name="@models.gui.StudyProperties.ALLOW_PREVIEW" value="false" />
