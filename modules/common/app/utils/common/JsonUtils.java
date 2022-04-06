@@ -384,6 +384,7 @@ public class JsonUtils {
         ObjectNode userNode = Json.mapper().createObjectNode();
         userNode.put("name", user.getName());
         userNode.put("username", user.getUsername());
+        userNode.put("email", user.getEmail());
         ArrayNode roleListArray = Json.mapper().valueToTree(user.getRoleList());
         userNode.putArray("roleList").addAll(roleListArray);
         userNode.put("authMethod", user.getAuthMethod().name());

@@ -19,121 +19,22 @@
     <!-- filled via JavaScript -->
 </ul>
 
-<!-- Edit Profile Modal -->
-<div class="modal fade" id="editProfileModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="editProfileForm" method="post" class="form-horizontal" role="form">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-                    <h4 class="modal-title">Edit Your Profile</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="messages"></div>
-                    <div class="form-group row">
-                        <label class="control-label col-xs-4" for="@models.gui.ChangeUserProfileModel.NAME">Name</label>
-                        <div class="col-xs-8">
-                            <input type="text" class="form-control @models.gui.ChangeUserProfileModel.NAME" name="@models.gui.ChangeUserProfileModel.NAME" value="@loggedInUser.getName()">
-                        </div>
-                    </div>
-                    <div class="form-group row adminRoleRow" style="display:none">
-                        <label class="control-label col-xs-4"></label>
-                        <div class="col-xs-8"><p>Your user has <b>admin rights</b> <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Users with admin rights can create/change/delete other users."></span>.</p></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-admin" value="Save">
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="changePasswordForm" method="post" class="form-horizontal" role="form">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-                    <h4 class="modal-title">Change Password</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="messages"></div>
-                    <input type="hidden" class="form-control username" name="@models.gui.ChangePasswordModel.USERNAME" value="@loggedInUser.getUsername()" required>
-                    <div class="form-group row">
-                        <label class="control-label col-xs-4" for="@models.gui.ChangePasswordModel.OLD_PASSWORD">Old password</label>
-                        <div class="col-xs-5">
-                            <input type="password" class="form-control @models.gui.ChangePasswordModel.OLD_PASSWORD" name="@models.gui.ChangePasswordModel.OLD_PASSWORD" placeholder="Your old password" autocomplete="off" required>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label class="control-label col-xs-4" for="@models.gui.ChangePasswordModel.NEW_PASSWORD">New password</label>
-                        <div class="col-xs-5">
-                            <input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD" name="@models.gui.ChangePasswordModel.NEW_PASSWORD" placeholder="Your new password" autocomplete="off" required>
-                            <input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" name="@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" placeholder="Repeat your new password" autocomplete="off" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-admin" value="Change">
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Delete user confirmation  modal -->
-<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="deleteUserForm" method="post" class="form-horizontal" role="form">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-                    <h4 class="modal-title">Confirm User Deletion</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="messages"></div>
-                    <p class="confirmationText"></p>
-                    @if(!loggedInUser.isOauthGoogle()) {
-                    <div class="form-group row" hidden>
-                        <label class="control-label col-xs-6 passwordLabel" for="password">Your password</label>
-                        <div class="col-xs-5">
-                            <input type="password" class="form-control password" name="password" placeholder="Your password">
-                        </div>
-                    </div>
-                    } else {
-                    <div class="form-group row" hidden>
-                        <label class="control-label col-xs-6 usernameLabel" for="username">Your email</label>
-                        <div class="col-xs-5">
-                            <input type="text" class="form-control username" name="username" placeholder="Your email">
-                        </div>
-                    </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-admin" value="Delete">
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+@views.html.gui.admin.editProfile(loggedInUser)
 
 <script type="text/javascript">
 
-var userData;
-loadUserData();
+var user;
+loadUser();
 
-function loadUserData() {
+function loadUser() {
     $.ajax({
         type: 'GET',
         url: "@controllers.gui.routes.Users.singleUserData(loggedInUser.getUsername())",
         success: function(response) {
-            userData = response;
-            fillStudyList(userData.studyList);
+            user = response;
+            $('#navUserText').html(`<span class="glyphicon glyphicon-user"></span> ${user.name}`);
+            $('#breadcrumbs li:last-child').text(`${user.name} (${user.username})`);
+            fillStudyList(user.studyList);
         },
         error: function(response) {
             showError(response.responseText);
@@ -155,134 +56,15 @@ function fillStudyList(studyList) {
 }
 
 $('#toolbar').on('click', '#editProfile', function() {
-    var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", userData.roleList) >= 0;
-    if (adminRole) {
-        $('#editProfileModal .adminRoleRow').show();
-    } else {
-        $('#editProfileModal .adminRoleRow').hide();
-    }
-    $('#editProfileModal').modal('show');
-});
-
-$("#editProfileForm").submit(function(event) {
-    event.preventDefault();
-    $.ajax({
-        type: 'POST',
-        url: "@controllers.gui.routes.Users.edit(loggedInUser.getUsername())",
-        data: $('#editProfileForm').serialize(),
-        success: function(response) {
-            removeAlerts("#editProfileModal");
-            removeFormErrors("#editProfileModal");
-            $('#editProfileModal').modal('hide');
-            var userText = $('#editProfileModal .name').val() + " (@loggedInUser.getUsername())";
-            $('#navUserText').text(userText);
-            $('#breadcrumbs li:last-child').text(userText);
-        },
-        error: function(response) {
-            removeAlerts("#editProfileModal");
-            removeFormErrors("#editProfileModal");
-            showWarning("User profile wasn't updated", "#editProfileModal .messages");
-            if (isJson(response.responseText)) {
-                showFormErrors("#editProfileModal", response);
-            } else {
-                showModalError("#editProfileModal .messages", response);
-            }
-        }
-    });
+    showEditProfileModal(user);
 });
 
 $('#toolbar').on('click', '#changePassword', function() {
-    removeAlerts("#changePasswordModal");
-    removeFormErrors("#changePasswordModal");
-    $('#changePasswordModal .@models.gui.ChangePasswordModel.OLD_PASSWORD').val('');
-    $('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD').val('');
-    $('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT').val('');
-    $('#changePasswordModal').modal('show');
-});
-
-$("#changePasswordForm").submit(function(event) {
-    event.preventDefault();
-    $.ajax({
-        type: 'POST',
-        url: "@controllers.gui.routes.Users.changePasswordByUser()",
-        data: $('#changePasswordForm').serialize(),
-        success: function(response) {
-            removeAlerts("#changePasswordModal");
-            removeFormErrors("#changePasswordModal");
-            $('#changePasswordModal').modal('hide');
-        },
-        error: function(response) {
-            removeAlerts("#changePasswordModal");
-            removeFormErrors("#changePasswordModal");
-            showWarning("Password wasn't changed", "#changePasswordModal .messages");
-            if (isJson(response.responseText)) {
-                showFormErrors("#changePasswordModal", response);
-            } else {
-                showModalError("#changePasswordModal .messages", response);
-            }
-        }
-    });
+    showChangePasswordModal(user, true);
 });
 
 $('#toolbar').on('click', '#deleteUser', function() {
-    removeAlerts("#deleteUserModal");
-    removeFormErrors("#deleteUserModal");
-    $('#deleteUserModal .modal-title').text("Delete yourself");
-    @if(!loggedInUser.isOauthGoogle()) {
-    $('#deleteUserModal .passwordLabel').text("Confirm with your (" + userData.username+ ") password");
-    $('#deleteUserModal .password').val('');
-    $('#deleteUserModal .password').parents('.form-group').show();
-    } else {
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address");
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .username').parents('.form-group').show();
-    }
-    $('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml());
-    $('#deleteUserModal').modal('show');
-});
-
-function generateUserDeleteConfirmationHtml() {
-    var confirmationText = "<p>You are about to delete your user <b>" + userData.username
-            + " (" + userData.name + ") from JATOS</b>. "
-            + "All studies with you as the only user will be deleted too.</p>";
-    // Only add the studies that have a user size of 1 (means this user is the only
-    // member and the study would be abandoned after user deletion) .
-    var studyList = "";
-    $.each(userData.studyList, function(index, study) {
-        if (study.userSize === 1) {
-            studyList += "<li>" + study.title + " (ID: " + study.id + ")</li>";
-        }
-    });
-    if (studyList !== "") {
-        confirmationText += "<p><b>This would automatically delete the following studies with all their results</b>.";
-        confirmationText += "<ul>" + studyList + "</ul>";
-    }
-    confirmationText += "<p><b>This can't be undone.</b> Afterwards you will be logged out of JATOS.</p>";
-    return confirmationText;
-}
-
-$('#deleteUserForm').submit(function(event) {
-    event.preventDefault();
-    $.ajax({
-        url : "@controllers.gui.routes.Users.remove(loggedInUser.getUsername())",
-        type : 'POST',
-        data: $('#deleteUserForm').serialize(),
-        success : function(result) {
-            window.location.href = '@controllers.gui.routes.Home.home()';
-        },
-        error : function(response) {
-            removeAlerts("#deleteUserModal");
-            removeFormErrors("#deleteUserModal");
-            showWarning("User wasn't deleted", "#deleteUserModal .messages");
-            $('#deleteUserModal .password').val('');
-            $('#deleteUserModal .username').val('');
-            if (isJson(response.responseText)) {
-                showFormErrors("#deleteUserModal", response);
-            } else {
-                showModalError("#deleteUserModal .messages", response);
-            }
-        }
-    });
+    showDeleteYourselfModal(user);
 });
 
 </script>

@@ -5,6 +5,7 @@ import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
 import models.common.*;
 import models.common.workers.Worker;
+import utils.common.Helpers;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -95,10 +96,9 @@ public class Checker {
             String errorMsg = MessagesStrings.studyNotExist(studyId);
             throw new BadRequestException(errorMsg);
         }
-        // Check that the user is a user of the study
-        if (!study.hasUser(user)) {
-            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), studyId,
-                    study.getTitle());
+        // Check that the user is a member of the study
+        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
+            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), studyId, study.getTitle());
             throw new ForbiddenException(errorMsg);
         }
     }

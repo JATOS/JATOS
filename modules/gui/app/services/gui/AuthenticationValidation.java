@@ -1,5 +1,6 @@
 package services.gui;
 
+import com.google.common.base.Strings;
 import daos.common.UserDao;
 import general.common.Common;
 import general.common.MessagesStrings;
@@ -17,7 +18,8 @@ import javax.inject.Singleton;
 
 /**
  * Service class that validates models that create, change or delete users. Usually this validation is part of the model
- * class, but since this is concerns important user authentication and it used other service I put it in an extra class.
+ * class, but since it's about (important) user authentication, and it is used by other services I put it in an extra
+ * class.
  *
  * @author Kristian Lange
  */
@@ -41,6 +43,7 @@ public class AuthenticationValidation {
         String password = form.get().getPassword();
         String passwordRepeat = form.get().getPasswordRepeat();
         String name = form.get().getName();
+        String email = form.get().getEmail();
         boolean authByLdap = form.get().getAuthByLdap();
         boolean authByOAuthGoogle = form.get().getAuthByOAuthGoogle();
 
@@ -72,6 +75,11 @@ public class AuthenticationValidation {
         // Check with Jsoup for illegal HTML
         if (!Jsoup.isValid(name, Whitelist.none())) {
             form = form.withError(new ValidationError(NewUserModel.NAME, MessagesStrings.NO_HTML_ALLOWED));
+        }
+
+        // Check with Jsoup for illegal HTML
+        if (!Strings.isNullOrEmpty(email) && !Jsoup.isValid(email, Whitelist.none())) {
+            form = form.withError(new ValidationError(NewUserModel.EMAIL, MessagesStrings.NO_HTML_ALLOWED));
         }
 
         // Check password only if not authenticated by LDAP or OAuth

@@ -10,6 +10,7 @@ import models.common.workers.Worker;
 import play.mvc.Http;
 import services.publix.PublixErrorMessages;
 import services.publix.StudyAuthorisation;
+import utils.common.Helpers;
 
 import javax.inject.Singleton;
 
@@ -39,8 +40,8 @@ public class JatosStudyAuthorisation extends StudyAuthorisation {
             throws ForbiddenPublixException {
         // Do not check for worker type - Jatos worker is always allowed
         User user = ((JatosWorker) worker).getUser();
-        // User has to be a user of this study
-        if (!study.hasUser(user)) {
+        // User has to be a member user of this study
+        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
         // User has to be logged in

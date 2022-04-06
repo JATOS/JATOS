@@ -11,9 +11,9 @@ public class NewUserModel {
 
     public static final String USERNAME = "username";
     public static final String NAME = "name";
+    public static final String EMAIL = "email";
     public static final String PASSWORD = "password";
     public static final String PASSWORD_REPEAT = "passwordRepeat";
-    public static final String ADMIN_ROLE = "adminRole";
     public static final String AUTH_BY_LDAP = "authByLdap";
     public static final String ADMIN_PASSWORD = "adminPassword";
 
@@ -21,14 +21,11 @@ public class NewUserModel {
 
     private String name;
 
+    private String email;
+
     private String password;
 
     private String passwordRepeat;
-
-    /**
-     * True if the user has the Role ADMIN
-     */
-    private boolean adminRole = false;
 
     /**
      * If true LDAP authentication is used for this user
@@ -61,6 +58,14 @@ public class NewUserModel {
         this.name = name;
     }
 
+    public String getEmail() {
+        return this.email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getPassword() {
         return password;
     }
@@ -75,14 +80,6 @@ public class NewUserModel {
 
     public void setPasswordRepeat(String passwordRepeat) {
         this.passwordRepeat = passwordRepeat;
-    }
-
-    public boolean getAdminRole() {
-        return adminRole;
-    }
-
-    public void setAdminRole(boolean adminRole) {
-        this.adminRole = adminRole;
     }
 
     public boolean getAuthByLdap() {
@@ -111,7 +108,7 @@ public class NewUserModel {
 
     @Override
     public String toString() {
-        return "NewUserModel [username=" + username + ", name=" + name + ", adminRole=" + adminRole + "]";
+        return "NewUserModel [username=" + username + ", name=" + name + "]";
     }
 
 }

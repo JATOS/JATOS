@@ -1,6 +1,7 @@
 package utils.common;
 
 import general.common.Common;
+import models.common.User;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
@@ -227,6 +228,10 @@ public class Helpers {
             obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer().getImplementation();
         }
         return obj;
+    }
+
+    public static boolean isAllowedSuperuser(User user) {
+        return Common.isUserRoleAllowSuperuser() && user.isSuperuser();
     }
 
 }

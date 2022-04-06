@@ -165,6 +165,7 @@ public class Authentication extends Controller {
             NewUserModel newUserModel = new NewUserModel();
             newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(name);
+            newUserModel.setEmail(idTokenPayload.getEmail());
             newUserModel.setAuthByOAuthGoogle(true);
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
 

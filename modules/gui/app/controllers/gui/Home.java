@@ -99,7 +99,9 @@ public class Home extends Controller {
     @Authenticated
     public Result sidebarStudyList() {
         User loggedInUser = authenticationService.getLoggedInUser();
-        List<Study> studyList = studyDao.findAllByUser(loggedInUser);
+        List<Study> studyList = Helpers.isAllowedSuperuser(loggedInUser)
+                ? studyDao.findAll()
+                : studyDao.findAllByUser(loggedInUser);
         return ok(jsonUtils.sidebarStudyList(studyList));
     }
 

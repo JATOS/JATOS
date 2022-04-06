@@ -87,7 +87,7 @@ public class UserService {
         jpa.withTransaction(() -> {
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             if (admin == null) {
-                admin = new User(ADMIN_USERNAME, ADMIN_NAME);
+                admin = new User(ADMIN_USERNAME, ADMIN_NAME, null);
                 createAndPersistUser(admin, ADMIN_PASSWORD, true, AuthMethod.DB);
                 LOGGER.info("Created Admin user");
             }
@@ -104,12 +104,11 @@ public class UserService {
      * Creates a user, sets password hash and persists him. Creates and persists an JatosWorker for the user.
      */
     public void bindToUserAndPersist(NewUserModel newUserModel) {
-        User user = new User(newUserModel.getUsername(), newUserModel.getName());
+        User user = new User(newUserModel.getUsername(), newUserModel.getName(), newUserModel.getEmail());
         String password = newUserModel.getPassword();
-        boolean adminRole = newUserModel.getAdminRole();
         AuthMethod authMethod = newUserModel.getAuthByLdap() ? AuthMethod.LDAP :
                 newUserModel.getAuthByOAuthGoogle() ? AuthMethod.OAUTH_GOOGLE : AuthMethod.DB;
-        createAndPersistUser(user, password, adminRole, authMethod);
+        createAndPersistUser(user, password, false, authMethod);
     }
 
     /**
@@ -147,14 +146,6 @@ public class UserService {
         userDao.update(user);
     }
 
-    /**
-     * Changes name and persists user.
-     */
-    public void updateName(User user, String name) {
-        user.setName(name);
-        userDao.update(user);
-    }
-
     public void toggleActive(String normalizedUsername, boolean active) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -169,12 +160,22 @@ public class UserService {
     }
 
     /**
-     * Adds or removes ADMIN role of the user with the given username and persists the change. It the parameter admin
+     * Adds or removes SUPERUSER role of the user with the given username and persists the change.
+     */
+    public boolean changeSuperuserRole(String normalizedUsername, boolean superuser) throws NotFoundException {
+        User user = retrieveUser(normalizedUsername);
+        if (superuser) user.addRole(Role.SUPERUSER);
+        else user.removeRole(Role.SUPERUSER);
+        userDao.update(user);
+        return user.isSuperuser();
+    }
+
+    /**
+     * Adds or removes ADMIN role of the user with the given username and persists the change. If the parameter admin
      * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
      * the end - or false if he hasn't.
      */
-    public boolean changeAdminRole(String normalizedUsername, boolean adminRole)
-            throws NotFoundException, ForbiddenException {
+    public boolean changeAdminRole(String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
         User loggedInUser = authenticationService.getLoggedInUser();
         if (user.equals(loggedInUser)) {
@@ -184,12 +185,8 @@ public class UserService {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS);
         }
 
-        if (adminRole) {
-            user.addRole(Role.ADMIN);
-        } else {
-            user.removeRole(Role.ADMIN);
-        }
-        userDao.update(user);
+        if (admin) user.addRole(Role.ADMIN);
+        else user.removeRole(Role.ADMIN);
         return user.isAdmin();
     }
 

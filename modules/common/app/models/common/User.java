@@ -23,7 +23,8 @@ public class User {
      */
     public enum Role {
         USER, // Normal JATOS user
-        ADMIN // Allows to create/change/delete other users (don't confuse role ADMIN with user 'admin')
+        ADMIN, // Allows creating/changing/deleting other users (don't confuse role ADMIN with user 'admin')
+        SUPERUSER // Makes this user a member of ALL studies with all rights of a normal member
     }
 
     /**
@@ -43,6 +44,11 @@ public class User {
      * User's name
      */
     private String name;
+
+    /**
+     * User's email address
+     */
+    private String email;
 
     /**
      * A list of Roles used for authorization. It has to be fetched eagerly
@@ -91,9 +97,10 @@ public class User {
      */
     private boolean active = true;
 
-    public User(String username, String name) {
+    public User(String username, String name, String email) {
         setUsername(username);
         this.name = name;
+        this.email = email;
     }
 
     public User() {
@@ -104,7 +111,7 @@ public class User {
      * 1) remove accents
      * 2) turn to lower case
      * 3) trim
-     * 4) return the the composed form NFKC (combining character sequences are mapped to composites
+     * 4) return the composed form NFKC (combining character sequences are mapped to composites)
      * (see https://stackoverflow.com/a/1598365/1278769)
      */
     public static String normalizeUsername(String username) {
@@ -130,6 +137,14 @@ public class User {
         return this.name;
     }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
     public Set<Role> getRoleList() {
         return roleList;
     }
@@ -152,6 +167,10 @@ public class User {
 
     public boolean isAdmin() {
         return roleList.contains(Role.ADMIN);
+    }
+
+    public boolean isSuperuser() {
+        return roleList.contains(Role.SUPERUSER);
     }
 
     public void setPasswordHash(String passwordHash) {

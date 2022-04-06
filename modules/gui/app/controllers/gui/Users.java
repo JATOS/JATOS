@@ -7,6 +7,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
+import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
@@ -88,17 +89,32 @@ public class Users extends Controller {
     public Result allUserData() {
         List<Map<String, Object>> allUserData = new ArrayList<>();
         for (User user : userDao.findAll()) {
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("active", user.isActive());
-            userData.put("name", user.getName());
-            userData.put("username", user.getUsername());
-            userData.put("roleList", user.getRoleList());
-            userData.put("authMethod", user.getAuthMethod().name());
-            userData.put("studyCount", user.getStudyList().size());
-            userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
+            Map<String, Object> userData = getSingleUserData(user);
             allUserData.add(userData);
         }
         return ok(jsonUtils.asJsonNode(allUserData));
+    }
+
+    private Map<String, Object> getSingleUserData(User user) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("active", user.isActive());
+        userData.put("name", user.getName());
+        userData.put("username", user.getUsername());
+        userData.put("email", user.getEmail());
+        userData.put("roleList", user.getRoleList());
+        userData.put("authMethod", user.getAuthMethod().name());
+        userData.put("studyCount", user.getStudyList().size());
+        userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
+        List<Map<String, Object>> allStudiesData = new ArrayList<>();
+        for (Study study : user.getStudyList()) {
+            Map<String, Object> studyData = new HashMap<>();
+            studyData.put("id", study.getId());
+            studyData.put("title", study.getTitle());
+            studyData.put("userSize", study.getUserList().size());
+            allStudiesData.add(studyData);
+        }
+        userData.put("studyList", allStudiesData);
+        return userData;
     }
 
     /**
@@ -119,21 +135,28 @@ public class Users extends Controller {
     }
 
     /**
-     * POST request to add or remove the ADMIN role from a user.
+     * POST request to add or remove a role from a user.
      */
     @Transactional
     @Authenticated(Role.ADMIN)
-    public Result toggleAdmin(String usernameOfUserToChange, Boolean adminRole) {
-        boolean hasAdminRole;
+    public Result toggleRole(String usernameOfUserToChange, String role, boolean value) {
+        String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
         try {
-            String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-            hasAdminRole = userService.changeAdminRole(normalizedUsernameOfUserToChange, adminRole);
+            switch (Role.valueOf(role)) {
+                case SUPERUSER:
+                    return ok(jsonUtils.asJsonNode(
+                            userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
+                case ADMIN:
+                    return ok(
+                            jsonUtils.asJsonNode(userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
+                default:
+                    return badRequest("Unknown role");
+            }
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         } catch (ForbiddenException e) {
             return forbidden(e.getMessage());
         }
-        return ok(jsonUtils.asJsonNode(hasAdminRole));
     }
 
     /**
@@ -159,7 +182,7 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedUsername = User.normalizeUsername(username);
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
-        return ok(jsonUtils.userData(loggedInUser));
+        return ok(jsonUtils.asJsonNode(getSingleUserData(loggedInUser)));
     }
 
     /**
@@ -189,27 +212,31 @@ public class Users extends Controller {
     }
 
     /**
-     * Handles POST request of user edit profile form (so far it's only the
-     * user's name - password is handled in another method).
+     * Handles POST request of user edit profile form (except password and roles).
+     * This POST can come from the user themselves or from an admin user to edit another user.
      */
     @Transactional
     @Authenticated
     public Result edit(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
-        String normalizedUsername = User.normalizeUsername(username);
+        String normalizedUsernameOfUserToChange = User.normalizeUsername(username);
+        User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
 
-        if (loggedInUser.isOauthGoogle()) {
-            return forbidden("Users signed in by Google can't change their name.");
+        if (user.isOauthGoogle()) {
+            return forbidden("Google authenticated users can't have their profile changed.");
         }
 
-        checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
+        if (!loggedInUser.isAdmin()) {
+            checkUsernameIsOfLoggedInUser(normalizedUsernameOfUserToChange, loggedInUser);
+        }
 
         Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         // Update user in database: so far it's only the user's name
-        String name = form.get().getName();
-        userService.updateName(loggedInUser, name);
+        user.setName(form.get().getName());
+        user.setEmail(form.get().getEmail());
+        userDao.update(user);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
