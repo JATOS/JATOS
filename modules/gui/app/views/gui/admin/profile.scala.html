@@ -14,7 +14,7 @@
     }
 </div>
 
-<h3>You are user in these studies</h3>
+<h4>You are member user in these studies:</h4>
 <ul id="usersStudyList" class="list-group">
     <!-- filled via JavaScript -->
 </ul>
@@ -22,6 +22,9 @@
 @views.html.gui.admin.editProfile(loggedInUser)
 
 <script type="text/javascript">
+@if(loggedInUser.isSuperuser()) {
+showInfo("As a Superuser you have access to all studies like a study member.");
+}
 
 var user;
 loadUser();
