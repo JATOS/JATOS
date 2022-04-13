@@ -23,7 +23,7 @@
                         <div class="btn-toolbar" role="toolbar">
                             <div class="col-xs-8">
                                 <div class="input-group">
-                                    <input type="text" class="form-control username" name="username" placeholder="username">
+                                    <input type="text" id="username" class="form-control username" name="username" placeholder="username">
                                     <span class="input-group-btn">
                                         <input type="submit" class="btn btn-primary" value="Add">
                                     </span>
@@ -82,6 +82,9 @@ $('#studyToolbar').on('click', '#changeMemberUsersLink', function() {
     removeFormErrors("#changeMemberUsersModal");
     clearForm("#addMemberToStudyForm");
     initMemberUserTable();
+    @if(utils.common.Helpers.isAllowedSuperuser(loggedInUser)) {
+    showInfo("As a Superuser you have access to all studies like a study member.", "#changeMemberUsersModal .messages");
+    }
     $('#changeMemberUsersModal').modal('show');
 });
 

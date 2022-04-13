@@ -36,6 +36,10 @@
 
 <script type="text/javascript">
 
+@if(utils.common.Helpers.isAllowedSuperuser(loggedInUser)) {
+showInfo("As a Superuser you have access to all studies like a study member.");
+}
+
 @if(general.common.Common.termsOfUseUrl() != null && !general.common.Common.termsOfUseUrl().isEmpty()) {
 showInfo('By using this application you agree to the <a href="@general.common.Common.termsOfUseUrl()">Terms of Use</a>.', null, true);
 }
