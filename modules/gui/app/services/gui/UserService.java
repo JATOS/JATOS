@@ -6,6 +6,7 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
@@ -162,7 +163,9 @@ public class UserService {
     /**
      * Adds or removes SUPERUSER role of the user with the given username and persists the change.
      */
-    public boolean changeSuperuserRole(String normalizedUsername, boolean superuser) throws NotFoundException {
+    public boolean changeSuperuserRole(String normalizedUsername, boolean superuser)
+            throws NotFoundException, ForbiddenException {
+        if (!Common.isUserRoleAllowSuperuser()) throw new ForbiddenException("Superuser role is not allowed");
         User user = retrieveUser(normalizedUsername);
         if (superuser) user.addRole(Role.SUPERUSER);
         else user.removeRole(Role.SUPERUSER);
