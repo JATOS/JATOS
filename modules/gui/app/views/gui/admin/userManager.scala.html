@@ -219,8 +219,9 @@ var userTable = $('#userTable').DataTable({
                 }
             }
         },
-                {
+        {
             "class": 'superuserRole',
+            "visible": @general.common.Common.isUserRoleAllowSuperuser(),
             "data": null,
             "defaultContent": '',
             "width": "1px",
@@ -539,7 +540,7 @@ function setUserToolbar(toolbar, username, authMethod) {
         toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
     } else {
         toolbar.find('.userChangePasswordButton').attr('disabled', true);
-        toolbar.find('.userChangePasswordTooltip').attr('title', "Not a locally stored User (e.g. authenticated by LDAP or Google)");
+        toolbar.find('.userChangePasswordTooltip').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP or Google) can't be changed in JATOS");
     }
 
     // Setup delete user button
