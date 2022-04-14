@@ -83,7 +83,7 @@ function fillSessionModal(session, type) {
         $('#sessionModal .modal-title').text("Current Group Session Data for group with ID " + data.id);
     }
 
-    if (!sessionDataEditor) setupSessionDataEditor();
+    setupSessionDataEditor();
     var sessionData = session['data'];
     sessionData = sessionData ? sessionData : "{}";
     var sessionDataPretty = JSON.stringify(JSON.parse(sessionData), null, 2);
@@ -97,6 +97,10 @@ function fillSessionModal(session, type) {
 }
 
 function setupSessionDataEditor() {
+    if (sessionDataEditor) {
+        sessionDataEditor.setValue("");
+        return;
+    }
     var sessionDataDiv = $("#sessionModal div.sessionData").get(0);
     sessionDataEditor = ace.edit(sessionDataDiv);
     sessionDataEditor.setTheme("ace/theme/clouds");

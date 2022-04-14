@@ -156,7 +156,7 @@ $('#jatosHeader').on('click', '#createStudyLink', function() {
     $('#studyPropertiesModal .modal-title').text("Create Study");
     $('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').closest('.form-group').hide();
     $('#studyPropertiesModal .@models.gui.StudyProperties.UUID').closest('.form-group').hide();
-    if (!studyJsonDataEditor) setupStudyJsonDataEditor();
+    setupStudyJsonDataEditor();
     $('#studyPropertiesModal .confirmed').val("Create");
     $('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
     $("#studyPropertiesForm").attr("action", "@controllers.gui.routes.Studies.submitCreated()");
@@ -199,7 +199,7 @@ function fillStudyPropertiesForm(properties) {
     $('#studyPropertiesModal .@models.gui.StudyProperties.END_REDIRECT_URL').val(endRedirectUrl);
     var studyEntryMsg = (properties['@models.gui.StudyProperties.STUDY_ENTRY_MSG']) ? properties['@models.gui.StudyProperties.STUDY_ENTRY_MSG'] : "";
     $('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ENTRY_MSG').val(studyEntryMsg);
-    if (!studyJsonDataEditor) setupStudyJsonDataEditor();
+    setupStudyJsonDataEditor();
     try {
         var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";
         var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
@@ -219,6 +219,10 @@ function fillStudyPropertiesForm(properties) {
 }
 
 function setupStudyJsonDataEditor() {
+    if (studyJsonDataEditor) {
+        studyJsonDataEditor.setValue("");
+        return;
+    }
     var jsonDataDiv = $("#studyPropertiesModal div.@models.gui.StudyProperties.JSON_DATA").get(0);
     studyJsonDataEditor = ace.edit(jsonDataDiv);
     studyJsonDataEditor.setTheme("ace/theme/clouds");

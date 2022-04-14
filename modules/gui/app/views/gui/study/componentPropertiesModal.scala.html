@@ -109,7 +109,7 @@ $('#studyToolbar').on('click', '#createComponentLink', function() {
     $('#componentPropertiesModal .modal-title').text("Create Component");
     $('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').hide();
     $('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').hide();
-    if (!componentJsonDataEditor) setupComponentJsonDataEditor();
+    setupComponentJsonDataEditor();
     $('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
     $('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
     $("#componentPropertiesForm").attr("action", "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/component");
@@ -131,7 +131,7 @@ function fillComponentPropertiesForm(properties) {
     $('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val(properties['@models.gui.ComponentProperties.HTML_FILE_PATH']);
     var comments = (properties['@models.gui.ComponentProperties.COMMENTS']) ? properties['@models.gui.ComponentProperties.COMMENTS'] : "";
     $('#componentPropertiesModal .@models.gui.ComponentProperties.COMMENTS').val(comments);
-    if (!componentJsonDataEditor) setupComponentJsonDataEditor();
+    setupComponentJsonDataEditor();
     try {
         var jsonInput = (properties['@models.gui.ComponentProperties.JSON_DATA']) ? properties['@models.gui.ComponentProperties.JSON_DATA'] : "";
         var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
@@ -149,6 +149,10 @@ function fillComponentPropertiesForm(properties) {
 }
 
 function setupComponentJsonDataEditor() {
+    if (componentJsonDataEditor) {
+        componentJsonDataEditor.setValue("");
+        return;
+    }
     var jsonDataDiv = $("#componentPropertiesModal div.@models.gui.ComponentProperties.JSON_DATA").get(0);
     componentJsonDataEditor = ace.edit(jsonDataDiv);
     componentJsonDataEditor.setTheme("ace/theme/clouds");

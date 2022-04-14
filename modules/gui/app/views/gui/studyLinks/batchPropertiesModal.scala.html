@@ -190,7 +190,7 @@ function fillbatchPropertiesForm(batch, properties, batchRow) {
         $('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
     });
     // Setup editor for JSON input data
-    if (!batchJsonDataEditor) setupBatchJsonDataEditor();
+    setupBatchJsonDataEditor();
     try {
         var jsonInput = (properties['@models.gui.BatchProperties.JSON_DATA']) ? properties['@models.gui.BatchProperties.JSON_DATA'] : "";
         var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
@@ -221,6 +221,10 @@ function fillbatchPropertiesForm(batch, properties, batchRow) {
 }
 
 function setupBatchJsonDataEditor() {
+    if (batchJsonDataEditor) {
+        batchJsonDataEditor.setValue("");
+        return;
+    }
     var jsonDataDiv = $("#batchPropertiesModal div.@models.gui.BatchProperties.JSON_DATA").get(0);
     batchJsonDataEditor = ace.edit(jsonDataDiv);
     batchJsonDataEditor.setTheme("ace/theme/clouds");
