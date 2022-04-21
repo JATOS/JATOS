@@ -30,7 +30,7 @@
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
-    mitm: (location.protocol == 'https:') ? "/assets/lib/jatos-gui/streamsaver/mitm.html" : 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
+    mitm: (location.protocol == 'https:') ? "mitm.html" : 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
   }
 
   /**

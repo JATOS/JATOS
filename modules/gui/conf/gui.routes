@@ -139,4 +139,18 @@ GET      /jatos/:studyId/resultFiles/:srid/:crid/:filename                  @con
 
 
 ### Static resources ###
+
+# StreamSaver needs some special routes to work with an URL base path
+GET      /jatos/worker/:ignore/mitm.html                                    @controllers.gui.StreamSaverAssets.at1(path="/public/lib/jatos-gui/streamsaver", file = "mitm.html", ignore: Long)
+GET      /jatos/worker/:ignore/sw.js                                        @controllers.gui.StreamSaverAssets.at1(path="/public/lib/jatos-gui/streamsaver", file = "sw.js", ignore: Long)
+GET      /jatos/:ignore1/batch/:ignore2/mitm.html                           @controllers.gui.StreamSaverAssets.at2(path="/public/lib/jatos-gui/streamsaver", file = "mitm.html", ignore1: Long, ignore2: Long)
+GET      /jatos/:ignore1/batch/:ignore2/sw.js                               @controllers.gui.StreamSaverAssets.at2(path="/public/lib/jatos-gui/streamsaver", file = "sw.js", ignore1: Long, ignore2: Long)
+GET      /jatos/:ignore1/group/:ignore2/mitm.html                           @controllers.gui.StreamSaverAssets.at2(path="/public/lib/jatos-gui/streamsaver", file = "mitm.html", ignore1: Long, ignore2: Long)
+GET      /jatos/:ignore1/group/:ignore2/sw.js                               @controllers.gui.StreamSaverAssets.at2(path="/public/lib/jatos-gui/streamsaver", file = "sw.js", ignore1: Long, ignore2: Long)
+GET      /jatos/:ignore/mitm.html                                           @controllers.gui.StreamSaverAssets.at1(path="/public/lib/jatos-gui/streamsaver", file = "mitm.html", ignore: Long)
+GET      /jatos/:ignore/sw.js                                               @controllers.gui.StreamSaverAssets.at1(path="/public/lib/jatos-gui/streamsaver", file = "sw.js", ignore: Long)
+GET      /jatos/:ignore1/:ignore2/mitm.html                                 @controllers.gui.StreamSaverAssets.at2(path="/public/lib/jatos-gui/streamsaver", file = "mitm.html", ignore1: Long, ignore2: Long)
+GET      /jatos/:ignore1/:ignore2/sw.js                                     @controllers.gui.StreamSaverAssets.at2(path="/public/lib/jatos-gui/streamsaver", file = "sw.js", ignore1: Long, ignore2: Long)
+
+# General assets
 GET      /assets/*file                                                      controllers.Assets.versioned(path="/public/lib/gui", file: Asset)
