@@ -13,11 +13,12 @@ libraryDependencies ++= Seq(
   evolutions,
   jdbc,
   guice,
-  "org.hibernate" % "hibernate-core" % "5.4.2.Final",
+  "org.hibernate" % "hibernate-core" % "5.4.24.Final",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.9.8",
-  "mysql" % "mysql-connector-java" % "8.0.23",
-  "org.jsoup" % "jsoup" % "1.11.3",
-  "commons-io" % "commons-io" % "2.6",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.10.8",
+  "mysql" % "mysql-connector-java" % "8.0.28",
+  "org.jsoup" % "jsoup" % "1.14.2",
+  "commons-io" % "commons-io" % "2.7",
   "com.diffplug.durian" % "durian" % "3.4.0",
   "org.apache.commons" % "commons-lang3" % "3.9"
 )
