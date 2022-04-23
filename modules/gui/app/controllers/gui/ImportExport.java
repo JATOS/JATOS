@@ -5,10 +5,8 @@ import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
@@ -18,7 +16,10 @@ import exceptions.gui.JatosGuiException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
-import models.common.*;
+import models.common.ComponentResult;
+import models.common.Study;
+import models.common.StudyResult;
+import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -29,7 +30,6 @@ import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import services.gui.*;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 import utils.common.ZipUtil;
 
 import javax.inject.Inject;
@@ -63,26 +63,22 @@ public class ImportExport extends Controller {
     private final ImportExportService importExportService;
     private final ResultService resultService;
     private final IOUtils ioUtils;
-    private final JsonUtils jsonUtils;
     private final StudyDao studyDao;
-    private final ComponentDao componentDao;
     private final StudyResultDao studyResultDao;
     private final ComponentResultDao componentResultDao;
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
-            JsonUtils jsonUtils, AuthenticationService authenticationService, ImportExportService importExportService,
-            ResultService resultService, StudyDao studyDao, ComponentDao componentDao,
+            AuthenticationService authenticationService, ImportExportService importExportService,
+            ResultService resultService, StudyDao studyDao,
             StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
-        this.jsonUtils = jsonUtils;
         this.ioUtils = ioUtils;
         this.authenticationService = authenticationService;
         this.importExportService = importExportService;
         this.resultService = resultService;
         this.studyDao = studyDao;
-        this.componentDao = componentDao;
         this.studyResultDao = studyResultDao;
         this.componentResultDao = componentResultDao;
     }
@@ -166,80 +162,6 @@ public class ImportExport extends Controller {
         String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", zipFileName);
         return okFileStreamed(zipFile, zipFile::delete, "application/zip")
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
-    }
-
-    /**
-     * GET request that exports a component. Returns a .jac file with the component in JSON.
-     */
-    @Transactional
-    @Authenticated
-    public Result exportComponent(Long studyId, Long componentId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Component component = componentDao.findById(componentId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-
-        JsonNode componentAsJson = null;
-        try {
-            componentAsJson = jsonUtils.componentAsJsonForIO(component);
-        } catch (IOException e) {
-            String errorMsg = MessagesStrings.componentExportFailure(componentId, component.getTitle());
-            jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        String filename = ioUtils.generateFileName(component.getTitle(), IOUtils.COMPONENT_FILE_SUFFIX);
-        String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", filename);
-        return ok(componentAsJson).withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
-    }
-
-    /**
-     * POST request that checks whether this is a legitimate component import. The actual import happens in
-     * importComponentConfirmed(). Returns JSON with the results.
-     */
-    @Transactional
-    @Authenticated
-    public Result importComponent(Http.Request request, Long studyId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        ObjectNode json = null;
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-
-            FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Component.COMPONENT);
-            json = importExportService.importComponent(study, filePart);
-        } catch (ForbiddenException | BadRequestException | IOException e) {
-            importExportService.cleanupAfterComponentImport();
-            jatosGuiExceptionThrower.throwStudy(e, studyId);
-        }
-        return ok(json);
-    }
-
-    /**
-     * POST request that actually imports a component.
-     */
-    @Transactional
-    @Authenticated
-    public Result importComponentConfirmed(Long studyId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            String tempComponentFileName = session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
-            importExportService.importComponentConfirmed(study, tempComponentFileName);
-        } catch (Exception e) {
-            jatosGuiExceptionThrower.throwStudy(e, studyId);
-        } finally {
-            importExportService.cleanupAfterComponentImport();
-        }
-        return ok(RequestScopeMessaging.getAsJson());
     }
 
     /**

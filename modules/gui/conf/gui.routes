@@ -132,9 +132,6 @@ POST     /jatos/componentResult/export/resultFiles                          @con
 POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy(request: Request)
 POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed(request: Request)
 GET      /jatos/:studyId/export                                             @controllers.gui.ImportExport.exportStudy(studyId: Long)
-POST     /jatos/:studyId/import/component                                   @controllers.gui.ImportExport.importComponent(request: Request, studyId: Long)
-POST     /jatos/:studyId/import/componentConfirmed                          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
-GET      /jatos/:studyId/:componentId/export                                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
 GET      /jatos/:studyId/resultFiles/:srid/:crid/:filename                  @controllers.gui.ImportExport.downloadSingleResultFile(studyId: Long, srid: Long, crid: Long, filename: String)
 
 

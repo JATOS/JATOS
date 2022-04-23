@@ -16,7 +16,6 @@ import play.Logger.ALogger;
 import play.api.Application;
 import play.libs.Json;
 import play.mvc.Controller;
-import play.mvc.Http.MultipartFormData.FilePart;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import utils.common.ZipUtil;
@@ -26,10 +25,8 @@ import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +44,6 @@ public class ImportExportService {
     private static final ALogger LOGGER = Logger.of(ImportExportService.class);
 
     public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
-    public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 
     private final Application app;
     private final Checker checker;
@@ -72,71 +68,6 @@ public class ImportExportService {
         this.ioUtils = ioUtils;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
-    }
-
-    public ObjectNode importComponent(Study study, FilePart<?> filePart)
-            throws IOException {
-        if (filePart == null) {
-            throw new IOException(MessagesStrings.FILE_MISSING);
-        }
-        File file = (File) filePart.getFile();
-
-        // Remember component's file name
-        Controller.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE, file.getName());
-
-        // If wrong key the upload comes from the wrong form
-        if (!filePart.getKey().equals(Component.COMPONENT)) {
-            throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
-        }
-
-        Component uploadedComponent = unmarshalComponent(file);
-        boolean componentExists =
-                componentDao.findByUuid(uploadedComponent.getUuid(), study).isPresent();
-
-        // Move uploaded component file to Java's tmp folder
-        Path source = file.toPath();
-        Path target = getTempComponentFile(file.getName()).toPath();
-        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-
-        // Create JSON response
-        ObjectNode objectNode = Json.mapper().createObjectNode();
-        objectNode.put("componentExists", componentExists);
-        objectNode.put("componentTitle", uploadedComponent.getTitle());
-        return objectNode;
-    }
-
-    public void importComponentConfirmed(Study study, String tempComponentFileName)
-            throws IOException {
-        File componentFile = getTempComponentFile(tempComponentFileName);
-        if (componentFile == null) {
-            LOGGER.warn(".importComponentConfirmed: unzipping failed, "
-                    + "couldn't find component file in temp directory");
-            throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
-        }
-        Component uploadedComponent = unmarshalComponent(componentFile);
-        Optional<Component> currentComponent =
-                componentDao.findByUuid(uploadedComponent.getUuid(), study);
-        if (currentComponent.isPresent()) {
-            componentService.updateProperties(currentComponent.get(), uploadedComponent);
-            RequestScopeMessaging.success(MessagesStrings.componentsPropertiesOverwritten(
-                    currentComponent.get().getId(), uploadedComponent.getTitle()));
-        } else {
-            componentService.createAndPersistComponent(study, uploadedComponent);
-            RequestScopeMessaging.success(MessagesStrings.importedNewComponent(
-                    uploadedComponent.getId(), uploadedComponent.getTitle()));
-        }
-    }
-
-    public void cleanupAfterComponentImport() {
-        String tempComponentFileName = Controller
-                .session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
-        if (tempComponentFileName != null) {
-            File componentFile = getTempComponentFile(tempComponentFileName);
-            if (componentFile != null) {
-                componentFile.delete();
-            }
-            Controller.session().remove(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
-        }
     }
 
     /**
@@ -382,17 +313,6 @@ public class ImportExportService {
     }
 
     /**
-     * Get component's File object. Name is stored in session. Discard session
-     * variable afterwards.
-     */
-    private File getTempComponentFile(String tempComponentFileName) {
-        if (tempComponentFileName == null || tempComponentFileName.trim().isEmpty()) {
-            return null;
-        }
-        return new File(IOUtils.TMP_DIR, tempComponentFileName);
-    }
-
-    /**
      * Get unzipped study dir File object stored in Java's temp directory. Name
      * is stored in session. Discard session variable afterwards.
      */
@@ -414,18 +334,6 @@ public class ImportExportService {
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
         return destDir;
-    }
-
-    private Component unmarshalComponent(File file) throws IOException {
-        UploadUnmarshaller<Component> uploadUnmarshaller =
-                app.injector().instanceOf(ComponentUploadUnmarshaller.class);
-        Component component = uploadUnmarshaller.unmarshalling(file);
-        try {
-            componentService.validate(component);
-        } catch (ValidationException e) {
-            throw new IOException(e);
-        }
-        return component;
     }
 
     private Study unmarshalStudy(File tempDir, boolean deleteAfterwards)
