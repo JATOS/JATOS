@@ -13,7 +13,7 @@ dockerAliases ++= Seq(dockerAlias.value.withTag(Option("latest")))
 libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "2.26.0" % "test",
   "org.easytesting" % "fest-assert" % "1.4" % "test",
-  "com.h2database" % "h2" % "1.4.193",
+  "com.h2database" % "h2" % "1.4.197",
   "com.typesafe.play" %% "play-json" % "2.7.2",
   "org.apache.commons" % "commons-lang3" % "3.9",
   "ch.qos.logback" % "logback-classic" % "1.2.8",
