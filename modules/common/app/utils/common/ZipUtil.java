@@ -34,6 +34,7 @@ public class ZipUtil {
      * zip's content in there. The method can handle recursive unzipping of sub-directories.
      */
     public static File unzip(File fileToUnzip, File destDir) throws IOException {
+        destDir = destDir.toPath().normalize().toFile(); // normalize to prevent path traversal attacks
         FileUtils.deleteQuietly(destDir);
         IOUtils.createDir(destDir);
         destDir.deleteOnExit();
