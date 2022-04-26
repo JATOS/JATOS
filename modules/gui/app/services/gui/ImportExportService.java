@@ -330,7 +330,7 @@ public class ImportExportService {
             destDir = new File(IOUtils.TMP_DIR, "JatosImport_" + UUID.randomUUID());
             ZipUtil.unzip(file, destDir);
         } catch (IOException e) {
-            LOGGER.warn(".unzipUploadedFile: unzipping failed", e);
+            LOGGER.warn(".unzipUploadedFile: unzipping failed");
             throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
         }
         return destDir;

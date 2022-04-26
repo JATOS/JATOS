@@ -103,13 +103,14 @@ public class ImportExport extends Controller {
             jatosGuiExceptionThrower.throwAjax(MessagesStrings.NO_STUDY_UPLOAD, Http.Status.BAD_REQUEST);
         }
 
-        JsonNode responseJson = null;
+        JsonNode responseJson;
         try {
             File file = (File) filePart.getFile();
             responseJson = importExportService.importStudy(loggedInUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
-            jatosGuiExceptionThrower.throwAjax(e);
+            LOGGER.info(".importStudy: Import of study failed");
+            return badRequest("Import of study failed");
         }
         return ok(responseJson);
     }
