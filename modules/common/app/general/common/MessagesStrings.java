@@ -45,10 +45,8 @@ public class MessagesStrings {
     public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
     public static final String BATCH_WASNT_SAVED = "Data weren't saved";
     public static final String BATCH_NOT_ALLOWED_DELETE_DEFAULT = "It's not allowed to delete the default batch.";
-    public static final String BATCH_MAX_ACTIVE_MEMBERS_SET = "Group's max acitive members size must be set if you "
+    public static final String BATCH_MAX_ACTIVE_MEMBERS_SET = "Group's max active member size must be set if you "
             + "want to limit it.";
-    public static final String BATCH_MAX_ACTIVE_MEMBERS = "Group's max active member size must be greater or equal "
-            + "than the min one.";
     public static final String BATCH_MAX_TOTAL_MEMBERS_SET = "Group's max total members size must be set if you want "
             + "to limit it.";
     public static final String BATCH_MAX_TOTAL_MEMBERS = "Group's max total members size must be greater or equal "
@@ -76,7 +74,6 @@ public class MessagesStrings {
     public static final String NOT_ALLOWED_DELETE_ADMIN = "It's not possible to remove user 'admin'.";
 
     // Export / import
-    public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
     public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
     public static final String MORE_THAN_ONE_DIR_IN_ZIP = "There are more than one directory in the ZIP file.";
     public static final String NO_DIR_IN_ZIP_CREATED_NEW = "There is no directory in the ZIP file - new study assets "
@@ -86,8 +83,6 @@ public class MessagesStrings {
     public static final String FILE_MISSING = "File missing";
     public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory";
     public static final String IMPORT_OF_STUDY_FAILED = "Import of study failed";
-    public static final String IMPORT_OF_COMPONENT_FAILED = "Import of component failed";
-    public static final String NO_RESULTS_SELECTED = "No results selected";
     public static final String TOO_NEW_STUDY_VERSION = "This study is from an newer version of JATOS. Try updating "
             + "your JATOS.";
     public static final String UNSUPPORTED_STUDY_VERSION = "This study is from an unsupported version of JATOS.";
@@ -141,8 +136,6 @@ public class MessagesStrings {
     public static final String RESULTS_GROUP_ID = "Click on the ID to go to this group's results";
     public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
     public static final String RESULTS_COMPONENT_RESULT_ID = "ID of this component result";
-    public static final String RESULTS_MT_WORKER_ID_CONFIRMATION_CODE = "Mechanical Turk's worker ID and in brackets "
-            + "the confirmation code for Mechanical Turk";
     public static final String RESULTS_FILES = "Are there any uploaded result files? "
             + "Open the component results to actually see them.";
     public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
@@ -206,18 +199,6 @@ public class MessagesStrings {
         return "<a href=\"" + Common.getPlayHttpContext() + "jatos/" + studyId + "\">Go to this study.</a>";
     }
 
-    public static String componentExportFailure(Long componentId, String componentTitle) {
-        return "Failure during export of component \"" + componentTitle + "\" (ID " + componentId + ")";
-    }
-
-    public static String componentsPropertiesOverwritten(Long componentId, String title) {
-        return "Properties of component \"" + title + "\" (ID " + componentId + ") were overwritten.";
-    }
-
-    public static String importedNewComponent(Long componentId, String title) {
-        return "New component \"" + title + "\" (ID " + componentId + ") imported.";
-    }
-
     public static String componentNotBelongToStudy(Long studyId, Long componentId) {
         return "There is no study with ID " + studyId + " that has a component with ID " + componentId + ".";
     }
@@ -242,24 +223,12 @@ public class MessagesStrings {
         return "An component with ID " + componentId + " doesn't exist.";
     }
 
-    public static String componentNotExist(Long studyId, Long componentId) {
-        return "An component with ID " + componentId + " of study " + studyId + " doesn't exist.";
-    }
-
     public static String componentCloneHtmlNotCloned(String htmlFilePath) {
         return "Successfully cloned component but couldn't copy HTML file \"" + htmlFilePath + "\".";
     }
 
     public static String componentResultNotExist(Long componentResultId) {
         return "An component result with ID " + componentResultId + " doesn't exist.";
-    }
-
-    public static String componentResultNotExist(String componentResultIdStr) {
-        return "An component result with ID \"" + componentResultIdStr + "\" doesn't exist.";
-    }
-
-    public static String resultNotExist(String resultIdStr) {
-        return "An result with ID \"" + resultIdStr + "\" doesn't exist.";
     }
 
     public static String studyResultNotExist(Long studyResultId) {
