@@ -136,14 +136,13 @@ public class Authentication extends Controller {
 
     /**
      * HTTP POST Endpoint for the login form. It handles the sign-in / log-in of users via Google OAuth sign-in button.
-     * The actual authentication is done with Google's gapi JavaScript library in the browser. Here we just check the
+     * The actual authentication is done with Google's gsi/client JavaScript library in the browser. Here we just check the
      * Token ID, create the user if it doesn't exist yet und log in the user into JATOS.
-     * More info: https://developers.google.com/identity/sign-in/web/sign-in
+     * More info: https://developers.google.com/identity/gsi/web
      */
     @Transactional
     public Result signInWithGoogle(Http.Request request) throws GeneralSecurityException, IOException {
-        String idTokenString = request.body().asText();
-
+        String idTokenString = request.body().asFormUrlEncoded().get("credential")[0];
         GoogleIdToken idToken = authenticationService.fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google OAuth: Invalid ID token.");
@@ -183,7 +182,7 @@ public class Authentication extends Controller {
         authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername, request.remoteAddress());
         userService.setLastLogin(normalizedUsername);
 
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return redirect(controllers.gui.routes.Home.home());
     }
 
     /**

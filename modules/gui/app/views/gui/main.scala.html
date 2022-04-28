@@ -22,10 +22,6 @@
 <script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/qr-creator.min.js")"></script>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-@if(loggedInUser.isOauthGoogle()) {
-<script src="https://apis.google.com/js/platform.js" async defer></script>
-<meta name="google-signin-client_id" content="@{general.common.Common.getOauthGoogleClientId()}">
-}
 </head>
 
 <body>
@@ -467,17 +463,9 @@ function fillSidebarStudyList(studyArray) {
     });
 }
 
-@if(loggedInUser.isOauthGoogle()) {
-@views.html.gui.auth.oauthSignInGoogle()
-}
-
 function logout() {
     var redirectToLogout = function() { window.location.href = "@controllers.gui.routes.Authentication.logout()" };
-    @if(loggedInUser.isOauthGoogle()) {
-    signOutGoogle(redirectToLogout);
-    } else {
     redirectToLogout();
-    }
 }
 
 $(document).on('show.bs.modal', '.modal', function() {

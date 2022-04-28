@@ -12,16 +12,15 @@
 <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/login.css")">
 <script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.5.1.min.js")"></script>
 <script src="@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")"></script>
+@if(general.common.Common.isOauthGoogleAllowed()) {
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+}
 <meta charset="utf-8"/>
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-@if(general.common.Common.isOauthGoogleAllowed()) {
-<script src="https://apis.google.com/js/platform.js?onload=renderSignInGoogleButton" async defer></script>
-<meta name="google-signin-client_id" content="@{general.common.Common.getOauthGoogleClientId()}">
-}
 </head>
-<body>
 
+<body>
 <nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	<div class="container-fluid">
 		<div class="navbar-header">
@@ -42,14 +41,28 @@
 <div class="container-fluid" id="login-container">
 	@if(general.common.Common.isOauthGoogleAllowed()) {
 	<div class="row">
-		<div id="signin-google" class="col"></div>
+		<div id="signin-google" class="col">
+			<div id="g_id_onload"
+				 data-client_id="@{general.common.Common.getOauthGoogleClientId()}"
+				 data-login_uri="@controllers.gui.routes.Authentication.signInWithGoogle"
+				 data-auto_prompt="false">
+			</div>
+			<div class="g_id_signin"
+				 data-type="standard"
+				 data-theme="outline"
+				 data-text="sign_in_with"
+				 data-shape="rectangular"
+				 data-size="large"
+				 data-width="300">
+			</div>
+		</div>
 	</div>
 	<div class="row">
-		<h2 class="login-text col">... or log in</h2>
+		<p class="login-text col">... or log in</p>
 	</div>
 	} else {
 	<div class="row">
-		<h2 class="login-text col">Please log in</h2>
+		<p class="login-text col">Please log in</p>
 	</div>
 	}
 	<div class="row">
@@ -64,10 +77,6 @@
 </div>
 
 <script>
-
-@if({general.common.Common.isOauthGoogleAllowed()}) {
-@views.html.gui.auth.oauthSignInGoogle()
-}
 
 setBrand();
 
