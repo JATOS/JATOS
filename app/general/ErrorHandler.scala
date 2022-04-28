@@ -63,7 +63,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
           logger.error("LDAP error", throwable)
           InternalServerError(s"LDAP error: ${e.getCause}")
         case _ =>
-          logger.error("Internal JATOS error", throwable)
+          logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more " +
             s"information."
           if (Helpers.isAjax(request)) InternalServerError(msg)
