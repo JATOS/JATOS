@@ -4,7 +4,7 @@ import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 name := "JATOS"
 version := "3.7.4"
 organization := "org.jatos"
-scalaVersion := "2.11.12"
+scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
 packageName in Universal := "jatos"
 packageName in Docker := "jatos/jatos"
@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "2.26.0" % "test",
   "org.easytesting" % "fest-assert" % "1.4" % "test",
   "com.h2database" % "h2" % "1.4.197",
-  "com.typesafe.play" %% "play-json" % "2.7.2",
+  "com.typesafe.play" %% "play-json" % "2.8.2",
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.10.8",
   "org.apache.commons" % "commons-lang3" % "3.9",
   "ch.qos.logback" % "logback-classic" % "1.2.8",

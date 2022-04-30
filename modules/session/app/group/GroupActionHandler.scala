@@ -2,16 +2,18 @@ package group
 
 import com.google.common.base.Strings
 import daos.common.GroupResultDao
-import gnieh.diffson.playJson._
+import diffson.jsonpatch._
+import diffson.playJson.DiffsonProtocol._
 import group.GroupDispatcher.{GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
-import javax.inject.{Inject, Singleton}
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.db.jpa.JPAApi
 
+import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.util.Try
 
 /**
   * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
@@ -97,7 +99,8 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
       return Json.obj()
     }
 
-    JsonPatch.apply(patches)(currentSessionData)
+    val patch = Json.parse(patches.toString()).as[JsonPatch[JsValue]]
+    patch[Try](currentSessionData).get
   }
 
   /**

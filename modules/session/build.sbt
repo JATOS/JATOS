@@ -1,13 +1,13 @@
 name := "jatos-session"
 version := "3.7.4"
 organization := "org.jatos"
-scalaVersion := "2.11.12"
+scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(
   guice,
   "org.apache.commons" % "commons-collections4" % "4.3",
-  "org.gnieh" % "diffson-play-json_2.11" % "3.1.1"
+  "org.gnieh" %% f"diffson-play-json" % "4.1.1"
 )
 
 // Routes from submodules

@@ -1,7 +1,7 @@
 name := "jatos-common"
 version := "3.7.4"
 organization := "org.jatos"
-scalaVersion := "2.11.12"
+scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(

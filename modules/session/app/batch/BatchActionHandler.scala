@@ -1,16 +1,20 @@
 package batch
 
 import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
+import cats.implicits._
 import com.google.common.base.Strings
 import daos.common.BatchDao
-import gnieh.diffson.playJson._
-import javax.inject.{Inject, Singleton}
+import diffson.jsonpatch._
+import diffson.playJson.DiffsonProtocol._
+
+import scala.util.Try
 import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.db.jpa.JPAApi
 
+import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
 /**
@@ -92,7 +96,8 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
       return Json.obj()
     }
 
-    JsonPatch.apply(patches)(currentSessionData)
+    val patch = Json.parse(patches.toString()).as[JsonPatch[JsValue]]
+    patch[Try](currentSessionData).get
   }
 
   /**
