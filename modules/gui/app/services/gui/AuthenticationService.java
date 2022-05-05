@@ -4,7 +4,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import controllers.gui.Authentication;
 import controllers.gui.actionannotations.AuthenticationAction;
 import daos.common.UserDao;
@@ -109,8 +110,8 @@ public class AuthenticationService {
      */
     public GoogleIdToken fetchOAuthGoogleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
         HttpTransport transport = new NetHttpTransport();
-        JacksonFactory jacksonFactory = new JacksonFactory();
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jacksonFactory)
+        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
                 .setAudience(Collections.singletonList(Common.getOauthGoogleClientId())).build();
         return verifier.verify(idTokenString);
     }
