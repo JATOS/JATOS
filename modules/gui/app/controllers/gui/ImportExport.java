@@ -110,7 +110,7 @@ public class ImportExport extends Controller {
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
             LOGGER.info(".importStudy: Import of study failed");
-            return badRequest("Import of study failed");
+            return badRequest("Import of study failed: " + e.getMessage());
         }
         return ok(responseJson);
     }
