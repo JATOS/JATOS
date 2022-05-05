@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -105,10 +106,13 @@ public class ComponentResultDao extends AbstractDao {
      */
     public Long sizeByStudy(Study study) {
         if (study.getComponentList().isEmpty()) return 0L;
+        List<Long> componentIds = study.getComponentList().stream()
+                .filter(Objects::nonNull)
+                .map(Component::getId)
+                .collect(Collectors.toList());
         Number result = (Number) jpa.em().createQuery(
                 "SELECT SUM(LENGTH(data)) FROM ComponentResult WHERE component_id IN :componentIds")
-                .setParameter("componentIds",
-                        study.getComponentList().stream().map(Component::getId).collect(Collectors.toList()))
+                .setParameter("componentIds", componentIds)
                 .getSingleResult();
         return result != null ? result.longValue() : 0L;
     }
