@@ -4,7 +4,7 @@
 
 <div id="resultsTable_upperToolbar" class="btn-toolbar" role="toolbar"></div>
 
-<div id="resultsTable_lowerToolbar">
+<div id="resultsTable_lowerToolbar" class="hidden-xs hidden-sm">
     <div id="resultsTable_select">
         <label for="resultsTable_select">Select <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Select or deselect table rows (results)"></span>:</label>
     </div>
@@ -384,6 +384,8 @@ $(document).ready(function() {
         resultsTable.buttons('deleteButton', null).containers()
             .attr('id', 'resultTable_delete')
             .appendTo('#resultsTable_upperToolbar');
+        $("#resultsTable_upperToolbar").addClass("toolbarFlexWrap");
+        $("#resultTable_export").addClass("toolbarFlexWrap");
         $('#resultsTable_upperToolbar').prependTo('#resultsTable_wrapper');
     }
 

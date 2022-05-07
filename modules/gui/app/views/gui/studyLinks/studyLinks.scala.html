@@ -3,24 +3,26 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<button id="createBatchButton" type="button" class="btn btn-batch" data-toggle="tooltip"
-    data-placement="bottom" title="Create a new batch of workers">
-    <span class="glyphicon glyphicon-plus"></span>
-    New Batch
-</button>
-<div class="btn-group">
-    <button id="studyLinksCreatorGeneralButton" type="button" class="btn btn-worker" data-toggle="tooltip"
-        data-placement="bottom" title="Shortcut to get study links for the different worker types and batches. Study links are meant to be distributed to your participants so they can run the study.">
-        Get Study Links
-        <span class="glyphicon glyphicon-link"></span>
+<div id="studyLinksToolbar" class="btn-toolbar toolbarFlexWrap" role="toolbar">
+    <button id="createBatchButton" type="button" class="btn btn-batch" data-toggle="tooltip"
+        data-placement="bottom" title="Create a new batch of workers">
+        <span class="glyphicon glyphicon-plus"></span>
+        New Batch
     </button>
-    <button id="allWorkersButton" type="button" class="btn btn-worker" data-toggle="tooltip"
-            data-placement="bottom" title="Show workers of all batches">
-        All Workers
-        <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Number of workers in all batches together">
-        @allWorkersSize
-        </span>
-    </button>
+    <div class="btn-group toolbarFlexWrap">
+        <button id="studyLinksCreatorGeneralButton" type="button" class="btn btn-worker" data-toggle="tooltip"
+            data-placement="bottom" title="Shortcut to get study links for the different worker types and batches. Study links are meant to be distributed to your participants so they can run the study.">
+            Get Study Links
+            <span class="glyphicon glyphicon-link"></span>
+        </button>
+        <button id="allWorkersButton" type="button" class="btn btn-worker" data-toggle="tooltip"
+                data-placement="bottom" title="Show workers of all batches">
+            All Workers
+            <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Number of workers in all batches together">
+            @allWorkersSize
+            </span>
+        </button>
+    </div>
 </div>
 
 <!-- Create Batch Modal -->
