@@ -245,7 +245,7 @@
     </div>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 function loadStudyLinksSetup(batchId) {
     var studyLinksSetupDiv = $(batchTable.row('#' + batchId).node()).next().find('.studyLinksSetupItem').first();

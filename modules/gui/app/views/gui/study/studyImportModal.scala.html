@@ -29,7 +29,7 @@
     </div>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 $('#jatosHeader').on('click', '#importStudyLink', function() {
     $('#importStudyBrowser').trigger("click");

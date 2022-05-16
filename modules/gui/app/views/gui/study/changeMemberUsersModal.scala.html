@@ -71,7 +71,7 @@
     </button>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 // Max length of each worker table before pagination kicks in
 var paginationLength = 10;

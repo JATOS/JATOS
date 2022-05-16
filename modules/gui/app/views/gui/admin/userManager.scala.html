@@ -139,7 +139,7 @@
 
 @views.html.gui.admin.editProfile(loggedInUser)
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 var userTable = $('#userTable').DataTable({
     "ajax": {

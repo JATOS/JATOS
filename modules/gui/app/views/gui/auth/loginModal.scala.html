@@ -30,7 +30,7 @@
 	</div>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 // Let a background worker check for session timeouts
 var sessionTimeoutWorker;

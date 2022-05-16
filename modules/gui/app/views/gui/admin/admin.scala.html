@@ -272,7 +272,7 @@
     </div>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 $('#userManager').click(function() {
     window.location.href = '@controllers.gui.routes.Users.userManager()';

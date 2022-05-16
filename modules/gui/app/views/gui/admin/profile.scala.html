@@ -21,7 +21,7 @@
 
 @views.html.gui.admin.editProfile(loggedInUser)
 
-<script type="text/javascript">
+<script @{helper.CSPNonce.attr}>
 @if(loggedInUser.isSuperuser()) {
 showInfo("As a Superuser you have access to all studies like a study member.");
 }

@@ -27,7 +27,7 @@
     </div>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 var studyAdminTable;
 $(document).ready(function() {
     studyAdminTable = $('#studyAdminTable').DataTable({

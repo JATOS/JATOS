@@ -34,7 +34,7 @@
     }
 </ul>
 
-<script type="text/javascript">
+<script @{helper.CSPNonce.attr}>
 
 @if(utils.common.Helpers.isAllowedSuperuser(loggedInUser)) {
 showInfo("As a Superuser you have access to all studies like a study member.");

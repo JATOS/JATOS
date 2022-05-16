@@ -122,7 +122,7 @@
 @views.html.gui.studyLinks.studyLinksSetup(loggedInUser, study)
 @views.html.gui.studyLinks.mTurkSourceCodeModal(study, request)
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 var batchTable;
 $(document).ready(function() {

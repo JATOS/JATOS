@@ -176,7 +176,7 @@
 @views.html.gui.study.componentPropertiesModal(study)
 @views.html.gui.study.studyLogModal(study)
 
-<script type="text/javascript">
+<script @{helper.CSPNonce.attr}>
 var studyId = @study.getId();
 var studyLocked = @study.isLocked();
 $(document).ready(setLockButton(studyLocked));

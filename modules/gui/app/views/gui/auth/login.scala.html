@@ -10,10 +10,10 @@
 <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
 <link rel="stylesheet" href="@routes.Assets.versioned("lib/bootstrap/css/bootstrap.min.css")">
 <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/login.css")">
-<script src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.5.1.min.js")"></script>
-<script src="@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")"></script>
+<script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.5.1.min.js")"></script>
+<script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")"></script>
 @if(general.common.Common.isOauthGoogleAllowed()) {
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async defer></script>
 }
 <meta charset="utf-8"/>
 <meta http-equiv="Cache-Control" content="no-store" />
@@ -76,7 +76,7 @@
 	</div>
 </div>
 
-<script>
+<script @{helper.CSPNonce.attr}>
 
 setBrand();
 
