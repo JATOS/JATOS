@@ -12,6 +12,9 @@ GET      /jatos/studiesData                                                 @con
 GET      /jatos/listLogs                                                    @controllers.gui.Admin.listLogs()
 GET      /jatos/log                                                         @controllers.gui.Admin.log(limit: Integer ?= -1)
 GET      /jatos/logs/:filename                                              @controllers.gui.Admin.logs(filename: String, limit: Integer ?= -1, reverse: Boolean ?= false)
+GET      /jatos/:studyId/studyAssetsSize                                    @controllers.gui.Admin.studyAssetsSize(studyId: Long)
+GET      /jatos/:studyId/resultDataSize                                     @controllers.gui.Admin.resultDataSize(studyId: Long)
+GET      /jatos/:studyId/resultFileSize                                     @controllers.gui.Admin.resultFileSize(studyId: Long)
 
 # Update controller
 GET      /jatos/releaseInfo                                                 @controllers.gui.Updates.getReleaseInfo(version:String ?= null, allowPreReleases:Boolean ?= false)

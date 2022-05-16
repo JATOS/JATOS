@@ -10,6 +10,7 @@ import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import general.common.Common;
+import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -58,9 +59,9 @@ public class Admin extends Controller {
 
     @Inject
     Admin(AuthenticationService authenticationService,
-            BreadcrumbsService breadcrumbsService, StudyDao studyDao, StudyResultDao studyResultDao,
-            UserDao userDao, WorkerDao workerDao, LogFileReader logFileReader, AdminService adminService,
-            JsonUtils jsonUtils) {
+          BreadcrumbsService breadcrumbsService, StudyDao studyDao, StudyResultDao studyResultDao,
+          UserDao userDao, WorkerDao workerDao, LogFileReader logFileReader,
+          AdminService adminService, JsonUtils jsonUtils) {
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
@@ -170,7 +171,13 @@ public class Admin extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result allStudiesData() {
-        return ok(jsonUtils.asJsonNode(adminService.getStudiesData(studyDao.findAll())));
+        List<Study> studyList = studyDao.findAll();
+        boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyAdmin();
+        boolean resultDataSizeFlag = Common.showResultDataSizeInStudyAdmin();
+        boolean resultFileSizeFlag = Common.showResultFileSizeInStudyAdmin();
+        List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, studyAssetsSizeFlag,
+                resultDataSizeFlag, resultFileSizeFlag);
+        return ok(jsonUtils.asJsonNode(studiesData));
     }
 
     /**
@@ -181,7 +188,44 @@ public class Admin extends Controller {
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
-        return ok(jsonUtils.asJsonNode(adminService.getStudiesData(user.getStudyList())));
+        Set<Study> studyList = user.getStudyList();
+        List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, true, true, true);
+        return ok(jsonUtils.asJsonNode(studiesData));
+    }
+
+    /**
+     * Returns the study assets folder size of one study
+     */
+    @Transactional
+    @Authenticated(Role.ADMIN)
+    public Result studyAssetsSize(Long studyId) {
+        Study study = studyDao.findById(studyId);
+        if (study == null) return badRequest("Study does not exist");
+        return ok(jsonUtils.asJsonNode(adminService.getStudyAssetDirSize(study)));
+    }
+
+    /**
+     * Returns the result data size of one study
+     */
+    @Transactional
+    @Authenticated(Role.ADMIN)
+    public Result resultDataSize(Long studyId) {
+        Study study = studyDao.findById(studyId);
+        if (study == null) return badRequest("Study does not exist");
+        int studyResultCount = studyResultDao.countByStudy(study);
+        return ok(jsonUtils.asJsonNode(adminService.getResultDataSize(study, studyResultCount)));
+    }
+
+    /**
+     * Returns the size of all result files of one study
+     */
+    @Transactional
+    @Authenticated(Role.ADMIN)
+    public Result resultFileSize(Long studyId) {
+        Study study = studyDao.findById(studyId);
+        if (study == null) return badRequest("Study does not exist");
+        int studyResultCount = studyResultDao.countByStudy(study);
+        return ok(jsonUtils.asJsonNode(adminService.getResultFileSize(study, studyResultCount)));
     }
 
 }

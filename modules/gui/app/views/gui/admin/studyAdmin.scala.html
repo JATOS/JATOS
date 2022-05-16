@@ -89,6 +89,13 @@ $(document).ready(function() {
                 "data": {
                     _: 'studyAssetsSize.display',
                     sort: 'studyAssetsSize.bytes'
+                },
+                "render": function (data, type, full, meta) {
+                    if (data == "disabled") {
+                        return '<button type="button" class="showStudyAssetSizeButton btn btn-default btn-sm">Show</a>';
+                    } else {
+                        return data;
+                    }
                 }
             },
             {
@@ -100,6 +107,13 @@ $(document).ready(function() {
                 "data": {
                     _: 'resultDataSize.display',
                     sort: 'resultDataSize.bytes'
+                },
+                "render": function (data, type, full, meta) {
+                    if (data == "disabled") {
+                        return '<button type="button" class="showResultDataSizeButton btn btn-default btn-sm">Show</a>';
+                    } else {
+                        return data;
+                    }
                 }
             },
             {
@@ -107,6 +121,13 @@ $(document).ready(function() {
                 "data": {
                     _: 'resultFileSize.display',
                     sort: 'resultFileSize.bytes'
+                },
+                "render": function (data, type, full, meta) {
+                    if (data == "disabled") {
+                        return '<button type="button" class="showResultFileSizeButton btn btn-default btn-sm">Show</a>';
+                    } else {
+                        return data;
+                    }
                 }
             },
             {
@@ -146,7 +167,7 @@ function setActiveButton(buttonDiv, active) {
 
 $('#studyAdminTable').on('click', '.activeButton', function() {
     var button = this;
-    var tr = $(this).closest('tr');
+    var tr = $(button).closest('tr');
     var studyInfo = studyAdminTable.row(tr).data();
     var active = $(this).hasClass('activeStudy');
     $.ajax({
@@ -154,6 +175,51 @@ $('#studyAdminTable').on('click', '.activeButton', function() {
         type : "POST",
         success: function() {
             setActiveButton($(button).parent(), !active);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#studyAdminTable').on('click', '.showStudyAssetSizeButton', function() {
+    var button = this;
+    var tr = $(button).closest('tr');
+    var studyInfo = studyAdminTable.row(tr).data();
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/studyAssetsSize",
+        success: function(response) {
+            $(button).parent().text(response.display);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#studyAdminTable').on('click', '.showResultDataSizeButton', function() {
+    var button = this;
+    var tr = $(button).closest('tr');
+    var studyInfo = studyAdminTable.row(tr).data();
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/resultDataSize",
+        success: function(response) {
+            $(button).parent().text(response.display);
+        },
+        error : function(err) {
+            showError(err.responseText);
+        }
+    });
+});
+
+$('#studyAdminTable').on('click', '.showResultFileSizeButton', function() {
+    var button = this;
+    var tr = $(button).closest('tr');
+    var studyInfo = studyAdminTable.row(tr).data();
+    $.ajax({
+        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/resultFileSize",
+        success: function(response) {
+            $(button).parent().text(response.display);
         },
         error : function(err) {
             showError(err.responseText);

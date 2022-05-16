@@ -104,7 +104,7 @@ public class ComponentResultDao extends AbstractDao {
      * Returns data size (in Byte) that is occupied by the 'data' field of all component results belonging to the given
      * study.
      */
-    public Long sizeByStudy(Study study) {
+    public long sizeByStudy(Study study) {
         if (study.getComponentList().isEmpty()) return 0L;
         List<Long> componentIds = study.getComponentList().stream()
                 .filter(Objects::nonNull)
