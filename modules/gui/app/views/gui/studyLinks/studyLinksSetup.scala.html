@@ -857,7 +857,7 @@ function generateStudyLinksHtml(studyCodes) {
 
 $('#studyLinksDisplayModal, #studyLinksModal').on('click', '.clipboardButton', function(e) {
     var text = $(this).parent().find('span').text();
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
 });
 
 $('#studyLinksDisplayModal, #studyLinksModal').on('click', '.qrCodeButton', function(e) {

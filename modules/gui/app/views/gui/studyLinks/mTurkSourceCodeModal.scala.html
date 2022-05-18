@@ -12,7 +12,7 @@
                 <div class="messages"></div>
                 <p><b>Copy & paste</b> this code into the '<i>source</i>' field of your study's design layout in Mechanical Turk (<a target="_blank" href="http://www.jatos.org/Connect-to-Mechanical-Turk.html">more information</a>).</p>
                 <p class="simulation"></p>
-                <p><button class="btn btn-worker copyToClipboardButton">Copy to Clipboard&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button></p>
+                <p><button class="btn btn-worker copyToClipboardButton" style="display: none">Copy to Clipboard&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button></p>
 <!-- Be careful with changing indentation - it changes the view -->
 <pre><code class="mtSourceCode">
 &lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
@@ -87,6 +87,10 @@
 
 var studyId = @study.getId();
 
+if (navigator.clipboard && window.isSecureContext) {
+    $('#mtSourceCodeModal .copyToClipboardButton').show();
+}
+
 $('#batchTable').on('click', '.mtWorkerSourceCode', function() {
     var batch = getBatchData(this);
     $.ajax({
@@ -129,12 +133,12 @@ function showSourceCodeMTurkModal(batch, studyCode) {
 // Select and copy to clipboard by button
 $('#mtSourceCodeModal').on('click', '.copyToClipboardButton', function(e) {
     var mtSourceCode = $('#mtSourceCodeModal').find('.mtSourceCode').text();
-    navigator.clipboard.writeText(mtSourceCode);
+    copyToClipboard(mtSourceCode);
 });
 
 $('#mtSourceCodeModal').on('click', '.clipboardButton', function(e) {
     var text = $(this).parent().text();
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
 });
 
 // Select and highlights a text (can't use .select() on a tag that's not a textarea)

@@ -612,6 +612,15 @@ function getDateTimeYYYYMMDDHHmmss() {
     return new Date().toISOString().replaceAll(/\.\d{3}Z/g, "").replaceAll(/[:\-T\.]/g, "");
 }
 
+function copyToClipboard(textToCopy) {
+    // navigator clipboard api needs a secure context (https)
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(textToCopy);
+    } else {
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", textToCopy);
+    }
+}
+
 </script>
 
 </body>
