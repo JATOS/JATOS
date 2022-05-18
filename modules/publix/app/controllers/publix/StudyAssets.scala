@@ -139,11 +139,9 @@ class StudyAssets @Inject()(components: ControllerComponents,
     */
   def endPage(studyResultUuid: String, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
     jpa.withTransaction(asJavaSupplier(() => {
-      val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseGet(null)
-      if (studyResult == null) {
-        throw new BadRequestPublixException("A study result " + studyResultUuid + " doesn't exist.")
-      }
-      else if (!PublixHelpers.studyDone(studyResult)) {
+      val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseThrow(
+        () => new BadRequestPublixException("A study result " + studyResultUuid + " doesn't exist."))
+      if (!PublixHelpers.studyDone(studyResult)) {
         throw new BadRequestPublixException("The study result " + studyResultUuid + " isn't finished yet.")
       }
 
