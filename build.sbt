@@ -28,7 +28,7 @@ dockerCommands := Seq(
   Cmd("MAINTAINER", "Kristian Lange"),
   Cmd("WORKDIR", "/opt/docker"),
   Cmd("ADD", "opt /opt"),
-  Cmd("EXPOSE", "9000 9443"),
+  Cmd("EXPOSE", "9000"),
   Cmd("RUN", "apt update -y && apt install vim -y"),
   ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
   ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
