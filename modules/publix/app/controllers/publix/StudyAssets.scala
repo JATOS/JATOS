@@ -54,8 +54,8 @@ class StudyAssets @Inject()(components: ControllerComponents,
       case "jatos.min.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.min.js")
       case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)
       case _ => jpa.withTransaction(asJavaSupplier(() => {
-        val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseGet(null)
-        if (studyResult == null) BadRequest("A study result " + studyResultUuid + " doesn't exist.")
+        val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseThrow(() =>
+          new BadRequestPublixException("A study result " + studyResultUuid + " doesn't exist."))
         viaAssetsPath(studyResult.getStudy.getDirName + URL_PATH_SEPARATOR + urlPath)
       }))
     }
