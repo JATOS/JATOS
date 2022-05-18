@@ -5,12 +5,16 @@
 
 ### Publix ###
 
++ nocsp
 GET     /publix/:studyId/start                                      @controllers.publix.LegacyStudyRuns.transformToStudyLink(request: Request, studyId: Long, batchId: Long)
 
++ nocsp
 GET     /publix/run                                                 @controllers.publix.PublixInterceptor.studyEntry(request: Request, code: String ?= null)
++ nocsp
 GET     /publix/:studyCode                                          @controllers.publix.PublixInterceptor.run(request: Request, studyCode: String)
 GET     /publix/:studyResultUuid/end                                @controllers.publix.PublixInterceptor.finishStudy(request: Request, studyResultUuid: String, successful: Boolean ?= true, message: String ?= null)
 GET     /publix/:studyResultUuid/abort                              @controllers.publix.PublixInterceptor.abortStudy(request: Request, studyResultUuid: String, message: String ?= null)
++ nocsp
 GET     /publix/:studyResultUuid/:componentUuid/start               @controllers.publix.PublixInterceptor.startComponent(request: Request, studyResultUuid: String, componentUuid: String, message: String ?= null)
 GET     /publix/:studyResultUuid/:componentUuid/initData            @controllers.publix.PublixInterceptor.getInitData(request: Request, studyResultUuid: String, componentUuid: String)
 POST    /publix/:studyResultUuid/studySessionData                   @controllers.publix.PublixInterceptor.setStudySessionData(request: Request, studyResultUuid: String)
