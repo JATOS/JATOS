@@ -609,7 +609,7 @@ $(document).ready(function() {
         var url = '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()';
         var data = JSON.stringify({resultIds: ids});
         var filename = "jatos_results_" + getDateTimeYYYYMMDDHHmmss() + ".txt";
-        downloadFileStreaming(url, data, filename);
+        window.downloadFileStream(url, data, filename);
     }
 
     function deleteAllResults(e, dt, node, config) {
@@ -683,7 +683,7 @@ $(document).ready(function() {
         var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfComponentResults()';
         var data = JSON.stringify({resultIds: ids});
         var filename = "jatos_resultfiles_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
-        downloadFileStreaming(url, data, filename);
+        window.downloadFileStream(url, data, filename);
     }
 
     function generateComponentResultDataChildRow(resultData, componentResultId) {

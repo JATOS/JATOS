@@ -558,7 +558,7 @@ function generateListLogsHtml(logFiles) {
 $('#listLogsModal .modal-body').on('click', 'li a', function(event) {
     event.preventDefault();
     var url = $(this).attr("href");
-    download(url);
+    window.downloadFileStream(url);
 });
 
 $('#listLogsModal .modal-body, #logs').on('click', 'li button, #applicationLog', function() {

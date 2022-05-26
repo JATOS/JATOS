@@ -201,11 +201,11 @@ public class ImportExport extends Controller {
     private Result exportResultData(User loggedInUser, List<Long> componentResultIdList) {
         if (Common.isResultDataExportUseTmpFile()) {
             File tmpFile = resultService.getComponentResultDataAsTmpFile(loggedInUser, componentResultIdList);
-            return okFileStreamed(tmpFile, tmpFile::delete, "text/plain; charset=utf-8");
+            return okFileStreamed(tmpFile, tmpFile::delete, "text/plain");
         } else {
             Source<ByteString, ?> dataSource = resultService.streamComponentResultData(loggedInUser,
                     componentResultIdList);
-            return ok().chunked(dataSource).as("text/plain; charset=utf-8");
+            return ok().chunked(dataSource).as("text/plain");
         }
     }
 

@@ -441,7 +441,7 @@ $('#studyToolbar').on('click', '#studyLinksButton', function() {
 
 $('#studyToolbar').on('click', '#exportStudy', function() {
     showWaitingModal();
-    download('@controllers.gui.routes.ImportExport.exportStudy(study.getId())');
+    window.downloadFileStream('@controllers.gui.routes.ImportExport.exportStudy(study.getId())');
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
