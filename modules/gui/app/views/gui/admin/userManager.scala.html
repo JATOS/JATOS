@@ -187,18 +187,26 @@ var userTable = $('#userTable').DataTable({
         },
         {
             "class": "username",
-            "data": "username"
+            "data": "username",
+            "render": function (data, type, full, meta) {
+                // Every 40 chars add a <br>
+                return (data) ? data.replace(/(.{40})/g, "$1<br>") : "none";
+            }
         },
         {
             "class": "name",
-            "data": "name"
+            "data": "name",
+            "render": function (data, type, full, meta) {
+                // Every 30 chars add a <br>
+                return (data) ? data.replace(/(.{30})/g, "$1<br>") : "none";
+            }
         },
         {
             "class": "email",
             "data": "email",
             "render": function (data, type, full, meta) {
-                // Every 50 chars add a <br>
-                return (data) ? data.replace(/(.{50})/g, "$1<br>") : "none";
+                // Every 40 chars add a <br>
+                return (data) ? data.replace(/(.{40})/g, "$1<br>") : "none";
             }
         },
         {
