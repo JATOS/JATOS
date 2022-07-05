@@ -43,7 +43,7 @@ javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
 PlayKeys.externalizeResources := false
 
 // JATOS root project with GUI. Container for all the submodules
-lazy val jatos: Project = (project in file("."))
+lazy val jatos = (project in file("."))
     .enablePlugins(PlayScala, SbtWeb)
     .aggregate(publix, common, gui)
     .dependsOn(publix, common, gui)
