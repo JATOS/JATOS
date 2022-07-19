@@ -1,8 +1,3 @@
-
-    // todo Works with Chrome, Edge, FF, HTTPS/HTTP
-    // todo streaming without memory? try with big file on Windows Edge in VM with low memory
-    // todo test: error msg in log and console
-
 /**
  * Module that uses the File System Access API via browser-fs-access (https://github.com/GoogleChromeLabs/browser-fs-access)
  */

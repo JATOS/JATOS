@@ -1,1 +1,0 @@
-sw.js belongs to streamsaver.js but must be in this 'javascript' folder because a browser scripts expects it to be there
