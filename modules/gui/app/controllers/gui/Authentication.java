@@ -146,16 +146,16 @@ public class Authentication extends Controller {
         GoogleIdToken idToken = authenticationService.fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google OAuth: Invalid ID token.");
-            return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
-                    .withGlobalError("Invalid ID token")));
+            FlashScopeMessaging.error("Invalid ID token");
+            return redirect(routes.Authentication.login());
         }
 
         GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
 
         if (!idTokenPayload.getEmailVerified()) {
             LOGGER.info("Google OAuth: Couldn't sign in user due to email not verified");
-            return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
-                    .withGlobalError("Email not verified")));
+            FlashScopeMessaging.error("Email not verified");
+            return redirect(routes.Authentication.login());
         }
 
         // Create new user if they doesn't exist in the DB
@@ -173,14 +173,14 @@ public class Authentication extends Controller {
             newUserForm = authenticationValidation.validateNewUser(newUserForm);
             if (newUserForm.hasErrors()) {
                 LOGGER.warn("Google OAuth: user validation failed - " + newUserForm.errors().get(0).message());
-                return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
-                        .withGlobalError(newUserForm.errors().get(0).message())));
+                FlashScopeMessaging.error(newUserForm.errors().get(0).message());
+                return redirect(routes.Authentication.login());
             }
 
             userService.bindToUserAndPersist(newUserModel);
         } else if (!existingUser.isOauthGoogle()) {
-            return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
-                    .withGlobalError("User exists already - but does not use Google sign in")));
+            FlashScopeMessaging.error("User exists already - but does not use Google sign in");
+            return redirect(routes.Authentication.login());
         }
 
         authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername, request.remoteAddress());
