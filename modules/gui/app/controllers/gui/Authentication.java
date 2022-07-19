@@ -146,14 +146,16 @@ public class Authentication extends Controller {
         GoogleIdToken idToken = authenticationService.fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google OAuth: Invalid ID token.");
-            return unauthorized("Invalid ID token.");
+            return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
+                    .withGlobalError("Invalid ID token")));
         }
 
         GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
 
         if (!idTokenPayload.getEmailVerified()) {
             LOGGER.info("Google OAuth: Couldn't sign in user due to email not verified");
-            return unauthorized("Email not verified");
+            return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
+                    .withGlobalError("Email not verified")));
         }
 
         // Create new user if they doesn't exist in the DB
@@ -171,12 +173,14 @@ public class Authentication extends Controller {
             newUserForm = authenticationValidation.validateNewUser(newUserForm);
             if (newUserForm.hasErrors()) {
                 LOGGER.warn("Google OAuth: user validation failed - " + newUserForm.errors().get(0).message());
-                return unauthorized(newUserForm.errors().get(0).message());
+                return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
+                        .withGlobalError(newUserForm.errors().get(0).message())));
             }
 
             userService.bindToUserAndPersist(newUserModel);
         } else if (!existingUser.isOauthGoogle()) {
-            return unauthorized("User exists already - but does not use Google sign in");
+            return unauthorized(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)
+                    .withGlobalError("User exists already - but does not use Google sign in")));
         }
 
         authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername, request.remoteAddress());
