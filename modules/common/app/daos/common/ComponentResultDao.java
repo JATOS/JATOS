@@ -39,10 +39,10 @@ public class ComponentResultDao extends AbstractDao {
     /**
      * Only update the 'data' field and leave all else untouched
      */
-    public void updateData(Long id, String data) {
+    public void updateData(ComponentResult componentResult) {
         jpa.em().createQuery("UPDATE ComponentResult cr SET cr.data = :data WHERE cr.id = :id")
-                .setParameter("id", id)
-                .setParameter("data", data)
+                .setParameter("id", componentResult.getId())
+                .setParameter("data", componentResult.getData())
                 .executeUpdate();
     }
 

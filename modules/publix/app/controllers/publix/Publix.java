@@ -176,7 +176,8 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
             return badRequest("Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
         }
 
-        componentResultDao.updateData(componentResult.get().getId(), resultData);
+        componentResult.get().setData(resultData);
+        componentResultDao.updateData(componentResult.get());
         studyLogger.logResultDataStoring(componentResult.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
