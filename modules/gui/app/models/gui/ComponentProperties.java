@@ -3,7 +3,7 @@ package models.gui;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
@@ -201,7 +201,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
         if (title != null && title.length() > 255) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
         }
-        if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+        if (title != null && !Jsoup.isValid(title, Safelist.none())) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
@@ -215,7 +215,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
                         new ValidationError(HTML_FILE_PATH, MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
             }
         }
-        if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+        if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {

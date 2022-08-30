@@ -2,7 +2,7 @@ package models.gui;
 
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 
@@ -49,10 +49,10 @@ public class ChangeUserProfileModel implements Constraints.Validatable<List<Vali
         if (name != null && name.length() > 255) {
             errorList.add(new ValidationError(NAME, MessagesStrings.NAME_TOO_LONG));
         }
-        if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
+        if (name != null && !Jsoup.isValid(name, Safelist.none())) {
             errorList.add(new ValidationError(NAME, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
+        if (email != null && !Jsoup.isValid(email, Safelist.none())) {
             errorList.add(new ValidationError(EMAIL, MessagesStrings.NO_HTML_ALLOWED));
         }
         return errorList.isEmpty() ? null : errorList;

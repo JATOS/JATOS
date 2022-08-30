@@ -9,7 +9,7 @@ import models.gui.ChangePasswordModel;
 import models.gui.NewUserModel;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 import play.data.Form;
 import play.data.validation.ValidationError;
 
@@ -60,7 +60,7 @@ public class AuthenticationValidation {
         }
 
         // Check with Jsoup for illegal HTML
-        if (!Jsoup.isValid(normalizedUsername, Whitelist.none())) {
+        if (!Jsoup.isValid(normalizedUsername, Safelist.none())) {
             return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
@@ -73,12 +73,12 @@ public class AuthenticationValidation {
         }
 
         // Check with Jsoup for illegal HTML
-        if (!Jsoup.isValid(name, Whitelist.none())) {
+        if (!Jsoup.isValid(name, Safelist.none())) {
             form = form.withError(new ValidationError(NewUserModel.NAME, MessagesStrings.NO_HTML_ALLOWED));
         }
 
         // Check with Jsoup for illegal HTML
-        if (!Strings.isNullOrEmpty(email) && !Jsoup.isValid(email, Whitelist.none())) {
+        if (!Strings.isNullOrEmpty(email) && !Jsoup.isValid(email, Safelist.none())) {
             form = form.withError(new ValidationError(NewUserModel.EMAIL, MessagesStrings.NO_HTML_ALLOWED));
         }
 

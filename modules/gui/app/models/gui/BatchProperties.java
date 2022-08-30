@@ -3,7 +3,7 @@ package models.gui;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
@@ -234,7 +234,7 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
 			errorList.add(
 					new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
 		}
-		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+		if (title != null && !Jsoup.isValid(title, Safelist.none())) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
@@ -260,7 +260,7 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
 			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
 					MessagesStrings.BATCH_MAX_TOTAL_WORKER_SET));
 		}
-		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+		if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}

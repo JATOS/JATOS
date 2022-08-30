@@ -3,7 +3,7 @@ package models.common.workers;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
@@ -65,7 +65,7 @@ public class PersonalSingleWorker extends Worker {
             errorList.add(new ValidationError(COMMENT,
                     MessagesStrings.COMMENT_TOO_LONG));
         }
-        if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
+        if (comment != null && !Jsoup.isValid(comment, Safelist.none())) {
             errorList.add(new ValidationError(COMMENT,
                     MessagesStrings.NO_HTML_ALLOWED));
         }
