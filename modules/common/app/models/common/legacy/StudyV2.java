@@ -1,5 +1,21 @@
 package models.common.legacy;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.google.common.base.Strings;
+import general.common.MessagesStrings;
+import models.common.Component;
+import models.common.User;
+import models.common.workers.JatosWorker;
+import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.PersonalSingleWorker;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+import play.data.validation.ValidationError;
+import utils.common.IOUtils;
+import utils.common.JsonUtils;
+
+import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -7,35 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.Lob;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderColumn;
-
-import com.google.common.base.Strings;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonView;
-
-import general.common.MessagesStrings;
-import models.common.Component;
-import models.common.User;
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
-import play.data.validation.ValidationError;
-import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 /**
  * Old model kept for unmarshaling JSON of old versions!
@@ -335,10 +322,10 @@ public class StudyV2 {
         if (title == null || title.trim().isEmpty()) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
         }
-        if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+        if (title != null && !Jsoup.isValid(title, Safelist.none())) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (description != null && !Jsoup.isValid(description, Whitelist.none())) {
+        if (description != null && !Jsoup.isValid(description, Safelist.none())) {
             errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (dirName == null || dirName.trim().isEmpty()) {
@@ -349,7 +336,7 @@ public class StudyV2 {
         if (dirName != null && matcher.find()) {
             errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
         }
-        if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+        if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {

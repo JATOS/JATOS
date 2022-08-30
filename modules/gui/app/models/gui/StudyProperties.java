@@ -3,7 +3,7 @@ package models.gui;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
@@ -245,11 +245,11 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
             errorList.add(
                     new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
         }
-        if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+        if (title != null && !Jsoup.isValid(title, Safelist.none())) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (description != null
-                && !Jsoup.isValid(description, Whitelist.none())) {
+                && !Jsoup.isValid(description, Safelist.none())) {
             errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (dirName == null || dirName.trim().isEmpty()) {
@@ -264,16 +264,16 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         if (dirName != null && Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
             errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
         }
-        if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+        if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
             errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
         }
-        if (endRedirectUrl != null && !Jsoup.isValid(endRedirectUrl, Whitelist.none())) {
+        if (endRedirectUrl != null && !Jsoup.isValid(endRedirectUrl, Safelist.none())) {
             errorList.add(new ValidationError(END_REDIRECT_URL, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (studyEntryMsg != null && !Jsoup.isValid(studyEntryMsg, Whitelist.none())) {
+        if (studyEntryMsg != null && !Jsoup.isValid(studyEntryMsg, Safelist.none())) {
             errorList.add(new ValidationError(STUDY_ENTRY_MSG, MessagesStrings.NO_HTML_ALLOWED));
         }
         return errorList.isEmpty() ? null : errorList;
