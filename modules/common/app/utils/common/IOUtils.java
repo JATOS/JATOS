@@ -24,11 +24,6 @@ import java.util.regex.Pattern;
 @Singleton
 public class IOUtils {
 
-    public static final String STUDY_FILE_SUFFIX = "jas";
-    public static final String COMPONENT_FILE_SUFFIX = "jac";
-    public static final String JZIP_FILE_SUFFIX = "jzip";
-    public static final String ZIP_FILE_SUFFIX = "zip";
-
     /**
      * Regular expression of illegal characters or strings in file or directory names '/', '\n', '\r', * '//', '\t',
      * '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':', '~', '!', '§', '$', '%', '&'

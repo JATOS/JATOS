@@ -45,7 +45,7 @@ export default async (
   }
   options.forEach((option, i) => {
     types[i] = {
-      description: option.description || '',
+      description: option.description || 'Files',
       accept: {},
     };
     if (option.mimeTypes) {
@@ -57,6 +57,8 @@ export default async (
       });
     } else if (type) {
       types[i].accept[type] = option.extensions || [];
+    } else {
+      types[i].accept['*/*'] = option.extensions || [];
     }
   });
   if (existingHandle) {
@@ -80,7 +82,7 @@ export default async (
       excludeAcceptAllOption: options[0].excludeAcceptAllOption || false,
     }));
   if (!existingHandle && filePickerShown) {
-    filePickerShown();
+    filePickerShown(handle);
   }
   const writable = await handle.createWritable();
   // Use streaming on the `Blob` if the browser supports it.
