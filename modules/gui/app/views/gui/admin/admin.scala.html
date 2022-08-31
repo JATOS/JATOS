@@ -545,7 +545,7 @@ function generateListLogsHtml(logFiles) {
     listLogsHtml.push("<ul>");
     logFiles.forEach(function(filename) {
         var url = "@{general.common.Common.getPlayHttpContext()}jatos/logs/" + filename;
-        var html = '<li><a href="' + url + '">' + filename + '</a>';
+        var html = '<li><a href="' + url + '" download>' + filename + '</a>';
         if (filename.includes(".log")) {
             html += '&nbsp;<button type="button" class="btn btn-default btn-sm">Show</button>';
         }
@@ -554,12 +554,6 @@ function generateListLogsHtml(logFiles) {
     listLogsHtml.push("</ul>");
     return listLogsHtml.join("");
 }
-
-$('#listLogsModal .modal-body').on('click', 'li a', function(event) {
-    event.preventDefault();
-    var url = $(this).attr("href");
-    window.downloadFileStream(url);
-});
 
 $('#listLogsModal .modal-body, #logs').on('click', 'li button, #applicationLog', function() {
     event.preventDefault();
