@@ -554,8 +554,8 @@ $(document).ready(function() {
             var rowData = resultsTable.row(selectedTr).data();
             ids.push(rowData.id);
         });
+        hideWaitingModal();
         if (ids.length == 0) {
-            hideWaitingModal();
             showError("No results selected");
             return;
         }
@@ -629,8 +629,8 @@ $(document).ready(function() {
             var rowData = resultsTable.row(selectedTr).data();
             ids.push(rowData.id);
         });
+        hideWaitingModal();
         if (ids.length == 0) {
-            hideWaitingModal();
             showError("No results selected");
             return;
         }

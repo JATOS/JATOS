@@ -102,7 +102,6 @@ function showStudyLogRaw() {
 }
 
 $('#studyLogDownload').on('click', function() {
-    showWaitingModal();
     var url = '@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/log?limit=-1&download=true';
     var filename = "jatos_studylog_@{study.getUuid()}.log";
     window.downloadFileStream(url, null, filename);

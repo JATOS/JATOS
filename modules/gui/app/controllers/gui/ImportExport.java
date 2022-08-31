@@ -22,7 +22,6 @@ import models.common.StudyResult;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
-import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -159,10 +158,7 @@ public class ImportExport extends Controller {
             jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
         }
 
-        String zipFileName = ioUtils.generateFileName(study.getTitle(), IOUtils.JZIP_FILE_SUFFIX);
-        String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", zipFileName);
-        return okFileStreamed(zipFile, zipFile::delete, "application/zip")
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
+        return okFileStreamed(zipFile, zipFile::delete, "application/zip");
     }
 
     /**
@@ -222,9 +218,7 @@ public class ImportExport extends Controller {
         }
 
         try {
-            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", filename);
-            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
+            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename));
         } catch (IOException e) {
             return badRequest("File does not exist");
         }
@@ -249,7 +243,7 @@ public class ImportExport extends Controller {
         }
         if (resultFileList.isEmpty()) return notFound("No result files found");
 
-        File zipFile = File.createTempFile("resultFiles", "." + IOUtils.ZIP_FILE_SUFFIX);
+        File zipFile = File.createTempFile("jatos_resultFiles_", ".zip");
         zipFile.deleteOnExit();
         ZipUtil.zipFiles(resultFileList, zipFile);
         return okFileStreamed(zipFile, zipFile::delete, "application/zip");
@@ -275,7 +269,7 @@ public class ImportExport extends Controller {
         }
         if (resultFileList.isEmpty()) return notFound("No result files found");
 
-        File zipFile = File.createTempFile("resultFiles", "." + IOUtils.ZIP_FILE_SUFFIX);
+        File zipFile = File.createTempFile("jatos_resultFiles_", ".zip");
         zipFile.deleteOnExit();
         ZipUtil.zipFiles(resultFileList, zipFile);
 

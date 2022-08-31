@@ -593,15 +593,15 @@ $(document).ready(function() {
 
     function exportSelectedResultData(e, dt, node, config, exportAll) {
         $(".dt-button-collection").hide();
-        showWaitingModal(true);
+        showWaitingModal();
         var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
             var rowData = resultsTable.row(selectedTr).data();
             ids.push(rowData.id);
         });
+        hideWaitingModal();
         if (ids.length == 0) {
-            hideWaitingModal();
             showError("No results selected");
             return;
         }
@@ -674,8 +674,8 @@ $(document).ready(function() {
             var rowData = resultsTable.row(selectedTr).data();
             ids.push(rowData.id);
         });
+        hideWaitingModal();
         if (ids.length == 0) {
-            hideWaitingModal();
             showError("No results selected");
             return;
         }

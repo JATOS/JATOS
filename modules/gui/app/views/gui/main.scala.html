@@ -357,6 +357,11 @@ function hideWaitingModal() {
     $('#waitingModal').modal('hide');
 }
 
+$('#waitingModal').on('click', '.cancel', function (e) {
+    window.abortFileDownload();
+    hideWaitingModal();
+});
+
 function showMessages(messages, allowHtml = false) {
     if (messages != null) {
         if (messages.successList != null) messages.successList.forEach(function(msg) { showSuccess(msg, null, allowHtml) });

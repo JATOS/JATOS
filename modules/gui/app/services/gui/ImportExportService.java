@@ -229,8 +229,7 @@ public class ImportExportService {
      */
     public File createStudyExportZipFile(Study study) throws IOException {
         String studyFileName = ioUtils.generateFileName(study.getTitle());
-        String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
-        File studyAsJsonFile = File.createTempFile(studyFileName, studyFileSuffix);
+        File studyAsJsonFile = File.createTempFile(studyFileName, ".jas");
         studyAsJsonFile.deleteOnExit();
         jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
         Path studyAssetsDir = Paths.get(ioUtils.generateStudyAssetsPath(study.getDirName()));
@@ -238,8 +237,7 @@ public class ImportExportService {
         List<Path> filesToZip = new ArrayList<>();
         filesToZip.add(studyAssetsDir);
         filesToZip.add(studyAsJsonFile.toPath());
-        String zipFileName = ioUtils.generateFileName(study.getTitle());
-        File zipFile = File.createTempFile(zipFileName, "." + IOUtils.JZIP_FILE_SUFFIX);
+        File zipFile = File.createTempFile("jatos_study_", ".jzip");
         zipFile.deleteOnExit();
         ZipUtil.zipFiles(filesToZip, zipFile);
 
@@ -338,7 +336,7 @@ public class ImportExportService {
 
     private Study unmarshalStudy(File tempDir, boolean deleteAfterwards)
             throws IOException {
-        File[] studyFileList = ioUtils.findFiles(tempDir, "", IOUtils.STUDY_FILE_SUFFIX);
+        File[] studyFileList = ioUtils.findFiles(tempDir, "", "jas");
         if (studyFileList.length != 1) {
             throw new IOException(MessagesStrings.STUDY_INVALID);
         }
