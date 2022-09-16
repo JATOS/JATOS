@@ -1370,6 +1370,37 @@ var jatos = {};
 	};
 
 	/**
+	 * Starts the component with the given title. If there are multiple components with an
+	 * identical title it starts the one with the lowest position. Before this it calls 
+	 * jatos.appendResultData (sends result data to the JATOS server and 
+	 * appends them to the already existing ones for this component) and 
+	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
+	 * 
+	 * Either without message:
+	 * @param {string} title - Title of the component to start
+	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
+	 * @param {optional function} onError - Callback function if fail
+	 * 
+	 * Or with message:
+	 * @param {title} title - Title of the component to start
+	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
+	 * @param {optional string} message - Message that should be logged (max 255 chars)
+	 * @param {optional function} onError - Callback function if fail
+	 */
+	jatos.startComponentByTitle = function (title, resultData, param3, param4) {
+		const component = jatos.componentList.find(component => component.title === title);
+		if (!component) {
+			var onError;
+			if (typeof param3 === 'function') onError = param3;
+			else if (typeof param4 === 'function') onError = param4;
+			callingOnError(onError, `Component with title ${title} does not exist`);
+			return;
+		}
+		var componentUuid = component.uuid;
+		jatos.startComponent(componentUuid, resultData, param3, param4);
+	}
+
+	/**
 	 * Starts the next active component of this study. The component's order is
 	 * determined by their position. If the current component is already the 
 	 * last one it finishes the study. Before this it calls 
