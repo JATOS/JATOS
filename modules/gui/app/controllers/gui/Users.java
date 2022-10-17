@@ -164,13 +164,13 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result profile(String username) throws JatosGuiException {
+    public Result profile(String username, Http.Request request) throws JatosGuiException {
         String normalizedUsername = User.normalizeUsername(username);
         User loggedInUser = authenticationService.getLoggedInUser();
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
-        return ok(views.html.gui.admin.profile.render(loggedInUser, breadcrumbs, Helpers.isLocalhost()));
+        return ok(views.html.gui.admin.profile.render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), request));
     }
 
     /**
