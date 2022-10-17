@@ -66,14 +66,14 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
           logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more " +
             s"information."
-          if (Helpers.isAjax(request)) InternalServerError(msg)
+          if (Helpers.isAjax(request) || Helpers.isApiRequest(request)) InternalServerError(msg)
           else InternalServerError(views.html.error.render(msg))
       }
     )
   }
 
   private def getErrorResult(status: Int, msg: String, request: RequestHeader): Result = {
-    if (Helpers.isAjax(request)) Status(status)(msg)
+    if (Helpers.isAjax(request) || Helpers.isApiRequest(request)) Status(status)(msg)
     else Status(status)(views.html.publix.error.render(msg))
   }
 

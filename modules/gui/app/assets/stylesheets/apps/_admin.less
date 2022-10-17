@@ -93,31 +93,37 @@ fieldset[disabled] .btn-admin.active {
     display: inline-block;
 }
 #userTable_wrapper .pagination > li.active > a ,
-#studyAdminTable_wrapper .pagination > li.active > a {
+#studyAdminTable_wrapper .pagination > li.active > a,
+#apiTokenTable_wrapper .pagination > li.active > a {
     color: @btn-admin-color;
     background-color: @btn-admin-bg;
     border-color: darken(@btn-admin-bg, 5%);
 }
 #userTable_wrapper .pagination > li.active > a:hover,
-#studyAdminTable_wrapper .pagination > li.active > a:hover {
+#studyAdminTable_wrapper .pagination > li.active > a:hover,
+#apiTokenTable_wrapper .pagination > li.active > a:hover {
     background-color: darken(@btn-admin-bg, 10%);
 }
 #userTable_wrapper .pagination > li > a,
-#studyAdminTable_wrapper .pagination > li > a {
+#studyAdminTable_wrapper .pagination > li > a,
+#apiTokenTable_wrapper .pagination > li > a {
     color: @btn-default-color;
     background-color: @btn-default-bg;
     border-color: darken(@btn-default-bg, 20%);
 }
 #userTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover,
-#studyAdminTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
+#studyAdminTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover,
+#apiTokenTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
     background-color: darken(@btn-default-bg, 10%);
 }
 #userTable_wrapper .pagination > li.disabled > a,
-#studyAdminTable_wrapper .pagination > li.disabled > a {
+#studyAdminTable_wrapper .pagination > li.disabled > a,
+#apiTokenTable_wrapper .pagination > li.disabled > a {
     color: lighten(@btn-default-color, 20%);
 }
 #userTable_wrapper .pagination > li.next > a,
-#studyAdminTable_wrapper .pagination > li.next > a {
+#studyAdminTable_wrapper .pagination > li.next > a,
+#apiTokenTable_wrapper .pagination > li.next > a {
     margin-right: 10px;
 }
 #userTable_wrapper tr.info td {

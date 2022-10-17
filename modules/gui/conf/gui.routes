@@ -3,6 +3,16 @@
 # Order is important!
 # ~~~~
 
+# API
+GET      /jatos/api/testToken                                               @controllers.gui.Api.testToken()
+GET      /jatos/api/status                                                  @controllers.gui.Api.status()
+POST     /jatos/api/studyResult/export/resultData                           @controllers.gui.Api.exportDataOfStudyResults(request: Request)
+
+# study export
+# study import
+# study/component result/data/meta export
+#
+
 # Admin controller
 GET      /jatos/admin                                                       @controllers.gui.Admin.administration(request: Request)
 GET      /jatos/status                                                      @controllers.gui.Admin.status()
@@ -43,6 +53,12 @@ GET      /jatos/                                                            @con
 GET      /                                                                  @controllers.gui.Home.home()
 GET      /jatos/branding                                                    @controllers.gui.Home.branding()
 
+# ApiTokens controller
+GET      /jatos/user/allApiTokenData                                        @controllers.gui.ApiTokens.allTokenDataByUser()
+POST     /jatos/user/apiToken                                               @controllers.gui.ApiTokens.generate(name: String, expires: Integer)
+DELETE   /jatos/user/apiToken/:id                                           @controllers.gui.ApiTokens.remove(id: Long)
+POST     /jatos/user/apiToken/:id/active                                    @controllers.gui.ApiTokens.toggleActive(id: Long, active: Boolean)
+
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager()
 GET      /jatos/userData                                                    @controllers.gui.Users.allUserData()
@@ -53,7 +69,7 @@ POST     /jatos/user/passwordByUser                                         @con
 POST     /jatos/user/passwordByAdmin                                        @controllers.gui.Users.changePasswordByAdmin(request: Request)
 POST     /jatos/user/:username/properties/role                              @controllers.gui.Users.toggleRole(username: String, role: String, value: Boolean)
 POST     /jatos/user/:username/properties/active                            @controllers.gui.Users.toggleActive(username: String, active: Boolean)
-GET      /jatos/user/:username                                              @controllers.gui.Users.profile(username: String)
+GET      /jatos/user/:username                                              @controllers.gui.Users.profile(username: String, request: Request)
 # Play doesn't allow data in body in a DELETE request, so I use POST instead
 POST     /jatos/user/:username/delete                                       @controllers.gui.Users.remove(username: String)
 

@@ -1,6 +1,7 @@
 package services.gui;
 
 import com.google.common.collect.Lists;
+import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
@@ -56,16 +57,18 @@ public class UserService {
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
+    private final ApiTokenDao apiTokenDao;
     private final JPAApi jpa;
 
     @Inject
     UserService(StudyService studyService, AuthenticationService authenticationService, UserDao userDao,
-            StudyDao studyDao, WorkerDao workerDao, JPAApi jpa) {
+            StudyDao studyDao, WorkerDao workerDao, ApiTokenDao apiTokenDao, JPAApi jpa) {
         this.studyService = studyService;
         this.authenticationService = authenticationService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
+        this.apiTokenDao = apiTokenDao;
         this.jpa = jpa;
     }
 
@@ -221,6 +224,10 @@ public class UserService {
                 studyDao.update(study);
             }
         }
+
+        // Delete all user's API tokens
+        apiTokenDao.findByUser(user).forEach(apiTokenDao::remove);
+
         // Don't necessary to remove the user's JatosWorker: he is removed
         // together with the default batch
         userDao.remove(user);

@@ -1,6 +1,6 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, request: Http.Request)
 
-@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
 
 <div id="toolbar" class="btn-group">
     @if(!loggedInUser.isOauthGoogle()) {
@@ -9,6 +9,7 @@
     @if(loggedInUser.isDb()) {
     <button id="changePassword" type="button" class="btn btn-admin">Change Password <span class="glyphicon glyphicon-lock"></span></button>
     }
+    <button id="apiTokens" type="button" class="btn btn-admin">API Tokens</button>
     @if(!loggedInUser.getUsername().equals(services.gui.UserService.ADMIN_USERNAME)) {
     <button id="deleteUser" type="button" class="btn btn-admin">Delete User <span class="glyphicon glyphicon-remove"></span></button>
     }
@@ -20,6 +21,7 @@
 </ul>
 
 @views.html.gui.admin.editProfile(loggedInUser)
+@views.html.gui.admin.apiTokensModal(request)
 
 <script @{helper.CSPNonce.attr}>
 @if(loggedInUser.isSuperuser()) {

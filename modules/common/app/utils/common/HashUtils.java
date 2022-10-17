@@ -1,5 +1,7 @@
 package utils.common;
 
+import org.apache.commons.lang3.RandomStringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +10,7 @@ import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 public class HashUtils {
 
@@ -63,6 +66,23 @@ public class HashUtils {
                     .substring(1));
         }
         return sb.toString();
+    }
+
+    /**
+     * Generates a random string that can be used for passwords or tokens
+     * https://stackoverflow.com/a/31260788/1278769
+     */
+    public static String generateSecureRandomString(int length) {
+        char[] possibleCharacters = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").toCharArray();
+        return RandomStringUtils.random(length, 0, possibleCharacters.length - 1, false, false, possibleCharacters,
+                new SecureRandom());
+    }
+
+    /**
+     * Uses MD5 to generate a 6 chars long checksum of a string
+     */
+    public static String getChecksum(String str) {
+        return HashUtils.getHashMD5(str).substring(0, 6);
     }
 
 }

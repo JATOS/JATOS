@@ -49,6 +49,22 @@ public class Helpers {
     }
 
     /**
+     * Checks the HTTP request if it has an "Authorization: Bearer" request
+     */
+    public static boolean isApiRequest(Http.Request request) {
+        Optional<String> headerOptional = request.header("Authorization");
+        return headerOptional.isPresent() && headerOptional.get().contains("Bearer");
+    }
+
+    /**
+     * Checks the HTTP request if it has an "Authorization: Bearer" request
+     */
+    public static boolean isApiRequest(RequestHeader request) {
+        Option<String> headerOption = request.headers().get("Authorization");
+        return headerOption.isDefined() && headerOption.get().contains("Bearer");
+    }
+
+    /**
      * Returns the request's host URL without path (and without base path from 'play.http.context') or query string
      * (e.g. "https://www.example.com"). It returns the URL with the proper protocol http or https.
      * If JATOS is run behind a proxy the real host address must be passed on with X-Forwarded-For header.

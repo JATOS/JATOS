@@ -1,0 +1,324 @@
+@(request: Http.Request)
+
+<!-- Show all API tokens Modal -->
+<div class="modal fade" id="apiTokenModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Your personal access tokens for JATOS' API (API Tokens)</h4>
+            </div>
+
+            <div class="modal-body">
+                <div class="messages"></div>
+                <!-- All groups table -->
+                <table id="apiTokenTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <thead>
+                    <tr>
+                        <th>Active</th>
+                        <th>ID <span class="glyphicon sortLogo gray-light"></span></th>
+                        <th>Name <span class="glyphicon sortLogo gray-light"></span></th>
+                        <th>Creation Date <span class="glyphicon sortLogo gray-light"></span></th>
+                        <th>Expires <span class="glyphicon sortLogo gray-light"></span></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create API token Modal -->
+<div id="apiTokenCreateModal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">New personal access token</h4>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <p class="modalText"></p>
+                <div class="form-group row">
+                    <label class="control-label col-xs-3">Name&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Use the name to distinguish the tokens from one another"></span></label>
+                    <div class="col-xs-9">
+                        <input class="form-control name" type="text" placeholder="Name" required autofocus>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="control-label col-xs-3">Expires&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Select token expiry"></span></label>
+                    <div class="col-xs-9">
+                        <div class="btn-group expires">
+                            <button type="button" class="btn btn-default">30 days</button>
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                            <ul class="dropdown-menu">
+                                <li><a href="#">7 days</a></li>
+                                <li class="active"><a href="#">30 days</a></li>
+                                <li><a href="#">60 days</a></li>
+                                <li><a href="#">90 days</a></li>
+                                <li><a href="#">No Expiration</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="confirmed btn btn-admin">Generate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API token display Modal -->
+<div id="apiTokenDisplayModal" class="modal fade" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">New personal access token</h4>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <div class="content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template for active toggle button in API token row -->
+<div id="activeToggleButtonDiv" style="display: none">
+    <div class="tooltipWrapper" data-title="">
+        <button type="button" class="btn btn-default activeButton">
+            <span class="glyphicon glyphicon-ok"></span>
+        </button>
+    </div>
+</div>
+
+<!-- Template for delete button in API token row -->
+<div id="deleteButtonDiv" style="display: none">
+    <div class="tooltipWrapper" data-title="">
+        <button type="button" class="btn btn-admin deleteButton">
+            Delete <span class="glyphicon glyphicon-remove"></span>
+        </button>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr}>
+
+var apiTokenTable;
+
+$('#toolbar').on('click', '#apiTokens', function() {
+    removeAlerts("#apiTokenModal");
+    if (apiTokenTable) {
+        apiTokenTable.ajax.reload();
+    } else {
+        apiTokenTable = generateApiTokenTable();
+    }
+    $('#apiTokenModal').modal('show');
+});
+
+function generateApiTokenTable() {
+    return $('#apiTokenTable').DataTable({
+        "ajax": {
+            "type": "GET",
+            "url" : "@controllers.gui.routes.ApiTokens.allTokenDataByUser()",
+            "error": function (err) {
+                if (err.responseText) {
+                    showError(err.responseText, "#apiTokenModal .messages");
+                } else {
+                    showError("Cannot read groups data.", "#apiTokenModal .messages");
+                }
+            }
+        },
+        "dom": "Btirp",
+        "pageLength": 10,
+        "order": [[ 3, "desc" ]],
+        "autoWidth": false,
+        "lengthChange": false,
+        "language": {
+            "emptyTable": "No tokens yet"
+        },
+        "buttons": [
+            {
+                "text": '<span class="glyphicon glyphicon-plus"></span>&nbsp;New&nbsp;Token',
+                "className": "btn btn-admin",
+                "titleAttr": 'Generate a new personal access token',
+                "action": function ( e, dt, node, config ) {
+                    removeAlerts("#apiTokenCreateModal");
+                    removeFormErrors("#apiTokenCreateModal");
+                    $('#apiTokenCreateModal .name').val("");
+                    $('#apiTokenCreateModal').modal('show');
+                }
+            }
+        ],
+        "columns": [
+            {
+                "data": null,
+                "width": "1%",
+                "orderable": false,
+                "searchable": false,
+                "render": function (data, type, full, meta) {
+                    var buttonDiv = $('#activeToggleButtonDiv :first-child').clone();
+                    setActiveButton(buttonDiv, data.active);
+                    return buttonDiv.prop('outerHTML');
+                }
+            },
+            {
+                "data": "id",
+                "width": "1%"
+            },
+            {
+                "data": "name",
+            },
+            {
+                "data": "creationDate",
+            },
+            {
+                "data": null,
+                "render": function (data, type, full, meta) {
+                    return data.isExpired ? `${data.expires} <b>(expired)</b>` : data.expires;
+                }
+            },
+            {
+                "data": null,
+                "class": "deleteButtonColumn",
+                "width": "1%",
+                "orderable": false,
+                "searchable": false,
+                "render": function (data, type, full, meta) {
+                    var buttonDiv = $('#deleteButtonDiv :first-child').clone();
+                    return buttonDiv.prop('outerHTML');
+                }
+            },
+        ],
+        "rowCallback": grayoutToken
+    });
+}
+
+function grayoutToken(row, data) {
+    if (!data.active || data.isExpired) {
+        $(row).find("td:not(.deleteButtonColumn)").addClass("grayout");
+    } else {
+        $(row).find("td:not(.deleteButtonColumn)").removeClass("grayout");
+    }
+}
+
+$('#apiTokenCreateModal').on( 'click', '.dropdown-menu li a', function() {
+   var target = $(this).html();
+
+   //Adds active class to selected item
+   $(this).parents('.dropdown-menu').find('li').removeClass('active');
+   $(this).parent('li').addClass('active');
+
+   //Displays selected text on dropdown-toggle button
+   $(this).parents('.btn-group').find('button').first().text(target);
+});
+
+$('#apiTokenCreateModal').on('click', '.confirmed', function(e) {
+    const name = $('#apiTokenCreateModal .name').val().trim();
+    const expires = Number($('#apiTokenCreateModal .expires button').first().text().replace(/\D/g,'')) * 60 * 60 * 24;
+
+    $.ajax({
+        url : `@{general.common.Common.getPlayHttpContext()}jatos/user/apiToken?name=${name}&expires=${expires}`,
+        type : "POST",
+        success: function(apiToken) {
+            $('#apiTokenCreateModal').modal('hide');
+            apiTokenTable.ajax.reload(null, false);
+            showApiTokenDisplayModal(name, apiToken);
+        },
+        error : function(err) {
+            removeAlerts("#apiTokenCreateModal");
+            showError(err.responseText, "#apiTokenCreateModal .messages");
+        }
+    });
+});
+
+function showApiTokenDisplayModal(name, apiToken) {
+    removeAlerts("#apiTokenDisplayModal");
+    $('#apiTokenDisplayModal .modal-title').text(`New personal access token "${name}"`);
+    const html = `<p>Please copy your personal access token now.<br>
+        <b>For your security it won't be shown again.</b></p>
+        <div class="well"><span>${apiToken}</span>
+            <button type="button" class="btn clipboardButton btn-xs pull-right" data-toggle="tooltip" title="Copy this token to the clipboard.">Copy&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button>
+        </div>
+        <p>Test with <code>curl</code>:</p>
+        <pre><code>curl -i -H "Authorization: Bearer ${apiToken}" @{utils.common.Helpers.getRealBaseUrl(request)}jatos/api/testToken</code></pre>`
+    $('#apiTokenDisplayModal .content').html(html);
+    $('#apiTokenDisplayModal').modal('show');
+}
+
+$('#apiTokenDisplayModal').on('click', '.clipboardButton', function(e) {
+    var text = $(this).parent().find('span').text();
+    copyToClipboard(text);
+});
+
+function setActiveButton(buttonDiv, active) {
+    var button = $(buttonDiv).children("button:first");
+    if (active) {
+        button.removeClass('btn-default');
+        button.addClass('btn-admin');
+        button.addClass('activeToken');
+        buttonDiv.attr('title', "Click to deactivate this token");
+        button.html($(button.html())
+                .removeClass('glyphicon-remove')
+                .addClass('glyphicon-ok').prop('outerHTML'));
+    } else {
+        button.removeClass('btn-admin');
+        button.removeClass('activeToken');
+        button.addClass('btn-default');
+        buttonDiv.attr('title', "Click to activate this token");
+        button.html($(button.html())
+                .removeClass('glyphicon-ok')
+                .addClass('glyphicon-remove').prop('outerHTML'));
+    }
+}
+
+$('#apiTokenModal').on('click', '.activeButton', function() {
+    const button = this;
+    const tr = $(this).closest('tr');
+    const data = apiTokenTable.row(tr).data();
+    const active = $(this).hasClass('activeToken');
+    $.ajax({
+        url : `@{general.common.Common.getPlayHttpContext()}jatos/user/apiToken/${data.id}/active?active=${!active}`,
+        type : "POST",
+        success: function() {
+            data.active = !active;
+            setActiveButton($(button).parent(), data.active);
+            grayoutToken(tr, data);
+        },
+        error : function(err) {
+            showError(err.responseText, "#apiTokenModal .messages");
+        }
+    });
+});
+
+$('#apiTokenModal').on('click', '.deleteButton', function() {
+    const button = this;
+    const tr = $(this).closest('tr');
+    const data = apiTokenTable.row(tr).data();
+    const title = "Confirm Delete";
+    const htmlText = `<p>You are about to delete token "${data.name}" (ID ${data.id}).</p>
+        <p><b>This cannot be undone.</b> Do you want to proceed?</p>`;
+    askConfirmation(title, htmlText, 'Delete', 'btn-admin', function() {
+        $.ajax({
+            url : `@{general.common.Common.getPlayHttpContext()}jatos/user/apiToken/${data.id}`,
+            type : "DELETE",
+            success: function() {
+                apiTokenTable.ajax.reload(null, false);
+            },
+            error : function(err) {
+                showError(err.responseText, "#apiTokenModal .messages");
+            },
+            complete: hideWaitingModal
+        });
+    });
+});
+
+</script>
