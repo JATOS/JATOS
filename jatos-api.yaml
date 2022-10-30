@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.0.3
 info:
   title: JATOS API
   description: 'This is JATOS API specification using OpenAPI.'
@@ -11,7 +11,6 @@ externalDocs:
   url: https://www.jatos.org
 servers:
   - url: http://localhost:9000
-  - url: https://jatos.mindprobe.eu
 
 paths:
   /jatos/api/status:
@@ -136,9 +135,6 @@ paths:
         401:
           description: Invalid token
 
-
-
-
   /jatos/api/{studyId}/log:
     get:
       summary: Get the study log of the study belonging to the study ID
@@ -161,83 +157,6 @@ paths:
                 type: object
         401:
           description: Invalid token
-
-  /jatos/api/{studyId}/properties:
-    get:
-      summary: Get the study properties of the study belonging to the study ID
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-    post:
-      summary: Change the study properties of the study belonging to the study ID
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                description:
-                  type: string
-                dirName:
-                  type: string
-                dirRename:
-                  type: boolean
-                comments:
-                  type: string
-                studyEntryMsg:
-                  type: string
-                endRedirectUrl:
-                  type: string
-                jsonData:
-                  type: string
-                groupStudy:
-                  type: boolean
-                linearStudy:
-                  type: boolean
-                allowPreview:
-                  type: boolean
-              required:
-
-
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
 
   /jatos/api/{studyId}/allWorkers:
     get:
@@ -383,8 +302,6 @@ paths:
                 type: object
         401:
           description: Invalid token
-
-
 
   /jatos/api/{studyId}/resultsOverview:
     get:
