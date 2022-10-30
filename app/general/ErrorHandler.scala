@@ -53,8 +53,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
           logger.info(s"JatosGuiException during call ${request.uri}: ${e.getMessage}")
           e.getSimpleResult.asScala()
         case e: InternalServerErrorPublixException =>
-          logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e
-            .getMessage}")
+          logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e.getMessage}")
           getErrorResult(e.getHttpStatus, e.getMessage, request)
         case e: PublixException =>
           logger.info(s"PublixException during call ${request.uri}: ${e.getMessage}")
@@ -64,8 +63,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
           InternalServerError(s"LDAP error: ${e.getCause}")
         case _ =>
           logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
-          val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more " +
-            s"information."
+          val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
           if (Helpers.isAjax(request) || Helpers.isApiRequest(request)) InternalServerError(msg)
           else InternalServerError(views.html.error.render(msg))
       }

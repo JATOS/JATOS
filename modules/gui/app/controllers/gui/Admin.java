@@ -129,7 +129,7 @@ public class Admin extends Controller {
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
             String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", filename);
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, contentLength, Optional.empty()))
+                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
         }
     }

@@ -1,18 +1,18 @@
 package controllers.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.*;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import general.gui.RequestScopeMessaging;
 import models.common.*;
 import models.common.GroupResult.GroupState;
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
+import models.common.workers.*;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
 import models.gui.GroupSession;
@@ -28,10 +28,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Controller for all actions regarding study links, batches, and workers within the JATOS GUI.
@@ -93,7 +90,7 @@ public class StudyLinks extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
@@ -116,7 +113,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -136,7 +133,7 @@ public class StudyLinks extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -162,7 +159,7 @@ public class StudyLinks extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
             dataAsJson = jsonUtils.allGroupResultsForUI(groupResultDao.findAllByBatch(batch));
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -181,7 +178,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -207,7 +204,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -227,7 +224,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -249,7 +246,7 @@ public class StudyLinks extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -279,7 +276,7 @@ public class StudyLinks extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -307,7 +304,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -327,7 +324,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -348,7 +345,7 @@ public class StudyLinks extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForBatch(currentBatch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -380,7 +377,7 @@ public class StudyLinks extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -405,7 +402,7 @@ public class StudyLinks extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -436,7 +433,7 @@ public class StudyLinks extends Controller {
             checker.checkStudyLocked(study);
             checker.checkStandardForBatch(batch, study, batchId);
             checker.checkDefaultBatch(batch);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -445,26 +442,57 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * POST request that creates either Personal Single or Personal Multiple study links and their corresponding
-     * workers.
+     * GET request that returns the study code(s) for the given worker type and batch. For Personal Single and
+     * Personal Multiple type the amount and a comment can be specified.
      */
     @Transactional
     @Authenticated
-    public Result createPersonalRun(Http.Request request, Long studyId, Long batchId, String workerType)
-            throws JatosGuiException {
+    public Result createStudyCodes(Long studyId, Long batchId, String workerType, String comment, Integer amount) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
 
-        JsonNode json = request.body().asJson();
-        String comment = json.findPath("comment").asText().trim();
-        int amount = json.findPath("amount").asInt();
+        switch (workerType.toLowerCase()) {
+            case "personalsingle":
+            case "ps":
+                workerType = PersonalSingleWorker.WORKER_TYPE;
+                return createPersonalRun(batch, workerType, comment, amount);
+            case "personalmultiple":
+            case "pm":
+                workerType = PersonalMultipleWorker.WORKER_TYPE;
+                return createPersonalRun(batch, workerType, comment, amount);
+            case "generalsingle":
+            case "gs":
+                workerType = GeneralSingleWorker.WORKER_TYPE;
+                return createGeneralRun(batch, workerType);
+
+            case "generalmultiple":
+            case "gm":
+                workerType = GeneralMultipleWorker.WORKER_TYPE;
+                return createGeneralRun(batch, workerType);
+            case "mturk":
+            case "mt":
+                workerType = MTWorker.WORKER_TYPE;
+                return createGeneralRun(batch, workerType);
+            default:
+                return badRequest("Unknown worker type");
+        }
+    }
+
+    /**
+     * Creates either Personal Single or Personal Multiple study codes and their corresponding workers.
+     */
+    private Result createPersonalRun(Batch batch, String workerType, String comment, Integer amount) {
+        comment = Strings.isNullOrEmpty(comment) ? "" : Helpers.urlDecode(comment);
+        amount = amount == null ? 1 : amount;
         List<String> studyCodeList;
         try {
             studyCodeList = studyLinkService.createAndPersistStudyLinks(comment, amount, batch, workerType);
@@ -478,28 +506,14 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * GET request that returns a study code for the given worker type (possible types are GeneralMultipleWorker,
-     * GeneralSingleWorker, MTWorker). This ID is used on the client side to generate the study link. Since for the
-     * 'General' workers only one study link is necessary per batch and worker type it only creates one if it is not
-     * already stored in the StudyLink table.
+     * Returns the study code for the given worker type (possible types are GeneralMultipleWorker, GeneralSingleWorker,
+     * MTWorker). Since for the 'General' workers only one study link is necessary per batch and worker type it only
+     * creates one if it is not already stored in the StudyLink table.
      */
-    @Transactional
-    @Authenticated
-    public Result createGeneralRun(Long studyId, Long batchId, String workerType) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
-
+    private Result createGeneralRun(Batch batch, String workerType) {
         StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
-        return ok(studyLink.getStudyCode());
+        return ok(jsonUtils.asJsonNode(Collections.singletonList(studyLink.getStudyCode())));
     }
 
     /**
@@ -515,7 +529,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -541,7 +555,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -562,7 +576,7 @@ public class StudyLinks extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         if (!batch.equals(studyLink.getBatch())) {

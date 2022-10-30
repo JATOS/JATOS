@@ -296,8 +296,8 @@ public class JsonUtils {
         Path dir = Paths.get(
                 IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId()));
         if (Files.isDirectory(dir)) {
-            try {
-                return Files.list(dir).map(this::getResultUploadFileNode).collect(Collectors.toList());
+            try (Stream<Path> paths = Files.list(dir)) {
+                return paths.map(this::getResultUploadFileNode).collect(Collectors.toList());
             } catch (IOException e) {
                 LOGGER.warn("Cannot open directory " + dir);
             }
@@ -307,8 +307,7 @@ public class JsonUtils {
 
     private ObjectNode getResultUploadFileNode(Path filePath) {
         String fileSize = null;
-        try {
-            FileChannel fileChannel = FileChannel.open(filePath);
+        try (FileChannel fileChannel = FileChannel.open(filePath)) {
             fileSize = Helpers.humanReadableByteCount(fileChannel.size());
         } catch (IOException e) {
             LOGGER.warn("Cannot open file " + filePath);
@@ -373,31 +372,6 @@ public class JsonUtils {
         userNode.put("name", user.getName());
         userNode.put("username", user.getUsername());
         userNode.put("isMember", study.hasUser(user));
-        return userNode;
-    }
-
-    /**
-     * Returns a JsonNode with the usual user fields plus from all studies where
-     * the user is member of the title and the number of members.
-     */
-    public JsonNode userData(User user) {
-        ObjectNode userNode = Json.mapper().createObjectNode();
-        userNode.put("name", user.getName());
-        userNode.put("username", user.getUsername());
-        userNode.put("email", user.getEmail());
-        ArrayNode roleListArray = Json.mapper().valueToTree(user.getRoleList());
-        userNode.putArray("roleList").addAll(roleListArray);
-        userNode.put("authMethod", user.getAuthMethod().name());
-        // Add array with study titles
-        ArrayNode studyArrayNode = Json.mapper().createArrayNode();
-        for (Study study : user.getStudyList()) {
-            ObjectNode studyNode = Json.mapper().createObjectNode();
-            studyNode.put("id", study.getId());
-            studyNode.put("title", study.getTitle());
-            studyNode.put("userSize", study.getUserList().size());
-            studyArrayNode.add(studyNode);
-        }
-        userNode.putArray("studyList").addAll(studyArrayNode);
         return userNode;
     }
 
@@ -527,8 +501,9 @@ public class JsonUtils {
         for (Worker worker : workerSet) {
             ObjectNode workerNode = Json.mapper().valueToTree(Helpers.initializeAndUnproxy(worker));
 
-            List<Batch> batchList = worker.getBatchList().stream()
+            List<String> batchList = worker.getBatchList().stream()
                     .filter(b -> study.getBatchList().contains(b))
+                    .map(Batch::getTitle)
                     .collect(Collectors.toList());
             workerNode.set("batchList", Json.mapper().valueToTree(batchList));
 
@@ -633,15 +608,6 @@ public class JsonUtils {
      */
     public JsonNode asJsonNode(Object obj) {
         return Json.mapper().valueToTree(obj);
-    }
-
-    /**
-     * Marshals the given component into JSON, adds the current component serial
-     * version, and returns it as JsonNode. It uses the view JsonForIO.
-     */
-    public JsonNode componentAsJsonForIO(Component component) throws IOException {
-        ObjectNode componentNode = (ObjectNode) asObjectNodeWithIOView(component);
-        return wrapNodeWithVersion(componentNode, String.valueOf(Component.SERIAL_VERSION));
     }
 
     /**

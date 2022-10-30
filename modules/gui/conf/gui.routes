@@ -3,15 +3,36 @@
 # Order is important!
 # ~~~~
 
-# API
+# API admin
 GET      /jatos/api/testToken                                               @controllers.gui.Api.testToken()
 GET      /jatos/api/status                                                  @controllers.gui.Api.status()
-POST     /jatos/api/studyResult/export/resultData                           @controllers.gui.Api.exportDataOfStudyResults(request: Request)
+GET      /jatos/api/logs/:filename                                          @controllers.gui.Api.logs(filename: String)
+GET      /jatos/api/:studyId/studyAssetsSize                                @controllers.gui.Api.studyAssetsSize(studyId: Long)
+GET      /jatos/api/:studyId/resultDataSize                                 @controllers.gui.Api.resultDataSize(studyId: Long)
+GET      /jatos/api/:studyId/resultFileSize                                 @controllers.gui.Api.resultFileSize(studyId: Long)
 
-# study export
-# study import
-# study/component result/data/meta export
-#
+# API study
+GET      /jatos/api/:studyId/log                                            @controllers.gui.Api.studyLog(studyId: Long)
+GET      /jatos/api/:studyId/allWorkers                                     @controllers.gui.Api.allWorkersByStudy(studyId: Long)
+GET      /jatos/api/:studyId/batch/:batchId/studyCode                       @controllers.gui.Api.createStudyCodes(studyId: Long, batchId: Long, workerType: String, comment: String ?= null, amount: Integer ?= 1)
+GET      /jatos/api/:studyId/export                                         @controllers.gui.Api.exportStudy(studyId: Long)
+POST     /jatos/api/import/study                                            @controllers.gui.Api.importStudy(request: Request, overwriteProperties: Boolean ?= true, overwriteDir: Boolean ?= true, keepCurrentDirName: Boolean ?= true, renameDir: Boolean ?= true)
+
+# API results
+GET      /jatos/api/:studyId/resultsOverview                                @controllers.gui.Api.studyResultsOverviewByStudy(studyId: Long)
+GET      /jatos/api/worker/:workerId/resultsOverview                        @controllers.gui.Api.studyResultsOverviewByWorker(workerId: Long)
+GET      /jatos/api/:studyId/batch/:batchId/resultsOverview                 @controllers.gui.Api.studyResultsOverviewByBatch(studyId: Long, batchId: Long, workerType: Option[String])
+GET      /jatos/api/:studyId/group/:groupId/resultsOverview                 @controllers.gui.Api.studyResultsOverviewByGroup(studyId: Long, groupId: Long)
+GET      /jatos/api/:studyId/:componentId/resultsOverview                   @controllers.gui.Api.componentResultsOverviewByStudyAndComponent(studyId: Long, componentId: Long)
+GET      /jatos/api/componentResult/:componentResultId/resultData           @controllers.gui.Api.componentResultData(componentResultId: Long)
+POST     /jatos/api/studyResult/export/resultData                           @controllers.gui.Api.exportDataOfStudyResults(request: Request)
+POST     /jatos/api/studyResult/export/resultFiles                          @controllers.gui.Api.exportResultFilesOfStudyResults(request: Request)
+POST     /jatos/api/componentResult/export/resultData                       @controllers.gui.Api.exportDataOfComponentResults(request: Request)
+POST     /jatos/api/componentResult/export/resultFiles                      @controllers.gui.Api.exportResultFilesOfComponentResults(request: Request)
+GET      /jatos/api/:studyId/resultFiles/:srid/:crid/:filename              @controllers.gui.Api.downloadSingleResultFile(studyId: Long, srid: Long, crid: Long, filename: String)
+POST     /jatos/api/studyResult/delete                                      @controllers.gui.Api.removeStudyResults(request: Request)
+POST     /jatos/api/componentResult/delete                                  @controllers.gui.Api.removeComponentResults(request: Request)
+
 
 # Admin controller
 GET      /jatos/admin                                                       @controllers.gui.Admin.administration(request: Request)
@@ -82,7 +103,7 @@ GET      /jatos/:studyId/group/:groupId/results                             @con
 GET      /jatos/:studyId/group/:groupId/tableData                           @controllers.gui.StudyResults.tableDataByGroup(studyId: Long, groupId: Long)
 GET      /jatos/:studyId/results                                            @controllers.gui.StudyResults.studysStudyResults(studyId: Long)
 GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
-POST     /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove()
+POST     /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove(request: Request)
 GET      /jatos/studyResult/:studyResultId/componentResults                 @controllers.gui.StudyResults.tableDataComponentResultByStudyResult(studyResultId: Long)
 GET      /jatos/:studyId/:componentId/tableData                             @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
 POST     /jatos/componentResult/delete                                      @controllers.gui.ComponentResults.remove(request: Request)
@@ -118,11 +139,7 @@ GET      /jatos/:studyId/batch/:batchId/properties                          @con
 POST     /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.StudyLinks.submitEditedBatchProperties(request: Request, studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.batchSessionData(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.submitEditedBatchSessionData(request: Request, studyId: Long, batchId: Long)
-POST     /jatos/:studyId/batch/:batchId/personalSingleRun                   @controllers.gui.StudyLinks.createPersonalRun(request: Request, studyId: Long, batchId: Long, workerType = "PersonalSingle")
-POST     /jatos/:studyId/batch/:batchId/personalMultipleRun                 @controllers.gui.StudyLinks.createPersonalRun(request: Request, studyId: Long, batchId: Long, workerType = "PersonalMultiple")
-GET      /jatos/:studyId/batch/:batchId/generalSingleRun                    @controllers.gui.StudyLinks.createGeneralRun(studyId: Long, batchId: Long, workerType = "GeneralSingle")
-GET      /jatos/:studyId/batch/:batchId/generalMultipleRun                  @controllers.gui.StudyLinks.createGeneralRun(studyId: Long, batchId: Long, workerType = "GeneralMultiple")
-GET      /jatos/:studyId/batch/:batchId/mTurkRun                            @controllers.gui.StudyLinks.createGeneralRun(studyId: Long, batchId: Long, workerType = "MT")
+GET      /jatos/:studyId/batch/:batchId/studyCode                           @controllers.gui.StudyLinks.createStudyCodes(studyId: Long, batchId: Long, workerType: String, comment: String ?= null, amount: Integer ?= 1)
 GET      /jatos/:studyId/batch/:batchId/studyLinksSetupData                 @controllers.gui.StudyLinks.studyLinksSetupData(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/studyLinksData                      @controllers.gui.StudyLinks.studyLinksData(studyId: Long, batchId: Long, workerType: String)
 POST     /jatos/:studyId/batch/:batchId/studyLink/:studyCode                @controllers.gui.StudyLinks.toggleStudyLinkActive(studyId: Long, batchId: Long, studyCode: String, active: Boolean)

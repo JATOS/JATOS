@@ -255,7 +255,7 @@ function loadStudyLinksSetup(batchId) {
 
     $.ajax({
         type: 'GET',
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batchId + "/studyLinksSetupData",
+        url: `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batchId}/studyLinksSetupData`,
         success: function(studyLinksSetupData) {
             fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv);
         },
@@ -637,20 +637,10 @@ $('#studyLinksModal').on('click', '.refreshButton', function(e) {
 });
 
 $('#studyLinksModal').on('click', '.oneNewStudyLinkButton', function(e) {
-    var batch = $('#studyLinksModal').data('batch');
-    var workerType = $('#studyLinksModal').data('workerType');
-    var runType;
-    if (workerType == "@common.workers.PersonalSingleWorker.WORKER_TYPE") {
-        runType = "personalSingleRun";
-    } else if (workerType == "@common.workers.PersonalMultipleWorker.WORKER_TYPE") {
-        runType = "personalMultipleRun";
-    }
+    const batch = $('#studyLinksModal').data('batch');
+    const workerType = $('#studyLinksModal').data('workerType');
     $.ajax({
-        type: 'POST',
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/${runType}`,
-        contentType: "application/json; charset=utf-8",
-        dataType: 'text',
-        data: '{}',
+        url: `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/studyCode?workerType=${workerType}`,
         success: () => studyLinksTable.ajax.reload(),
         error : (err) => showError(err.responseText)
     });
@@ -672,8 +662,8 @@ function showStudyLinksCreatorPersonalSingleModal(batch) {
     showStudyLinksCreatorModal(title, text);
     $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
         $('#studyLinksCreatorModal').modal('hide');
-        var url = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/personalSingleRun";
-        postGetLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
+        const url = `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/studyCode?workerType=PersonalSingle`;
+        requestLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
     });
 }
 
@@ -683,8 +673,8 @@ function showStudyLinksCreatorPersonalMultipleModal(batch) {
     showStudyLinksCreatorModal(title, text);
     $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
         $('#studyLinksCreatorModal').modal('hide');
-        var url = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/personalMultipleRun";
-        postGetLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
+        var url = `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/studyCode?workerType=PersonalMultiple`;
+        requestLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
     });
 }
 
@@ -701,22 +691,17 @@ function showStudyLinksCreatorModal(title, text) {
     $('#studyLinksCreatorModal').modal('show');
 }
 
-function postGetLinksPersonal(url, studyLinksDisplayModal, batch) {
-    var jsonData = {};
-    jsonData['comment'] = $('#studyLinksCreatorModal').find('.comment').val();
-    jsonData['amount'] = $('#studyLinksCreatorModal').find('.amount').val();
+function requestLinksPersonal(url, studyLinksDisplayModal, batch) {
+    const comment = encodeURIComponent($('#studyLinksCreatorModal').find('.comment').val());
+    const amount = $('#studyLinksCreatorModal').find('.amount').val();
     $.ajax({
-        type: 'POST',
-        url: url,
-        contentType: "application/json; charset=utf-8",
-        dataType: 'text',
-        data: JSON.stringify(jsonData),
+        url: `${url}&comment=${comment}&amount=${amount}`,
         success: function(studyCodes) {
             if (studyLinksTable) {
                 loadStudyLinksSetup(batch.id);
                 studyLinksTable.ajax.reload();
             }
-            studyLinksDisplayModal($.parseJSON(studyCodes), batch);
+            studyLinksDisplayModal(studyCodes, batch);
         },
         error : function(err) {
             showError(err.responseText);
@@ -784,7 +769,7 @@ $('#batchTable').on('click', '.generalMultipleStudyLinksSetup .studyLinkButton',
 
 function showStudyLinkGeneralSingleModal(batch) {
     $.ajax({
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalSingleRun",
+        url: `@{general.common.Common.getPlayHttpContext()}jatos/@{study.getId()}/batch/${batch.id}/studyCode?workerType=GeneralSingle`,
         success: function(studyCode) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
@@ -804,7 +789,7 @@ function showStudyLinkGeneralSingleModal(batch) {
 
 function showStudyLinkGeneralMultipleModal(batch) {
     $.ajax({
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @{study.getId()} + "/batch/" + batch.id + "/generalMultipleRun",
+        url: `@{general.common.Common.getPlayHttpContext()}jatos/@{study.getId()}/batch/${batch.id}/studyCode?workerType=GeneralMultiple`,
         success: function(studyCode) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>

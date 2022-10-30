@@ -113,8 +113,8 @@ function askConfirmationForStudyExists(uploadedStudyTitle, uploadedStudyUuid, up
         var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
         var studysDirConfirm = $('#studysDirConfirm').is(':checked');
         // Keep the current study assets dir name if the properties aren't overwritten
-        var jsonData = JSON.stringify({ "overwriteStudysProperties": studysPropertiesConfirm,
-            "overwriteStudysDir" : studysDirConfirm, "keepCurrentDirName": !studysPropertiesConfirm });
+        var jsonData = JSON.stringify({ "overwriteProperties": studysPropertiesConfirm,
+            "overwriteDir" : studysDirConfirm, "keepCurrentDirName": !studysPropertiesConfirm });
         postStudyImportConfirm(jsonData);
     });
 }
@@ -145,8 +145,8 @@ function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uploadedS
         $('#confirmModalStudyImport').modal('hide');
         var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
         var studysDirConfirm = $('#studysDirConfirm').is(':checked');
-        var jsonData = JSON.stringify({ "overwriteStudysProperties": studysPropertiesConfirm,
-            "overwriteStudysDir" : studysDirConfirm, "keepCurrentDirName": studysDirConfirm });
+        var jsonData = JSON.stringify({ "overwriteProperties": studysPropertiesConfirm,
+            "overwriteDir" : studysDirConfirm, "keepCurrentDirName": studysDirConfirm });
         postStudyImportConfirm(jsonData);
     });
 }
@@ -159,7 +159,7 @@ function askConfirmationForStudyNotExistsDirExists(uploadedStudyTitle, uploadedD
         + 'If you proceed the directory will be renamed to "' + newDirName + '".</p>'
         + '<p>Do you want to proceed?</p>';
     askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
-        var jsonData = JSON.stringify({ "overwriteStudysProperties": true, "overwriteStudysDir" : true,
+        var jsonData = JSON.stringify({ "overwriteProperties": true, "overwriteDir" : true,
          "renameDir": true });
         postStudyImportConfirm(jsonData);
     });
@@ -171,7 +171,7 @@ function askConfirmationForStudyNotExistsDirNotExists(uploadedStudyTitle, upload
         + '" and its directory "' + uploadedDirName + '".</p>'
         + '<p>Do you want to proceed?</p>';
     askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
-        var jsonData = JSON.stringify({ "overwriteStudysProperties": true, "overwriteStudysDir" : true,
+        var jsonData = JSON.stringify({ "overwriteProperties": true, "overwriteDir" : true,
          "renameDir": false });
         postStudyImportConfirm(jsonData);
     });

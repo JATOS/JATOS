@@ -1,6 +1,8 @@
 package controllers.gui.actionannotations;
 
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import general.common.RequestScope;
+import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.*;
@@ -19,6 +21,7 @@ import java.util.concurrent.CompletionStage;
  * 
  * @author Kristian Lange (2016)
  */
+@SuppressWarnings("deprecation")
 public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 
 	@With(GuiAccessLoggingAction.class)
@@ -31,9 +34,13 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
-		guiLogger.info(request.method() + " " + request.uri() + " ("
-				+ Controller.session(AuthenticationService.SESSION_USERNAME)
-				+ ")");
+		String username = "unknown";
+		if (Controller.session(AuthenticationService.SESSION_USERNAME) != null) {
+			username = Controller.session(AuthenticationService.SESSION_USERNAME);
+		} else if (RequestScope.get(AuthenticationService.LOGGED_IN_USER) != null) {
+			username = ((User) RequestScope.get(AuthenticationService.LOGGED_IN_USER)).getUsername();
+		}
+		guiLogger.info(request.method() + " " + request.uri() + " (" + username	+ ")");
 		return delegate.call(ctx);
 	}
 

@@ -68,8 +68,9 @@ function generateWorkersTable() {
                 "render": getUIWorkerTypeWithGlyphicon
             },
             {
-                "data": getBatchColumnText,
-                "width": "30%"
+                "data": "batchList",
+                "width": "30%",
+                "render": (data) => data.join(', ')
             },
             {
                 "data": getStudyState,
@@ -94,17 +95,6 @@ function generateWorkersTable() {
             "search": "Search:"
         }
     });
-}
-
-function getBatchColumnText(data, type, dataToSet) {
-    var batchTitles = [];
-    if (data.workerType == "@common.workers.JatosWorker.WORKER_TYPE") {
-        return "all";
-    }
-    data.batchList.forEach(function(batch) {
-        batchTitles.push(batch.title);
-    });
-    return batchTitles.join(', ');
 }
 
 function getStudyState(data, type, dataToSet) {

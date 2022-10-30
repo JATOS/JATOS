@@ -10,9 +10,9 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
@@ -83,23 +83,71 @@ public class ImportExport extends Controller {
     }
 
     /**
+     * POST request that imports a study zip file to JATOS. It's only used by the API. The difference to the methods
+     * used by the GUI (importStudy and importStudyConfirmed) is, that here all is done in one request and all
+     * confirmation (e.g. overwriteProperties, overwriteDir) has to be specified beforehand.
+     */
+    @Transactional
+    @Authenticated
+    public Result importStudyApi(Http.Request request, boolean overwriteProperties, boolean overwriteDir,
+            boolean keepCurrentDirName, boolean renameDir) {
+        User loggedInUser = authenticationService.getLoggedInUser();
+
+        // Get file from request
+        if (request.body().asMultipartFormData() == null) {
+            return badRequest(MessagesStrings.FILE_MISSING);
+        }
+        FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
+        if (filePart == null) {
+            return badRequest(MessagesStrings.FILE_MISSING);
+        }
+        if (!Study.STUDY.equals(filePart.getKey())) {
+            // If wrong key the upload comes from wrong form
+            return badRequest(MessagesStrings.NO_STUDY_UPLOAD);
+        }
+
+        JsonNode responseJson;
+        try {
+            File file = (File) filePart.getFile();
+            responseJson = importExportService.importStudy(loggedInUser, file);
+        } catch (Exception e) {
+            importExportService.cleanupAfterStudyImport();
+            LOGGER.info(".importStudyApi: Import of study failed");
+            return badRequest("Import of study failed: " + e.getMessage());
+        }
+
+        try {
+            importExportService.importStudyConfirmed(loggedInUser, overwriteProperties, overwriteDir,
+                    keepCurrentDirName, renameDir);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error(".importStudyApi: " + e.getMessage());
+            return internalServerError();
+        } finally {
+            importExportService.cleanupAfterStudyImport();
+        }
+        return ok(responseJson);
+    }
+
+    /**
      * POST request that checks whether this is a legitimate study import, whether the study or its directory already
      * exists. The actual import happens in importStudyConfirmed(). Returns JSON.
      */
     @Transactional
     @Authenticated
-    public Result importStudy(Http.Request request) throws JatosGuiException {
+    public Result importStudy(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Get file from request
         FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
 
         if (filePart == null) {
-            jatosGuiExceptionThrower.throwAjax(MessagesStrings.FILE_MISSING, Http.Status.BAD_REQUEST);
+            return badRequest(MessagesStrings.FILE_MISSING);
         }
         if (!Study.STUDY.equals(filePart.getKey())) {
             // If wrong key the upload comes from wrong form
-            jatosGuiExceptionThrower.throwAjax(MessagesStrings.NO_STUDY_UPLOAD, Http.Status.BAD_REQUEST);
+            return badRequest(MessagesStrings.NO_STUDY_UPLOAD);
         }
 
         JsonNode responseJson;
@@ -115,7 +163,8 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that does Actual import of study and its study assets directory. Always subsequent of an importStudy() call.
+     * POST request that does Actual import of study and its study assets directory. Always subsequent of an
+     * importStudy() call.
      */
     @Transactional
     @Authenticated
@@ -124,8 +173,21 @@ public class ImportExport extends Controller {
 
         // Get confirmation: overwrite study's properties and/or study assets
         JsonNode json = request.body().asJson();
+        if (json == null || json.findPath("overwriteProperties") == null ||
+                json.findPath("overwriteDir") == null) {
+            LOGGER.error(".importStudyConfirmed: " + "JSON is malformed");
+            return badRequest("Import of study failed");
+        }
+        boolean overwriteProperties = json.findPath("overwriteProperties").asBoolean();
+        boolean overwriteDir = json.findPath("overwriteDir").asBoolean();
+        boolean keepCurrentDirName = json.findPath("keepCurrentDirName").booleanValue();
+        boolean renameDir = json.findPath("renameDir").booleanValue();
+
         try {
-            importExportService.importStudyConfirmed(loggedInUser, json);
+            importExportService.importStudyConfirmed(loggedInUser, overwriteProperties, overwriteDir,
+                    keepCurrentDirName, renameDir);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
         } catch (Exception e) {
             jatosGuiExceptionThrower.throwHome(e);
         } finally {
@@ -140,25 +202,27 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportStudy(Long studyId) throws JatosGuiException {
+    public Result exportStudy(Long studyId) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
 
-        File zipFile = null;
+        File zipFile;
         try {
             zipFile = importExportService.createStudyExportZipFile(study);
         } catch (IOException e) {
             String errorMsg = MessagesStrings.studyExportFailure(studyId, study.getTitle());
             LOGGER.error(".exportStudy: " + errorMsg, e);
-            jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
+            return internalServerError(errorMsg);
         }
 
-        return okFileStreamed(zipFile, zipFile::delete, "application/zip");
+        return okFileStreamed(zipFile, zipFile::delete, "application/octet-stream");
     }
 
     /**
@@ -173,7 +237,11 @@ public class ImportExport extends Controller {
     public Result exportDataOfStudyResults(Http.Request request) throws IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> studyResultIdList = new ArrayList<>();
-        request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
+        try {
+            request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
+        } catch (Exception e) {
+            return badRequest("Malformed JSON");
+        }
         List<Long> componentResultIdList = componentResultDao.findIdsByStudyResultIds(studyResultIdList);
         return exportResultData(loggedInUser, componentResultIdList);
     }
@@ -190,7 +258,11 @@ public class ImportExport extends Controller {
     public Result exportDataOfComponentResults(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
-        request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+        try {
+            request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+        } catch (Exception e) {
+            return badRequest("Malformed JSON");
+        }
         return exportResultData(loggedInUser, componentResultIdList);
     }
 
@@ -207,14 +279,15 @@ public class ImportExport extends Controller {
 
     @Transactional
     @Authenticated
-    public Result downloadSingleResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename)
-            throws JatosGuiException {
+    public Result downloadSingleResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
 
         try {
@@ -226,7 +299,7 @@ public class ImportExport extends Controller {
 
     @Transactional
     @Authenticated
-    public Result exportResultFilesOfStudyResults(Http.Request request) throws IOException, JatosGuiException {
+    public Result exportResultFilesOfStudyResults(Http.Request request) throws IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         List<Path> resultFileList = new ArrayList<>();
@@ -238,20 +311,24 @@ public class ImportExport extends Controller {
                 Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
                 if (Files.exists(path)) resultFileList.add(path);
             }
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
+        } catch (Exception e) {
+            return badRequest("Malformed JSON");
         }
         if (resultFileList.isEmpty()) return notFound("No result files found");
 
         File zipFile = File.createTempFile("jatos_resultFiles_", ".zip");
         zipFile.deleteOnExit();
         ZipUtil.zipFiles(resultFileList, zipFile);
-        return okFileStreamed(zipFile, zipFile::delete, "application/zip");
+        return okFileStreamed(zipFile, zipFile::delete, "application/octet-stream");
     }
 
     @Transactional
     @Authenticated
-    public Result exportResultFilesOfComponentResults(Http.Request request) throws IOException, JatosGuiException {
+    public Result exportResultFilesOfComponentResults(Http.Request request) throws IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         List<Path> resultFileList = new ArrayList<>();
@@ -264,8 +341,12 @@ public class ImportExport extends Controller {
                         componentResultId));
                 if (Files.exists(path)) resultFileList.add(path);
             }
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
+        } catch (Exception e) {
+            return badRequest("Malformed JSON");
         }
         if (resultFileList.isEmpty()) return notFound("No result files found");
 
@@ -273,7 +354,7 @@ public class ImportExport extends Controller {
         zipFile.deleteOnExit();
         ZipUtil.zipFiles(resultFileList, zipFile);
 
-        return okFileStreamed(zipFile, zipFile::delete, "application/zip");
+        return okFileStreamed(zipFile, zipFile::delete, "application/octet-stream");
     }
 
     /**
