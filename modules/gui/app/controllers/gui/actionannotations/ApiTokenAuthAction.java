@@ -34,6 +34,7 @@ public class ApiTokenAuthAction extends Action<ApiTokenAuth> {
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface ApiTokenAuth {
+        User.Role value() default User.Role.USER;
     }
 
     public static final String API_TOKEN = "apiToken";
@@ -52,30 +53,31 @@ public class ApiTokenAuthAction extends Action<ApiTokenAuth> {
 
         // Check proper authorization header is there
         if (!Helpers.isApiRequest(ctx.request())) {
-            return CompletableFuture.completedFuture(forbidden("Bearer authorization header missing"));
+            return CompletableFuture.completedFuture(unauthorized("Bearer authorization header missing"));
         }
 
         // Check token checksum
+        //noinspection OptionalGetWithoutIsPresent - it's checked in Helpers.isApiRequest
         String headerValue = ctx.request().header("Authorization").get();
         String fullTokenStr = headerValue.replace("Bearer", "").trim();
         String cleanedToken = fullTokenStr.replace("jap_", "").substring(0, 31);
         String calculatedChecksum = HashUtils.getChecksum(cleanedToken);
         String givenChecksum = fullTokenStr.substring(fullTokenStr.length() - 6);
         if (!givenChecksum.equals(calculatedChecksum)) {
-            return CompletableFuture.completedFuture(forbidden("Invalid api token"));
+            return CompletableFuture.completedFuture(unauthorized("Invalid api token"));
         }
 
         // Search token by its hash in the database
         String tokenHash = HashUtils.getHash(fullTokenStr, HashUtils.SHA_256);
         Optional<ApiToken> apiTokenOptional = jpa.withTransaction(() -> apiTokenDao.findByHash(tokenHash));
         if (!apiTokenOptional.isPresent()) {
-            return CompletableFuture.completedFuture(forbidden("Invalid api token"));
+            return CompletableFuture.completedFuture(unauthorized("Invalid api token"));
         }
         ApiToken apiToken = apiTokenOptional.get();
 
         // Tokens can be deactivated
         if (!apiToken.isActive()) {
-            return CompletableFuture.completedFuture(forbidden("Invalid api token"));
+            return CompletableFuture.completedFuture(unauthorized("Invalid api token"));
         }
 
         // Check the token's user: since these are personal access tokens and the user which belongs to the token can
@@ -83,12 +85,18 @@ public class ApiTokenAuthAction extends Action<ApiTokenAuth> {
         User user = apiToken.getUser();
         RequestScope.put(AuthenticationService.LOGGED_IN_USER, user);
         if (!user.isActive()) {
-            return CompletableFuture.completedFuture(forbidden("Invalid api token"));
+            return CompletableFuture.completedFuture(unauthorized("Invalid api token"));
+        }
+
+        // Check authorization
+        User.Role neededRole = configuration.value();
+        if (!user.hasRole(neededRole)) {
+            return CompletableFuture.completedFuture(unauthorized("Invalid api token"));
         }
 
         // Check if token is expired
         if (apiToken.isExpired()) {
-            return CompletableFuture.completedFuture(forbidden("Invalid api token"));
+            return CompletableFuture.completedFuture(unauthorized("Invalid api token"));
         }
 
         RequestScope.put(API_TOKEN, apiToken);
