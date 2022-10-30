@@ -84,6 +84,7 @@ public class StudyResult {
      * JSON. It's initialised with an empty JSON object.
      */
     @Lob
+    @JsonIgnore
     private String studySessionData = "{}";
 
     /**
