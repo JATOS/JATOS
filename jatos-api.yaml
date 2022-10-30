@@ -677,16 +677,9 @@ security:
 
 components:
   securitySchemes:
-    cookieAuth: # arbitrary name for the security scheme; will be used in the "security" key later
-      type: apiKey
-      in: cookie
-      name: PLAY_SESSION  # cookie name
-    bearerAuth: # arbitrary name for the security scheme
+    bearerAuth:
       type: http
       scheme: bearer
-    jap_W8kzVOm5Oi3TlcSUzZtGaKJtmGLs4q486d20e: # <-- arbitrary name for the security scheme
-      type: http
-      scheme: basic
   schemas:
     Status:
       type: object
