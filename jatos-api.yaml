@@ -1,0 +1,814 @@
+openapi: 3.0.1
+info:
+  title: JATOS API
+  description: 'This is JATOS API specification using OpenAPI.'
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.0.1
+externalDocs:
+  description: Find out more about JATOS
+  url: https://www.jatos.org
+servers:
+  - url: http://localhost:9000
+  - url: https://jatos.mindprobe.eu
+
+paths:
+  /jatos/api/status:
+    get:
+      summary: Get the status of your JATOS (for tokens created by admin users only)
+      tags:
+        - admin
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/testToken:
+    get:
+      summary: Get token details of the token used in this request
+      tags:
+        - admin
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/logs/{filename}:
+    get:
+      summary: Returns the log file specified by 'filename'
+      tags:
+        - admin
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+          description: Filename of the log file (e.g. application.log, loader.log, update.log)
+      responses:
+        200:
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/studyAssetsSize:
+    get:
+      summary: Get the size of the study asset folder belonging to a study
+      tags:
+        - admin
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/resultDataSize:
+    get:
+      summary: Get the size of all result data belonging to a study
+      tags:
+        - admin
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success. The first number is the total size of all result data. The second in brackets is per result.
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/resultFileSize:
+    get:
+      summary: Get the size of all result files belonging to a study
+      tags:
+        - admin
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success. The first number is the total size of all result data. The second in brackets is per result.
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+
+
+
+  /jatos/api/{studyId}/log:
+    get:
+      summary: Get the study log of the study belonging to the study ID
+      tags:
+        - study
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/properties:
+    get:
+      summary: Get the study properties of the study belonging to the study ID
+      tags:
+        - study
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+    post:
+      summary: Change the study properties of the study belonging to the study ID
+      tags:
+        - study
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                dirName:
+                  type: string
+                dirRename:
+                  type: boolean
+                comments:
+                  type: string
+                studyEntryMsg:
+                  type: string
+                endRedirectUrl:
+                  type: string
+                jsonData:
+                  type: string
+                groupStudy:
+                  type: boolean
+                linearStudy:
+                  type: boolean
+                allowPreview:
+                  type: boolean
+              required:
+
+
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+
+  /jatos/api/{studyId}/allWorkers:
+    get:
+      summary: Get overview data of all workers that belong to a study
+      description: All worker types except the internal Jatos worker type
+      tags:
+        - study
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/batch/{batchId}/studyCode:
+    get:
+      summary: Get a study link
+      tags:
+        - study
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+        - in: path
+          name: batchId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Batch ID
+        - in: query
+          name: workerType
+          required: true
+          schema:
+            type: string
+          description: Worker type, one of 'PersonalSingle' (or 'ps'), 'PersonalMultiple' (or 'pm'), 'GeneralSingle' (or 'gs'), 'GeneralMultiple' (or 'gm'), 'MTurk' (or 'mt')
+        - in: query
+          name: comment
+          required: false
+          schema:
+            type: string
+          description: Some identifying description or name ('PersonalSingle' and 'PersonalMultiple' only)
+        - in: query
+          name: amount
+          required: false
+          schema:
+            type: integer
+          description: Number of study codes to be created ('PersonalSingle' and 'PersonalMultiple' only)
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/export:
+    get:
+      summary: Export study
+      tags:
+        - study
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Invalid token
+
+  /jatos/api/import/study:
+    post:
+      summary: Import study
+      tags:
+        - study
+      parameters:
+        - in: query
+          name: overwriteProperties
+          required: false
+          schema:
+            type: boolean
+          description: If the study exists already in JATOS, should the study properties be overwritten? Default is true. If the study doesn't exist already this parameter has no effect.
+        - in: query
+          name: overwriteDir
+          required: false
+          schema:
+            type: boolean
+          description: If the study exists already in JATOS, should the study assets directory be overwritten? Default is true. If the study doesn't exist already this parameter has no effect.
+        - in: query
+          name: keepCurrentDirName
+          required: false
+          schema:
+            type: boolean
+          description: If the study exists already in JATOS and the current study assets directory name is different from the uploaded one, should the current directory name be kept? Default is true. If the study doesn't already exist or both names are the same this parameter has no effect.
+        - in: query
+          name: renameDir
+          required: false
+          schema:
+            type: boolean
+          description: If the study assets directory exists already in JATOS but belongs to a different study you can set this parameter to true to let JATOS choose a new directory name for your study (usually name + '_' + number). Default is true. If the study directory doesn't exist already and is from a different study this parameter has no effect.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                study:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+
+
+  /jatos/api/{studyId}/resultsOverview:
+    get:
+      summary: Get an overview of all study results belonging to a study
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/worker/{workerId}/resultOverview:
+    get:
+      summary: Get an overview of all study results belonging to a worker
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: workerId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Worker ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/batch/{batchId}/resultsOverview:
+    get:
+      summary: Get an overview of all study results belonging to a batch and worker type
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+        - in: path
+          name: batchId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Batch ID
+        - in: query
+          name: workerType
+          required: false
+          schema:
+            type: string
+          description: Worker type (e.g. jatos, personalsingle, personalmultiple, generalsingle, generalmultiple, mturk, mturksandbox)
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/group/{groupId}/resultsOverview:
+    get:
+      summary: Get an overview of all study results belonging to a group
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+        - in: path
+          name: groupId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Group ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/{componentId}/resultsOverview:
+    get:
+      summary: Get an overview of all component results belonging to a component
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+        - in: path
+          name: componentId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Component ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/componentResult/{componentResultId}/resultData:
+    get:
+      summary: Get the result data of a single component result
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: componentResultId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Component result ID
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: Invalid token
+
+  /jatos/api/studyResult/export/resultData:
+    post:
+      summary: Get the result data of study results. Multiple study results can be specified in the body.
+      tags:
+        - results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                resultIds: [1,2,3]
+      responses:
+        200:
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        401:
+          description: Invalid token
+
+  /jatos/api/studyResult/export/resultFiles:
+    post:
+      summary: Get study result files of study results. Multiple study results can be specified in the body.
+      tags:
+        - results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                resultIds: [1,2,3]
+      responses:
+        200:
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Invalid token
+
+  /jatos/api/componentResult/export/resultData:
+    post:
+      summary: Get the result data of component results. Multiple component results can be specified in the body.
+      tags:
+        - results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                resultIds: [ 1,2,3 ]
+      responses:
+        200:
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        401:
+          description: Invalid token
+
+  /jatos/api/componentResult/export/resultFiles:
+    post:
+      summary: Get component result files of component results. Multiple component results can be specified in the body.
+      tags:
+        - results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                resultIds: [ 1,2,3 ]
+      responses:
+        200:
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Invalid token
+
+  /jatos/api/{studyId}/resultFiles/{srid}/{crid}/{filename}:
+    get:
+      summary: Get a single result file
+      tags:
+        - results
+      parameters:
+        - in: path
+          name: studyId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study ID
+        - in: path
+          name: srid
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Study result ID
+        - in: path
+          name: crid
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Component result ID
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+          description: Filename
+      responses:
+        200:
+          description: Success
+          content:
+            "*":
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Invalid token
+
+  /jatos/api/studyResult/delete:
+    post:
+      summary: Delete the study results specified in the body. This will also delete the component results that belong to these study results.
+      tags:
+        - results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                resultIds: [ 1,2,3 ]
+      responses:
+        200:
+          description: Success
+        401:
+          description: Invalid token
+        404:
+          description: One of the component results does not exist
+
+  /jatos/api/componentResult/delete:
+    post:
+      summary: Delete the component results specified in the body
+      tags:
+        - results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                resultIds: [ 1,2,3 ]
+      responses:
+        200:
+          description: Success
+        401:
+          description: Invalid token
+        404:
+          description: One of the study results does not exist
+
+security:
+  - bearerAuth: [ ]
+
+components:
+  securitySchemes:
+    cookieAuth: # arbitrary name for the security scheme; will be used in the "security" key later
+      type: apiKey
+      in: cookie
+      name: PLAY_SESSION  # cookie name
+    bearerAuth: # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+    jap_W8kzVOm5Oi3TlcSUzZtGaKJtmGLs4q486d20e: # <-- arbitrary name for the security scheme
+      type: http
+      scheme: basic
+  schemas:
+    Status:
+      type: object
+      properties:
+        studyCount:
+          type: integer
+        studyCountTotal:
+          type: integer
+        studyResultCount:
+          type: integer
+        studyResultCountTotal:
+          type: integer
+        workerCount:
+          type: integer
+        workerCountTotal:
+          type: integer
+        userCount:
+          type: integer
+        serverTime:
+          type: string
+        latestUsers:
+          type: array
+          items:
+            type: object
+            properties:
+              username:
+                type: string
+              time:
+                type: string
+        latestStudyRuns:
+          type: array
+          items:
+            type: object
+            properties:
+              studyTitle:
+                type: string
+              time:
+                type: string
+              members:
+                type: array
+                items:
+                  type: string
