@@ -78,7 +78,7 @@ public class ComponentResults extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
 
@@ -93,15 +93,19 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(Http.Request request) throws JatosGuiException {
+    public Result remove(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Long> componentResultIdList = new ArrayList<>();
         request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
         try {
             // Permission check is done in service for each result individually
             resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
-        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (BadRequestException e) {
+            return badRequest(e.getMessage());
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
@@ -111,15 +115,17 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByComponent(Long studyId, Long componentId) throws JatosGuiException {
+    public Result tableDataByComponent(Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
 
         Source<ByteString, ?> dataSource = resultService.streamComponentResults(component);
@@ -131,14 +137,16 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataComponentResultData(Long componentResultId) throws JatosGuiException {
+    public Result tableDataComponentResultData(Long componentResultId) {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         Study study = componentResult.getStudyResult().getStudy();
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, study.getId(), loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
 
         return ok(jsonUtils.componentResultDataForUI(componentResult));

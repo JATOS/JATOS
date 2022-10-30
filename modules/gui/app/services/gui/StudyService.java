@@ -362,7 +362,7 @@ public class StudyService {
         if (studyProperties.validate() != null) {
             LOGGER.warn(".validate: " + studyProperties.validate().stream().map(ValidationError::message)
                     .collect(Collectors.joining(", ")));
-            throw new ValidationException(MessagesStrings.STUDY_INVALID);
+            throw new ValidationException("Study is invalid");
         }
     }
 

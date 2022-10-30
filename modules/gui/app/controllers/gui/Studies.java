@@ -150,10 +150,16 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result properties(Long studyId) throws JatosGuiException {
+    public Result properties(Long studyId) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        checkStandardForStudy(studyId, study, loggedInUser);
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
+        }
 
         StudyProperties studyProperties = studyService.bindToProperties(study);
         return ok(jsonUtils.asJsonNode(studyProperties));
@@ -164,14 +170,16 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitEdited(Long studyId) throws JatosGuiException {
+    public Result submitEdited(Long studyId) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
@@ -231,7 +239,7 @@ public class Studies extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -254,7 +262,7 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -278,7 +286,7 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         List<User> userList = userDao.findAll();
@@ -299,7 +307,7 @@ public class Studies extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             userToChange = userService.retrieveUser(normalizedUsername);
             studyService.changeUserMember(study, userToChange, isMember);
-        } catch (ForbiddenException | NotFoundException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -316,7 +324,7 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         if (!Common.isStudyMembersAllowedToAddAllUsers()) {
@@ -337,7 +345,7 @@ public class Studies extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         studyService.removeAllUserMembers(study);
@@ -358,7 +366,7 @@ public class Studies extends Controller {
             checker.checkStudyLocked(study);
             checker.checkStandardForComponents(studyId, componentId, component);
             studyService.changeComponentPosition(newPosition, study, component);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | BadRequestException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -377,7 +385,7 @@ public class Studies extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -416,10 +424,16 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result studyLog(Long studyId, int entryLimit, boolean download) throws JatosGuiException {
+    public Result studyLog(Long studyId, int entryLimit, boolean download) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        checkStandardForStudy(studyId, study, loggedInUser);
+        try {
+            checker.checkStandardForStudy(study, studyId, loggedInUser);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
+        }
 
         if (download) {
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
@@ -429,7 +443,7 @@ public class Studies extends Controller {
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
             Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, contentLength, Optional.of("text/plain")));
+                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")));
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit));
         }
@@ -440,18 +454,20 @@ public class Studies extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result allWorkers(Long studyId) throws JatosGuiException {
+    public Result allWorkers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
 
-        JsonNode dataAsJson = null;
+        JsonNode dataAsJson;
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
 
             Set<Worker> workerSet = workerService.retrieveAllWorkers(study);
             dataAsJson = jsonUtils.workersForTableData(workerSet, study);
-        } catch (ForbiddenException | BadRequestException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
+        } catch (ForbiddenException e) {
+            return forbidden(e.getMessage());
+        } catch (NotFoundException e) {
+            return notFound(e.getMessage());
         }
         return ok(dataAsJson);
     }
@@ -459,7 +475,7 @@ public class Studies extends Controller {
     private void checkStandardForStudy(Long studyId, Study study, User loggedInUser) throws JatosGuiException {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
     }

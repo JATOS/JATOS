@@ -2,6 +2,7 @@ package services.gui;
 
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.*;
 import models.common.workers.Worker;
@@ -22,16 +23,16 @@ public class Checker {
      * Checks the component of this study and throws an Exception in case of a problem.
      */
     public void checkStandardForComponents(Long studyId, Long componentId, Component component)
-            throws BadRequestException {
+            throws NotFoundException, ForbiddenException {
         if (component == null) {
-            throw new BadRequestException(MessagesStrings.componentNotExist(componentId));
+            throw new NotFoundException(MessagesStrings.componentNotExist(componentId));
         }
         if (component.getStudy() == null) {
-            throw new BadRequestException(MessagesStrings.componentHasNoStudy(componentId));
+            throw new ForbiddenException(MessagesStrings.componentHasNoStudy(componentId));
         }
         // Check component belongs to the study
         if (!component.getStudy().getId().equals(studyId)) {
-            throw new BadRequestException(MessagesStrings.componentNotBelongToStudy(studyId, componentId));
+            throw new ForbiddenException(MessagesStrings.componentNotBelongToStudy(studyId, componentId));
         }
     }
 
@@ -39,10 +40,10 @@ public class Checker {
      * Checks the batch and throws an Exception in case of a problem.
      */
     public void checkStandardForBatch(Batch batch, Study study, Long batchId)
-            throws ForbiddenException, BadRequestException {
+            throws ForbiddenException, NotFoundException {
         if (batch == null) {
             String errorMsg = MessagesStrings.batchNotExist(batchId);
-            throw new BadRequestException(errorMsg);
+            throw new NotFoundException(errorMsg);
         }
         // Check that the study has this batch
         if (!study.hasBatch(batch)) {
@@ -55,10 +56,10 @@ public class Checker {
      * Checks the group and throws an Exception in case of a problem.
      */
     public void checkStandardForGroup(GroupResult groupResult, Study study, Long groupResultId)
-            throws ForbiddenException, BadRequestException {
+            throws ForbiddenException, NotFoundException {
         if (groupResult == null) {
             String errorMsg = MessagesStrings.groupNotExist(groupResultId);
-            throw new BadRequestException(errorMsg);
+            throw new NotFoundException(errorMsg);
         }
         // Check that the group belongs to the study
         if (!groupResult.getBatch().getStudy().equals(study)) {
@@ -91,10 +92,10 @@ public class Checker {
      * Checks the study and throws an Exception in case of a problem.
      */
     public void checkStandardForStudy(Study study, Long studyId, User user)
-            throws ForbiddenException, BadRequestException {
+            throws ForbiddenException, NotFoundException {
         if (study == null) {
             String errorMsg = MessagesStrings.studyNotExist(studyId);
-            throw new BadRequestException(errorMsg);
+            throw new NotFoundException(errorMsg);
         }
         // Check that the user is a member of the study
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
@@ -114,7 +115,7 @@ public class Checker {
      *                             throw an ForbiddenException.
      */
     public void checkComponentResults(List<ComponentResult> componentResultList, User user,
-            boolean studyMustNotBeLocked) throws ForbiddenException, BadRequestException {
+            boolean studyMustNotBeLocked) throws ForbiddenException, NotFoundException {
         for (ComponentResult componentResult : componentResultList) {
             checkComponentResult(componentResult, user, studyMustNotBeLocked);
         }
@@ -131,7 +132,7 @@ public class Checker {
      *                             throw an ForbiddenException.
      */
     public void checkComponentResult(ComponentResult componentResult, User user, boolean studyMustNotBeLocked)
-            throws ForbiddenException, BadRequestException {
+            throws ForbiddenException, NotFoundException {
         Component component = componentResult.getComponent();
         Study study = component.getStudy();
         checkStandardForStudy(study, study.getId(), user);
@@ -152,7 +153,7 @@ public class Checker {
      *                             throw an ForbiddenException.
      */
     public void checkStudyResult(StudyResult studyResult, User user, boolean studyMustNotBeLocked)
-            throws ForbiddenException, BadRequestException {
+            throws ForbiddenException, NotFoundException {
         Study study = studyResult.getStudy();
         checkStandardForStudy(study, study.getId(), user);
         if (studyMustNotBeLocked) {
@@ -171,7 +172,7 @@ public class Checker {
      *                             throw an ForbiddenException.
      */
     public void checkStudyResults(List<StudyResult> studyResultList, User user, boolean studyMustNotBeLocked)
-            throws ForbiddenException, BadRequestException {
+            throws ForbiddenException, NotFoundException {
         for (StudyResult studyResult : studyResultList) {
             checkStudyResult(studyResult, user, studyMustNotBeLocked);
         }

@@ -5,7 +5,6 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
-import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
@@ -83,12 +82,12 @@ public class Components extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
         try {
             checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
         if (component.getHtmlFilePath() == null || component.getHtmlFilePath().trim().isEmpty()) {
@@ -136,7 +135,7 @@ public class Components extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwAjax(e);
         }
 
@@ -221,7 +220,7 @@ public class Components extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
     }
@@ -232,7 +231,7 @@ public class Components extends Controller {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | BadRequestException e) {
+        } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
     }
