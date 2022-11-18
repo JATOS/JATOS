@@ -10,6 +10,8 @@
 			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL57Dialect" />
 			<property name="hibernate.show_sql" value="false" />
 			<property name="hibernate.id.new_generator_mappings" value="false" />
+			<property name="hibernate.enhancer.enableLazyInitialization" value="true"/>
+
 		</properties>
 	</persistence-unit>
 
@@ -22,6 +24,7 @@
 			<property name="hibernate.hbm2ddl.auto" value="update" />
 			<property name="hibernate.show_sql" value="false" />
 			<property name="hibernate.id.new_generator_mappings" value="false" />
+			<property name="hibernate.enhancer.enableLazyInitialization" value="true"/>
 		</properties>
 	</persistence-unit>
 
