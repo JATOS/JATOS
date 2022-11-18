@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 /**
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 public class Helpers {
 
     private static final ALogger LOGGER = Logger.of(Helpers.class);
@@ -225,6 +226,10 @@ public class Helpers {
 
     public static String formatDate(Date date) {
         return date != null ? (new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")).format(date) : "never";
+    }
+
+    public static String getDateTimeYyyyMMddHHmmss() {
+        return new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     }
 
     /**
