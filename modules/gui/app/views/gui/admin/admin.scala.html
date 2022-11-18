@@ -262,7 +262,6 @@
                     <b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
                     <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
                     <b>Access internal cache</b>: <span id="testCacheResult"></span><br>
-                    <b>Internal JSON serialization</b>: <span id="testJsonSerializationResult"></span><br>
                     <b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
                     <b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
                     <b>Open WebSocket</b>: <span id="testWebSocketResult"></span><br>
@@ -579,7 +578,6 @@ $('#adminToolbar').on('click', '#tests', function() {
     testDatabase();
     testStudyAssetsRootFolder();
     testCache();
-    testJsonSerialization();
     testJatosJsViaStudyPath();
     testJatosJsViaAssetsPath();
     testWebSocket();
@@ -636,19 +634,6 @@ function testCache() {
         },
         error : function(err) {
             $('#testCacheResult').html('<font color="red">FAIL</font>');
-        }
-    });
-}
-
-function testJsonSerialization() {
-    $.ajax({
-        type: 'GET',
-        url: '@controllers.gui.routes.Tests.testJsonSerialization()',
-        success: function(result) {
-            $('#testJsonSerializationResult').html('<font color="green">OK</font>');
-        },
-        error : function(err) {
-            $('#testJsonSerializationResult').html('<font color="red">FAIL</font>');
         }
     });
 }

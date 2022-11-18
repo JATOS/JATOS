@@ -12,7 +12,6 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -86,17 +85,6 @@ public class Tests extends Controller {
             if (!value.equals("testValue")) {
                 return badRequest();
             }
-        } catch (Exception e) {
-            return badRequest();
-        }
-        return ok();
-    }
-
-    @Transactional
-    @Authenticated(User.Role.ADMIN)
-    public Result testJsonSerialization() {
-        try {
-            JsonUtils.asStringForDB("{\"test\":\"test\"}");
         } catch (Exception e) {
             return badRequest();
         }
