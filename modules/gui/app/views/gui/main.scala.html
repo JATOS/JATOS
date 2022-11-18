@@ -28,8 +28,8 @@
 
 function showSuccess(msg, insertAfterElem, allowHtml = false) {
     msg = allowHtml ? msg : $($.parseHTML(msg)).text();
-    var html = '<div class="alert alert-success alert-dismissible" role="alert">'
-        + '<button type="button" class="close" data-dismiss="alert">'
+    var html = '<div class="alert alert-success alert-dismissible" role="alert" data-dismiss="alert">'
+        + '<button type="button" class="close">'
         + '<span>&times;</span>'
         + '<span class="sr-only">Close</span></button>'
         + '<i class="glyphicon glyphicon-ok-circle"></i>'
@@ -44,8 +44,8 @@ function showSuccess(msg, insertAfterElem, allowHtml = false) {
 
 function showInfo(msg, insertAfterElem, allowHtml = false) {
     msg = allowHtml ? msg : $($.parseHTML(msg)).text();
-    var html = '<div class="alert alert-info alert-dismissible" role="alert">'
-        + '<button type="button" class="close" data-dismiss="alert">'
+    var html = '<div class="alert alert-info alert-dismissible" role="alert" data-dismiss="alert">'
+        + '<button type="button" class="close">'
         + '<span>&times;</span>'
         + '<span class="sr-only">Close</span></button>'
         + '<i class="glyphicon glyphicon-eye-open"></i>'
@@ -60,8 +60,8 @@ function showInfo(msg, insertAfterElem, allowHtml = false) {
 
 function showWarning(msg, insertAfterElem, allowHtml = false) {
     msg = allowHtml ? msg : $($.parseHTML(msg)).text();
-    var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
-        + '<button type="button" class="close" data-dismiss="alert">'
+    var html = '<div class="alert alert-warning alert-dismissible" role="alert" data-dismiss="alert">'
+        + '<button type="button" class="close">'
         + '<span>&times;</span>'
         + '<span class="sr-only">Close</span></button>'
         + '<i class="glyphicon glyphicon-warning-sign"></i>'
@@ -76,8 +76,9 @@ function showWarning(msg, insertAfterElem, allowHtml = false) {
 
 function showError(msg, insertAfterElem, allowHtml = false) {
     msg = allowHtml ? msg : $($.parseHTML(msg)).text();
-    var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
-        + '<button type="button" class="close" data-dismiss="alert">'
+    var html = '<div class="alert alert-danger alert-dismissible" role="alert" data-dismiss="alert">'
+    var html = '<div class="alert alert-danger alert-dismissible" role="alert" data-dismiss="alert">'
+        + '<button type="button" class="close">'
         + '<span>&times;</span>'
         + '<span class="sr-only">Close</span></button>'
         + '<i class="glyphicon glyphicon-exclamation-sign"></i>'
