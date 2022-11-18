@@ -69,6 +69,11 @@ public class ApiToken {
         return Instant.now().isAfter(creationDate.toInstant().plusSeconds(expires));
     }
 
+    @JsonProperty("isAdminToken")
+    public boolean isAdminToken() {
+        return user.isAdmin();
+    }
+
     /**
      * Is this token active (true) or revoked (false)
      */
