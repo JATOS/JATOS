@@ -82,33 +82,37 @@ public class AdminService {
     }
 
     public Map<String, Object> getStudyAssetDirSize(Study study) {
-        long studyAssetsDirSize = ioUtils.getStudyAssetsDirSize(study.getDirName());
+        long size = ioUtils.getStudyAssetsDirSize(study.getDirName());
         return ImmutableMap.of(
-                "display", Helpers.humanReadableByteCount(studyAssetsDirSize),
-                "bytes", studyAssetsDirSize);
+                "humanReadable", Helpers.humanReadableByteCount(size),
+                "size", size);
     }
 
     public ImmutableMap<String, Object> getResultDataSize(Study study, int studyResultCount) {
-        long resultDataSize = componentResultDao.sizeByStudy(study);
+        long size = componentResultDao.sizeByStudy(study);
+        long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
         String resultDataSizePerStudyResultCount = (studyResultCount != 0 ?
-                Helpers.humanReadableByteCount(resultDataSize / studyResultCount) : "0 B");
-        String resultDataSizeDisplay = Helpers.humanReadableByteCount(resultDataSize)
+                Helpers.humanReadableByteCount(averagePerResult) : "0 B");
+        String humanReadable = Helpers.humanReadableByteCount(size)
                 + " (" + resultDataSizePerStudyResultCount + ")";
         return ImmutableMap.of(
-                "display", resultDataSizeDisplay,
-                "bytes", resultDataSize);
+                "humanReadable", humanReadable,
+                "size", size,
+                "averagePerResult", averagePerResult);
     }
 
     public ImmutableMap<String, Object> getResultFileSize(Study study, int studyResultCount) {
-        long resultFileSize = studyResultDao.findAllByStudy(
+        long size = studyResultDao.findAllByStudy(
                 study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
+        long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
         String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
-                Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B";
-        String resultFileSizeDisplay = Helpers.humanReadableByteCount(resultFileSize)
+                Helpers.humanReadableByteCount(averagePerResult) : "0 B";
+        String humanReadable = Helpers.humanReadableByteCount(size)
                 + " (" + resultFileSizePerStudyResultCount + ")";
         return ImmutableMap.of(
-                "display", resultFileSizeDisplay,
-                "bytes", resultFileSize);
+                "humanReadable", humanReadable,
+                "size", size,
+                "averagePerResult", averagePerResult);
     }
 
     /**
