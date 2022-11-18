@@ -119,7 +119,7 @@ public class Admin extends Controller {
     @Authenticated(Role.ADMIN)
     public Result logs(String filename, Integer lineLimit, boolean reverse) {
         if (reverse) {
-            return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=utf-8");
+            return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=UTF-8");
         } else {
             Path logPath = Paths.get(Common.getBasepath() + "/logs/" + filename);
             if (Files.notExists(logPath)) {
@@ -127,7 +127,7 @@ public class Admin extends Controller {
             }
             Source<ByteString, ?> source = FileIO.fromPath(logPath);
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
-            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", filename);
+            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
                     new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
@@ -197,10 +197,12 @@ public class Admin extends Controller {
      * Returns the study assets folder size of one study
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Authenticated
     public Result studyAssetsSize(Long studyId) {
+        User loggedInUser = authenticationService.getLoggedInUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
+        if (!study.hasUser(loggedInUser) && !loggedInUser.isAdmin()) return forbidden("No access for this user");
         return ok(jsonUtils.asJsonNode(adminService.getStudyAssetDirSize(study)));
     }
 
@@ -208,10 +210,12 @@ public class Admin extends Controller {
      * Returns the result data size of one study
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Authenticated
     public Result resultDataSize(Long studyId) {
+        User loggedInUser = authenticationService.getLoggedInUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
+        if (!study.hasUser(loggedInUser) && !loggedInUser.isAdmin()) return forbidden("No access for this user");
         int studyResultCount = studyResultDao.countByStudy(study);
         return ok(jsonUtils.asJsonNode(adminService.getResultDataSize(study, studyResultCount)));
     }
@@ -222,8 +226,10 @@ public class Admin extends Controller {
     @Transactional
     @Authenticated(Role.ADMIN)
     public Result resultFileSize(Long studyId) {
+        User loggedInUser = authenticationService.getLoggedInUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
+        if (!study.hasUser(loggedInUser) && !loggedInUser.isAdmin()) return forbidden("No access for this user");
         int studyResultCount = studyResultDao.countByStudy(study);
         return ok(jsonUtils.asJsonNode(adminService.getResultFileSize(study, studyResultCount)));
     }
