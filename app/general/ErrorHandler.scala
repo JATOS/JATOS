@@ -1,7 +1,7 @@
 package general
 
 import javax.inject.{Inject, Singleton}
-import exceptions.gui.JatosGuiException
+import exceptions.gui.{BadRequestException, ForbiddenException, JatosGuiException, NotFoundException}
 import exceptions.publix.{InternalServerErrorPublixException, PublixException}
 
 import javax.naming.NamingException
@@ -61,6 +61,15 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
         case e: NamingException =>
           logger.error("LDAP error", throwable)
           InternalServerError(s"LDAP error: ${e.getCause}")
+        case e: BadRequestException =>
+          logger.info(s"BadRequestException during call ${request.uri}: ${e.getMessage}")
+          BadRequest(e.getMessage)
+        case e: ForbiddenException =>
+          logger.info(s"ForbiddenException during call ${request.uri}: ${e.getMessage}")
+          Forbidden(e.getMessage)
+        case e: NotFoundException =>
+          logger.info(s"NotFoundException during call ${request.uri}: ${e.getMessage}")
+          NotFound(e.getMessage)
         case _ =>
           logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
