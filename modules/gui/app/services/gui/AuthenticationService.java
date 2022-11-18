@@ -38,6 +38,7 @@ import java.util.Collections;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class AuthenticationService {
 
@@ -219,7 +220,7 @@ public class AuthenticationService {
             Instant allowedUntil = loginTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(".isSessionTimeout: " + e.getMessage());
             // In case of any exception: timeout
             return true;
         }
@@ -236,7 +237,7 @@ public class AuthenticationService {
             Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(".isInactivityTimeout: " + e.getMessage());
             // In case of any exception: timeout
             return true;
         }
