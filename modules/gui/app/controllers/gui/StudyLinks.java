@@ -106,16 +106,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result batchById(Long studyId, Long batchId) throws JatosGuiException {
+    public Result batchById(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         Integer resultCount = studyResultDao.countByBatch(batch, JatosWorker.WORKER_TYPE);
         Integer groupCount = groupResultDao.countByBatch(batch);
@@ -128,14 +124,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result batchesByStudy(Long studyId) throws JatosGuiException {
+    public Result batchesByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
 
         List<Batch> batchList = study.getBatchList();
         List<Integer> resultCountList = new ArrayList<>();
@@ -150,20 +142,14 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result groupsByBatch(Long studyId, Long batchId) throws JatosGuiException {
+    public Result groupsByBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        JsonNode dataAsJson = null;
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-            dataAsJson = jsonUtils.allGroupResultsForUI(groupResultDao.findAllByBatch(batch));
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
 
-        assert dataAsJson != null;
+        JsonNode dataAsJson = jsonUtils.allGroupResultsForUI(groupResultDao.findAllByBatch(batch));
         return ok(dataAsJson);
     }
 
@@ -172,15 +158,11 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitCreatedBatch(Http.Request request, Long studyId) throws JatosGuiException {
+    public Result submitCreatedBatch(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
 
         Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -197,16 +179,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result batchSessionData(Long studyId, Long batchId) throws JatosGuiException {
+    public Result batchSessionData(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         BatchSession batchSession = batchService.bindToBatchSession(batch);
         return ok(jsonUtils.asJsonNode(batchSession));
@@ -217,16 +195,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result groupSessionData(Long studyId, Long groupResultId) throws JatosGuiException {
+    public Result groupSessionData(Long studyId, Long groupResultId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForGroup(groupResult, study, groupResultId);
 
         GroupSession groupSession = groupService.bindToGroupSession(groupResult);
         return ok(jsonUtils.asJsonNode(groupSession));
@@ -238,17 +212,13 @@ public class StudyLinks extends Controller {
     @Transactional
     @Authenticated
     public Result submitEditedBatchSessionData(Http.Request request, Long studyId, Long batchId)
-            throws JatosGuiException {
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         Form<BatchSession> form = formFactory.form(BatchSession.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -268,17 +238,13 @@ public class StudyLinks extends Controller {
     @Transactional
     @Authenticated
     public Result submitEditedGroupSessionData(Http.Request request, Long studyId, Long groupResultId)
-            throws JatosGuiException {
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         GroupResult groupResult = groupResultDao.findById(groupResultId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForGroup(groupResult, study, groupResultId);
 
         Form<GroupSession> form = formFactory.form(GroupSession.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -297,16 +263,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) throws JatosGuiException {
+    public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForGroup(groupResult, study, groupResultId);
 
         GroupState result = groupService.toggleGroupFixed(groupResult, fixed);
         return ok(jsonUtils.asJsonNode(result));
@@ -317,16 +279,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result batchProperties(Long studyId, Long batchId) throws JatosGuiException {
+    public Result batchProperties(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         BatchProperties batchProperties = batchService.bindToProperties(batch);
         return ok(jsonUtils.asJsonNode(batchProperties));
@@ -337,17 +295,14 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result submitEditedBatchProperties(Http.Request request, Long studyId, Long batchId) throws JatosGuiException {
+    public Result submitEditedBatchProperties(Http.Request request, Long studyId, Long batchId)
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch currentBatch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForBatch(currentBatch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForBatch(currentBatch, study, batchId);
 
         Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -369,17 +324,13 @@ public class StudyLinks extends Controller {
     @Transactional
     @Authenticated
     public Result toggleBatchActive(Long studyId, Long batchId, Boolean active)
-            throws JatosGuiException {
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         if (active != null) {
             batch.setActive(active);
@@ -394,28 +345,23 @@ public class StudyLinks extends Controller {
     @Transactional
     @Authenticated
     public Result toggleAllowedWorkerType(Long studyId, Long batchId,
-            String workerType, Boolean allow) throws JatosGuiException {
+            String workerType, Boolean allow) throws BadRequestException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForBatch(batch, study, batchId);
 
-        if (allow != null && workerType != null) {
-            if (allow) {
-                batch.addAllowedWorkerType(workerType);
-            } else {
-                batch.removeAllowedWorkerType(workerType);
-            }
-            batchDao.update(batch);
+        workerType = workerService.extractWorkerType(workerType);
+        if (allow == null)  return badRequest();
+
+        if (allow) {
+            batch.addAllowedWorkerType(workerType);
         } else {
-            return badRequest();
+            batch.removeAllowedWorkerType(workerType);
         }
+        batchDao.update(batch);
         return ok(jsonUtils.asJsonNode(batch.getAllowedWorkerTypes()));
     }
 
@@ -424,18 +370,14 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result removeBatch(Long studyId, Long batchId) throws Exception {
+    public Result removeBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForBatch(batch, study, batchId);
-            checker.checkDefaultBatch(batch);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForBatch(batch, study, batchId);
+        checker.checkDefaultBatch(batch);
 
         batchService.remove(batch, loggedInUser);
         return ok(RequestScopeMessaging.getAsJson());
@@ -447,41 +389,24 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result createStudyCodes(Long studyId, Long batchId, String workerType, String comment, Integer amount) {
+    public Result getStudyCodes(Long studyId, Long batchId, String workerType, String comment,
+            Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
+        workerType = workerService.extractWorkerType(workerType);
 
-        switch (workerType.toLowerCase()) {
-            case "personalsingle":
-            case "ps":
-                workerType = PersonalSingleWorker.WORKER_TYPE;
-                return createPersonalRun(batch, workerType, comment, amount);
-            case "personalmultiple":
-            case "pm":
-                workerType = PersonalMultipleWorker.WORKER_TYPE;
-                return createPersonalRun(batch, workerType, comment, amount);
-            case "generalsingle":
-            case "gs":
-                workerType = GeneralSingleWorker.WORKER_TYPE;
-                return createGeneralRun(batch, workerType);
 
-            case "generalmultiple":
-            case "gm":
-                workerType = GeneralMultipleWorker.WORKER_TYPE;
-                return createGeneralRun(batch, workerType);
-            case "mturk":
-            case "mt":
-                workerType = MTWorker.WORKER_TYPE;
-                return createGeneralRun(batch, workerType);
+        switch (workerType) {
+            case PersonalSingleWorker.WORKER_TYPE:
+            case PersonalMultipleWorker.WORKER_TYPE:
+                return getPersonalRun(batch, workerType, comment, amount);
+            case GeneralSingleWorker.WORKER_TYPE:
+            case GeneralMultipleWorker.WORKER_TYPE:
+            case MTWorker.WORKER_TYPE:
+                return getGeneralRun(batch, workerType);
             default:
                 return badRequest("Unknown worker type");
         }
@@ -490,17 +415,12 @@ public class StudyLinks extends Controller {
     /**
      * Creates either Personal Single or Personal Multiple study codes and their corresponding workers.
      */
-    private Result createPersonalRun(Batch batch, String workerType, String comment, Integer amount) {
+    private Result getPersonalRun(Batch batch, String workerType, String comment, Integer amount)
+            throws BadRequestException {
         comment = Strings.isNullOrEmpty(comment) ? "" : Helpers.urlDecode(comment);
         amount = amount == null ? 1 : amount;
         List<String> studyCodeList;
-        try {
-            studyCodeList = studyLinkService.createAndPersistStudyLinks(comment, amount, batch, workerType);
-        } catch (BadRequestException e) {
-            return badRequest(e.getMessage());
-        } catch (Throwable e) {
-            return internalServerError();
-        }
+        studyCodeList = studyLinkService.createAndPersistStudyLinks(comment, amount, batch, workerType);
 
         return ok(jsonUtils.asJsonNode(studyCodeList));
     }
@@ -510,7 +430,7 @@ public class StudyLinks extends Controller {
      * MTWorker). Since for the 'General' workers only one study link is necessary per batch and worker type it only
      * creates one if it is not already stored in the StudyLink table.
      */
-    private Result createGeneralRun(Batch batch, String workerType) {
+    private Result getGeneralRun(Batch batch, String workerType) {
         StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
         return ok(jsonUtils.asJsonNode(Collections.singletonList(studyLink.getStudyCode())));
@@ -522,16 +442,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result studyLinksSetupData(Long studyId, Long batchId) throws JatosGuiException {
+    public Result studyLinksSetupData(Long studyId, Long batchId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         Map<String, Integer> studyResultCountsPerWorker = workerService.retrieveStudyResultCountsPerWorker(batch);
         Integer personalSingleLinkCount = studyLinkDao.countByBatchAndWorkerType(batch, PersonalSingleWorker.WORKER_TYPE);
@@ -548,16 +464,12 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result studyLinksData(Long studyId, Long batchId, String workerType) throws JatosGuiException {
+    public Result studyLinksData(Long studyId, Long batchId, String workerType) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
 
         List<StudyLink> studyLinkList = studyLinkDao.findAllByBatchAndWorkerType(batch, workerType);
         return ok(jsonUtils.studyLinksData(studyLinkList));
@@ -568,19 +480,17 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active) throws JatosGuiException {
+    public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active)
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Batch batch = batchDao.findById(batchId);
         StudyLink studyLink = studyLinkDao.findByStudyCode(studyCode);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForBatch(batch, study, batchId);
+
         if (!batch.equals(studyLink.getBatch())) {
-            jatosGuiExceptionThrower.throwAjax("Not allowed to change this study link.", FORBIDDEN);
+            return forbidden("Not allowed to change this study link.");
         }
 
         studyLink.setActive(active);
