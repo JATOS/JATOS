@@ -83,7 +83,6 @@ public class Common {
     private static boolean studyMembersAllowedToAddAllUsers;
     private static boolean idCookiesSecure;
     private static Http.Cookie.SameSite idCookiesSameSite;
-    private static boolean resultDataExportUseTmpFile;
     private static boolean showStudyAssetsSizeInStudyAdmin;
     private static boolean showResultDataSizeInStudyAdmin;
     private static boolean showResultFileSizeInStudyAdmin;
@@ -153,7 +152,6 @@ public class Common {
         studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
         idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
         idCookiesSameSite = fillIdCookiesSameSite(config);
-        resultDataExportUseTmpFile = config.getBoolean("jatos.resultData.export.useTmpFile");
         showStudyAssetsSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showStudyAssetsSize");
         showResultDataSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultDataSize");
         showResultFileSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultFileSize");
@@ -512,15 +510,6 @@ public class Common {
      */
     public static Http.Cookie.SameSite getIdCookiesSameSite() {
         return idCookiesSameSite;
-    }
-
-    /**
-     * If true, result data that are fetched from the database are first stored in a temporary file and only if
-     * they are all gathered the file is sent to the browser. If false the result data are streamed directly from the
-     * database to the browser.
-     */
-    public static boolean isResultDataExportUseTmpFile() {
-        return resultDataExportUseTmpFile;
     }
 
     /**
