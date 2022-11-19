@@ -288,7 +288,7 @@ $('#batchTable').on('click', '.activeBatchButton', function() {
 
 $('#batchTable').on('click', '.batchResultsButton', function() {
     var batch = getBatchData(this);
-    window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/results";
+    window.location.href =  `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/results`;
 });
 
 $('#batchTable').on('click', '.groupsButton', function() {
