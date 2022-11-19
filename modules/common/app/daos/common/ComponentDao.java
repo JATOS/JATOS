@@ -9,6 +9,7 @@ import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * DAO for Component entity
@@ -82,6 +83,15 @@ public class ComponentDao extends AbstractDao {
         String queryStr = "SELECT c FROM Component c WHERE c.title=:title";
         TypedQuery<Component> query = jpa.em().createQuery(queryStr, Component.class);
         return query.setParameter("title", title).getResultList();
+    }
+
+    public List<Long> findIdsByStudyIds(List<Long> studyIds) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT c.id FROM Component c WHERE c.study_id IN :studyIds")
+                .setParameter("studyIds", studyIds)
+                .getResultList();
+        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
     }
 
 }
