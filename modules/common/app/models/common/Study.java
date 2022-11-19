@@ -5,11 +5,14 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import utils.common.HashUtils;
-import utils.common.JsonUtils;
+import utils.common.JsonUtils.JsonForPublix;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
+
+import static utils.common.JsonUtils.JsonForIO;
+import static utils.common.JsonUtils.asStringForDB;
 
 /**
  * DB entity of a study. Used for JSON marshalling and JPA persistance.
@@ -38,7 +41,7 @@ public class Study {
 
     @Id
     @GeneratedValue
-    @JsonView(JsonUtils.JsonForPublix.class)
+    @JsonView({JsonForPublix.class})
     private Long id;
 
     /**
@@ -46,14 +49,14 @@ public class Study {
      * instance it is only allowed to have one study with the same UUID.
      */
     @Column(unique = true, nullable = false)
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForPublix.class, JsonForIO.class })
     private String uuid;
 
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForPublix.class, JsonForIO.class })
     private String title;
 
     @Lob
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForPublix.class, JsonForIO.class })
     private String description;
 
     /**
@@ -65,7 +68,7 @@ public class Study {
     /**
      * If a study is locked, it can't be changed.
      */
-    @JsonView(JsonUtils.JsonForPublix.class)
+    @JsonView(JsonForPublix.class)
     private boolean locked = false;
 
     /**
@@ -78,14 +81,14 @@ public class Study {
     /**
      * Is this study a group study (e.g. group members can send messages to each other)
      */
-    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
+    @JsonView({ JsonForIO.class, JsonForPublix.class })
     private boolean groupStudy = false;
 
     /**
      * A study with a linear study flow allows the component position to only increase or stay the same
      * (no going back to earlier components).
      */
-    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
+    @JsonView({ JsonForIO.class, JsonForPublix.class })
     private boolean linearStudy = false;
 
     /**
@@ -93,20 +96,20 @@ public class Study {
      * it does not go further than the first component. As soon as the second component is reached the usual
      * restrictions of the worker apply. 'Single' workers only (PersonalSingleWorker or MultipleSingleWorker).
      */
-    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
+    @JsonView({ JsonForIO.class, JsonForPublix.class })
     private boolean allowPreview = false;
 
     /**
      * Study assets directory name
      */
-    @JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
+    @JsonView({ JsonForIO.class, JsonForPublix.class })
     private String dirName;
 
     /**
      * User comments, reminders, something to share with others. They have no further meaning.
      */
     @Lob
-    @JsonView({ JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForIO.class })
     private String comments;
 
     /**
@@ -114,20 +117,20 @@ public class Study {
      * via jatos.js. Can be used for initial data and configuration.
      */
     @Lob
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForPublix.class, JsonForIO.class })
     private String jsonData;
 
     /**
      * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
      * endPage will be shown.
      */
-    @JsonView({ JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForIO.class })
     private String endRedirectUrl;
 
     /**
      * Will be shown to the worker on the Study Entry page
      */
-    @JsonView({ JsonUtils.JsonForIO.class })
+    @JsonView({ JsonForIO.class })
     private String studyEntryMsg;
 
     /**
@@ -143,7 +146,7 @@ public class Study {
     /**
      * Ordered list of component of this study. The relationship is bidirectional.
      */
-    @JsonView(JsonUtils.JsonForIO.class)
+    @JsonView(JsonForIO.class)
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderColumn(name = "componentList_order")
     @JoinColumn(name = "study_id")
@@ -154,7 +157,7 @@ public class Study {
     /**
      * Ordered list of batches of this study. The relationship is bidirectional.
      */
-    @JsonView(JsonUtils.JsonForIO.class)
+    @JsonView(JsonForIO.class)
     @OneToMany(fetch = FetchType.LAZY)
     @OrderColumn(name = "batchList_order")
     @JoinColumn(name = "study_id")
@@ -197,7 +200,7 @@ public class Study {
         return this.description;
     }
 
-    @JsonView(JsonUtils.JsonForPublix.class)
+    @JsonView(JsonForPublix.class)
     public String getDescriptionHash() {
         return !Strings.isNullOrEmpty(getDescription()) ? HashUtils.getHash(getDescription(), HashUtils.SHA_256) : null;
     }
@@ -271,7 +274,7 @@ public class Study {
     }
 
     public void setJsonData(String jsonData) {
-        this.jsonData = JsonUtils.asStringForDB(jsonData);
+        this.jsonData = asStringForDB(jsonData);
     }
 
     public String getEndRedirectUrl() {
