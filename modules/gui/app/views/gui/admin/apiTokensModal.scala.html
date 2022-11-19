@@ -249,7 +249,7 @@ function showApiTokenDisplayModal(name, apiToken) {
             <button type="button" class="btn clipboardButton btn-xs pull-right" data-toggle="tooltip" title="Copy this token to the clipboard.">Copy&nbsp;<span class="glyphicon glyphicon-duplicate"></span></button>
         </div>
         <p>Test with <code>curl</code>:</p>
-        <pre><code>curl -i -H "Authorization: Bearer ${apiToken}" @{utils.common.Helpers.getRealBaseUrl(request)}jatos/api/testToken</code></pre>`
+        <pre><code>curl -i -H "Authorization: Bearer ${apiToken}" @{utils.common.Helpers.getRealBaseUrl(request)}jatos/api/admin/token</code></pre>`
     $('#apiTokenDisplayModal .content').html(html);
     $('#apiTokenDisplayModal').modal('show');
 }

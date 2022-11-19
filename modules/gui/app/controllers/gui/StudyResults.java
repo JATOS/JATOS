@@ -2,6 +2,7 @@ package controllers.gui;
 
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import com.google.common.base.Strings;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
@@ -14,12 +15,11 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import models.common.*;
-import models.common.workers.Worker;
+import models.common.workers.*;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import scala.Option;
 import services.gui.*;
 import utils.common.Helpers;
 import utils.common.JsonUtils;
@@ -44,7 +44,8 @@ public class StudyResults extends Controller {
     private final AuthenticationService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
-    private final ResultService resultService;
+    private final ResultStreamer resultStreamer;
+    private final WorkerService workerService;
     private final StudyDao studyDao;
     private final BatchDao batchDao;
     private final StudyResultDao studyResultDao;
@@ -56,14 +57,15 @@ public class StudyResults extends Controller {
     StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
             Checker checker, AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
-            ResultService resultService, StudyDao studyDao, BatchDao batchDao,
+            ResultStreamer resultStreamer, WorkerService workerService, StudyDao studyDao, BatchDao batchDao,
             StudyResultDao studyResultDao, GroupResultDao groupResultDao, WorkerDao workerDao, JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
-        this.resultService = resultService;
+        this.resultStreamer = resultStreamer;
+        this.workerService = workerService;
         this.studyDao = studyDao;
         this.batchDao = batchDao;
         this.studyResultDao = studyResultDao;
@@ -97,7 +99,7 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result batchesStudyResults(Long studyId, Long batchId, Option<String> workerType) throws JatosGuiException {
+    public Result batchesStudyResults(Long studyId, Long batchId, String workerType) throws JatosGuiException {
         Batch batch = batchDao.findById(batchId);
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -108,10 +110,10 @@ public class StudyResults extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
-        String breadcrumbsTitle = workerType.isEmpty() ? BreadcrumbsService.RESULTS
-                : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType.get()) + " workers";
+        String breadcrumbsTitle = Strings.isNullOrEmpty(workerType) ? BreadcrumbsService.RESULTS
+                : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
-        String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(studyId, batchId, workerType).url();
+        String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(batchId, workerType).url();
         return ok(views.html.gui.result.studyResults.render(loggedInUser,
                 breadcrumbs, Helpers.isLocalhost(), study, dataUrl));
     }
@@ -135,7 +137,7 @@ public class StudyResults extends Controller {
         String breadcrumbsTitle = BreadcrumbsService.RESULTS;
         String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
                 breadcrumbsTitle);
-        String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(studyId, groupId).url();
+        String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(groupId).url();
         return ok(views.html.gui.result.studyResults.render(loggedInUser,
                 breadcrumbs, Helpers.isLocalhost(), study, dataUrl));
     }
@@ -165,19 +167,15 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(Http.Request request) {
+    public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
+        if (request.body().asJson() == null) return badRequest("Malformed request body");
+        if (!request.body().asJson().has("studyResultIds")) return badRequest("Malformed JSON");
+
         List<Long> studyResultIdList = new ArrayList<>();
-        request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
-        try {
-            resultRemover.removeStudyResults(studyResultIdList, loggedInUser);
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (BadRequestException e) {
-            return badRequest(e.getMessage());
-        }
+        request.body().asJson().get("studyResultIds").forEach(node -> studyResultIdList.add(node.asLong()));
+        resultRemover.removeStudyResults(studyResultIdList, loggedInUser);
+
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -186,19 +184,13 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByStudy(Long studyId) {
+    public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
 
-        Source<ByteString, ?> source = resultService.streamStudyResultsByStudy(study);
-        return ok().chunked(source).as("text/html; charset=utf-8");
+        Source<ByteString, ?> source = resultStreamer.streamStudyResultsByStudy(study);
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
@@ -207,21 +199,14 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByBatch(Long studyId, Long batchId, Option<String> workerType) {
-        Study study = studyDao.findById(studyId);
+    public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkStandardForBatch(batch, batch.getId(), loggedInUser);
+        workerType = workerType != null ? workerService.extractWorkerType(workerType) : null;
 
-        Source<ByteString, ?> source = resultService.streamStudyResultsByBatch(workerType, batch);
-        return ok().chunked(source).as("text/html; charset=utf-8");
+        Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
+        return ok().chunked(source).as("application/json");
     }
 
     /**
@@ -229,21 +214,13 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByGroup(Long studyId, Long groupResultId) {
-        Study study = studyDao.findById(studyId);
+    public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForGroup(groupResult, study, groupResultId);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkStandardForGroup(groupResult, groupResultId, loggedInUser);
 
-        Source<ByteString, ?> source = resultService.streamStudyResultsByGroup(groupResult);
-        return ok().chunked(source).as("text/html; charset=utf-8");
+        Source<ByteString, ?> source = resultStreamer.streamStudyResultsByGroup(groupResult);
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
@@ -251,17 +228,13 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByWorker(Long workerId) {
+    public Result tableDataByWorker(Long workerId) throws BadRequestException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Worker worker = workerDao.findById(workerId);
-        try {
-            checker.checkWorker(worker, workerId);
-        } catch (BadRequestException e) {
-            return badRequest(e.getMessage());
-        }
+        checker.checkWorker(worker, workerId);
 
-        Source<ByteString, ?> source = resultService.streamStudyResultsByWorker(loggedInUser, worker);
-        return ok().chunked(source).as("text/html; charset=utf-8");
+        Source<ByteString, ?> source = resultStreamer.streamStudyResultsByWorker(loggedInUser, worker);
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
@@ -269,15 +242,10 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataComponentResultByStudyResult(Long studyResultId) throws JatosGuiException {
+    public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
-        Study study = studyResult.getStudy();
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStudyResult(studyResult, loggedInUser, false);
 
         return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
     }

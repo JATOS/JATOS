@@ -401,12 +401,32 @@ public class IOUtils {
         }
     }
 
+    /**
+     * Path to result uploads folder where JATOS stores the uploaded result files
+     */
     public static String getResultUploadsDir(Long studyResultId) {
         return Common.getResultUploadsPath() + File.separator + "study-result_" + studyResultId;
     }
 
+    /**
+     * Path to result uploads folder where JATOS stores the uploaded result files
+     */
     public static String getResultUploadsDir(Long studyResultId, Long componentResultId) {
         return getResultUploadsDir(studyResultId) + File.separator + "comp-result_" + componentResultId;
+    }
+
+    /**
+     * Path to result files in zip package with '/' as file separator
+     */
+    public static String getResultsPathForZip(Long studyResultId, Long componentResultId) {
+        return "/study_result_" + studyResultId + "/comp-result_" + componentResultId;
+    }
+
+    /**
+     * Path to result files in file system (after unpacking - so using the OS' file separator)
+     */
+    public static String getResultsPath(Long studyResultId, Long componentResultId) {
+        return File.separator + "study_result_" + studyResultId + File.separator + "comp-result_" + componentResultId;
     }
 
     /**

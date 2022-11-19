@@ -10,39 +10,38 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
+import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
-import general.common.Common;
 import general.common.MessagesStrings;
+import general.common.StudyLogger;
 import general.gui.RequestScopeMessaging;
 import models.common.ComponentResult;
 import models.common.Study;
-import models.common.StudyResult;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
+import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import services.gui.*;
+import utils.common.Helpers;
 import utils.common.IOUtils;
-import utils.common.ZipUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+
+import static services.gui.ResultStreamer.*;
 
 /**
  * Controller that cares for import/export of components, studies and their result data.
@@ -60,26 +59,30 @@ public class ImportExport extends Controller {
     private final Checker checker;
     private final AuthenticationService authenticationService;
     private final ImportExportService importExportService;
-    private final ResultService resultService;
+    private final ResultStreamer resultStreamer;
     private final IOUtils ioUtils;
+    private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
     private final StudyResultDao studyResultDao;
     private final ComponentResultDao componentResultDao;
+    private final StudyLogger studyLogger;
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, IOUtils ioUtils,
             AuthenticationService authenticationService, ImportExportService importExportService,
-            ResultService resultService, StudyDao studyDao,
-            StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
+            ResultStreamer resultStreamer, ComponentResultIdsExtractor componentResultIdsExtractor, StudyDao studyDao,
+            StudyResultDao studyResultDao, ComponentResultDao componentResultDao, StudyLogger studyLogger) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.ioUtils = ioUtils;
         this.authenticationService = authenticationService;
         this.importExportService = importExportService;
-        this.resultService = resultService;
+        this.resultStreamer = resultStreamer;
+        this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
         this.componentResultDao = componentResultDao;
+        this.studyLogger = studyLogger;
     }
 
     /**
@@ -90,7 +93,7 @@ public class ImportExport extends Controller {
     @Transactional
     @Authenticated
     public Result importStudyApi(Http.Request request, boolean overwriteProperties, boolean overwriteDir,
-            boolean keepCurrentDirName, boolean renameDir) {
+            boolean keepCurrentDirName, boolean renameDir) throws ForbiddenException, NotFoundException, IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
 
         // Get file from request
@@ -119,11 +122,6 @@ public class ImportExport extends Controller {
         try {
             importExportService.importStudyConfirmed(loggedInUser, overwriteProperties, overwriteDir,
                     keepCurrentDirName, renameDir);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (Exception e) {
-            LOGGER.error(".importStudyApi: " + e.getMessage());
-            return internalServerError();
         } finally {
             importExportService.cleanupAfterStudyImport();
         }
@@ -202,16 +200,10 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportStudy(Long studyId) {
+    public Result exportStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
 
         File zipFile;
         try {
@@ -222,139 +214,128 @@ public class ImportExport extends Controller {
             return internalServerError(errorMsg);
         }
 
-        return okFileStreamed(zipFile, zipFile::delete, "application/octet-stream");
+        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_study_" + study.getUuid() + ".jzip");
+        return okFileStreamed(zipFile, zipFile::delete, "application/zip")
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
     /**
-     * Returns all result data of ComponentResults belonging to the given StudyResults. The StudyResults are specified
-     * by a list of IDs in the request's body. Returns the result data as text, each line a result data. Depending on
-     * the configuration it streams the results directly as a chunked response, or it first saves the results in a
-     * temporary file and only when all are written sends the file in a normal response. Both approaches use streaming
-     * to reduce memory usage.
+     * Returns all result data of ComponentResults. The results are specified by IDs (can be any kind) in the
+     * request's body. Returns the result data as plain text (each result data in a new line) or in a zip file (each
+     * result data in its own file). Both options use streaming to reduce memory usage.
      */
     @Transactional
     @Authenticated
-    public Result exportDataOfStudyResults(Http.Request request) throws IOException {
+    public Result exportResultsData(Http.Request request, boolean asPlainText)
+            throws BadRequestException, ForbiddenException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
-        List<Long> studyResultIdList = new ArrayList<>();
-        try {
-            request.body().asJson().get("resultIds").forEach(node -> studyResultIdList.add(node.asLong()));
-        } catch (Exception e) {
-            return badRequest("Malformed JSON");
-        }
-        List<Long> componentResultIdList = componentResultDao.findIdsByStudyResultIds(studyResultIdList);
-        return exportResultData(loggedInUser, componentResultIdList);
-    }
+        JsonNode json = request.body().asJson();
+        if (json == null) return badRequest("Malformed request body");
 
-    /**
-     * Returns all result data of the given ComponentResults. The ComponentResults are specified
-     * by a list of IDs in the request's body. Returns the result data as text, each line a result data. Depending on
-     * the configuration it streams the results directly as a chunked response, or it first saves the results in a
-     * temporary file and only when all are written sends the file in a normal response. Both approaches use streaming
-     * to reduce memory usage.
-     */
-    @Transactional
-    @Authenticated
-    public Result exportDataOfComponentResults(Http.Request request) {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        List<Long> componentResultIdList = new ArrayList<>();
-        try {
-            request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
-        } catch (Exception e) {
-            return badRequest("Malformed JSON");
-        }
-        return exportResultData(loggedInUser, componentResultIdList);
-    }
+        if (asPlainText) {
+            List<Long> componentResultIdList = componentResultIdsExtractor.extract(json);
+            List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
+            List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
+            for (Study study : studyList) {
+                checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+            }
 
-    private Result exportResultData(User loggedInUser, List<Long> componentResultIdList) {
-        if (Common.isResultDataExportUseTmpFile()) {
-            File tmpFile = resultService.getComponentResultDataAsTmpFile(loggedInUser, componentResultIdList);
-            return okFileStreamed(tmpFile, tmpFile::delete, "text/plain");
+            Source<ByteString, ?> dataSource = resultStreamer.streamComponentResult(componentResultIdList);
+
+            studyList.forEach(s -> studyLogger.log(s, loggedInUser, "Exported result files"));
+            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
+                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
+            return ok().chunked(dataSource).as("application/octet-stream")
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         } else {
-            Source<ByteString, ?> dataSource = resultService.streamComponentResultData(loggedInUser,
-                    componentResultIdList);
-            return ok().chunked(dataSource).as("text/plain");
+            List<Long> crids = componentResultIdsExtractor.extract(json);
+            Source<ByteString, ?> dataSource = resultStreamer.streamResults(crids, loggedInUser, ResultsType.DATA_ONLY);
+            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
+                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+            return ok().chunked(dataSource).as("application/zip")
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         }
     }
 
+    /**
+     * Returns a single result
+     */
     @Transactional
     @Authenticated
-    public Result downloadSingleResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename) {
-        Study study = studyDao.findById(studyId);
+    public Result exportSingleResultFile(Long componentResultId, String filename)
+            throws ForbiddenException, NotFoundException {
+        ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkComponentResult(componentResult, loggedInUser, false);
 
+        File file;
         try {
-            return ok(ioUtils.getResultUploadFileSecurely(studyResultId, componetResultId, filename));
+            Study study = componentResult.getComponent().getStudy();
+            file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
+            studyLogger.log(study, loggedInUser, "Exported single result file");
         } catch (IOException e) {
             return badRequest("File does not exist");
         }
+        return ok(file);
     }
 
+    /**
+     * Returns all files belonging to results in a zip. The results are specified by IDs (can be any kind) in the
+     * request's body.
+     */
     @Transactional
     @Authenticated
-    public Result exportResultFilesOfStudyResults(Http.Request request) throws IOException {
+    public Result exportResultsFiles(Http.Request request)
+            throws IOException, BadRequestException, ForbiddenException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
+        JsonNode json = request.body().asJson();
+        if (json == null) return badRequest("Malformed request body");
 
-        List<Path> resultFileList = new ArrayList<>();
-        try {
-            for (JsonNode node : request.body().asJson().get("resultIds")) {
-                Long studyResultId = node.asLong();
-                StudyResult studyResult = studyResultDao.findById(studyResultId);
-                checker.checkStudyResult(studyResult, loggedInUser, false);
-                Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
-                if (Files.exists(path)) resultFileList.add(path);
-            }
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        } catch (Exception e) {
-            return badRequest("Malformed JSON");
-        }
-        if (resultFileList.isEmpty()) return notFound("No result files found");
-
-        File zipFile = File.createTempFile("jatos_resultFiles_", ".zip");
-        zipFile.deleteOnExit();
-        ZipUtil.zipFiles(resultFileList, zipFile);
-        return okFileStreamed(zipFile, zipFile::delete, "application/octet-stream");
+        List<Long> crids = componentResultIdsExtractor.extract(json);
+        Source<ByteString, ?> dataSource = resultStreamer.streamResults(crids, loggedInUser, ResultsType.FILES_ONLY);
+        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+        return ok().chunked(dataSource).as("application/zip")
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
+    /**
+     * Returns all results (metadata, data, files) in a zip file. The results are specified by IDs (can be any kind) in
+     * the request's body.
+     */
     @Transactional
     @Authenticated
-    public Result exportResultFilesOfComponentResults(Http.Request request) throws IOException {
+    public Result exportResults(Http.Request request) throws BadRequestException {
         User loggedInUser = authenticationService.getLoggedInUser();
+        JsonNode json = request.body().asJson();
+        if (json == null) return badRequest("Malformed request body");
 
-        List<Path> resultFileList = new ArrayList<>();
-        try {
-            for (JsonNode node : request.body().asJson().get("resultIds")) {
-                Long componentResultId = node.asLong();
-                ComponentResult componentResult = componentResultDao.findById(componentResultId);
-                checker.checkComponentResult(componentResult, loggedInUser, false);
-                Path path = Paths.get(IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(),
-                        componentResultId));
-                if (Files.exists(path)) resultFileList.add(path);
-            }
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        } catch (Exception e) {
-            return badRequest("Malformed JSON");
-        }
-        if (resultFileList.isEmpty()) return notFound("No result files found");
+        List<Long> crids = componentResultIdsExtractor.extract(json);
+        Source<ByteString, ?> dataSource = resultStreamer.streamResults(crids, loggedInUser, ResultsType.COMBINED);
+        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+        return ok().chunked(dataSource).as("application/zip")
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+    }
 
-        File zipFile = File.createTempFile("jatos_resultFiles_", ".zip");
-        zipFile.deleteOnExit();
-        ZipUtil.zipFiles(resultFileList, zipFile);
+    /**
+     * Returns all result's metadata in a zip file. The results are specified by IDs (can be any kind) in
+     * the request's body.
+     */
+    @Transactional
+    @Authenticated
+    public Result exportResultsMetadata(
+            Http.Request request) throws BadRequestException, ForbiddenException, NotFoundException, IOException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        JsonNode json = request.body().asJson();
+        if (json == null) return badRequest("Malformed request body");
 
-        return okFileStreamed(zipFile, zipFile::delete, "application/octet-stream");
+        List<Long> crids = componentResultIdsExtractor.extract(json);
+        File file = resultStreamer.writeResultsMetadata(crids, loggedInUser);
+        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
+        return okFileStreamed(file, file::delete, "application/json")
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
     /**

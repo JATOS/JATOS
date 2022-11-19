@@ -21,7 +21,6 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -187,57 +186,81 @@ public class JsonUtils {
      * Returns the data string of a componentResult limited to
      * MAX_CHAR_PER_RESULT characters.
      */
-    public String componentResultDataForUI(ComponentResult componentResult) {
-        final int MAX_CHAR_PER_RESULT = 1000;
-        String data = componentResult.getData();
+    public String componentResultDataShortForUI(ComponentResult componentResult) {
+        int MAX_CHAR_PER_RESULT = 1000;
+        String data = componentResult.getDataShort();
         if (data != null) {
             // Escape HTML tags and &
             data = data.replace("&", "&amp").replace("<", "&lt;").replace(">", "&gt;");
-            if (data.length() < MAX_CHAR_PER_RESULT) {
+            if (componentResult.getDataSize() < MAX_CHAR_PER_RESULT) {
                 return data;
             } else {
-                return data.substring(0, MAX_CHAR_PER_RESULT) + " ...";
+                return data + " ...";
             }
         } else {
             return "none";
         }
     }
 
-    /**
-     * Returns ObjectNode of the given StudyResult. It contains the worker,
-     * study's ID and title, and all ComponentResults.
-     */
-    public JsonNode studyResultAsJsonNode(StudyResult studyResult, int componentResultCount) {
-        ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
+    public ObjectNode studyResultMetadata(StudyResult sr) throws IOException {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("id", sr.getId());
+        metadata.put("uuid", sr.getUuid());
+        metadata.put("studyCode", sr.getStudyCode());
+        metadata.put("startDate", sr.getStartDate());
+        metadata.put("endDate", sr.getEndDate());
+        metadata.put("duration", getDurationPretty(sr.getStartDate(), sr.getEndDate()));
+        metadata.put("lastSeenDate", sr.getLastSeenDate());
+        metadata.put("studyState", sr.getStudyState());
+        if (!Strings.isNullOrEmpty(sr.getMessage())) {
+            metadata.put("message", sr.getMessage());
+        }
+        if (!Strings.isNullOrEmpty(sr.getUrlQueryParameters()) && !sr.getUrlQueryParameters().equals("{}")) {
+            Map<String, String> map = Json.mapper().readerFor(Map.class).readValue(sr.getUrlQueryParameters());
+            metadata.put("urlQueryParameters", map);
+        }
+        metadata.put("workerId", sr.getWorkerId());
+        metadata.put("workerType", sr.getWorkerType());
+        metadata.put("batchId", sr.getBatch().getId());
+        metadata.put("batchUuid", sr.getBatch().getUuid());
+        metadata.put("batchTitle", sr.getBatch().getTitle());
+        metadata.put("groupId", getGroupResultId(sr));
+        if (sr.getConfirmationCode() != null) {
+            metadata.put("confirmationCode", sr.getConfirmationCode());
+        }
+        return Json.mapper().valueToTree(metadata);
+    }
 
-        // Add worker
-        ObjectNode workerNode = Json.mapper().valueToTree(Helpers.initializeAndUnproxy(studyResult.getWorker()));
-        studyResultNode.set("worker", workerNode);
+    /**
+     * Returns ObjectNode of the given StudyResult. It contains the worker, study's ID and title
+     */
+    public ObjectNode studyResultAsJsonNode(StudyResult sr, Integer componentResultCount) {
+        ObjectNode node = Json.mapper().valueToTree(sr);
 
         // Add extra variables
-        studyResultNode.put("studyId", studyResult.getStudy().getId());
-        studyResultNode.put("studyCode", studyResult.getStudyCode());
-        studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
-        studyResultNode.put("batchTitle", studyResult.getBatch().getTitle());
+        node.put("studyId", sr.getStudy().getId());
+        node.put("studyCode", sr.getStudyCode());
+        node.put("studyTitle", sr.getStudy().getTitle());
+        node.put("batchTitle", sr.getBatch().getTitle());
         String duration;
-        if (studyResult.getEndDate() != null) {
-            duration = getDurationPretty(studyResult.getStartDate(), studyResult.getEndDate());
+        if (sr.getEndDate() != null) {
+            duration = getDurationPretty(sr.getStartDate(), sr.getEndDate());
         } else {
-            duration = getDurationPretty(studyResult.getStartDate(), studyResult.getLastSeenDate());
+            duration = getDurationPretty(sr.getStartDate(), sr.getLastSeenDate());
             duration = duration != null ? duration + " (not finished yet)" : "none";
         }
-        studyResultNode.put("duration", duration);
-        studyResultNode.put("groupResultId", getGroupResultId(studyResult));
-        studyResultNode.put("componentResultCount", componentResultCount);
-        studyResultNode.put("hasResultFiles", hasResultUploadFiles(studyResult));
+        node.put("duration", duration);
+        node.put("groupId", getGroupResultId(sr));
+        if (componentResultCount != null) node.put("componentResultCount", componentResultCount);
+        node.put("hasResultFiles", hasResultUploadFiles(sr));
 
-        return studyResultNode;
+        return node;
     }
 
     public JsonNode getComponentResultsByStudyResult(StudyResult studyResult) {
         ArrayNode componentResultsNode = Json.mapper().createArrayNode();
         for (ComponentResult componentResult : studyResult.getComponentResultList()) {
-            JsonNode componentResultNode = componentResultAsJsonNode(componentResult, true);
+            JsonNode componentResultNode = componentResultAsJsonNode(componentResult);
             componentResultsNode.add(componentResultNode);
         }
         return componentResultsNode;
@@ -257,42 +280,54 @@ public class JsonUtils {
         }
     }
 
+    public ObjectNode componentResultMetadata(ComponentResult cr) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("id", cr.getId());
+        metadata.put("componentId", cr.getComponent().getId());
+        metadata.put("componentUuid", cr.getComponent().getUuid());
+        metadata.put("startDate", cr.getStartDate());
+        metadata.put("endDate", cr.getEndDate());
+        metadata.put("duration", getDurationPretty(cr.getStartDate(), cr.getEndDate()));
+        metadata.put("componentState", cr.getComponentState());
+        metadata.put("path", IOUtils.getResultsPath(cr.getStudyResult().getId(), cr.getId()));
+        Map<String, Object> dataMap = new LinkedHashMap<>();
+        dataMap.put("size", cr.getDataSize());
+        dataMap.put("sizeHumanReadable", Helpers.humanReadableByteCount(cr.getDataSize()));
+        if (cr.getDataSize() == 0) dataMap.put("filename", "data.txt");
+        metadata.put("data", dataMap);
+        metadata.put("files", getResultUploadFiles(cr));
+        return Json.mapper().valueToTree(metadata);
+    }
+
     /**
      * Returns an ObjectNode of the given ComponentResult.
      */
-    public JsonNode componentResultAsJsonNode(ComponentResult componentResult, boolean withData) {
-        ObjectNode componentResultNode = Json.mapper().valueToTree(componentResult);
+    public JsonNode componentResultAsJsonNode(ComponentResult cr) {
+        ObjectNode node = Json.mapper().valueToTree(cr);
 
         // Add extra variables
-        componentResultNode.put("studyId", componentResult.getComponent().getStudy().getId());
-        componentResultNode.put("componentId", componentResult.getComponent().getId());
-        componentResultNode.put("componentTitle", componentResult.getComponent().getTitle());
-        componentResultNode.put("duration", getDurationPretty(
-                componentResult.getStartDate(), componentResult.getEndDate()));
-        componentResultNode.put("studyResultId", componentResult.getStudyResult().getId());
-        componentResultNode.put("studyCode", componentResult.getStudyResult().getStudyCode());
-        componentResultNode.put("studyResultUuid", componentResult.getStudyResult().getUuid());
-        String groupResultId = getGroupResultId(componentResult.getStudyResult());
-        componentResultNode.put("groupResultId", groupResultId);
-        componentResultNode.put("batchTitle", componentResult.getStudyResult().getBatch().getTitle());
+        node.put("studyId", cr.getComponent().getStudy().getId());
+        node.put("componentId", cr.getComponent().getId());
+        node.put("componentTitle", cr.getComponent().getTitle());
+        node.put("duration", getDurationPretty(cr.getStartDate(), cr.getEndDate()));
+        node.put("studyResultId", cr.getStudyResult().getId());
+        node.put("studyCode", cr.getStudyResult().getStudyCode());
+        node.put("studyResultUuid", cr.getStudyResult().getUuid());
+        String groupResultId = getGroupResultId(cr.getStudyResult());
+        node.put("groupId", groupResultId);
+        node.put("batchTitle", cr.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
-        if (withData) {
-            componentResultNode.put("data", componentResultDataForUI(componentResult));
-        }
-        int dataSize = componentResult.getData() != null ?
-                componentResult.getData().getBytes(StandardCharsets.UTF_8).length : 0;
-        componentResultNode.put("dataSize", Helpers.humanReadableByteCount(dataSize));
+        node.put("dataShort", componentResultDataShortForUI(cr));
+        node.put("dataSizeHumanReadable", Helpers.humanReadableByteCount(cr.getDataSize()));
 
         // Add uploaded result files
-        ArrayNode filesNode = componentResultNode.arrayNode();
-        getResultUploadFiles(componentResult).forEach(filesNode::add);
-        componentResultNode.set("files", filesNode);
+        node.set("files", asJsonNode(getResultUploadFiles(cr)));
 
-        return componentResultNode;
+        return node;
     }
 
-    private List<ObjectNode> getResultUploadFiles(ComponentResult componentResult) {
+    private List<Map<String, Object>> getResultUploadFiles(ComponentResult componentResult) {
         Path dir = Paths.get(
                 IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId()));
         if (Files.isDirectory(dir)) {
@@ -305,16 +340,20 @@ public class JsonUtils {
         return new ArrayList<>();
     }
 
-    private ObjectNode getResultUploadFileNode(Path filePath) {
-        String fileSize = null;
+    private Map<String, Object> getResultUploadFileNode(Path filePath) {
+        String fileSizeHumanReadable = null;
+        long fileSize = 0;
         try (FileChannel fileChannel = FileChannel.open(filePath)) {
-            fileSize = Helpers.humanReadableByteCount(fileChannel.size());
+            fileSize = fileChannel.size();
+            fileSizeHumanReadable = Helpers.humanReadableByteCount(fileChannel.size());
         } catch (IOException e) {
             LOGGER.warn("Cannot open file " + filePath);
         }
-        return Json.mapper().createObjectNode()
-                .put("name", filePath.getFileName().toString())
-                .put("size", fileSize);
+        Map<String, Object> data = new HashMap<>();
+        data.put("filename", filePath.getFileName().toString());
+        data.put("size", fileSize);
+        data.put("sizeHumanReadable", fileSizeHumanReadable);
+        return data;
     }
 
     private boolean hasResultUploadFiles(StudyResult studyResult) {
@@ -373,6 +412,28 @@ public class JsonUtils {
         userNode.put("username", user.getUsername());
         userNode.put("isMember", study.hasUser(user));
         return userNode;
+    }
+
+    public Map<String, Object> getSingleUserData(User user) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("active", user.isActive());
+        userData.put("name", user.getName());
+        userData.put("username", user.getUsername());
+        userData.put("email", user.getEmail());
+        userData.put("roleList", user.getRoleList());
+        userData.put("authMethod", user.getAuthMethod().name());
+        userData.put("studyCount", user.getStudyList().size());
+        userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
+        List<Map<String, Object>> allStudiesData = new ArrayList<>();
+        for (Study study : user.getStudyList()) {
+            Map<String, Object> studyData = new HashMap<>();
+            studyData.put("id", study.getId());
+            studyData.put("title", study.getTitle());
+            studyData.put("userSize", study.getUserList().size());
+            allStudiesData.add(studyData);
+        }
+        userData.put("studyList", allStudiesData);
+        return userData;
     }
 
     /**
@@ -514,9 +575,7 @@ public class JsonUtils {
             addUsernameForJatosWorker(worker, workerNode);
             workerArrayNode.add(workerNode);
         }
-        ObjectNode workersNode = Json.mapper().createObjectNode();
-        workersNode.set(DATA, workerArrayNode);
-        return workersNode;
+        return workerArrayNode;
     }
 
     public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,

@@ -21,7 +21,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
 import utils.common.Helpers;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,27 +42,25 @@ public class ComponentResults extends Controller {
     private final AuthenticationService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
-    private final ResultService resultService;
+    private final ResultStreamer resultStreamer;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
-    private final JsonUtils jsonUtils;
 
     @Inject
     ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
             AuthenticationService authenticationService, BreadcrumbsService breadcrumbsService,
-            ResultRemover resultRemover, ResultService resultService, StudyDao studyDao,
-            ComponentDao componentDao, ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+            ResultRemover resultRemover, ResultStreamer resultStreamer, StudyDao studyDao,
+            ComponentDao componentDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.authenticationService = authenticationService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
-        this.resultService = resultService;
+        this.resultStreamer = resultStreamer;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
-        this.jsonUtils = jsonUtils;
     }
 
     /**
@@ -77,7 +74,7 @@ public class ComponentResults extends Controller {
         Component component = componentDao.findById(componentId);
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForComponents(studyId, componentId, component);
+            checker.checkStandardForComponent(studyId, componentId, component);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
@@ -93,20 +90,15 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(Http.Request request) {
+    public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
+        if (request.body().asJson() == null) return badRequest("Malformed request body");
+        if (!request.body().asJson().has("componentResultIds")) return badRequest("Malformed JSON");
+
         List<Long> componentResultIdList = new ArrayList<>();
-        request.body().asJson().get("resultIds").forEach(node -> componentResultIdList.add(node.asLong()));
-        try {
-            // Permission check is done in service for each result individually
-            resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (BadRequestException e) {
-            return badRequest(e.getMessage());
-        }
+        request.body().asJson().get("componentResultIds").forEach(node -> componentResultIdList.add(node.asLong()));
+        // Permission check is done in service for each result individually
+        resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -115,21 +107,13 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataByComponent(Long studyId, Long componentId) {
-        Study study = studyDao.findById(studyId);
+    public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkStandardForComponent(componentId, component, loggedInUser);
 
-        Source<ByteString, ?> dataSource = resultService.streamComponentResults(component);
-        return ok().chunked(dataSource).as("text/html; charset=utf-8");
+        Source<ByteString, ?> dataSource = resultStreamer.streamComponentResults(component);
+        return ok().chunked(dataSource).as("application/json");
     }
 
     /**
@@ -137,20 +121,12 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result tableDataComponentResultData(Long componentResultId) {
+    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        Study study = componentResult.getStudyResult().getStudy();
         User loggedInUser = authenticationService.getLoggedInUser();
-        try {
-            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (NotFoundException e) {
-            return notFound(e.getMessage());
-        }
+        checker.checkComponentResult(componentResult, loggedInUser, false);
 
-        return ok(jsonUtils.componentResultDataForUI(componentResult));
+        return ok(componentResult.getData());
     }
-
 
 }

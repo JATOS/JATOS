@@ -86,7 +86,7 @@ public class Components extends Controller {
             jatosGuiExceptionThrower.throwHome(e);
         }
         try {
-            checker.checkStandardForComponents(studyId, componentId, component);
+            checker.checkStandardForComponent(studyId, componentId, component);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
@@ -128,16 +128,12 @@ public class Components extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result properties(Long studyId, Long componentId) throws JatosGuiException {
+    public Result properties(Long studyId, Long componentId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
-        try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
-            checker.checkStandardForComponents(studyId, componentId, component);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwAjax(e);
-        }
+        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForComponent(studyId, componentId, component);
 
         ComponentProperties p = componentService.bindToProperties(component);
         return ok(jsonUtils.asJsonNode(p));
@@ -205,7 +201,7 @@ public class Components extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(Long studyId, Long componentId) throws Exception {
+    public Result remove(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -230,7 +226,7 @@ public class Components extends Controller {
         try {
             checker.checkStandardForStudy(study, studyId, loggedInUser);
             checker.checkStudyLocked(study);
-            checker.checkStandardForComponents(studyId, componentId, component);
+            checker.checkStandardForComponent(studyId, componentId, component);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }

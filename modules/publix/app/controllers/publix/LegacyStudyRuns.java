@@ -55,7 +55,7 @@ public class LegacyStudyRuns extends Controller {
     @Transactional
     public Result transformToStudyLink(Http.Request request, Long studyId, Long batchId)
             throws BadRequestPublixException {
-        LOGGER.info(".transformToStudyLink: studyId " + studyId + ", batchId" + batchId);
+        LOGGER.info(".transformToStudyLink: studyId " + studyId + ", batchId " + batchId);
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
         if (study == null || batch == null || !batch.getStudy().getId().equals(studyId)) {

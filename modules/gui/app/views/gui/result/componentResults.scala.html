@@ -98,11 +98,8 @@ var resultsTable;
 $(document).ready(function() {
     resultsTable = $('#resultsTable').DataTable({
         "ajax": {
-            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
-            "dataType": "text",
-            "dataSrc": function(json) {
-                return JSON.parse("[" + json + "]");
-            },
+            "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(component.getId())",
+            "dataSrc": "",
             "beforeSend": showWaitingModal,
             "error": function (err) {
                 if (err.responseText) {
@@ -194,7 +191,7 @@ $(document).ready(function() {
                 "render": getUIWorkerTypeWithGlyphicon
             },
             {
-                "data": "groupResultId",
+                "data": "groupId",
                 "visible": false,
                 "width": "1%",
                 "render": function (data, type, full, meta) {
@@ -205,15 +202,14 @@ $(document).ready(function() {
                 }
             },
             { "data": "componentState" },
-            { "data": "dataSize" },
+            { "data": "dataSizeHumanReadable" },
             {
                 "data": "files",
                 "render": function (data, type, full, meta) {
                     if (data.length === 0) return "none";
                     var resultFiles = data.map(function(fileObj) {
-                        var url = "@{general.common.Common.getPlayHttpContext()}jatos/" + full.studyId + "/resultFiles/"
-                            + full.studyResultId + "/" + full.id + "/" + fileObj.name;
-                        return '<a href="' + url + '" download>' + fileObj.name + ' (' + fileObj.size + ')</a>';
+                        var url = `@{general.common.Common.getPlayHttpContext()}jatos/componentResult/${full.id}/files/${fileObj.filename}`;
+                        return '<a href="' + url + '" download>' + fileObj.filename + ' (' + fileObj.sizeHumanReadable + ')</a>';
                     });
                     return resultFiles.join("<br>");
                 }
@@ -310,83 +306,61 @@ $(document).ready(function() {
             buttons: [
                 {
                     "extend": 'collection',
-                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Results&nbsp;<span class="caret"></span>',
+                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export Results&nbsp;<span class="caret"></span>',
                     "className": "btn btn-component",
-                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA',
                     "buttons": [
                         {
-                            "text": "Selected",
-                            "action": exportSelectedResultData,
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_DATA'
+                            "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports everything from results (metadata, data and files), all packed in a zip file">Combined <span class="glyphicon glyphicon-info-sign"></span></button>',
+                            "action": exportSelectedResults
                         },
                         {
-                            "text": "All",
-                            "action": exportAllSelectedResultData,
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
-                        }
-                    ]
-                },
-                {
-                    "extend": 'collection',
-                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Files&nbsp;<span class="caret"></span>',
-                    "className": "btn btn-component exportFilesButton",
-                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_FILES',
-                    "buttons": [
-                        {
-                            "text": "Selected",
-                            "action": exportSelectedResultFiles,
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_FILES'
+                            "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports metadata only from results, as JSON or CSV">Metadata only <span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span class="caret"></span></button>',
+                            "extend": 'collection',
+                            "buttons": [
+                                {
+                                    "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON <span class="glyphicon glyphicon-info-sign"></span></button>',
+                                    "action": exportResultsMetadata
+                                },
+                                {
+                                    "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV <span class="glyphicon glyphicon-info-sign"></span></button>',
+                                    "extend": 'csv',
+                                    "filename": function() { return "jatos_results_metadata_" + getDateTimeYYYYMMDDHHmmss() },
+                                    "exportOptions": {
+                                        "columns": ':nth-child(n+3):visible',
+                                        "modifier": {
+                                            "selected": true
+                                        }
+                                    },
+                                    "action": function(e, dt, node, config) {
+                                        $(".dt-button-collection").hide();
+                                        $('#waitingModal').modal('show');
+                                        setTimeout(function(){
+                                            $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
+                                            $('#waitingModal').modal('hide');
+                                        }, 1000);
+                                    }
+                                },
+                            ]
                         },
                         {
-                            "text": "All",
-                            "action": exportAllResultFiles,
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_FILES'
-                        }
-                    ]
-                },
-                {
-                    "extend": 'collection',
-                    "text": '<span class="glyphicon glyphicon-export"></span>&nbsp;Export&nbsp;Metadata&nbsp;<span class="caret"></span>',
-                    "className": "btn btn-component",
-                    "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_METADATA',
-                    "buttons": [
-                        {
-                            "extend": 'csv',
-                            "text": "Selected",
-                            "filename": function() { return "jatos_meta_" + getDateTimeYYYYMMDDHHmmss() },
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_SELECTED_METADATA',
-                            "exportOptions": {
-                                "columns": ':nth-child(n+3):visible',
-                                "modifier": {
-                                    "selected": true
+                            "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports data only from results, as zip package or plain text file">Data only <span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span class="pull-right"><span class="caret"></span></span></button>',
+                            "extend": 'collection',
+                            "buttons": [
+                                {
+                                    "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP <span class="glyphicon glyphicon-info-sign"></span></button>',
+                                    "action": exportSelectedResultDataZip
+                                },
+                                {
+                                    "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text <span class="glyphicon glyphicon-info-sign"></span></button>',
+                                    "action": exportSelectedResultDataText
                                 }
-                            },
-                            "action": function(e, dt, node, config) {
-                                $(".dt-button-collection").hide();
-                                $('#waitingModal').modal('show');
-                                setTimeout(function(){
-                                    $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
-                                    $('#waitingModal').modal('hide');
-                                }, 1000);
-                            }
+                            ]
                         },
                         {
-                            "extend": 'csv',
-                            "text": "All",
-                            "filename": function() { return "jatos_meta_" + getDateTimeYYYYMMDDHHmmss() },
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_METADATA',
-                            "exportOptions": {
-                                "columns": ':nth-child(n+3):visible'
-                            },
-                            "action": function(e, dt, node, config) {
-                                $(".dt-button-collection").hide();
-                                $('#waitingModal').modal('show');
-                                setTimeout(function(){
-                                    $.fn.dataTable.ext.buttons.csvHtml5.action.call(dt.button(this), e, dt, node, config);
-                                    $('#waitingModal').modal('hide');
-                                }, 1000);
-                            }
-                        }
+                            "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports files only from results, packed in a zip file">Files only <span class="glyphicon glyphicon-info-sign"></span></button>',
+                            "className": "exportFilesButton",
+                            "action": exportSelectedResultFiles
+                        },
                     ]
                 }
             ]
@@ -395,22 +369,10 @@ $(document).ready(function() {
             name: 'deleteButton',
             buttons: [
                 {
-                    "extend": 'collection',
-                    "text": '<span class="glyphicon glyphicon-floppy-remove"></span>&nbsp;Delete&nbsp;<span class="caret"></span>',
+                    "text": '<span class="glyphicon glyphicon-floppy-remove"></span>&nbsp;Delete',
                     "titleAttr": "Delete results from JATOS' database",
                     "className": "btn btn-danger",
-                    "buttons": [
-                        {
-                            "text": "Selected",
-                            "action": deleteSelectedResults,
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
-                        },
-                        {
-                            "text": "All",
-                            "action": deleteAllResults,
-                            "titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
-                        }
-                    ]
+                    "action": deleteSelectedResults
                 }
             ]
         });
@@ -501,6 +463,11 @@ $(document).ready(function() {
         toggleExportFilesButton();
     });
 
+    $('#resultTable_export .buttons-collection').on('click', function() {
+        toggleExportFilesButton();
+        setButtonWidthToMax("#resultTable_export .dropdown-menu button");
+    });
+
     resultsTable.on('select', function (e, dt, type, indexes) {
         if (type == "row") {
             resultsTable.rows(indexes).nodes().to$().each(function(index, selectedRow) {
@@ -551,10 +518,11 @@ $(document).ready(function() {
     }
 
     function toggleExportFilesButton() {
-        resultsTable.buttons(['.exportFilesButton']).disable();
+        $("#resultTable_export .dropdown-menu .exportFilesButton button").prop("disabled", true);
         resultsTable.rows().data().each(function(componentResult, index) {
             if (componentResult.files.length > 0) {
-                resultsTable.buttons(['.exportFilesButton']).enable();
+                $("#resultTable_export .dropdown-menu .exportFilesButton button").prop("disabled", false);
+                return false;
             }
         });
     }
@@ -570,31 +538,51 @@ $(document).ready(function() {
         }
         else {
             var componentResultId = row.data().id;
-            $.ajax({
-                url : "@{general.common.Common.getPlayHttpContext()}jatos/componentResult/" + componentResultId + "/data",
-                contentType: "application/json; charset=utf-8"
-            }).done(function(resultData) {
-                var childRow = generateComponentResultDataChildRow(resultData, componentResultId);
-                row.child(childRow).show();
-                tr.addClass('shown');
-                tr.next().addClass('info');
-                $('div.slider', row.child()).slideDown();
-            }).fail(function(err) {
-                showError(err.responseText);
-            });
+            var resultData = row.data().dataShort;
+            var childRow = generateComponentResultChildRow(resultData, componentResultId);
+            row.child(childRow).show();
+            tr.addClass('shown');
+            tr.next().addClass('info');
+            $('div.slider', row.child()).slideDown();
         }
         $(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
                 .toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
     });
 
-    function exportAllSelectedResultData(e, dt, node, config) {
-        exportSelectedResultData(e, dt, node, config, true);
+    function exportSelectedResults(e, dt, node, config) {
+        const url = '@controllers.gui.routes.ImportExport.exportResults()';
+        const filename = "jatos_results_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
+        exportResults(url, filename);
     }
 
-    function exportSelectedResultData(e, dt, node, config, exportAll) {
+    function exportResultsMetadata(e, dt, node, config) {
+        const url = '@controllers.gui.routes.ImportExport.exportResultsMetadata()';
+        const filename = "jatos_results_metadata_" + getDateTimeYYYYMMDDHHmmss() + ".json";
+        exportResults(url, filename);
+    }
+
+    function exportSelectedResultDataZip(e, dt, node, config) {
+        const url = '@controllers.gui.routes.ImportExport.exportResultsData(false)';
+        const filename = "jatos_results_data_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
+        exportResults(url, filename);
+    }
+
+    function exportSelectedResultDataText(e, dt, node, config) {
+        const url = '@controllers.gui.routes.ImportExport.exportResultsData(true)';
+        const filename = "jatos_results_data_" + getDateTimeYYYYMMDDHHmmss() + ".txt";
+        exportResults(url, filename);
+    }
+
+    function exportSelectedResultFiles(e, dt, node, config) {
+        const url = '@controllers.gui.routes.ImportExport.exportResultsFiles()';
+        const filename = "jatos_results_files_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
+        exportResults(url, filename);
+    }
+
+    function exportResults(url, filename) {
         $(".dt-button-collection").hide();
-        showWaitingModal();
-        var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
+        showWaitingModal(true);
+        var selectedTrs = resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
             var rowData = resultsTable.row(selectedTr).data();
@@ -605,21 +593,18 @@ $(document).ready(function() {
             showError("No results selected");
             return;
         }
-
-        var url = '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()';
-        var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_results_" + getDateTimeYYYYMMDDHHmmss() + ".txt";
+        var data = JSON.stringify({"componentResultIds": ids});
         window.downloadFileStream(url, data, filename);
     }
 
-    function deleteAllResults(e, dt, node, config) {
-        deleteSelectedResults(e, dt, node, config, true);
+    function isAllSelected() {
+        return resultsTable.rows({selected: true}).count() == resultsTable.rows().count();
     }
 
     function deleteSelectedResults(e, dt, node, config, deleteAll) {
         $(".dt-button-collection").hide();
         showWaitingModal();
-        var selectedTrs = deleteAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
+        var selectedTrs = resultsTable.rows('.selected').nodes();
         var ids = [];
         $.each(selectedTrs, function(index, selectedTr) {
             var rowData = resultsTable.row(selectedTr).data();
@@ -632,7 +617,7 @@ $(document).ready(function() {
         }
 
         var htmlText;
-        if (deleteAll) {
+        if (isAllSelected()) {
             htmlText = "<p>You are about to delete <b>ALL</b> component results.</p>"
                 + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         } else {
@@ -645,9 +630,9 @@ $(document).ready(function() {
             showWaitingModal();
             $.ajax({
                 url: '@controllers.gui.routes.ComponentResults.remove()',
-                type: 'POST',
+                type: 'PUT',
                 contentType: "application/json; charset=utf-8",
-                data: JSON.stringify({resultIds: ids}),
+                data: JSON.stringify({"componentResultIds": ids}),
                 success: function(result) {
                     $.each(selectedTrs, function(index, selectedTr) {
                         resultsTable.row(selectedTr).remove().draw();
@@ -661,32 +646,7 @@ $(document).ready(function() {
         });
     }
 
-    function exportAllResultFiles(e, dt, node, config) {
-        exportSelectedResultFiles(e, dt, node, config, true);
-    }
-
-    function exportSelectedResultFiles(e, dt, node, config, exportAll) {
-        $(".dt-button-collection").hide();
-        showWaitingModal(true);
-        var selectedTrs = exportAll ? resultsTable.rows().nodes() : resultsTable.rows('.selected').nodes();
-        var ids = [];
-        $.each(selectedTrs, function(index, selectedTr) {
-            var rowData = resultsTable.row(selectedTr).data();
-            ids.push(rowData.id);
-        });
-        hideWaitingModal();
-        if (ids.length == 0) {
-            showError("No results selected");
-            return;
-        }
-
-        var url = '@controllers.gui.routes.ImportExport.exportResultFilesOfComponentResults()';
-        var data = JSON.stringify({resultIds: ids});
-        var filename = "jatos_resultfiles_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
-        window.downloadFileStream(url, data, filename);
-    }
-
-    function generateComponentResultDataChildRow(resultData, componentResultId) {
+    function generateComponentResultChildRow(resultData, componentResultId) {
         var showAllButton = "";
         if (resultData.substr(resultData.length - 3) == "...") {
             showAllButton = '<button type="button" class="btn btn-xs showAllButton" data-toggle="tooltip" '
@@ -696,13 +656,10 @@ $(document).ready(function() {
     }
 
     $('#resultsTable tbody').on('click', '.showAllButton', function() {
-        var componentResultId = resultsTable.row($(this).closest('tr').prev()).data().id;
+        const componentResultId = resultsTable.row($(this).closest('tr').prev()).data().id;
         $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
         $.ajax({
-            url : '@controllers.gui.routes.ImportExport.exportDataOfComponentResults()',
-            type : 'POST',
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({resultIds: [componentResultId]}),
+            url : `@{general.common.Common.getPlayHttpContext()}jatos/componentResult/${componentResultId}/data`,
             success : function(result) {
                 $('#componentResultDataModal .componentResultData').text(result);
                 $('#componentResultDataModal').modal('show');

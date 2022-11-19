@@ -93,25 +93,6 @@ public class MessagesStrings {
             + "different table pages)";
     public static final String RESULTS_SELECT_VISIBLE = "Select only the currently visible results on this page";
     public static final String RESULTS_DESELECT_ALL = "Deselect all results";
-    public static final String RESULTS_EXPORT_DATA =
-            "Result data are the actual data that are saved during a study run - "
-                    + "but does not include any metadata";
-    public static final String RESULTS_EXPORT_SELECTED_DATA = "Export selected results as a text file to your local "
-            + "file system";
-    public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
-    public static final String RESULTS_EXPORT_FILES = "Result files that were uploaded during a study run";
-    public static final String RESULTS_EXPORT_SELECTED_FILES = "Export selected result files as a .zip to your local "
-            + "file system";
-    public static final String RESULTS_EXPORT_ALL_FILES = "Export all result files as a .zip to your local file system";
-    public static final String RESULTS_EXPORT_METADATA =
-            "Metadata are all data that are not result data, e.g. Result ID, "
-                    + "Start Time, State";
-    public static final String RESULTS_EXPORT_ALL_METADATA = "Export all metadata as a CSV file to your local file "
-            + "system";
-    public static final String RESULTS_EXPORT_SELECTED_METADATA = "Export seleceted metadata as a CSV file to your "
-            + "local file system";
-    public static final String RESULTS_DELETE = "Delete selected results";
-    public static final String RESULTS_DELETE_ALL = "Delete all results";
     public static final String RESULTS_DATA = "Click on the › icon to open the result's data";
     public static final String RESULTS_DATA_SELECTION = "Check the box to select this result for export or "
             + "deleting. Use Shift and Ctrl keys for selecting multiple rows.";
@@ -159,13 +140,12 @@ public class MessagesStrings {
         return "An study with ID " + studyId + " doesn't exist.";
     }
 
-    public static String studyNotUser(String name, String username, Long studyId, String title) {
-        return name + " (" + username + ") isn't user of study \"" + title + "\" (" + studyId + ").";
+    public static String studyNotUser(String name, String username, Long studyId) {
+        return name + " (" + username + ") isn't user of study with ID " + studyId + ".";
     }
 
-    public static String studyReorderUnknownPosition(String position, Long studyId, String title) {
-        return "Unknown position " + position + ". Couldn't reorder " + "components in study with ID " + "study \""
-                + title + "\" (" + studyId + ").";
+    public static String studyReorderUnknownPosition(String position, Long studyId) {
+        return "Unknown position " + position + ". Couldn't reorder " + "components in study with ID " + studyId + ".";
     }
 
     public static String studyImportNotUser() {
@@ -243,8 +223,8 @@ public class MessagesStrings {
         return "Export of study \"" + studyTitle + "\" (ID " + studyId + ") failed.";
     }
 
-    public static String studyLocked(Long studyId, String title) {
-        return "Study \"" + title + "\" (" + studyId + ") is locked. Unlock it if you want to make changes.";
+    public static String studyLocked(Long studyId) {
+        return "Study with ID " + studyId + " is locked. Unlock it if you want to make changes.";
     }
 
     public static String couldntGeneratePathToFileOrDir(String fileStr) {

@@ -7,7 +7,6 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
-import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
@@ -31,7 +30,6 @@ import javax.inject.Singleton;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -89,32 +87,10 @@ public class Users extends Controller {
     public Result allUserData() {
         List<Map<String, Object>> allUserData = new ArrayList<>();
         for (User user : userDao.findAll()) {
-            Map<String, Object> userData = getSingleUserData(user);
+            Map<String, Object> userData = jsonUtils.getSingleUserData(user);
             allUserData.add(userData);
         }
         return ok(jsonUtils.asJsonNode(allUserData));
-    }
-
-    private Map<String, Object> getSingleUserData(User user) {
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("active", user.isActive());
-        userData.put("name", user.getName());
-        userData.put("username", user.getUsername());
-        userData.put("email", user.getEmail());
-        userData.put("roleList", user.getRoleList());
-        userData.put("authMethod", user.getAuthMethod().name());
-        userData.put("studyCount", user.getStudyList().size());
-        userData.put("lastLogin", Helpers.formatDate(user.getLastLogin()));
-        List<Map<String, Object>> allStudiesData = new ArrayList<>();
-        for (Study study : user.getStudyList()) {
-            Map<String, Object> studyData = new HashMap<>();
-            studyData.put("id", study.getId());
-            studyData.put("title", study.getTitle());
-            studyData.put("userSize", study.getUserList().size());
-            allStudiesData.add(studyData);
-        }
-        userData.put("studyList", allStudiesData);
-        return userData;
     }
 
     /**
@@ -182,7 +158,7 @@ public class Users extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedUsername = User.normalizeUsername(username);
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
-        return ok(jsonUtils.asJsonNode(getSingleUserData(loggedInUser)));
+        return ok(jsonUtils.asJsonNode(jsonUtils.getSingleUserData(loggedInUser)));
     }
 
     /**
@@ -334,7 +310,7 @@ public class Users extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result remove(String usernameOfUserToRemove) {
+    public Result remove(String usernameOfUserToRemove) throws ForbiddenException, NotFoundException, IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedLoggedInUsername = loggedInUser.getUsername();
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
@@ -361,15 +337,8 @@ public class Users extends Controller {
             }
         }
 
-        try {
-            userService.removeUser(normalizedUsernameOfUserToRemove);
-        } catch (NotFoundException e) {
-            return badRequest(e.getMessage());
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        } catch (IOException e) {
-            return internalServerError(e.getMessage());
-        }
+        userService.removeUser(normalizedUsernameOfUserToRemove);
+
         // If the user removes himself: logout
         if (normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
             authenticationService.clearSessionCookieAndSessionCache(session(),

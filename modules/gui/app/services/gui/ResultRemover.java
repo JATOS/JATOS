@@ -12,7 +12,6 @@ import models.common.*;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -33,9 +32,7 @@ public class ResultRemover {
 
     private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
-    private final JPAApi jpa;
     private final Checker checker;
-    private final ResultService resultService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
@@ -44,13 +41,10 @@ public class ResultRemover {
     private final IOUtils ioUtils;
 
     @Inject
-    ResultRemover(JPAApi jpa, Checker checker, ResultService resultService,
-            ComponentResultDao componentResultDao,
+    ResultRemover(Checker checker, ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, GroupResultDao groupResultDao,
             WorkerDao workerDao, StudyLogger studyLogger, IOUtils ioUtils) {
-        this.jpa = jpa;
         this.checker = checker;
-        this.resultService = resultService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
@@ -70,7 +64,7 @@ public class ResultRemover {
      */
     public void removeComponentResults(List<Long> componentResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
-        List<ComponentResult> componentResultList = resultService.getComponentResults(componentResultIdList);
+        List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, true);
         for (ComponentResult componentResult : componentResultList) {
             removeComponentResult(componentResult.getId());
@@ -92,7 +86,7 @@ public class ResultRemover {
      */
     public void removeStudyResults(List<Long> studyResultIdList, User user)
             throws BadRequestException, NotFoundException, ForbiddenException {
-        List<StudyResult> studyResultList = resultService.getStudyResults(studyResultIdList);
+        List<StudyResult> studyResultList = studyResultDao.findByIds(studyResultIdList);
         Set<Study> studies = new HashSet<>();
         checker.checkStudyResults(studyResultList, user, true);
         for (StudyResult studyResult : studyResultList) {

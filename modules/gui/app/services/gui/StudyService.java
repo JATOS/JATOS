@@ -184,7 +184,7 @@ public class StudyService {
             throw new BadRequestException(MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
         } catch (IndexOutOfBoundsException e) {
             throw new BadRequestException(
-                    MessagesStrings.studyReorderUnknownPosition(newPosition, study.getId(), study.getTitle()));
+                    MessagesStrings.studyReorderUnknownPosition(newPosition, study.getId()));
         }
     }
 

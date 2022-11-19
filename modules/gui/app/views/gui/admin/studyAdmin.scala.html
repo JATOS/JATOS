@@ -87,8 +87,8 @@ $(document).ready(function() {
             {
                 "type": "num",
                 "data": {
-                    _: 'studyAssetsSize.display',
-                    sort: 'studyAssetsSize.bytes'
+                    _: 'studyAssetsSize.humanReadable',
+                    sort: 'studyAssetsSize.size'
                 },
                 "render": function (data, type, full, meta) {
                     if (data == "disabled") {
@@ -105,8 +105,8 @@ $(document).ready(function() {
             {
                 "type": "num",
                 "data": {
-                    _: 'resultDataSize.display',
-                    sort: 'resultDataSize.bytes'
+                    _: 'resultDataSize.humanReadable',
+                    sort: 'resultDataSize.size'
                 },
                 "render": function (data, type, full, meta) {
                     if (data == "disabled") {
@@ -119,8 +119,8 @@ $(document).ready(function() {
             {
                 "type": "num",
                 "data": {
-                    _: 'resultFileSize.display',
-                    sort: 'resultFileSize.bytes'
+                    _: 'resultFileSize.humanReadable',
+                    sort: 'resultFileSize.size'
                 },
                 "render": function (data, type, full, meta) {
                     if (data == "disabled") {
@@ -189,7 +189,7 @@ $('#studyAdminTable').on('click', '.showStudyAssetSizeButton', function() {
     $.ajax({
         url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/studyAssetsSize",
         success: function(response) {
-            $(button).parent().text(response.display);
+            $(button).parent().text(response.humanReadable);
         },
         error : function(err) {
             showError(err.responseText);
@@ -204,7 +204,7 @@ $('#studyAdminTable').on('click', '.showResultDataSizeButton', function() {
     $.ajax({
         url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/resultDataSize",
         success: function(response) {
-            $(button).parent().text(response.display);
+            $(button).parent().text(response.humanReadable);
         },
         error : function(err) {
             showError(err.responseText);
@@ -219,7 +219,7 @@ $('#studyAdminTable').on('click', '.showResultFileSizeButton', function() {
     $.ajax({
         url : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyInfo.id + "/resultFileSize",
         success: function(response) {
-            $(button).parent().text(response.display);
+            $(button).parent().text(response.humanReadable);
         },
         error : function(err) {
             showError(err.responseText);

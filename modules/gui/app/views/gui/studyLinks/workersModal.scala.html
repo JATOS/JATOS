@@ -44,6 +44,7 @@ function generateWorkersTable() {
         "ajax": {
             "type": "GET",
             "url" : '@controllers.gui.routes.Studies.allWorkers(study.getId())',
+            "dataSrc": "",
             "error": function (err) {
                 if (err.responseText) {
                     showError(err.responseText, "#workersModal .messages");

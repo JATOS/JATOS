@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -12,8 +13,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 /**
- * DB entity of a component result. It's used by JPA and JSON
- * marshaling.
+ * DB entity of a component result. It's used by JPA and JSON marshaling.
  *
  * @author Kristian Lange
  */
@@ -37,7 +37,6 @@ public class ComponentResult {
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
-
 
     /**
      * State of this component run (it actually should be called ComponentResultState)
@@ -81,17 +80,20 @@ public class ComponentResult {
     private StudyResult studyResult;
 
     /**
-     * Result data string submitted from the client during running the
-     * component. It can be any string and doesn't have to be in JSON format.
-     */
-    @Lob
-    @JsonIgnore
-    private String data;
-
-    /**
      * Some message usually set via jatos.startComponent. Max 255 characters. Can be left null.
      */
     private String message;
+
+    @JsonIgnore
+    @Basic(fetch=FetchType.LAZY)
+    private String data;
+
+    @JsonIgnore
+    @Formula("substr(data, 1, 1000)")
+    private String dataShort;
+
+    @Formula("length(data)")
+    private Integer dataSize;
 
     public ComponentResult() {
     }
@@ -152,14 +154,6 @@ public class ComponentResult {
         return this.component;
     }
 
-    public void setData(String data) {
-        this.data = data;
-    }
-
-    public String getData() {
-        return this.data;
-    }
-
     public void setMessage(String message) {
         this.message = StringUtils.substring(message, 0, 255);
     }
@@ -174,6 +168,31 @@ public class ComponentResult {
 
     public StudyResult getStudyResult() {
         return this.studyResult;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
+
+
+    public void setDataShort(String dataShort) {
+        this.dataShort = dataShort;
+    }
+
+    public String getDataShort() {
+        return this.dataShort;
+    }
+
+    public void setDataSize(Integer dataSize) {
+        this.dataSize = dataSize;
+    }
+
+    public Integer getDataSize() {
+        return this.dataSize != null ? this.dataSize : 0;
     }
 
     @Override

@@ -1,12 +1,14 @@
 package controllers.gui;
 
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import general.common.RequestScope;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import scala.Option;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -63,7 +65,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @ApiTokenAuth(ADMIN)
+    @ApiTokenAuth
     public Result studyAssetsSize(Long studyId) {
         return admin.studyAssetsSize(studyId);
     }
@@ -82,20 +84,21 @@ public class Api extends Controller {
 
     @Transactional
     @ApiTokenAuth
-    public Result studyLog(Long studyId) {
+    public Result studyLog(Long studyId) throws ForbiddenException, NotFoundException {
         return studies.studyLog(studyId, -1, true);
     }
 
     @Transactional
     @ApiTokenAuth
-    public Result allWorkersByStudy(Long studyId) {
+    public Result allWorkersByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         return studies.allWorkers(studyId);
     }
 
     @Transactional
     @ApiTokenAuth
-    public Result createStudyCodes(Long studyId, Long batchId, String workerType, String comment, Integer amount) {
-        return studyLinks.createStudyCodes(studyId, batchId, workerType, comment, amount);
+    public Result getStudyCodes(Long studyId, Long batchId, String type, String comment, Integer amount)
+            throws ForbiddenException, NotFoundException, BadRequestException {
+        return studyLinks.getStudyCodes(studyId, batchId, type, comment, amount);
     }
 
     @Transactional
@@ -113,80 +116,53 @@ public class Api extends Controller {
 
     @Transactional
     @ApiTokenAuth
-    public Result studyResultsOverviewByStudy(Long studyId) {
-        return studyResults.tableDataByStudy(studyId);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result studyResultsOverviewByWorker(Long workerId) {
-        return studyResults.tableDataByWorker(workerId);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result studyResultsOverviewByBatch(Long studyId, Long batchId, Option<String> workerType) {
-        return studyResults.tableDataByBatch(studyId, batchId, workerType);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result studyResultsOverviewByGroup(Long studyId, Long groupResultId) {
-        return studyResults.tableDataByGroup(studyId, groupResultId);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result componentResultsOverviewByStudyAndComponent(Long studyId, Long componentId) {
-        return componentResults.tableDataByComponent(studyId, componentId);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result componentResultData(Long componentResultId) {
-        return componentResults.tableDataComponentResultData(componentResultId);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result exportDataOfStudyResults(Http.Request request) throws IOException {
-        return importExport.exportDataOfStudyResults(request);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result exportResultFilesOfStudyResults(Http.Request request) throws IOException {
-        return importExport.exportResultFilesOfStudyResults(request);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result exportDataOfComponentResults(Http.Request request) {
-        return importExport.exportDataOfComponentResults(request);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result exportResultFilesOfComponentResults(Http.Request request) throws IOException {
-        return importExport.exportResultFilesOfComponentResults(request);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result downloadSingleResultFile(Long studyId, Long studyResultId, Long componetResultId, String filename) {
-        return importExport.downloadSingleResultFile(studyId, studyResultId, componetResultId, filename);
-    }
-
-    @Transactional
-    @ApiTokenAuth
-    public Result removeStudyResults(Http.Request request) {
+    public Result removeStudyResults(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         return studyResults.remove(request);
     }
 
     @Transactional
     @ApiTokenAuth
-    public Result removeComponentResults(Http.Request request) {
+    public Result removeComponentResults(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         return componentResults.remove(request);
+    }
+
+    @Transactional
+    @ApiTokenAuth
+    public Result exportResultsData(Http.Request request, Boolean asPlainText)
+            throws ForbiddenException, BadRequestException, NotFoundException {
+        return importExport.exportResultsData(request, asPlainText);
+    }
+
+    @Transactional
+    @ApiTokenAuth
+    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
+        return componentResults.exportSingleResultData(componentResultId);
+    }
+
+    @Transactional
+    @ApiTokenAuth
+    public Result exportSingleResultFile(Long componentResultId, String filename) {
+        return importExport.exportSingleResultFile(componentResultId, filename);
+    }
+
+    @Transactional
+    @ApiTokenAuth
+    public Result exportResultsFiles(
+            Http.Request request) throws IOException, ForbiddenException, BadRequestException, NotFoundException {
+        return importExport.exportResultsFiles(request);
+    }
+
+    @Transactional
+    @ApiTokenAuth
+    public Result exportResults(Http.Request request) throws BadRequestException {
+        return importExport.exportResults(request);
+    }
+
+    @Transactional
+    @ApiTokenAuth
+    public Result exportResultsMetadata(
+            Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException, IOException {
+        return importExport.exportResultsMetadata(request);
     }
 
 }
