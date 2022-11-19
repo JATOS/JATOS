@@ -437,10 +437,10 @@ function generateStudiesChildRow(studiesData, username) {
             + '<td>' + studyData.id + '</td>'
             + '<td>' + trimmedStudyTitle + '</td>'
             + '<td>' + memberList + '</td>'
-            + '<td>' + studyData.studyAssetsSize.display + '</td>'
+            + '<td>' + studyData.studyAssetsSize.humanReadable + '</td>'
             + '<td>' + studyData.studyResultCount + '</td>'
-            + '<td>' + studyData.resultDataSize.display + '</td>'
-            + '<td>' + studyData.resultFileSize.display + '</td>'
+            + '<td>' + studyData.resultDataSize.humanReadable + '</td>'
+            + '<td>' + studyData.resultFileSize.humanReadable + '</td>'
             + '<td>' + studyData.lastStarted + '</td>'
             + '</tr>');
         childRow.find("tr").last().after(row);
