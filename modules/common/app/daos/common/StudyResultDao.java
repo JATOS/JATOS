@@ -7,8 +7,8 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * DAO for StudyResult and StudyResultStatus
@@ -52,6 +52,22 @@ public class StudyResultDao extends AbstractDao {
 
     public StudyResult findById(Long id) {
         return jpa.em().find(StudyResult.class, id);
+    }
+
+    public List<StudyResult> findByIds(List<Long> ids) {
+        return jpa.em()
+                .createQuery("SELECT sr FROM StudyResult sr WHERE sr.id IN :ids", StudyResult.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
+    public List<StudyResult> findByIds(List<Long> ids, int first, int max) {
+        return jpa.em()
+                .createQuery("SELECT sr FROM StudyResult sr WHERE sr.id IN :ids", StudyResult.class)
+                .setParameter("ids", ids)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList();
     }
 
     public Optional<StudyResult> findByUuid(String uuid) {
@@ -262,6 +278,50 @@ public class StudyResultDao extends AbstractDao {
         return jpa.em().createQuery(queryStr, StudyResultStatus.class)
                 .setMaxResults(limit)
                 .getResultList();
+    }
+
+    /**
+     * Returns a list of unique study result IDs that belong to the given list of component result IDs.
+     */
+    public List<Long> findIdsByComponentResultIds(List<Long> crids) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.studyResult_id FROM ComponentResult cr WHERE cr.id IN :crids")
+                .setParameter("crids", crids)
+                .getResultList();
+        // Filter duplicate srids
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+    }
+
+    public List<Long> findIdsFromListThatBelongToStudy(List<Long> srids, Long studyId) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT sr.id FROM StudyResult sr WHERE sr.id IN :srids AND sr.study_id = :studyId")
+                .setParameter("srids", srids)
+                .setParameter("studyId", studyId)
+                .getResultList();
+        // Filter duplicate srids
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+    }
+
+    public List<Long> findIdsByBatchIds(List<Long> batchIds) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT sr.id FROM StudyResult sr WHERE sr.batch_id IN :batchIds")
+                .setParameter("batchIds", batchIds)
+                .getResultList();
+        // Filter duplicate srids
+        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
+    }
+
+    public List<Long> findIdsByGroupIds(List<Long> groupIds) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT sr.id FROM StudyResult sr WHERE sr.activeGroupMember_id IN :groupIds OR sr.historyGroupMember_id IN :groupIds")
+                .setParameter("groupIds", groupIds)
+                .getResultList();
+        // Filter duplicate srids
+        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
     }
 
 }
