@@ -58,6 +58,13 @@ public class ComponentResultDao extends AbstractDao {
         return jpa.em().find(ComponentResult.class, id);
     }
 
+    public List<ComponentResult> findByIds(List<Long> ids) {
+        return jpa.em()
+                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.id IN :ids", ComponentResult.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
     /**
      * Returns the number of ComponentResults belonging to the given Component.
      */
@@ -93,10 +100,10 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
         return jpa.em()
-                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
+                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component = :component", ComponentResult.class)
+                .setParameter("component", component)
                 .setFirstResult(first)
                 .setMaxResults(max)
-                .setParameter("component", component)
                 .getResultList();
     }
 
@@ -115,6 +122,25 @@ public class ComponentResultDao extends AbstractDao {
                 .setParameter("componentIds", componentIds)
                 .getSingleResult();
         return result != null ? result.longValue() : 0L;
+    }
+
+    public List<Long> findIdsByComponentIds(List<Long> componentIds) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN :componentIds")
+                .setParameter("componentIds", componentIds)
+                .getResultList();
+        // Filter duplicate crids
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+    }
+
+    public List<Long> findIdsByStudyResultId(Long srid) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult_id = :srid")
+                .setParameter("srid", srid)
+                .getResultList();
+        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
     }
 
     /**
@@ -144,6 +170,18 @@ public class ComponentResultDao extends AbstractDao {
             }
         }
         return orderedComponentResultIds;
+    }
+
+    /**
+     * Takes a list component result IDs and checks if they exist in the database. Returns only the existing ones.
+     */
+    public List<Long> findIdsByComponentResultIds(List<Long> crids) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.id IN :ids")
+                .setParameter("ids", crids)
+                .getResultList();
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
     }
 
 }
