@@ -14,6 +14,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static java.nio.charset.StandardCharsets.*;
+
 /**
  * Utility class that does zipping and unzipping.
  *
@@ -70,9 +72,12 @@ public class ZipUtil {
         return destDir;
     }
 
+    /**
+     * Generates a zip archive file and writes a list of files into it
+     */
     static public void zipFiles(List<Path> filesToZip, File zipFile) throws IOException {
-        BufferedOutputStream fileOutputStream = new BufferedOutputStream(new FileOutputStream(zipFile));
-        ZipOutputStream out = new ZipOutputStream(fileOutputStream);
+        BufferedOutputStream fileOutputStream = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+        ZipOutputStream out = new ZipOutputStream(fileOutputStream, UTF_8);
 
         for (Path file : filesToZip) {
             if (Files.exists(file)) addToZip(out, file.getFileName(), file);
@@ -82,18 +87,24 @@ public class ZipUtil {
         out.close();
     }
 
-    private static void addToZip(final ZipOutputStream out, final Path root, final Path file) throws IOException {
+    /**
+     * Add a path (can be a file or a directory) to a ZipOutputStream under path zipRoot in the zip
+     */
+    public static void addToZip(final ZipOutputStream out, final Path zipRoot, final Path file) throws IOException {
         if (Files.isDirectory(file)) {
-            addDirToZip(out, root, file);
+            addDirToZip(out, zipRoot, file);
         } else {
             addFileToZip(out, Paths.get(""), file);
         }
     }
 
-    private static void addDirToZip(ZipOutputStream out, Path root, Path file) throws IOException {
+    /**
+     * Writes a directory to the ZipOutputStream walking recursively through the file system.
+     */
+    public static void addDirToZip(ZipOutputStream out, Path zipRoot, Path file) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(file)) {
             for (Path child : stream) {
-                Path entry = buildPath(root, child.getFileName());
+                Path entry = buildPath(zipRoot, child.getFileName());
                 if (Files.isDirectory(child)) {
                     addToZip(out, entry, child);
                 } else {
@@ -105,8 +116,21 @@ public class ZipUtil {
         }
     }
 
-    static private void addFileToZip(ZipOutputStream out, Path root, Path file) throws IOException {
-        Path entry = buildPath(root, file.getFileName());
+    /**
+     * Writes the file using its filename into the ZipOutputStream under path zipRoot in the zip package
+     */
+    static public void addFileToZip(ZipOutputStream out, Path zipRoot, Path file) throws IOException {
+        Path entry = buildPath(zipRoot, file.getFileName());
+        out.putNextEntry(new ZipEntry(entry.toString().replace("\\", ZIP_FILE_SEPARATOR)));
+        Files.copy(file, out);
+        out.closeEntry();
+    }
+
+    /**
+     * Writes the file into the ZipOutputStream under the path '/zipRoot/zipFilename'
+     */
+    static public void addFileToZip(ZipOutputStream out, Path zipRoot, Path zipFilename, Path file) throws IOException {
+        Path entry = buildPath(zipRoot, zipFilename);
         out.putNextEntry(new ZipEntry(entry.toString().replace("\\", ZIP_FILE_SEPARATOR)));
         Files.copy(file, out);
         out.closeEntry();
@@ -117,6 +141,24 @@ public class ZipUtil {
             return child;
         } else {
             return Paths.get(root.toString(), child.toString());
+        }
+    }
+
+    /**
+     * Writes the given data as a file to the zip stream using pathInZip as the path in the zip package
+     */
+    public static void addDataToZip(ZipOutputStream zipOut, String data, String pathInZip) throws IOException {
+        if (data != null) {
+            ByteArrayInputStream bais = new ByteArrayInputStream(data.getBytes());
+            ZipEntry zipEntry = new ZipEntry(pathInZip.replace("\\", ZIP_FILE_SEPARATOR));
+            zipOut.putNextEntry(zipEntry);
+
+            byte[] bytes = new byte[1024];
+            int length;
+            while ((length = bais.read(bytes)) >= 0) {
+                zipOut.write(bytes, 0, length);
+            }
+            bais.close();
         }
     }
 
