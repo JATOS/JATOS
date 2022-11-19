@@ -22,7 +22,7 @@ public class Checker {
     /**
      * Checks the component of this study and throws an Exception in case of a problem.
      */
-    public void checkStandardForComponents(Long studyId, Long componentId, Component component)
+    public void checkStandardForComponent(Long studyId, Long componentId, Component component)
             throws NotFoundException, ForbiddenException {
         if (component == null) {
             throw new NotFoundException(MessagesStrings.componentNotExist(componentId));
@@ -33,6 +33,22 @@ public class Checker {
         // Check component belongs to the study
         if (!component.getStudy().getId().equals(studyId)) {
             throw new ForbiddenException(MessagesStrings.componentNotBelongToStudy(studyId, componentId));
+        }
+    }
+
+    public void checkStandardForComponent(Long componentId, Component component, User user)
+            throws NotFoundException, ForbiddenException {
+        if (component == null) {
+            throw new NotFoundException(MessagesStrings.componentNotExist(componentId));
+        }
+        if (component.getStudy() == null) {
+            throw new ForbiddenException(MessagesStrings.componentHasNoStudy(componentId));
+        }
+        // Check that the user is a member of the study
+        Study study = component.getStudy();
+        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
+            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), study.getId());
+            throw new ForbiddenException(errorMsg);
         }
     }
 
@@ -48,6 +64,19 @@ public class Checker {
         // Check that the study has this batch
         if (!study.hasBatch(batch)) {
             String errorMsg = MessagesStrings.batchNotInStudy(batchId, study.getId());
+            throw new ForbiddenException(errorMsg);
+        }
+    }
+
+    public void checkStandardForBatch(Batch batch, Long batchId, User user)
+            throws NotFoundException, ForbiddenException {
+        if (batch == null) {
+            String errorMsg = MessagesStrings.batchNotExist(batchId);
+            throw new NotFoundException(errorMsg);
+        }
+        Study study = batch.getStudy();
+        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
+            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), study.getId());
             throw new ForbiddenException(errorMsg);
         }
     }
@@ -68,6 +97,19 @@ public class Checker {
         }
     }
 
+    public void checkStandardForGroup(GroupResult groupResult, Long groupResultId, User user)
+            throws ForbiddenException, NotFoundException {
+        if (groupResult == null) {
+            String errorMsg = MessagesStrings.groupNotExist(groupResultId);
+            throw new NotFoundException(errorMsg);
+        }
+        Study study = groupResult.getBatch().getStudy();
+        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
+            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), study.getId());
+            throw new ForbiddenException(errorMsg);
+        }
+    }
+
     /**
      * Throws an ForbiddenException if this batch is the default batch of it's study.
      */
@@ -83,7 +125,7 @@ public class Checker {
      */
     public void checkStudyLocked(Study study) throws ForbiddenException {
         if (study.isLocked()) {
-            String errorMsg = MessagesStrings.studyLocked(study.getId(), study.getTitle());
+            String errorMsg = MessagesStrings.studyLocked(study.getId());
             throw new ForbiddenException(errorMsg);
         }
     }
@@ -99,7 +141,7 @@ public class Checker {
         }
         // Check that the user is a member of the study
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
-            String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), studyId, study.getTitle());
+            String errorMsg = "No access to study with ID " + studyId;
             throw new ForbiddenException(errorMsg);
         }
     }
@@ -131,12 +173,11 @@ public class Checker {
      * @param studyMustNotBeLocked If true the study that corresponds to the results must not be locked and it will
      *                             throw an ForbiddenException.
      */
-    public void checkComponentResult(ComponentResult componentResult, User user, boolean studyMustNotBeLocked)
+    public <T extends ComponentResult> void checkComponentResult(T componentResult, User user, boolean studyMustNotBeLocked)
             throws ForbiddenException, NotFoundException {
         Component component = componentResult.getComponent();
         Study study = component.getStudy();
-        checkStandardForStudy(study, study.getId(), user);
-        checkStandardForComponents(study.getId(), component.getId(), component);
+        checkStandardForComponent(component.getId(), component, user);
         if (studyMustNotBeLocked) {
             checkStudyLocked(study);
         }
