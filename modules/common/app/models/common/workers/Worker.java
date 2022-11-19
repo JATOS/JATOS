@@ -1,7 +1,6 @@
 package models.common.workers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import models.common.Batch;
@@ -67,7 +66,7 @@ public abstract class Worker {
 
     public abstract String getWorkerType();
 
-    @JsonProperty("uiWorkerType")
+    @JsonIgnore
     public abstract String getUIWorkerType();
 
     /**
