@@ -65,4 +65,33 @@ public class WorkerService {
         return resultsPerWorker;
     }
 
+    public String extractWorkerType(String workerType) throws BadRequestException {
+        if (workerType == null) return null;
+        switch (workerType.toLowerCase()) {
+            case "jatos":
+            case "ja":
+                return JatosWorker.WORKER_TYPE;
+            case "personalsingle":
+            case "ps":
+                return PersonalSingleWorker.WORKER_TYPE;
+            case "personalmultiple":
+            case "pm":
+                return PersonalMultipleWorker.WORKER_TYPE;
+            case "generalsingle":
+            case "gs":
+                return GeneralSingleWorker.WORKER_TYPE;
+            case "generalmultiple":
+            case "gm":
+                return GeneralMultipleWorker.WORKER_TYPE;
+            case "mturk":
+            case "mt":
+                return MTWorker.WORKER_TYPE;
+            case "mturksandbox":
+            case "mts":
+                return MTSandboxWorker.WORKER_TYPE;
+            default:
+                throw new BadRequestException("Unknown worker type");
+        }
+    }
+
 }
