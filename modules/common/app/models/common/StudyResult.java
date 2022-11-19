@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
 
@@ -172,6 +173,11 @@ public class StudyResult {
     @JsonProperty("workerType")
     public String getWorkerType() {
         return worker.getWorkerType();
+    }
+
+    @JsonProperty("mtWorkerId")
+    public String getMtWorkerId() {
+        return (worker instanceof MTWorker) ? ((MTWorker) worker).getMTWorkerId() : null;
     }
 
     public void setId(Long id) {
