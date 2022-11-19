@@ -7,8 +7,10 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * DAO of Study entity
@@ -57,6 +59,20 @@ public class StudyDao extends AbstractDao {
         String queryStr = "SELECT s FROM Study s WHERE s.title=:title";
         TypedQuery<Study> query = jpa.em().createQuery(queryStr, Study.class);
         return query.setParameter("title", title).getResultList();
+    }
+
+    public List<Study> findByStudyResultIds(Collection<Long> srids) {
+        return jpa.em().createQuery("SELECT s FROM Study s WHERE s IN (SELECT sr.study FROM StudyResult sr WHERE sr.id IN :srids)", Study.class)
+                .setParameter("srids", srids)
+                .getResultList();
+    }
+
+    public List<Long> findIdsByStudyResultIds(Collection<Long> srids) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em().createNativeQuery("SELECT sr.study_id FROM StudyResult sr WHERE sr.id IN :srids")
+                .setParameter("srids", srids)
+                .getResultList();
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
     }
 
     public List<Study> findAll() {
