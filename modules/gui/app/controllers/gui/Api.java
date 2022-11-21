@@ -103,26 +103,28 @@ public class Api extends Controller {
 
     @Transactional
     @ApiTokenAuth
-    public Result exportStudy(Long studyId) {
+    public Result exportStudy(Long studyId) throws ForbiddenException, NotFoundException {
         return importExport.exportStudy(studyId);
     }
 
     @Transactional
     @ApiTokenAuth
     public Result importStudy(Http.Request request, boolean overwriteProperties, boolean overwriteDir,
-            boolean keepCurrentDirName, boolean renameDir) {
+            boolean keepCurrentDirName, boolean renameDir) throws ForbiddenException, NotFoundException, IOException {
         return importExport.importStudyApi(request, overwriteProperties, overwriteDir, keepCurrentDirName, renameDir);
     }
 
     @Transactional
     @ApiTokenAuth
-    public Result removeStudyResults(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
+    public Result removeStudyResults(
+            Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         return studyResults.remove(request);
     }
 
     @Transactional
     @ApiTokenAuth
-    public Result removeComponentResults(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
+    public Result removeComponentResults(
+            Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         return componentResults.remove(request);
     }
 
@@ -141,7 +143,8 @@ public class Api extends Controller {
 
     @Transactional
     @ApiTokenAuth
-    public Result exportSingleResultFile(Long componentResultId, String filename) {
+    public Result exportSingleResultFile(Long componentResultId,
+            String filename) throws ForbiddenException, NotFoundException {
         return importExport.exportSingleResultFile(componentResultId, filename);
     }
 
