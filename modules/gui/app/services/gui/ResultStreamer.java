@@ -416,7 +416,7 @@ public class ResultStreamer {
                 jGenerator.writeEndObject();
             }
             if (resultsType == ResultsType.COMBINED || resultsType == ResultsType.DATA_ONLY || resultsType == ResultsType.FILES_ONLY) {
-                studyLogger.log(study, loggedInUser, "Exported results (files and data)");
+                studyLogger.log(study, loggedInUser, "Exported results (files and/or data)");
             }
         }
 

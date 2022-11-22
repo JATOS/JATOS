@@ -232,24 +232,22 @@ public class ImportExport extends Controller {
         JsonNode json = request.body().asJson();
         if (json == null) return badRequest("Malformed request body");
 
+        List<Long> componentResultIdList = componentResultIdsExtractor.extract(json);
         if (asPlainText) {
-            List<Long> componentResultIdList = componentResultIdsExtractor.extract(json);
             List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
             List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
             for (Study study : studyList) {
                 checker.checkStandardForStudy(study, study.getId(), loggedInUser);
             }
-
             Source<ByteString, ?> dataSource = resultStreamer.streamComponentResult(componentResultIdList);
-
-            studyList.forEach(s -> studyLogger.log(s, loggedInUser, "Exported result files"));
+            studyList.forEach(s -> studyLogger.log(s, loggedInUser, "Exported result data"));
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
                     + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
             return ok().chunked(dataSource).as("application/octet-stream")
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         } else {
-            List<Long> crids = componentResultIdsExtractor.extract(json);
-            Source<ByteString, ?> dataSource = resultStreamer.streamResults(crids, loggedInUser, ResultsType.DATA_ONLY);
+            Source<ByteString, ?> dataSource = resultStreamer.streamResults(componentResultIdList, loggedInUser,
+                    ResultsType.DATA_ONLY);
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
                     + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
             return ok().chunked(dataSource).as("application/zip")
