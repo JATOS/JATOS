@@ -672,10 +672,7 @@ $(document).ready(function() {
         var componentResultId = $(this).closest('tr').data().id;
         $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
         $.ajax({
-            url : '@controllers.gui.routes.ImportExport.exportResultsData(true)',
-            type : 'POST',
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({"componentResultIds": [componentResultId]}),
+            url: `@{general.common.Common.getPlayHttpContext()}jatos/componentResult/${componentResultId}/data`,
             success : function(result) {
                 $('#componentResultDataModal .componentResultData').text(result);
                 $('#componentResultDataModal').modal('show');
