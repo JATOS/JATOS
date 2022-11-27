@@ -11,6 +11,7 @@ import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import play.Logger;
 import play.Logger.ALogger;
@@ -21,7 +22,6 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -187,19 +187,14 @@ public class JsonUtils {
      * Returns the data string of a componentResult limited to
      * MAX_CHAR_PER_RESULT characters.
      */
-    public String componentResultDataForUI(ComponentResult componentResult) {
-        final int MAX_CHAR_PER_RESULT = 1000;
-        String data = componentResult.getData();
-        if (data != null) {
-            // Escape HTML tags and &
-            data = data.replace("&", "&amp").replace("<", "&lt;").replace(">", "&gt;");
-            if (data.length() < MAX_CHAR_PER_RESULT) {
-                return data;
-            } else {
-                return data.substring(0, MAX_CHAR_PER_RESULT) + " ...";
-            }
+    public String componentResultDataForUI(ComponentResult result) {
+        if (result == null || result.getDataShort() == null) return "none";
+        // Escape HTML tags and &
+        String dataShort = StringEscapeUtils.escapeHtml4(result.getDataShort());
+        if (result.getDataSize() < ComponentResult.DATA_SHORT_MAX_CHARS) {
+            return dataShort;
         } else {
-            return "none";
+            return dataShort + " ...";
         }
     }
 
@@ -207,7 +202,7 @@ public class JsonUtils {
      * Returns ObjectNode of the given StudyResult. It contains the worker,
      * study's ID and title, and all ComponentResults.
      */
-    public JsonNode studyResultAsJsonNode(StudyResult studyResult, int componentResultCount) {
+    public JsonNode studyResultAsJsonNode(StudyResult studyResult, Integer componentResultCount) {
         ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
 
         // Add worker
@@ -228,7 +223,7 @@ public class JsonUtils {
         }
         studyResultNode.put("duration", duration);
         studyResultNode.put("groupResultId", getGroupResultId(studyResult));
-        studyResultNode.put("componentResultCount", componentResultCount);
+        studyResultNode.put("componentResultCount", componentResultCount != null ? componentResultCount : 0);
         studyResultNode.put("hasResultFiles", hasResultUploadFiles(studyResult));
 
         return studyResultNode;
@@ -280,8 +275,7 @@ public class JsonUtils {
         if (withData) {
             componentResultNode.put("data", componentResultDataForUI(componentResult));
         }
-        int dataSize = componentResult.getData() != null ?
-                componentResult.getData().getBytes(StandardCharsets.UTF_8).length : 0;
+        int dataSize = componentResult.getDataSize();
         componentResultNode.put("dataSize", Helpers.humanReadableByteCount(dataSize));
 
         // Add uploaded result files

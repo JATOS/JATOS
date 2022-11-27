@@ -12,10 +12,7 @@ import general.common.Common;
 import general.common.MessagesStrings;
 import general.common.StudyLogger;
 import models.common.*;
-import models.common.workers.JatosWorker;
-import models.common.workers.MTSandboxWorker;
-import models.common.workers.MTWorker;
-import models.common.workers.Worker;
+import models.common.workers.*;
 import play.Logger;
 import play.db.jpa.JPAApi;
 import scala.Option;
@@ -25,9 +22,11 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.*;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
@@ -97,10 +96,14 @@ public class ResultService {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                    Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                    fetchStudyResultsByStudyPaginated(writer, study);
-                    Errors.rethrow().run(writer::flush);
-                    Errors.rethrow().run(writer::close);
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                        writer.write("[");
+                        fetchStudyResultsByStudyPaginated(writer, study);
+                        writer.write("]");
+                        writer.flush();
+                    } catch (Exception e) {
+                        LOGGER.error(".streamStudyResultsByStudy: ", e);
+                    }
                 }));
     }
 
@@ -129,23 +132,31 @@ public class ResultService {
             return StreamConverters.asOutputStream()
                     .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                     .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                        Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                        fetchStudyResultsByBatchPaginated(writer, batch);
-                        Errors.rethrow().run(writer::flush);
-                        Errors.rethrow().run(writer::close);
+                        try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                            writer.write("[");
+                            fetchStudyResultsByBatchPaginated(writer, batch);
+                            writer.write("]");
+                            writer.flush();
+                        } catch (Exception e) {
+                            LOGGER.error(".streamStudyResultsByBatch: ", e);
+                        }
                     }));
         } else {
             return StreamConverters.asOutputStream()
                     .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                     .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                        Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                        fetchStudyResultsByBatchAndWorkerTypePaginated(writer, batch, workerType.get());
-                        // If worker type is MT then add MTSandbox on top
-                        if (MTWorker.WORKER_TYPE.equals(workerType.get())) {
-                            fetchStudyResultsByBatchAndWorkerTypePaginated(writer, batch, MTSandboxWorker.WORKER_TYPE);
+                        try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                            writer.write("[");
+                            fetchStudyResultsByBatchAndWorkerTypePaginated(writer, batch, workerType.get());
+                            // If worker type is MT then add MTSandbox on top
+                            if (MTWorker.WORKER_TYPE.equals(workerType.get())) {
+                                fetchStudyResultsByBatchAndWorkerTypePaginated(writer, batch, MTSandboxWorker.WORKER_TYPE);
+                            }
+                            writer.write("]");
+                            writer.flush();
+                        } catch (Exception e) {
+                            LOGGER.error(".streamStudyResultsByBatch: ", e);
                         }
-                        Errors.rethrow().run(writer::flush);
-                        Errors.rethrow().run(writer::close);
                     }));
         }
     }
@@ -191,10 +202,14 @@ public class ResultService {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                    Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                    fetchStudyResultsByGroupPaginated(writer, groupResult);
-                    Errors.rethrow().run(writer::flush);
-                    Errors.rethrow().run(writer::close);
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                        writer.write("[");
+                        fetchStudyResultsByGroupPaginated(writer, groupResult);
+                        writer.write("]");
+                        writer.flush();
+                    } catch (Exception e) {
+                        LOGGER.error(".streamStudyResultsByGroup: ", e);
+                    }
                 }));
     }
 
@@ -222,10 +237,14 @@ public class ResultService {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                    Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                    fetchStudyResultsByWorkerPaginated(writer, worker, loggedInUser);
-                    Errors.rethrow().run(writer::flush);
-                    Errors.rethrow().run(writer::close);
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                        writer.write("[");
+                        fetchStudyResultsByWorkerPaginated(writer, worker, loggedInUser);
+                        writer.write("]");
+                        writer.flush();
+                    } catch (Exception e) {
+                        LOGGER.error(".streamStudyResultsByWorker: ", e);
+                    }
                 }));
     }
 
@@ -253,10 +272,14 @@ public class ResultService {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                    Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                    fetchComponentResultsPaginated(writer, component);
-                    Errors.rethrow().run(writer::flush);
-                    Errors.rethrow().run(writer::close);
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                        writer.write("[");
+                        fetchComponentResultsPaginated(writer, component);
+                        writer.write("]");
+                        writer.flush();
+                    } catch (Exception e) {
+                        LOGGER.error(".streamComponentResults: ", e);
+                    }
                 }));
     }
 
@@ -284,10 +307,12 @@ public class ResultService {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
-                    Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                    fetchComponentResultDataByIds(writer, componentResultIdList, loggedInUser);
-                    Errors.rethrow().run(writer::flush);
-                    Errors.rethrow().run(writer::close);
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                        fetchComponentResultDataByIds(writer, componentResultIdList, loggedInUser);
+                        writer.flush();
+                    } catch (Exception e) {
+                        LOGGER.error(".streamComponentResult: ", e);
+                    }
                 }));
     }
 
@@ -296,14 +321,12 @@ public class ResultService {
      */
     public File getComponentResultDataAsTmpFile(User loggedInUser, List<Long> componentResultIdList) {
         File tmpFile = new File(IOUtils.TMP_DIR, "JatosExport_" + UUID.randomUUID());
-        try {
-            Writer writer = new BufferedWriter(new FileWriter(tmpFile, true));
+        try (Writer writer = new BufferedWriter(new FileWriter(tmpFile, true))) {
             fetchComponentResultDataByIds(writer, componentResultIdList, loggedInUser);
             writer.flush();
-            writer.close();
         } catch (IOException e) {
+            LOGGER.error(".streamComponentResult: ", e);
             tmpFile.delete();
-            throw new RuntimeException(e);
         }
         return tmpFile;
     }
@@ -330,9 +353,11 @@ public class ResultService {
     }
 
     private void writeStudyResults(Writer writer, boolean isLastPage, List<StudyResult> resultList) throws IOException {
+        List<Long> srids = resultList.stream().map(StudyResult::getId).collect(Collectors.toList());
+        Map<Long, Integer> componentResultCounts = studyResultDao.countComponentResultsForStudyResultIds(srids);
         for (int i = 0; i < resultList.size(); i++) {
             StudyResult result = resultList.get(i);
-            int componentResultCount = componentResultDao.countByStudyResult(result);
+            Integer componentResultCount = componentResultCounts.get(result.getId());
             JsonNode resultNode = jsonUtils.studyResultAsJsonNode(result, componentResultCount);
             writer.write(resultNode.toString());
             boolean isLastResult = (i + 1) >= resultList.size();
@@ -355,10 +380,27 @@ public class ResultService {
         }
     }
 
-    private void writeComponentResultData(Writer writer, ComponentResult componentResult) throws IOException {
-        String resultData = componentResult.getData();
+    private void writeComponentResultData(Writer writer,
+            ComponentResult componentResult) throws IOException, SQLException {
+        String resultData = componentResultDao.getData(componentResult.getId());
         if (resultData == null) return;
         writer.write(resultData + System.lineSeparator());
+    }
+
+    /**
+     * This method is only used during update from version <3.7.5. It creates for each existing
+     * ComponentResult entity the fields dataShort and dataSize.
+     */
+    public void fillDataFieldsForExistingComponentResults() {
+        jpaApi.withTransaction(() -> {
+            List<Long> crids = componentResultDao.findAllIdsWhereDataSizeIsNull();
+            for (Long crid : crids) {
+                Errors.rethrow().run(() -> componentResultDao.setDataSizeAndDataShort(crid));
+            }
+            if (!crids.isEmpty()) {
+                LOGGER.info("Filled dataSize and dataShort fields in " + crids.size() + " ComponentResult entities");
+            }
+        });
     }
 
 }

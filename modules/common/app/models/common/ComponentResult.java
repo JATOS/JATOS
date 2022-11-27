@@ -81,17 +81,27 @@ public class ComponentResult {
     private StudyResult studyResult;
 
     /**
-     * Result data string submitted from the client during running the
-     * component. It can be any string and doesn't have to be in JSON format.
-     */
-    @Lob
-    @JsonIgnore
-    private String data;
-
-    /**
      * Some message usually set via jatos.startComponent. Max 255 characters. Can be left null.
      */
     private String message;
+
+    /**
+     * Max number of chars in the dataShort string
+     */
+    public static final int DATA_SHORT_MAX_CHARS = 1000;
+
+    /**
+     * Short version of the result data. It's used in the GUI since the result data are not part of this ComponentResult
+     * entity anymore (although the data are still part of the actual database table).
+     */
+    @JsonIgnore
+    private String dataShort;
+
+    /**
+     * Size of the result data. To store this in an extra field is, compared to HQL's 'length(data)', more performant.
+     */
+    @JsonIgnore
+    private Integer dataSize;
 
     public ComponentResult() {
     }
@@ -152,20 +162,28 @@ public class ComponentResult {
         return this.component;
     }
 
-    public void setData(String data) {
-        this.data = data;
-    }
-
-    public String getData() {
-        return this.data;
-    }
-
     public void setMessage(String message) {
         this.message = StringUtils.substring(message, 0, 255);
     }
 
     public String getMessage() {
         return this.message;
+    }
+
+    public String getDataShort() {
+        return dataShort;
+    }
+
+    public void setDataShort(String dataShort) {
+        this.dataShort = dataShort;
+    }
+
+    public Integer getDataSize() {
+        return dataSize != null ? dataSize : 0;
+    }
+
+    public void setDataSize(Integer dataSize) {
+        this.dataSize = dataSize;
     }
 
     public void setStudyResult(StudyResult studyResult) {

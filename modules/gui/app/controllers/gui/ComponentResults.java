@@ -25,6 +25,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 

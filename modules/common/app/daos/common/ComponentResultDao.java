@@ -3,12 +3,15 @@ package daos.common;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
-import models.common.StudyResult;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.sql.Clob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,13 +40,67 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Only update the 'data' field and leave all else untouched
+     * Overwrite data in 'data' fields (data, dateShort, dataSize)
      */
-    public void updateData(ComponentResult componentResult) {
-        jpa.em().createQuery("UPDATE ComponentResult cr SET cr.data = :data WHERE cr.id = :id")
-                .setParameter("id", componentResult.getId())
-                .setParameter("data", componentResult.getData())
+    public void replaceData(Long id, String data) {
+        jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                        "SET cr.data = :data, cr.dataShort = SUBSTR(cr.data, 1, 1000), cr.dataSize = LENGTH(cr.data) " +
+                        "WHERE cr.id = :id")
+                .setParameter("id", id)
+                .setParameter("data", data)
                 .executeUpdate();
+    }
+
+    /**
+     * Append data to 'data' field and replace data in 'dateShort' and 'dataSize'
+     */
+    public void appendData(Long id, String data) {
+        jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                        "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), cr.dataShort = SUBSTR(cr.data, 1, 1000), cr.dataSize = LENGTH(cr.data) " +
+                        "WHERE cr.id = :id")
+                .setParameter("id", id)
+                .setParameter("data", data)
+                .executeUpdate();
+    }
+
+    /**
+     * Only set the 'dataShort' and 'dataSize' field with data from 'data' (used only during update from old version of
+     * JATOS that didn't have those fields yet).
+     */
+    public void setDataSizeAndDataShort(Long id) throws SQLException {
+        String data = getData(id);
+        if (data != null) {
+            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                            "SET cr.dataShort = SUBSTR(:data, 1, 1000), cr.dataSize = LENGTH(:data) " +
+                            "WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .setParameter("data", data)
+                    .executeUpdate();
+        } else {
+            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                            "SET cr.dataShort = NULL, cr.dataSize = 0 " +
+                            "WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
+        }
+    }
+
+    /**
+     * Get 'data' field without fetching the whole row.
+     */
+    public String getData(Long id) throws SQLException {
+        Object result = jpa.em().createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
+                .setParameter("id", id)
+                .getSingleResult();
+        if (result instanceof String) {
+            // Performance-wise it would be better to pass on the stream but MySQL only returns String
+            return (String) result;
+        } else if (result instanceof Clob) {
+            // H2 returns Clob
+            Clob clob = (Clob) result;
+            return new BufferedReader(new InputStreamReader(clob.getAsciiStream())).lines().collect(Collectors.joining());
+        }
+        return null;
     }
 
     public void remove(ComponentResult componentResult) {
@@ -58,6 +115,13 @@ public class ComponentResultDao extends AbstractDao {
         return jpa.em().find(ComponentResult.class, id);
     }
 
+    public int count() {
+        String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr";
+        Query query = jpa.em().createQuery(queryStr);
+        Number result = (Number) query.getSingleResult();
+        return result != null ? result.intValue() : 0;
+    }
+
     /**
      * Returns the number of ComponentResults belonging to the given Component.
      */
@@ -69,13 +133,15 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of ComponentResults belonging to the given StudyResult.
+     * Fetches all ComponentResults without 'dataSize' (is null). This is used only during update from old version of
+     * JATOS that didn't have those fields yet.
      */
-    public int countByStudyResult(StudyResult studyResult) {
-        String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.studyResult=:studyResult";
-        Query query = jpa.em().createQuery(queryStr);
-        Number result = (Number) query.setParameter("studyResult", studyResult).getSingleResult();
-        return result != null ? result.intValue() : 0;
+    public List<Long> findAllIdsWhereDataSizeIsNull() {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.dataSize is NULL")
+                .getResultList();
+        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
     }
 
     public List<ComponentResult> findAllByComponent(Component component) {
@@ -92,8 +158,12 @@ public class ComponentResultDao extends AbstractDao {
      * (https://stackoverflow.com/a/2826512/1278769)
      */
     public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
+        // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked StudyResults and their Workers)
         return jpa.em()
-                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
+                .createQuery("SELECT cr FROM ComponentResult cr " +
+                        "LEFT JOIN FETCH cr.studyResult sr " +
+                        "LEFT JOIN FETCH sr.worker " +
+                        "WHERE cr.component=:component", ComponentResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("component", component)
@@ -111,7 +181,7 @@ public class ComponentResultDao extends AbstractDao {
                 .map(Component::getId)
                 .collect(Collectors.toList());
         Number result = (Number) jpa.em().createQuery(
-                "SELECT SUM(LENGTH(data)) FROM ComponentResult WHERE component_id IN :componentIds")
+                "SELECT SUM(dataSize) FROM ComponentResult WHERE component_id IN :componentIds")
                 .setParameter("componentIds", componentIds)
                 .getSingleResult();
         return result != null ? result.longValue() : 0L;

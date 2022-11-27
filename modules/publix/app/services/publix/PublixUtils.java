@@ -147,7 +147,7 @@ public class PublixUtils {
 
         // Clear all data and set ABORTED for all(!) ComponentResults
         for (ComponentResult componentResult : studyResult.getComponentResultList()) {
-            componentResult.setData(null);
+            componentResultDao.replaceData(componentResult.getId(), null);
             componentResult.setComponentState(ComponentState.ABORTED);
             componentResultDao.update(componentResult);
         }

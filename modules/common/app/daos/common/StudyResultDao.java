@@ -7,8 +7,11 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * DAO for StudyResult and StudyResultStatus
@@ -154,6 +157,15 @@ public class StudyResultDao extends AbstractDao {
                 .getResultList();
     }
 
+    public List<Long> findIdsByStudyId(Long studyId) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT sr.id FROM StudyResult sr WHERE sr.study_id = :studyId")
+                .setParameter("studyId", studyId)
+                .getResultList();
+        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
+    }
+
     /**
      * Returns paginated StudyResults that belong to the given Study
      *
@@ -161,7 +173,8 @@ public class StudyResultDao extends AbstractDao {
      * (https://stackoverflow.com/a/2826512/1278769)
      */
     public List<StudyResult> findAllByStudy(Study study, int first, int max) {
-        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.study=:study", StudyResult.class)
+        // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked Workers in StudyResults)
+        return jpa.em().createQuery("SELECT sr FROM StudyResult sr LEFT JOIN FETCH sr.worker WHERE sr.study=:study", StudyResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("study", study)
@@ -262,6 +275,20 @@ public class StudyResultDao extends AbstractDao {
         return jpa.em().createQuery(queryStr, StudyResultStatus.class)
                 .setMaxResults(limit)
                 .getResultList();
+    }
+
+    public Map<Long, Integer> countComponentResultsForStudyResultIds(List<Long> srids) {
+        return jpa.em()
+                .createQuery("SELECT cr.studyResult.id AS srid, COUNT(cr) AS count FROM ComponentResult cr " +
+                        "WHERE cr.studyResult.id IN :srids GROUP BY cr.studyResult.id", Tuple.class)
+                .setParameter("srids", srids)
+                .getResultList()
+                .stream()
+                .collect(Collectors.toMap(
+                                tuple -> ((Number) tuple.get("srid")).longValue(),
+                                tuple -> ((Number) tuple.get("count")).intValue()
+                        )
+                );
     }
 
 }

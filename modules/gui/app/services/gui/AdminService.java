@@ -100,8 +100,8 @@ public class AdminService {
     }
 
     public ImmutableMap<String, Object> getResultFileSize(Study study, int studyResultCount) {
-        long resultFileSize = studyResultDao.findAllByStudy(
-                study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
+        long resultFileSize = studyResultDao.findIdsByStudyId(study.getId()).stream()
+                .mapToLong(ioUtils::getResultUploadDirSize).sum();
         String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
                 Helpers.humanReadableByteCount(resultFileSize / studyResultCount) : "0 B";
         String resultFileSizeDisplay = Helpers.humanReadableByteCount(resultFileSize)
