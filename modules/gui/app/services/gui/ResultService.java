@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("ALL")
 @Singleton
 public class ResultService {
 
@@ -392,15 +393,18 @@ public class ResultService {
      * ComponentResult entity the fields dataShort and dataSize.
      */
     public void fillDataFieldsForExistingComponentResults() {
-        jpaApi.withTransaction(() -> {
-            List<Long> crids = componentResultDao.findAllIdsWhereDataSizeIsNull();
-            for (Long crid : crids) {
+        List<Long> crids = jpaApi.withTransaction(componentResultDao::findAllIdsWhereDataSizeIsNull);
+        LOGGER.info("Start filling dataSize and dataShort fields of ComponentResults. This is part of the update " +
+                "and can take a while depending on the number of ComponentResults in your database.");
+        crids.parallelStream().forEach(crid -> {
+            jpaApi.withTransaction(() -> {
                 Errors.rethrow().run(() -> componentResultDao.setDataSizeAndDataShort(crid));
-            }
-            if (!crids.isEmpty()) {
-                LOGGER.info("Filled dataSize and dataShort fields in " + crids.size() + " ComponentResult entities");
-            }
+                LOGGER.info("Filled dataSize and dataShort fields of ComponentResult " + crid);
+            });
         });
+        if (!crids.isEmpty()) {
+            LOGGER.info("Filled dataSize and dataShort fields in " + crids.size() + " ComponentResult entities");
+        }
     }
 
 }
