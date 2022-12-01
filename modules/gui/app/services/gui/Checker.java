@@ -9,6 +9,8 @@ import utils.common.Helpers;
 
 import javax.inject.Singleton;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service class that provides checks for different entities
@@ -183,6 +185,18 @@ public class Checker {
     public void checkWorker(Worker worker, Long workerId) throws BadRequestException {
         if (worker == null) {
             throw new BadRequestException(MessagesStrings.workerNotExist(workerId));
+        }
+    }
+
+    public void isUserAllowedToAccessWorker(User user, Worker worker) throws ForbiddenException {
+        List<Worker> workerList = user.getStudyList().stream()
+                .map(Study::getBatchList)
+                .flatMap(List::stream)
+                .map(Batch::getWorkerList)
+                .flatMap(Set::stream)
+                .collect(Collectors.toList());
+        if (!workerList.contains(worker)) {
+            throw new ForbiddenException("User is not allowed to access this Worker");
         }
     }
 

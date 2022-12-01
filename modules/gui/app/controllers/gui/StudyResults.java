@@ -149,8 +149,9 @@ public class StudyResults extends Controller {
         Worker worker = workerDao.findById(workerId);
         try {
             checker.checkWorker(worker, workerId);
-        } catch (BadRequestException e) {
-            jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
+            checker.isUserAllowedToAccessWorker(loggedInUser, worker);
+        } catch (BadRequestException | ForbiddenException e) {
+            jatosGuiExceptionThrower.throwHome(e);
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
