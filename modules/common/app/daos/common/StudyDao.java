@@ -66,7 +66,7 @@ public class StudyDao extends AbstractDao {
 
     public List<Study> findAllByUser(User user) {
         TypedQuery<Study> query = jpa.em().createQuery(
-                "SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user", Study.class);
+                "SELECT s FROM Study s INNER JOIN s.userList u LEFT JOIN FETCH s.componentList WHERE u = :user", Study.class);
         query.setParameter("user", user);
         return query.getResultList();
     }
