@@ -1,15 +1,13 @@
 package group
 
-import java.sql.Timestamp
-import java.util.Date
 import daos.common.{GroupResultDao, StudyResultDao}
-
-import javax.inject.{Inject, Singleton}
 import models.common.GroupResult.GroupState
 import models.common.{Batch, GroupResult, StudyResult}
 import play.db.jpa.JPAApi
-import utils.common.Helpers
 
+import java.sql.Timestamp
+import java.util.Date
+import javax.inject.{Inject, Singleton}
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
@@ -65,7 +63,6 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
     * (StudyResult's state is in FINISHED, FAILED, ABORTED).
     */
   private def moveActiveMemberToHistory(studyResult: StudyResult): Unit = {
-    jpa.withTransaction(asJavaSupplier(() => {
       val groupResult = studyResult.getActiveGroupResult
       groupResult.removeActiveMember(studyResult)
       groupResult.addHistoryMember(studyResult)
@@ -73,7 +70,6 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
       studyResult.setHistoryGroupResult(groupResult)
       groupResultDao.update(groupResult)
       studyResultDao.update(studyResult)
-    }))
   }
 
   /**
