@@ -96,7 +96,7 @@ public class ComponentResult {
      * extra methods in ComponentResultDao.
      */
     @JsonIgnore
-    @Transient
+    @Column(insertable = false, updatable = false)
     private String dataShort;
 
     /**
@@ -104,7 +104,7 @@ public class ComponentResult {
      * Database operations are done via extra methods in ComponentResultDao.
      */
     @JsonIgnore
-    @Transient
+    @Column(insertable = false, updatable = false)
     private Integer dataSize;
 
     public ComponentResult() {
