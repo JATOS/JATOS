@@ -51,6 +51,14 @@ public class ComponentResultDao extends AbstractDao {
                 .executeUpdate();
     }
 
+    public void purgeData(Long id) {
+        jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                        "SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0 " +
+                        "WHERE cr.id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+    }
+
     /**
      * Append data to 'data' field and replace data in 'dateShort' and 'dataSize'
      */
