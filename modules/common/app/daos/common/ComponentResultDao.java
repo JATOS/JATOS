@@ -188,7 +188,7 @@ public class ComponentResultDao extends AbstractDao {
                 .filter(Objects::nonNull)
                 .map(Component::getId)
                 .collect(Collectors.toList());
-        Number result = (Number) jpa.em().createQuery(
+        Number result = (Number) jpa.em().createNativeQuery(
                 "SELECT SUM(dataSize) FROM ComponentResult WHERE component_id IN :componentIds")
                 .setParameter("componentIds", componentIds)
                 .getSingleResult();
