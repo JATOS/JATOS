@@ -92,15 +92,19 @@ public class ComponentResult {
 
     /**
      * Short version of the result data. It's used in the GUI since the result data are not part of this ComponentResult
-     * entity anymore (although the data are still part of the actual database table).
+     * entity anymore (although the data are still part of the actual database table). Database operations are done via
+     * extra methods in ComponentResultDao.
      */
     @JsonIgnore
+    @Transient
     private String dataShort;
 
     /**
      * Size of the result data. To store this in an extra field is, compared to HQL's 'length(data)', more performant.
+     * Database operations are done via extra methods in ComponentResultDao.
      */
     @JsonIgnore
+    @Transient
     private Integer dataSize;
 
     public ComponentResult() {
