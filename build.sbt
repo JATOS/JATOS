@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
 
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
-  Cmd("FROM", "openjdk:11-jre"),
+  Cmd("FROM", "eclipse-temurin:11-jre-ubi9-minimal"),
   Cmd("MAINTAINER", "Kristian Lange"),
   Cmd("WORKDIR", "/opt/docker"),
   Cmd("ADD", "opt /opt"),
