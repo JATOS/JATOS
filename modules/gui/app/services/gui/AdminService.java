@@ -58,17 +58,17 @@ public class AdminService {
             if (studyAssetsSizeFlag) {
                 studyInfo.put("studyAssetsSize", getStudyAssetDirSize(study));
             } else {
-                studyInfo.put("studyAssetsSize", ImmutableMap.of("display", "disabled", "bytes", 0));
+                studyInfo.put("studyAssetsSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             if (resultDataSizeFlag) {
                 studyInfo.put("resultDataSize", getResultDataSize(study, studyResultCount));
             } else {
-                studyInfo.put("resultDataSize", ImmutableMap.of("display", "disabled", "bytes", 0));
+                studyInfo.put("resultDataSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             if (resultFileSizeFlag) {
                 studyInfo.put("resultFileSize", getResultFileSize(study, studyResultCount));
             } else {
-                studyInfo.put("resultFileSize", ImmutableMap.of("display", "disabled", "bytes", 0));
+                studyInfo.put("resultFileSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
             if (srsOpt.isPresent()) {
@@ -102,8 +102,8 @@ public class AdminService {
     }
 
     public ImmutableMap<String, Object> getResultFileSize(Study study, int studyResultCount) {
-        long size = studyResultDao.findAllByStudy(
-                study).stream().mapToLong(sr -> ioUtils.getResultUploadDirSize(sr.getId())).sum();
+        long size = studyResultDao.findIdsByStudyId(study.getId()).stream()
+                .mapToLong(ioUtils::getResultUploadDirSize).sum();
         long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
         String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
                 Helpers.humanReadableByteCount(averagePerResult) : "0 B";

@@ -35,8 +35,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
@@ -87,7 +91,7 @@ public class ResultStreamer {
                         writer.write("]");
                         writer.flush();
                     } catch (Exception e) {
-                        LOGGER.error(".streamStudyResultsByStudy: " + e.getMessage());
+                        LOGGER.error(".streamStudyResultsByStudy: ", e);
                     }
                 }));
     }
@@ -123,7 +127,7 @@ public class ResultStreamer {
                             writer.write("]");
                             writer.flush();
                         } catch (Exception e) {
-                            LOGGER.error(".streamStudyResultsByBatch: " + e.getMessage());
+                            LOGGER.error(".streamStudyResultsByBatch: ", e);
                         }
                     }));
         } else {
@@ -140,7 +144,7 @@ public class ResultStreamer {
                             writer.write("]");
                             writer.flush();
                         } catch (Exception e) {
-                            LOGGER.error(".streamStudyResultsByBatch: " + e.getMessage());
+                            LOGGER.error(".streamStudyResultsByBatch: ", e);
                         }
                     }));
         }
@@ -193,7 +197,7 @@ public class ResultStreamer {
                         writer.write("]");
                         writer.flush();
                     } catch (Exception e) {
-                        LOGGER.error(".streamStudyResultsByGroup: " + e.getMessage());
+                        LOGGER.error(".streamStudyResultsByGroup: ", e);
                     }
                 }));
     }
@@ -228,7 +232,7 @@ public class ResultStreamer {
                         writer.write("]");
                         writer.flush();
                     } catch (Exception e) {
-                        LOGGER.error(".streamStudyResultsByWorker: " + e.getMessage());
+                        LOGGER.error(".streamStudyResultsByWorker: ", e);
                     }
                 }));
     }
@@ -263,7 +267,7 @@ public class ResultStreamer {
                         writer.write("]");
                         writer.flush();
                     } catch (Exception e) {
-                        LOGGER.error(".streamComponentResults: " + e.getMessage());
+                        LOGGER.error(".streamComponentResults: ", e);
                     }
                 }));
     }
@@ -290,15 +294,15 @@ public class ResultStreamer {
     /**
      * Returns an Akka Source that streams all data of the given component results specified by their IDs.
      */
-    public Source<ByteString, ?> streamComponentResult(List<Long> componentResultIdList) {
+    public Source<ByteString, ?> streamComponentResultData(User loggedInUser, List<Long> componentResultIdList) {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-                        fetchComponentResultByIds(writer, componentResultIdList);
+                        fetchComponentResultDataByIds(writer, componentResultIdList, loggedInUser);
                         writer.flush();
                     } catch (Exception e) {
-                        LOGGER.error(".streamComponentResult: " + e.getMessage());
+                        LOGGER.error(".streamComponentResult: ", e);
                     }
                 }));
     }
@@ -307,22 +311,29 @@ public class ResultStreamer {
      * Fetches the ComponentResults that correspond to the IDs, checks them and writes their result data into the given
      * Writer. Fetches them one by one to reduce memory usages.
      */
-    private void fetchComponentResultByIds(Writer writer, List<Long> componentResultIdList) {
+    private void fetchComponentResultDataByIds(Writer writer, List<Long> componentResultIdList, User user) {
+        Set<Study> studies = new HashSet<>();
         for (Long componentResultId : componentResultIdList) {
             jpaApi.withTransaction(entityManager -> {
-                Errors.rethrow().run(() -> {
-                    ComponentResult cr = componentResultDao.findById(componentResultId);
-                    if (cr.getData() != null) writer.write(cr.getData() + System.lineSeparator());
-                    else writer.write(System.lineSeparator());
-                });
+                ComponentResult componentResult = componentResultDao.findById(componentResultId);
+                if (componentResult != null) {
+                    Errors.rethrow().run(() -> checker.checkComponentResult(componentResult, user, false));
+                    studies.add(componentResult.getStudyResult().getStudy());
+                    Errors.rethrow().run(() -> writeComponentResultData(writer, componentResult));
+                } else {
+                    LOGGER.warn("A component result with ID " + componentResultId + " doesn't exist.");
+                }
             });
         }
+        studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
     }
 
     private void writeStudyResults(Writer writer, boolean isLastPage, List<StudyResult> resultList) throws IOException {
+        List<Long> srids = resultList.stream().map(StudyResult::getId).collect(Collectors.toList());
+        Map<Long, Integer> componentResultCounts = studyResultDao.countComponentResultsForStudyResultIds(srids);
         for (int i = 0; i < resultList.size(); i++) {
             StudyResult result = resultList.get(i);
-            int componentResultCount = componentResultDao.countByStudyResult(result);
+            Integer componentResultCount = componentResultCounts.get(result.getId());
             JsonNode resultNode = jsonUtils.studyResultAsJsonNode(result, componentResultCount);
             writer.write(resultNode.toString());
             boolean isLastResult = (i + 1) >= resultList.size();
@@ -343,6 +354,13 @@ public class ResultStreamer {
                 writer.write(",\n");
             }
         }
+    }
+
+    private void writeComponentResultData(Writer writer,
+            ComponentResult componentResult) throws IOException, SQLException {
+        String resultData = componentResultDao.getData(componentResult.getId());
+        if (resultData == null) return;
+        writer.write(resultData + System.lineSeparator());
     }
 
     public enum ResultsType {
@@ -443,7 +461,7 @@ public class ResultStreamer {
                 // Filter: Keep only the crids that are in the original request's crids (StudyResult can have more)
                 List<Long> someCrids = componentResultDao.findIdsByStudyResultId(studyResult.getId())
                         .stream().filter(crids::contains).collect(Collectors.toList());
-                ArrayNode componentResultArrayNode = writeComponentResults(someCrids, zipOut, resultsType);
+                ArrayNode componentResultArrayNode = writeComponentResults(studyResult.getId(), someCrids, zipOut, resultsType);
 
                 if (resultsType == ResultsType.METADATA_ONLY || resultsType == ResultsType.COMBINED) {
                     ObjectNode studyResultNode = jsonUtils.studyResultMetadata(studyResult);
@@ -454,7 +472,7 @@ public class ResultStreamer {
         }
     }
 
-    private ArrayNode writeComponentResults(List<Long> componentResultList, ZipOutputStream zipOut,
+    private ArrayNode writeComponentResults(Long studyResultId, List<Long> componentResultList, ZipOutputStream zipOut,
             ResultsType resultsType) {
         ArrayNode componentResultArrayNode = Json.mapper().createArrayNode();
         for (Long componentResultId : componentResultList) {
@@ -467,28 +485,25 @@ public class ResultStreamer {
                         break;
                     }
                     case FILES_ONLY: {
-                        ComponentResult componentResult = componentResultDao.findById(componentResultId);
-                        Long studyResultId = componentResult.getStudyResult().getId();
                         Errors.rethrow().run(() -> addFilesToZip(zipOut, studyResultId, componentResultId));
                         break;
                     }
                     case DATA_ONLY: {
-                        ComponentResult componentResult = componentResultDao.findById(componentResultId);
-                        Long studyResultId = componentResult.getStudyResult().getId();
                         Errors.rethrow().run(() -> {
+                            String data = componentResultDao.getData(componentResultId);
                             String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId) + "/data.txt";
-                            ZipUtil.addDataToZip(zipOut, componentResult.getData(), path);
+                            ZipUtil.addDataToZip(zipOut, data, path);
                         });
                         break;
                     }
                     case COMBINED: {
                         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-                        Long studyResultId = componentResult.getStudyResult().getId();
                         componentResultArrayNode.add(jsonUtils.componentResultMetadata(componentResult));
                         Errors.rethrow().run(() -> addFilesToZip(zipOut, studyResultId, componentResultId));
                         Errors.rethrow().run(() -> {
+                            String data = componentResultDao.getData(componentResultId);
                             String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId) + "/data.txt";
-                            ZipUtil.addDataToZip(zipOut, componentResult.getData(), path);
+                            ZipUtil.addDataToZip(zipOut, data, path);
                         });
                         break;
                     }

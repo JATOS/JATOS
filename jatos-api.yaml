@@ -306,7 +306,7 @@ paths:
 
   /jatos/api/results:
     post:
-      summary: "Get results (metadata, data, and files) packed in a zip file"
+      summary: "Get results, combined with metadata, data, and files, packed in a zip file"
       description: "Select results by specifying one or multiple of: study IDs, component IDs, batch IDs, group IDs,
           study result IDs, and component result IDs. You can use single IDs, list of IDs, ranges, or a combination of
           all three. If the IDs do not exist in the DB or you have no permission to access them the results are just
@@ -369,7 +369,7 @@ paths:
               batchIds:
                 summary: Using a list of batch IDs
                 value:
-                  studyIds: [1,2,3]
+                  batchIds: [1,2,3]
               componentIds:
                 summary: Using a list of component IDs
                 value:
@@ -393,7 +393,7 @@ paths:
               combinationOfAll:
                 summary: Using a combination of ID types with single IDs and ID ranges
                 value:
-                  batchId: [1,2,3]
+                  batchIds: [1,2,3]
                   componentResultIds: "1-10, 12, 15, 20-15"
                   studyResultIds: [1,2,3]
       responses:
@@ -472,7 +472,7 @@ paths:
               batchIds:
                 summary: Using a list of batch IDs
                 value:
-                  studyIds: [1,2,3]
+                  batchIds: [1,2,3]
               componentIds:
                 summary: Using a list of component IDs
                 value:
@@ -496,7 +496,7 @@ paths:
               combinationOfAll:
                 summary: Using a combination of ID types with single IDs and ID ranges
                 value:
-                  batchId: [1,2,3]
+                  batchIds: [1,2,3]
                   componentResultIds: "1-10, 12, 15, 20-15"
                   studyResultIds: [1,2,3]
       responses:
@@ -580,7 +580,7 @@ paths:
               batchIds:
                 summary: Using a list of batch IDs
                 value:
-                  studyIds: [ 1,2,3 ]
+                  batchIds: [ 1,2,3 ]
               componentIds:
                 summary: Using a list of component IDs
                 value:
@@ -604,7 +604,7 @@ paths:
               combinationOfAll:
                 summary: Using a combination of ID types with single IDs and ID ranges
                 value:
-                  batchId: [ 1,2,3 ]
+                  batchIds: [ 1,2,3 ]
                   componentResultIds: "1-10, 12, 15, 20-15"
                   studyResultIds: [ 1,2,3 ]
       responses:
@@ -682,7 +682,7 @@ paths:
               batchIds:
                 summary: Using a list of batch IDs
                 value:
-                  studyIds: [ 1,2,3 ]
+                  batchIds: [ 1,2,3 ]
               componentIds:
                 summary: Using a list of component IDs
                 value:
@@ -706,7 +706,7 @@ paths:
               combinationOfAll:
                 summary: Using a combination of ID types with single IDs and ID ranges
                 value:
-                  batchId: [ 1,2,3 ]
+                  batchIds: [ 1,2,3 ]
                   componentResultIds: "1-10, 12, 15, 20-15"
                   studyResultIds: [ 1,2,3 ]
       responses:

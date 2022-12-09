@@ -1,19 +1,11 @@
-# --- Add ApiToken table
+# --- Add dataShort and dataSize to ComponentResult table; Add indices to uuid of StudyResult and Batch
 
 # --- !Ups
-CREATE TABLE `ApiToken` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `tokenHash` varchar(255) NOT NULL,
-  `name` longtext NOT NULL,
-  `user_username` varchar(255) NOT NULL,
-  `creationDate` datetime NOT NULL,
-  `expires` int(11) DEFAULT NULL,
-  `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
-);
+ALTER TABLE `ComponentResult` ADD `dataShort` varchar(1023) DEFAULT NULL;
+ALTER TABLE `ComponentResult` ADD `dataSize` bigint(20) DEFAULT NULL;
 
-ALTER TABLE `ApiToken` ADD KEY `FK_lghqbQuIHvMEqpdJHkjdQHYbe` (`user_username`);
-ALTER TABLE `ApiToken` ADD CONSTRAINT `FK_lghqbQuIHvMEqpdJHkjdQHYbe` FOREIGN KEY (`user_username`) REFERENCES `User` (`username`);
+ALTER TABLE `StudyResult` ADD UNIQUE KEY `FKzl0vqfy8qoopgrkkcp1q5qja` (`uuid`);
+ALTER TABLE `Batch` ADD UNIQUE KEY `FKlskzulbu7gz7mktw9zv6dso4` (`uuid`);
 
 # --- !Downs
 # --- not supported

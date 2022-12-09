@@ -1,6 +1,7 @@
 package services.gui;
 
 import daos.common.StudyResultDao;
+import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.Study;
@@ -22,19 +23,20 @@ import java.util.stream.Collectors;
 public class WorkerService {
 
     private final StudyResultDao studyResultDao;
+    private final WorkerDao workerDao;
 
     @Inject
-    WorkerService(StudyResultDao studyResultDao) {
+    WorkerService(StudyResultDao studyResultDao, WorkerDao workerDao) {
         this.studyResultDao = studyResultDao;
+        this.workerDao = workerDao;
     }
 
     /**
      * Retrieve all workers that belong to the study including the ones that were not started yet
      */
     public Set<Worker> retrieveAllWorkers(Study study) {
-        return study.getBatchList().stream()
-                .map(Batch::getWorkerList)
-                .flatMap(Collection::stream)
+        List<Long> srids = studyResultDao.findIdsByStudyId(study.getId());
+        return workerDao.findAllByStudy(srids).stream()
                 .filter(w -> !w.getWorkerType().equals(JatosWorker.WORKER_TYPE))
                 .collect(Collectors.toSet());
     }

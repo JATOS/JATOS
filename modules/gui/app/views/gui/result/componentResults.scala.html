@@ -101,13 +101,7 @@ $(document).ready(function() {
             "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(component.getId())",
             "dataSrc": "",
             "beforeSend": showWaitingModal,
-            "error": function (err) {
-                if (err.responseText) {
-                    showError(err.responseText);
-                } else {
-                    showError("Cannot read results data.");
-                }
-            },
+            "error": () => showError("Error reading results data"),
             "complete": hideWaitingModal
         },
         "dom": 'lfrtip',

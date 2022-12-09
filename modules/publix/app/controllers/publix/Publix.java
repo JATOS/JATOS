@@ -161,24 +161,21 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         String postedResultData = request.body().asText();
         if (postedResultData == null) return badRequest("Result data empty");
 
-        String resultData;
         if (append) {
-            String currentResultData = componentResult.get().getData();
-            resultData = currentResultData != null ? currentResultData + postedResultData : postedResultData;
+            componentResultDao.appendData(componentResult.get().getId(), postedResultData);
         } else {
-            resultData = postedResultData;
+            componentResultDao.replaceData(componentResult.get().getId(), postedResultData);
         }
 
-        if (resultData.getBytes(StandardCharsets.UTF_8).length > Common.getResultDataMaxSize()) {
+        if (componentResult.get().getDataSize() + postedResultData.getBytes(StandardCharsets.UTF_8).length
+                > Common.getResultDataMaxSize()) {
             String maxSize = Helpers.humanReadableByteCount(Common.getResultDataMaxSize());
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
                     + "componentId " + component.getId() + " - " + "Result data size exceeds allowed " + maxSize);
             return badRequest("Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
         }
 
-        componentResult.get().setData(resultData);
-        componentResultDao.updateData(componentResult.get());
-        studyLogger.logResultDataStoring(componentResult.get());
+        studyLogger.logResultDataStoring(componentResult.get(), postedResultData, append);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 

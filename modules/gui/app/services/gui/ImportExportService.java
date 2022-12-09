@@ -99,11 +99,13 @@ public class ImportExportService {
         ObjectNode responseJson = Json.mapper().createObjectNode();
         responseJson.put("studyExists", currentStudy.isPresent());
         if (currentStudy.isPresent()) {
+            responseJson.put("uuid", currentStudy.get().getUuid());
             responseJson.put("currentStudyTitle", currentStudy.get().getTitle());
             responseJson.put("currentDirName", currentStudy.get().getDirName());
+        } else {
+            responseJson.put("uuid", uploadedStudy.getUuid());
         }
         responseJson.put("uploadedStudyTitle", uploadedStudy.getTitle());
-        responseJson.put("uploadedStudyUuid", uploadedStudy.getUuid());
         responseJson.put("uploadedDirName", uploadedStudy.getDirName());
         responseJson.put("uploadedDirExists", uploadedDirExists);
         if (!currentStudy.isPresent() && uploadedDirExists) {
@@ -123,7 +125,7 @@ public class ImportExportService {
             if (existingComponent.isPresent()
                     && !existingComponent.get().getStudy().getUuid().equals(uploadedStudy.getUuid())) {
                 throw new ForbiddenException("An component of the imported study has the same UUID (" + c.getUuid()
-                        + ") as existing component.");
+                        + ") as an existing component.");
             }
         }
     }

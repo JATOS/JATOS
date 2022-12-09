@@ -11,6 +11,7 @@ import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import play.Logger;
 import play.Logger.ALogger;
@@ -183,22 +184,16 @@ public class JsonUtils {
     }
 
     /**
-     * Returns the data string of a componentResult limited to
-     * MAX_CHAR_PER_RESULT characters.
+     * Returns ComponentResult.dataShort limited to MAX_CHAR_PER_RESULT characters.
      */
-    public String componentResultDataShortForUI(ComponentResult componentResult) {
-        int MAX_CHAR_PER_RESULT = 1000;
-        String data = componentResult.getDataShort();
-        if (data != null) {
-            // Escape HTML tags and &
-            data = data.replace("&", "&amp").replace("<", "&lt;").replace(">", "&gt;");
-            if (componentResult.getDataSize() < MAX_CHAR_PER_RESULT) {
-                return data;
-            } else {
-                return data + " ...";
-            }
+    public String componentResultDataShortForUI(ComponentResult result) {
+        if (result == null || result.getDataShort() == null) return "none";
+        // Escape HTML tags and &
+        String dataShort = StringEscapeUtils.escapeHtml4(result.getDataShort());
+        if (result.getDataSize() < ComponentResult.DATA_SHORT_MAX_CHARS) {
+            return dataShort;
         } else {
-            return "none";
+            return dataShort + " ...";
         }
     }
 
@@ -251,7 +246,7 @@ public class JsonUtils {
         }
         node.put("duration", duration);
         node.put("groupId", getGroupResultId(sr));
-        if (componentResultCount != null) node.put("componentResultCount", componentResultCount);
+        node.put("componentResultCount", componentResultCount != null ? componentResultCount : 0);
         node.put("hasResultFiles", hasResultUploadFiles(sr));
 
         return node;

@@ -14,6 +14,7 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.sql.SQLException;
 
 import static controllers.gui.actionannotations.ApiTokenAuthAction.API_TOKEN;
 import static controllers.gui.actionannotations.ApiTokenAuthAction.ApiTokenAuth;
@@ -137,7 +138,8 @@ public class Api extends Controller {
 
     @Transactional
     @ApiTokenAuth
-    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
+    public Result exportSingleResultData(Long componentResultId)
+            throws ForbiddenException, NotFoundException, SQLException {
         return componentResults.exportSingleResultData(componentResultId);
     }
 

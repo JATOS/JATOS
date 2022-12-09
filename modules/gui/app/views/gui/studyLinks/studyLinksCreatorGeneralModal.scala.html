@@ -111,18 +111,23 @@ $('#studyLinksCreatorGeneralModal').on('click', '.confirmed', function(e) {
 
     switch (type) {
     case '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE':
+        $('#studyLinksModal').data('workerType', '@common.workers.PersonalSingleWorker.WORKER_TYPE');
         showStudyLinksCreatorPersonalSingleModal(batch);
         break;
     case '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE':
+        $('#studyLinksModal').data('workerType', '@common.workers.PersonalMultipleWorker.WORKER_TYPE');
         showStudyLinksCreatorPersonalMultipleModal(batch);
         break;
     case '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE':
+        $('#studyLinksModal').data('workerType', '@common.workers.GeneralSingleWorker.WORKER_TYPE');
         showStudyLinkGeneralSingleModal(batch);
         break;
     case '@common.workers.GeneralMultipleWorker.UI_WORKER_TYPE':
+        $('#studyLinksModal').data('workerType', '@common.workers.PersonalSingleWorker.WORKER_TYPE');
         showStudyLinkGeneralMultipleModal(batch);
         break;
     case '@common.workers.MTWorker.UI_WORKER_TYPE':
+        $('#studyLinksModal').data('workerType', '@common.workers.GeneralMultipleWorker.WORKER_TYPE');
         showSourceCodeMTurkModal(batch);
         break;
     }

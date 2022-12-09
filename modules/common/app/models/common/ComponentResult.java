@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -37,6 +36,7 @@ public class ComponentResult {
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
+
 
     /**
      * State of this component run (it actually should be called ComponentResultState)
@@ -84,15 +84,26 @@ public class ComponentResult {
      */
     private String message;
 
-    @JsonIgnore
-    @Basic(fetch=FetchType.LAZY)
-    private String data;
+    /**
+     * Max number of chars in the dataShort string
+     */
+    public static final int DATA_SHORT_MAX_CHARS = 1000;
 
+    /**
+     * Short version of the result data. It's used in the GUI since the result data are not part of this ComponentResult
+     * entity anymore (although the data are still part of the actual database table). Database operations are done via
+     * extra methods in ComponentResultDao.
+     */
     @JsonIgnore
-    @Formula("substr(data, 1, 1000)")
+    @Column(insertable = false, updatable = false)
     private String dataShort;
 
-    @Formula("length(data)")
+    /**
+     * Size of the result data. To store this in an extra field is, compared to HQL's 'length(data)', more performant.
+     * Database operations are done via extra methods in ComponentResultDao.
+     */
+    @JsonIgnore
+    @Column(insertable = false, updatable = false)
     private Integer dataSize;
 
     public ComponentResult() {
@@ -162,37 +173,28 @@ public class ComponentResult {
         return this.message;
     }
 
-    public void setStudyResult(StudyResult studyResult) {
-        this.studyResult = studyResult;
+    public String getDataShort() {
+        return dataShort;
     }
-
-    public StudyResult getStudyResult() {
-        return this.studyResult;
-    }
-
-    public String getData() {
-        return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
-
 
     public void setDataShort(String dataShort) {
         this.dataShort = dataShort;
     }
 
-    public String getDataShort() {
-        return this.dataShort;
+    public Integer getDataSize() {
+        return dataSize != null ? dataSize : 0;
     }
 
     public void setDataSize(Integer dataSize) {
         this.dataSize = dataSize;
     }
 
-    public Integer getDataSize() {
-        return this.dataSize != null ? this.dataSize : 0;
+    public void setStudyResult(StudyResult studyResult) {
+        this.studyResult = studyResult;
+    }
+
+    public StudyResult getStudyResult() {
+        return this.studyResult;
     }
 
     @Override

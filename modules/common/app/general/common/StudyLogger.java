@@ -198,15 +198,14 @@ public class StudyLogger {
      *
      * @param componentResult ComponentResults that will be stored
      */
-    public void logResultDataStoring(ComponentResult componentResult) {
+    public void logResultDataStoring(ComponentResult componentResult, String data, boolean append) {
         if (!Common.isStudyLogsEnabled()) return;
         if (componentResult == null) return;
 
         StudyResult studyResult = componentResult.getStudyResult();
-        String resultDataHash = (componentResult.getData() != null) ? HashUtils.getHash(componentResult.getData(),
-                HashUtils.SHA_256) : NO_DATA;
+        String resultDataHash = (data != null) ? HashUtils.getHash(data, HashUtils.SHA_256) : NO_DATA;
         ObjectNode jsonObj = Json.newObject();
-        jsonObj.put(MSG, "Stored component result data");
+        jsonObj.put(MSG, append ? "Appended component result data" : "Replaced component result data");
         jsonObj.put(COMPONENT_UUID, componentResult.getComponent().getUuid());
         jsonObj.put(WORKER_ID, componentResult.getWorkerId());
         jsonObj.put(DATA_HASH, resultDataHash);

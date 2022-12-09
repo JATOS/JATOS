@@ -60,4 +60,10 @@ public class WorkerDao extends AbstractDao {
         return result != null ? result.intValue() : 0;
     }
 
+    public List<Worker> findAllByStudy(List<Long> srids) {
+        return jpa.em().createQuery("SELECT sr.worker FROM StudyResult sr WHERE sr.id IN :srids", Worker.class)
+                .setParameter("srids", srids)
+                .getResultList();
+    }
+
 }

@@ -40,7 +40,10 @@ public class ApiTokenDao extends AbstractDao {
     }
 
     public Optional<ApiToken> findByHash(String tokenHash) {
-        String queryStr = "SELECT t FROM ApiToken t WHERE t.tokenHash = :tokenHash";
+        String queryStr = "SELECT t FROM ApiToken t " +
+                "LEFT JOIN FETCH t.user u " +
+                "LEFT JOIN FETCH u.studyList " +
+                "WHERE t.tokenHash = :tokenHash";
         List<ApiToken> apiToken = jpa.em().createQuery(queryStr, ApiToken.class)
                 .setParameter("tokenHash", tokenHash)
                 .getResultList();

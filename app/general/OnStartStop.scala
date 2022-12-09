@@ -4,6 +4,7 @@ import general.common.{Common, JatosUpdater}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import services.gui.StudyLinkService
+import utils.common.ComponentResultMigration
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
@@ -20,7 +21,8 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             environment: play.Environment,
                             jatosUpdater: JatosUpdater,
                             mySQLCharsetFix: MySQLCharsetFix,
-                            studyLinkService: StudyLinkService) {
+                            studyLinkService: StudyLinkService,
+                            componentResultMigration: ComponentResultMigration) {
 
   private val logger = Logger(this.getClass)
 
@@ -28,6 +30,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   checkUpdate()
   checkStudyAssetsRootDir()
   studyLinkService.createStudyLinksForExistingPersonalWorkers()
+  componentResultMigration.fillDataFieldsForExistingComponentResults()
 
   if (!environment.isProd) {
     logger.info("JATOS started")

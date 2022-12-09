@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.7.4"
+version := "3.7.5"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
@@ -24,12 +24,11 @@ libraryDependencies ++= Seq(
 
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
-  Cmd("FROM", "openjdk:11-jre"),
+  Cmd("FROM", "eclipse-temurin:11-jre-ubi9-minimal"),
   Cmd("MAINTAINER", "Kristian Lange"),
   Cmd("WORKDIR", "/opt/docker"),
   Cmd("ADD", "opt /opt"),
   Cmd("EXPOSE", "9000"),
-  Cmd("RUN", "apt update -y && apt install vim -y"),
   ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
   ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
   ExecCmd("RUN", "chmod", "u+x", "loader.sh"),

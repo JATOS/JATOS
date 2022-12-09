@@ -24,6 +24,7 @@ import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,12 +122,11 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Authenticated
-    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
+    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException, SQLException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checker.checkComponentResult(componentResult, loggedInUser, false);
-
-        return ok(componentResult.getData());
+        return ok(componentResultDao.getData(componentResultId));
     }
 
 }

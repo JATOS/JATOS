@@ -239,7 +239,7 @@ public class ImportExport extends Controller {
             for (Study study : studyList) {
                 checker.checkStandardForStudy(study, study.getId(), loggedInUser);
             }
-            Source<ByteString, ?> dataSource = resultStreamer.streamComponentResult(componentResultIdList);
+            Source<ByteString, ?> dataSource = resultStreamer.streamComponentResultData(loggedInUser, componentResultIdList);
             studyList.forEach(s -> studyLogger.log(s, loggedInUser, "Exported result data"));
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
                     + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");

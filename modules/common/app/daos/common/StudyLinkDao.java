@@ -54,7 +54,9 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, String workerType) {
-        String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch = :batch AND sr.workerType = :workerType";
+        String queryStr = "SELECT sl FROM StudyLink sl " +
+                "LEFT JOIN FETCH sl.worker w " +
+                "WHERE sl.batch = :batch AND sl.workerType = :workerType";
         return jpa.em().createQuery(queryStr, StudyLink.class)
                 .setParameter("batch", batch)
                 .setParameter("workerType", workerType)
