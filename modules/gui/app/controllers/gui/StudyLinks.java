@@ -97,10 +97,9 @@ public class StudyLinks extends Controller {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
-        Integer allWorkersSize = study.getBatchList().stream().mapToInt(batchDao::countWorkersWithoutJatosWorker).sum();
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
         return ok(views.html.gui.studyLinks.studyLinks.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost(), study, allWorkersSize, request));
+                breadcrumbs, Helpers.isLocalhost(), study, request));
     }
 
     /**
