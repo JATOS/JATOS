@@ -1,18 +1,17 @@
 package services.gui;
 
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import models.common.Batch;
-import models.common.Study;
 import models.common.workers.*;
 import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -23,12 +22,10 @@ import java.util.stream.Collectors;
 public class WorkerService {
 
     private final StudyResultDao studyResultDao;
-    private final WorkerDao workerDao;
 
     @Inject
-    WorkerService(StudyResultDao studyResultDao, WorkerDao workerDao) {
+    WorkerService(StudyResultDao studyResultDao) {
         this.studyResultDao = studyResultDao;
-        this.workerDao = workerDao;
     }
 
     public void validateWorker(Worker worker) throws BadRequestException {
