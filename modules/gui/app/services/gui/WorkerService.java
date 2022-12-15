@@ -31,16 +31,6 @@ public class WorkerService {
         this.workerDao = workerDao;
     }
 
-    /**
-     * Retrieve all workers that belong to the study including the ones that were not started yet
-     */
-    public Set<Worker> retrieveAllWorkers(Study study) {
-        List<Long> srids = studyResultDao.findIdsByStudyId(study.getId());
-        return workerDao.findAllByStudy(srids).stream()
-                .filter(w -> !w.getWorkerType().equals(JatosWorker.WORKER_TYPE))
-                .collect(Collectors.toSet());
-    }
-
     public void validateWorker(Worker worker) throws BadRequestException {
         List<ValidationError> errorList = worker.validate();
         if (errorList != null && !errorList.isEmpty()) {

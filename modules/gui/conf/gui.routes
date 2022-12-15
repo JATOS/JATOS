@@ -120,7 +120,6 @@ GET      /jatos/:studyId/clone                                              @con
 POST     /jatos/:studyId/lock/toggle                                        @controllers.gui.Studies.toggleLock(studyId: Long)
 GET      /jatos/:studyId/componentsTableData                                @controllers.gui.Studies.tableDataByStudy(studyId: Long)
 GET      /jatos/:studyId/log                                                @controllers.gui.Studies.studyLog(studyId: Long, limit: Integer ?= -1, download: Boolean ?= false)
-GET      /jatos/:studyId/allWorkers                                         @controllers.gui.Studies.allWorkers(studyId: Long)
 GET      /jatos/:studyId                                                    @controllers.gui.Studies.study(studyId: Long)
 GET      /jatos/:studyId/                                                   @controllers.gui.Studies.study(studyId: Long)
 

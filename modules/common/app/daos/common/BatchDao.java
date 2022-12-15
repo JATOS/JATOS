@@ -36,19 +36,4 @@ public class BatchDao extends AbstractDao {
 		return jpa.em().find(Batch.class, id);
 	}
 
-	/**
-	 * Counts all workers in the given batch that are not JatosWorkers
-	 * https://stackoverflow.com/a/34432660/1278769
-	 */
-	public int countWorkersWithoutJatosWorker(Batch batch) {
-		Number result = (Number) jpa.em()
-				.createQuery("SELECT COUNT(*) AS cnt FROM Worker worker "
-						+ "WHERE TYPE(worker)!=JatosWorker AND worker.id IN("
-						+ "SELECT workerList.id FROM Batch batch INNER JOIN batch.workerList workerList WHERE batch.id=:batchId"
-						+ ")")
-				.setParameter("batchId", batch.getId())
-				.getSingleResult();
-		return result != null ? result.intValue() : 0;
-	}
-
 }
