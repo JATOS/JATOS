@@ -548,31 +548,6 @@ public class JsonUtils {
         return componentsNode;
     }
 
-    /**
-     * Returns a JSON string with the given set of workers wrapped in a data
-     * object. Intended for use in JATOS' GUI.
-     */
-    public JsonNode workersForTableData(Set<Worker> workerSet, Study study) {
-        ArrayNode workerArrayNode = Json.mapper().createArrayNode();
-        for (Worker worker : workerSet) {
-            ObjectNode workerNode = Json.mapper().valueToTree(Helpers.initializeAndUnproxy(worker));
-
-            List<String> batchList = worker.getBatchList().stream()
-                    .filter(b -> study.getBatchList().contains(b))
-                    .map(Batch::getTitle)
-                    .collect(Collectors.toList());
-            workerNode.set("batchList", Json.mapper().valueToTree(batchList));
-
-            Optional<StudyResult> last = worker.getLastStudyResult();
-            String lastStudyState = last.map(studyResult -> studyResult.getStudyState().name()).orElse(null);
-            workerNode.put("lastStudyState", lastStudyState);
-
-            addUsernameForJatosWorker(worker, workerNode);
-            workerArrayNode.add(workerNode);
-        }
-        return workerArrayNode;
-    }
-
     public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,
             Integer personalSingleLinkCount, Integer personalMultipleLinkCount) {
         ObjectNode studyLinkSetupData = Json.mapper().createObjectNode();

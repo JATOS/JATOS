@@ -16,7 +16,6 @@ import general.common.Common;
 import general.common.StudyLogger;
 import general.gui.RequestScopeMessaging;
 import models.common.*;
-import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.data.Form;
@@ -39,7 +38,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -56,7 +58,6 @@ public class Studies extends Controller {
     private final StudyService studyService;
     private final UserService userService;
     private final AuthenticationService authenticationService;
-    private final WorkerService workerService;
     private final BreadcrumbsService breadcrumbsService;
     private final BatchService batchService;
     private final StudyDao studyDao;
@@ -72,7 +73,7 @@ public class Studies extends Controller {
 
     @Inject
     Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, StudyService studyService,
-            UserService userService, AuthenticationService authenticationService, WorkerService workerService,
+            UserService userService, AuthenticationService authenticationService,
             BreadcrumbsService breadcrumbsService, BatchService batchService, StudyDao studyDao,
             ComponentDao componentDao, StudyResultDao studyResultDao, UserDao userDao,
             ComponentResultDao componentResultDao, StudyLinkDao studyLinkDao, JsonUtils jsonUtils,
@@ -82,7 +83,6 @@ public class Studies extends Controller {
         this.studyService = studyService;
         this.userService = userService;
         this.authenticationService = authenticationService;
-        this.workerService = workerService;
         this.breadcrumbsService = breadcrumbsService;
         this.batchService = batchService;
         this.studyDao = studyDao;
@@ -393,22 +393,6 @@ public class Studies extends Controller {
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/jsonline");
         }
-    }
-
-    /**
-     * GET request that returns all worker data that belong to this study as JSON
-     */
-    @Transactional
-    @Authenticated
-    public Result allWorkers(Long studyId) throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-
-        JsonNode dataAsJson;
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
-        Set<Worker> workerSet = workerService.retrieveAllWorkers(study);
-        dataAsJson = jsonUtils.workersForTableData(workerSet, study);
-        return ok(dataAsJson);
     }
 
     private void checkStandardForStudy(Long studyId, Study study, User loggedInUser) throws JatosGuiException {
