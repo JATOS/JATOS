@@ -311,7 +311,7 @@ public class ImportExport extends Controller {
         List<Long> crids = componentResultIdsExtractor.extract(json);
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(crids, loggedInUser, ResultsType.COMBINED);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
         return ok().chunked(dataSource).as("application/zip")
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }

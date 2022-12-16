@@ -265,7 +265,7 @@ $(document).ready(function() {
                     "className": "btn btn-study",
                     "buttons": [
                         {
-                            "text": '<button class="btn btn-study" data-toggle="tooltip" title="A JATOS Results Archive contains everything from results (metadata, data and files), all packed in a zip file">JATOS Results Archive <span class="glyphicon glyphicon-info-sign"></span></button>',
+                            "text": '<button class="btn btn-study" data-toggle="tooltip" title="A JATOS Results Archive (.jrzip) contains everything from results (metadata, data and files), all packed in a ZIP archive">JATOS Results Archive <span class="glyphicon glyphicon-info-sign"></span></button>',
                             "action": exportSelectedResults
                         },
                         {
@@ -508,35 +508,30 @@ $(document).ready(function() {
 
     function exportSelectedResults(e, dt, node, config) {
         const url = '@controllers.gui.routes.ImportExport.exportResults()';
-        const filename = "jatos_results_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
-        exportResults(url, filename);
+        exportResults(url);
     }
 
     function exportResultsMetadata(e, dt, node, config) {
         const url = '@controllers.gui.routes.ImportExport.exportResultsMetadata()';
-        const filename = "jatos_results_metadata_" + getDateTimeYYYYMMDDHHmmss() + ".json";
-        exportResults(url, filename);
+        exportResults(url);
     }
 
     function exportSelectedResultDataZip(e, dt, node, config) {
         const url = '@controllers.gui.routes.ImportExport.exportResultsData(false)';
-        const filename = "jatos_results_data_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
-        exportResults(url, filename);
+        exportResults(url);
     }
 
     function exportSelectedResultDataText(e, dt, node, config) {
         const url = '@controllers.gui.routes.ImportExport.exportResultsData(true)';
-        const filename = "jatos_results_data_" + getDateTimeYYYYMMDDHHmmss() + ".txt";
-        exportResults(url, filename);
+        exportResults(url);
     }
 
     function exportSelectedResultFiles(e, dt, node, config) {
         const url = '@controllers.gui.routes.ImportExport.exportResultsFiles()';
-        const filename = "jatos_results_files_" + getDateTimeYYYYMMDDHHmmss() + ".zip";
-        exportResults(url, filename);
+        exportResults(url);
     }
 
-    function exportResults(url, filename) {
+    function exportResults(url) {
         $(".dt-button-collection").hide();
         showWaitingModal(true);
         var selectedTrs = resultsTable.rows('.selected').nodes();
@@ -551,7 +546,7 @@ $(document).ready(function() {
             return;
         }
         var data = JSON.stringify({"studyResultIds": ids});
-        window.downloadFileStream(url, data, filename);
+        window.downloadFileStream(url, data);
     }
 
     function isAllSelected() {
