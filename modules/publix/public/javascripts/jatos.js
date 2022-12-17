@@ -311,23 +311,23 @@ var jatos = {};
 			// Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
 			jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.min.js")
 		)
-		.then(function () {
-			// Get studyResultUuid from URL path
-			jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
-			readIdCookie();
-			// Start heartbeat.js (the general one - not the channel one)
-            heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
-			heartbeatWorker.postMessage([jatos.studyResultUuid]);
-			// Start httpLoop.js
-            httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
-			httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
-		})
-		.then(getInitData)
-		.then(openBatchChannelWithRetry)
-		.always(function () {
-			initialized = true;
-			readyForOnLoad();
-		});
+			.then(function () {
+				// Get studyResultUuid from URL path
+				jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
+				readIdCookie();
+				// Start heartbeat.js (the general one - not the channel one)
+				heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
+				heartbeatWorker.postMessage([jatos.studyResultUuid]);
+				// Start httpLoop.js
+				httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
+				httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
+			})
+			.then(getInitData)
+			.then(openBatchChannelWithRetry)
+			.always(function () {
+				initialized = true;
+				readyForOnLoad();
+			});
 	}
 
 	/**
@@ -438,7 +438,7 @@ var jatos = {};
 			dataType: 'json',
 			timeout: jatos.httpTimeout,
 			success: setInitData,
-			error: (err) =>	console.error(getAjaxErrorMsg(err))
+			error: (err) => console.error(getAjaxErrorMsg(err))
 		}).retry({
 			times: jatos.httpRetry,
 			timeout: jatos.httpRetryWait
@@ -566,10 +566,10 @@ var jatos = {};
 			console.info("Won't open batch channel because study is about to move to the next component or finish.");
 			return rejectedPromise();
 		}
-        if (studyRunInvalid) {
-            console.warn("Can't open batch channel. This study run is invalid.");
-            return rejectedPromise();
-        }
+		if (studyRunInvalid) {
+			console.warn("Can't open batch channel. This study run is invalid.");
+			return rejectedPromise();
+		}
 		if (isDeferredPending(openingBatchChannelDeferred)) {
 			console.warn("Can open only one batch channel.");
 			return rejectedPromise();
@@ -1159,7 +1159,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
 		}
-		
+
 		var componentPos, filename, onSuccess, onError;
 		if (typeof param1 === 'number') {
 			componentPos = param1;
@@ -1289,7 +1289,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return;
 		}
-		
+
 		var message, onError, componentUuid;
 		if (typeof componentIdOrUuid === 'number') {
 			componentUuid = jatos.componentList.find(c => c.id == componentIdOrUuid).uuid;
@@ -1302,7 +1302,7 @@ var jatos = {};
 		} else if (typeof param3 === 'function') {
 			onError = param3;
 		}
-		
+
 		if (studyRunInvalid) {
 			callMany("Can't start component. This study run is invalid.", onError, console.warn);
 			return;
@@ -2405,7 +2405,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
 		}
-		
+
 		var resultData, successful, message, onSuccess, onError;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2419,7 +2419,7 @@ var jatos = {};
 			onSuccess = param3;
 			onError = param4;
 		}
-		
+
 		if (studyRunInvalid) {
 			callMany("Can't end study. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
@@ -2429,10 +2429,10 @@ var jatos = {};
 			return rejectedPromise();
 		}
 		endingStudy = true;
-		
+
 		// Before finish send result data
 		if (resultData) jatos.appendResultData(resultData);
-		
+
 		var url = getURL("../end");
 		if (typeof successful == 'boolean' && typeof message == 'string') {
 			url = url + "?" + jatos.jQuery.param({
@@ -2515,7 +2515,7 @@ var jatos = {};
 			console.warn("Can't end study. This study run is invalid.");
 			return;
 		}
-		
+
 		var resultData, successful, message, showEndPage;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2861,7 +2861,7 @@ var jatos = {};
 	 * @param {*} arg 
 	 * @param  {...function} functions 
 	 */
-	var callMany = (arg, ...functions) => functions.forEach((f) => { 
+	var callMany = (arg, ...functions) => functions.forEach((f) => {
 		if (f && typeof f === 'function') f(arg);
 	});
 
