@@ -255,10 +255,6 @@ var jatos = {};
 	 */
 	var onJatosBatchSession;
 	/**
-	 * Callback function if jatos.js produces an error, defined via jatos.onError.
-	 */
-	var onJatosError;
-	/**
 	 * Flag that determines if the 'beforeunload' warning should be shown
 	 * by the browser to the worker if they attempt to reload or close the
 	 * broser (tab)
@@ -345,10 +341,10 @@ var jatos = {};
 
 		var deferred = jatos.jQuery.Deferred();
 		deferred.done(function () {
-			callFunctionIfExist(onSuccess);
+			call(onSuccess);
 		});
 		deferred.fail(function (err) {
-			callingOnError(onError, err);
+			callWithArgs(onError, err);
 		});
 
 		var requestId = httpLoopCounter++;
@@ -442,9 +438,7 @@ var jatos = {};
 			dataType: 'json',
 			timeout: jatos.httpTimeout,
 			success: setInitData,
-			error: function (err) {
-				callingOnError(null, getAjaxErrorMsg(err));
-			}
+			error: (err) =>	console.error(getAjaxErrorMsg(err))
 		}).retry({
 			times: jatos.httpRetry,
 			timeout: jatos.httpRetryWait
@@ -469,7 +463,7 @@ var jatos = {};
 		try {
 			jatos.studySessionData = JSON.parse(initData.studySessionData);
 		} catch (e) {
-			callingOnError(null, e.stack || e);
+			console.error(e.stack || e);
 		}
 
 		// Study properties
@@ -557,7 +551,7 @@ var jatos = {};
 	 */
 	function openBatchChannel() {
 		if (!webSocketSupported) {
-			callingOnError(null, "This browser does not support WebSockets. Can't open batch channel.");
+			console.warn("This browser does not support WebSockets. Can't open batch channel.");
 			return rejectedPromise();
 		}
 		// WebSocket's readyState:
@@ -568,12 +562,16 @@ var jatos = {};
 		if (batchChannel && batchChannel.readyState != batchChannel.CLOSED) {
 			return rejectedPromise();
 		}
-		if (studyRunInvalid) {
-			callingOnError(null, "This study run is invalid.");
+		if (endingStudy || startingComponent) {
+			console.info("Won't open batch channel because study is about to move to the next component or finish.");
 			return rejectedPromise();
 		}
+        if (studyRunInvalid) {
+            console.warn("Can't open batch channel. This study run is invalid.");
+            return rejectedPromise();
+        }
 		if (isDeferredPending(openingBatchChannelDeferred)) {
-			callingOnError(null, "Can open only one batch channel.");
+			console.warn("Can open only one batch channel.");
 			return rejectedPromise();
 		}
 		openingBatchChannelDeferred = jatos.jQuery.Deferred();
@@ -591,7 +589,7 @@ var jatos = {};
 			handleBatchMsg(event.data);
 		};
 		batchChannel.onerror = function () {
-			callingOnError(null, "Batch channel error");
+			console.error("Batch channel error");
 			openingBatchChannelDeferred.reject();
 		};
 		// Some browsers call it with leaving/reloading the page
@@ -629,7 +627,7 @@ var jatos = {};
 			if (batchChannel.readyState == batchChannel.OPEN) {
 				batchChannel.send('{"heartbeat":"ping"}');
 				var timeout = setTimeout(function () {
-					callingOnError(null, "Batch channel heartbeat fail");
+					console.warn("Batch channel heartbeat fail");
 					reopenBatchChannel();
 				}, jatos.channelHeartbeatTimeoutTime);
 				batchChannelHeartbeatTimeoutTimers.push(timeout);
@@ -648,7 +646,7 @@ var jatos = {};
 		clearInterval(batchChannelClosedCheckTimer);
 		batchChannelClosedCheckTimer = setInterval(function () {
 			if (batchChannel.readyState == batchChannel.CLOSED) {
-				callingOnError(null, "Batch channel closed unexpectedly");
+				console.info("Batch channel closed");
 				clearInterval(batchChannelClosedCheckTimer);
 				reopenBatchChannel();
 			}
@@ -678,7 +676,7 @@ var jatos = {};
 		try {
 			batchMsg = JSON.parse(msg);
 		} catch (error) {
-			callingOnError(null, error);
+			console.error(error);
 			return;
 		}
 		if (typeof batchMsg.heartbeat != 'undefined') {
@@ -724,23 +722,21 @@ var jatos = {};
 				// Call onJatosBatchSession with JSON Patch's path and 
 				// op (operation) for each patch
 				batchMsg.patches.forEach(function (patch) {
-					callFunctionIfExist(onJatosBatchSession, patch.path, patch.op);
+					callWithArgs(onJatosBatchSession, patch.path, patch.op);
 				});
 				break;
 			case "SESSION_ACK":
 				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
 					batchSessionTimeouts[batchMsg.id].cancel();
 				} else {
-					callingOnError(null, "Batch session got 'SESSION_ACK' " +
-						"with nonexistent ID " + batchMsg.id);
+					console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
 				}
 				break;
 			case "SESSION_FAIL":
 				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
 					batchSessionTimeouts[batchMsg.id].trigger();
 				} else {
-					callingOnError(null, "Batch session got 'SESSION_FAIL' " +
-						"with nonexistent ID " + batchMsg.id);
+					console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
 				}
 				break;
 			case "CLOSED":
@@ -750,7 +746,7 @@ var jatos = {};
 				jatos.showOverlay(jatos.studyRunInvalidOverlayConfig);
 				break;
 			case "ERROR":
-				callingOnError(null, batchMsg.errorMsg);
+				console.error(batchMsg.errorMsg);
 				break;
 		}
 	}
@@ -973,15 +969,15 @@ var jatos = {};
 	 */
 	function sendBatchSessionPatch(patches, onSuccess, onFail) {
 		if (!batchChannel || batchChannel.readyState != batchChannel.OPEN) {
-			callingOnError(onFail, "No open batch channel");
+			callMany("Can't send batch session patch. No open batch channel", onFail, console.error);
 			return rejectedPromise();
 		}
 		if (jatos.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
-			callingOnError(onFail, "Can send only one batch session patch at a time");
+			callMany("Can send only one batch session patch at a time", onFail, console.error);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onFail, "This study run is invalid.");
+			callMany("Can't send batch session patch. This study run is invalid.", onFail, console.warn);
 			return rejectedPromise();
 		}
 
@@ -1001,7 +997,7 @@ var jatos = {};
 			setChannelSendingTimeoutAndPromiseResolution(deferred, batchSessionTimeouts,
 				sessionActionId, onSuccess, onFail);
 		} catch (error) {
-			callingOnError(onFail, error);
+			callMany(error, onFail, console.error);
 			deferred.reject();
 		}
 		return deferred.promise();
@@ -1033,8 +1029,7 @@ var jatos = {};
 	 * Defines callback function to be called if jatos.js produces an error, e.g. Ajax errors.
 	 */
 	jatos.onError = function (onError) {
-		console.warn("jatos.onError is deprecated - use the specific function's error callback or Promise function");
-		onJatosError = onError;
+		console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
 	};
 
 	/**
@@ -1073,7 +1068,7 @@ var jatos = {};
 	 */
 	function submitOrAppendResultData(resultData, append, onSuccess, onError) {
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't send result data. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
 		}
 		var httpMethod = append ? "POST" : "PUT";
@@ -1107,11 +1102,11 @@ var jatos = {};
 	 */
 	jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't upload file. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
 		}
 		if (typeof filename !== "string" || 0 === filename.length) {
-			callingOnError(onError, "No filename specified");
+			callMany("No filename specified", onError, console.error);
 			return rejectedPromise();
 		}
 
@@ -1124,7 +1119,7 @@ var jatos = {};
 			// Object can be stringified to JSON
 			blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
 		} else {
-			callingOnError(onError, "Only string, Object or Blob allowed");
+			callMany("Only string, Object or Blob allowed", onError, console.error);
 			return rejectedPromise();
 		}
 
@@ -1176,22 +1171,22 @@ var jatos = {};
 			onSuccess = param2;
 			onError = param3;
 		} else {
-			callingOnError(onError, "Unknown first parameter");
+			callMany("Unknown first parameter", onError, console.error);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't download file. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
 		}
 		if (typeof filename !== "string" || 0 === filename.length) {
-			callingOnError(onError, "No filename specified");
+			callMany("No filename specified", onError, console.error);
 			return rejectedPromise();
 		}
 
 		var url = getURL("../files/" + encodeURI(filename));
 		if (componentPos) {
 			if (isInvalidComponentPosition(componentPos)) {
-				callingOnError(onError, "Component position does not exist");
+				callMany("Component position does not exist", onError, console.error);
 				return rejectedPromise();
 			}
 			var componentId = jatos.componentList[componentPos - 1].id;
@@ -1210,7 +1205,7 @@ var jatos = {};
 					var jsonReader = new FileReader();
 					jsonReader.addEventListener("loadend", function () {
 						var obj = JSON.parse(jsonReader.result);
-						callFunctionIfExist(onSuccess, obj);
+						callWithArgs(onSuccess, obj);
 						deferred.resolve(obj);
 					});
 					jsonReader.readAsText(blob);
@@ -1218,12 +1213,12 @@ var jatos = {};
 					var textReader = new FileReader();
 					textReader.addEventListener("loadend", function () {
 						var text = textReader.result;
-						callFunctionIfExist(onSuccess, text);
+						callWithArgs(onSuccess, text);
 						deferred.resolve(text);
 					});
 					textReader.readAsText(blob);
 				} else {
-					callFunctionIfExist(onSuccess, blob);
+					callWithArgs(onSuccess, blob);
 					deferred.resolve(blob);
 				}
 			} else {
@@ -1232,7 +1227,7 @@ var jatos = {};
 		};
 		xhr.onerror = function () {
 			var error = "Download of " + filename + " returned " + xhr.statusText;
-			callingOnError(onError, error);
+			callMany(error, onError, console.error);
 			deferred.reject(error);
 		};
 		xhr.send(null);
@@ -1309,11 +1304,11 @@ var jatos = {};
 		}
 		
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't start component. This study run is invalid.", onError, console.warn);
 			return;
 		}
 		if (startingComponent) {
-			callingOnError(onError, "Can start only one component at the same time");
+			callMany("Can start only one component at the same time", onError, console.warn);
 			return;
 		}
 		startingComponent = true;
@@ -1362,7 +1357,7 @@ var jatos = {};
 			var onError;
 			if (typeof param3 === 'function') onError = param3;
 			else if (typeof param4 === 'function') onError = param4;
-			callingOnError(onError, "Component position does not exist");
+			callMany("Component position does not exist", onError, console.error);
 			return;
 		}
 		var componentUuid = jatos.componentList[componentPos - 1].uuid;
@@ -1393,7 +1388,7 @@ var jatos = {};
 			var onError;
 			if (typeof param3 === 'function') onError = param3;
 			else if (typeof param4 === 'function') onError = param4;
-			callingOnError(onError, `Component with title ${title} does not exist`);
+			callMany(`Component with title ${title} does not exist`, onError, console.error);
 			return;
 		}
 		var componentUuid = component.uuid;
@@ -1481,9 +1476,7 @@ var jatos = {};
 	 *		onClose: to be called when the group channel is closed
 	 *		onError(errorMsg): to be called if an error during opening of the group
 	 *			channel's WebSocket occurs or if an error is received via the
-	 *			group channel (e.g. the group session data couldn't be updated). If
-	 *			this function is not defined jatos.js will try to call the global
-	 *			onJatosError function.
+	 *			group channel (e.g. the group session data couldn't be updated).
 	 *		onMessage(msg): to be called if a message from another group member is
 	 *			received. It gets the message as a parameter.
 	 *		onMemberJoin(memberId): to be called when another member (not the worker
@@ -1515,8 +1508,7 @@ var jatos = {};
 
 	function openGroupChannel() {
 		if (!webSocketSupported) {
-			callingOnError(groupChannelCallbacks.onError,
-				"This browser does not support WebSockets.");
+			callMany("This browser does not support WebSockets.", console.warn, groupChannelCallbacks.onError);
 			return rejectedPromise();
 		}
 		// WebSocket's readyState:
@@ -1527,20 +1519,25 @@ var jatos = {};
 		if (groupChannel && groupChannel.readyState != groupChannel.CLOSED) {
 			return rejectedPromise();
 		}
+		if (endingStudy || startingComponent) {
+			callMany("Won't open group channel because study is about to move to the next component or finish.",
+				console.warn, groupChannelCallbacks.onError);
+			return rejectedPromise();
+		}
 		if (studyRunInvalid) {
-			callingOnError(groupChannelCallbacks.onError, "This study run is invalid.");
+			callMany("Can't open group channel. This study run is invalid.", console.warn, groupChannelCallbacks.onError);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(openingGroupChannelDeferred)) {
-			callingOnError(groupChannelCallbacks.onError, "Can open group channel only once");
+			callMany("Can open only one group channel", console.warn, groupChannelCallbacks.onError);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(leavingGroupDeferred)) {
-			callingOnError(groupChannelCallbacks.onError, "Can't open group channel while leaving a group");
+			callMany("Can't open group channel while leaving a group", console.error, groupChannelCallbacks.onError);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(reassigningGroupDeferred)) {
-			callingOnError(groupChannelCallbacks.onError, "Can't open group channel while reassigning a group");
+			callMany("Can't open group channel while reassigning a group", console.error, groupChannelCallbacks.onError);
 			return rejectedPromise();
 		}
 
@@ -1558,12 +1555,12 @@ var jatos = {};
 			handleGroupMsg(event.data);
 		};
 		groupChannel.onerror = function () {
-			callingOnError(groupChannelCallbacks.onError, "Group channel error");
+			callMany("Group channel error", console.error, groupChannelCallbacks.onError);
 			openingGroupChannelDeferred.reject();
 		};
 		groupChannel.onclose = function () {
 			clearGroupChannel();
-			callFunctionIfExist(groupChannelCallbacks.onClose);
+			call(groupChannelCallbacks.onClose);
 			openingGroupChannelDeferred.reject();
 		};
 
@@ -1613,8 +1610,7 @@ var jatos = {};
 			if (groupChannel.readyState == groupChannel.OPEN) {
 				groupChannel.send('{"heartbeat":"ping"}');
 				var timeout = setTimeout(function () {
-					callingOnError(groupChannelCallbacks.onError,
-						"Group channel heartbeat fail");
+					callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
 					reopenGroupChannel();
 				}, jatos.channelHeartbeatTimeoutTime);
 				groupChannelHeartbeatTimeoutTimers.push(timeout);
@@ -1633,8 +1629,7 @@ var jatos = {};
 		clearInterval(groupChannelClosedCheckTimer);
 		groupChannelClosedCheckTimer = setInterval(function () {
 			if (groupChannel.readyState == groupChannel.CLOSED) {
-				callingOnError(groupChannelCallbacks.onError,
-					"Group channel closed unexpectedly");
+				callMany("Group channel closed", console.info, groupChannelCallbacks.onError);
 				clearInterval(groupChannelClosedCheckTimer);
 				reopenGroupChannel();
 			}
@@ -1671,7 +1666,7 @@ var jatos = {};
 		try {
 			groupMsg = JSON.parse(msg);
 		} catch (error) {
-			callingOnError(groupChannelCallbacks.onError, error);
+			callMany(error, groupChannelCallbacks.onError, console.error);
 			return;
 		}
 		if (typeof groupMsg.heartbeat != 'undefined') {
@@ -1740,10 +1735,10 @@ var jatos = {};
 				// Someone opened a group channel; distinguish between the worker running
 				// this study and others
 				if (groupMsg.memberId == jatos.groupMemberId) {
-					callFunctionIfExist(groupChannelCallbacks.onOpen, groupMsg.memberId);
+					callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
 				} else {
-					callFunctionIfExist(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
-					callFunctionIfExist(groupChannelCallbacks.onUpdate);
+					callWithArgs(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
+					call(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "CLOSED":
@@ -1751,8 +1746,8 @@ var jatos = {};
 				// Some member closed its group channel
 				// (onClose callback function is handled during groupChannel.onclose)
 				if (typeof groupMsg.memberId != 'undefined' && groupMsg.memberId != jatos.groupMemberId) {
-					callFunctionIfExist(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
-					callFunctionIfExist(groupChannelCallbacks.onUpdate);
+					callWithArgs(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
+					call(groupChannelCallbacks.onUpdate);
 				} else {
 					clearInterval(groupChannelClosedCheckTimer);
 					console.info("Group channel closed by JATOS server");
@@ -1763,8 +1758,8 @@ var jatos = {};
 				// Some member joined (it should not happen, but check the group member ID
 				// (aka study result ID) is not the one of the joined member)
 				if (groupMsg.memberId != jatos.groupMemberId) {
-					callFunctionIfExist(groupChannelCallbacks.onMemberJoin, groupMsg.memberId);
-					callFunctionIfExist(groupChannelCallbacks.onUpdate);
+					callWithArgs(groupChannelCallbacks.onMemberJoin, groupMsg.memberId);
+					call(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "LEFT":
@@ -1772,8 +1767,8 @@ var jatos = {};
 				// Some member left (it should not happen, but check the group member ID
 				// (aka study result ID) is not the one of the left member)
 				if (groupMsg.memberId != jatos.groupMemberId) {
-					callFunctionIfExist(groupChannelCallbacks.onMemberLeave, groupMsg.memberId);
-					callFunctionIfExist(groupChannelCallbacks.onUpdate);
+					callWithArgs(groupChannelCallbacks.onMemberLeave, groupMsg.memberId);
+					call(groupChannelCallbacks.onUpdate);
 				}
 				break;
 			case "SESSION":
@@ -1782,37 +1777,33 @@ var jatos = {};
 				// Call onGroupSession with JSON Patch's path 
 				// and op (operation) for each patch.
 				groupMsg.sessionPatches.forEach(function (patch) {
-					callFunctionIfExist(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
+					callWithArgs(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
 				});
-				callFunctionIfExist(groupChannelCallbacks.onUpdate);
+				call(groupChannelCallbacks.onUpdate);
 				break;
 			case "FIXED":
 				// The group is now fixed (no new members)
 				if (groupFixedTimeout) {
 					groupFixedTimeout.cancel();
 				}
-				callFunctionIfExist(groupChannelCallbacks.onUpdate);
+				call(groupChannelCallbacks.onUpdate);
 				break;
 			case "SESSION_ACK":
 				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
 					groupSessionTimeouts[groupMsg.sessionActionId].cancel();
 				} else {
-					callingOnError(null, "Group session got 'SESSION_ACK' " +
-						"with nonexistent ID " + groupMsg.sessionActionId);
+					console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
 				}
 				break;
 			case "SESSION_FAIL":
 				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
 					groupSessionTimeouts[groupMsg.sessionActionId].trigger();
 				} else {
-					callingOnError(null, "Group session got 'SESSION_FAIL' " +
-						"with nonexistent ID " + groupMsg.sessionActionId);
+					console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
 				}
 				break;
 			case "ERROR":
-				// onError or jatos.onError
-				// Got an error
-				callingOnError(groupChannelCallbacks.onError, groupMsg.errorMsg);
+				callMany(groupMsg.errorMsg, groupChannelCallbacks.onError, console.error);
 				break;
 		}
 	}
@@ -2000,15 +1991,15 @@ var jatos = {};
 	 */
 	function sendGroupSessionPatch(patches, onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
-			callingOnError(onFail, "No open group channel");
+			callMany("Can't send group session patch. No open group channel", onFail, console.error);
 			return rejectedPromise();
 		}
 		if (jatos.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
-			callingOnError(onFail, "Can send only one group session patch at a time");
+			callMany("Can send only one group session patch at a time", onFail, console.error);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onFail, "This study run is invalid.");
+			callMany("Can't send group session patch. This study run is invalid.", onFail, console.warn);
 			return rejectedPromise();
 		}
 
@@ -2028,7 +2019,7 @@ var jatos = {};
 			setChannelSendingTimeoutAndPromiseResolution(deferred, groupSessionTimeouts,
 				sessionActionId, onSuccess, onFail);
 		} catch (error) {
-			callingOnError(onFail, error);
+			callMany(error, onFail, console.error);
 			deferred.reject();
 		}
 		return deferred.promise();
@@ -2044,15 +2035,15 @@ var jatos = {};
 	 */
 	jatos.setGroupFixed = function (onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
-			callingOnError(onFail, "No open group channel");
+			callMany("Can't fix group. No open group channel", onFail, console.error);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(sendingGroupFixedDeferred)) {
-			callingOnError(onFail, "Can fix group only once");
+			callMany("Can fix group only once", onFail, console.warn);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onFail, "This study run is invalid.");
+			callMany("Can't fix group. This study run is invalid.", onFail, console.warn);
 			return rejectedPromise();
 		}
 
@@ -2065,7 +2056,7 @@ var jatos = {};
 			setGroupFixedTimeoutAndPromiseResolution(sendingGroupFixedDeferred,
 				onSuccess, onFail);
 		} catch (error) {
-			callingOnError(onFail, error);
+			callMany(error, onFail, console.error);
 			sendingGroupFixedDeferred.reject();
 		}
 		return sendingGroupFixedDeferred.promise();
@@ -2073,7 +2064,7 @@ var jatos = {};
 
 	function setGroupFixedTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
 		var timeoutId = setTimeout(() => {
-			callFunctionIfExist(onFail, "Timeout sending message");
+			callWithArgs(onFail, "Timeout sending message");
 			deferred.reject("Timeout sending message");
 		}, jatos.channelSendingTimeoutTime);
 
@@ -2081,7 +2072,7 @@ var jatos = {};
 		groupFixedTimeout = {
 			cancel: () => {
 				clearTimeout(timeoutId);
-				callFunctionIfExist(onSuccess, "success");
+				callWithArgs(onSuccess, "success");
 				deferred.resolve("success");
 			}
 		};
@@ -2190,23 +2181,23 @@ var jatos = {};
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
 		if (isDeferredPending(openingGroupChannelDeferred)) {
-			callingOnError(onFail, "Can't reassign group if not joined yet");
+			callMany("Can't reassign a group if not joined yet", console.error, onFail);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(leavingGroupDeferred)) {
-			callingOnError(onFail, "Can't reassign group during leaving");
+			callMany("Can't reassign a group during leaving", console.error, onFail);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(reassigningGroupDeferred)) {
-			callingOnError(onFail, "Can't reassign group twice at the same time");
+			callMany("Can't reassign a group twice at the same time", console.warn, onFail);
 			return rejectedPromise();
 		}
-		if (groupChannel && groupChannel.readyState != groupChannel.OPEN) {
-			callingOnError(onFail, "Group channel not open");
+		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
+			callMany("Can't reassign group. Group channel not open", console.error, onFail);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onFail, "This study run is invalid.");
+			callMany("Can't reassign group. This study run is invalid.", console.warn, onFail);
 			return rejectedPromise();
 		}
 
@@ -2219,18 +2210,18 @@ var jatos = {};
 			statusCode: {
 				200: function () {
 					// Successful reassignment (keeps the same WebSocket)
-					callFunctionIfExist(onSuccess);
+					call(onSuccess);
 					reassigningGroupDeferred.resolve();
 				},
 				204: function () {
 					// Unsuccessful reassignment
-					callFunctionIfExist(onFail);
+					call(onFail);
 					reassigningGroupDeferred.reject();
 				}
 			},
 			error: function (err) {
 				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(onFail, getAjaxErrorMsg(err));
+				callMany(errMsg, console.error, onFail);
 				reassigningGroupDeferred.reject(errMsg);
 			}
 		});
@@ -2249,19 +2240,19 @@ var jatos = {};
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
 		if (isDeferredPending(openingGroupChannelDeferred)) {
-			callingOnError(onError, "Can't leave group if not joined yet");
+			callMany("Can't leave group if not joined yet", onError, console.error);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(reassigningGroupDeferred)) {
-			callingOnError(onError, "Can't leave group during reassigning");
+			callMany("Can't leave group during reassigning", onError, console.error);
 			return rejectedPromise();
 		}
 		if (isDeferredPending(leavingGroupDeferred)) {
-			callingOnError(onError, "Can leave only once");
+			callMany("Can leave only once", onError, console.warn);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't leave group. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
 		}
 
@@ -2273,12 +2264,12 @@ var jatos = {};
 			timeout: jatos.httpTimeout,
 			success: function (response) {
 				clearInterval(groupChannelClosedCheckTimer);
-				callFunctionIfExist(onSuccess, response);
+				callWithArgs(onSuccess, response);
 				leavingGroupDeferred.resolve(response);
 			},
 			error: function (err) {
 				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(onError, getAjaxErrorMsg(err));
+				callMany(errMsg, onError, console.error);
 				leavingGroupDeferred.reject(errMsg);
 			}
 		}).retry({
@@ -2299,15 +2290,15 @@ var jatos = {};
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
 		if (!initialized) {
-			callingOnError(onError, "jatos.js not yet initialized");
+			callMany("jatos.js not yet initialized", onError, console.error);
 			return rejectedPromise();
 		}
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't abort study. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
 		}
 		if (endingStudy) {
-			callingOnError(onError, "Can end/abort study only once");
+			callMany("Can end/abort study only once", onError, console.warn);
 			return rejectedPromise();
 		}
 		endingStudy = true;
@@ -2354,12 +2345,12 @@ var jatos = {};
 			return jatos.abortStudyAjax(message);
 		}
 		if (studyRunInvalid) {
-			callingOnError(null, "This study run is invalid.");
+			console.warn("Can't abort study. This study run is invalid.");
 			return;
 		}
 
 		if (endingStudy) {
-			callingOnError(null, "Can end/abort study only once");
+			console.warn("Can end/abort study only once");
 			return;
 		}
 		endingStudy = true;
@@ -2430,11 +2421,11 @@ var jatos = {};
 		}
 		
 		if (studyRunInvalid) {
-			callingOnError(onError, "This study run is invalid.");
+			callMany("Can't end study. This study run is invalid.", onError, console.warn);
 			return rejectedPromise();
 		}
 		if (endingStudy) {
-			callingOnError(onError, "Can end/abort study only once");
+			callMany("Can end/abort study only once", onError, console.warn);
 			return rejectedPromise();
 		}
 		endingStudy = true;
@@ -2517,11 +2508,11 @@ var jatos = {};
 	 */
 	jatos.endStudy = function (param1, param2, param3, param4) {
 		if (!initialized) {
-			callingOnError(null, "jatos.js not yet initialized");
+			console.error("jatos.js not yet initialized");
 			return;
 		}
 		if (studyRunInvalid) {
-			callingOnError(null, "This study run is invalid.");
+			console.warn("Can't end study. This study run is invalid.");
 			return;
 		}
 		
@@ -2546,7 +2537,7 @@ var jatos = {};
 		}
 
 		if (endingStudy) {
-			callingOnError(null, "Can end/abort study only once");
+			console.warn("Can end/abort study only once");
 			return;
 		}
 		endingStudy = true;
@@ -2601,8 +2592,7 @@ var jatos = {};
 	 * Logs a message within the JATOS log on the server side.
 	 */
 	jatos.logError = function (logErrorMsg) {
-		console.warn("jatos.logError is deprecated - use jatos.log instead");
-		jatos.log(logErrorMsg);
+		console.warn("jatos.logError is abolished - use jatos.log instead");
 	};
 
 	/**
@@ -2629,12 +2619,10 @@ var jatos = {};
 	 */
 	jatos.catchAndLogErrors = function () {
 		window.addEventListener('error', function (e) {
-			jatos.log("Via 'error' event in " + e.filename + ":" +
-				e.lineno + " - " + e.message);
+			jatos.log(`Via 'error' event in ${e.filename}:${e.lineno} - ${e.message}`);
 		});
 		window.addEventListener('unhandledrejection', function (e) {
-			jatos.log("Via 'unhandledrejection' event in " + e.filename + ":" +
-				e.lineno + " - " + e.message);
+			jatos.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
 		});
 
 		var errorLog = console.error;
@@ -2833,15 +2821,6 @@ var jatos = {};
 	};
 
 	/**
-	 * Calls the function f it f exists with parameters a and b. 
-	 */
-	function callFunctionIfExist(f, a, b) {
-		if (f && typeof f == 'function') {
-			f(a, b);
-		}
-	}
-
-	/**
 	 * Takes a jQuery Ajax response and returns an error message.
 	 */
 	function getAjaxErrorMsg(jqxhr) {
@@ -2857,18 +2836,34 @@ var jatos = {};
 	}
 
 	/**
-	 * Little helper function that calls error functions. First it tries to call the
-	 * given onError one. If this fails it tries the onJatosError. If this fails
-	 * it calls console.error.
+	 * Checks if a function exists and calls it.
+	 * 
+	 * @param {function} f Function to be called
 	 */
-	function callingOnError(onError, errorMsg) {
-		if (onError) {
-			onError(errorMsg);
-		} else if (onJatosError) {
-			onJatosError(errorMsg);
-		}
-		console.error(errorMsg);
-	}
+	var call = (f) => {
+		if (f && typeof f == 'function') f();
+	};
+
+	/**
+	 * Calls one function with none, one or multiple arguments. Checks if the function exists.
+	 * 
+	 * @param {function} f Function to be called 
+	 * @param  {...any} args Arguments to be used with the function
+	 */
+	var callWithArgs = (f, ...args) => {
+		if (f && typeof f == 'function') args.length ? f(...args) : f();
+	};
+
+	/**
+	 * Calls multiple functions with the given argument. Often used for logging to multiple destinations.
+	 * Checks if the functions exists.
+	 * 
+	 * @param {*} arg 
+	 * @param  {...function} functions 
+	 */
+	var callMany = (arg, ...functions) => functions.forEach((f) => { 
+		if (f && typeof f === 'function') f(arg);
+	});
 
 	/**
 	 * Sets a timeout and puts an object with two functions, 'cancel' and 'trigger'
@@ -2877,7 +2872,7 @@ var jatos = {};
 	function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts,
 		sessionActionId, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
-			callFunctionIfExist(onFail, "Timeout sending message");
+			callWithArgs(onFail, "Timeout sending message");
 			deferred.reject("Timeout sending message");
 		}, jatos.channelSendingTimeoutTime);
 
@@ -2886,12 +2881,12 @@ var jatos = {};
 		sessionTimeouts[sessionActionId] = {
 			cancel: function () {
 				clearTimeout(timeoutId);
-				callFunctionIfExist(onSuccess, "success");
+				callWithArgs(onSuccess, "success");
 				deferred.resolve("success");
 			},
 			trigger: function () {
 				clearTimeout(timeoutId);
-				callFunctionIfExist(onFail, "Error sending message");
+				callWithArgs(onFail, "Error sending message");
 				deferred.reject("Error sending message");
 			}
 		};
