@@ -20,7 +20,7 @@ class MySQLCharsetFix @Inject()(db: Database) {
   private val logger = Logger(this.getClass)
 
   def run(): Unit = {
-    if (!Common.getDbDefaultUrl.toLowerCase.contains("jdbc:mysql")) return
+    if (!Common.usesMysql()) return
 
     val connection = db.getConnection()
     try {

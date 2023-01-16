@@ -1,8 +1,10 @@
 package daos.common;
 
+import general.common.Common;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
+import play.Logger;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 @Singleton
 public class ComponentResultDao extends AbstractDao {
 
+    private static final Logger.ALogger LOGGER = Logger.of(ComponentResultDao.class);
+
     @Inject
     ComponentResultDao(JPAApi jpa) {
         super(jpa);
@@ -44,7 +48,9 @@ public class ComponentResultDao extends AbstractDao {
      */
     public void replaceData(Long id, String data) {
         jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                        "SET cr.data = :data, cr.dataShort = SUBSTR(cr.data, 1, 1000), cr.dataSize = LENGTH(cr.data) " +
+                        "SET cr.data = :data, " +
+                        "cr.dataShort = SUBSTR(:data, 1, 1000), " +
+                        "cr.dataSize = LENGTH(:data) " +
                         "WHERE cr.id = :id")
                 .setParameter("id", id)
                 .setParameter("data", data)
@@ -63,19 +69,35 @@ public class ComponentResultDao extends AbstractDao {
      * Append data to 'data' field and replace data in 'dateShort' and 'dataSize'
      */
     public void appendData(Long id, String data) {
-        jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                        "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), cr.dataShort = SUBSTR(cr.data, 1, 1000), cr.dataSize = LENGTH(cr.data) " +
-                        "WHERE cr.id = :id")
-                .setParameter("id", id)
-                .setParameter("data", data)
-                .executeUpdate();
+        if (Common.usesMysql()) {
+            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                            "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), " +
+                            "cr.dataShort = SUBSTR(cr.data, 1, 1000), " +
+                            "cr.dataSize = LENGTH(cr.data) " +
+                            "WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .setParameter("data", data)
+                    .executeUpdate();
+        } else {
+            // H2 can't handle cr.data (it contains the old value)
+            String oldData = getData(id);
+            String newData = oldData != null ? oldData + data : data;
+            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
+                            "SET cr.data = :newData, " +
+                            "cr.dataShort = SUBSTR(:newData, 1, 1000), " +
+                            "cr.dataSize = LENGTH(:newData) " +
+                            "WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .setParameter("newData", newData)
+                    .executeUpdate();
+        }
     }
 
     /**
      * Only set the 'dataShort' and 'dataSize' field with data from 'data' (used only during update from old version of
      * JATOS that didn't have those fields yet).
      */
-    public void setDataSizeAndDataShort(Long id) throws SQLException {
+    public void setDataSizeAndDataShort(Long id) {
         String data = getData(id);
         if (data != null) {
             jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
@@ -97,7 +119,7 @@ public class ComponentResultDao extends AbstractDao {
      * Get 'data' field without fetching the whole row. The result is of a different type depending on the database
      * in use, MySQL or H2. So we have to treat them differently to get the String.
      */
-    public String getData(Long id) throws SQLException {
+    public String getData(Long id) {
         Object result = jpa.em().createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                 .setParameter("id", id)
                 .getSingleResult();
@@ -107,7 +129,11 @@ public class ComponentResultDao extends AbstractDao {
         } else if (result instanceof Clob) {
             // H2 returns Clob
             Clob clob = (Clob) result;
-            return new BufferedReader(new InputStreamReader(clob.getAsciiStream())).lines().collect(Collectors.joining());
+            try {
+                return new BufferedReader(new InputStreamReader(clob.getAsciiStream())).lines().collect(Collectors.joining());
+            } catch (SQLException e) {
+                LOGGER.error(".getData: Couldn't get data from ComponentResult " + id, e);
+            }
         }
         return null;
     }
@@ -197,7 +223,7 @@ public class ComponentResultDao extends AbstractDao {
                 .map(Component::getId)
                 .collect(Collectors.toList());
         Number result = (Number) jpa.em().createNativeQuery(
-                "SELECT SUM(dataSize) FROM ComponentResult WHERE component_id IN :componentIds")
+                        "SELECT SUM(dataSize) FROM ComponentResult WHERE component_id IN :componentIds")
                 .setParameter("componentIds", componentIds)
                 .getSingleResult();
         return result != null ? result.longValue() : 0L;

@@ -2837,7 +2837,7 @@ var jatos = {};
 
 	/**
 	 * Checks if a function exists and calls it.
-	 * 
+	 *
 	 * @param {function} f Function to be called
 	 */
 	var call = (f) => {
@@ -2846,8 +2846,8 @@ var jatos = {};
 
 	/**
 	 * Calls one function with none, one or multiple arguments. Checks if the function exists.
-	 * 
-	 * @param {function} f Function to be called 
+	 *
+	 * @param {function} f Function to be called
 	 * @param  {...any} args Arguments to be used with the function
 	 */
 	var callWithArgs = (f, ...args) => {
@@ -2857,9 +2857,9 @@ var jatos = {};
 	/**
 	 * Calls multiple functions with the given argument. Often used for logging to multiple destinations.
 	 * Checks if the functions exists.
-	 * 
-	 * @param {*} arg 
-	 * @param  {...function} functions 
+	 *
+	 * @param {*} arg
+	 * @param  {...function} functions
 	 */
 	var callMany = (arg, ...functions) => functions.forEach((f) => {
 		if (f && typeof f === 'function') f(arg);

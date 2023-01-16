@@ -358,6 +358,13 @@ public class Common {
     }
 
     /**
+     * Does JATOS use an MySQL database?
+     */
+    public static boolean usesMysql() {
+        return getDbDefaultUrl().toLowerCase().contains("jdbc:mysql");
+    }
+
+    /**
      * Database driver as defined in application.conf
      */
     public static String getDbDefaultDriver() {
