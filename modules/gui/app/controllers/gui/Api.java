@@ -91,12 +91,6 @@ public class Api extends Controller {
 
     @Transactional
     @ApiTokenAuth
-    public Result allWorkersByStudy(Long studyId) throws ForbiddenException, NotFoundException {
-        return studies.allWorkers(studyId);
-    }
-
-    @Transactional
-    @ApiTokenAuth
     public Result getStudyCodes(Long studyId, Long batchId, String type, String comment, Integer amount)
             throws ForbiddenException, NotFoundException, BadRequestException {
         return studyLinks.getStudyCodes(studyId, batchId, type, comment, amount);

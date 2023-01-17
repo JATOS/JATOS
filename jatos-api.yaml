@@ -232,30 +232,6 @@ paths:
         401:
           description: Invalid token
 
-  /jatos/api/workers:
-    get:
-      summary: Get overview data of all workers that belong to a study
-      description: All worker types except the internal Jatos worker type
-      tags:
-        - study
-      parameters:
-        - in: query
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
   /jatos/api/studyCodes:
     get:
       summary: Get one or multiple study codes

@@ -15,7 +15,6 @@ GET      /jatos/api/studies/:studyId/log                                    @con
 GET      /jatos/api/studies/:studyId/studyAssetsSize                        @controllers.gui.Api.studyAssetsSize(studyId: Long)
 GET      /jatos/api/studies/:studyId/resultDataSize                         @controllers.gui.Api.resultDataSize(studyId: Long)
 GET      /jatos/api/studies/:studyId/resultFileSize                         @controllers.gui.Api.resultFileSize(studyId: Long)
-GET      /jatos/api/workers                                                 @controllers.gui.Api.allWorkersByStudy(studyId: Long)
 GET      /jatos/api/studyCodes                                              @controllers.gui.Api.getStudyCodes(studyId: Long, batchId: Long, type: String, comment: String ?= null, amount: Integer ?= 1)
 
 # API results
