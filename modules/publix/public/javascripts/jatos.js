@@ -762,7 +762,8 @@ var jatos = {};
 
 	/**
 	 * Getter for a field in the batch session data. Takes a name
-	 * and returns the matching value. Works only on the first
+	 * and returns the matching value, or undefined if the name does not
+	 * correspond to an existing field. Works only on the first
 	 * level of the object tree. For all other levels use
 	 * jatos.batchSession.find. Gets the object from the
 	 * locally stored copy of the session and does not call
@@ -788,7 +789,8 @@ var jatos = {};
 
 	/**
 	 * Getter for a field in the batch session data. Takes a
-	 * JSON Pointer and returns the matching value. Gets the
+	 * JSON Pointer and returns the matching value, or undefined if
+	 * the pointer does not correspond to an existing field. Gets the
 	 * object from the locally stored copy of the session
 	 * and does not call the server.
 	 * @param {string} path - JSON pointer path
@@ -1824,7 +1826,8 @@ var jatos = {};
 
 	/**
 	 * Getter for a field in the group session data. Takes a name
-	 * and returns the matching value. Works only on the first
+	 * and returns the matching value, or undefined if the name does not
+	 * correspond to an existing field. Works only on the first
 	 * level of the object tree. For all other levels use
 	 * jatos.groupSession.find. Gets the object from the
 	 * locally stored copy of the group session and does not call
@@ -1849,7 +1852,8 @@ var jatos = {};
 
 	/**
 	 * Getter for a field in the group session data. Takes a
-	 * JSON Pointer and returns the matching value. Gets the object from the
+	 * JSON Pointer and returns the matching value, or undefined if the pointer
+	 * does not correspond to an existing field. Gets the object from the
 	 * locally stored copy of the group session and does not call the server.
 	 * @return {object}
 	 */
