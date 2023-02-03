@@ -716,7 +716,7 @@ var jatos = {};
 	}
 
 	/**
-	 * Handels a batch action message received via the batch channel
+	 * Handles a batch action message received via the batch channel
 	 */
 	function handleBatchAction(batchMsg) {
 		switch (batchMsg.action) {
