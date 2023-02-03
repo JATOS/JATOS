@@ -3,17 +3,17 @@
  * http://www.jatos.org
  * Author Kristian Lange 2014 - 2022
  * Licensed under Apache License 2.0
- * 
+ *
  * Uses plugin jquery.ajax-retry:
  * https://github.com/johnkpaul/jquery-ajax-retry
  * Copyright (c) 2012 John Paul
  * Licensed under the MIT license.
- * 
+ *
  * Uses Starcounter-Jack/JSON-Patch:
  * https://github.com/Starcounter-Jack/JSON-Patch
  * Copyright (c) 2013, 2014 Joachim Wester
  * Licensed under the MIT license.
- * 
+ *
  * Uses jsonpointer.js:
  * https://github.com/alexeykuzmin/jsonpointer.js
  * Copyright (c) 2013 Alexey Kuzmin
@@ -109,7 +109,7 @@ var jatos = {};
 	 */
 	var groupSessionData = {};
 	/**
-	 * Batch session data: shared in between study runs of the same batch 
+	 * Batch session data: shared in between study runs of the same batch
 	 */
 	var batchSessionData = {};
 	/**
@@ -130,7 +130,7 @@ var jatos = {};
 	 */
 	jatos.channelClosedCheckInterval = 2000;
 	/**
-	 * Min and max waiting time between channel reopening attempts 
+	 * Min and max waiting time between channel reopening attempts
 	 */
 	jatos.channelOpeningBackoffTimeMin = 1000;
 	jatos.channelOpeningBackoffTimeMax = 120000; // 2 min
@@ -584,7 +584,7 @@ var jatos = {};
 		batchChannel.onopen = function () {
 			batchChannelHeartbeat();
 			batchChannelClosedCheck();
-			// The actual batch channel opening is done when we have the 
+			// The actual batch channel opening is done when we have the
 			// current version of the batch session
 		};
 		batchChannel.onmessage = function (event) {
@@ -595,7 +595,7 @@ var jatos = {};
 			openingBatchChannelDeferred.reject();
 		};
 		// Some browsers call it with leaving/reloading the page
-		// Called with closing the WebSocket intentionally 
+		// Called with closing the WebSocket intentionally
 		// Called with network error, after ws.onerror
 		batchChannel.onclose = function () {
 			clearBatchChannel();
@@ -641,7 +641,7 @@ var jatos = {};
 	 * Periodically checks whether the batch channel is closed and if yes
 	 * reopens it. We don't rely on WebSocket's onClose callback (we could
 	 * just put reopenBatchChannel() in there) because it's not always called
-	 * and additionally sometimes called (unwanted) in case of a page 
+	 * and additionally sometimes called (unwanted) in case of a page
 	 * reload/closing.
 	 */
 	function batchChannelClosedCheck() {
@@ -721,7 +721,7 @@ var jatos = {};
 	function handleBatchAction(batchMsg) {
 		switch (batchMsg.action) {
 			case "SESSION":
-				// Call onJatosBatchSession with JSON Patch's path and 
+				// Call onJatosBatchSession with JSON Patch's path and
 				// op (operation) for each patch
 				batchMsg.patches.forEach(function (patch) {
 					callFunctionIfExist(onJatosBatchSession, patch.path, patch.op);
@@ -767,7 +767,7 @@ var jatos = {};
 	 * jatos.batchSession.find. Gets the object from the
 	 * locally stored copy of the session and does not call
 	 * the server.
-	 * @param {string} name - name of the field 
+	 * @param {string} name - name of the field
 	 * @return {object}
 	 */
 	jatos.batchSession.get = function (name) {
@@ -786,7 +786,7 @@ var jatos = {};
 		return cloneJsonObj(obj);
 	};
 
-	/**	
+	/**
 	 * Getter for a field in the batch session data. Takes a
 	 * JSON Pointer and returns the matching value. Gets the
 	 * object from the locally stored copy of the session
@@ -800,7 +800,7 @@ var jatos = {};
 	};
 
 	/**
-	 * This function defines the JSON Patch test operation but it 
+	 * This function defines the JSON Patch test operation but it
 	 * does not use the 'test' operation of the JSON patch
 	 * implementation, but uses the JSON pointer implementation
 	 * instead.
@@ -824,7 +824,7 @@ var jatos = {};
 
 	/**
 	 * JSON Patch add operation
-	 * @param {string} path - JSON pointer path 
+	 * @param {string} path - JSON pointer path
 	 * @param {object} value - value to be stored
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
@@ -842,7 +842,7 @@ var jatos = {};
 	 * Like JSON Patch add operation, but instead of a path accepts
 	 * a name of the field to be stored. Works only on the first level
 	 * of the object tree.
-	 * @param {string} name - name of the field 
+	 * @param {string} name - name of the field
 	 * @param {object} value - value to be stored
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
@@ -902,7 +902,7 @@ var jatos = {};
 
 	/**
 	 * JSON Patch replace operation
-	 * @param {string} path - JSON pointer path 
+	 * @param {string} path - JSON pointer path
 	 * @param {object} value - value to be replaced with
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
@@ -918,7 +918,7 @@ var jatos = {};
 
 	/**
 	 * JSON Patch copy operation
-	 * @param {string} from - JSON pointer path to the origin 
+	 * @param {string} from - JSON pointer path to the origin
 	 * @param {string} path - JSON pointer path to the target
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
@@ -934,7 +934,7 @@ var jatos = {};
 
 	/**
 	 * JSON Patch move operation
-	 * @param {string} from - JSON pointer path to the origin 
+	 * @param {string} from - JSON pointer path to the origin
 	 * @param {string} path - JSON pointer path to the target
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
@@ -1011,7 +1011,7 @@ var jatos = {};
 	 * A web worker used in jatos.js to send periodic Ajax requests back to the
 	 * JATOS server. With this function one can set the period with which the
 	 * heartbeat is send.
-	 * 
+	 *
 	 * @param {number} heartbeatPeriod - in milliseconds (Integer)
 	 */
 	jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
@@ -1042,7 +1042,7 @@ var jatos = {};
 	 * server. Already stored result data for this component will be overwritten.
 	 * It offers callbacks, either as parameter or via Promise,
 	 * to signal success or failure in the transfer.
-	 * 
+	 *
 	 * @param {object} resultData - String or object to be submitted
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
@@ -1093,7 +1093,7 @@ var jatos = {};
 	}
 
 	/**
-	 * Uploads a file that will be saved on the JATOS server. 
+	 * Uploads a file that will be saved on the JATOS server.
 	 *
 	 * @param {Blob, string or object} obj - Data to be uploaded as a file. A Blob
 	 * 										will be uploaded right away. A string
@@ -1150,7 +1150,7 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called in case of success
 	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {Promise}
-	 * 
+	 *
 	 * Additionally one can specify the component ID (in case different components uploaded
 	 * files with the same filename):
 	 * @param {number} componentPos - Position of the component to look for the file
@@ -1164,7 +1164,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
 		}
-		
+
 		var componentPos, filename, onSuccess, onError;
 		if (typeof param1 === 'number') {
 			componentPos = param1;
@@ -1244,13 +1244,13 @@ var jatos = {};
 	 * If you want to just write into the study session, this function is
 	 * not what you need. If you want to write something into the study
 	 * session, just write into the 'jatos.studySessionData' object.
-	 * 
+	 *
 	 * This function sets the study session data and sends it to the
 	 * JATOS server for safe storage. This is done automatically whenever
 	 * a component finishes. But sometimes it is necessary to trigger this
 	 * manually, e.g. in a very long-running component one might want to
 	 * store the session intermediately.
-	 * 
+	 *
 	 * @param {object} studySessionData - Object to be submitted
 	 * @param {optional function} onSuccess - Function to be called after this
 	 *				function is finished
@@ -1274,15 +1274,15 @@ var jatos = {};
 
 	/**
 	 * Starts the component with the given ID. Before it calls
-	 * jatos.appendResultData (sends result data to the JATOS server and 
-	 * appends them to the already existing ones for this component) and 
+	 * jatos.appendResultData (sends result data to the JATOS server and
+	 * appends them to the already existing ones for this component) and
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
-	 * 
+	 *
 	 * Either without message:
 	 * @param {string|number} componentIdOrUuid - ID or UUID of the component to start
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional function} onError - Callback function if fail
-	 * 
+	 *
 	 * Or with message:
 	 * @param {string|number} componentIdOrUuid - ID or UUID of the component to start
 	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
@@ -1294,7 +1294,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return;
 		}
-		
+
 		var message, onError, componentUuid;
 		if (typeof componentIdOrUuid === 'number') {
 			componentUuid = jatos.componentList.find(c => c.id == componentIdOrUuid).uuid;
@@ -1307,7 +1307,7 @@ var jatos = {};
 		} else if (typeof param3 === 'function') {
 			onError = param3;
 		}
-		
+
 		if (studyRunInvalid) {
 			callingOnError(onError, "This study run is invalid.");
 			return;
@@ -1341,16 +1341,16 @@ var jatos = {};
 
 	/**
 	 * Starts the component with the given position (position of the first
-	 * component of a study is 1). Before this it calls 
-	 * jatos.appendResultData (sends result data to the JATOS server and 
-	 * appends them to the already existing ones for this component) and 
+	 * component of a study is 1). Before this it calls
+	 * jatos.appendResultData (sends result data to the JATOS server and
+	 * appends them to the already existing ones for this component) and
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
-	 * 
+	 *
 	 * Either without message:
 	 * @param {number} componentPos - Position of the component to start
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional function} onError - Callback function if fail
-	 * 
+	 *
 	 * Or with message:
 	 * @param {number} componentPos - Position of the component to start
 	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
@@ -1371,16 +1371,16 @@ var jatos = {};
 
 	/**
 	 * Starts the component with the given title. If there are multiple components with an
-	 * identical title it starts the one with the lowest position. Before this it calls 
-	 * jatos.appendResultData (sends result data to the JATOS server and 
-	 * appends them to the already existing ones for this component) and 
+	 * identical title it starts the one with the lowest position. Before this it calls
+	 * jatos.appendResultData (sends result data to the JATOS server and
+	 * appends them to the already existing ones for this component) and
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
-	 * 
+	 *
 	 * Either without message:
 	 * @param {string} title - Title of the component to start
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional function} onError - Callback function if fail
-	 * 
+	 *
 	 * Or with message:
 	 * @param {title} title - Title of the component to start
 	 * @param {optional object or String} resultData - Result data to be sent back to JATOS
@@ -1402,16 +1402,16 @@ var jatos = {};
 
 	/**
 	 * Starts the next active component of this study. The component's order is
-	 * determined by their position. If the current component is already the 
-	 * last one it finishes the study. Before this it calls 
-	 * jatos.appendResultData (sends result data to the JATOS server and 
-	 * appends them to the already existing ones for this component) and 
+	 * determined by their position. If the current component is already the
+	 * last one it finishes the study. Before this it calls
+	 * jatos.appendResultData (sends result data to the JATOS server and
+	 * appends them to the already existing ones for this component) and
 	 * jatos.setStudySessionData (syncs study session data with the JATOS server).
-	 * 
+	 *
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional function} onError - Callback function if fail
-	 * 
+	 *
 	 * Or with message:
 	 * @param {optional object or string} resultData - Result data to be sent back to JATOS
 	 * @param {optional string} message - Message that should be logged (max 255 chars)
@@ -1460,7 +1460,7 @@ var jatos = {};
 	 * Either without message:
 	 * @param {optional object or string} resultData - Result data be sent back
 	 * @param {optional function} onError - Callback function if fail
-	 * 
+	 *
 	 * Or with message:
 	 * @param {optional object or string} resultData - Result data be sent back
 	 * @param {optional string} message - Message that should be logged (max 255 chars)
@@ -1474,7 +1474,7 @@ var jatos = {};
 	/**
 	 * Tries to join a group (actually a GroupResult) in the JATOS server and if it
 	 * succeeds opens the group channel's WebSocket.
-	 * 
+	 *
 	 * @param {object} callbacks - Defining callback functions for group events. All
 	 *		callbacks are optional. These callbacks functions can be:
 	 *		onOpen: to be called when the group channel is successfully opened
@@ -1488,7 +1488,7 @@ var jatos = {};
 	 *			received. It gets the message as a parameter.
 	 *		onMemberJoin(memberId): to be called when another member (not the worker
 	 *			running this study) joined the group. It gets the group member ID as
-	 *			a parameter. 
+	 *			a parameter.
 	 *		onMemberOpen(memberId): to be called when another member (not the worker
 	 *			running this study) opened a group channel. It gets the group member
 	 *			ID as a parameter.
@@ -1496,7 +1496,7 @@ var jatos = {};
 	 *			running his study) left the group. It gets the group member ID as
 	 *			a parameter.
 	 *		onMemberClose(memberId): to be called when another member (not the worker
-	 *			running this study) closed his group channel. It gets the group 
+	 *			running this study) closed his group channel. It gets the group
 	 *			member ID as a parameter.
 	 *		onGroupSession(path): to be called when the group session is updated. It gets
 	 *			a JSON Pointer as a parameter that points to the changed object within
@@ -1626,7 +1626,7 @@ var jatos = {};
 	 * Periodically checks whether the group channel is closed and if yes
 	 * reopens it. We don't rely on WebSocket's onClose callback (we could
 	 * just put reopenGroupChannel() in there) because it's not always called
-	 * and additionally sometimes called (unwanted) in case of a page 
+	 * and additionally sometimes called (unwanted) in case of a page
 	 * reload/closing.
 	 */
 	function groupChannelClosedCheck() {
@@ -1779,7 +1779,7 @@ var jatos = {};
 			case "SESSION":
 				// onGroupSession
 				// Got updated group session data and version.
-				// Call onGroupSession with JSON Patch's path 
+				// Call onGroupSession with JSON Patch's path
 				// and op (operation) for each patch.
 				groupMsg.sessionPatches.forEach(function (patch) {
 					callFunctionIfExist(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
@@ -1859,7 +1859,7 @@ var jatos = {};
 	};
 
 	/**
-	 * This function defines the JSON Patch test operation but it 
+	 * This function defines the JSON Patch test operation but it
 	 * does not use the 'test' operation of the JSON patch
 	 * implementation but uses the JSON pointer implementation
 	 * instead.
@@ -2150,7 +2150,7 @@ var jatos = {};
 
 	/**
 	 * Sends a message to all group members if group channel is open.
-	 * 
+	 *
 	 * @param {object} msg - Any JavaScript object
 	 */
 	jatos.sendGroupMsg = function (msg) {
@@ -2164,7 +2164,7 @@ var jatos = {};
 	/**
 	 * Sends a message to a single group member specified with the given member ID
 	 * (only if group channel is open).
-	 * 
+	 *
 	 * @param {string} recipient - Recipient's group member ID
 	 * @param {object} msg - Any JavaScript object
 	 */
@@ -2181,7 +2181,7 @@ var jatos = {};
 	 * Asks the JATOS server to reassign this study run to a different group.
 	 * Successful reassigning reuses the current group channel (and WebSocket) -
 	 * it does not close the channel and opens a new one.
-	 * 
+	 *
 	 * @param {optional function} onSuccess - Function to be called if the
 	 *            reassignment was successful
 	 * @param {optional function} onFail - Function to be called if the
@@ -2241,7 +2241,7 @@ var jatos = {};
 	 * Tries to leave the group (actually a GroupResult) it has previously joined.
 	 * The group channel WebSocket is not closed in this function - it's closed from
 	 * the JATOS' side.
-	 * 
+	 *
 	 * @param {optional function} onSuccess - Function to be called after the group
 	 *            is left.
 	 * @param {optional function} onError - Function to be called in case of error.
@@ -2290,7 +2290,7 @@ var jatos = {};
 
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
-	 * 
+	 *
 	 * @param {optional string} message - Message that should be logged
 	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
@@ -2344,7 +2344,7 @@ var jatos = {};
 
 	/**
 	 * Aborts study. All previously submitted data will be deleted.
-	 * 
+	 *
 	 * @param {optional string} message - Message that should be logged
 	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
 	 *				behaves like jatos.abortStudyAjax
@@ -2386,7 +2386,7 @@ var jatos = {};
 
 	/**
 	 * Ends study with an Ajax call.
-	 * 
+	 *
 	 * Either without result data:
 	 * @param {optional boolean} successful - 'true' if study should finish
 	 *				successful and the participant should get the confirmation
@@ -2395,7 +2395,7 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
 	 * @param {optional function} onError - Function to be called in case of error
-	 * 
+	 *
 	 * Or with result data:
 	 * @param {optional string or object} resultData- result data to be sent back
 	 * 				to JATOS server
@@ -2406,7 +2406,7 @@ var jatos = {};
 	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
 	 * @param {optional function} onError - Function to be called in case of error
-	 * 
+	 *
 	 * @return {Promise}
 	 */
 	jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
@@ -2414,7 +2414,7 @@ var jatos = {};
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
 		}
-		
+
 		var resultData, successful, message, onSuccess, onError;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2428,7 +2428,7 @@ var jatos = {};
 			onSuccess = param3;
 			onError = param4;
 		}
-		
+
 		if (studyRunInvalid) {
 			callingOnError(onError, "This study run is invalid.");
 			return rejectedPromise();
@@ -2438,10 +2438,10 @@ var jatos = {};
 			return rejectedPromise();
 		}
 		endingStudy = true;
-		
+
 		// Before finish send result data
 		if (resultData) jatos.appendResultData(resultData);
-		
+
 		var url = getURL("../end");
 		if (typeof successful == 'boolean' && typeof message == 'string') {
 			url = url + "?" + jatos.jQuery.param({
@@ -2496,7 +2496,7 @@ var jatos = {};
 
 	/**
 	 * Ends study.
-	 * 
+	 *
 	 * Either without result data:
 	 * @param {optional boolean} successful - 'true' if study should finish
 	 *			successful and the participant should get the confirmation code
@@ -2524,7 +2524,7 @@ var jatos = {};
 			callingOnError(null, "This study run is invalid.");
 			return;
 		}
-		
+
 		var resultData, successful, message, showEndPage;
 		if (typeof param1 === 'string' || typeof param1 === 'object') {
 			resultData = param1;
@@ -2650,11 +2650,11 @@ var jatos = {};
 	};
 
 	/**
-	 * Convenience function that adds all JATOS IDs (study ID, study title, 
+	 * Convenience function that adds all JATOS IDs (study ID, study title,
 	 * component ID, component position, component title, worker ID,
 	 * study result ID, component result ID, group result ID, group member ID)
 	 * to the given object.
-	 * 
+	 *
 	 * @param {object} obj - Object to which the IDs will be added
 	 */
 	jatos.addJatosIds = function (obj) {
@@ -2694,7 +2694,7 @@ var jatos = {};
 	/**
 	 * Adds or cancels warning popup that will be shown by the browser to the worker who
 	 * attempts to reload the page or close the browser (tab).
-	 * 
+	 *
 	 * @param {boolean} show - If true the warning will be shown - if false a
 	 * 		previously added warning will be canceled
 	 */
@@ -2777,7 +2777,7 @@ var jatos = {};
 	 * Adds a button to the document that if pressed calls jatos.abortStudy.
 	 * By default this button is in the bottom-right corner but this and
 	 * other properties can be configured.
-	 * 
+	 *
 	 * @param {object optional} config - Config object
 	 * @param {string optional} config.text - Button text
 	 * @param {boolean optional} config.confirm - Should the worker be asked for confirmation?
@@ -2833,7 +2833,7 @@ var jatos = {};
 	};
 
 	/**
-	 * Calls the function f it f exists with parameters a and b. 
+	 * Calls the function f it f exists with parameters a and b.
 	 */
 	function callFunctionIfExist(f, a, b) {
 		if (f && typeof f == 'function') {
