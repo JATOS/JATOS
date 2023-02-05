@@ -224,7 +224,6 @@ public class Api extends Controller {
     @Auth
     public Result getStudyCodes(String id, Option<Long> batchId, String type, String comment, Integer amount)
             throws ForbiddenException, NotFoundException, BadRequestException {
-        // todo use this method in StudyLinks
         return ok(JsonUtils.wrapForApi(studyLinkService.getStudyCodes(id, batchId, type, comment, amount)));
     }
 

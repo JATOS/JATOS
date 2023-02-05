@@ -136,11 +136,11 @@ public class StudyLinkService {
         Batch batch;
         if (batchId.nonEmpty()) {
             batch = batchDao.findById(batchId.get());
+            checker.checkStandardForBatch(batch, batch.getStudy(), batchId.get());
         } else {
             batch = study.getDefaultBatch();
         }
 
-        checker.checkStandardForBatch(batch, batch.getStudy(), batchId.get());
         workerType = workerService.extractWorkerType(workerType);
 
 

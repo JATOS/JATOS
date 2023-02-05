@@ -384,16 +384,6 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * GET request that returns the study code(s) for the given worker type and batch. For Personal Single and
-     * Personal Multiple type the amount and a comment can be specified.
-     */
-    @Transactional
-    @Auth
-    public Result getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
-            Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
-        return ok(studyLinkService.getStudyCodes(id, batchId, workerType, comment, amount));
-    }
-    /**
      * GET request that returns a JSON object use in the Study Links page with a list of data aggregated from
      * StudyLink, Worker and Batch
      */

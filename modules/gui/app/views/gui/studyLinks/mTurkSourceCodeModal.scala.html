@@ -94,12 +94,12 @@ if (navigator.clipboard && window.isSecureContext) {
 $('#batchTable').on('click', '.mtWorkerSourceCode', function() {
     var batch = getBatchData(this);
     $.ajax({
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/@{study.getId()}/batch/${batch.id}/studyCode?workerType=MTurk`,
+        url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=MTurk`,
         error : function(err) {
             showError(err.responseText);
         }
-    }).done(function(studyCode) {
-        showSourceCodeMTurkModal(batch, studyCode);
+    }).done(function(response) {
+        showSourceCodeMTurkModal(batch, response.data);
     });
 });
 

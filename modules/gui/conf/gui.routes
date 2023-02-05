@@ -12,9 +12,9 @@ GET      /jatos/api/v1/admin/logs/:filename                                 @con
 GET      /jatos/api/v1/studies/properties                                   @controllers.gui.Api.getAllStudyPropertiesByUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
 GET      /jatos/api/v1/studies/:id/properties                               @controllers.gui.Api.getStudyProperties(id: String, withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
 GET      /jatos/api/v1/studies/:id/log                                      @controllers.gui.Api.studyLog(id: String, entryLimit: Integer ?= -1, download: Boolean ?= true)
+GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getStudyCodes(id: String, batchId: Option[java.lang.Long], type: String, comment: String ?= null, amount: Integer ?= 1)
 GET      /jatos/api/v1/studies/:id                                          @controllers.gui.Api.exportStudy(id: String)
 POST     /jatos/api/v1/study                                                @controllers.gui.Api.importStudy(request: Request, keepProperties: Boolean ?= false, keepAssets: Boolean ?= false, keepCurrentAssetsName: Boolean ?= true, renameAssets: Boolean ?= true)
-GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getStudyCodes(id: String, batchId: Option<Long>, type: String, comment: String ?= null, amount: Integer ?= 1)
 
 # API results
 GET      /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, wrap: Boolean ?= true)
@@ -133,7 +133,6 @@ GET      /jatos/:studyId/batch/:batchId/properties                          @con
 POST     /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.StudyLinks.submitEditedBatchProperties(request: Request, studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.batchSessionData(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.submitEditedBatchSessionData(request: Request, studyId: Long, batchId: Long)
-GET      /jatos/:studyId/batch/:batchId/studyCode                           @controllers.gui.StudyLinks.getStudyCodes(studyId: Long, batchId: Long, workerType: String, comment: String ?= null, amount: Integer ?= 1)
 GET      /jatos/:studyId/batch/:batchId/studyLinksSetupData                 @controllers.gui.StudyLinks.studyLinksSetupData(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/studyLinksData                      @controllers.gui.StudyLinks.studyLinksData(studyId: Long, batchId: Long, workerType: String)
 POST     /jatos/:studyId/batch/:batchId/studyLink/:studyCode                @controllers.gui.StudyLinks.toggleStudyLinkActive(studyId: Long, batchId: Long, studyCode: String, active: Boolean)
