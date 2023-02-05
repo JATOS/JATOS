@@ -127,6 +127,8 @@ public class PublixUtils {
         componentResult.setEndDate(new Timestamp(new Date().getTime()));
         componentResult.setMessage(message);
         componentResultDao.update(componentResult);
+        // If data fields not set -> set at least data size = 0
+        if (componentResult.getDataShort() == null) componentResultDao.setDataSizeAndDataShort(componentResult.getId());
     }
 
     /**
@@ -193,10 +195,8 @@ public class PublixUtils {
             studyState = StudyState.FAIL;
         }
         Timestamp endDate = new Timestamp(new Date().getTime());
-        retrieveCurrentComponentResult(studyResult).ifPresent(componentResult -> {
-            componentResult.setComponentState(componentState);
-            componentResult.setEndDate(endDate);
-        });
+        retrieveCurrentComponentResult(studyResult).ifPresent(componentResult ->
+                finishComponentResult(componentResult, componentState, null));
         studyResult.setStudyState(studyState);
 
         finishAllComponentResults(studyResult);

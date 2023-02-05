@@ -440,7 +440,7 @@ $('#studyToolbar').on('click', '#studyLinksButton', function() {
 });
 
 $('#studyToolbar').on('click', '#exportStudy', function() {
-    const url = '@controllers.gui.routes.ImportExport.exportStudy(study.getId())';
+    const url = '@controllers.gui.routes.Api.exportStudy(study.getId().toString())';
     const filename = '@{study.getTitle()}.jzip';
     window.downloadFileStream(url, null, filename);
 });

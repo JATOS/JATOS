@@ -2,7 +2,8 @@ package controllers.gui;
 
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -40,7 +41,7 @@ public class ComponentResults extends Controller {
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
@@ -50,7 +51,7 @@ public class ComponentResults extends Controller {
 
     @Inject
     ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-            AuthenticationService authenticationService, BreadcrumbsService breadcrumbsService,
+            AuthService authenticationService, BreadcrumbsService breadcrumbsService,
             ResultRemover resultRemover, ResultStreamer resultStreamer, StudyDao studyDao,
             ComponentDao componentDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
@@ -68,7 +69,7 @@ public class ComponentResults extends Controller {
      * Shows a view with all component results of a component of a study.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result componentResults(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -90,7 +91,7 @@ public class ComponentResults extends Controller {
      * a comma separated list of ComponentResult IDs as a String.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
@@ -99,7 +100,7 @@ public class ComponentResults extends Controller {
         List<Long> componentResultIdList = new ArrayList<>();
         request.body().asJson().get("componentResultIds").forEach(node -> componentResultIdList.add(node.asLong()));
         // Permission check is done in service for each result individually
-        resultRemover.removeComponentResults(componentResultIdList, loggedInUser);
+        resultRemover.removeComponentResults(componentResultIdList, loggedInUser, false);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -107,7 +108,7 @@ public class ComponentResults extends Controller {
      * GET request that returns all ComponentResults as JSON for a given component. It streams the data as chunks (reduces memory usage)
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Component component = componentDao.findById(componentId);
@@ -121,8 +122,8 @@ public class ComponentResults extends Controller {
      * GET result data of one component result
      */
     @Transactional
-    @Authenticated
-    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException, SQLException {
+    @Auth
+    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checker.checkComponentResult(componentResult, loggedInUser, false);

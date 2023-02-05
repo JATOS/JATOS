@@ -1,8 +1,8 @@
 package controllers.gui;
 
+import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.*;
 import exceptions.gui.BadRequestException;
@@ -22,6 +22,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import scala.Option;
 import services.gui.*;
 import utils.common.Helpers;
 import utils.common.JsonUtils;
@@ -43,7 +44,7 @@ public class StudyLinks extends Controller {
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
     private final JsonUtils jsonUtils;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final WorkerService workerService;
     private final BatchService batchService;
     private final StudyLinkService studyLinkService;
@@ -58,7 +59,7 @@ public class StudyLinks extends Controller {
 
     @Inject
     StudyLinks(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-            JsonUtils jsonUtils, AuthenticationService authenticationService,
+            JsonUtils jsonUtils, AuthService authenticationService,
             WorkerService workerService, BatchService batchService, StudyLinkService studyLinkService,
             GroupService groupService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
             BatchDao batchDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao, StudyLinkDao studyLinkDao,
@@ -84,7 +85,7 @@ public class StudyLinks extends Controller {
      * GET request to get the Study Links page
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result studyLinks(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -104,7 +105,7 @@ public class StudyLinks extends Controller {
      * StudyResults and GroupResults.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result batchById(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -122,7 +123,7 @@ public class StudyLinks extends Controller {
      * StudyResults, count of their GroupResults, and the count of their Workers.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result batchesByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -140,7 +141,7 @@ public class StudyLinks extends Controller {
      * GET request that returns data of all groups that belong to the given batch as JSON
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result groupsByBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -156,7 +157,7 @@ public class StudyLinks extends Controller {
      * POST request to submit a newly created Batch
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitCreatedBatch(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -177,7 +178,7 @@ public class StudyLinks extends Controller {
      * GET request that returns the batch session data as String
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result batchSessionData(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -186,14 +187,14 @@ public class StudyLinks extends Controller {
         checker.checkStandardForBatch(batch, study, batchId);
 
         BatchSession batchSession = batchService.bindToBatchSession(batch);
-        return ok(jsonUtils.asJsonNode(batchSession));
+        return ok(JsonUtils.asJsonNode(batchSession));
     }
 
     /**
      * GET request that returns the group session data as String
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result groupSessionData(Long studyId, Long groupResultId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
@@ -202,14 +203,14 @@ public class StudyLinks extends Controller {
         checker.checkStandardForGroup(groupResult, study, groupResultId);
 
         GroupSession groupSession = groupService.bindToGroupSession(groupResult);
-        return ok(jsonUtils.asJsonNode(groupSession));
+        return ok(JsonUtils.asJsonNode(groupSession));
     }
 
     /**
      * POST request to submit changed batch session data
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitEditedBatchSessionData(Http.Request request, Long studyId, Long batchId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -235,7 +236,7 @@ public class StudyLinks extends Controller {
      * POST request to submit changed group session data
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitEditedGroupSessionData(Http.Request request, Long studyId, Long groupResultId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -261,7 +262,7 @@ public class StudyLinks extends Controller {
      * GET request to toggle the group state FIXED / STARTED
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
@@ -270,14 +271,14 @@ public class StudyLinks extends Controller {
         checker.checkStandardForGroup(groupResult, study, groupResultId);
 
         GroupState result = groupService.toggleGroupFixed(groupResult, fixed);
-        return ok(jsonUtils.asJsonNode(result));
+        return ok(JsonUtils.asJsonNode(result));
     }
 
     /**
      * GET request that returns Batch properties as JSON
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result batchProperties(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -286,14 +287,14 @@ public class StudyLinks extends Controller {
         checker.checkStandardForBatch(batch, study, batchId);
 
         BatchProperties batchProperties = batchService.bindToProperties(batch);
-        return ok(jsonUtils.asJsonNode(batchProperties));
+        return ok(JsonUtils.asJsonNode(batchProperties));
     }
 
     /**
      * POST request to submit changed Batch properties
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitEditedBatchProperties(Http.Request request, Long studyId, Long batchId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -321,7 +322,7 @@ public class StudyLinks extends Controller {
      * POST request to toggle the property 'active' of the given batch.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleBatchActive(Long studyId, Long batchId, Boolean active)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -335,14 +336,14 @@ public class StudyLinks extends Controller {
             batch.setActive(active);
             batchDao.update(batch);
         }
-        return ok(jsonUtils.asJsonNode(batch.isActive()));
+        return ok(JsonUtils.asJsonNode(batch.isActive()));
     }
 
     /**
      * POST request to allow or deny a worker type in a batch.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleAllowedWorkerType(Long studyId, Long batchId,
             String workerType, Boolean allow) throws BadRequestException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -361,14 +362,14 @@ public class StudyLinks extends Controller {
             batch.removeAllowedWorkerType(workerType);
         }
         batchDao.update(batch);
-        return ok(jsonUtils.asJsonNode(batch.getAllowedWorkerTypes()));
+        return ok(JsonUtils.asJsonNode(batch.getAllowedWorkerTypes()));
     }
 
     /**
      * DELETE request to remove a Batch
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result removeBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -387,60 +388,17 @@ public class StudyLinks extends Controller {
      * Personal Multiple type the amount and a comment can be specified.
      */
     @Transactional
-    @Authenticated
-    public Result getStudyCodes(Long studyId, Long batchId, String workerType, String comment,
+    @Auth
+    public Result getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
             Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Batch batch = batchDao.findById(batchId);
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
-        checker.checkStandardForBatch(batch, study, batchId);
-        workerType = workerService.extractWorkerType(workerType);
-
-
-        switch (workerType) {
-            case PersonalSingleWorker.WORKER_TYPE:
-            case PersonalMultipleWorker.WORKER_TYPE:
-                return getPersonalRun(batch, workerType, comment, amount);
-            case GeneralSingleWorker.WORKER_TYPE:
-            case GeneralMultipleWorker.WORKER_TYPE:
-            case MTWorker.WORKER_TYPE:
-                return getGeneralRun(batch, workerType);
-            default:
-                return badRequest("Unknown worker type");
-        }
+        return ok(studyLinkService.getStudyCodes(id, batchId, workerType, comment, amount));
     }
-
-    /**
-     * Creates either Personal Single or Personal Multiple study codes and their corresponding workers.
-     */
-    private Result getPersonalRun(Batch batch, String workerType, String comment, Integer amount)
-            throws BadRequestException {
-        comment = Strings.isNullOrEmpty(comment) ? "" : Helpers.urlDecode(comment);
-        amount = amount == null ? 1 : amount;
-        List<String> studyCodeList;
-        studyCodeList = studyLinkService.createAndPersistStudyLinks(comment, amount, batch, workerType);
-
-        return ok(jsonUtils.asJsonNode(studyCodeList));
-    }
-
-    /**
-     * Returns the study code for the given worker type (possible types are GeneralMultipleWorker, GeneralSingleWorker,
-     * MTWorker). Since for the 'General' workers only one study link is necessary per batch and worker type it only
-     * creates one if it is not already stored in the StudyLink table.
-     */
-    private Result getGeneralRun(Batch batch, String workerType) {
-        StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
-        return ok(jsonUtils.asJsonNode(Collections.singletonList(studyLink.getStudyCode())));
-    }
-
     /**
      * GET request that returns a JSON object use in the Study Links page with a list of data aggregated from
      * StudyLink, Worker and Batch
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result studyLinksSetupData(Long studyId, Long batchId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -462,7 +420,7 @@ public class StudyLinks extends Controller {
      * Personal type workers
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result studyLinksData(Long studyId, Long batchId, String workerType) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -478,7 +436,7 @@ public class StudyLinks extends Controller {
      * POST request to change the property 'active' of a StudyLink.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -494,7 +452,7 @@ public class StudyLinks extends Controller {
 
         studyLink.setActive(active);
         studyLinkDao.update(studyLink);
-        return ok(jsonUtils.asJsonNode(studyLink.isActive()));
+        return ok(JsonUtils.asJsonNode(studyLink.isActive()));
     }
 
 }

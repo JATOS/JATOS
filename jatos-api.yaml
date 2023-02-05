@@ -1,295 +1,543 @@
-openapi: 3.0.3
-info:
-  title: JATOS API
-  description: 'This is JATOS API specification using OpenAPI.'
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 0.0.1
-externalDocs:
-  description: Find out more about JATOS
-  url: https://www.jatos.org
-servers:
-  - url: http://localhost:9000
-
-paths:
-  /jatos/api/admin/status:
-    get:
-      summary: Get the status of your JATOS (for admin tokens only)
-      tags:
-        - admin
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
-  /jatos/api/admin/token:
-    get:
-      summary: Get details of the token used in this request
-      tags:
-        - admin
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
-  /jatos/api/admin/logs/{filename}:
-    get:
-      summary: Returns the log file specified by 'filename' (for admin tokens only)
-      tags:
-        - admin
-      parameters:
-        - in: path
-          name: filename
-          required: true
-          schema:
-            type: string
-          description: Filename of the log file (e.g. application.log, loader.log, update.log)
-      responses:
-        200:
-          description: Success
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
-
-  /jatos/api/study:
-    post:
-      summary: Import a study
-      tags:
-        - study
-      parameters:
-        - in: query
-          name: overwriteProperties
-          required: false
-          schema:
-            type: boolean
-          description: If the study exists already in JATOS, should the study properties be overwritten? Default is true. If the study doesn't exist already this parameter has no effect.
-        - in: query
-          name: overwriteDir
-          required: false
-          schema:
-            type: boolean
-          description: If the study exists already in JATOS, should the study assets directory be overwritten? Default is true. If the study doesn't exist already this parameter has no effect.
-        - in: query
-          name: keepCurrentDirName
-          required: false
-          schema:
-            type: boolean
-          description: If the study exists already in JATOS and the current study assets directory name is different from the uploaded one, should the current directory name be kept? Default is true. If the study doesn't already exist or both names are the same this parameter has no effect.
-        - in: query
-          name: renameDir
-          required: false
-          schema:
-            type: boolean
-          description: If the study assets directory exists already in JATOS but belongs to a different study you can set this parameter to true to let JATOS choose a new directory name for your study (usually name + '_' + number). Default is true. If the study directory doesn't exist already and is from a different study this parameter has no effect.
-      requestBody:
-        content:
-          multipart/form-data:
+  openapi: 3.0.3
+  info:
+    title: JATOS API
+    description: 'This is JATOS API specification using OpenAPI.'
+    license:
+      name: Apache 2.0
+      url: http://www.apache.org/licenses/LICENSE-2.0.html
+    version: 0.0.1
+  externalDocs:
+    description: Find out more about JATOS
+    url: https://www.jatos.org
+  servers:
+    - url: http://localhost:9000
+  
+  paths:
+    /jatos/api/v1/admin/status:
+      get:
+        summary: Get the status of your JATOS (for admin tokens only)
+        tags:
+          - admin
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/admin/token:
+      get:
+        summary: Get details of the token used in this request
+        tags:
+          - admin
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/admin/logs/{filename}:
+      get:
+        summary: Get a log file (application logs)
+        description: Works only with admin tokens
+        tags:
+          - admin
+        parameters:
+          - in: path
+            name: filename
+            required: true
             schema:
-              type: object
-              properties:
-                study:
+              type: string
+            description: Filename of the log file (e.g. application.log, loader.log, update.log)
+        responses:
+          200:
+            description: Success
+            content:
+              application/octet-stream:
+                schema:
                   type: string
                   format: binary
-      responses:
-        200:
-          description: Success
+          401:
+            description: Invalid token
+
+    /jatos/api/v1/study:
+      post:
+        summary: "Import a study"
+        description: "Import a study in the JATOS study file format (*.jzip* suffix). You can set several flags in the
+          query parameters to specify how eventual existing studies with the same UUID should be handled
+          (e.g keep their properties and assets)."
+        tags:
+          - study
+        parameters:
+          - in: query
+            name: keepProperties
+            schema:
+              type: boolean
+            description: If the study exists already in JATOS, should the current properties be kept?
+              Default is *false* (properties are overwritten by default). If the study doesn't exist this parameter has
+              no effect.
+          - in: query
+            name: keepAssets
+            schema:
+              type: boolean
+            description: If the study exists already in JATOS, should the current assets directory be kept?
+              Default is *false* (assets are overwritten by default). If the study doesn't exist this parameter has
+              no effect.
+          - in: query
+            name: keepCurrentAssetsName
+            schema:
+              type: boolean
+            description: If the study exists already in JATOS and the current study assets directory name is different
+              from the uploaded one, should the current directory name be kept? Default is *true*. If the study doesn't
+              already exist or both names are the same this parameter has no effect.
+          - in: query
+            name: renameAssets
+            schema:
+              type: boolean
+            description: If the study assets directory exists already in JATOS but belongs to a different study you can
+              set this parameter to *true* to let JATOS choose a new directory name for your study (usually name + '_' +
+              number). Default is *true*. If the study directory doesn't exist already and is from a different study this
+              parameter has no effect.
+        requestBody:
           content:
-            application/json:
+            multipart/form-data:
               schema:
                 type: object
-        401:
-          description: Invalid token
+                properties:
+                  study:
+                    type: string
+                    format: binary
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
 
-  /jatos/api/studies/{studyId}:
-    get:
-      summary: Export a study
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success
-          content:
-            application/zip:
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
+    /jatos/api/v1/studies/{id}:
+      get:
+        summary: "Export a study"
+        description: "Export a study by specifying its ID or UUID. The exported study will be an ZIP archive with a
+          *.jzip* suffix."
+        tags:
+          - study
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Either a study ID or a study UUID
+        responses:
+          200:
+            description: Success
+            content:
+              application/zip:
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
 
-  /jatos/api/studies/{studyId}/log:
-    get:
-      summary: Get the study log of a study
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success
-          content:
-            application/jsonlines:
-              schema:
-                type: object
-        401:
-          description: Invalid token
+    /jatos/api/v1/studies/{id}/properties:
+      get:
+        summary: Get study properties
+        description: Get the study properties by specifying a study ID or UUID. The properties of the study's
+          components can be included by setting the flag *withComponentProperties*. The batch properties can be included
+          by setting the flag *withBatchProperties*. If no study ID or UUID is specified the study properties of **all**
+          studies that you can access will be returned.
+        tags:
+          - study
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Either a study ID or a study UUID
+          - in: query
+            name: withComponentProperties
+            allowEmptyValue: true
+            schema:
+              type: boolean
+              default: false
+            description: Flag, if set to *true* the data will additionally contain the properties of the study's component.
+          - in: query
+            name: withBatchProperties
+            allowEmptyValue: true
+            schema:
+              type: boolean
+              default: false
+            description: Flag, if set to *true* the data will additionally contain the properties of the batches that belong to this study.
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
+
+    /jatos/api/v1/studies/properties:
+      get:
+        summary: Get all study properties that are accessible to the user
+        description: The properties of the study's components can be included by setting the flag
+          *withComponentProperties*. The batch properties can be included by setting the flag *withBatchProperties*.
+        tags:
+          - study
+        parameters:
+          - in: query
+            name: withComponentProperties
+            allowEmptyValue: true
+            schema:
+              type: boolean
+              default: false
+            description: Flag, if set to *true* the data will additionally contain the properties of the study's component.
+          - in: query
+            name: withBatchProperties
+            allowEmptyValue: true
+            schema:
+              type: boolean
+              default: false
+            description: Flag, if set to *true* the data will additionally contain the properties of the batches that belong to this study.
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
+
+    /jatos/api/v1/studies/{id}/log:
+      get:
+        summary: Get the study log of a study
+        tags:
+          - study
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Either a study ID or a study UUID
+        responses:
+          200:
+            description: Success
+            content:
+              application/jsonlines:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
+  
+  
+    /jatos/api/v1/studies/{id}/studyCodes:
+      get:
+        summary: Get one or multiple study codes
+        tags:
+          - study
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Either a study ID or a study UUID
+          - in: query
+            name: type
+            required: true
+            schema:
+              type: string
+            description: Type - one of 'PersonalSingle' (or 'ps'), 'PersonalMultiple' (or 'pm'), 'GeneralSingle' (or 'gs'), 'GeneralMultiple' (or 'gm'), 'MTurk' (or 'mt')
+          - in: query
+            name: batchId
+            schema:
+              type: integer
+              minimum: 1
+            description: ID of the batch to which the study codes should belong to. If not set the default batch is used.
+          - in: query
+            name: comment
+            schema:
+              type: string
+            description: Some identifying description or name (only for type 'PersonalSingle' or 'PersonalMultiple'). Can be left empty.
+          - in: query
+            name: amount
+            schema:
+              type: integer
+            description: Number of study codes to be created (only for type 'PersonalSingle' or 'PersonalMultiple'). Default is 1.
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: object
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/results:
+      post:
+        summary: "Get results (combined with metadata, data, and files)"
+        description: "Select results by specifying one or multiple of: study IDs/UUIDs, component IDs/UUIDs, batch IDs,
+            group IDs, study result IDs, and component result IDs. You can use either **query parameters** or **JSON posted
+            in the body**. Posting JSON is more flexible since it allows you to use single IDs, list of IDs, ranges, or a
+            combination of all three. In any case if one of the specified results does not exist or you have no permission
+            to access it the results is just left out. The results will be packed in an ZIP archive with an *.jrzip* suffix."
+        tags:
+          - results
+        parameters:
+          - $ref: '#/components/parameters/StudyIdParameter'
+          - $ref: '#/components/parameters/StudyUuidParameter'
+          - $ref: '#/components/parameters/ComponentIdParameter'
+          - $ref: '#/components/parameters/ComponentUuidParameter'
+          - $ref: '#/components/parameters/StudyResultIdParameter'
+          - $ref: '#/components/parameters/ComponentResultIdParameter'
+          - $ref: '#/components/parameters/BatchIdParameter'
+          - $ref: '#/components/parameters/GroupIdParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/ResultIdsJsonBody'
+        responses:
+          200:
+            description: Success
+            content:
+              application/zip:
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/results/metadata:
+      post:
+        summary: "Get result metadata in JSON"
+        description: "Select results by specifying one or multiple of: study IDs/UUIDs, component IDs/UUIDs, batch IDs,
+            group IDs, study result IDs, and component result IDs. You can use either **query parameters** or **JSON posted
+            in the body**. Posting JSON is more flexible since it allows you to use single IDs, list of IDs, ranges, or a
+            combination of all three. In any case if one of the specified results does not exist or you have no permission
+            to access it the results is just left out. The metadata will be returned in JSON format."
+        tags:
+          - results
+        parameters:
+          - $ref: '#/components/parameters/StudyIdParameter'
+          - $ref: '#/components/parameters/StudyUuidParameter'
+          - $ref: '#/components/parameters/ComponentIdParameter'
+          - $ref: '#/components/parameters/ComponentUuidParameter'
+          - $ref: '#/components/parameters/StudyResultIdParameter'
+          - $ref: '#/components/parameters/ComponentResultIdParameter'
+          - $ref: '#/components/parameters/BatchIdParameter'
+          - $ref: '#/components/parameters/GroupIdParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/ResultIdsJsonBody'
+        responses:
+          200:
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/results/data:
+      post:
+        summary: "Get only the data of results"
+        description: "Select results by specifying one or multiple of: study IDs/UUIDs, component IDs/UUIDs, batch IDs,
+            group IDs, study result IDs, and component result IDs. You can use either **query parameters** or **JSON posted
+            in the body**. Posting JSON is more flexible since it allows you to use single IDs, list of IDs, ranges, or a
+            combination of all three. In any case if one of the specified results does not exist or you have no permission
+            to access it the results is just left out. The results will be packed in an ZIP archive with an *.jrzip* suffix."
+        tags:
+          - results
+        parameters:
+          - $ref: '#/components/parameters/StudyIdParameter'
+          - $ref: '#/components/parameters/StudyUuidParameter'
+          - $ref: '#/components/parameters/ComponentIdParameter'
+          - $ref: '#/components/parameters/ComponentUuidParameter'
+          - $ref: '#/components/parameters/StudyResultIdParameter'
+          - $ref: '#/components/parameters/ComponentResultIdParameter'
+          - $ref: '#/components/parameters/BatchIdParameter'
+          - $ref: '#/components/parameters/GroupIdParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/ResultIdsJsonBody'
+        responses:
+          200:
+            description: Success
+            content:
+              application/octet-stream:
+                schema:
+                  type: string
+              application/zip:
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/results/files:
+      post:
+        summary: "Get only the files of results"
+        description: "Select results by specifying one or multiple of: study IDs/UUIDs, component IDs/UUIDs, batch IDs,
+            group IDs, study result IDs, and component result IDs. You can use either **query parameters** or **JSON posted
+            in the body**. Posting JSON is more flexible since it allows you to use single IDs, list of IDs, ranges, or a
+            combination of all three. In any case if one of the specified results does not exist or you have no permission
+            to access it the results is just left out. The results will be packed in an ZIP archive with an *.jrzip* suffix."
+        tags:
+          - results
+        parameters:
+          - $ref: '#/components/parameters/StudyIdParameter'
+          - $ref: '#/components/parameters/StudyUuidParameter'
+          - $ref: '#/components/parameters/ComponentIdParameter'
+          - $ref: '#/components/parameters/ComponentUuidParameter'
+          - $ref: '#/components/parameters/StudyResultIdParameter'
+          - $ref: '#/components/parameters/ComponentResultIdParameter'
+          - $ref: '#/components/parameters/BatchIdParameter'
+          - $ref: '#/components/parameters/GroupIdParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/ResultIdsJsonBody'
+        responses:
+          200:
+            description: Success
+            content:
+              application/zip:
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/results/files/{filename}:
+      get:
+        summary: Get a single result file
+        tags:
+          - results
+        parameters:
+          - in: query
+            name: componentResultId
+            required: true
+            schema:
+              type: integer
+              minimum: 1
+            description: Component result ID
+          - in: path
+            name: filename
+            required: true
+            schema:
+              type: string
+            description: Name of the file to be fetched
+        responses:
+          200:
+            description: Success
+            content:
+              "*":
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
+  
+    /jatos/api/v1/results/delete:
+      put:
+        summary: Delete results
+        description: "**Delete results (including data, metadata and files)** by specifying one or multiple of: study
+            IDs/UUIDs, component IDs/UUIDs, batch IDs, group IDs, study result IDs, and component result IDs. You can 
+            use either **query parameters** or **JSON posted in the body**. Posting JSON is more flexible since it
+            allows you to use single IDs, list of IDs, ranges, or a combination of all three. In any case if one of the
+            specified results does not exist or you have no permission to access it the results is just left out. Empty
+            study results will be deleted too. **Only results will be deleted, studies, components, batches, and groups
+            remain untouched**. **This cannot be undone**."
+        tags:
+          - danger zone
+        parameters:
+          - $ref: '#/components/parameters/StudyIdParameter'
+          - $ref: '#/components/parameters/StudyUuidParameter'
+          - $ref: '#/components/parameters/ComponentIdParameter'
+          - $ref: '#/components/parameters/ComponentUuidParameter'
+          - $ref: '#/components/parameters/StudyResultIdParameter'
+          - $ref: '#/components/parameters/ComponentResultIdParameter'
+          - $ref: '#/components/parameters/BatchIdParameter'
+          - $ref: '#/components/parameters/GroupIdParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/ResultIdsJsonBody'
+        responses:
+          200:
+            description: Success
+          401:
+            description: Invalid token
 
 
-  /jatos/api/studies/{studyId}/studyAssetsSize:
-    get:
-      summary: Get the size of the study asset folder belonging to the study
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success (size in bytes)
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
-  /jatos/api/studies/{studyId}/resultDataSize:
-    get:
-      summary: Get the size of all result data belonging to the study
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success (size in bytes)
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
-  /jatos/api/studies/{studyId}/resultFileSize:
-    get:
-      summary: Get the size of all result files belonging to the study
-      tags:
-        - study
-      parameters:
-        - in: path
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-      responses:
-        200:
-          description: Success (size in bytes)
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
-  /jatos/api/studyCodes:
-    get:
-      summary: Get one or multiple study codes
-      tags:
-        - study
-      parameters:
-        - in: query
-          name: studyId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Study ID
-        - in: query
-          name: batchId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Batch ID
-        - in: query
-          name: type
-          required: true
-          schema:
-            type: string
-          description: Type - one of 'PersonalSingle' (or 'ps'), 'PersonalMultiple' (or 'pm'), 'GeneralSingle' (or 'gs'), 'GeneralMultiple' (or 'gm'), 'MTurk' (or 'mt')
-        - in: query
-          name: comment
-          required: false
-          schema:
-            type: string
-          description: Some identifying description or name (only for type 'PersonalSingle' or 'PersonalMultiple'). Can be left empty.
-        - in: query
-          name: amount
-          required: false
-          schema:
-            type: integer
-          description: Number of study codes to be created (only for type 'PersonalSingle' or 'PersonalMultiple'). Default is 1.
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          description: Invalid token
-
-  /jatos/api/results:
-    post:
-      summary: "Get results, combined with metadata, data, and files, packed in a zip file"
-      description: "Select results by specifying one or multiple of: study IDs, component IDs, batch IDs, group IDs,
-          study result IDs, and component result IDs. You can use single IDs, list of IDs, ranges, or a combination of
-          all three. If the IDs do not exist in the DB or you have no permission to access them the results are just
-          left out."
-      tags:
-        - results
-      requestBody:
+  security:
+    - BearerAuth: [ ]
+  
+  components:
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+    parameters:
+      StudyIdParameter:
+        in: query
+        name: studyId
+        schema:
+          type: integer
+        description: Specify results with a study ID. This query parameter can be used multiple times.
+      StudyUuidParameter:
+        in: query
+        name: studyUuid
+        schema:
+          type: string
+        description: Specify results with a study UUID. This query parameter can be used multiple times.
+      ComponentIdParameter:
+        in: query
+        name: componentId
+        schema:
+          type: integer
+        description: Specify results with a component ID. This query parameter can be used multiple times.
+      ComponentUuidParameter:
+        in: query
+        name: componentUuid
+        schema:
+          type: string
+        description: Specify results with a component UUID. This query parameter can be used multiple times.
+      StudyResultIdParameter:
+        in: query
+        name: studyResultId
+        schema:
+          type: integer
+        description: Specify results with a study result ID. This query parameter can be used multiple times.
+      ComponentResultIdParameter:
+        in: query
+        name: componentResultId
+        schema:
+          type: integer
+        description: Specify results with a component result ID. This query parameter can be used multiple times.
+      BatchIdParameter:
+        in: query
+        name: batchId
+        schema:
+          type: integer
+        description: Specify results with a batch ID. This query parameter can be used multiple times.
+      GroupIdParameter:
+        in: query
+        name: groupId
+        schema:
+          type: integer
+        description: Specify results with a group ID. This query parameter can be used multiple times.
+    requestBodies:
+      ResultIdsJsonBody:
         content:
           application/json:
             schema:
@@ -302,12 +550,24 @@ paths:
                         type: integer
                     - type: integer
                     - type: string
+                studyUuids:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
+                    - type: string
                 componentIds:
                   oneOf:
                     - type: array
                       items:
                         type: integer
                     - type: integer
+                    - type: string
+                componentUuids:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
                     - type: string
                 componentResultIds:
                   oneOf:
@@ -338,483 +598,73 @@ paths:
                     - type: integer
                     - type: string
             examples:
+              empty:
+                summary: empty
+                value: { }
               studyIds:
-                summary: Using a study ID
+                summary: Study ID
                 value:
                   studyIds: 1
-              batchIds:
-                summary: Using a list of batch IDs
+              studyUuids:
+                summary: Study UUID
                 value:
-                  batchIds: [1,2,3]
+                  studyIds: "11111111-1111-1111-1111-111111111111"
               componentIds:
-                summary: Using a list of component IDs
-                value:
-                  componentIds: [1,2,3]
-              listOfcomponentResultIds:
-                summary: Using a list of component result IDs
-                value:
-                  componentResultIds: [1,2,3]
-              rangeOfcomponentResultIds:
-                summary: Using a range of component result IDs
-                value:
-                  componentResultIds: "1-10"
-              mixOfcomponentResultIds:
-                summary: Using a mix of single IDs and ranges of IDs
-                value:
-                  componentResultIds: "1-10, 12, 15, 20-15"
-              listOfstudyResultIds:
-                summary: Using only study result IDs
-                value:
-                  studyResultIds: [1,2,3]
-              combinationOfAll:
-                summary: Using a combination of ID types with single IDs and ID ranges
-                value:
-                  batchIds: [1,2,3]
-                  componentResultIds: "1-10, 12, 15, 20-15"
-                  studyResultIds: [1,2,3]
-      responses:
-        200:
-          description: Success
-          content:
-            application/zip:
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
-
-  /jatos/api/results/metadata:
-    post:
-      summary: "Get metadata of results in JSON"
-      description: "Select results by specifying one or multiple of: study IDs, component IDs, batch IDs, group IDs,
-          study result IDs, and component result IDs. You can use single IDs, list of IDs, ranges, or a combination of
-          all three. If the IDs do not exist in the DB or you have no permission to access them the results are just
-          left out."
-      tags:
-        - results
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                studyIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                componentIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                componentResultIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                studyResultIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                batchIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                groupIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-            examples:
-              studyIds:
-                summary: Using a study ID
+                summary: Component ID
                 value:
                   studyIds: 1
-              batchIds:
-                summary: Using a list of batch IDs
+              componentUuids:
+                summary: Component UUID
                 value:
-                  batchIds: [1,2,3]
-              componentIds:
-                summary: Using a list of component IDs
-                value:
-                  componentIds: [1,2,3]
-              listOfcomponentResultIds:
-                summary: Using a list of component result IDs
-                value:
-                  componentResultIds: [1,2,3]
-              rangeOfcomponentResultIds:
-                summary: Using a range of component result IDs
-                value:
-                  componentResultIds: "1-10"
-              mixOfcomponentResultIds:
-                summary: Using a mix of single IDs and ranges of IDs
-                value:
-                  componentResultIds: "1-10, 12, 15, 20-15"
-              listOfstudyResultIds:
-                summary: Using only study result IDs
-                value:
-                  studyResultIds: [1,2,3]
-              combinationOfAll:
-                summary: Using a combination of ID types with single IDs and ID ranges
-                value:
-                  batchIds: [1,2,3]
-                  componentResultIds: "1-10, 12, 15, 20-15"
-                  studyResultIds: [1,2,3]
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
-
-  /jatos/api/results/data:
-    post:
-      summary: Get only the data of results in one text file
-      tags:
-        - results
-      parameters:
-        - in: query
-          name: asPlainText
-          required: false
-          allowEmptyValue: true
-          schema:
-            type: boolean
-          description: If set the data will be returned in one text file with each line contains one result data. If not
-              set (default) all result data will be returned in a zip package with the usual structure.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                studyIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                componentIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                componentResultIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                studyResultIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                batchIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                groupIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-            examples:
-              studyIds:
-                summary: Using a study ID
-                value:
-                  studyIds: 1
-              batchIds:
-                summary: Using a list of batch IDs
-                value:
-                  batchIds: [ 1,2,3 ]
-              componentIds:
-                summary: Using a list of component IDs
+                  studyIds: "11111111-1111-1111-1111-111111111111"
+              listOfComponentIds:
+                summary: Multiple component IDs
                 value:
                   componentIds: [ 1,2,3 ]
-              listOfcomponentResultIds:
-                summary: Using a list of component result IDs
+              listOfComponentUuids:
+                summary: Multiple component UUIDs
                 value:
-                  componentResultIds: [ 1,2,3 ]
-              rangeOfcomponentResultIds:
-                summary: Using a range of component result IDs
-                value:
-                  componentResultIds: "1-10"
-              mixOfcomponentResultIds:
-                summary: Using a mix of single IDs and ranges of IDs
-                value:
-                  componentResultIds: "1-10, 12, 15, 20-15"
-              listOfstudyResultIds:
-                summary: Using only study result IDs
-                value:
-                  studyResultIds: [ 1,2,3 ]
-              combinationOfAll:
-                summary: Using a combination of ID types with single IDs and ID ranges
-                value:
-                  batchIds: [ 1,2,3 ]
-                  componentResultIds: "1-10, 12, 15, 20-15"
-                  studyResultIds: [ 1,2,3 ]
-      responses:
-        200:
-          description: Success
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-            application/zip:
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
-
-  /jatos/api/results/files:
-    post:
-      summary: Get only the files of results in one zip file
-      tags:
-        - results
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                studyIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                componentIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                componentResultIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                studyResultIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                batchIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-                groupIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                    - type: integer
-                    - type: string
-            examples:
-              studyIds:
-                summary: Using a study ID
-                value:
-                  studyIds: 1
+                  componentUuids: [ "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222", "33333333-3333-3333-3333-333333333333" ]
               batchIds:
-                summary: Using a list of batch IDs
+                summary: Batch ID
                 value:
-                  batchIds: [ 1,2,3 ]
-              componentIds:
-                summary: Using a list of component IDs
+                  batchIds: 1
+              groupIds:
+                summary: Group ID
                 value:
-                  componentIds: [ 1,2,3 ]
-              listOfcomponentResultIds:
-                summary: Using a list of component result IDs
+                  batchIds: 1
+              listOfComponentResultIds:
+                summary: Multiple component result IDs
                 value:
                   componentResultIds: [ 1,2,3 ]
-              rangeOfcomponentResultIds:
-                summary: Using a range of component result IDs
+              rangeOfComponentResultIds:
+                summary: Range of component result IDs
                 value:
                   componentResultIds: "1-10"
-              mixOfcomponentResultIds:
-                summary: Using a mix of single IDs and ranges of IDs
+              mixOfComponentResultIds:
+                summary: Mix of ranges and single component result IDs
                 value:
-                  componentResultIds: "1-10, 12, 15, 20-15"
-              listOfstudyResultIds:
-                summary: Using only study result IDs
+                  componentResultIds: "1-10, 12, 15, 20-30"
+              listOfStudyResultIds:
+                summary: Multiple study result IDs
                 value:
                   studyResultIds: [ 1,2,3 ]
+              rangeOfStudyResultIds:
+                summary: Range of Study result IDs
+                value:
+                  studyResultIds: "1-10"
+              mixOfStudyResultIds:
+                summary: Mix of ranges and single study result IDs
+                value:
+                  studyResultIds: "1-10, 12, 15, 20-30"
               combinationOfAll:
-                summary: Using a combination of ID types with single IDs and ID ranges
+                summary: All
                 value:
-                  batchIds: [ 1,2,3 ]
-                  componentResultIds: "1-10, 12, 15, 20-15"
-                  studyResultIds: [ 1,2,3 ]
-      responses:
-        200:
-          description: Success
-          content:
-            application/zip:
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
-
-  /jatos/api/results/{componentResultId}/data:
-    get:
-      summary: Get single result data
-      tags:
-        - results
-      parameters:
-        - in: path
-          name: componentResultId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Component result ID
-      responses:
-        200:
-          description: Success
-          content:
-            "*":
-              schema:
-                type: string
-        401:
-          description: Invalid token
-
-  /jatos/api/results/{componentResultId}/files/{filename}:
-    get:
-      summary: Get a single result file
-      tags:
-        - results
-      parameters:
-        - in: path
-          name: componentResultId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Component result ID
-        - in: path
-          name: filename
-          required: true
-          schema:
-            type: string
-          description: Filename
-      responses:
-        200:
-          description: Success
-          content:
-            "*":
-              schema:
-                type: string
-                format: binary
-        401:
-          description: Invalid token
-
-  /jatos/api/studyResults/delete:
-    put:
-      summary: Delete (multiple) study results
-      tags:
-        - results
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                componentResultIds:
-                  type: array
-                  items:
-                    type: integer
-                studyResultIds:
-                  type: array
-                  items:
-                    type: integer
-                  description: This will also delete the component results that belong to these study results.
-              example:
-                studyResultIds: [ 1,2,3 ]
-      responses:
-        200:
-          description: Success
-        401:
-          description: Invalid token
-        404:
-          description: One of the results does not exist
-
-  /jatos/api/componentResults/delete:
-    put:
-      summary: Delete (multiple) component results
-      tags:
-        - results
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                componentResultIds:
-                  type: array
-                  items:
-                    type: integer
-                studyResultIds:
-                  type: array
-                  items:
-                    type: integer
-                  description: This will also delete the component results that belong to these study results.
-              example:
-                componentResultIds: [ 1,2,3 ]
-      responses:
-        200:
-          description: Success
-        401:
-          description: Invalid token
-        404:
-          description: One of the results does not exist
-
-
-security:
-  - bearerAuth: [ ]
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
+                  studyIds:
+                  studyUuids:
+                  componentIds:
+                  componentUuids:
+                  componentResultIds:
+                  studyResultIds:
+                  batchIds:
+                  groupIds:

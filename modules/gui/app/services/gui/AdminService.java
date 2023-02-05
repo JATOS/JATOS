@@ -1,14 +1,20 @@
 package services.gui;
 
+import auth.gui.AuthService;
+import auth.gui.UserSessionCacheAccessor;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
+import daos.common.worker.WorkerDao;
 import models.common.Study;
 import models.common.StudyResultStatus;
 import models.common.User;
 import utils.common.Helpers;
 import utils.common.IOUtils;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -25,17 +31,21 @@ import java.util.stream.Collectors;
 public class AdminService {
 
     private final UserDao userDao;
+    private final StudyDao studyDao;
+    private final WorkerDao workerDao;
     private final StudyResultDao studyResultDao;
     private final ComponentResultDao componentResultDao;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final IOUtils ioUtils;
     private final UserSessionCacheAccessor userSessionCacheAccessor;
 
     @Inject
-    AdminService(UserDao userDao, StudyResultDao studyResultDao, ComponentResultDao componentResultDao,
-            AuthenticationService authenticationService, IOUtils ioUtils,
+    AdminService(UserDao userDao, StudyDao studyDao, WorkerDao workerDao, StudyResultDao studyResultDao, ComponentResultDao componentResultDao,
+            AuthService authenticationService, IOUtils ioUtils,
             UserSessionCacheAccessor userSessionCacheAccessor) {
         this.userDao = userDao;
+        this.studyDao = studyDao;
+        this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
         this.componentResultDao = componentResultDao;
         this.authenticationService = authenticationService;
@@ -150,6 +160,21 @@ public class AdminService {
                         srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
                 .collect(Collectors.toList());
 
+    }
+
+    public JsonNode getAdminStatus() {
+        Map<String, Object> statusMap = new HashMap<>();
+        statusMap.put("studyCount", studyDao.count());
+        statusMap.put("studyCountTotal", studyDao.countTotal());
+        statusMap.put("studyResultCount", studyResultDao.count());
+        statusMap.put("studyResultCountTotal", studyResultDao.countTotal());
+        statusMap.put("workerCount", workerDao.count());
+        statusMap.put("workerCountTotal", workerDao.countTotal());
+        statusMap.put("userCount", userDao.count());
+        statusMap.put("serverTime", Helpers.formatDate(new Date()));
+        statusMap.put("latestUsers", getLatestUsers(10));
+        statusMap.put("latestStudyRuns", getLatestStudyRuns(10));
+        return JsonUtils.asJsonNode(statusMap);
     }
 
 }

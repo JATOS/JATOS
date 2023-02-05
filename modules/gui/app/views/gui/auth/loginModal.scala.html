@@ -5,24 +5,55 @@
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
 			<div class="modal-body">
-				@if(loggedInUser.isOauthGoogle()) {
+
+				@if(loggedInUser.isOidc()) {
 				<h3 class="form-login-heading">Please sign in again</h3>
 				<p class="explanation"></p>
-				<div id="signin-google"></div>
-				<p>Or <a href="@controllers.gui.routes.Authentication.login()">login as a different user</a>.</p>
+				<p>
+					<div id="signin-oidc">
+						<button class="btn btn-lg btn-default btn-block">
+							<img class="pull-left" height="25" src="@{general.common.Common.getPlayHttpContext()+general.common.Common.getOidcSignInButtonLogoUrl()}">
+							@general.common.Common.getOidcSignInButtonText()
+						</button>
+					</div>
+				</p>
+				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
+
+				} else if(loggedInUser.isOauthGoogle()) {
+				<h3 class="form-login-heading">Please sign in again</h3>
+				<p class="explanation"></p>
+				<p>
+					<div id="signin-google">
+						<div id="g_id_onload"
+							 data-client_id="@{general.common.Common.getOauthGoogleClientId()}"
+							 data-login_uri="@auth.gui.routes.SignInGoogle.signIn()"
+							 data-auto_prompt="false">
+						</div>
+						<div class="g_id_signin"
+							 data-type="standard"
+							 data-theme="outline"
+							 data-text="sign_in_with"
+							 data-shape="rectangular"
+							 data-size="large"
+							 data-width="200">
+						</div>
+					</div>
+				</p>
+				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
+
 				} else {
 				<form id="loginForm" method="post" class="form-horizontal" role="form">
 					<h2 class="form-login-heading">Please log in again</h2>
 					<label class="explanation"></label>
-					<input type="hidden" class="form-control username" name="@controllers.gui.Authentication.Login.USERNAME" value="@loggedInUser.getUsername()" required>
+					<input type="hidden" class="form-control username" name="@auth.gui.SignIn.Login.USERNAME" value="@loggedInUser.getUsername()" required>
 					<div class="form-group">
 						<div class="col-sm-12">
 							<label>Password for @loggedInUser.getUsername()</label>
-							<input type="password" class="form-control" name="@controllers.gui.Authentication.Login.PASSWORD" placeholder="Password" autocomplete="off" required autofocus>
+							<input type="password" class="form-control" name="@auth.gui.SignIn.Login.PASSWORD" placeholder="Password" autocomplete="off" required autofocus>
 						</div>
 					</div>
 					<button type="submit" class="btn btn-lg btn-primary btn-block">Log in</button>
-					<label>Or <a href="@controllers.gui.routes.Authentication.login()">login as a different user</a>.</label>
+					<label>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</label>
 				</form>
 				}
 			</div>
@@ -47,9 +78,6 @@ function showLoginModal(explanationText) {
 	removeFormErrors('#loginModal');
 	$('#loginModal .explanation').text(explanationText);
 	clearForm("#loginForm");
-	@if(loggedInUser.isOauthGoogle()) {
-	renderSignInGoogleButton(270);
-	}
 	$('#loginModal').modal('show');
 }
 
@@ -57,7 +85,7 @@ $("#loginForm").submit(function(event) {
 	event.preventDefault();
 	$.ajax({
 		type: 'POST',
-		url: "@controllers.gui.routes.Authentication.authenticate()",
+		url: "@auth.gui.routes.SignIn.authenticate()",
 		data: $('#loginForm').serialize(),
 		success: function(response) {
 			removeAlerts('#loginModal');
@@ -67,6 +95,19 @@ $("#loginForm").submit(function(event) {
 		error: function(response) {
 			removeAlerts('#loginModal');
 			showModalError("#loginModal .explanation", response);
+		}
+	});
+});
+
+$('#signin-oidc button').click(function() {
+	$.ajax({
+		url : "@auth.gui.routes.SignInOidc.signIn()",
+		success: function(uri) {
+			window.location.href = uri;
+		},
+		error : function(err) {
+			$("p.text-danger").remove();
+			$('.explanation').after(`<p class="text-danger">${err.responseText}</p>`);
 		}
 	});
 });

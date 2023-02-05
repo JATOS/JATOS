@@ -9,7 +9,6 @@ import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * DAO for Component entity
@@ -62,11 +61,11 @@ public class ComponentDao extends AbstractDao {
     }
 
     /**
-     * Searches for components with this UUID within the given study.
+     * Searches for components with this UUID within the given study. This is faster than just searching by UUID since
+     * Component does not have an index on its UUID field.
      */
     public Optional<Component> findByUuid(String uuid, Study study) {
-        String queryStr = "SELECT c FROM Component c WHERE "
-                + "c.uuid=:uuid and c.study=:study";
+        String queryStr = "SELECT c FROM Component c WHERE c.study=:study AND c.uuid=:uuid";
         List<Component> componentList = jpa.em().createQuery(queryStr, Component.class)
                 .setParameter("uuid", uuid)
                 .setParameter("study", study)
@@ -83,15 +82,6 @@ public class ComponentDao extends AbstractDao {
         String queryStr = "SELECT c FROM Component c WHERE c.title=:title";
         TypedQuery<Component> query = jpa.em().createQuery(queryStr, Component.class);
         return query.setParameter("title", title).getResultList();
-    }
-
-    public List<Long> findIdsByStudyIds(List<Long> studyIds) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT c.id FROM Component c WHERE c.study_id IN :studyIds")
-                .setParameter("studyIds", studyIds)
-                .getResultList();
-        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
     }
 
 }

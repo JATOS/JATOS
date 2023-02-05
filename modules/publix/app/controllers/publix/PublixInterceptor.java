@@ -11,6 +11,7 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.Component;
+import models.common.Study;
 import models.common.StudyLink;
 import models.common.StudyResult;
 import models.common.workers.*;
@@ -127,7 +128,7 @@ public class PublixInterceptor extends Controller {
     public Result startComponent(Http.Request request, String studyResultUuid, String componentUuid, String message)
             throws PublixException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
-        Component component = fetchComponent(componentUuid);
+        Component component = fetchComponent(componentUuid, studyResult.getStudy());
         checkStudyResultAndComponent(studyResult, component);
         LOGGER.info(".startComponent: studyResultId " + studyResult.getId() + ", "
                 + "componentId " + component.getId());
@@ -161,7 +162,7 @@ public class PublixInterceptor extends Controller {
     public Result getInitData(Http.Request request, String studyResultUuid, String componentUuid)
             throws PublixException, IOException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
-        Component component = fetchComponent(componentUuid);
+        Component component = fetchComponent(componentUuid, studyResult.getStudy());
         checkStudyResultAndComponent(studyResult, component);
         LOGGER.info(".getInitData: studyResultId " + studyResult.getId() + ", " + "componentId " + component.getId());
 
@@ -250,7 +251,7 @@ public class PublixInterceptor extends Controller {
     private Result submitOrAppendResultData(Http.Request request, String studyResultUuid, String componentUuid,
             boolean append) throws PublixException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
-        Component component = fetchComponent(componentUuid);
+        Component component = fetchComponent(componentUuid, studyResult.getStudy());
         checkStudyResultAndComponent(studyResult, component);
         LOGGER.info(".submitOrAppendResultData: studyResultId " + studyResult.getId() + ", "
                 + "componentId " + component.getId());
@@ -285,7 +286,7 @@ public class PublixInterceptor extends Controller {
     public Result uploadResultFile(Http.Request request, String studyResultUuid, String componentUuid, String filename)
             throws PublixException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
-        Component component = fetchComponent(componentUuid);
+        Component component = fetchComponent(componentUuid, studyResult.getStudy());
         checkStudyResultAndComponent(studyResult, component);
         LOGGER.info(".uploadResultFile: studyResultId " + studyResult.getId() + ", "
                 + "componentId " + component.getId() + ", " + "filename " + filename);
@@ -410,7 +411,7 @@ public class PublixInterceptor extends Controller {
     @Transactional
     public Result log(Http.Request request, String studyResultUuid, String componentUuid) throws PublixException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
-        Component component = fetchComponent(componentUuid);
+        Component component = fetchComponent(componentUuid, studyResult.getStudy());
         checkStudyResultAndComponent(studyResult, component);
 
         switch (studyResult.getWorkerType()) {
@@ -441,11 +442,11 @@ public class PublixInterceptor extends Controller {
                 .orElseThrow(() -> new BadRequestPublixException("Study result " + uuid + " doesn't exist."));
     }
 
-    private Component fetchComponent(String uuid) throws NotFoundPublixException, ForbiddenPublixException {
+    private Component fetchComponent(String uuid, Study study) throws NotFoundPublixException, ForbiddenPublixException {
         if (uuid == null || uuid.equals("undefined")) {
             throw new ForbiddenPublixException("Error getting component UUID");
         }
-        return componentDao.findByUuid(uuid)
+        return componentDao.findByUuid(uuid, study)
                 .orElseThrow(() -> new NotFoundPublixException("Component " + uuid + " doesn't exist."));
     }
 

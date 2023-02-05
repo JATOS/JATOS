@@ -17,7 +17,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 
-import static controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import static auth.gui.AuthAction.Auth;
 
 /**
  * Controller with endpoints used by /jatos/test. Each endpoint test a different
@@ -40,13 +40,13 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated(User.Role.ADMIN)
+    @Auth(User.Role.ADMIN)
     public Result test() {
         return ok(views.html.gui.admin.test.render());
     }
 
     @Transactional
-    @Authenticated(User.Role.ADMIN)
+    @Auth(User.Role.ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -57,7 +57,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated(User.Role.ADMIN)
+    @Auth(User.Role.ADMIN)
     public Result testStudyAssetsRootFolder() {
         try {
             File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
@@ -77,7 +77,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated(User.Role.ADMIN)
+    @Auth(User.Role.ADMIN)
     public Result testCache() {
         try {
             cache.set("test", "testValue");
@@ -92,7 +92,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Authenticated(User.Role.ADMIN)
+    @Auth(User.Role.ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to client

@@ -3,7 +3,7 @@
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
 
 <div id="toolbar" class="btn-group">
-    @if(!loggedInUser.isOauthGoogle()) {
+    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()) {
     <button id="editProfile" type="button" class="btn btn-admin">Edit Profile</button>
     }
     @if(loggedInUser.isDb()) {

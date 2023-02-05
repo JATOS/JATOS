@@ -1,5 +1,10 @@
 package utils.common;
 
+import akka.stream.IOResult;
+import akka.stream.javadsl.FileIO;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
+import com.google.common.base.Strings;
 import general.common.Common;
 import models.common.User;
 import org.apache.commons.io.FileUtils;
@@ -10,8 +15,8 @@ import play.Logger.ALogger;
 import play.api.mvc.RequestHeader;
 import play.mvc.Controller;
 import play.mvc.Http;
-import scala.Option;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.*;
 import java.net.MalformedURLException;
@@ -24,6 +29,7 @@ import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 /**
@@ -35,34 +41,33 @@ public class Helpers {
     private static final ALogger LOGGER = Logger.of(Helpers.class);
 
     /**
-     * Check if the request was made via Ajax or not for Scala requests.
-     */
-    public static boolean isAjax(RequestHeader request) {
-        Option<String> headerOption = request.headers().get("X-Requested-With");
-        return headerOption.isDefined() && headerOption.get().equals("XMLHttpRequest");
-    }
-
-    /**
      * Check if the request was made via Ajax or not.
      */
     public static Boolean isAjax() {
         return Controller.request().header("X-Requested-With").map(v -> v.equals("XMLHttpRequest")).orElse(false);
     }
 
+    public static boolean isHtmlRequest(Http.Request request) {
+        return request.accepts(Http.MimeTypes.HTML);
+    }
+
+    public static boolean isHtmlRequest(RequestHeader request) {
+        return request.asJava().getHeaders().get("Accept").map(s -> s.toLowerCase().contains("html")).orElse(false);
+    }
+
     /**
-     * Checks the HTTP request if it has an "Authorization: Bearer" request
+     * Checks if the session has a field 'username'
+     */
+    public static boolean isSessionCookieRequest(Http.Request request) {
+        return request.cookie("PLAY_SESSION") != null && !Strings.isNullOrEmpty(request.cookie("PLAY_SESSION").value());
+    }
+
+    /**
+     * Checks if the HTTP request has an "Authorization: Bearer" header. This does not check any authentication.
      */
     public static boolean isApiRequest(Http.Request request) {
         Optional<String> headerOptional = request.header("Authorization");
         return headerOptional.isPresent() && headerOptional.get().contains("Bearer");
-    }
-
-    /**
-     * Checks the HTTP request if it has an "Authorization: Bearer" request
-     */
-    public static boolean isApiRequest(RequestHeader request) {
-        Option<String> headerOption = request.headers().get("Authorization");
-        return headerOption.isDefined() && headerOption.get().contains("Bearer");
     }
 
     /**
@@ -253,6 +258,26 @@ public class Helpers {
 
     public static boolean isAllowedSuperuser(User user) {
         return Common.isUserRoleAllowSuperuser() && user.isSuperuser();
+    }
+
+    /**
+     * Helper function to allow an action after a file was sent (e.g. delete the file)
+     */
+    public static Source<ByteString, CompletionStage<IOResult>> okFileStreamed(final File file, final Runnable handler) {
+        final Source<ByteString, CompletionStage<IOResult>> fileSource = FileIO.fromFile(file)
+                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "));
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        Source<ByteString, CompletionStage<IOResult>> wrap = fileSource.mapMaterializedValue(
+                action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
+        return wrap;
+    }
+
+    public static Optional<Long> parseLong(String str) {
+        try {
+            return Optional.of(Long.parseLong(str));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 
 }

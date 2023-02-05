@@ -2,8 +2,9 @@ package controllers.gui;
 
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import auth.gui.AuthService;
 import com.google.common.base.Strings;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
@@ -41,7 +42,7 @@ public class StudyResults extends Controller {
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
@@ -55,7 +56,7 @@ public class StudyResults extends Controller {
 
     @Inject
     StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            Checker checker, AuthenticationService authenticationService,
+            Checker checker, AuthService authenticationService,
             BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
             ResultStreamer resultStreamer, WorkerService workerService, StudyDao studyDao, BatchDao batchDao,
             StudyResultDao studyResultDao, GroupResultDao groupResultDao, WorkerDao workerDao, JsonUtils jsonUtils) {
@@ -78,7 +79,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a study.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result studysStudyResults(Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -98,7 +99,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a batch.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result batchesStudyResults(Long studyId, Long batchId, String workerType) throws JatosGuiException {
         Batch batch = batchDao.findById(batchId);
         Study study = studyDao.findById(studyId);
@@ -122,7 +123,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a group.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result groupsStudyResults(Long studyId, Long groupId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupId);
@@ -146,7 +147,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a worker.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result workersStudyResults(Long workerId) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Worker worker = workerDao.findById(workerId);
@@ -167,7 +168,7 @@ public class StudyResults extends Controller {
      * StudyResults IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
@@ -184,7 +185,7 @@ public class StudyResults extends Controller {
      * GET request that returns StudyResults of a study in JSON format. It streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -199,7 +200,7 @@ public class StudyResults extends Controller {
      * be specified and the results will only be of this type. It streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -214,7 +215,7 @@ public class StudyResults extends Controller {
      * GET request that returns all StudyResults of a group in JSON format. It streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -228,7 +229,7 @@ public class StudyResults extends Controller {
      * GET request that returns all StudyResults belonging to a worker as JSON. Streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataByWorker(Long workerId) throws BadRequestException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Worker worker = workerDao.findById(workerId);
@@ -242,7 +243,7 @@ public class StudyResults extends Controller {
      * Returns for one study result the component result's data
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User loggedInUser = authenticationService.getLoggedInUser();

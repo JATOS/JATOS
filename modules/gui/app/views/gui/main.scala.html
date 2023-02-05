@@ -19,16 +19,18 @@
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/qr-creator.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")" type="module"></script>
+@if(loggedInUser.isOauthGoogle()) {
+<script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async defer></script>
+}
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
 </head>
 
-<body>
 <script @{helper.CSPNonce.attr}>
 
 function showSuccess(msg, insertAfterElem, allowHtml = false) {
     msg = allowHtml ? msg : $($.parseHTML(msg)).text();
-    var html = '<div class="alert alert-success alert-dismissible" role="alert" data-dismiss="alert">'
+    var html = '<div class="alert alert-success alert-dismissible" role="alert">'
         + '<button type="button" class="close">'
         + '<span>&times;</span>'
         + '<span class="sr-only">Close</span></button>'
@@ -40,6 +42,9 @@ function showSuccess(msg, insertAfterElem, allowHtml = false) {
     } else {
         $(html).insertAfter("#breadcrumbs");
     }
+    $('.alert').click(function(event) {
+        if (!$(this).is("a")) $(this).remove();
+    });
 }
 
 function showInfo(msg, insertAfterElem, allowHtml = false) {
@@ -56,6 +61,9 @@ function showInfo(msg, insertAfterElem, allowHtml = false) {
     } else {
         $(html).insertAfter("#breadcrumbs");
     }
+    $('.alert').click(function(event) {
+        if (!$(this).is("a")) $(this).remove();
+    });
 }
 
 function showWarning(msg, insertAfterElem, allowHtml = false) {
@@ -72,6 +80,9 @@ function showWarning(msg, insertAfterElem, allowHtml = false) {
     } else {
         $(html).insertAfter("#breadcrumbs");
     }
+    $('.alert').click(function(event) {
+        if (!$(this).is("a")) $(this).remove();
+    });
 }
 
 function showError(msg, insertAfterElem, allowHtml = false) {
@@ -89,6 +100,9 @@ function showError(msg, insertAfterElem, allowHtml = false) {
     } else {
         $(html).insertAfter("#breadcrumbs");
     }
+    $('.alert').click(function(event) {
+        if (!$(this).is("a")) $(this).remove();
+    });
 }
 
 function removeSuccess(elem) {
@@ -213,6 +227,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 }
 
 </script>
+<body>
 
 @if(localhost) {
 <nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
@@ -268,7 +283,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
                 <li><a id="navUserText" href="@controllers.gui.routes.Users.profile(loggedInUser.getUsername())">
                     <span class="glyphicon glyphicon-user"></span> @loggedInUser.getName()
                 </a></li>
-                <li><a href="@controllers.gui.routes.Authentication.logout()"><span class="glyphicon glyphicon-off"></span> Logout</a></li>
+                <li><a href="@{general.common.Common.getPlayHttpContext()}jatos/logout"><span class="glyphicon glyphicon-off"></span> Logout</a></li>
             </ul>
         </div>
     </div>

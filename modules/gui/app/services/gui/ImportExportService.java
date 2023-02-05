@@ -130,8 +130,8 @@ public class ImportExportService {
         }
     }
 
-    public void importStudyConfirmed(User loggedInUser, boolean overwriteProperties, boolean overwriteDir,
-            boolean keepCurrentDirName, boolean renameDir) throws IOException, ForbiddenException, NotFoundException {
+    public void importStudyConfirmed(User loggedInUser, boolean keepProperties, boolean keepAssets,
+            boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
             LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
@@ -144,19 +144,19 @@ public class ImportExportService {
         // 2) study exists  -  udir exists - udir != cdir
         // 3) study exists  - !udir exists
         if (currentStudy.isPresent()) {
-            overwriteExistingStudy(loggedInUser, overwriteProperties, overwriteDir,
-                    keepCurrentDirName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
+            overwriteExistingStudy(loggedInUser, keepProperties, keepAssets,
+                    keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
             return;
         }
 
         // 4) !study exists -  udir exists
         // 5) !study exists - !udir exists
-        if (overwriteProperties && overwriteDir) {
+        if (!keepProperties && !keepAssets) { // if we have no current study do nothing
             boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
-            if (uploadedDirExists && !renameDir) {
-                throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameDir' is set to false.");
+            if (uploadedDirExists && !renameAssets) {
+                throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameAssets' is set to false.");
             }
-            if (renameDir) {
+            if (renameAssets) {
                 String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
                 uploadedStudy.setDirName(newDirName);
             }
@@ -172,21 +172,21 @@ public class ImportExportService {
         Controller.session().remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
     }
 
-    private void overwriteExistingStudy(User loggedInUser, boolean overwriteProperties, boolean overwriteDir,
-            boolean keepCurrentDirName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
+    private void overwriteExistingStudy(User loggedInUser, boolean keepProperties, boolean keepAssets,
+            boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
             throws IOException, ForbiddenException, NotFoundException {
         checker.checkStandardForStudy(currentStudy, currentStudy.getId(), loggedInUser);
         checker.checkStudyLocked(currentStudy);
 
-        if (overwriteDir) {
-            String dirName = keepCurrentDirName ? currentStudy.getDirName() : uploadedStudy.getDirName();
+        if (!keepAssets) {
+            String dirName = keepCurrentAssetsName ? currentStudy.getDirName() : uploadedStudy.getDirName();
             moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, dirName);
             RequestScopeMessaging.success(MessagesStrings.studyAssetsOverwritten(
                     dirName, currentStudy.getId(), currentStudy.getTitle()));
         }
 
-        if (overwriteProperties) {
-            if (keepCurrentDirName || !overwriteDir) {
+        if (!keepProperties) {
+            if (keepCurrentAssetsName || keepAssets) {
                 studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy, loggedInUser);
             } else {
                 studyService.updateStudy(currentStudy, uploadedStudy, loggedInUser);

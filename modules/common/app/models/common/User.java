@@ -1,6 +1,7 @@
 package models.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 import models.common.workers.JatosWorker;
 
 import javax.persistence.*;
@@ -9,8 +10,10 @@ import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Set;
 
+import static utils.common.JsonUtils.JsonForApi;
+
 /**
- * DB entity of a user. Used for JSON marshalling and JPA persistance.
+ * DB entity of a user. Used for JSON marshalling and JPA persistence.
  *
  * @author Kristian Lange
  */
@@ -31,13 +34,14 @@ public class User {
      * Possible authentication methods
      */
     public enum AuthMethod {
-        DB, LDAP, OAUTH_GOOGLE
+        DB, LDAP, OAUTH_GOOGLE, OIDC
     }
 
     /**
      * username is used as ID
      */
     @Id
+    @JsonView({JsonForApi.class})
     private String username;
 
     /**
@@ -199,6 +203,10 @@ public class User {
 
     public boolean isOauthGoogle() {
         return this.authMethod == AuthMethod.OAUTH_GOOGLE;
+    }
+
+    public boolean isOidc() {
+        return this.authMethod == AuthMethod.OIDC;
     }
 
     public void setWorker(JatosWorker worker) {

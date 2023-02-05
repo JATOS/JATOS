@@ -1,5 +1,6 @@
 package services.gui;
 
+import auth.gui.AuthService;
 import com.google.common.collect.Lists;
 import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
@@ -53,7 +54,7 @@ public class UserService {
     public static final String ADMIN_NAME = "Admin";
 
     private final StudyService studyService;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
@@ -61,7 +62,7 @@ public class UserService {
     private final JPAApi jpa;
 
     @Inject
-    UserService(StudyService studyService, AuthenticationService authenticationService, UserDao userDao,
+    UserService(StudyService studyService, AuthService authenticationService, UserDao userDao,
             StudyDao studyDao, WorkerDao workerDao, ApiTokenDao apiTokenDao, JPAApi jpa) {
         this.studyService = studyService;
         this.authenticationService = authenticationService;
@@ -111,7 +112,8 @@ public class UserService {
         User user = new User(newUserModel.getUsername(), newUserModel.getName(), newUserModel.getEmail());
         String password = newUserModel.getPassword();
         AuthMethod authMethod = newUserModel.getAuthByLdap() ? AuthMethod.LDAP :
-                newUserModel.getAuthByOAuthGoogle() ? AuthMethod.OAUTH_GOOGLE : AuthMethod.DB;
+                newUserModel.getAuthByOAuthGoogle() ? AuthMethod.OAUTH_GOOGLE :
+                newUserModel.getAuthByOidc() ? AuthMethod.OIDC : AuthMethod.DB;
         createAndPersistUser(user, password, false, authMethod);
     }
 

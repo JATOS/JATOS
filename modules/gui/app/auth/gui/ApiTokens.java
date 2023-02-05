@@ -1,9 +1,9 @@
-package controllers.gui;
+package auth.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ApiTokenDao;
 import models.common.ApiToken;
@@ -14,7 +14,6 @@ import play.db.jpa.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.gui.AuthenticationService;
 import services.gui.ApiTokenService;
 
 import javax.inject.Inject;
@@ -33,17 +32,17 @@ public class ApiTokens extends Controller {
 
     private final ApiTokenDao apiTokenDao;
     private final ApiTokenService apiTokenService;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
 
     @Inject
-    ApiTokens(ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthenticationService authenticationService) {
+    ApiTokens(ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthService authenticationService) {
         this.apiTokenDao = apiTokenDao;
         this.apiTokenService = apiTokenService;
         this.authenticationService = authenticationService;
     }
 
     @Transactional
-    @Authenticated
+    @Auth
     public Result allTokenDataByUser() {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<ApiToken> tokenList = apiTokenDao.findByUser(loggedInUser);
@@ -56,7 +55,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Auth
     public Result generate(String name, Integer expires) {
         User loggedInUser = authenticationService.getLoggedInUser();
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
@@ -68,7 +67,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Auth
     public Result remove(Long id) {
         User loggedInUser = authenticationService.getLoggedInUser();
         ApiToken token = apiTokenDao.find(id);
@@ -78,7 +77,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleActive(Long id, Boolean active) {
         User loggedInUser = authenticationService.getLoggedInUser();
         ApiToken token = apiTokenDao.find(id);

@@ -1,4 +1,4 @@
-package services.gui;
+package auth.gui;
 
 import com.google.common.base.Strings;
 import general.common.Common;
@@ -17,10 +17,10 @@ import java.util.Hashtable;
  * @author Kristian Lange
  */
 @Singleton
-public class LdapAuthentication {
+public class SignInLdap {
 
     /**
-     * Authenticates the given user via an external LDAP server. It throws an NamingException if the LDAP server can't
+     * Authenticates the given user via an external LDAP server. It throws an {@link NamingException} if the LDAP server can't
      * be reached or the LDAP URL or Base DN is wrong. It allows multiple base DNs and tries to authenticate against
      * each of them one after another. If an admin user is specified it tries to search for the user and then
      * authenticates- if not it tries to authenticate right away. The username is used as the uid in LDAP.

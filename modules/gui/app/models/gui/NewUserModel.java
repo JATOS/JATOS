@@ -33,9 +33,14 @@ public class NewUserModel {
     private boolean authByLdap = false;
 
     /**
-     * If true OAuth / OpenId Connect (OIDC) authentication is used for this user
+     * If true Google OAuth / OpenId Connect (OIDC) authentication is used for this user
      */
     private boolean authByOAuthGoogle = false;
+
+    /**
+     * If true OpenId Connect (OIDC) authentication is used for this user
+     */
+    private boolean authByOidc = false;
 
     /**
      * Password from the logged-in admin user. Used for authentication.
@@ -96,6 +101,14 @@ public class NewUserModel {
 
     public void setAuthByOAuthGoogle(boolean authByOAuthGoogle) {
         this.authByOAuthGoogle = authByOAuthGoogle;
+    }
+
+    public boolean getAuthByOidc() {
+        return authByOidc;
+    }
+
+    public void setAuthByOidc(boolean authByOidc) {
+        this.authByOidc = authByOidc;
     }
 
     public String getAdminPassword() {

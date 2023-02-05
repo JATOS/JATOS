@@ -71,15 +71,15 @@ $('#collapseStudyImportDetails').on('hide.bs.collapse show.bs.collapse', functio
 function importStudyConfirm(response) {
     if (response.studyExists && response.uploadedDirExists && response.uploadedDirName == response.currentDirName) {
         // 1) study exists  -  udir exists - udir == cdir : ask confirmation to overwrite study and/or dir
-        askConfirmationForStudyExists(response.uploadedStudyTitle, response.uploadedStudyUuid,
+        askConfirmationForStudyExists(response.uploadedStudyTitle, response.uuid,
                 response.uploadedDirName);
     } else if (response.studyExists && response.uploadedDirExists && response.uploadedDirName != response.currentDirName) {
         // 2) study exists  -  udir exists - udir != cdir : ask confirmation to overwrite study and/or (dir && rename to cdir)
         askConfirmationForStudyExistsAndRenameDir(response.uploadedStudyTitle,
-                response.uploadedStudyUuid, response.uploadedDirName, response.currentDirName);
+                response.uuid, response.uploadedDirName, response.currentDirName);
     } else if (response.studyExists && !response.uploadedDirExists) {
         // 3) study exists  - !udir exists : shouldn't happen, ask confirmation to overwrite study
-        askConfirmationForStudyExists(response.uploadedStudyTitle, response.uploadedStudyUuid,
+        askConfirmationForStudyExists(response.uploadedStudyTitle, response.uuid,
                         response.uploadedDirName);
     } else if (!response.studyExists && response.uploadedDirExists) {
         // 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
@@ -91,10 +91,10 @@ function importStudyConfirm(response) {
     }
 }
 
-function askConfirmationForStudyExists(uploadedStudyTitle, uploadedStudyUuid, uploadedDirName) {
+function askConfirmationForStudyExists(uploadedStudyTitle, uuid, uploadedDirName) {
     $('#studysPropertiesConfirm').prop('checked', true);
     $('#studysDirConfirm').prop('checked', true);
-    var preText = '<p>It seems a study "' + uploadedStudyTitle + '" (UUID ' + uploadedStudyUuid
+    var preText = '<p>It seems a study "' + uploadedStudyTitle + '" (UUID ' + uuid
         + ') and its study assets\' directory "' + uploadedDirName + '" already exist.</p>'
         + '<p>What do you want to do?</p>';
     $('#confirmModalStudyImport').find('.modalText').html(preText);
@@ -113,17 +113,17 @@ function askConfirmationForStudyExists(uploadedStudyTitle, uploadedStudyUuid, up
         var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
         var studysDirConfirm = $('#studysDirConfirm').is(':checked');
         // Keep the current study assets dir name if the properties aren't overwritten
-        var jsonData = JSON.stringify({ "overwriteProperties": studysPropertiesConfirm,
-            "overwriteDir" : studysDirConfirm, "keepCurrentDirName": !studysPropertiesConfirm });
+        var jsonData = JSON.stringify({ "keepProperties": !studysPropertiesConfirm,
+            "keepAssets" : !studysDirConfirm, "keepCurrentAssetsName": !studysPropertiesConfirm });
         postStudyImportConfirm(jsonData);
     });
 }
 
-function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uploadedStudyUuid,
+function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uuid,
         uploadedDirName, currentDirName) {
     $('#studysPropertiesConfirm').prop('checked', true);
     $('#studysDirConfirm').prop('checked', true);
-    var preText = '<p>It seems a study "' + uploadedStudyTitle + '" (UUID ' + uploadedStudyUuid
+    var preText = '<p>It seems a study "' + uploadedStudyTitle + '" (UUID ' + uuid
         + ') already exist.</p>'
         + '<p>The imported study assets\' directory is "' + uploadedDirName
         + '" - the current one is "' + currentDirName + '". Usually in this case the directory '
@@ -145,8 +145,8 @@ function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uploadedS
         $('#confirmModalStudyImport').modal('hide');
         var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
         var studysDirConfirm = $('#studysDirConfirm').is(':checked');
-        var jsonData = JSON.stringify({ "overwriteProperties": studysPropertiesConfirm,
-            "overwriteDir" : studysDirConfirm, "keepCurrentDirName": studysDirConfirm });
+        var jsonData = JSON.stringify({ "keepProperties": !studysPropertiesConfirm,
+            "keepAssets" : !studysDirConfirm, "keepCurrentAssetsName": studysDirConfirm });
         postStudyImportConfirm(jsonData);
     });
 }
@@ -159,8 +159,8 @@ function askConfirmationForStudyNotExistsDirExists(uploadedStudyTitle, uploadedD
         + 'If you proceed the directory will be renamed to "' + newDirName + '".</p>'
         + '<p>Do you want to proceed?</p>';
     askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
-        var jsonData = JSON.stringify({ "overwriteProperties": true, "overwriteDir" : true,
-         "renameDir": true });
+        var jsonData = JSON.stringify({ "keepProperties": false, "keepAssets" : false,
+         "renameAssets": true });
         postStudyImportConfirm(jsonData);
     });
 }
@@ -171,8 +171,8 @@ function askConfirmationForStudyNotExistsDirNotExists(uploadedStudyTitle, upload
         + '" and its directory "' + uploadedDirName + '".</p>'
         + '<p>Do you want to proceed?</p>';
     askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
-        var jsonData = JSON.stringify({ "overwriteProperties": true, "overwriteDir" : true,
-         "renameDir": false });
+        var jsonData = JSON.stringify({ "keepProperties": false, "keepAssets" : false,
+         "renameAssets": false });
         postStudyImportConfirm(jsonData);
     });
 }

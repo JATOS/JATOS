@@ -1,13 +1,11 @@
-package controllers.gui;
+package auth.gui;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
-import models.gui.NewUserModel;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
@@ -16,41 +14,38 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.AuthenticationService;
-import services.gui.AuthenticationValidation;
 import services.gui.UserService;
 import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.naming.NamingException;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 
 /**
- * Controller that deals with login/logout. There are two login views: 1) login HTML page, and 2) an overlay. The second
- * one is triggered by a session timeout or an inactivity timeout in JavaScript.
+ * Controller that deals with authentication for users stored in JATOS DB and users authenticated by LDAP. OIDC auth is
+ * handled by the classes {@link SignInGoogle} and {@link SignInOidc}.There are two login views: 1) login HTML page,
+ * and 2) an overlay. The second one is triggered by a session timeout or an inactivity timeout in JavaScript.
  *
  * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
-public class Authentication extends Controller {
+public class SignIn extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(Authentication.class);
+    private static final ALogger LOGGER = Logger.of(SignIn.class);
 
-    private final AuthenticationService authenticationService;
-    private final AuthenticationValidation authenticationValidation;
+    private final AuthService authenticationService;
+    private final UserSessionCacheAccessor userSessionCacheAccessor;
     private final FormFactory formFactory;
     private final UserDao userDao;
     private final UserService userService;
 
     @Inject
-    Authentication(AuthenticationService authenticationService, AuthenticationValidation authenticationValidation,
+    SignIn(AuthService authenticationService, UserSessionCacheAccessor userSessionCacheAccessor,
             FormFactory formFactory, UserService userService, UserDao userDao) {
         this.authenticationService = authenticationService;
-        this.authenticationValidation = authenticationValidation;
+        this.userSessionCacheAccessor = userSessionCacheAccessor;
         this.formFactory = formFactory;
         this.userDao = userDao;
         this.userService = userService;
@@ -62,7 +57,7 @@ public class Authentication extends Controller {
      * Shows the login page
      */
     public Result login() {
-        return ok(views.html.gui.auth.login.render(formFactory.form(Authentication.Login.class)));
+        return ok(views.html.gui.auth.login.render(formFactory.form(SignIn.Login.class)));
     }
 
     /**
@@ -89,9 +84,9 @@ public class Authentication extends Controller {
         if (!authenticated) {
             return returnUnauthorizedDueToFailedAuth(loginForm, normalizedUsername, request.remoteAddress());
         } else {
-            authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername,
-                    request.remoteAddress());
+            authenticationService.writeSessionCookie(session(), normalizedUsername);
             userService.setLastLogin(normalizedUsername);
+            userSessionCacheAccessor.add(normalizedUsername);
             if (Helpers.isAjax()) {
                 return ok(" "); // jQuery.ajax cannot handle empty responses
             } else {
@@ -135,72 +130,15 @@ public class Authentication extends Controller {
     }
 
     /**
-     * HTTP POST Endpoint for the login form. It handles the sign-in / log-in of users via Google OAuth sign-in button.
-     * The actual authentication is done with Google's gsi/client JavaScript library in the browser. Here we just check the
-     * Token ID, create the user if it doesn't exist yet und log in the user into JATOS.
-     * More info: https://developers.google.com/identity/gsi/web
-     */
-    @Transactional
-    public Result signInWithGoogle(Http.Request request) throws GeneralSecurityException, IOException {
-        String idTokenString = request.body().asFormUrlEncoded().get("credential")[0];
-        GoogleIdToken idToken = authenticationService.fetchOAuthGoogleIdToken(idTokenString);
-        if (idToken == null) {
-            LOGGER.warn("Google OAuth: Invalid ID token.");
-            FlashScopeMessaging.error("Invalid ID token");
-            return redirect(routes.Authentication.login());
-        }
-
-        GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
-
-        if (!idTokenPayload.getEmailVerified()) {
-            LOGGER.info("Google OAuth: Couldn't sign in user due to email not verified");
-            FlashScopeMessaging.error("Email not verified");
-            return redirect(routes.Authentication.login());
-        }
-
-        // Create new user if they doesn't exist in the DB
-        String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
-        User existingUser = userDao.findByUsername(normalizedUsername);
-        if (existingUser == null) {
-            String name = (String) idTokenPayload.get("name");
-            NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedUsername);
-            newUserModel.setName(name);
-            newUserModel.setEmail(idTokenPayload.getEmail());
-            newUserModel.setAuthByOAuthGoogle(true);
-            Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-
-            newUserForm = authenticationValidation.validateNewUser(newUserForm);
-            if (newUserForm.hasErrors()) {
-                LOGGER.warn("Google OAuth: user validation failed - " + newUserForm.errors().get(0).message());
-                FlashScopeMessaging.error(newUserForm.errors().get(0).message());
-                return redirect(routes.Authentication.login());
-            }
-
-            userService.bindToUserAndPersist(newUserModel);
-        } else if (!existingUser.isOauthGoogle()) {
-            FlashScopeMessaging.error("User exists already - but does not use Google sign in");
-            return redirect(routes.Authentication.login());
-        }
-
-        authenticationService.writeSessionCookieAndSessionCache(session(), normalizedUsername, request.remoteAddress());
-        userService.setLastLogin(normalizedUsername);
-
-        return redirect(controllers.gui.routes.Home.home());
-    }
-
-    /**
      * Removes user from session and shows login view with an logout message.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result logout(Http.Request request) {
-        LOGGER.info(".logout: " + request.session().get(AuthenticationService.SESSION_USERNAME));
-        User loggedInUser = authenticationService.getLoggedInUser();
-        authenticationService.clearSessionCookieAndSessionCache(session(), loggedInUser.getUsername(),
-                request.remoteAddress());
+        LOGGER.info(".logout: " + request.session().get(AuthService.SESSION_USERNAME));
+        authenticationService.clearSessionCookie(request.session());
         FlashScopeMessaging.success("You've been logged out.");
-        return redirect(controllers.gui.routes.Authentication.login());
+        return redirect(auth.gui.routes.SignIn.login());
     }
 
     /**

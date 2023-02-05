@@ -7,7 +7,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.*;
 import play.mvc.Http.Request;
-import services.gui.AuthenticationService;
+import auth.gui.AuthService;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -35,10 +35,10 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		String username = "unknown";
-		if (Controller.session(AuthenticationService.SESSION_USERNAME) != null) {
-			username = Controller.session(AuthenticationService.SESSION_USERNAME);
-		} else if (RequestScope.get(AuthenticationService.LOGGED_IN_USER) != null) {
-			username = ((User) RequestScope.get(AuthenticationService.LOGGED_IN_USER)).getUsername();
+		if (Controller.session(AuthService.SESSION_USERNAME) != null) {
+			username = Controller.session(AuthService.SESSION_USERNAME);
+		} else if (RequestScope.get(AuthService.LOGGED_IN_USER) != null) {
+			username = ((User) RequestScope.get(AuthService.LOGGED_IN_USER)).getUsername();
 		}
 		guiLogger.info(request.method() + " " + request.uri() + " (" + username	+ ")");
 		return delegate.call(ctx);

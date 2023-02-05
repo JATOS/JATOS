@@ -239,6 +239,40 @@ public class ComponentResultDao extends AbstractDao {
         return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
     }
 
+    public List<Long> findIdsByComponentUuids(List<String> componentUuids) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
+                        "(SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)")
+                .setParameter("componentUuids", componentUuids)
+                .getResultList();
+        // Filter duplicate crids
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+    }
+
+    public List<Long> findIdsByStudyIds(List<Long> studyIds) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
+                        "(SELECT c.id FROM Component c WHERE c.study_id IN :studyIds)")
+                .setParameter("studyIds", studyIds)
+                .getResultList();
+        // Filter duplicate crids
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+    }
+
+    public List<Long> findIdsByStudyUuids(List<String> studyUuids) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = jpa.em()
+                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
+                        "(SELECT c.id FROM Component c WHERE c.study_id IN " +
+                        "(SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))")
+                .setParameter("studyUuids", studyUuids)
+                .getResultList();
+        // Filter duplicate crids
+        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+    }
+
     public List<Long> findIdsByStudyResultId(Long srid) {
         @SuppressWarnings("unchecked")
         List<Object> results = jpa.em()
@@ -253,7 +287,7 @@ public class ComponentResultDao extends AbstractDao {
      * study results is kept, e.g. if the study result IDs are sr1, sr2, sr3 - then in the returned list are first all
      * component result IDs of sr1, then all of sr2, and last all of sr3.
      */
-    public List<Long> findIdsByStudyResultIds(List<Long> orderedSrids) {
+    public List<Long> findOrderedIdsByOrderedStudyResultIds(List<Long> orderedSrids) {
         @SuppressWarnings("unchecked")
         List<Object[]> unorderedDbResults = jpa.em()
                 .createNativeQuery("SELECT cr.studyResult_id, cr.id FROM ComponentResult cr "

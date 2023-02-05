@@ -1,11 +1,9 @@
 package controllers.gui;
 
-import akka.stream.javadsl.FileIO;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
+import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.*;
 import exceptions.gui.BadRequestException;
@@ -17,15 +15,12 @@ import general.common.StudyLogger;
 import general.gui.RequestScopeMessaging;
 import models.common.*;
 import models.gui.StudyProperties;
-import play.core.utils.HttpHeaderParameterEncoding;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
-import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.*;
 import utils.common.Helpers;
@@ -35,13 +30,8 @@ import utils.common.JsonUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -57,7 +47,7 @@ public class Studies extends Controller {
     private final Checker checker;
     private final StudyService studyService;
     private final UserService userService;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final BatchService batchService;
     private final StudyDao studyDao;
@@ -73,7 +63,7 @@ public class Studies extends Controller {
 
     @Inject
     Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, StudyService studyService,
-            UserService userService, AuthenticationService authenticationService,
+            UserService userService, AuthService authenticationService,
             BreadcrumbsService breadcrumbsService, BatchService batchService, StudyDao studyDao,
             ComponentDao componentDao, StudyResultDao studyResultDao, UserDao userDao,
             ComponentResultDao componentResultDao, StudyLinkDao studyLinkDao, JsonUtils jsonUtils,
@@ -101,7 +91,7 @@ public class Studies extends Controller {
      * Shows the study view with details of a study components and so on.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result study(Long studyId, int httpStatus) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -118,7 +108,7 @@ public class Studies extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Auth
     public Result study(Long studyId) throws JatosGuiException {
         return study(studyId, Http.Status.OK);
     }
@@ -127,7 +117,7 @@ public class Studies extends Controller {
      * POST request to create a new study.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitCreated() {
         User loggedInUser = authenticationService.getLoggedInUser();
 
@@ -150,21 +140,21 @@ public class Studies extends Controller {
      * GET request that returns the study properties as JSON.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result properties(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
         checker.checkStandardForStudy(study, studyId, loggedInUser);
 
         StudyProperties studyProperties = studyService.bindToProperties(study);
-        return ok(jsonUtils.asJsonNode(studyProperties));
+        return ok(JsonUtils.asJsonNode(studyProperties));
     }
 
     /**
      * POST request to update study properties
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitEdited(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -189,7 +179,7 @@ public class Studies extends Controller {
      * POST request to swap the locked field of a study.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleLock(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -209,7 +199,7 @@ public class Studies extends Controller {
      * POST request to activate or deactivate a study. Can be done only by an admin.
      */
     @Transactional
-    @Authenticated(User.Role.ADMIN)
+    @Auth(User.Role.ADMIN)
     public Result toggleActive(Long studyId, Boolean active) {
         Study study = studyDao.findById(studyId);
         study.setActive(active);
@@ -221,7 +211,7 @@ public class Studies extends Controller {
      * DELETE request to remove a study
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result remove(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -236,7 +226,7 @@ public class Studies extends Controller {
      * GET request to clones a study.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result cloneStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -251,7 +241,7 @@ public class Studies extends Controller {
      * GET request that gets all users and whether they are admin of this study as a JSON array.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result memberUsers(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -265,7 +255,7 @@ public class Studies extends Controller {
      * POST request that adds or removes a member user from a study
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleMemberUser(Long studyId, String username, boolean isMember) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -281,7 +271,7 @@ public class Studies extends Controller {
      * POST request that adds all users as members to a study
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result addAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -299,7 +289,7 @@ public class Studies extends Controller {
      * DELETE request that removes all member users from a study
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result removeAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -313,7 +303,7 @@ public class Studies extends Controller {
      * POST request to change the oder of components within a study.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result changeComponentOrder(Long studyId, Long componentId, String newPosition)
             throws JatosGuiException, ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyDao.findById(studyId);
@@ -331,7 +321,7 @@ public class Studies extends Controller {
      * Runs the whole study. Uses a JatosWorker and the given batch. Redirects to /publix/studyCode.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result runStudy(Http.Request request, Long studyId, Long batchId)
             throws JatosGuiException, NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
@@ -351,7 +341,7 @@ public class Studies extends Controller {
      * GET request that returns all component data of the given study as JSON.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result tableDataByStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -362,37 +352,6 @@ public class Studies extends Controller {
         componentList.forEach(component -> resultCountList.add(componentResultDao.countByComponent(component)));
         JsonNode dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList(), resultCountList);
         return ok(dataAsJson);
-    }
-
-    /**
-     * GET request
-     *
-     * @param studyId    study's ID
-     * @param entryLimit It cuts the log after the number of lines given in entryLimit
-     * @param download   If true streams the whole study log file - if not only until entryLimit
-     * @return Depending on 'download' flag returns the whole study log file - or only part of it (until entryLimit) in
-     * reverse order and 'Transfer-Encoding:chunked'
-     */
-    @Transactional
-    @Authenticated
-    public Result studyLog(Long studyId, int entryLimit, boolean download) throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
-
-        if (download) {
-            Path studyLogPath = Paths.get(studyLogger.getPath(study));
-            if (Files.notExists(studyLogPath)) return notFound();
-
-            Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
-            Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
-            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_studylog_" + studyLogger.getFilename(study));
-            return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
-        } else {
-            return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/jsonline");
-        }
     }
 
     private void checkStandardForStudy(Long studyId, Study study, User loggedInUser) throws JatosGuiException {

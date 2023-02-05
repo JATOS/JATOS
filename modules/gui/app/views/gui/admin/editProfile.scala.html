@@ -101,7 +101,7 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <p class="confirmationText"></p>
-                    @if(!loggedInUser.isOauthGoogle()){
+                    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()){
                     <div class="form-group row">
                         <label class="control-label col-xs-6 passwordLabel" for="passwordInput">Your password</label>
                         <div class="col-xs-5">
@@ -112,7 +112,7 @@
                     <div class="form-group row">
                         <label class="control-label col-xs-6 usernameLabel" for="usernameInput">Your email</label>
                         <div class="col-xs-5">
-                            <input type="text" id="usernameInput" class="form-control username" name="username" placeholder="Your email">
+                            <input type="text" id="usernameInput" class="form-control username" name="username" placeholder="Your username">
                         </div>
                     </div>
                     }
@@ -195,7 +195,7 @@ function showChangePasswordModal(user, loggedInUserChangesOwnPassword) {
     $('#newPasswordInput').val('');
     $('#newPasswordRepeatInput').val('');
 
-    if (@loggedInUser.isOauthGoogle()) {
+    if (@loggedInUser.isOauthGoogle() || @loggedInUser.isOidc()) {
         $('#changePasswordModal .oldPasswordDiv').hide();
         $('#changePasswordModal .adminPasswordDiv').hide();
     } else if (loggedInUserChangesOwnPassword) {
@@ -244,15 +244,20 @@ $("#changePasswordForm").submit(function(event) {
 function showDeleteUserModal(user) {
     removeAlerts("#deleteUserModal");
     removeFormErrors("#deleteUserModal");
+
     $('#deleteUserModal .modal-title').text(`Delete ${user.username} (${user.name})`);
     $('#deleteUserModal .confirmationText').html(generateDeleteUserConfirmationHtml(user));
-    @if(!loggedInUser.isOauthGoogle()) {
+    @if(loggedInUser.isOauthGoogle()) {
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
+    } if (loggedInUser.isOidc()) {
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
+    } else {
     $('#deleteUserModal .password').val('');
     $('#deleteUserModal .passwordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
-    } else {
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address");
     }
+
     $('#deleteUserModal .password').val('');
     $('#deleteUserForm').data(user);
     $('#deleteUserModal').modal('show');
@@ -262,15 +267,21 @@ function showDeleteYourselfModal(user) {
     removeAlerts("#deleteUserModal");
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete yourself");
-    @if(!loggedInUser.isOauthGoogle()) {
+
+    @if(loggedInUser.isOauthGoogle()) {
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .username').parents('.form-group').show();
+    } else if (loggedInUser.isOidc()) {
+    $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
+    $('#deleteUserModal .username').val('');
+    $('#deleteUserModal .username').parents('.form-group').show();
+    } else {
     $('#deleteUserModal .passwordLabel').text(`Confirm with your (${user.username}) password`);
     $('#deleteUserModal .password').val('');
     $('#deleteUserModal .password').parents('.form-group').show();
-    } else {
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address");
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .username').parents('.form-group').show();
     }
+
     $('#deleteUserModal .confirmationText').html(generateDeleteYourselfConfirmationHtml());
     $('#deleteUserForm').data(user);
     $('#deleteUserModal').modal('show');
@@ -316,7 +327,7 @@ $('#deleteUserForm').submit(function(event) {
         data: $('#deleteUserForm').serialize(),
         success : function(result) {
             if (user.username === "@loggedInUser.getUsername()") {
-                window.location.href = '@controllers.gui.routes.Authentication.login()';
+                window.location.href = '@auth.gui.routes.SignIn.login()';
             } else {
                 removeAlerts("#deleteUserModal");
                 removeFormErrors("#deleteUserModal");

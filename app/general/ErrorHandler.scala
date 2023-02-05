@@ -1,7 +1,7 @@
 package general
 
 import javax.inject.{Inject, Singleton}
-import exceptions.gui.{BadRequestException, ForbiddenException, JatosGuiException, NotFoundException}
+import exceptions.gui.{BadRequestException, ForbiddenException, JatosGuiException, NotFoundException, AuthException}
 import exceptions.publix.{InternalServerErrorPublixException, PublixException}
 
 import javax.naming.NamingException
@@ -70,18 +70,21 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
         case e: NotFoundException =>
           logger.info(s"NotFoundException during call ${request.uri}: ${e.getMessage}")
           NotFound(e.getMessage)
+        case e: AuthException =>
+          logger.info(e.getMessage)
+          Forbidden(e.getMessage)
         case _ =>
           logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
-          if (Helpers.isAjax(request) || Helpers.isApiRequest(request)) InternalServerError(msg)
-          else InternalServerError(views.html.error.render(msg))
+          if (Helpers.isHtmlRequest(request)) InternalServerError(views.html.error.render(msg))
+          else InternalServerError(msg)
       }
     )
   }
 
   private def getErrorResult(status: Int, msg: String, request: RequestHeader): Result = {
-    if (Helpers.isAjax(request) || Helpers.isApiRequest(request)) Status(status)(msg)
-    else Status(status)(views.html.publix.error.render(msg))
+    if (Helpers.isHtmlRequest(request)) Status(status)(views.html.publix.error.render(msg))
+    else Status(status)(msg)
   }
 
 }

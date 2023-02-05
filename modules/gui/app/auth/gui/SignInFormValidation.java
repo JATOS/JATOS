@@ -1,4 +1,4 @@
-package services.gui;
+package auth.gui;
 
 import com.google.common.base.Strings;
 import daos.common.UserDao;
@@ -24,12 +24,12 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class AuthenticationValidation {
+public class SignInFormValidation {
 
     private final UserDao userDao;
 
     @Inject
-    AuthenticationValidation(UserDao userDao) {
+    SignInFormValidation(UserDao userDao) {
         this.userDao = userDao;
     }
 
@@ -46,6 +46,7 @@ public class AuthenticationValidation {
         String email = form.get().getEmail();
         boolean authByLdap = form.get().getAuthByLdap();
         boolean authByOAuthGoogle = form.get().getAuthByOAuthGoogle();
+        boolean authByOidc = form.get().getAuthByOidc();
 
         if (normalizedUsername == null || normalizedUsername.isEmpty()) {
             return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.MISSING_USERNAME));
@@ -83,7 +84,7 @@ public class AuthenticationValidation {
         }
 
         // Check password only if not authenticated by LDAP or OAuth
-        if (!authByLdap && !authByOAuthGoogle) {
+        if (!authByLdap && !authByOAuthGoogle && !authByOidc) {
             if (password == null || password.trim().isEmpty()) {
                 return form.withError(new ValidationError(NewUserModel.PASSWORD,
                         MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));

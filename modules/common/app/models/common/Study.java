@@ -3,8 +3,8 @@ package models.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import utils.common.HashUtils;
+import utils.common.JsonUtils.JsonForApi;
 import utils.common.JsonUtils.JsonForPublix;
 
 import javax.persistence.*;
@@ -41,7 +41,7 @@ public class Study {
 
     @Id
     @GeneratedValue
-    @JsonView({JsonForPublix.class})
+    @JsonView({JsonForPublix.class, JsonForApi.class})
     private Long id;
 
     /**
@@ -49,14 +49,14 @@ public class Study {
      * instance it is only allowed to have one study with the same UUID.
      */
     @Column(unique = true, nullable = false)
-    @JsonView({ JsonForPublix.class, JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String uuid;
 
-    @JsonView({ JsonForPublix.class, JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String title;
 
     @Lob
-    @JsonView({ JsonForPublix.class, JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class})
     private String description;
 
     /**
@@ -68,27 +68,28 @@ public class Study {
     /**
      * If a study is locked, it can't be changed.
      */
-    @JsonView(JsonForPublix.class)
+    @JsonView({JsonForPublix.class, JsonForApi.class})
     private boolean locked = false;
 
     /**
      * A deactivated study cannot be run by worker. A study can be deactivated by an admin, but not by the member users
      * of the study (unless they are admin). It's meant to give admins the possibility to turn off studies that use to
-     * many resources. By default it's activated (true).
+     * many resources. By default, it's activated (true).
      */
+    @JsonView({JsonForApi.class})
     private boolean active = true;
 
     /**
      * Is this study a group study (e.g. group members can send messages to each other)
      */
-    @JsonView({ JsonForIO.class, JsonForPublix.class })
+    @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private boolean groupStudy = false;
 
     /**
      * A study with a linear study flow allows the component position to only increase or stay the same
      * (no going back to earlier components).
      */
-    @JsonView({ JsonForIO.class, JsonForPublix.class })
+    @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private boolean linearStudy = false;
 
     /**
@@ -96,20 +97,20 @@ public class Study {
      * it does not go further than the first component. As soon as the second component is reached the usual
      * restrictions of the worker apply. 'Single' workers only (PersonalSingleWorker or MultipleSingleWorker).
      */
-    @JsonView({ JsonForIO.class, JsonForPublix.class })
+    @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private boolean allowPreview = false;
 
     /**
      * Study assets directory name
      */
-    @JsonView({ JsonForIO.class, JsonForPublix.class })
+    @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private String dirName;
 
     /**
      * User comments, reminders, something to share with others. They have no further meaning.
      */
     @Lob
-    @JsonView({ JsonForIO.class })
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private String comments;
 
     /**
@@ -117,20 +118,20 @@ public class Study {
      * via jatos.js. Can be used for initial data and configuration.
      */
     @Lob
-    @JsonView({ JsonForPublix.class, JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String jsonData;
 
     /**
      * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
      * endPage will be shown.
      */
-    @JsonView({ JsonForIO.class })
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private String endRedirectUrl;
 
     /**
      * Will be shown to the worker on the Study Entry page
      */
-    @JsonView({ JsonForIO.class })
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private String studyEntryMsg;
 
     /**
@@ -146,7 +147,7 @@ public class Study {
     /**
      * Ordered list of component of this study. The relationship is bidirectional.
      */
-    @JsonView(JsonForIO.class)
+    @JsonView({JsonForIO.class, JsonForApi.class})
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderColumn(name = "componentList_order")
     @JoinColumn(name = "study_id")
@@ -157,7 +158,7 @@ public class Study {
     /**
      * Ordered list of batches of this study. The relationship is bidirectional.
      */
-    @JsonView(JsonForIO.class)
+    @JsonView({JsonForIO.class, JsonForApi.class})
     @OneToMany(fetch = FetchType.LAZY)
     @OrderColumn(name = "batchList_order")
     @JoinColumn(name = "study_id")
@@ -200,7 +201,7 @@ public class Study {
         return this.description;
     }
 
-    @JsonView(JsonForPublix.class)
+    @JsonView({JsonForPublix.class, JsonForApi.class})
     public String getDescriptionHash() {
         return !Strings.isNullOrEmpty(getDescription()) ? HashUtils.getHash(getDescription(), HashUtils.SHA_256) : null;
     }
@@ -400,11 +401,6 @@ public class Study {
     @JsonIgnore
     public Batch getDefaultBatch() {
         return this.batchList.get(0);
-    }
-
-    @JsonIgnore
-    public List<Batch> getDefaultBatchList() {
-        return Lists.newArrayList(this.batchList.get(0));
     }
 
     @Override

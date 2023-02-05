@@ -3,6 +3,7 @@ package services.gui;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
+import auth.gui.AuthService;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -13,6 +14,7 @@ import com.google.common.base.Strings;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
+import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
@@ -25,6 +27,7 @@ import models.common.workers.Worker;
 import play.Logger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
+import play.mvc.Http;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import utils.common.ZipUtil;
@@ -35,12 +38,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
@@ -57,23 +56,28 @@ public class ResultStreamer {
 
     private static final Logger.ALogger LOGGER = Logger.of(ResultStreamer.class);
 
+    private final AuthService authenticationService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final StudyDao studyDao;
     private final JsonUtils jsonUtils;
     private final Checker checker;
     private final StudyLogger studyLogger;
+    private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final JPAApi jpaApi;
 
     @Inject
-    ResultStreamer(ComponentResultDao componentResultDao, StudyResultDao studyResultDao, StudyDao studyDao,
-            JsonUtils jsonUtils, Checker checker, StudyLogger studyLogger, JPAApi jpaApi) {
+    ResultStreamer(AuthService authenticationService, ComponentResultDao componentResultDao,
+            StudyResultDao studyResultDao, StudyDao studyDao, JsonUtils jsonUtils, Checker checker,
+            StudyLogger studyLogger, ComponentResultIdsExtractor componentResultIdsExtractor, JPAApi jpaApi) {
+        this.authenticationService = authenticationService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyDao = studyDao;
         this.jsonUtils = jsonUtils;
         this.checker = checker;
         this.studyLogger = studyLogger;
+        this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.jpaApi = jpaApi;
     }
 
@@ -291,10 +295,24 @@ public class ResultStreamer {
         }
     }
 
+    public Source<ByteString, ?> streamComponentResultData(Http.Request request)
+            throws BadRequestException, ForbiddenException, NotFoundException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        List<Long> componentResultIdList = componentResultIdsExtractor.extract(request.body().asJson());
+        componentResultIdList.addAll(componentResultIdsExtractor.extract(request.queryString()));
+        List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
+        List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
+        for (Study study : studyList) {
+            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+        }
+        studyList.forEach(s -> studyLogger.log(s, loggedInUser, "Exported result data"));
+        return streamComponentResultData(loggedInUser, componentResultIdList);
+    }
+
     /**
      * Returns an Akka Source that streams all data of the given component results specified by their IDs.
      */
-    public Source<ByteString, ?> streamComponentResultData(User loggedInUser, List<Long> componentResultIdList) {
+    private Source<ByteString, ?> streamComponentResultData(User loggedInUser, List<Long> componentResultIdList) {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
@@ -356,31 +374,43 @@ public class ResultStreamer {
         }
     }
 
-    private void writeComponentResultData(Writer writer,
-            ComponentResult componentResult) throws IOException, SQLException {
+    private void writeComponentResultData(Writer writer, ComponentResult componentResult) throws IOException {
         String resultData = componentResultDao.getData(componentResult.getId());
         if (resultData == null) return;
         writer.write(resultData + System.lineSeparator());
     }
 
-    public enum ResultsType {
+    public enum ResultType {
         COMBINED, // Metadata, data, and files
         DATA_ONLY,
         FILES_ONLY,
         METADATA_ONLY
     }
 
+    public Source<ByteString, ?> streamResults(Http.Request request, ResultType resultType) throws BadRequestException {
+        return streamResults(request, resultType, Collections.emptyMap());
+    }
+
+    public Source<ByteString, ?> streamResults(Http.Request request, ResultType resultType,
+            Map<String, Object> wrapObject) throws BadRequestException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
+        crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
+        return streamResults(crids, loggedInUser, resultType, wrapObject);
+    }
+
     /**
      * Returns a Source that streams ComponentResults. The content of what is written into the Source can be
      * specified by a ResultsType.
      */
-    public Source<ByteString, ?> streamResults(List<Long> componentResultIds, User loggedInUser, ResultsType resultsType) {
+    private Source<ByteString, ?> streamResults(List<Long> componentResultIds, User loggedInUser, ResultType resultsType,
+            Map<String, Object> wrapObject) {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (ZipOutputStream zipOut = new ZipOutputStream(outputStream, UTF_8)) {
                         jpaApi.withTransaction(entityManager -> {
-                            Errors.rethrow().run(() -> writeResults(componentResultIds, loggedInUser, zipOut, resultsType));
+                            Errors.rethrow().run(() -> writeResults(componentResultIds, loggedInUser, zipOut, resultsType, wrapObject));
                         });
                         zipOut.flush();
                     } catch (Exception e) {
@@ -390,11 +420,14 @@ public class ResultStreamer {
     }
 
     /**
-     * Returns a file with metadata of the given ComponentResults
+     * Returns a file with metadata
      */
-    public File writeResultsMetadata(List<Long> componentResultIds, User loggedInUser)
-            throws ForbiddenException, NotFoundException, IOException {
-        return writeResults(componentResultIds, loggedInUser, null, ResultsType.METADATA_ONLY);
+    public File writeResultMetadata(Http.Request request, Map<String, Object> wrapObject)
+            throws ForbiddenException, NotFoundException, IOException, BadRequestException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
+        crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
+        return writeResults(crids, loggedInUser, null, ResultType.METADATA_ONLY, wrapObject);
     }
 
     /**
@@ -402,15 +435,25 @@ public class ResultStreamer {
      * metadata in JSON format. The content of what is written into the ZipOutputStream can be specified by a ResultsType.
      */
     private File writeResults(List<Long> componentResultIds, User loggedInUser, ZipOutputStream zipOut,
-            ResultsType resultsType) throws IOException, NotFoundException, ForbiddenException {
+            ResultType resultsType, Map<String, Object> wrapObject) throws IOException, NotFoundException, ForbiddenException {
         List<Long> studyResultIds = studyResultDao.findIdsByComponentResultIds(componentResultIds);
 
         Path metadataFile = null;
-        JsonGenerator jGenerator = null;
-        if (resultsType == ResultsType.METADATA_ONLY || resultsType == ResultsType.COMBINED) {
+        JsonGenerator jGenerator;
+        if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
             metadataFile = Files.createTempFile("metadata", "json");
             jGenerator = Json.mapper().getFactory().createGenerator(metadataFile.toFile(), JsonEncoding.UTF8);
-            jGenerator.writeStartArray();
+            if (wrapObject.isEmpty()) {
+                jGenerator.writeStartArray();
+            } else {
+                jGenerator.writeStartObject();
+                for (Map.Entry<String, Object> e : wrapObject.entrySet()) {
+                    jGenerator.writeObjectField(e.getKey(), e.getValue());
+                }
+                jGenerator.writeArrayFieldStart("data");
+            }
+        } else {
+            jGenerator = null;
         }
 
         List<Long> studyIds = studyDao.findIdsByStudyResultIds(studyResultIds);
@@ -418,7 +461,7 @@ public class ResultStreamer {
             Study study = studyDao.findById(studyId);
             checker.checkStandardForStudy(study, studyId, loggedInUser);
 
-            if (resultsType == ResultsType.METADATA_ONLY || resultsType == ResultsType.COMBINED) {
+            if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                 jGenerator.writeStartObject();
                 jGenerator.writeNumberField("studyId", study.getId());
                 jGenerator.writeStringField("studyUuid", study.getUuid());
@@ -429,29 +472,30 @@ public class ResultStreamer {
             List<Long> sridsByStudy = studyResultDao.findIdsFromListThatBelongToStudy(studyResultIds, study.getId());
             writeStudyResults(componentResultIds, sridsByStudy, zipOut, jGenerator, resultsType);
 
-            if (resultsType == ResultsType.METADATA_ONLY || resultsType == ResultsType.COMBINED) {
+            if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                 jGenerator.writeEndArray();
                 jGenerator.writeEndObject();
             }
-            if (resultsType == ResultsType.COMBINED || resultsType == ResultsType.DATA_ONLY || resultsType == ResultsType.FILES_ONLY) {
+            if (resultsType == ResultType.COMBINED || resultsType == ResultType.DATA_ONLY || resultsType == ResultType.FILES_ONLY) {
                 studyLogger.log(study, loggedInUser, "Exported results (files and/or data)");
             }
         }
 
-        if (resultsType == ResultsType.METADATA_ONLY || resultsType == ResultsType.COMBINED) {
+        if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
             jGenerator.writeEndArray();
+            if (!wrapObject.isEmpty()) jGenerator.writeEndObject();
             jGenerator.close();
         }
 
-        if (resultsType == ResultsType.COMBINED) {
+        if (resultsType == ResultType.COMBINED) {
             ZipUtil.addFileToZip(zipOut, Paths.get("/"), Paths.get("metadata.json"), metadataFile);
             Files.delete(metadataFile);
         }
-        return resultsType == ResultsType.METADATA_ONLY ? metadataFile.toFile(): null;
+        return resultsType == ResultType.METADATA_ONLY ? metadataFile.toFile(): null;
     }
 
     private void writeStudyResults(List<Long> crids, List<Long> srids, ZipOutputStream zipOut,
-            JsonGenerator jGenerator, ResultsType resultsType) throws IOException {
+            JsonGenerator jGenerator, ResultType resultsType) throws IOException {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
 
         for (int i = 0; i < srids.size(); i += maxDbQuerySize) {
@@ -463,7 +507,7 @@ public class ResultStreamer {
                         .stream().filter(crids::contains).collect(Collectors.toList());
                 ArrayNode componentResultArrayNode = writeComponentResults(studyResult.getId(), someCrids, zipOut, resultsType);
 
-                if (resultsType == ResultsType.METADATA_ONLY || resultsType == ResultsType.COMBINED) {
+                if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                     ObjectNode studyResultNode = jsonUtils.studyResultMetadata(studyResult);
                     studyResultNode.set("componentResults", componentResultArrayNode);
                     jGenerator.writeTree(studyResultNode);
@@ -473,7 +517,7 @@ public class ResultStreamer {
     }
 
     private ArrayNode writeComponentResults(Long studyResultId, List<Long> componentResultList, ZipOutputStream zipOut,
-            ResultsType resultsType) {
+            ResultType resultsType) {
         ArrayNode componentResultArrayNode = Json.mapper().createArrayNode();
         for (Long componentResultId : componentResultList) {
             // We have to do it one by one to save memory in case of large result data

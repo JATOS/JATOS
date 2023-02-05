@@ -1,13 +1,5 @@
-package services.gui;
+package auth.gui;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
-import controllers.gui.Authentication;
-import controllers.gui.actionannotations.AuthenticationAction;
 import daos.common.UserDao;
 import general.common.Common;
 import general.common.RequestScope;
@@ -20,37 +12,23 @@ import utils.common.HashUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.naming.NamingException;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 
 /**
  * Service class around authentication, session cookie and session cache handling. It works together with the
- * {@link Authentication} controller and the @Authenticated annotation defined in {@link AuthenticationAction}.
- *
- * If a user is authenticated (same password as stored in the database) a user session ID is generated and stored in
- * Play's session cookie and in the the cache. With each subsequent request this session is checked in the
- * AuthenticationAction.
+ * {@link SignIn} controller and the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
  *
  * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
 @Singleton
-public class AuthenticationService {
+public class AuthService {
 
-    private static final ALogger LOGGER = Logger.of(AuthenticationService.class);
-
-    /**
-     * Parameter name in Play's session cookie: It contains the username of the logged in user
-     */
-    public static final String SESSION_ID = "sessionID";
+    private static final ALogger LOGGER = Logger.of(AuthService.class);
 
     /**
-     * Parameter name in Play's session cookie: It contains the username of the logged in user
+     * Parameter name in Play's session cookie: It contains the username of the logged-in user
      */
     public static final String SESSION_USERNAME = "username";
 
@@ -70,15 +48,13 @@ public class AuthenticationService {
      */
     public static final String LOGGED_IN_USER = "loggedInUser";
 
-    private static final SecureRandom random = new SecureRandom();
-
     private final UserDao userDao;
     private final UserSessionCacheAccessor userSessionCacheAccessor;
-    private final LdapAuthentication ldapAuthentication;
+    private final SignInLdap ldapAuthentication;
 
     @Inject
-    AuthenticationService(UserDao userDao, UserSessionCacheAccessor userSessionCacheAccessor,
-            LdapAuthentication ldapAuthentication) {
+    AuthService(UserDao userDao, UserSessionCacheAccessor userSessionCacheAccessor,
+            SignInLdap ldapAuthentication) {
         this.userDao = userDao;
         this.userSessionCacheAccessor = userSessionCacheAccessor;
         this.ldapAuthentication = ldapAuthentication;
@@ -106,19 +82,7 @@ public class AuthenticationService {
     }
 
     /**
-     * Verifies and fetches an ID token from Google OAuth by sending an HTTP POST to Google. The actual authentication
-     * happens in the frontend with Google's gapi library.
-     */
-    public GoogleIdToken fetchOAuthGoogleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
-        HttpTransport transport = new NetHttpTransport();
-        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-                .setAudience(Collections.singletonList(Common.getOauthGoogleClientId())).build();
-        return verifier.verify(idTokenString);
-    }
-
-    /**
-     * Checks the user session cache whether this user tries to login repeatedly
+     * Checks the user session cache whether this user tries to log in repeatedly
      */
     public boolean isRepeatedLoginAttempt(String normalizedUsername) {
         userSessionCacheAccessor.addLoginAttempt(normalizedUsername);
@@ -128,12 +92,12 @@ public class AuthenticationService {
     /**
      * Retrieves the logged-in user from Play's session. If a user is logged-in their username is stored in Play's
      * session cookie. With the username a user can be retrieved from the database. Returns null if the session doesn't
-     * contains an username or if the user doesn't exists in the database.
+     * contain a username or if the user doesn't exist in the database.
      * <p>
-     * In most cases getLoggedInUser() is faster since it doesn't has to query the database.
+     * In most cases getLoggedInUser() is faster since it doesn't have to query the database.
      */
     public User getLoggedInUserBySessionCookie(Http.Session session) {
-        String normalizedUsername = session.get(AuthenticationService.SESSION_USERNAME);
+        String normalizedUsername = session.get(AuthService.SESSION_USERNAME);
         User loggedInUser = null;
         if (normalizedUsername != null) {
             loggedInUser = userDao.findByUsername(normalizedUsername);
@@ -143,7 +107,7 @@ public class AuthenticationService {
 
     /**
      * Gets the logged-in user from the RequestScope. It was put into the
-     * RequestScope by the AuthenticationAction. Therefore this method works
+     * RequestScope by the AuthenticationAction. Therefore, this method works
      * only if you use the @Authenticated annotation at your action.
      */
     public User getLoggedInUser() {
@@ -155,23 +119,10 @@ public class AuthenticationService {
      * with the given username to be logged-in. Does not authenticate the user (use
      * authenticate() for this).
      */
-    public void writeSessionCookieAndSessionCache(Http.Session session, String normalizedUsername,
-            String remoteAddress) {
-        String sessionId = generateSessionId();
-        userSessionCacheAccessor.setUserSessionId(normalizedUsername, remoteAddress, sessionId);
-        session.put(SESSION_ID, sessionId);
+    public void writeSessionCookie(Http.Session session, String normalizedUsername) {
         session.put(SESSION_USERNAME, normalizedUsername);
         session.put(SESSION_LOGIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
         session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
-    }
-
-    /**
-     * Used StackOverflow for this session ID generator: "This works by choosing
-     * 130 bits from a cryptographically secure random bit generator, and
-     * encoding them in base-32" (http://stackoverflow.com/questions/41107)
-     */
-    private String generateSessionId() {
-        return new BigInteger(130, random).toString(32);
     }
 
     /**
@@ -183,30 +134,10 @@ public class AuthenticationService {
     }
 
     /**
-     * Deletes the session cookie. This is usual done during a user logout.
+     * Deletes the session cookie. This is usually done during a user logout.
      */
     public void clearSessionCookie(Http.Session session) {
         session.clear();
-    }
-
-    /**
-     * Deletes the session cookie and removes the cache entry. This is usual
-     * done during a user logout.
-     */
-    public void clearSessionCookieAndSessionCache(Http.Session session, String normalizedUsername,
-            String remoteAddress) {
-        userSessionCacheAccessor.removeUserSessionId(normalizedUsername, remoteAddress);
-        session.clear();
-    }
-
-    /**
-     * Checks the session ID stored in Play's session cookie whether it is the
-     * same as stored in the cache during the last login.
-     */
-    public boolean isValidSessionId(Http.Session session, String normalizedUsername, String remoteAddress) {
-        String cookieSessionId = session.get(SESSION_ID);
-        String cachedSessionId = userSessionCacheAccessor.getUserSessionId(normalizedUsername, remoteAddress);
-        return cookieSessionId != null && cookieSessionId.equals(cachedSessionId);
     }
 
     /**

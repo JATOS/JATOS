@@ -47,6 +47,7 @@ public class Common {
     private static final String PROPERTY_JATOS_RESULT_UPLOADS_PATH = "jatos.resultUploads.path";
 
     private static String jatosVersion;
+    private static final String jatosApiVersion = "0.0.2";
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
@@ -60,7 +61,6 @@ public class Common {
     private static boolean inMemoryDb;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
-    private static boolean userSessionValidation;
     private static String dbDefaultUrl;
     private static String dbDefaultDriver;
     private static String jpaDefault;
@@ -77,6 +77,11 @@ public class Common {
     private static String ldapAdminPassword;
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
+    private static String oidcProviderConfigUrl;
+    private static String oidcClientId;
+    private static String oidcIdTokenSigningAlgorithm;
+    private static String oidcSignInButtonText;
+    private static String oidcSignInButtonLogoUrl;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
@@ -118,10 +123,6 @@ public class Common {
         inMemoryDb = config.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
-        userSessionValidation = config.getBoolean("jatos.userSession.validation");
-        if (!userSessionValidation) {
-            LOGGER.warn("User session validation is switched off. This decreases security.");
-        }
         dbDefaultUrl = config.getString("db.default.url");
         dbDefaultDriver = config.getString("db.default.driver");
         jpaDefault = config.getString("jpa.default");
@@ -146,6 +147,11 @@ public class Common {
         ldapAdminPassword = config.getString("jatos.user.authentication.ldap.admin.password");
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
+        oidcProviderConfigUrl = config.getString("jatos.user.authentication.oidc.providerConfigUrl");
+        oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
+        oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
+        oidcSignInButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
+        oidcSignInButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
@@ -249,6 +255,13 @@ public class Common {
     }
 
     /**
+     * JATOS API version (different from JATOS version)
+     */
+    public static String getJatosApiVersion() {
+        return jatosApiVersion;
+    }
+
+    /**
      * JATOS' absolute base path without trailing '/.'
      */
     public static String getBasepath() {
@@ -341,13 +354,6 @@ public class Common {
      */
     public static int getUserSessionInactivity() {
         return userSessionInactivity;
-    }
-
-    /**
-     * Toggle for user session validation (not the Play session validation which is done by Play).
-     */
-    public static boolean isUserSessionValidation() {
-        return userSessionValidation;
     }
 
     /**
@@ -475,6 +481,45 @@ public class Common {
      */
     public static String getOauthGoogleClientId() {
         return oauthGoogleClientId;
+    }
+
+    public static boolean isOidcAllowed() {
+        return !Strings.isNullOrEmpty(oidcClientId);
+    }
+
+    /**
+     * OpenId Connect (OIDC) provider config URL (ends with ".well-known/openid-configuration")
+     */
+    public static String getOidcProviderConfigUrl() {
+        return oidcProviderConfigUrl;
+    }
+
+    /**
+     * OpenId Connect (OIDC) Client ID
+     */
+    public static String getOidcClientId() {
+        return oidcClientId;
+    }
+
+    /**
+     * OpenId Connect (OIDC) Client ID
+     */
+    public static String getOidcIdTokenSigningAlgorithm() {
+        return oidcIdTokenSigningAlgorithm;
+    }
+
+    /**
+     * Text of OIDC button in login page
+     */
+    public static String getOidcSignInButtonText() {
+        return oidcSignInButtonText;
+    }
+
+    /**
+     * Logo URL of OIDC button in login page
+     */
+    public static String getOidcSignInButtonLogoUrl() {
+        return oidcSignInButtonLogoUrl;
     }
 
     /**

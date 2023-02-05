@@ -101,7 +101,7 @@ $(document).ready(function() {
             "url" : "@controllers.gui.routes.ComponentResults.tableDataByComponent(component.getId())",
             "dataSrc": "",
             "beforeSend": showWaitingModal,
-            "error": () => showError("Error reading results data"),
+            "error": () => showError("Error reading result data"),
             "complete": hideWaitingModal
         },
         "dom": 'lfrtip',
@@ -202,7 +202,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     if (data.length === 0) return "none";
                     var resultFiles = data.map(function(fileObj) {
-                        var url = `@{general.common.Common.getPlayHttpContext()}jatos/componentResult/${full.id}/files/${fileObj.filename}`;
+                        var url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${full.id}`;
                         return '<a href="' + url + '" download>' + fileObj.filename + ' (' + fileObj.sizeHumanReadable + ')</a>';
                     });
                     return resultFiles.join("<br>");
@@ -313,7 +313,7 @@ $(document).ready(function() {
                             "buttons": [
                                 {
                                     "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON <span class="glyphicon glyphicon-info-sign"></span></button>',
-                                    "action": exportResultsMetadata
+                                    "action": exportResultMetadata
                                 },
                                 {
                                     "text": '<button class="btn btn-component" data-toggle="tooltip" title="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV <span class="glyphicon glyphicon-info-sign"></span></button>',
@@ -372,16 +372,16 @@ $(document).ready(function() {
         });
 
         resultsTable.buttons('refreshButton', null).containers()
-            .attr('id', 'resultTable_refresh')
+            .attr('id', 'resultsTable_refresh')
             .appendTo('#resultsTable_upperToolbar');
         resultsTable.buttons('exportButtonGroup', null).containers()
-            .attr('id', 'resultTable_export')
+            .attr('id', 'resultsTable_export')
             .appendTo('#resultsTable_upperToolbar');
         resultsTable.buttons('deleteButton', null).containers()
-            .attr('id', 'resultTable_delete')
+            .attr('id', 'resultsTable_delete')
             .appendTo('#resultsTable_upperToolbar');
         $("#resultsTable_upperToolbar").addClass("toolbarFlexWrap");
-        $("#resultTable_export").addClass("toolbarFlexWrap");
+        $("#resultsTable_export").addClass("toolbarFlexWrap");
         $('#resultsTable_upperToolbar').prependTo('#resultsTable_wrapper');
     }
 
@@ -457,9 +457,9 @@ $(document).ready(function() {
         toggleExportFilesButton();
     });
 
-    $('#resultTable_export .buttons-collection').on('click', function() {
+    $('#resultsTable_export .buttons-collection').on('click', function() {
         toggleExportFilesButton();
-        setButtonWidthToMax("#resultTable_export .dropdown-menu button");
+        setButtonWidthToMax("#resultsTable_export .dropdown-menu button");
     });
 
     resultsTable.on('select', function (e, dt, type, indexes) {
@@ -480,7 +480,7 @@ $(document).ready(function() {
         }
     });
 
-    $('#resultsTable_search input').on('keyup click', searchResultTable);
+    $('#resultsTable_search input').on('keyup click', searchresultsTable);
 
     $('#resultsTable_search button.regex, button.caseSensitive').on('click', function () {
         var button = $(this);
@@ -491,10 +491,10 @@ $(document).ready(function() {
             button.addClass('checked');
             button.addClass('lightgrayBackground');
         }
-        searchResultTable();
+        searchresultsTable();
     });
 
-    function searchResultTable() {
+    function searchresultsTable() {
         resultsTable.search(
             $('#resultsTable_search input').val(),
             $('#resultsTable_search .regex').hasClass('checked'),
@@ -512,10 +512,10 @@ $(document).ready(function() {
     }
 
     function toggleExportFilesButton() {
-        $("#resultTable_export .dropdown-menu .exportFilesButton button").prop("disabled", true);
+        $("#resultsTable_export .dropdown-menu .exportFilesButton button").prop("disabled", true);
         resultsTable.rows().data().each(function(componentResult, index) {
             if (componentResult.files.length > 0) {
-                $("#resultTable_export .dropdown-menu .exportFilesButton button").prop("disabled", false);
+                $("#resultsTable_export .dropdown-menu .exportFilesButton button").prop("disabled", false);
                 return false;
             }
         });
@@ -544,27 +544,27 @@ $(document).ready(function() {
     });
 
     function exportSelectedResults(e, dt, node, config) {
-        const url = '@controllers.gui.routes.ImportExport.exportResults()';
+        const url = '@controllers.gui.routes.Api.exportResults(false)';
         exportResults(url);
     }
 
-    function exportResultsMetadata(e, dt, node, config) {
-        const url = '@controllers.gui.routes.ImportExport.exportResultsMetadata()';
+    function exportResultMetadata(e, dt, node, config) {
+        const url = '@controllers.gui.routes.Api.exportResultMetadata(false)';
         exportResults(url);
     }
 
     function exportSelectedResultDataZip(e, dt, node, config) {
-        const url = '@controllers.gui.routes.ImportExport.exportResultsData(false)';
+        const url = '@controllers.gui.routes.Api.exportResultData(false,false)';
         exportResults(url);
     }
 
     function exportSelectedResultDataText(e, dt, node, config) {
-        const url = '@controllers.gui.routes.ImportExport.exportResultsData(true)';
+        const url = '@controllers.gui.routes.Api.exportResultData(true,false)';
         exportResults(url);
     }
 
     function exportSelectedResultFiles(e, dt, node, config) {
-        const url = '@controllers.gui.routes.ImportExport.exportResultsFiles()';
+        const url = '@controllers.gui.routes.Api.exportResultFiles()';
         exportResults(url);
     }
 

@@ -1,7 +1,7 @@
 package controllers.gui;
 
 import com.google.common.base.Strings;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
 import general.common.Common;
@@ -12,7 +12,7 @@ import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.AuthenticationService;
+import auth.gui.AuthService;
 import services.gui.BreadcrumbsService;
 import utils.common.Helpers;
 import utils.common.JsonUtils;
@@ -36,13 +36,13 @@ import java.util.concurrent.CompletionStage;
 public class Home extends Controller {
 
     private final JsonUtils jsonUtils;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final WSClient ws;
 
     @Inject
-    Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
+    Home(JsonUtils jsonUtils, AuthService authenticationService,
             BreadcrumbsService breadcrumbsService, StudyDao studyDao, WSClient ws) {
         this.jsonUtils = jsonUtils;
         this.authenticationService = authenticationService;
@@ -55,7 +55,7 @@ public class Home extends Controller {
      * Shows home view
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result home(int httpStatus) {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Study> studyList = studyDao.findAllByUser(loggedInUser);
@@ -68,7 +68,7 @@ public class Home extends Controller {
     }
 
     @Transactional
-    @Authenticated
+    @Auth
     public Result home() {
         return home(Http.Status.OK);
     }
@@ -77,7 +77,7 @@ public class Home extends Controller {
      * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
      */
     @Transactional
-    @Authenticated
+    @Auth
     public CompletionStage<Result> branding() {
         User loggedInUser = authenticationService.getLoggedInUser();
         if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
@@ -96,7 +96,7 @@ public class Home extends Controller {
      * logged-in user for use in the GUI's sidebar.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result sidebarStudyList() {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Study> studyList = Helpers.isAllowedSuperuser(loggedInUser)

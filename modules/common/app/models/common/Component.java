@@ -3,6 +3,9 @@ package models.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import utils.common.JsonUtils;
+import utils.common.JsonUtils.JsonForApi;
+import utils.common.JsonUtils.JsonForIO;
+import utils.common.JsonUtils.JsonForPublix;
 
 import javax.persistence.*;
 import java.io.File;
@@ -15,7 +18,7 @@ import java.sql.Timestamp;
  * @author Kristian Lange
  */
 @Entity
-@Table(name = "Component", indexes = { @Index(columnList = "uuid") })
+@Table(name = "Component", indexes = {@Index(columnList = "uuid")})
 public class Component {
 
     /**
@@ -26,7 +29,7 @@ public class Component {
 
     @Id
     @GeneratedValue
-    @JsonView(JsonUtils.JsonForPublix.class)
+    @JsonView({JsonForPublix.class, JsonForApi.class})
     private Long id;
 
     /**
@@ -36,7 +39,7 @@ public class Component {
      * component with this UUID.
      */
     @Column(nullable = false)
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String uuid;
 
     @JsonIgnore
@@ -44,7 +47,7 @@ public class Component {
     @JoinColumn(name = "study_id", insertable = false, updatable = false, nullable = false)
     private Study study;
 
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String title;
 
     /**
@@ -57,11 +60,11 @@ public class Component {
      * Local path to component's HTML file in the study assets' dir. File
      * separators are persisted as '/'.
      */
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @JoinColumn(name = "viewUrl")
     private String htmlFilePath;
 
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private boolean reloadable = false;
 
     /**
@@ -69,7 +72,7 @@ public class Component {
      * error message if one try. Further it's skipped if one uses
      * startNextComponent from the public API.
      */
-    @JsonView(JsonUtils.JsonForIO.class)
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private boolean active = true;
 
     /**
@@ -77,7 +80,7 @@ public class Component {
      * further meaning.
      */
     @Lob
-    @JsonView({ JsonUtils.JsonForIO.class })
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private String comments;
 
     /**
@@ -85,7 +88,7 @@ public class Component {
      * them. They can be changed in the GUI but not via jatos.js. Can be used
      * for initial data and configuration.
      */
-    @JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @Lob
     private String jsonData;
 

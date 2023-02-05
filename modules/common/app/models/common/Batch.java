@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import models.common.workers.Worker;
 import utils.common.JsonUtils;
+import utils.common.JsonUtils.JsonForApi;
+import utils.common.JsonUtils.JsonForIO;
+import utils.common.JsonUtils.JsonForPublix;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -12,8 +15,8 @@ import java.util.Set;
 
 /**
  * DB entity of a batch. The corresponding UI model is BatchProperties in model Gui.
- *
- * Defines the constrains regarding workers for a batch of a study, e.g. which
+ * <p>
+ * Defines the constraints regarding workers for a batch of a study, e.g. which
  * worker types are allowed, how many workers, which Workers etc.
  *
  * @author Kristian Lange
@@ -24,14 +27,14 @@ public class Batch {
 
     @Id
     @GeneratedValue
-    @JsonView({JsonUtils.JsonForPublix.class})
+    @JsonView({JsonForPublix.class, JsonForApi.class})
     private Long id;
 
     /**
      * Universally (world-wide) unique ID.
      */
     @Column(nullable = false)
-    @JsonView(JsonUtils.JsonForIO.class)
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private String uuid;
 
     /**
@@ -45,13 +48,13 @@ public class Batch {
     /**
      * Title of the batch
      */
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String title;
 
     /**
      * Only active (if true) batches can be used.
      */
-    @JsonView({JsonUtils.JsonForIO.class})
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private boolean active = true;
 
     /**
@@ -60,7 +63,7 @@ public class Batch {
      * is null. This property is only used if this batch belongs to a group
      * study.
      */
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxActiveMembers = null;
 
     /**
@@ -68,7 +71,7 @@ public class Batch {
      * there is no limit in active members the value is null. This property is
      * only used if this batch belongs to a group study.
      */
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxTotalMembers = null;
 
     /**
@@ -77,7 +80,7 @@ public class Batch {
      * JatosWorker does not count here. The workers who belong to this batch are
      * stored in the workerList (except JatosWorkers).
      */
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxTotalWorkers = null;
 
     /**
@@ -98,8 +101,8 @@ public class Batch {
      * Set of worker types that are allowed to run in this batch. If the worker
      * type is not in this list, it has no permission to run this study.
      */
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
-    @ElementCollection(fetch=FetchType.EAGER)
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
+    @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> allowedWorkerTypes = new HashSet<>();
 
     /**
@@ -107,7 +110,7 @@ public class Batch {
      * further meaning.
      */
     @Lob
-    @JsonView({JsonUtils.JsonForIO.class})
+    @JsonView({JsonForIO.class, JsonForApi.class})
     private String comments;
 
     /**
@@ -116,7 +119,7 @@ public class Batch {
      * initial data and configuration.
      */
     @Lob
-    @JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String jsonData;
 
     /**

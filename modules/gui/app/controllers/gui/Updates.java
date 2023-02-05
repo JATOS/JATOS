@@ -1,6 +1,6 @@
 package controllers.gui;
 
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import general.common.JatosUpdater;
 import models.common.User.Role;
@@ -42,7 +42,7 @@ public class Updates extends Controller {
      * @param allowPreReleases If true, allows requesting of pre-releases too
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public CompletionStage<Result> getReleaseInfo(String version, Boolean allowPreReleases) {
         return jatosUpdater.getReleaseInfo(version, allowPreReleases).handle((releaseInfo, error) -> {
             if (error != null) {
@@ -55,7 +55,7 @@ public class Updates extends Controller {
     }
 
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result cancelUpdate() {
         jatosUpdater.cancelUpdate();
         return ok();
@@ -67,7 +67,7 @@ public class Updates extends Controller {
      * @param dry Allows testing the endpoint without actually downloading anything
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public CompletionStage<Result> downloadJatos(Boolean dry) {
         return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
             if (error != null) {
@@ -86,7 +86,7 @@ public class Updates extends Controller {
      *                  If false, only the conf directory and the loader scripts.
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result updateAndRestart(Boolean backupAll) {
         try {
             jatosUpdater.updateAndRestart(backupAll);

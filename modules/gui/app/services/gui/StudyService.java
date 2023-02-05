@@ -1,5 +1,6 @@
 package services.gui;
 
+import auth.gui.AuthService;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import daos.common.BatchDao;
@@ -50,12 +51,12 @@ public class StudyService {
     private final WorkerDao workerDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
             BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthenticationService authenticationService) {
+            StudyLogger studyLogger, AuthService authenticationService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;

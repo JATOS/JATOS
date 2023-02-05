@@ -16,7 +16,9 @@ libraryDependencies ++= Seq(
   ehcache,
   guice,
   "org.webjars" % "bootstrap" % "3.4.1",
-  "com.google.api-client" % "google-api-client" % "1.34.0"
+  "com.google.api-client" % "google-api-client" % "1.34.0",
+  "com.nimbusds" % "oauth2-oidc-sdk" % "10.4",
+  "com.nimbusds" % "nimbus-jose-jwt" % "9.27"
 )
 
 // Routes from submodules

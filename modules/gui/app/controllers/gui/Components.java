@@ -1,6 +1,7 @@
 package controllers.gui;
 
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
@@ -42,19 +43,17 @@ public class Components extends Controller {
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
     private final ComponentService componentService;
-    private final AuthenticationService authenticationService;
+    private final AuthService authenticationService;
     private final BatchService batchService;
     private final StudyDao studyDao;
     private final StudyLinkDao studyLinkDao;
     private final ComponentDao componentDao;
     private final FormFactory formFactory;
-    private final JsonUtils jsonUtils;
 
     @Inject
     Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, ComponentService componentService,
-            AuthenticationService authenticationService, BatchService batchService, StudyDao studyDao,
-            StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory,
-            JsonUtils jsonUtils) {
+            AuthService authenticationService, BatchService batchService, StudyDao studyDao,
+            StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.componentService = componentService;
@@ -64,7 +63,6 @@ public class Components extends Controller {
         this.studyLinkDao = studyLinkDao;
         this.componentDao = componentDao;
         this.formFactory = formFactory;
-        this.jsonUtils = jsonUtils;
     }
 
     /**
@@ -72,7 +70,7 @@ public class Components extends Controller {
      * to /publix/studyCode.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId)
             throws JatosGuiException, NotFoundException {
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -108,7 +106,7 @@ public class Components extends Controller {
      * POST request: Handles the post request of the form to create a new Component.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitCreated(Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -127,7 +125,7 @@ public class Components extends Controller {
      * GET requests for getting the properties of a Component.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result properties(Long studyId, Long componentId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -136,14 +134,14 @@ public class Components extends Controller {
         checker.checkStandardForComponent(studyId, componentId, component);
 
         ComponentProperties p = componentService.bindToProperties(component);
-        return ok(jsonUtils.asJsonNode(p));
+        return ok(JsonUtils.asJsonNode(p));
     }
 
     /**
      * POST request that handles update of component properties
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result submitEdited(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -167,7 +165,7 @@ public class Components extends Controller {
      * POST Request to change the property 'active' of a component.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result toggleActive(Long studyId, Long componentId, Boolean active) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -177,14 +175,14 @@ public class Components extends Controller {
         if (active != null) {
             componentDao.changeActive(component, active);
         }
-        return ok(jsonUtils.asJsonNode(component.isActive()));
+        return ok(JsonUtils.asJsonNode(component.isActive()));
     }
 
     /**
      * GET request to clone a component.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result cloneComponent(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -200,7 +198,7 @@ public class Components extends Controller {
      * DELETE request to remove a component.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result remove(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User loggedInUser = authenticationService.getLoggedInUser();

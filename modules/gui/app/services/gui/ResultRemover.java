@@ -62,12 +62,15 @@ public class ResultRemover {
      *                              user is a user of the study that the ComponentResult belongs
      *                              too.
      */
-    public void removeComponentResults(List<Long> componentResultIdList, User user)
+    public void removeComponentResults(List<Long> componentResultIdList, User user, boolean removeEmptyStudyResults)
             throws BadRequestException, NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, true);
         for (ComponentResult componentResult : componentResultList) {
             removeComponentResult(componentResult.getId());
+            if (removeEmptyStudyResults && componentResult.getStudyResult().getComponentResultList().isEmpty()) {
+                removeEmptyStudyResult(componentResult.getStudyResult());
+            }
         }
 
         Set<Study> studies = new HashSet<>();
@@ -167,6 +170,10 @@ public class ResultRemover {
         // Remove all component results of this study result
         studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
+        removeEmptyStudyResult(studyResult);
+    }
+
+    private void removeEmptyStudyResult(StudyResult studyResult) {
         // Remove study result from worker
         Worker worker = studyResult.getWorker();
         worker.removeStudyResult(studyResult);
@@ -186,7 +193,7 @@ public class ResultRemover {
 
         try {
             // Remove studyResult's upload dir
-            ioUtils.removeResultUploadsDir(studyResultId);
+            ioUtils.removeResultUploadsDir(studyResult.getId());
         } catch (IOException e) {
             LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
         }

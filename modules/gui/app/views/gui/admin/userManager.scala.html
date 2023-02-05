@@ -11,7 +11,7 @@
             <th>Name <span class="glyphicon sortLogo gray-light"/></th>
             <th>Email <span class="glyphicon sortLogo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user">Last Login <span class="glyphicon sortLogo gray-light"/></th>
-            <th data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, or Google">Auth <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, Google or OIDC">Auth <span class="glyphicon sortLogo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser</th>
             <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies.">Admin</th>
             <th></th>
@@ -119,7 +119,7 @@
                         </div>
                     </div>
 
-                    @if(!loggedInUser.isOauthGoogle()){
+                    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()){
                     <div class="form-group row">
                         <label class="control-label col-xs-4 adminPasswordLabel" for="adminPassword">Your password <sup>*</sup></label>
                         <div class="col-xs-5">
@@ -223,6 +223,7 @@ var userTable = $('#userTable').DataTable({
                     case "@{common.User.AuthMethod.DB.name()}": return "local";
                     case "@{common.User.AuthMethod.LDAP.name()}": return "LDAP";
                     case "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}": return "Google";
+                    case "@{common.User.AuthMethod.OIDC.name()}": return "OIDC";
                     default: return "unknown";
                 }
             }
@@ -531,9 +532,9 @@ function setAdminButton(buttonDiv, adminRole, username) {
 
 function setUserToolbar(toolbar, username, authMethod) {
     // Setup Edit button
-    if (authMethod == "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}") {
+    if (authMethod == "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}" || authMethod == "@{common.User.AuthMethod.OIDC.name()}") {
         toolbar.find('.userEditButton').attr('disabled', true);
-        toolbar.find('.userEditButton').attr('title', "Google authenticated users can't be edited (they receive their data from Google).");
+        toolbar.find('.userEditButton').attr('title', "Google/OIDC authenticated users can't be edited (they get their user data from the external identity provider).");
     }
 
     // Setup change password button
@@ -548,7 +549,7 @@ function setUserToolbar(toolbar, username, authMethod) {
         toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
     } else {
         toolbar.find('.userChangePasswordButton').attr('disabled', true);
-        toolbar.find('.userChangePasswordTooltip').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP or Google) can't be changed in JATOS");
+        toolbar.find('.userChangePasswordTooltip').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC or Google) can't be changed in JATOS");
     }
 
     // Setup delete user button

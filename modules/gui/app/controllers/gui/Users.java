@@ -1,6 +1,8 @@
 package controllers.gui;
 
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
+import auth.gui.SignInFormValidation;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -48,8 +50,8 @@ public class Users extends Controller {
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final UserDao userDao;
     private final UserService userService;
-    private final AuthenticationService authenticationService;
-    private final AuthenticationValidation authenticationValidation;
+    private final AuthService authenticationService;
+    private final SignInFormValidation authenticationValidation;
     private final BreadcrumbsService breadcrumbsService;
     private final FormFactory formFactory;
     private final JsonUtils jsonUtils;
@@ -57,8 +59,8 @@ public class Users extends Controller {
     @Inject
     Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
             UserDao userDao, UserService userService,
-            AuthenticationService authenticationService,
-            AuthenticationValidation authenticationValidation,
+            AuthService authenticationService,
+            SignInFormValidation authenticationValidation,
             BreadcrumbsService breadcrumbsService, FormFactory formFactory,
             JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
@@ -72,7 +74,7 @@ public class Users extends Controller {
     }
 
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result userManager() {
         User loggedInUser = authenticationService.getLoggedInUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
@@ -83,21 +85,21 @@ public class Users extends Controller {
      * GET request: Returns a list of all users as JSON
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result allUserData() {
         List<Map<String, Object>> allUserData = new ArrayList<>();
         for (User user : userDao.findAll()) {
             Map<String, Object> userData = jsonUtils.getSingleUserData(user);
             allUserData.add(userData);
         }
-        return ok(jsonUtils.asJsonNode(allUserData));
+        return ok(JsonUtils.asJsonNode(allUserData));
     }
 
     /**
      * POST request to activate or deactivate a user.
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result toggleActive(String usernameOfUserToChange, Boolean active) {
         try {
             String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
@@ -114,17 +116,17 @@ public class Users extends Controller {
      * POST request to add or remove a role from a user.
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result toggleRole(String usernameOfUserToChange, String role, boolean value) {
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
         try {
             switch (Role.valueOf(role)) {
                 case SUPERUSER:
-                    return ok(jsonUtils.asJsonNode(
+                    return ok(JsonUtils.asJsonNode(
                             userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
                 case ADMIN:
-                    return ok(
-                            jsonUtils.asJsonNode(userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
+                    return ok(JsonUtils.asJsonNode(
+                            userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
                 default:
                     return badRequest("Unknown role");
             }
@@ -139,7 +141,7 @@ public class Users extends Controller {
      * Shows the profile view of a user
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result profile(String username, Http.Request request) throws JatosGuiException {
         String normalizedUsername = User.normalizeUsername(username);
         User loggedInUser = authenticationService.getLoggedInUser();
@@ -153,12 +155,12 @@ public class Users extends Controller {
      * GET request that returns data of the user that belongs to the given username
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result singleUserData(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedUsername = User.normalizeUsername(username);
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
-        return ok(jsonUtils.asJsonNode(jsonUtils.getSingleUserData(loggedInUser)));
+        return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(loggedInUser)));
     }
 
     /**
@@ -166,7 +168,7 @@ public class Users extends Controller {
      * allowed to create new users.
      */
     @Transactional
-    @Authenticated(Role.ADMIN)
+    @Auth(Role.ADMIN)
     public Result create(Http.Request request) throws NamingException {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
 
@@ -174,10 +176,10 @@ public class Users extends Controller {
         form = authenticationValidation.validateNewUser(form);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Check admin password (except if Oauth Google)
+        // Check admin password (except if Oauth Google and OIDC)
         User loggedInUser = authenticationService.getLoggedInUser();
         String adminPassword = form.get().getAdminPassword();
-        if (!loggedInUser.isOauthGoogle()
+        if (!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()
                 && !authenticationService.authenticate(loggedInUser, adminPassword)) {
             form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, "Wrong password"));
             return forbidden(form.errorsAsJson());
@@ -192,7 +194,7 @@ public class Users extends Controller {
      * This POST can come from the user themselves or from an admin user to edit another user.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result edit(String username) throws JatosGuiException {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedUsernameOfUserToChange = User.normalizeUsername(username);
@@ -200,6 +202,10 @@ public class Users extends Controller {
 
         if (user.isOauthGoogle()) {
             return forbidden("Google authenticated users can't have their profile changed.");
+        }
+
+        if (user.isOidc()) {
+            return forbidden("OIDC authenticated users can't have their profile changed.");
         }
 
         if (!loggedInUser.isAdmin()) {
@@ -220,7 +226,7 @@ public class Users extends Controller {
      * Handles POST request from change password form in user manager initiated by an admin
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result changePasswordByAdmin(Http.Request request) throws NamingException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
@@ -234,8 +240,8 @@ public class Users extends Controller {
         if (user == null) {
             return badRequest("An user with username " + normalizedUsernameOfUserToChange + " doesn't exist.");
         }
-        if (user.isLdap() || user.isOauthGoogle()) {
-            return forbidden("It's not possible to change the password of LDAP or Google sign-in users.");
+        if (user.isLdap() || user.isOauthGoogle() || user.isOidc()) {
+            return forbidden("It's not possible to change the password of LDAP, Google sign-in or OIDC authenticated users.");
         }
 
         // Only user 'admin' is allowed to change his own password
@@ -250,8 +256,8 @@ public class Users extends Controller {
         form = authenticationValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
-        // Authenticate loggedInUser
-        if (!loggedInUser.isOauthGoogle()) {
+        // Authenticate loggedInUser (not for OIDC or OAuthGoogle users)
+        if (loggedInUser.isDb() || loggedInUser.isLdap()) {
             String adminPassword = form.get().getAdminPassword();
             if (!authenticationService.authenticate(loggedInUser, adminPassword)) {
                 form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, "Wrong password"));
@@ -269,7 +275,7 @@ public class Users extends Controller {
      * Handles POST request from change password form by user themselves
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result changePasswordByUser(Http.Request request) throws NamingException {
         User loggedInUser = authenticationService.getLoggedInUser();
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
@@ -279,8 +285,8 @@ public class Users extends Controller {
             return forbidden("User can change only their own password");
         }
 
-        if (loggedInUser.isLdap() || loggedInUser.isOauthGoogle()) {
-            return forbidden("It's not possible to change the password of LDAP or Google sign-in users.");
+        if (loggedInUser.isLdap() || loggedInUser.isOauthGoogle() || loggedInUser.isOidc()) {
+            return forbidden("It's not possible to change the password of LDAP, Google sign-in or OIDC authenticated users.");
         }
 
         // Validate
@@ -309,7 +315,7 @@ public class Users extends Controller {
      * handle body data in a DELETE request.
      */
     @Transactional
-    @Authenticated
+    @Auth
     public Result remove(String usernameOfUserToRemove) throws ForbiddenException, NotFoundException, IOException {
         User loggedInUser = authenticationService.getLoggedInUser();
         String normalizedLoggedInUsername = loggedInUser.getUsername();
@@ -319,30 +325,36 @@ public class Users extends Controller {
         }
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
-        if (!loggedInUser.isOauthGoogle()) {
-            try {
-                String password = requestData.get("password");
-                if (!authenticationService.authenticate(loggedInUser, password)) {
-                    return forbidden(MessagesStrings.WRONG_PASSWORD);
+        switch (loggedInUser.getAuthMethod()) {
+            case DB:
+            case LDAP:
+                try {
+                    String password = requestData.get("password");
+                    if (!authenticationService.authenticate(loggedInUser, password)) {
+                        return forbidden(MessagesStrings.WRONG_PASSWORD);
+                    }
+                } catch (NamingException e) {
+                    LOGGER.warn("LDAP problems - " + e);
+                    return internalServerError(MessagesStrings.LDAP_PROBLEMS);
                 }
-            } catch (NamingException e) {
-                LOGGER.warn("LDAP problems - " + e);
-                return internalServerError(MessagesStrings.LDAP_PROBLEMS);
-            }
-        } else {
-            // Google Oauth users confirm with their email address (stored in username)
-            String username = requestData.get("username");
-            if (!username.equals(loggedInUser.getUsername())) {
-                return forbidden(MessagesStrings.WRONG_USERNAME);
-            }
+                break;
+            case OIDC:
+            case OAUTH_GOOGLE:
+                // Google Oauth and OIDC users confirm with their email address (stored in username)
+                String username = requestData.get("username");
+                if (!username.equals(loggedInUser.getUsername())) {
+                    return forbidden(MessagesStrings.WRONG_USERNAME);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown auth method");
         }
 
         userService.removeUser(normalizedUsernameOfUserToRemove);
 
         // If the user removes himself: logout
         if (normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
-            authenticationService.clearSessionCookieAndSessionCache(session(),
-                    loggedInUser.getUsername(), request().host());
+            authenticationService.clearSessionCookie(session());
         }
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }

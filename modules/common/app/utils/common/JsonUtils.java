@@ -2,12 +2,14 @@ package utils.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import general.common.Common;
 import models.common.*;
-import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
@@ -61,6 +63,9 @@ public class JsonUtils {
     public static class JsonForIO {
     }
 
+    public static class JsonForApi {
+    }
+
     /**
      * Marshalling an Object into an JSON string. It only considers fields that
      * are annotated with 'JsonForPublix'.
@@ -69,6 +74,25 @@ public class JsonUtils {
         ObjectWriter objectWriter =
                 Json.mapper().writerWithView(JsonForPublix.class);
         return objectWriter.writeValueAsString(obj);
+    }
+
+    /**
+     * Reads the given object into a JsonNode while using the JsonForIO view.
+     */
+    private JsonNode asJsonForIO(Object obj) throws IOException {
+        // Unnecessary conversion into a temporary string - better solution?
+        String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
+                .writeValueAsString(obj);
+        return Json.mapper().readTree(tmpStr);
+    }
+
+    public JsonNode asJsonForApi(Object obj) throws IOException {
+        // Unnecessary conversion into a temporary string - better solution?
+        String tmpStr = Json.mapper()
+                .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                .writerWithView(JsonForApi.class)
+                .writeValueAsString(obj);
+        return Json.mapper().readTree(tmpStr);
     }
 
     /**
@@ -603,23 +627,8 @@ public class JsonUtils {
         return dataNode;
     }
 
-    private void addUsernameForJatosWorker(Worker worker, ObjectNode workerNode) {
-        if (worker instanceof JatosWorker) {
-            JatosWorker jatosWorker = (JatosWorker) worker;
-            if (jatosWorker.getUser() != null) {
-                workerNode.put("username", jatosWorker.getUser().getUsername());
-            } else {
-                workerNode.put("username", "unknown");
-            }
-        } else if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
-            // In case the JatosWorker's user is already removed from the
-            // database Hibernate doesn't use the type JatosWorker
-            workerNode.put("username", "unknown (probably deleted)");
-        }
-    }
-
     /**
-     * Generic JSON marshaler.
+     * Generic JSON marshaller.
      */
     public static String asJson(Object obj) {
         ObjectWriter objectWriter = Json.mapper().writer();
@@ -633,9 +642,9 @@ public class JsonUtils {
     }
 
     /**
-     * Generic JSON marshaler.
+     * Generic JSON marshaller.
      */
-    public JsonNode asJsonNode(Object obj) {
+    public static JsonNode asJsonNode(Object obj) {
         return Json.mapper().valueToTree(obj);
     }
 
@@ -644,37 +653,68 @@ public class JsonUtils {
      * version, and saves it into the given File. It uses the view JsonForIO.
      */
     public void studyAsJsonForIO(Study study, File file) throws IOException {
-        ObjectNode studyNode = (ObjectNode) asObjectNodeWithIOView(study);
+        ObjectNode studyNode = (ObjectNode) asJsonForIO(study);
 
         // Add components
-        ArrayNode componentArray = (ArrayNode) asObjectNodeWithIOView(study.getComponentList());
+        ArrayNode componentArray = (ArrayNode) asJsonForIO(study.getComponentList());
         studyNode.putArray("componentList").addAll(componentArray);
 
         // Add default Batch
-        ArrayNode batchArray = (ArrayNode) asObjectNodeWithIOView(study.getDefaultBatchList());
-        studyNode.putArray("batchList").addAll(batchArray);
+        studyNode.putArray("batchList").add(asJsonForIO(study.getDefaultBatch()));
 
         // Add Study version
-        JsonNode nodeForIO = wrapNodeWithVersion(studyNode, String.valueOf(Study.SERIAL_VERSION));
+        JsonNode nodeForIO = wrapNodeInObject(studyNode, ImmutableMap.of(
+                "version", String.valueOf(Study.SERIAL_VERSION)));
 
         // Write to file
         Json.mapper().writeValue(file, nodeForIO);
     }
 
     /**
-     * Reads the given object into a JsonNode while using the JsonForIO view.
+     * Returns JSON of a study intended for the JATOS API
      */
-    private JsonNode asObjectNodeWithIOView(Object obj) throws IOException {
-        // Unnecessary conversion into a temporary string - better solution?
-        String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
-                .writeValueAsString(obj);
-        return Json.mapper().readTree(tmpStr);
+    public JsonNode studyAsJsonForApi(Study study, Boolean withComponentProperties, Boolean withBatchProperties)
+            throws IOException {
+        ObjectNode studyNode = (ObjectNode) asJsonForApi(study);
+
+        if (withComponentProperties) {
+            ArrayNode componentArray = (ArrayNode) asJsonForApi(study.getComponentList());
+            studyNode.putArray("components").addAll(componentArray);
+        } else {
+            ArrayNode components = studyNode.putArray("components");
+            study.getComponentList().forEach(c -> components.addObject().put("id", c.getId()).put("uuid", c.getUuid()));
+        }
+
+        if (withBatchProperties) {
+            ArrayNode batchArray = (ArrayNode) asJsonForApi(study.getBatchList());
+            studyNode.putArray("batches").addAll(batchArray);
+        } else {
+            ArrayNode batches = studyNode.putArray("batches");
+            study.getBatchList().forEach(b -> batches.addObject().put("id", b.getId()).put("uuid", b.getUuid()));
+        }
+
+        ArrayNode members = studyNode.putArray("members");
+        for (User u : study.getUserList()) {
+            members.addObject()
+                    .put("username", u.getUsername());
+        }
+
+        return studyNode;
     }
 
-    private JsonNode wrapNodeWithVersion(JsonNode jsonNode, String version) {
+    public static JsonNode wrapForApi(JsonNode jsonNode) {
+        return wrapForApi(jsonNode, new HashMap<>());
+    }
+
+    public static JsonNode wrapForApi(JsonNode jsonNode, Map<String, Object> fields) {
+        fields.put("apiVersion", Common.getJatosApiVersion());
+        return wrapNodeInObject(jsonNode, fields);
+    }
+
+    public static JsonNode wrapNodeInObject(JsonNode jsonNode, Map<String, Object> fields) {
         ObjectNode node = Json.mapper().createObjectNode();
-        node.put(VERSION, version);
-        node.set(DATA, jsonNode);
+        fields.forEach(node::putPOJO);
+        node.set("data", jsonNode);
         return node;
     }
 
