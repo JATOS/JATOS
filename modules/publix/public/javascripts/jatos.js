@@ -457,7 +457,8 @@ var jatos = {};
 	function setInitData(initData) {
 		// Batch properties
 		jatos.batchProperties = initData.batchProperties;
-		if (typeof jatos.batchProperties.jsonData != 'undefined') {
+		if (typeof jatos.batchProperties.jsonData != 'undefined' &&
+			jatos.studyProperties.jsonData !== null) {
 			jatos.batchJsonInput = jatos.jQuery
 				.parseJSON(jatos.batchProperties.jsonData);
 		} else {
