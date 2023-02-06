@@ -662,7 +662,6 @@ function showStudyLinksCreatorPersonalSingleModal(batch) {
     var title = "Create study links for worker type Personal Single in batch '" + batch.title + "'";
     showStudyLinksCreatorModal(title, text);
     $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
-        $('#studyLinksCreatorModal').modal('hide');
         const url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=PersonalSingle`;
         requestLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
     });
@@ -673,15 +672,14 @@ function showStudyLinksCreatorPersonalMultipleModal(batch) {
     var title = "Create study links for worker type Personal Multiple in batch '" + batch.title + "'";
     showStudyLinksCreatorModal(title, text);
     $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
-        $('#studyLinksCreatorModal').modal('hide');
         var url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=PersonalMultiple`;
         requestLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
     });
 }
 
-
 function showStudyLinksCreatorModal(title, text) {
     $('#studyLinksCreatorModal').find('.modal-title').html(title);
+    $('#studyLinksCreatorModal').find('.alert').remove();
     $('#studyLinksCreatorModal').find('.modalText').html(text);
     $('#studyLinksCreatorModal').find('.comment').val("");
     $('#studyLinksCreatorModal').find('.amount').val(1);
@@ -695,42 +693,22 @@ function showStudyLinksCreatorModal(title, text) {
 function requestLinksPersonal(url, studyLinksDisplayModal, batch) {
     const comment = encodeURIComponent($('#studyLinksCreatorModal').find('.comment').val());
     const amount = $('#studyLinksCreatorModal').find('.amount').val();
+    $('#studyLinksCreatorModal').find('.alert').remove();
     $.ajax({
         url: `${url}&comment=${comment}&amount=${amount}`,
-        success: function(studyCodes) {
+        success: function(studyCodesResponse) {
+            $('#studyLinksCreatorModal').modal('hide');
             if (studyLinksTable) {
                 loadStudyLinksSetup(batch.id);
                 studyLinksTable.ajax.reload();
             }
-            studyLinksDisplayModal(studyCodes, batch);
+            studyLinksDisplayModal(studyCodesResponse.data, batch);
         },
         error : function(err) {
-            showError(err.responseText);
+            showError(err.responseText, "#studyLinksCreatorModal .messages");
         }
     });
 }
-
-$('#batchTable').on('click', '.personalSingleStudyLinksSetup .studyLinkButton', function() {
-    var studyLinksSetupDiv = $(this).closest('.studyLinksSetupItem');
-    var workerTables = $(studyLinksSetupDiv).data('workerTables');
-    var tr = $(this).closest('tr');
-    var rowData = workerTables.personalSingle.row(tr).data();
-    var workerId = rowData[0];
-    var workerIds = [workerId];
-    var batch = getBatchData(this);
-    showStudyLinksDisplayPersonalModal(workerIds, batch);
-});
-
-$('#batchTable').on('click', '.personalMultipleStudyLinksSetup .studyLinkButton', function() {
-    var studyLinksSetupDiv = $(this).closest('.studyLinksSetupItem');
-    var workerTables = $(studyLinksSetupDiv).data('workerTables');
-    var tr = $(this).closest('tr');
-    var rowData = workerTables.personalMultiple.row(tr).data();
-    var workerId = rowData[0];
-    var workerIds = [workerId];
-    var batch = getBatchData(this);
-    showStudyLinksDisplayPersonalModal(workerIds, batch);
-});
 
 function showStudyLinksDisplayPersonalModal(studyCodes, batch) {
     var title;
@@ -770,17 +748,17 @@ $('#batchTable').on('click', '.generalMultipleStudyLinksSetup .studyLinkButton',
 
 function showStudyLinkGeneralSingleModal(batch) {
     $.ajax({
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}?type=GeneralSingle`,
-        success: function(studyCode) {
+        url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=GeneralSingle`,
+        success: function(studyCodeResponse) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
                 <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
-            var postText = `Or use the study code '${studyCode}'.<br>Copy & paste and hand it to your workers.`;
+            var postText = `Or use the study code '${studyCodeResponse.data}'.<br>Copy & paste and hand it to your workers.`;
             var warning;
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralSingleWorker.WORKER_TYPE")) {
                 warning = `Worker type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE is currently not allowed in this batch`;
             }
-            showStudyLinksDisplayModal(title, preText, [studyCode], postText, warning);
+            showStudyLinksDisplayModal(title, preText, studyCodeResponse.data, postText, warning);
         },
         error : function(err) {
             showError(err.responseText);
@@ -791,16 +769,16 @@ function showStudyLinkGeneralSingleModal(batch) {
 function showStudyLinkGeneralMultipleModal(batch) {
     $.ajax({
         url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=GeneralMultiple`,
-        success: function(studyCode) {
+        success: function(studyCodeResponse) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
                 <div class="confirmLink">This link will start the study but first ask the worker for confirmation (by pressing a button).</div>`;
-            var postText = `Or use the study code '${studyCode}'.<br>Copy & paste and hand it to your workers.`;
+            var postText = `Or use the study code '${studyCodeResponse.data}'.<br>Copy & paste and hand it to your workers.`;
             var warning;
             if (!batch.allowedWorkerTypes.includes("@common.workers.GeneralMultipleWorker.WORKER_TYPE")) {
                 warning = `Worker type @common.workers.GeneralMultipleWorker.UI_WORKER_TYPE is currently not allowed in this batch`;
             }
-            showStudyLinksDisplayModal(title, preText, [studyCode], postText, warning);
+            showStudyLinksDisplayModal(title, preText, studyCodeResponse.data, postText, warning);
         },
         error : function(err) {
             showError(err.responseText);
