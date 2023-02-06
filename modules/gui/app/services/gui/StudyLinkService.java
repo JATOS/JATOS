@@ -1,10 +1,8 @@
 package services.gui;
 
-import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import daos.common.BatchDao;
-import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
@@ -13,7 +11,6 @@ import exceptions.gui.NotFoundException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyLink;
-import models.common.User;
 import models.common.workers.*;
 import play.Logger;
 import play.db.jpa.JPAApi;
@@ -26,7 +23,6 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -39,24 +35,23 @@ public class StudyLinkService {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLinkService.class);
 
-    private final StudyDao studyDao;
     private final BatchDao batchDao;
     private final WorkerDao workerDao;
     private final StudyLinkDao studyLinkDao;
     private final WorkerService workerService;
-    private final AuthService authenticationService;
+    private final StudyService studyService;
     private final Checker checker;
     private final JPAApi jpa;
 
     @Inject
-    StudyLinkService(StudyDao studyDao, BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao, WorkerService workerService,
-            AuthService authenticationService, Checker checker, JPAApi jpa) {
-        this.studyDao = studyDao;
+    StudyLinkService(BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao,
+            WorkerService workerService, StudyService studyService,
+            Checker checker, JPAApi jpa) {
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
         this.workerService = workerService;
-        this.authenticationService = authenticationService;
+        this.studyService = studyService;
         this.checker = checker;
         this.jpa = jpa;
     }
@@ -120,18 +115,7 @@ public class StudyLinkService {
 
     public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
             Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Optional<Long> studyId = Helpers.parseLong(id);
-        Study study;
-        if (studyId.isPresent()) {
-            study = studyDao.findById(studyId.get());
-            if (study == null) throw new NotFoundException("Couldn't find study with ID " + studyId.get());
-            checker.checkStandardForStudy(study, studyId.get(), loggedInUser);
-        } else {
-            study = studyDao.findByUuid(id)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + id));
-            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
-        }
+        Study study = studyService.getStudyFromIdOrUuid(id);
 
         Batch batch;
         if (batchId.nonEmpty()) {
@@ -142,8 +126,6 @@ public class StudyLinkService {
         }
 
         workerType = workerService.extractWorkerType(workerType);
-
-
         switch (workerType) {
             case PersonalSingleWorker.WORKER_TYPE:
             case PersonalMultipleWorker.WORKER_TYPE:

@@ -9,6 +9,7 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.common.StudyLogger;
 import models.common.Batch;
@@ -21,16 +22,14 @@ import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -52,11 +51,12 @@ public class StudyService {
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
     private final AuthService authenticationService;
+    private final Checker checker;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
             BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthService authenticationService) {
+            StudyLogger studyLogger, AuthService authenticationService, Checker checker) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -66,6 +66,7 @@ public class StudyService {
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
         this.authenticationService = authenticationService;
+        this.checker = checker;
     }
 
     /**
@@ -389,6 +390,22 @@ public class StudyService {
         ioUtils.removeStudyAssetsDir(study.getDirName());
         studyLogger.log(study, loggedInUser, "Removed study");
         studyLogger.retire(study);
+    }
+
+    public Study getStudyFromIdOrUuid(String id) throws NotFoundException, ForbiddenException {
+        Optional<Long> studyId = Helpers.parseLong(id);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        Study study;
+        if (studyId.isPresent()) {
+            study = studyDao.findById(studyId.get());
+            if (study == null) throw new NotFoundException("Couldn't find study with ID " + studyId.get());
+            checker.checkStandardForStudy(study, studyId.get(), loggedInUser);
+        } else {
+            study = studyDao.findByUuid(id)
+                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + id));
+            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+        }
+        return study;
     }
 
 }

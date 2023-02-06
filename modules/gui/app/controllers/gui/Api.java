@@ -57,11 +57,11 @@ import static models.common.User.Role.ADMIN;
  *  keepCurrentAssetsName - if you don't keep the assets - take the assets name form the current study or the uploaded one
  * renameAssets - if the assets name already exists but is from another study - rename it or not by adding some suffix
  *
+ * todo POST/GET/DELETE /jatos/api/v1/study/id/assets/filepath
  * todo difference in import study btw keepCurrentAssetsName and renameAssets
  * todo check keepAssets and keepCurrentAssetsName
  * todo API quotas / on-off
  * todo SignInOidc todos
- * todo getStudyProperties
  */
 @SuppressWarnings("deprecation")
 @Singleton
@@ -73,6 +73,7 @@ public class Api extends Controller {
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
     private final ComponentResultDao componentResultDao;
+    private final StudyService studyService;
     private final StudyLinkService studyLinkService;
     private final ImportExport importExport;
     private final ResultRemover resultRemover;
@@ -85,7 +86,8 @@ public class Api extends Controller {
     @Inject
     Api(Admin admin, AdminService adminService, AuthService authenticationService,
             ComponentResultIdsExtractor componentResultIdsExtractor,
-            StudyDao studyDao, ComponentResultDao componentResultDao, StudyLinkService studyLinkService,
+            StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
+            StudyLinkService studyLinkService,
             ImportExport importExport, ResultRemover resultRemover,
             ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
             StudyLogger studyLogger, IOUtils ioUtils) {
@@ -95,6 +97,7 @@ public class Api extends Controller {
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
         this.componentResultDao = componentResultDao;
+        this.studyService = studyService;
         this.studyLinkService = studyLinkService;
         this.importExport = importExport;
         this.resultRemover = resultRemover;
@@ -142,19 +145,7 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result studyLog(String id, int entryLimit, boolean download) throws ForbiddenException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        Optional<Long> studyId = Helpers.parseLong(id);
-        Study study;
-        if (studyId.isPresent()) {
-            study = studyDao.findById(studyId.get());
-            if (study == null) return notFound("Couldn't find study log of study with ID " + studyId.get());
-        } else {
-            Optional<Study> s = studyDao.findByUuid(id);
-            if (!s.isPresent()) return notFound("Couldn't find study log of study with UUID " + id);
-            study = s.get();
-        }
-
-        checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+        Study study = studyService.getStudyFromIdOrUuid(id);
         if (download) {
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
             if (Files.notExists(studyLogPath)) return notFound();
@@ -198,21 +189,8 @@ public class Api extends Controller {
     @Auth
     public Result getStudyProperties(String id, Boolean withComponentProperties, Boolean withBatchProperties)
             throws ForbiddenException, NotFoundException, IOException {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        JsonNode studiesNode;
-        Optional<Long> studyId = Helpers.parseLong(id);
-        Study study;
-        // todo abstract this somewhere
-        if (studyId.isPresent()) {
-            study = studyDao.findById(studyId.get());
-            if (study == null) return notFound("Couldn't find study with ID " + studyId.get());
-            checker.checkStandardForStudy(study, studyId.get(), loggedInUser);
-        } else {
-            study = studyDao.findByUuid(id)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + id));
-            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
-        }
-        studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(JsonUtils.wrapForApi(studiesNode));
     }
 

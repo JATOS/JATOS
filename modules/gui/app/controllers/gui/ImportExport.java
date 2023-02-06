@@ -4,7 +4,6 @@ import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
@@ -20,9 +19,9 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
-import services.gui.Checker;
 import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
+import services.gui.StudyService;
 import utils.common.Helpers;
 
 import javax.inject.Inject;
@@ -44,19 +43,18 @@ public class ImportExport extends Controller {
     private static final ALogger LOGGER = Logger.of(ImportExport.class);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-    private final Checker checker;
     private final AuthService authenticationService;
     private final ImportExportService importExportService;
-    private final StudyDao studyDao;
+    private final StudyService studyService;
 
     @Inject
-    ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-            AuthService authenticationService, ImportExportService importExportService, StudyDao studyDao) {
+    ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+            AuthService authenticationService, ImportExportService importExportService,
+            StudyService studyService) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-        this.checker = checker;
         this.authenticationService = authenticationService;
         this.importExportService = importExportService;
-        this.studyDao = studyDao;
+        this.studyService = studyService;
     }
 
     /**
@@ -175,20 +173,7 @@ public class ImportExport extends Controller {
     @Transactional
     @Auth
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
-        Study study;
-        Optional<Long> studyId = Helpers.parseLong(id);
-        if (studyId.isPresent()) {
-            study = studyDao.findById(studyId.get());
-            if (study == null) return notFound("Couldn't find study with ID " + studyId.get());
-        } else {
-            Optional<Study> s = studyDao.findByUuid(id);
-            if (!s.isPresent()) return notFound("Couldn't find study with UUID " + id);
-            study = s.get();
-        }
-
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, study.getId(), loggedInUser);
-
+        Study study = studyService.getStudyFromIdOrUuid(id);
         File zipFile;
         try {
             zipFile = importExportService.createStudyExportZipFile(study);
