@@ -3,10 +3,10 @@ package controllers.gui;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import auth.gui.AuthActionApiToken;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import auth.gui.AuthActionApiToken;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import exceptions.gui.BadRequestException;
@@ -18,6 +18,7 @@ import general.common.StudyLogger;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
+import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
 import play.http.HttpEntity;
@@ -37,6 +38,7 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -45,27 +47,22 @@ import java.util.Map;
 import java.util.Optional;
 
 import static auth.gui.AuthAction.Auth;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static models.common.User.Role.ADMIN;
 
 /**
- * JATOS API Controller: interface for all requests possible via JATOS' API
+ * JATOS API Controller: all requests possible via JATOS' API
  *
  * @author Kristian Lange
  *
- * /api/components/properties ?componentId ?componentUuid
- *
- *  keepCurrentAssetsName - if you don't keep the assets - take the assets name form the current study or the uploaded one
- * renameAssets - if the assets name already exists but is from another study - rename it or not by adding some suffix
- *
- * todo POST/GET/DELETE /jatos/api/v1/study/id/assets/filepath
- * todo difference in import study btw keepCurrentAssetsName and renameAssets
- * todo check keepAssets and keepCurrentAssetsName
  * todo API quotas / on-off
  * todo SignInOidc todos
  */
 @SuppressWarnings("deprecation")
 @Singleton
 public class Api extends Controller {
+
+    private static final Logger.ALogger LOGGER = Logger.of(Api.class);
 
     private final Admin admin;
     private final AdminService adminService;
@@ -109,7 +106,7 @@ public class Api extends Controller {
     }
 
     /**
-     * @return Returns information about the API token used in the request in JSON.
+     * Returns information about the API token used in the request in JSON.
      */
     @Auth
     public Result testToken() {
@@ -117,7 +114,7 @@ public class Api extends Controller {
     }
 
     /**
-     * @returns Returns admin status information in JSON
+     * Returns admin status information in JSON
      */
     @Transactional
     @Auth(ADMIN)
@@ -126,6 +123,8 @@ public class Api extends Controller {
     }
 
     /**
+     * Returns a JATOS application log file.
+     *
      * @param filename Log's filename
      * @return Returns the log file
      */
@@ -136,6 +135,8 @@ public class Api extends Controller {
     }
 
     /**
+     * Returns a study log.
+     *
      * @param id         Study's ID or UUID
      * @param entryLimit It cuts the log after the number of lines given in entryLimit. Only if 'download' is false.
      * @param download   If true streams the whole study log file - if not only until entryLimit
@@ -162,6 +163,8 @@ public class Api extends Controller {
     }
 
     /**
+     * Returns all study properties a user can access.
+     *
      * @param withComponentProperties Flag if true all component properties of the study will be included
      * @param withBatchProperties     Flag if true all batch properties will be included
      * @return All study properties the user has access to (is member of) in JSON
@@ -180,6 +183,8 @@ public class Api extends Controller {
     }
 
     /**
+     * Get study properties
+     *
      * @param id                      Study's ID or UUID
      * @param withComponentProperties Flag if true all component properties of the study will be included
      * @param withBatchProperties     Flag if true all batch properties will be included
@@ -195,8 +200,96 @@ public class Api extends Controller {
     }
 
     /**
-     * Returns study codes for the given batch and worker type. A comment can be specified and amount specifies the
-     * number to be generated.
+     * Download a file from a study assets folder.
+     *
+     * @param id       Study's ID or UUID
+     * @param filepath Path to the file in the study assets directory that is supposed to be downloaded. The path can be
+     *                 URL encoded but doesn't have to be. Directories cannot be downloaded.
+     */
+    @Transactional
+    @Auth
+    public Result downloadStudyAssetsFile(String id, String filepath) throws ForbiddenException, NotFoundException {
+        filepath = Helpers.urlDecode(filepath);
+        if (filepath.startsWith("/")) filepath = filepath.substring(1);
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        File file;
+        try {
+            file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+            if (!file.isFile()) throw new IOException();
+        } catch (IOException e) {
+            return notFound("File '" + filepath + "' couldn't be found.");
+        }
+        return ok().sendFile(file);
+    }
+
+    /**
+     * Upload a file to a study assets folder.
+     *
+     * @param id       Study's ID or UUID
+     * @param filepath Supposed path of the uploaded file in the study assets directory. If it is null, "", "/" or "."
+     *                 it will be ignored and the uploaded file saved in the top-level of the assets under the uploaded
+     *                 file's name. If it is a directory, the filename is taken from the uploaded file. If it ends with
+     *                 a filename the uploaded file will be renamed to this name. All non-existing subdirectories will
+     *                 be created. Existing files will be overwritten. The path can be URL encoded but doesn't have to be.
+     */
+    @Transactional
+    @Auth
+    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath)
+            throws ForbiddenException, NotFoundException {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+
+        if (request.body().asMultipartFormData() == null) return badRequest("File missing");
+        Http.MultipartFormData.FilePart<Object> filePart = request.body().asMultipartFormData().getFile("studyAssetsFile");
+        if (filePart == null) return badRequest("File missing");
+        File uploadedFile = (File) filePart.getFile();
+
+        try {
+            Path assetsFilePath= ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
+            if (Files.notExists(assetsFilePath)) Files.createDirectories(assetsFilePath);
+            Files.move(uploadedFile.toPath(), assetsFilePath, REPLACE_EXISTING);
+            return ok();
+        } catch (IOException e) {
+            LOGGER.info(".uploadStudyAssetsFile: " + e.getLocalizedMessage());
+            return badRequest("Error writing file");
+        }
+    }
+
+    /**
+     * Deletes a file in the study assets directory.
+     *
+     * @param id       Study's ID or UUID
+     * @param filepath Path to the file in the study assets directory that is supposed to be deleted. The path can be
+     *                 URL encoded but doesn't have to be. Directories cannot be deleted.
+     */
+    @Transactional
+    @Auth
+    public Result deleteStudyAssetsFile(String id, String filepath) throws ForbiddenException, NotFoundException {
+        filepath = Helpers.urlDecode(filepath);
+        if (filepath.startsWith("/")) filepath = filepath.substring(1);
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        try {
+            File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+            if (file.isDirectory()) throw new IOException("Directories can't be deleted.");
+            Files.delete(file.toPath());
+        } catch (NoSuchFileException e) {
+            return notFound("File '" + filepath + "' couldn't be found.");
+        } catch (IOException e) {
+            LOGGER.info(".deleteStudyAssetsFile: " + e.getLocalizedMessage());
+            return badRequest();
+        }
+        return ok();
+    }
+
+    /**
+     * Get study codes for the given batch and worker type
+     *
+     * @param id      Study's ID or UUID
+     * @param batchId Optional specify the batch ID to which the study codes should belong to. If it is not specified
+     *                the default batch of this study will be used.
+     * @param type    Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle`
+     *                (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
+     * @param comment Some comment that will be associated with the worker.
+     * @param amount  Number of study codes that have to be generated. If empty 1 is assumed.
      */
     @Transactional
     @Auth
@@ -205,12 +298,37 @@ public class Api extends Controller {
         return ok(JsonUtils.wrapForApi(studyLinkService.getStudyCodes(id, batchId, type, comment, amount)));
     }
 
+    /**
+     * Returns the study's JATOS archive (.jzip)
+     *
+     * @param id Study's ID or UUID
+     */
     @Transactional
     @Auth
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
         return importExport.exportStudy(id);
     }
 
+    /**
+     * Imports a Study JATOS archive (.jzip).
+     *
+     * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
+     *                              Default is `false` (properties are overwritten by default). If the study doesn't
+     *                              already exist this parameter has no effect.
+     * @param keepAssets            If true and the study exists already in JATOS the current study assets directory is
+     *                              kept. Default is `false` (assets are overwritten by default). If the study doesn't
+     *                              already exist this parameter has no effect.
+     * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
+     *                              if the study assets directory name is taken form the current or the uploaded one. In
+     *                              the common case that both names are the same this has no effect. But if the current
+     *                              asset directory name is different from the uploaded one a `keepCurrentAssetsName=true`
+     *                              indicates that the name of the currently installed assets directory should be kept.
+     *                              A `false` indicates that the name should be taken from the uploaded one. Default is `true`.
+     * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
+     *                              study it cannot be overwritten. In this case you can set `renameAssets=true` to let
+     *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
+     *                              Default is `true`.
+     */
     @Transactional
     @Auth
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
@@ -218,6 +336,14 @@ public class Api extends Controller {
         return importExport.importStudyApi(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
     }
 
+    /**
+     * Removes results from the database (ComponentResults and StudyResults) and result files from the file system.
+     * Which results are to be removed are indicated by query parameters and/or JSON in the request's body. Different
+     * IDs can be used, e.g. study ID (to delete all results of this study), component results (all of this component),
+     * batch ID (all of this batch). Of course component result IDs or study result IDs can be specified directly. It
+     * primarily removes the ComponentResults since results are associated with them, but if in the process a
+     * StudyResults becomes empty (no more ComponentResults) it will be deleted too.
+     */
     @Transactional
     @Auth
     public Result removeResults(Http.Request request)
@@ -230,8 +356,8 @@ public class Api extends Controller {
     }
 
     /**
-     * Returns results (including metadata, data, and files) in a zip file. The results are specified by IDs (can be any kind) in
-     * the request's body or as query parameters. Streaming is used to reduce memory and disk usage.
+     * Returns results (including metadata, data, and files) in a zip file. The results are specified by IDs (can be
+     * nearly any kind) in the request's body or as query parameters. Streaming is used to reduce memory and disk usage.
      */
     @Transactional
     @Auth
@@ -249,6 +375,8 @@ public class Api extends Controller {
     /**
      * Returns all result's metadata (but not result files and not metadata) in a zip file. The results are specified by
      * IDs (can be any kind) in the request's body or query parameters. Streaming is used to reduce memory and disk usage.
+     *
+     * @param wrap Indicates if the response JSON should be wrapped in an 'API' object
      */
     @Transactional
     @Auth
@@ -272,6 +400,9 @@ public class Api extends Controller {
      * the result data as plain text (each result data in a new line) or in a zip file (each
      * result data in its own file). The results are specified by IDs (can be any kind) in the request's body or as
      * query parameters. Both options use streaming to reduce memory and disk usage.
+     *
+     * @param asPlainText If true the results will be returned in one single text file, each result in a new line.
+     * @param wrap        Indicates if the response JSON should be wrapped in an 'API' object
      */
     @Transactional
     @Auth
@@ -290,7 +421,7 @@ public class Api extends Controller {
             Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.DATA_ONLY,
                     wrapperObject);
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
-                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
             return ok().chunked(dataSource).as("application/zip")
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         }
@@ -307,11 +438,17 @@ public class Api extends Controller {
             throws IOException, ForbiddenException, BadRequestException, NotFoundException {
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
         return ok().chunked(dataSource).as("application/zip")
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
+    /**
+     * Exports a single result file.
+     *
+     * @param componentResultId ID of the component result that the file belongs to
+     * @param filename          Filename of the file to be exported
+     */
     @Transactional
     @Auth
     public Result exportSingleResultFile(Long componentResultId, String filename)

@@ -1,11 +1,11 @@
   openapi: 3.0.3
   info:
     title: JATOS API
-    description: 'This is JATOS API specification using OpenAPI.'
+    description: "This is JATOS API specification using OpenAPI."
     license:
       name: Apache 2.0
       url: http://www.apache.org/licenses/LICENSE-2.0.html
-    version: 0.0.1
+    version: 0.1.1
   externalDocs:
     description: Find out more about JATOS
     url: https://www.jatos.org
@@ -72,7 +72,7 @@
         summary: "Import a study"
         description: "Import a study in the JATOS study file format (*.jzip* suffix). You can set several flags in the
           query parameters to specify how eventual existing studies with the same UUID should be handled
-          (e.g keep their properties and assets)."
+          (e.g keep or overwrite their properties and/or assets)."
         tags:
           - study
         parameters:
@@ -80,31 +80,36 @@
             name: keepProperties
             schema:
               type: boolean
+              default: false
             description: If the study exists already in JATOS, should the current properties be kept?
-              Default is *false* (properties are overwritten by default). If the study doesn't exist this parameter has
-              no effect.
+              Default is `false` (properties are overwritten by default). If `true` the current properties are kept.
+              If the study doesn't already exist this parameter has no effect.
           - in: query
             name: keepAssets
             schema:
               type: boolean
+              default: false
             description: If the study exists already in JATOS, should the current assets directory be kept?
-              Default is *false* (assets are overwritten by default). If the study doesn't exist this parameter has
-              no effect.
+              Default is `false` (assets are overwritten by default). If the study doesn't already exist this parameter
+              has no effect.
           - in: query
             name: keepCurrentAssetsName
             schema:
               type: boolean
-            description: If the study exists already in JATOS and the current study assets directory name is different
-              from the uploaded one, should the current directory name be kept? Default is *true*. If the study doesn't
-              already exist or both names are the same this parameter has no effect.
+              default: true
+            description: If the assets are going to be overwritten (`keepAssets=false`), this flag indicates if the
+              assets directory name is taken form the current or the uploaded one. In the common case that both names
+              are the same this has no effect. But if the current asset directory name is different from the uploaded
+              one a `keepCurrentAssetsName=true` indicates that the name of the currently installed assets directory
+              should be kept. A `false` indicates that the name should be taken from the uploaded one. Default is `true`.
           - in: query
             name: renameAssets
             schema:
               type: boolean
-            description: If the study assets directory exists already in JATOS but belongs to a different study you can
-              set this parameter to *true* to let JATOS choose a new directory name for your study (usually name + '_' +
-              number). Default is *true*. If the study directory doesn't exist already and is from a different study this
-              parameter has no effect.
+              default: true
+            description: If the study assets directory already exists in JATOS but belongs to a different study it 
+              cannot be overwritten. In this case you can set `renameAssets=true` to let JATOS add a suffix to the
+              assets directory name (original name + "_" + a number). Default is `true`.
         requestBody:
           content:
             multipart/form-data:
@@ -132,12 +137,7 @@
         tags:
           - study
         parameters:
-          - in: path
-            name: id
-            required: true
-            schema:
-              type: string
-            description: Either a study ID or a study UUID
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         responses:
           200:
             description: Success
@@ -153,32 +153,27 @@
       get:
         summary: Get study properties
         description: Get the study properties by specifying a study ID or UUID. The properties of the study's
-          components can be included by setting the flag *withComponentProperties*. The batch properties can be included
-          by setting the flag *withBatchProperties*. If no study ID or UUID is specified the study properties of **all**
+          components can be included by setting the flag `withComponentProperties`. The batch properties can be included
+          by setting the flag `withBatchProperties`. If no study ID or UUID is specified the study properties of **all**
           studies that you can access will be returned.
         tags:
           - study
         parameters:
-          - in: path
-            name: id
-            required: true
-            schema:
-              type: string
-            description: Either a study ID or a study UUID
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
           - in: query
             name: withComponentProperties
             allowEmptyValue: true
             schema:
               type: boolean
               default: false
-            description: Flag, if set to *true* the data will additionally contain the properties of the study's component.
+            description: Flag, if set to `true` the data will additionally contain the properties of the study's component.
           - in: query
             name: withBatchProperties
             allowEmptyValue: true
             schema:
               type: boolean
               default: false
-            description: Flag, if set to *true* the data will additionally contain the properties of the batches that belong to this study.
+            description: Flag, if set to `true` the data will additionally contain the properties of the batches that belong to this study.
         responses:
           200:
             description: Success
@@ -193,7 +188,7 @@
       get:
         summary: Get all study properties that are accessible to the user
         description: The properties of the study's components can be included by setting the flag
-          *withComponentProperties*. The batch properties can be included by setting the flag *withBatchProperties*.
+          `withComponentProperties`. The batch properties can be included by setting the flag `withBatchProperties`.
         tags:
           - study
         parameters:
@@ -203,14 +198,14 @@
             schema:
               type: boolean
               default: false
-            description: Flag, if set to *true* the data will additionally contain the properties of the study's component.
+            description: Flag, if set to `true` the data will additionally contain the properties of the study's component.
           - in: query
             name: withBatchProperties
             allowEmptyValue: true
             schema:
               type: boolean
               default: false
-            description: Flag, if set to *true* the data will additionally contain the properties of the batches that belong to this study.
+            description: Flag, if set to `true` the data will additionally contain the properties of the batches that belong to this study.
         responses:
           200:
             description: Success
@@ -221,28 +216,127 @@
           401:
             description: Invalid token
 
+    /jatos/api/v1/studies/{id}/assets/{filepath}:
+      get:
+        summary: Download a file from the study assets
+        tags:
+          - study
+        parameters:
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+          - in: path
+            name: filepath
+            required: true
+            schema:
+              type: string
+            description: Filepath to the file. Directories cannot be downloaded. The path can be URL encoded but doesn't
+              have to be.
+            examples:
+              top-level:
+                value: "logo.png"
+                summary: Get a file
+                description: Downloads the file *logo.png* from the top-level of the study assets directory.
+              subdirectory:
+                value: "images/logo.png"
+                summary: Get a file from a subdirectory
+                description: Downloads the file *logo.png* from the *images* subdirectory of the study assets directory.
+        responses:
+          200:
+            description: Success
+            content:
+              application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+          401:
+            description: Invalid token
+      post:
+        summary: Upload a file to the study assets
+        tags:
+          - study
+        parameters:
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+          - in: path
+            name: filepath
+            required: true
+            schema:
+              type: string
+            description: Filepath to the file. Subdirectories are allowed and it can additionally rename the file (see
+              examples). If it is just '.' the file will be saved at the top-level of the study assets directory.
+              The path can be URL encoded but doesn't have to be. Non-existing subdirectories will be created. Existing
+              files will be overwritten.
+            examples:
+              top-level:
+                value: "."
+                summary: Save in the top-level of the study assets directory
+                description: The filepath will be ignored and the uploaded file be saved in the top-level of the study assets directory.
+              subdirectory:
+                value: "images/"
+                summary: Save in a subdirectory
+                description: Saves the file in the subdirectory *images* of the study assets directory. If the subdirectory
+                  does not exist it will be created.
+              changeFilename:
+                value: "images/newFilename.png"
+                summary: Rename file
+                description: Additionally to saving the file in the subdirectory *images* it will be renamed to *newFilename.png*.
+        requestBody:
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  studyAssetsFile:
+                    type: string
+                    format: binary
+        responses:
+          200:
+            description: Success
+          401:
+            description: Invalid token
+      delete:
+        summary: Delete a file from the study assets
+        tags:
+          - study
+        parameters:
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+          - in: path
+            name: filepath
+            required: true
+            schema:
+              type: string
+            description: Path to the file in the study assets directory that is supposed to be deleted. The path can be
+              URL encoded but doesn't have to be. Directories won't be deleted.
+            examples:
+              top-level:
+                value: "logo.png"
+                summary: Deletes a file
+                description: Deletes the file *logo.png* in the top-level of the study assets directory.
+              subdirectory:
+                value: "images/logo.png"
+                summary: Deletes a file in a subdirectory
+                description: Deletes the file *logo.png* in the subdirectory *images* in the study assets directory.
+        responses:
+          200:
+            description: Success
+          401:
+            description: Invalid token
+
     /jatos/api/v1/studies/{id}/log:
       get:
         summary: Get the study log of a study
         tags:
           - study
         parameters:
-          - in: path
-            name: id
-            required: true
-            schema:
-              type: string
-            description: Either a study ID or a study UUID
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         responses:
           200:
             description: Success
             content:
-              application/jsonlines:
+              application/zip:
                 schema:
-                  type: object
+                  type: string
+                  format: binary
           401:
             description: Invalid token
-  
   
     /jatos/api/v1/studies/{id}/studyCodes:
       get:
@@ -250,18 +344,14 @@
         tags:
           - study
         parameters:
-          - in: path
-            name: id
-            required: true
-            schema:
-              type: string
-            description: Either a study ID or a study UUID
+          - $ref: '#/components/parameters/StudyIdOrUuidParameter'
           - in: query
             name: type
             required: true
             schema:
               type: string
-            description: Type - one of 'PersonalSingle' (or 'ps'), 'PersonalMultiple' (or 'pm'), 'GeneralSingle' (or 'gs'), 'GeneralMultiple' (or 'gm'), 'MTurk' (or 'mt')
+            description: Type - one of `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle`
+              (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
           - in: query
             name: batchId
             schema:
@@ -272,12 +362,12 @@
             name: comment
             schema:
               type: string
-            description: Some identifying description or name (only for type 'PersonalSingle' or 'PersonalMultiple'). Can be left empty.
+            description: Some identifying description or name (only for type `PersonalSingle` or `PersonalMultiple`). Can be left empty.
           - in: query
             name: amount
             schema:
               type: integer
-            description: Number of study codes to be created (only for type 'PersonalSingle' or 'PersonalMultiple'). Default is 1.
+            description: Number of study codes to be created (only for type PersonalSingle` or `PersonalMultiple`). Default is 1.
         responses:
           200:
             description: Success
@@ -488,6 +578,13 @@
         type: http
         scheme: bearer
     parameters:
+      StudyIdOrUuidParameter:
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Either a study ID or a study UUID
       StudyIdParameter:
         in: query
         name: studyId

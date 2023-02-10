@@ -86,9 +86,6 @@ public class SignInOidc extends Controller {
     // todo wording login to sign in and register
     // todo check with Google
     // todo test user manager, user page, login, popup-login, logout
-    // todo Users.changePasswordByAdmin todo
-    // todo Users.remove todo
-    // todo application.conf jatos.userSession.validation still necessary
     // todo API via OIDC
     @GuiAccessLogging
     @Transactional

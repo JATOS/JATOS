@@ -58,9 +58,9 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that imports a study zip file to JATOS. It's only used by the API. The difference to the methods
-     * used by the GUI (importStudy and importStudyConfirmed) is, that here all is done in one request and all
-     * confirmation (e.g. keepProperties, keepAssets) has to be specified beforehand.
+     * POST request that imports a JATOS study archive (.jzip file) to JATOS. It's only used by the API. The difference
+     * to the methods used by the GUI (importStudy and importStudyConfirmed) is, that here all is done in one request
+     * and all confirmation (e.g. keepProperties, keepAssets) has to be specified beforehand.
      */
     @Transactional
     @Auth
@@ -101,8 +101,8 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that checks whether this is a legitimate study import, whether the study or its directory already
-     * exists. The actual import happens in importStudyConfirmed(). Returns JSON.
+     * POST request that checks whether this is a legitimate import of a JATOS study archive (.jzip file), e.g. if the
+     * study or its directory already exists. The actual import happens in method importStudyConfirmed().
      */
     @Transactional
     @Auth
@@ -133,8 +133,8 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that does Actual import of study and its study assets directory. Always subsequent of an
-     * importStudy() call.
+     * POST request that does the actual import of a JATOS study archive (.jzip file). This endpoint gets called always
+     * after importStudy().
      */
     @Transactional
     @Auth
@@ -167,8 +167,8 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * GET request that exports a study. Returns a .zip file that contains the study asset directory and the study as JSON as a .jas
-     * file.
+     * GET request that exports a JATOS study archive (.jzip file). The archive is a zip compressed file that contains
+     * the study asset directory and the study properties as JSON saved in a .jas file.
      */
     @Transactional
     @Auth

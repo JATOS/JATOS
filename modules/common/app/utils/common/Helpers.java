@@ -142,6 +142,7 @@ public class Helpers {
     }
 
     public static String urlDecode(String str) {
+        if (str == null) return null;
         String decodedStr = null;
         try {
             decodedStr = URLDecoder.decode(str, StandardCharsets.UTF_8.name());

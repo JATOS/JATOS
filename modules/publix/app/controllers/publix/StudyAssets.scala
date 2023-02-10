@@ -38,7 +38,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
 
   private val URL_PATH_SEPARATOR = "/"
 
-  val jatosPublixPattern: Regex = "(.*)(jatos-publix)(.*)".r
+  private val jatosPublixPattern: Regex = "(.*)(jatos-publix)(.*)".r
 
   /**
     * Returns the study asset file that belongs to the study with the given study result UUID

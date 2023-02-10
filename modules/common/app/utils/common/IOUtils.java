@@ -1,7 +1,9 @@
 package utils.common;
 
+import com.google.common.base.Strings;
 import general.common.Common;
 import general.common.MessagesStrings;
+import models.common.Study;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -206,10 +208,37 @@ public class IOUtils {
     }
 
     /**
+     * Get a Path to a file in a study assets directory.
+     *
+     * @param filepath Filepath to the file. If it points to a directory (indicated by a trailing '/') the returned Path
+     *                 consists of filepath + filename. If it does not point to a directory it is treated as Path to a
+     *                 file and returned as Path (without the filename parameter). This parameter is optional and can be
+     *                 null to signal the Path to the file is supposed to be in the root of the study assets directory.
+     *                 If it has a leading '/' it gets removed. It can be URL encoded but doesn't have to be.
+     * @param filename Filename of the file (without path).
+     * @param study    Study where the study assets belong to
+     * @return Path to the file in the study assets
+     */
+    public Path getAssetsFilePath(String filepath, String filename, Study study) throws IOException {
+        String assetsFilePathStr;
+        if (!Strings.isNullOrEmpty(filepath)) {
+            filepath = Helpers.urlDecode(filepath);
+            if (filepath.startsWith("/")) filepath = filepath.substring(1); // remove leading '/'
+
+            if (filepath.endsWith("/")) assetsFilePathStr = filepath + filename;
+            else if (filepath.equals("")) assetsFilePathStr = filename;
+            else assetsFilePathStr = filepath;
+        } else {
+            assetsFilePathStr = filename;
+        }
+        return getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
+    }
+
+    /**
      * Copies a component's HTML file.
      *
      * @param studyAssetsDirName Name of the study assets
-     * @param htmlFilePath       Local file path to the HTML file. The file can be in a sub-directory of the study
+     * @param htmlFilePath       Local file path to the HTML file. The file can be in a subdirectory of the study
      *                           assets directory.
      * @return Name of the new file.
      */
