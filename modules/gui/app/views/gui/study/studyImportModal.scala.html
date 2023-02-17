@@ -78,9 +78,9 @@ function importStudyConfirm(response) {
         askConfirmationForStudyExistsAndRenameDir(response.uploadedStudyTitle,
                 response.uuid, response.uploadedDirName, response.currentDirName);
     } else if (response.studyExists && !response.uploadedDirExists) {
-        // 3) study exists  - !udir exists : shouldn't happen, ask confirmation to overwrite study
-        askConfirmationForStudyExists(response.uploadedStudyTitle, response.uuid,
-                        response.uploadedDirName);
+        // 3) study exists  - !udir exists : can only happen if someone deleted/renamed the study's folder - ask confirmation to overwrite study
+        askConfirmationForStudyExistsDirNotExists(response.uploadedStudyTitle,
+                response.uuid, response.uploadedDirName, response.currentDirName)
     } else if (!response.studyExists && response.uploadedDirExists) {
         // 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
         askConfirmationForStudyNotExistsDirExists(response.uploadedStudyTitle,
@@ -95,7 +95,7 @@ function askConfirmationForStudyExists(uploadedStudyTitle, uuid, uploadedDirName
     $('#studysPropertiesConfirm').prop('checked', true);
     $('#studysDirConfirm').prop('checked', true);
     var preText = '<p>It seems a study "' + uploadedStudyTitle + '" (UUID ' + uuid
-        + ') and its study assets\' directory "' + uploadedDirName + '" already exist.</p>'
+        + ') and its study assets directory "' + uploadedDirName + '" already exist.</p>'
         + '<p>What do you want to do?</p>';
     $('#confirmModalStudyImport').find('.modalText').html(preText);
     $('#confirmModalStudyImport').on('click', '.checkbox', function() {
@@ -125,7 +125,7 @@ function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uuid,
     $('#studysDirConfirm').prop('checked', true);
     var preText = '<p>It seems a study "' + uploadedStudyTitle + '" (UUID ' + uuid
         + ') already exist.</p>'
-        + '<p>The imported study assets\' directory is "' + uploadedDirName
+        + '<p>The imported study assets directory is "' + uploadedDirName
         + '" - the current one is "' + currentDirName + '". Usually in this case the directory '
         + 'is renamed to the imported version but unfortunately this one already exists and belongs to another study. '
         + 'If you agree the <b>current directory name will be kept</b>.</p>'
@@ -151,8 +151,22 @@ function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uuid,
     });
 }
 
+function askConfirmationForStudyExistsDirNotExists(uploadedStudyTitle, uuid, uploadedDirName, currentDirName) {
+    var title = 'Study import';
+    var htmlText = `<p>It seems a study "${uploadedStudyTitle}" (UUID ${uuid}) already exist.</p>
+        <p>But strangely the currently the study doesn't seem to have a study assets directory associated with it. The directory's
+        name was "${currentDirName}" but it doesn't exist on the disk. Maybe someone changed its name or deleted it?</p>
+        <p>If you continue the uploaded study assets directory will be used instead of the non-existing current one.</p>
+        <p>Do you want to proceed?</p>`;
+    askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
+        var jsonData = JSON.stringify({ "keepProperties": false, "keepAssets" : false,
+         "renameAssets": true });
+        postStudyImportConfirm(jsonData);
+    });
+}
+
 function askConfirmationForStudyNotExistsDirExists(uploadedStudyTitle, uploadedDirName, newDirName) {
-    var title = 'Study import - but study assets\' directory already exists';
+    var title = 'Study import - but study assets directory already exists';
     var htmlText = '<p>You are about to import the study "' + uploadedStudyTitle + '" '
         + 'and its directory "' + uploadedDirName + '". '
         + 'Unfortunately a directory with this name already exists. '
