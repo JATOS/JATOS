@@ -11,6 +11,7 @@ externalDocs:
   url: https://www.jatos.org
 servers:
   - url: http://localhost:9000
+  - url: https://cortex.jatos.org
 paths:
   /jatos/api/v1/admin/status:
     get:
@@ -42,7 +43,7 @@ paths:
           description: Invalid token
   /jatos/api/v1/admin/logs/{filename}:
     get:
-      summary: Get a log file (application logs)
+      summary: Get a log file (application logs - not study logs)
       description: Works only with admin tokens
       tags:
         - admin
