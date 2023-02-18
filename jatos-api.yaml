@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: JATOS API
-  description: This is JATOS API specification using OpenAPI.
+  description: This is the JATOS API specification using OpenAPI.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -10,9 +10,6 @@ externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/JATOS/JATOS_API/0.1.2
   - url: http://localhost:9000
   - url: https://cortex.jatos.org
 paths:
