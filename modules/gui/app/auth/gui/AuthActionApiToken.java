@@ -1,6 +1,7 @@
 package auth.gui;
 
 import daos.common.ApiTokenDao;
+import general.common.Common;
 import general.common.RequestScope;
 import models.common.ApiToken;
 import models.common.User;
@@ -13,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Optional;
 
+import static play.mvc.Results.forbidden;
 import static play.mvc.Results.unauthorized;
 
 /**
@@ -41,6 +43,10 @@ public class AuthActionApiToken implements AuthAction.IAuth {
 
         if (!Helpers.isApiRequest(request)) {
             return AuthResult.of(false);
+        }
+
+        if (!Common.isJatosApiAllowed()) {
+            return AuthResult.of(forbidden("JATOS' current settings do not allow API usage"));
         }
 
         // Check token checksum

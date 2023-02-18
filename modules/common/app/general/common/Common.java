@@ -92,6 +92,7 @@ public class Common {
     private static boolean showResultDataSizeInStudyAdmin;
     private static boolean showResultFileSizeInStudyAdmin;
     private static boolean userRoleAllowSuperuser;
+    private static boolean jatosApiAllowed;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -162,6 +163,7 @@ public class Common {
         showResultDataSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultDataSize");
         showResultFileSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
+        jatosApiAllowed = config.getBoolean("jatos.api.allowed");
     }
 
     private String fillBasePath(Application application) {
@@ -590,5 +592,12 @@ public class Common {
      */
     public static boolean isUserRoleAllowSuperuser() {
         return userRoleAllowSuperuser;
+    }
+
+    /**
+     * If true, it is allowed to use JATOS' API
+     */
+    public static boolean isJatosApiAllowed() {
+        return jatosApiAllowed;
     }
 }
