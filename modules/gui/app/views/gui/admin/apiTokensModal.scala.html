@@ -50,7 +50,7 @@
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label class="control-label col-xs-3">Expires&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Select token expiry"></span></label>
+                    <label class="control-label col-xs-3">Expiration&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Select token expiration time."></span></label>
                     <div class="col-xs-9">
                         <div class="btn-group expires">
                             <button type="button" class="btn btn-default">30 days</button>
@@ -133,7 +133,7 @@ function generateApiTokenTable() {
                 if (err.responseText) {
                     showError(err.responseText, "#apiTokenModal .messages");
                 } else {
-                    showError("Cannot read groups data.", "#apiTokenModal .messages");
+                    showError("Cannot read token data.", "#apiTokenModal .messages");
                 }
             }
         },
