@@ -10,6 +10,9 @@ externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
 servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/JATOS/JATOS_API/0.1.2
   - url: http://localhost:9000
   - url: https://cortex.jatos.org
 paths:
