@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: JATOS API
-  description: This is JATOS API specification using OpenAPI.
+  description: This is the JATOS API specification using OpenAPI.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
