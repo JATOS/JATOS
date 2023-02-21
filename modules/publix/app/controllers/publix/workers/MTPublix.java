@@ -83,11 +83,11 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             throw new BadRequestPublixException("No preview available for study " + study.getId() + ".");
         }
 
-        // Check worker and create if doesn't exists
+        // Check worker and create if it doesn't exist
         if (mtWorkerId == null) {
             throw new BadRequestPublixException("MTurk's workerId is missing in the query parameters.");
         }
-        Optional<MTWorker> workerOptional = mtWorkerDao.findByMTWorkerId(mtWorkerId);
+        Optional<MTWorker> workerOptional = mtWorkerDao.findByMTWorkerId(mtWorkerId, requestsWorkerType);
         MTWorker worker;
         if (!workerOptional.isPresent()) {
             boolean isRequestFromMTurkSandbox = requestsWorkerType.equals(MTSandboxWorker.WORKER_TYPE);
@@ -96,12 +96,6 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
             worker = workerOptional.get();
         }
 
-        // Check if same worker type MT/MTSandbox (can only happen in non-legitimate cases)
-        if (!worker.getWorkerType().equals(requestsWorkerType)) {
-            throw new BadRequestPublixException("Wrong worker type: A worker with this MTurk workerId=" + mtWorkerId
-                    + " exists already in JATOS. But the existing worker is of type " + worker.getWorkerType()
-                    + " while your study link is for type " + studyLink.getWorkerType() + ".");
-        }
         studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         publixUtils.finishOldestStudyResult();

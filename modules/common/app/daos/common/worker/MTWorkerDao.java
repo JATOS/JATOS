@@ -25,8 +25,7 @@ public class MTWorkerDao extends WorkerDao {
     }
 
     /**
-     * Create MTWorker. Distinguishes between normal MechTurk and Sandbox
-     * MechTurk via mTurkSandbox parameter.
+     * Create MTWorker. Distinguishes between normal MTurk and Sandbox MTurk via mTurkSandbox parameter.
      */
     public MTWorker create(String mtWorkerId, boolean mTurkSandbox) {
         MTWorker worker;
@@ -40,12 +39,14 @@ public class MTWorkerDao extends WorkerDao {
     }
 
     /**
-     * Retrieves the worker with the given MTurk worker ID in a case insensitive way.
+     * Retrieves the worker with the given MTurk worker ID and worker type. The mtWorkerId is treated in a
+     * case-insensitive way. The only possible worker types are "MT" or "MTSandbox".
      */
-    public Optional<MTWorker> findByMTWorkerId(String mtWorkerId) {
-        String queryStr = "SELECT w FROM Worker w WHERE upper(w.mtWorkerId)=:mtWorkerId";
+    public Optional<MTWorker> findByMTWorkerId(String mtWorkerId, String workerType) {
+        String queryStr = "SELECT w FROM Worker w WHERE UPPER(w.mtWorkerId) = :mtWorkerId AND w.class != :workerType";
         List<Worker> workerList = jpa.em().createQuery(queryStr, Worker.class)
                 .setParameter("mtWorkerId", mtWorkerId.toUpperCase())
+                .setParameter("workerType", workerType)
                 .setMaxResults(1)
                 .getResultList();
         return !workerList.isEmpty() ? Optional.of((MTWorker) workerList.get(0)) : Optional.empty();
