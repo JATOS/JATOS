@@ -1,6 +1,7 @@
 package daos.common;
 
 import models.common.*;
+import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import play.db.jpa.JPAApi;
 
@@ -153,16 +154,26 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of StudyResults belonging to the given batch and given worker type.
+     * Returns the number of StudyResults belonging to the given batch and given worker type. If the worker type is 'MT'
+     * it additionally returns the number of 'MTSandbox' results.
      */
     public int countByBatchAndWorkerType(Batch batch, String workerType) {
-        String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch_id = :batchId "
-                + "AND sr.worker_id IN (SELECT id FROM Worker w WHERE w.workerType = :workerType)";
-        Query query = jpa.em().createNativeQuery(queryStr)
-                .setParameter("batchId", batch.getId())
-                .setParameter("workerType", workerType);
-        Number result = (Number) query.getSingleResult();
-        return result != null ? result.intValue() : 0;
+        if (workerType.equals(MTWorker.WORKER_TYPE)) {
+            String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch_id = :batchId "
+                    + "AND sr.worker_id IN (SELECT id FROM Worker w WHERE w.workerType LIKE 'MT%')";
+            Query query = jpa.em().createNativeQuery(queryStr)
+                    .setParameter("batchId", batch.getId());
+            Number result = (Number) query.getSingleResult();
+            return result != null ? result.intValue() : 0;
+        } else {
+            String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch_id = :batchId "
+                    + "AND sr.worker_id IN (SELECT id FROM Worker w WHERE w.workerType = :workerType)";
+            Query query = jpa.em().createNativeQuery(queryStr)
+                    .setParameter("batchId", batch.getId())
+                    .setParameter("workerType", workerType);
+            Number result = (Number) query.getSingleResult();
+            return result != null ? result.intValue() : 0;
+        }
     }
 
     public List<StudyResult> findAllByStudy(Study study) {
@@ -219,19 +230,29 @@ public class StudyResultDao extends AbstractDao {
     }
 
     /**
-     * Returns paginated StudyResults that belong to the given Batch and worker type.
+     * Returns paginated StudyResults that belong to the given Batch and worker type. If the worker type is 'MT' it
+     * additionally returns the MTSandbox results.
      *
      * We can't use ScrollableResults for pagination since the MySQL Hibernate driver doesn't support it
      * (https://stackoverflow.com/a/2826512/1278769)
      */
     public List<StudyResult> findAllByBatchAndWorkerType(Batch batch, String workerType, int first, int max) {
-        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
-                        + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)", StudyResult.class)
-                .setFirstResult(first)
-                .setMaxResults(max)
-                .setParameter("batch", batch)
-                .setParameter("workerType", workerType)
-                .getResultList();
+        if (workerType.equals(MTWorker.WORKER_TYPE)) {
+            return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
+                            + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class LIKE 'MT%')", StudyResult.class)
+                    .setFirstResult(first)
+                    .setMaxResults(max)
+                    .setParameter("batch", batch)
+                    .getResultList();
+        } else {
+            return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch "
+                            + "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)", StudyResult.class)
+                    .setFirstResult(first)
+                    .setMaxResults(max)
+                    .setParameter("batch", batch)
+                    .setParameter("workerType", workerType)
+                    .getResultList();
+        }
     }
 
     /**

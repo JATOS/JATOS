@@ -141,10 +141,6 @@ public class ResultStreamer {
                         try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                             writer.write("[");
                             fetchStudyResultsByBatchAndWorkerTypePaginated(writer, batch, workerType);
-                            // If worker type is MT then add MTSandbox on top
-                            if (MTWorker.WORKER_TYPE.equals(workerType)) {
-                                fetchStudyResultsByBatchAndWorkerTypePaginated(writer, batch, MTSandboxWorker.WORKER_TYPE);
-                            }
                             writer.write("]");
                             writer.flush();
                         } catch (Exception e) {

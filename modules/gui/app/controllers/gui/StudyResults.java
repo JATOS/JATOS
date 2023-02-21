@@ -208,7 +208,7 @@ public class StudyResults extends Controller {
         workerType = workerType != null ? workerService.extractWorkerType(workerType) : null;
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
-        return ok().chunked(source).as("application/json");
+        return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
     /**
