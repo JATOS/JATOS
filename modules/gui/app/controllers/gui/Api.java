@@ -54,9 +54,6 @@ import static models.common.User.Role.ADMIN;
  * JATOS API Controller: all requests possible via JATOS' API
  *
  * @author Kristian Lange
- *
- * todo API quotas / on-off
- * todo SignInOidc todos
  */
 @SuppressWarnings("deprecation")
 @Singleton
@@ -299,7 +296,7 @@ public class Api extends Controller {
     }
 
     /**
-     * Returns the study's JATOS archive (.jzip)
+     * Returns a JATOS study archive (.jzip)
      *
      * @param id Study's ID or UUID
      */
@@ -310,7 +307,7 @@ public class Api extends Controller {
     }
 
     /**
-     * Imports a Study JATOS archive (.jzip).
+     * Imports a JATOS study archive (.jzip).
      *
      * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
      *                              Default is `false` (properties are overwritten by default). If the study doesn't

@@ -47,7 +47,7 @@ import java.util.Optional;
  * OpenID Connect (OIDC) authentication using Authorization Code Flow with Proof Key for Code Exchange (PKCE). OIDC is
  * just used for authentication - authorization and session management are still done with the session cookies from the
  * Play Framework.
- *
+ * <p>
  * Using library: Nimbus OAuth 2.0 SDK with OpenID Connect extensions
  * https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/guides/java-cookbook-for-openid-connect-public-clients
  *
@@ -80,13 +80,6 @@ public class SignInOidc extends Controller {
         this.userService = userService;
     }
 
-    // todo make Google and OIDC users only addable by user manager (and not by the user via login page)
-    // todo make LDAP users addable by login page (and not only by user manager)
-    // todo allow user self register
-    // todo wording login to sign in and register
-    // todo check with Google
-    // todo test user manager, user page, login, popup-login, logout
-    // todo API via OIDC
     @GuiAccessLogging
     @Transactional
     public Result signIn(Http.Request request) throws URISyntaxException, IOException, ParseException, AuthException {
