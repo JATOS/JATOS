@@ -247,15 +247,15 @@ function showDeleteUserModal(user) {
 
     $('#deleteUserModal .modal-title').text(`Delete ${user.username} (${user.name})`);
     $('#deleteUserModal .confirmationText').html(generateDeleteUserConfirmationHtml(user));
-    @if(loggedInUser.isOauthGoogle()) {
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
-    } if (loggedInUser.isOidc()) {
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
+    if (@loggedInUser.isOauthGoogle()) {
+        $('#deleteUserModal .username').val('');
+        $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
+    } else if (@loggedInUser.isOidc()) {
+        $('#deleteUserModal .username').val('');
+        $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
     } else {
-    $('#deleteUserModal .password').val('');
-    $('#deleteUserModal .passwordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
+        $('#deleteUserModal .password').val('');
+        $('#deleteUserModal .passwordLabel').text("Confirm with your (@loggedInUser.getUsername()) password");
     }
 
     $('#deleteUserModal .password').val('');
@@ -268,18 +268,18 @@ function showDeleteYourselfModal(user) {
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete yourself");
 
-    @if(loggedInUser.isOauthGoogle()) {
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .username').parents('.form-group').show();
-    } else if (loggedInUser.isOidc()) {
-    $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
-    $('#deleteUserModal .username').val('');
-    $('#deleteUserModal .username').parents('.form-group').show();
+    if (@loggedInUser.isOauthGoogle()) {
+        $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
+        $('#deleteUserModal .username').val('');
+        $('#deleteUserModal .username').parents('.form-group').show();
+    } else if (@loggedInUser.isOidc()) {
+        $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
+        $('#deleteUserModal .username').val('');
+        $('#deleteUserModal .username').parents('.form-group').show();
     } else {
-    $('#deleteUserModal .passwordLabel').text(`Confirm with your (${user.username}) password`);
-    $('#deleteUserModal .password').val('');
-    $('#deleteUserModal .password').parents('.form-group').show();
+        $('#deleteUserModal .passwordLabel').text(`Confirm with your (${user.username}) password`);
+        $('#deleteUserModal .password').val('');
+        $('#deleteUserModal .password').parents('.form-group').show();
     }
 
     $('#deleteUserModal .confirmationText').html(generateDeleteYourselfConfirmationHtml());
