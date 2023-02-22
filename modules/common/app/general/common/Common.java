@@ -47,7 +47,7 @@ public class Common {
     private static final String PROPERTY_JATOS_RESULT_UPLOADS_PATH = "jatos.resultUploads.path";
 
     private static String jatosVersion;
-    private static final String jatosApiVersion = "0.0.2";
+    private static final String jatosApiVersion = "1.0.0";
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
