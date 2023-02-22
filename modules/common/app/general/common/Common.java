@@ -486,7 +486,8 @@ public class Common {
     }
 
     public static boolean isOidcAllowed() {
-        return !Strings.isNullOrEmpty(oidcClientId);
+        // OIDC will be allowed in a later release
+        return false; // !Strings.isNullOrEmpty(oidcClientId);
     }
 
     /**
