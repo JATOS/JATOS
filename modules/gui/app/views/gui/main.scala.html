@@ -18,6 +18,7 @@
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/qr-creator.min.js")"></script>
+<script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/timeago.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")" type="module"></script>
 @if(loggedInUser.isOauthGoogle()) {
 <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async defer></script>
@@ -487,6 +488,14 @@ $(document).on('show.bs.modal', '.modal', function() {
 
 function getDateTimeYYYYMMDDHHmmss() {
     return new Date().toISOString().replaceAll(/\.\d{3}Z/g, "").replaceAll(/[:\-T\.]/g, "");
+}
+
+function getFormattedDate(timestamp) {
+    // From https://stackoverflow.com/a/67705873/1278769
+    // Uses format YYYY/MM/DD HH:mm:ss
+    const pad = (n,s=2) => (`${new Array(s).fill(0)}${n}`).slice(-s);
+    const d = new Date(timestamp);
+    return `${pad(d.getFullYear(),4)}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function copyToClipboard(textToCopy) {

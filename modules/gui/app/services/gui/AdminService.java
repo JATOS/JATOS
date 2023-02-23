@@ -146,7 +146,7 @@ public class AdminService {
                 .limit(limit)
                 .map(e -> ImmutableMap.of(
                         "username", e.getKey(),
-                        "time", Helpers.formatDate(Date.from(e.getValue()))))
+                        "time", e.getValue().toString()))
                 .collect(Collectors.toList());
         return lastSeenMapOrdered;
     }
@@ -155,11 +155,10 @@ public class AdminService {
         return studyResultDao.findLastSeen(limit).stream()
                 .map(srs -> ImmutableMap.of(
                         "studyTitle", srs.getStudy().getTitle(),
-                        "time", Helpers.formatDate(srs.getLastSeenDate()),
+                        "time", srs.getLastSeenDate(),
                         "members",
                         srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
                 .collect(Collectors.toList());
-
     }
 
     public JsonNode getAdminStatus() {
@@ -171,7 +170,7 @@ public class AdminService {
         statusMap.put("workerCount", workerDao.count());
         statusMap.put("workerCountTotal", workerDao.countTotal());
         statusMap.put("userCount", userDao.count());
-        statusMap.put("serverTime", Helpers.formatDate(new Date()));
+        statusMap.put("serverTime", System.currentTimeMillis());
         statusMap.put("latestUsers", getLatestUsers(10));
         statusMap.put("latestStudyRuns", getLatestStudyRuns(10));
         return JsonUtils.asJsonNode(statusMap);

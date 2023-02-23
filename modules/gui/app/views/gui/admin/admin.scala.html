@@ -472,7 +472,7 @@ function getJatosStatus() {
             $("#jatosStatus div:nth-child(3) .total").text(status.workerCountTotal);
             $("#jatosStatus div:nth-child(4) .value").text(status.userCount);
             $("#jatosStatus").show();
-            $("#adminToolbar .serverTime").text(status.serverTime);
+            $("#adminToolbar .serverTime").text(getFormattedDate(status.serverTime));
             $("#latestUsers .table > tbody:last-child").append(fillLatestUsers(status.latestUsers));
             $("#latestStudyRuns .table > tbody:last-child").append(fillLatestStudyRuns(status.latestStudyRuns));
             $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
@@ -491,7 +491,7 @@ function fillLatestUsers(latestUsers) {
     var htmlArray = [];
     latestUsers.forEach(function(e) {
         htmlArray.push("<tr>");
-        htmlArray.push("<td>" + e.time + "</td>");
+        htmlArray.push(`<td data-toggle="tooltip" title="${getFormattedDate(e.time)}">${timeago.format(e.time)}</td>`);
         htmlArray.push("<td>" + e.username + "</td>");
         htmlArray.push("</tr>");
     });
@@ -517,7 +517,7 @@ function fillLatestStudyRuns(latestStudyRuns) {
                     + 'data-content="' + studyRun.members.join("<br>") + '">show all</button>';
         }
         htmlArray.push("<tr>");
-        htmlArray.push("<td>" + studyRun.time + "</td>");
+        htmlArray.push(`<td><span data-toggle="tooltip" title="${getFormattedDate(studyRun.time)}">${timeago.format(studyRun.time)}</span></td>`);
         htmlArray.push("<td>" + trimmedStudyTitle + "</td>");
         htmlArray.push("<td>" + memberList + "</td>");
         htmlArray.push("</tr>");
