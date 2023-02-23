@@ -1,14 +1,11 @@
 package models.common;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
@@ -46,7 +43,6 @@ public class ApiToken {
     /**
      * Timestamp of the creation date
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp creationDate;
 
     /**
@@ -54,13 +50,10 @@ public class ApiToken {
      */
     private Integer expires;
 
-    @JsonProperty("expires")
-    public String getJsonExpires() {
-        if (expires == null || expires <= 0) return "never";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
-                .withZone(ZoneId.systemDefault());
-        Instant expirationDate = creationDate.toInstant().plusSeconds(expires);
-        return formatter.format(expirationDate);
+    @JsonProperty("expirationDate")
+    public Timestamp getExpirationDate() {
+        if (expires == null || expires <= 0) return Timestamp.from(Instant.EPOCH);
+        return Timestamp.from(creationDate.toInstant().plusSeconds(expires));
     }
 
     @JsonProperty("isExpired")

@@ -20,7 +20,7 @@
                         <th>ID <span class="glyphicon sortLogo gray-light"></span></th>
                         <th>Name <span class="glyphicon sortLogo gray-light"></span></th>
                         <th>Creation Date <span class="glyphicon sortLogo gray-light"></span></th>
-                        <th>Expires <span class="glyphicon sortLogo gray-light"></span></th>
+                        <th>Expiration <span class="glyphicon sortLogo gray-light"></span></th>
                         <th></th>
                     </tr>
                     </thead>
@@ -179,11 +179,14 @@ function generateApiTokenTable() {
             },
             {
                 "data": "creationDate",
+                "render": getFormattedDate
             },
             {
                 "data": null,
                 "render": function (data, type, full, meta) {
-                    return data.isExpired ? `${data.expires} <b>(expired)</b>` : data.expires;
+                    if (data.expiration <= 0) return "never";
+                    const expirationDate = getFormattedDate(data.expirationDate);
+                    return data.isExpired ? `${expirationDate} <b>(expired)</b>` : expirationDate;
                 }
             },
             {
