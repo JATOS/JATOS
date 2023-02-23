@@ -70,8 +70,8 @@ paths:
     post:
       summary: Import a study
       description: >-
-        Import a study in the [JATOS study archive](https://www.jatos.org/JATOS-Study-Archive.html) file format (*.jzip* suffix). You can
-        set several flags in the query parameters to specify how eventual
+        Import a study in the JATOS study archive file format (*.jzip* suffix).
+        You can set several flags in the query parameters to specify how eventual
         existing studies with the same UUID should be handled (e.g keep or
         overwrite their properties and/or assets).
       tags:
@@ -144,8 +144,7 @@ paths:
       summary: Export a study
       description: >-
         Export a study by specifying its ID or UUID. The exported study will be in the
-        [JATOS study archive](https://www.jatos.org/JATOS-Study-Archive.html) file format
-        with a *.jzip* suffix.
+        JATOS study archive file format with a *.jzip* suffix.
       tags:
         - study
       parameters:
@@ -433,11 +432,10 @@ paths:
         component result IDs. You can use either **query parameters** or **JSON
         posted in the body**. Posting JSON is more flexible since it allows you
         to use single IDs, list of IDs, ranges, or a combination of all three.
-        In any case if one of the specified results does not exist or you have
-        no permission to access it the results is just left out. The results
-        will be packed in an 
-        [JATOS Results archive](https://www.jatos.org/JATOS-Results-Archive.html)
-        with an *.jrzip* suffix.
+        If one of the specified results does not exist or you have no permission
+        to access it this result will simply be left out and no error will be
+        raised. The results will be packed in an JATOS results archive with an
+        *.jrzip* suffix.
       tags:
         - results
       parameters:
@@ -470,9 +468,9 @@ paths:
         component result IDs. You can use either **query parameters** or **JSON
         posted in the body**. Posting JSON is more flexible since it allows you
         to use single IDs, list of IDs, ranges, or a combination of all three.
-        In any case if one of the specified results does not exist or you have
-        no permission to access it the results is just left out. The metadata
-        will be returned in JSON format.
+        If one of the specified results does not exist or you have no permission
+        to access it this result will simply be left out and no error will be
+        raised. The metadata will be returned in JSON format.
       tags:
         - results
       parameters:
@@ -505,9 +503,10 @@ paths:
         component result IDs. You can use either **query parameters** or **JSON
         posted in the body**. Posting JSON is more flexible since it allows you
         to use single IDs, list of IDs, ranges, or a combination of all three.
-        In any case if one of the specified results does not exist or you have
-        no permission to access it the results is just left out. The results
-        will be packed in an ZIP archive with an *.jrzip* suffix.
+        If one of the specified results does not exist or you have no permission
+        to access it this result will simply be left out and no error will be
+        raised. The results will be packed in an ZIP archive with an *.jrzip*
+        suffix.
       tags:
         - results
       parameters:
@@ -543,9 +542,10 @@ paths:
         component result IDs. You can use either **query parameters** or **JSON
         posted in the body**. Posting JSON is more flexible since it allows you
         to use single IDs, list of IDs, ranges, or a combination of all three.
-        In any case if one of the specified results does not exist or you have
-        no permission to access it the results is just left out. The results
-        will be packed in an ZIP archive with an *.jrzip* suffix.
+        If one of the specified results does not exist or you have no permission
+        to access it this result will simply be left out and no error will be
+        raised. The results will be packed in an ZIP archive with an *.jrzip*
+        suffix.
       tags:
         - results
       parameters:
@@ -607,11 +607,11 @@ paths:
         group IDs, study result IDs, and component result IDs. You can  use
         either **query parameters** or **JSON posted in the body**. Posting JSON
         is more flexible since it allows you to use single IDs, list of IDs,
-        ranges, or a combination of all three. In any case if one of the
-        specified results does not exist or you have no permission to access it
-        the results is just left out. Empty study results will be deleted too.
-        **Only results will be deleted, studies, components, batches, and groups
-        remain untouched**. **This cannot be undone**.
+        ranges, or a combination of all three. If one of the specified results
+        does not exist or you have no permission to access it this result will
+        simply be left out and no error will be raised. Empty study results will
+        be deleted too. **Only results will be deleted, studies, components,
+        batches, and groups remain untouched**. **This cannot be undone**.
       tags:
         - danger zone
       parameters:
@@ -712,6 +712,7 @@ components:
   requestBodies:
     ResultIdsJsonBody:
       content:
+        text/plain: {}
         application/json:
           schema:
             type: object
@@ -771,9 +772,6 @@ components:
                   - type: integer
                   - type: string
           examples:
-            empty:
-              summary: empty
-              value: {}
             studyIds:
               summary: Study ID
               value:
