@@ -11,6 +11,7 @@ import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Study;
 import models.common.User;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -87,8 +88,8 @@ public class ImportExport extends Controller {
             responseJson = importExportService.importStudy(loggedInUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
-            LOGGER.info(".importStudy: Import of study failed - " + e.getCause().getMessage());
-            return badRequest("Import of study failed: " + e.getMessage());
+            LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
+            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
         }
 
         try {
@@ -126,8 +127,8 @@ public class ImportExport extends Controller {
             responseJson = importExportService.importStudy(loggedInUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
-            LOGGER.info(".importStudy: Import of study failed - " + e.getCause().getMessage());
-            return badRequest("Import of study failed: " + e.getMessage());
+            LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
+            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
         }
         return ok(responseJson);
     }
