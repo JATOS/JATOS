@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static auth.gui.AuthAction.Auth;
+import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static models.common.User.Role.ADMIN;
 
@@ -56,6 +57,7 @@ import static models.common.User.Role.ADMIN;
  * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
+@ApiAccessLogging
 @Singleton
 public class Api extends Controller {
 
