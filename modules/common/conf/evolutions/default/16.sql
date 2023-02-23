@@ -1,4 +1,4 @@
-# --- Add dataShort and dataSize to ComponentResult table; Add indices to uuid of StudyResult and Batch
+# --- Add dataShort and dataSize to ComponentResult table; Add indices to uuid of StudyResult, Batch and Component
 
 # --- !Ups
 ALTER TABLE `ComponentResult` ADD `dataShort` varchar(1023) DEFAULT NULL;
