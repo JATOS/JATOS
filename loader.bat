@@ -98,15 +98,14 @@ rem ### Functions ###
 
   call :process_args %SCRIPT_CONF_ARGS% %%*
 
-  set _JAVA_OPTS=!_JAVA_OPTS! !_JAVA_PARAMS!
+  set _JAVA_OPTS=--illegal-access=permit --add-opens java.base/java.lang=ALL-UNNAMED !_JAVA_OPTS! !_JAVA_PARAMS!
 
   set "APP_MAIN_CLASS=play.core.server.ProdServerStart"
 
   set CMD="%_JAVACMD%" !_JAVA_OPTS! !JATOS_OPTS! -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS% !_APP_ARGS!
   cd %JATOS_HOME%
-  start /b call %CMD% >>"%JATOS_HOME%\logs\loader.log" 2>&1
-  
-  echo To use JATOS type %address%:%port% in your browser's address bar
+  %CMD% 2>&1
+
   goto:eof
 
 :stop
