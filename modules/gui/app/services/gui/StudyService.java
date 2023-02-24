@@ -393,7 +393,7 @@ public class StudyService {
     }
 
     public Study getStudyFromIdOrUuid(String id) throws NotFoundException, ForbiddenException {
-        Optional<Long> studyId = Helpers.parseLong(id);
+        Optional<Long> studyId = Helpers.parseLong(id.trim());
         User loggedInUser = authenticationService.getLoggedInUser();
         Study study;
         if (studyId.isPresent()) {
