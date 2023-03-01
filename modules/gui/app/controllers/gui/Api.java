@@ -357,14 +357,17 @@ public class Api extends Controller {
     /**
      * Returns results (including metadata, data, and files) in a zip file. The results are specified by IDs (can be
      * nearly any kind) in the request's body or as query parameters. Streaming is used to reduce memory and disk usage.
+     *
+     * @param isApiCall If true the response JSON gets an additional 'apiVersion' field
      */
     @Transactional
     @Auth
-    public Result exportResults(Http.Request request, Boolean wrap) throws BadRequestException {
-        Map<String, Object> wrapperObject = wrap
+    public Result exportResults(Http.Request request, Boolean isApiCall) throws BadRequestException {
+        Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
                 : Collections.emptyMap();
-        Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.COMBINED, wrapperObject);
+        Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.COMBINED,
+                wrapperObject);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
                 + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
         return ok().chunked(dataSource).as("application/zip")
@@ -375,13 +378,13 @@ public class Api extends Controller {
      * Returns all result's metadata (but not result files and not metadata) in a zip file. The results are specified by
      * IDs (can be any kind) in the request's body or query parameters. Streaming is used to reduce memory and disk usage.
      *
-     * @param wrap Indicates if the response JSON should be wrapped in an 'API' object
+     * @param isApiCall If true the response JSON gets an additional 'apiVersion' field
      */
     @Transactional
     @Auth
-    public Result exportResultMetadata(Http.Request request, Boolean wrap)
+    public Result exportResultMetadata(Http.Request request, Boolean isApiCall)
             throws ForbiddenException, BadRequestException, NotFoundException, IOException {
-        Map<String, Object> wrapperObject = wrap
+        Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
                 : Collections.emptyMap();
         File file = resultStreamer.writeResultMetadata(request, wrapperObject);
@@ -401,11 +404,11 @@ public class Api extends Controller {
      * query parameters. Both options use streaming to reduce memory and disk usage.
      *
      * @param asPlainText If true the results will be returned in one single text file, each result in a new line.
-     * @param wrap        Indicates if the response JSON should be wrapped in an 'API' object
+     * @param isApiCall   If true the response JSON gets an additional 'apiVersion' field
      */
     @Transactional
     @Auth
-    public Result exportResultData(Http.Request request, boolean asPlainText, boolean wrap)
+    public Result exportResultData(Http.Request request, boolean asPlainText, boolean isApiCall)
             throws ForbiddenException, BadRequestException, NotFoundException {
         if (asPlainText) {
             Source<ByteString, ?> dataSource = resultStreamer.streamComponentResultData(request);
@@ -414,13 +417,13 @@ public class Api extends Controller {
             return ok().chunked(dataSource).as("application/octet-stream")
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         } else {
-            Map<String, Object> wrapperObject = wrap
+            Map<String, Object> wrapperObject = isApiCall
                     ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
                     : Collections.emptyMap();
             Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.DATA_ONLY,
                     wrapperObject);
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
-                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
+                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
             return ok().chunked(dataSource).as("application/zip")
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         }
@@ -437,7 +440,7 @@ public class Api extends Controller {
             throws IOException, ForbiddenException, BadRequestException, NotFoundException {
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
         return ok().chunked(dataSource).as("application/zip")
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
