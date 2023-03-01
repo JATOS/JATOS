@@ -22,12 +22,12 @@ POST     /jatos/api/v1/studies/:id/assets/*filepath                         @con
 DELETE   /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.deleteStudyAssetsFile(id, filepath)
 
 # API results
-GET      /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, wrap: Boolean ?= true)
-POST     /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, wrap: Boolean ?= true)
-GET      /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, wrap: Boolean ?= true)
-POST     /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, wrap: Boolean ?= true)
-GET      /jatos/api/v1/results/data                                         @controllers.gui.Api.exportResultData(request: Request, asPlainText: Boolean ?= false, wrap: Boolean ?= true)
-POST     /jatos/api/v1/results/data                                         @controllers.gui.Api.exportResultData(request: Request, asPlainText: Boolean ?= false, wrap: Boolean ?= true)
+GET      /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, isApiCall: Boolean ?= true)
+GET      /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, isApiCall: Boolean ?= true)
+GET      /jatos/api/v1/results/data                                         @controllers.gui.Api.exportResultData(request: Request, asPlainText: Boolean ?= false, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results/data                                         @controllers.gui.Api.exportResultData(request: Request, asPlainText: Boolean ?= false, isApiCall: Boolean ?= true)
 GET      /jatos/api/v1/results/files                                        @controllers.gui.Api.exportResultFiles(request: Request)
 POST     /jatos/api/v1/results/files                                        @controllers.gui.Api.exportResultFiles(request: Request)
 GET      /jatos/api/v1/results/files/:filename                              @controllers.gui.Api.exportSingleResultFile(componentResultId: Long, filename)
