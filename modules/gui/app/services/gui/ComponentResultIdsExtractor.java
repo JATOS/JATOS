@@ -99,7 +99,7 @@ public class ComponentResultIdsExtractor {
                     break;
                 }
                 default:
-                    throw new BadRequestException("Unknown field " + field);
+                    // ignore unknown query parameters
             }
         }
         return new ArrayList<>(componentResultIds);
