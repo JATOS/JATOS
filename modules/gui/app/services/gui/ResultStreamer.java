@@ -439,15 +439,13 @@ public class ResultStreamer {
         if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
             metadataFile = Files.createTempFile("metadata", "json");
             jGenerator = Json.mapper().getFactory().createGenerator(metadataFile.toFile(), JsonEncoding.UTF8);
-            if (wrapObject.isEmpty()) {
-                jGenerator.writeStartArray();
-            } else {
-                jGenerator.writeStartObject();
+            jGenerator.writeStartObject();
+            if (!wrapObject.isEmpty()) {
                 for (Map.Entry<String, Object> e : wrapObject.entrySet()) {
                     jGenerator.writeObjectField(e.getKey(), e.getValue());
                 }
-                jGenerator.writeArrayFieldStart("data");
             }
+            jGenerator.writeArrayFieldStart("data");
         } else {
             jGenerator = null;
         }
