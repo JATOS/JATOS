@@ -265,11 +265,11 @@ $(document).ready(function() {
                     "className": "btn btn-study",
                     "buttons": [
                         {
-                            "text": '<button class="btn btn-study" data-toggle="tooltip" title="A JATOS Results Archive (.jrzip) contains everything from results (metadata, data and files), all packed in a ZIP archive">JATOS Results Archive <span class="glyphicon glyphicon-info-sign"></span></button>',
+                            "text": '<button class="btn btn-study" data-toggle="tooltip" title="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive.">JATOS Results Archive <span class="glyphicon glyphicon-info-sign"></span></button>',
                             "action": exportSelectedResults
                         },
                         {
-                            "text": '<button class="btn btn-study" data-toggle="tooltip" title="Exports metadata only from results, as JSON or CSV">Metadata only <span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span class="pull-right"><span class="caret"></span></span></button>',
+                            "text": '<button class="btn btn-study" data-toggle="tooltip" title="Exports only the metadata of the results. Choose between JSON and CSV format.">Metadata only <span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span class="pull-right"><span class="caret"></span></span></button>',
                             "extend": 'collection',
                             "buttons": [
                                 {
@@ -579,7 +579,7 @@ $(document).ready(function() {
         }
         var title = "Confirm Delete";
         hideWaitingModal();
-        askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
+        askConfirmation(title, htmlText, 'Delete', 'btn-danger', function() {
             showWaitingModal();
             $.ajax({
                 url : '@controllers.gui.routes.StudyResults.remove()',
