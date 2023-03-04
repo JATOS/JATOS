@@ -281,4 +281,11 @@ public class Helpers {
         }
     }
 
+    /**
+     * Gets the number of bytes in UTF-8 the given string has
+     */
+    public static int getStringSize(String str) {
+        return !Strings.isNullOrEmpty(str) ? str.getBytes(StandardCharsets.UTF_8).length : 0;
+    }
+
 }

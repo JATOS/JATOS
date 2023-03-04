@@ -30,7 +30,6 @@ import utils.common.JsonUtils;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -161,18 +160,20 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         String postedResultData = request.body().asText();
         if (postedResultData == null) return badRequest("Result data empty");
 
-        if (append) {
-            componentResultDao.appendData(componentResult.get().getId(), postedResultData);
-        } else {
-            componentResultDao.replaceData(componentResult.get().getId(), postedResultData);
-        }
-
-        if (componentResult.get().getDataSize() + postedResultData.getBytes(StandardCharsets.UTF_8).length
-                > Common.getResultDataMaxSize()) {
+        int newDataSize = append
+                ? componentResult.get().getDataSize() + Helpers.getStringSize(postedResultData)
+                : Helpers.getStringSize(postedResultData);
+        if (newDataSize > Common.getResultDataMaxSize()) {
             String maxSize = Helpers.humanReadableByteCount(Common.getResultDataMaxSize());
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
                     + "componentId " + component.getId() + " - " + "Result data size exceeds allowed " + maxSize);
             return badRequest("Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
+        }
+
+        if (append) {
+            componentResultDao.appendData(componentResult.get().getId(), postedResultData);
+        } else {
+            componentResultDao.replaceData(componentResult.get().getId(), postedResultData);
         }
 
         studyLogger.logResultDataStoring(componentResult.get(), postedResultData, append);
