@@ -25,6 +25,20 @@
 var requests = [];
 var running = false;
 
+/**
+ * Message listener. Accepts the request object that will be sent to the JATOS server.
+ *
+ * @param {object} request - Request object
+ * @param {string} request.url - URL to be called
+ * @param {string} request.method - POST, GET or PUT
+ * @param {string optional} request.blob - Blob to be sent
+ * @param {string optional} request.data - Data to be sent
+ * @param {string optional} request.contentType - Content type of the data to be sent
+ * @param {string optional} request.filename - Filename on the JATOS server side of the file to be uploaded
+ * @param {string optional} request.timeout - How long to wait in ms until the request is regarded as fail
+ * @param {string optional} request.retry - How often to retry after a failed request
+ * @param {string optional} request.retryWait - How long to wait in ms until retry after a failed request
+ */
 onmessage = function (request) {
 	if (!request.data) {
 		console.error("Empty request.data");
@@ -49,8 +63,7 @@ function run() {
 	xhr.open(request.method, request.url);
 	if (request.contentType) xhr.setRequestHeader("Content-Type", request.contentType);
 	if (request.timeout) xhr.timeout = request.timeout;
-	// X-Requested-With header needed to detect Ajax in backend
-	xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+	xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest"); // X-Requested-With header needed to detect Ajax in backend
 
 	xhr.onload = function () {
 		if (xhr.status == 200) {
@@ -58,16 +71,21 @@ function run() {
 				status: xhr.status,
 				requestId: request.id
 			});
-			run();
+			run(); // Run the next request in line
 		} else {
-			handleError(false);
+			handleErrorAndRetry(false);
+			setTimeout(run, request.retryWait); // Run the next request after waiting a bit
 		}
 	};
-	xhr.ontimeout = function () { handleError(true) };
-	xhr.onerror = function () { handleError(false) };
+	xhr.ontimeout = function () { handleErrorAndRetry(true) };
+	xhr.onerror = function () { handleErrorAndRetry(false) };
 
-	function handleError(timeout) {
-		if ("retry" in request === false || request.retry <= 0) {
+    // Embedded function (can access objects request and xhr)
+	function handleErrorAndRetry(timeout) {
+	    // Do not retry if 1) a BadRequest or 2) retry is not wanted or 3) all retry attempts were already used
+		if ((xhr.status && xhr.status == 400)
+		        || "retry" in request === false
+		        || request.retry <= 0) {
 			var msg = {
 				requestId: request.id,
 				url: request.url,
@@ -84,9 +102,8 @@ function run() {
 		} else {
 			console.log("Retry " + request.method + " to " + request.url);
 			request.retry = request.retry - 1;
-			requests.unshift(request);
+			requests.unshift(request); // Retry this request before other requests
 		}
-		setTimeout(run, request.retryWait);
 	}
 
 	// Actual sending of data
