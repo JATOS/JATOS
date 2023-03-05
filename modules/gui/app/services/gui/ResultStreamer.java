@@ -482,7 +482,7 @@ public class ResultStreamer {
         }
 
         if (resultsType == ResultType.COMBINED) {
-            ZipUtil.addFileToZip(zipOut, Paths.get("/"), Paths.get("metadata.json"), metadataFile);
+            ZipUtil.addFileToZip(zipOut, Paths.get(""), Paths.get("metadata.json"), metadataFile);
             Files.delete(metadataFile);
         }
         return resultsType == ResultType.METADATA_ONLY ? metadataFile.toFile(): null;
@@ -554,7 +554,7 @@ public class ResultStreamer {
     private void addFilesToZip(ZipOutputStream zipOut, Long studyResultId, Long componentResultId) throws IOException {
         Path pathInFileSystem = Paths.get(IOUtils.getResultUploadsDir(studyResultId, componentResultId));
         if (Files.exists(pathInFileSystem)) {
-            Path pathInZip = Paths.get("/", IOUtils.getResultsPathForZip(studyResultId, componentResultId), "files");
+            Path pathInZip = Paths.get(IOUtils.getResultsPathForZip(studyResultId, componentResultId), "files");
             ZipUtil.addToZip(zipOut, pathInZip, pathInFileSystem);
         }
     }

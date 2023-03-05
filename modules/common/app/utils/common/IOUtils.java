@@ -448,7 +448,7 @@ public class IOUtils {
      * Path to result files in zip package with '/' as file separator
      */
     public static String getResultsPathForZip(Long studyResultId, Long componentResultId) {
-        return "/study_result_" + studyResultId + "/comp-result_" + componentResultId;
+        return "study_result_" + studyResultId + "/comp-result_" + componentResultId;
     }
 
     /**
