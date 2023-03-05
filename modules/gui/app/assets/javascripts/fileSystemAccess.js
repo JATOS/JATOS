@@ -28,16 +28,6 @@ window.downloadFileStream = async function (url, postData, rawFileName) {
     try {
         showWaitingModal(true);
 
-        // Trying to get the file handle before requesting the file. If the time between 'click' and getting the file
-        // handle is too long one gets a "Failed to execute 'showSaveFilePicker' on 'Window': Must be handling a user
-        // gesture to show a file picker.".
-        let handle;
-        if (supported) {
-            handle = (await window.showSaveFilePicker({
-                suggestedName: fileName
-            }));
-        }
-
         downloadFileAbortController = new AbortController();
         var init;
         if (postData) {
@@ -60,6 +50,40 @@ window.downloadFileStream = async function (url, postData, rawFileName) {
 
         const fileName = rawFileName ? generateFilename(rawFileName) : getFilenameFromContentDispositionHeader(response);
         if (!fileName) throw `Downloading ${url} - no file name specified`;
+        const fileExtension = fileName.split('.').pop();
+
+        let handle;
+        if (supported) {
+            handle = (await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [
+                    {
+                        description: `ZIP archive file`,
+                        accept: {'application/zip': ['.zip']},
+                    },
+                    {
+                        description: `JATOS study archive (JZIP) file`,
+                        accept: {'application/zip': ['.jzip']},
+                    },
+                    {
+                        description: `JATOS study results archive (JRZIP) file`,
+                        accept: {'application/zip': ['.jrzip']},
+                    },
+                    {
+                        description: `JSON file`,
+                        accept: {'application/json': ['.json']},
+                    },
+                    {
+                        description: `CSV file`,
+                        accept: {'text/csv': ['.csv']},
+                    },
+                    {
+                        description: `Log file`,
+                        accept: {'text/plain': ['.log']},
+                    }
+                ]
+            }));
+        }
 
         await fileSave(
             response,
