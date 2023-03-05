@@ -38,7 +38,7 @@ var studyLogPretty;
 $('#studyToolbar').on('click', '#showStudyLog', function() {
     $.ajax({
         type: 'GET',
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/log?studyId=@study.getId()&entryLimit=100&download=false',
+        url: "@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/log?entryLimit=100&download=false",
         success: showStudyLogModal,
         error: function(response) {
             showError("Couldn't get study log.");
