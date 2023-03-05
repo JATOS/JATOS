@@ -66,7 +66,7 @@ window.downloadFileStream = async function (url, postData, rawFileName) {
                         accept: {'application/zip': ['.jzip']},
                     },
                     {
-                        description: `JATOS study results archive (JRZIP) file`,
+                        description: `JATOS results archive (JRZIP) file`,
                         accept: {'application/zip': ['.jrzip']},
                     },
                     {
