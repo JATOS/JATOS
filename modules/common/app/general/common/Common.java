@@ -58,11 +58,10 @@ public class Common {
     private static long resultUploadsLimitPerStudyRun;
     private static long resultDataMaxSize;
     private static int maxResultsDbQuerySize;
-    private static boolean inMemoryDb;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
-    private static String dbDefaultUrl;
-    private static String dbDefaultDriver;
+    private static String dbUrl;
+    private static String dbDriver;
     private static String jpaDefault;
     private static String mac;
     private static int userPasswordLength;
@@ -121,12 +120,11 @@ public class Common {
         resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
         resultDataMaxSize = config.getBytes("jatos.resultData.maxSize");
         maxResultsDbQuerySize = config.getInt("jatos.maxResultsDbQuerySize");
-        inMemoryDb = config.getString("db.default.url").contains("jdbc:h2:mem:");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
-        dbDefaultUrl = config.getString("db.default.url");
-        dbDefaultDriver = config.getString("db.default.driver");
         jpaDefault = config.getString("jpa.default");
+        dbUrl = config.getString("db.default.url");
+        dbDriver = config.getString("db.default.driver");
         mac = fillMac();
         userPasswordLength = config.getInt("jatos.user.password.length");
         userPasswordStrength = config.getInt("jatos.user.password.strength");
@@ -336,13 +334,6 @@ public class Common {
     }
 
     /**
-     * Is true if an in-memory database is used.
-     */
-    public static boolean isInMemoryDb() {
-        return inMemoryDb;
-    }
-
-    /**
      * Time in minutes when the Play session will timeout (defined in
      * application.conf)
      */
@@ -361,22 +352,22 @@ public class Common {
     /**
      * Database URL as defined in application.conf
      */
-    public static String getDbDefaultUrl() {
-        return dbDefaultUrl;
+    public static String getDbUrl() {
+        return dbUrl;
     }
 
     /**
      * Does JATOS use an MySQL database?
      */
     public static boolean usesMysql() {
-        return getDbDefaultUrl().toLowerCase().contains("jdbc:mysql");
+        return getDbUrl().toLowerCase().contains("jdbc:mysql");
     }
 
     /**
      * Database driver as defined in application.conf
      */
-    public static String getDbDefaultDriver() {
-        return dbDefaultDriver;
+    public static String getDbDriver() {
+        return dbDriver;
     }
 
     /**
