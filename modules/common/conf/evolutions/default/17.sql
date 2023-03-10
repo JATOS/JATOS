@@ -10,10 +10,9 @@ CREATE TABLE `ApiToken` (
   `expires` int(11) DEFAULT NULL,
   `active` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
-);
+) DEFAULT CHARSET=utf8;
 
 ALTER TABLE `ApiToken` ADD KEY `FK_lghqbQuIHvMEqpdJHkjdQHYbe` (`user_username`);
-ALTER TABLE `ApiToken` ADD CONSTRAINT `FK_lghqbQuIHvMEqpdJHkjdQHYbe` FOREIGN KEY (`user_username`) REFERENCES `User` (`username`);
 
 # --- !Downs
 # --- not supported
