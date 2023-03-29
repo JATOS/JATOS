@@ -1,5 +1,6 @@
 package services.publix.idcookie;
 
+import com.google.common.base.Strings;
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import general.common.Common;
@@ -218,7 +219,7 @@ public class IdCookieAccessor {
             throw new IdCookieMalformedException(PublixErrorMessages
                     .couldntExtractFromIdCookie(cookieName, key));
         }
-        if (strict && valueStr.trim().isEmpty()) {
+        if (strict && Strings.isNullOrEmpty(valueStr)) {
             throw new IdCookieMalformedException(PublixErrorMessages
                     .couldntExtractFromIdCookie(cookieName, key));
         }
