@@ -15,7 +15,7 @@ GET      /jatos/api/v1/studies/:id/log                                      @con
 GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getStudyCodes(id, batchId: Option[java.lang.Long], type, comment ?= null, amount: Integer ?= 1)
 GET      /jatos/api/v1/studies/:id                                          @controllers.gui.Api.exportStudy(id)
 POST     /jatos/api/v1/study                                                @controllers.gui.Api.importStudy(request: Request, keepProperties: Boolean ?= false, keepAssets: Boolean ?= false, keepCurrentAssetsName: Boolean ?= true, renameAssets: Boolean ?= true)
-
+GET      /jatos/api/v1/studies/:id/assets/structure                         @controllers.gui.Api.getStudyAssetsStructure(id, flatten: Boolean ?= false)
 GET      /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.downloadStudyAssetsFile(id, filepath)
 POST     /jatos/api/v1/studies/:id/assets/                                  @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath = null)
 POST     /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath)

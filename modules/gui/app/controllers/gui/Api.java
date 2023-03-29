@@ -29,6 +29,7 @@ import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import scala.Option;
 import services.gui.*;
+import utils.common.DirectoryStructureToJson;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -196,6 +197,30 @@ public class Api extends Controller {
         Study study = studyService.getStudyFromIdOrUuid(id);
         JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(JsonUtils.wrapForApi(studiesNode));
+    }
+
+    /**
+     * Gets the study assets directory structure as JSON
+     *
+     * @param id      Study's ID or UUID
+     * @param flatten Flag, if set to `true` the returned JSON will be a flat list of files (no tree, no directories).
+     *                If `false`, the returned JSON will have tree-like structure and include directories. Default is
+     *                `false`.
+     * @return JSON with study assets directory structure
+     */
+    @Transactional
+    @Auth
+    public Result getStudyAssetsStructure(String id, boolean flatten)
+            throws ForbiddenException, NotFoundException, IOException {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        File base;
+        try {
+            base = ioUtils.getStudyAssetsDir(study.getDirName());
+        } catch (IOException e) {
+            return notFound("Study assets directory couldn't be found");
+        }
+        JsonNode structure = DirectoryStructureToJson.get(base, flatten);
+        return ok(JsonUtils.wrapForApi(structure));
     }
 
     /**

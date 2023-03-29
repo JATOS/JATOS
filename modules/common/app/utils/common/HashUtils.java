@@ -2,6 +2,8 @@ package utils.common;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +13,8 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
 
 public class HashUtils {
 
@@ -48,8 +52,9 @@ public class HashUtils {
         try {
             MessageDigest digest = MessageDigest.getInstance(hashFunction);
             try (InputStream is = Files.newInputStream(file);
-                    DigestInputStream dis = new DigestInputStream(is, digest)) {
-                while ((dis.read()) != -1) {}
+                 DigestInputStream dis = new DigestInputStream(is, digest)) {
+                while ((dis.read()) != -1) {
+                }
 
             }
             byte[] hashByte = digest.digest();
@@ -83,6 +88,19 @@ public class HashUtils {
      */
     public static String getChecksum(String str) {
         return HashUtils.getHashMD5(str).substring(0, 6);
+    }
+
+    /**
+     * Uses Adler32 to calculate a checksum of a file
+     */
+    public static long getChecksum(File file) throws IOException {
+        byte[] tempBuf = new byte[128];
+        FileInputStream is = new FileInputStream(file);
+        CheckedInputStream cis = new CheckedInputStream(is, new Adler32());
+        //noinspection StatementWithEmptyBody - intentionally empty
+        while (cis.read(tempBuf) >= 0) {
+        }
+        return cis.getChecksum().getValue();
     }
 
 }
