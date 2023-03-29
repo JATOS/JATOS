@@ -130,7 +130,8 @@ public class ComponentResultDao extends AbstractDao {
             // H2 returns Clob
             Clob clob = (Clob) result;
             try {
-                return new BufferedReader(new InputStreamReader(clob.getAsciiStream())).lines().collect(Collectors.joining());
+                return new BufferedReader(new InputStreamReader(clob.getAsciiStream()))
+                        .lines().collect(Collectors.joining(System.lineSeparator()));
             } catch (SQLException e) {
                 LOGGER.error(".getData: Couldn't get data from ComponentResult " + id, e);
             }
