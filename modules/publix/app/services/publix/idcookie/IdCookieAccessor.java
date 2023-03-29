@@ -41,6 +41,7 @@ import static play.mvc.Http.Cookie.builder;
  *
  * @author Kristian Lange (2016)
  */
+@SuppressWarnings("deprecation")
 @Singleton
 public class IdCookieAccessor {
 
