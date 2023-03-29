@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.0
+  version: 1.0.1
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -235,6 +235,35 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          description: Invalid token
+  /jatos/api/v1/studies/{id}/assets/structure:
+    get:
+      summary: (since v3.8.2) Get the directory structure of a study assets directory in JSON
+      description: Every element has `name` (filename), `path` (location in the study assets), `type` (_file_ or _directory_), `creation` (creation timestamp), `lastModified` (last modification timestamp), `size` (file size), `checksum` (checksum of the file calculated with Adler32)
+      tags:
+        - study
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: query
+          name: flatten
+          allowEmptyValue: true
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            Flag, if set to `true` the returned JSON will be a flat list of
+            files (no tree, no directories). If `false`, the returned JSON
+            will have tree-like structure and include directories. Default
+            is `false`.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '401':
           description: Invalid token
   /jatos/api/v1/studies/{id}/assets/{filepath}:
