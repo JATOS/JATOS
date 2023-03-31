@@ -523,31 +523,31 @@ function fillStudyLinksTable(batch, workerType) {
                     "titleAttr": 'Show all study links',
                     "action": function(e, dt, node, config) {
                         dt.column(0).search("").draw();
-                    },
+                    }
                 },
                 {
                     "text": "Active",
                     "className": "btn-sm btn-default",
-                    "titleAttr": 'Show only active study links'
+                    "titleAttr": 'Show only active study links',
                     "action": function(e, dt, node, config) {
                         dt.column(0).search("active").draw();
-                    },
+                    }
                 },
                 {
                     "text": "Deactivated",
                     "className": "btn-sm btn-default",
-                    "titleAttr": 'Show only active study links'
+                    "titleAttr": 'Show only active study links',
                     "action": function(e, dt, node, config) {
                         dt.column(0).search("deactivated").draw();
-                    },
+                    }
                 },
                 {
                     "text": "Used",
                     "className": "btn-sm btn-default",
-                    "titleAttr": 'Show only used study links'
+                    "titleAttr": 'Show only used study links',
                     "action": function(e, dt, node, config) {
                         dt.column(0).search("used").draw();
-                    },
+                    }
                 }
             ]
     });
