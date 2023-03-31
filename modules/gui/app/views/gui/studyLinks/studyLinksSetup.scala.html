@@ -170,6 +170,7 @@
     <button type="button" class="btn btn-default activeStudyLinkButton"
             data-toggle="tooltip" data-placement="bottom" title="">
         <span class="glyphicon glyphicon-ok"></span>
+        <span class="searchText" style="display:none;">active</span>
     </button>
 </div>
 
@@ -414,10 +415,9 @@ function fillStudyLinksTable(batch, workerType) {
             }
         },
         "destroy": true,
-        "initComplete": toggleTablePagination,
         "pageLength": paginationLength,
         "dom": 'ftip',
-        "dom": "<'row'<'col-sm-6 buttons'B><'col-sm-6'f>>" + "<'row'<'col-sm-12't>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        "dom": "<'row'<'col-sm-6 createButtons'><'col-sm-3 showButtons'><'col-sm-3'f>>" + "<'row'<'col-sm-12't>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         "buttons": [],
         "columns": [
             {
@@ -475,11 +475,13 @@ function fillStudyLinksTable(batch, workerType) {
         "language": {
             "emptyTable": "No links yet",
             "search": "Search:"
-        },
-        "drawCallback": function( settings ) {
-            showDirectOrConfirmStudyLink();
-            setWorkerResultsButtonWidthToMax();
         }
+    });
+
+    studyLinksTable.on('draw', function () {
+        setWorkerResultsButtonWidthToMax();
+        showDirectOrConfirmStudyLink();
+        toggleTablePagination();
     });
 
     new $.fn.dataTable.Buttons(studyLinksTable, {
@@ -512,12 +514,62 @@ function fillStudyLinksTable(batch, workerType) {
             }
         ]
     });
+    new $.fn.dataTable.Buttons(studyLinksTable, {
+            name: 'showButtonGroup',
+            buttons: [
+                {
+                    "text": "All",
+                    "className": "btn-sm btn-worker",
+                    "titleAttr": 'Show all study links',
+                    "action": function(e, dt, node, config) {
+                        dt.column(0).search("").draw();
+                    },
+                },
+                {
+                    "text": "Active",
+                    "className": "btn-sm btn-default",
+                    "titleAttr": 'Show only active study links'
+                    "action": function(e, dt, node, config) {
+                        dt.column(0).search("active").draw();
+                    },
+                },
+                {
+                    "text": "Deactivated",
+                    "className": "btn-sm btn-default",
+                    "titleAttr": 'Show only active study links'
+                    "action": function(e, dt, node, config) {
+                        dt.column(0).search("deactivated").draw();
+                    },
+                },
+                {
+                    "text": "Used",
+                    "className": "btn-sm btn-default",
+                    "titleAttr": 'Show only used study links'
+                    "action": function(e, dt, node, config) {
+                        dt.column(0).search("used").draw();
+                    },
+                }
+            ]
+    });
     studyLinksTable.buttons('createButtonGroup', null).containers()
             .attr('id', 'studyLinksTable_create')
-            .appendTo('.buttons');
+            .appendTo('.createButtons');
     studyLinksTable.buttons('refreshButton', null).containers()
             .attr('id', 'studyLinksTable_refresh')
-            .appendTo('.buttons');
+            .appendTo('.createButtons');
+    studyLinksTable.buttons('showButtonGroup', null).containers()
+            .attr('id', 'studyLinksTable_show')
+            .appendTo('.showButtons');
+    $('#studyLinksTable_show').wrap(`<label for="studyLinksTable_show">Show:&nbsp;&nbsp;</label>`);
+
+    $('#studyLinksTable_show').on('click', 'button', function() {
+        $(this).parent().children('button').each(function(i, button) {
+            $(button).removeClass('btn-worker');
+            $(button).addClass('btn-default');
+        });
+        $(this).removeClass('btn-default');
+        $(this).addClass('btn-worker');
+    });
 
     function renderStudyLink(studyCode, type, row) {
         return `<div class="directLink">
@@ -557,15 +609,21 @@ function fillStudyLinksTable(batch, workerType) {
             studyLinksTable.columns.adjust();
         }
     };
-}
 
-function showDirectOrConfirmStudyLink() {
-    if ($('th button.directLink').hasClass('active')) {
-        $('td div.directLink').removeClass('hideKeepWidth');
-        $('td div.confirmLink').addClass('hideKeepWidth');
-    } else {
-        $('td div.directLink').addClass('hideKeepWidth');
-        $('td div.confirmLink').removeClass('hideKeepWidth');
+    function showDirectOrConfirmStudyLink() {
+        if ($('th button.directLink').hasClass('active')) {
+            $('td div.directLink').removeClass('hideKeepWidth');
+            $('td div.confirmLink').addClass('hideKeepWidth');
+        } else {
+            $('td div.directLink').addClass('hideKeepWidth');
+            $('td div.confirmLink').removeClass('hideKeepWidth');
+        }
+    }
+
+    function toggleTablePagination() {
+        var rowNumber = studyLinksTable.rows().count();
+        var hidePaging = rowNumber <= paginationLength;
+        $('#studyLinksModal .dataTables_paginate').toggle(!hidePaging);
     }
 }
 
@@ -578,36 +636,28 @@ $('#batchTable').on('click', '.workerResultsButton', function() {
     }
 });
 
-function toggleTablePagination() {
-    var rowNumber = studyLinksTable.rows().count();
-    var hidePaging = rowNumber <= paginationLength;
-    $('#studyLinksModal .dataTables_paginate').toggle(!hidePaging);
-}
-
 function setStudyLinkRowActive(button, active, studyResultState) {
     if (active) {
         button.addClass('activeStudyLink');
         button.removeClass('btn-default');
         button.addClass('btn-worker');
         button.attr('title', "Click to deactivate this study link");
-        button.html($(button.html())
-                .removeClass('glyphicon-remove')
-                .addClass('glyphicon-ok').prop('outerHTML'));
+        button.children(".glyphicon").removeClass('glyphicon-remove').addClass('glyphicon-ok');
+        button.children(".searchText").text("active");
     } else {
         button.removeClass('activeStudyLink');
         button.removeClass('btn-worker');
         button.addClass('btn-default');
         button.attr('title', "Click to activate this study link");
-        button.html($(button.html())
-                .removeClass('glyphicon-ok')
-                .addClass('glyphicon-remove').prop('outerHTML'));
+        button.children(".glyphicon").removeClass('glyphicon-ok').addClass('glyphicon-remove');
+        button.children(".searchText").text("deactivated");
     }
     const isPersonalSingle = $('#studyLinksModal').data('workerType') == "@common.workers.PersonalSingleWorker.WORKER_TYPE";
     if (isPersonalSingle && studyResultState !== null && studyResultState !== "PRE") {
         button.prop("disabled", true);
         button.attr('title', "This link was already used and can't be deactivated.");
         button.addClass("grayout");
-        return
+        button.children(".searchText").text("used");
     }
 }
 

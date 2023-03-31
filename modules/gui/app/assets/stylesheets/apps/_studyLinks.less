@@ -198,15 +198,25 @@ fieldset[disabled] .btn-worker.active {
 #studyLinksModal .pagination > li.next > a {
     margin-right: 10px;
 }
-
 #studyLinksModal td {
     word-break:break-all;
 }
-
 #studyLinksDisplayModal .btn-toggle {
     margin: 0 0 10px;
 }
-
-#studyLinksTable_create {
-    display: inline;
+#studyLinksModal #studyLinksTable_refresh {
+    margin-left: 5px;
+}
+#studyLinksModal .showButtons label {
+    font-weight: normal;
+    white-space: nowrap;
+    position:absolute;
+    right:0
+}
+@media only screen and (max-width: 1160px) {
+    #studyLinksModal .showButtons,
+    #studyLinksModal .dataTables_filter,
+    #studyLinksModal .table .btn-toggle{
+        display: none;
+    }
 }
