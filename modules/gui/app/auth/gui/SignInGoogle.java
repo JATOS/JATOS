@@ -45,18 +45,15 @@ public class SignInGoogle extends Controller {
     private static final ALogger LOGGER = Logger.of(SignInGoogle.class);
 
     private final AuthService authenticationService;
-    private final UserSessionCacheAccessor userSessionCacheAccessor;
     private final SignInFormValidation authenticationValidation;
     private final FormFactory formFactory;
     private final UserDao userDao;
     private final UserService userService;
 
     @Inject
-    SignInGoogle(AuthService authenticationService, UserSessionCacheAccessor userSessionCacheAccessor,
-            SignInFormValidation authenticationValidation, FormFactory formFactory, UserService userService,
-            UserDao userDao) {
+    SignInGoogle(AuthService authenticationService, SignInFormValidation authenticationValidation,
+            FormFactory formFactory, UserService userService, UserDao userDao) {
         this.authenticationService = authenticationService;
-        this.userSessionCacheAccessor = userSessionCacheAccessor;
         this.authenticationValidation = authenticationValidation;
         this.formFactory = formFactory;
         this.userDao = userDao;
@@ -95,7 +92,6 @@ public class SignInGoogle extends Controller {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
         authenticationService.writeSessionCookie(session(), normalizedUsername);
         userService.setLastLogin(normalizedUsername);
-        userSessionCacheAccessor.add(normalizedUsername);
 
         return redirect(controllers.gui.routes.Home.home());
     }

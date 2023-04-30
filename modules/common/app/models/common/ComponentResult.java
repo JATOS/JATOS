@@ -1,6 +1,5 @@
 package models.common;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -28,13 +27,11 @@ public class ComponentResult {
     /**
      * Time and date when the component was started on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp startDate;
 
     /**
      * Time and date when the component was finished on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
 
 
@@ -113,6 +110,7 @@ public class ComponentResult {
         this.startDate = new Timestamp(new Date().getTime());
         this.component = component;
         this.componentState = ComponentState.STARTED;
+        this.dataSize = 0;
     }
 
     @JsonProperty("workerId")

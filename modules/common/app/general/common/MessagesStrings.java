@@ -56,8 +56,7 @@ public class MessagesStrings {
 
     // User
     public static final String INVALID_USER_OR_PASSWORD = "Invalid user or password";
-    public static final String FAILED_THREE_TIMES = "You failed three times. Now you have to wait for a minute before"
-            + " you can try again.";
+    public static final String FAILED_THREE_TIMES = "You have only three login attempts per minute.";
     public static final String WRONG_PASSWORD = "Wrong password";
     public static final String WRONG_USERNAME = "Wrong username";
     public static final String NOT_ALLOWED_TO_DELETE_USER = "You are not allowed to delete this user.";
@@ -171,7 +170,7 @@ public class MessagesStrings {
     }
 
     public static String goToThisStudyLink(Long studyId) {
-        return "<a href=\"" + Common.getPlayHttpContext() + "jatos/" + studyId + "\">Go to this study.</a>";
+        return "<a href=\"" + Common.getJatosUrlBasePath() + "jatos/" + studyId + "\">Go to this study.</a>";
     }
 
     public static String componentNotBelongToStudy(Long studyId, Long componentId) {

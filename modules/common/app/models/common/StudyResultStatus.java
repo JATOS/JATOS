@@ -1,9 +1,5 @@
 package models.common;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -15,31 +11,26 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table(name = "StudyResult")
-@JsonPropertyOrder(value = { "id", "startDate", "lastSeenDate", "studyState" })
 public class StudyResultStatus {
 
     @Id
     @GeneratedValue
-    @JsonIgnore
     private Long id;
 
     /**
      * Time and date when the study was started on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp startDate;
 
     /**
      * Time and date when the study was finished on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
 
     /**
-     * Time and date when the study was last seen (server time). jatos.js sends a periodic heart beat and the time of
+     * Time and date when the study was last seen. jatos.js sends a periodic heart beat and the time of
      * the last one is saved here.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp lastSeenDate;
 
     /**
@@ -48,7 +39,6 @@ public class StudyResultStatus {
      */
     private StudyResult.StudyState studyState;
 
-    @JsonIgnore
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "study_id")
     private Study study;

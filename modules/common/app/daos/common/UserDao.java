@@ -63,4 +63,13 @@ public class UserDao extends AbstractDao {
         return result != null ? result.intValue() : 0;
     }
 
+    /**
+     * Returns the users with the most recent lastSeen datetime field. Limit the number by 'limit'.
+     */
+    public List<User> findLastSeen(int limit) {
+        return jpa.em().createQuery("SELECT u FROM User u ORDER BY lastSeen DESC", User.class)
+                .setMaxResults(limit)
+                .getResultList();
+    }
+
 }

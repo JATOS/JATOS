@@ -1,6 +1,5 @@
 package models.common;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
@@ -107,13 +106,11 @@ public class GroupResult {
     /**
      * Time and date when the study was started on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp startDate;
 
     /**
      * Time and date when the study was finished on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
 
     public GroupResult() {

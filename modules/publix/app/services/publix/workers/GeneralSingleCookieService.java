@@ -103,7 +103,7 @@ public class GeneralSingleCookieService {
                 .withSecure(false)
                 .withHttpOnly(true)
                 .withSameSite(SameSite.LAX)
-                .withPath(Common.getPlayHttpContext())
+                .withPath(Common.getJatosUrlBasePath())
                 .build();
         Publix.response().setCookie(newCookie);
     }

@@ -84,7 +84,7 @@ public class Admin extends Controller {
     @Transactional
     @Auth(Role.ADMIN)
     public Result listLogs() throws IOException {
-        try (Stream<Path> paths = Files.walk(Paths.get(Common.getBasepath() + "/logs/"))) {
+        try (Stream<Path> paths = Files.walk(Paths.get(Common.getLogsPath()))) {
             List<String> content = paths
                     .filter(Files::isRegularFile)
                     .map(file -> file.getFileName().toString())
@@ -115,7 +115,7 @@ public class Admin extends Controller {
         if (reverse) {
             return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=UTF-8");
         } else {
-            Path logPath = Paths.get(Common.getBasepath() + "/logs/" + filename);
+            Path logPath = Paths.get(Common.getLogsPath(), filename);
             if (Files.notExists(logPath)) {
                 return notFound();
             }

@@ -1,6 +1,5 @@
 package models.common;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -40,20 +39,17 @@ public class StudyResult {
     /**
      * Time and date when the study was started on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp startDate;
 
     /**
      * Time and date when the study was finished on the server.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp endDate;
 
     /**
-     * Time and date when the study was last seen (server time). jatos.js sends a periodic heart beat and the time of
+     * Time and date when the study was last seen. jatos.js sends a periodic heart beat and the time of
      * the last one is saved here.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
     private Timestamp lastSeenDate;
 
     /**

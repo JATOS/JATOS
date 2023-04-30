@@ -259,7 +259,7 @@ $('#batchTable').on('click', '.activeBatchButton', function() {
     var batch = getBatchData(button);
     var active = $(button).hasClass('activeBatch');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/batch/" + batch.id
                 + "/properties/active?active=" + !active,
         type : "POST",
         success: function(active) {
@@ -273,7 +273,7 @@ $('#batchTable').on('click', '.activeBatchButton', function() {
 
 $('#batchTable').on('click', '.batchResultsButton', function() {
     var batch = getBatchData(this);
-    window.location.href =  `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/results`;
+    window.location.href =  `@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/${batch.id}/results`;
 });
 
 $('#batchTable').on('click', '.groupsButton', function() {
@@ -314,7 +314,7 @@ $('#batchTable').on('click', '.removeBatch', function() {
         + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
     askConfirmation(title, htmlText, 'Delete', "btn-batch", function() {
         $.ajax({
-            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id,
+            url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/batch/" + batch.id,
             type : 'DELETE',
             success : function(result) {
                 showMessages(JSON.parse(result));

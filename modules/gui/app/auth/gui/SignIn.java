@@ -2,9 +2,11 @@ package auth.gui;
 
 import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
+import models.common.LoginAttempt;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
@@ -36,18 +38,18 @@ public class SignIn extends Controller {
     private static final ALogger LOGGER = Logger.of(SignIn.class);
 
     private final AuthService authenticationService;
-    private final UserSessionCacheAccessor userSessionCacheAccessor;
     private final FormFactory formFactory;
     private final UserDao userDao;
+    private final LoginAttemptDao loginAttemptDao;
     private final UserService userService;
 
     @Inject
-    SignIn(AuthService authenticationService, UserSessionCacheAccessor userSessionCacheAccessor,
-            FormFactory formFactory, UserService userService, UserDao userDao) {
+    SignIn(AuthService authenticationService, FormFactory formFactory, UserDao userDao, LoginAttemptDao loginAttemptDao,
+            UserService userService) {
         this.authenticationService = authenticationService;
-        this.userSessionCacheAccessor = userSessionCacheAccessor;
         this.formFactory = formFactory;
         this.userDao = userDao;
+        this.loginAttemptDao = loginAttemptDao;
         this.userService = userService;
 
         userService.createAdminIfNotExists();
@@ -82,11 +84,16 @@ public class SignIn extends Controller {
         }
 
         if (!authenticated) {
-            return returnUnauthorizedDueToFailedAuth(loginForm, normalizedUsername, request.remoteAddress());
+            loginAttemptDao.create(new LoginAttempt(normalizedUsername));
+            if (authenticationService.isRepeatedLoginAttempt(normalizedUsername)) {
+                return returnUnauthorizedDueToRepeatedLoginAttempt(loginForm, normalizedUsername, request.remoteAddress());
+            } else {
+                return returnUnauthorizedDueToFailedAuth(loginForm, normalizedUsername, request.remoteAddress());
+            }
         } else {
             authenticationService.writeSessionCookie(session(), normalizedUsername);
             userService.setLastLogin(normalizedUsername);
-            userSessionCacheAccessor.add(normalizedUsername);
+            loginAttemptDao.removeByUsername(normalizedUsername);
             if (Helpers.isAjax()) {
                 return ok(" "); // jQuery.ajax cannot handle empty responses
             } else {

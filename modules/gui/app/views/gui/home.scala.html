@@ -47,7 +47,7 @@ showInfo('By using this application you agree to the <a href="@general.common.Co
 loadBranding();
 function loadBranding() {
     $.ajax({
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/branding',
+        url: '@{general.common.Common.getJatosUrlBasePath()}jatos/branding',
         @if(freshlyLoggedIn) {
         headers: { 'Cache-Control': 'max-age=0' },
         }

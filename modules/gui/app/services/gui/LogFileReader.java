@@ -41,7 +41,7 @@ public class LogFileReader {
      * This method is very touchy. Change only if you know what you are doing.
      */
     private void streamLogFile(Writer writer, String filename, int lineLimit) throws IOException {
-        File logFile = new File(Common.getBasepath() + "/logs/" + filename);
+        File logFile = new File(Common.getLogsPath(), filename);
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, Charset.defaultCharset())) {
             String oneLine = reader.readLine();
             int lineNumber = 1;

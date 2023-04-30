@@ -8,6 +8,7 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http;
+import services.gui.UserService;
 import utils.common.Helpers;
 
 import javax.inject.Inject;
@@ -19,24 +20,19 @@ import static play.mvc.Results.redirect;
 /**
  * This class defines authentication via session cookies (which is the default authentication in the Play Framework).
  * <p>
- * It checks Play's session cookie and the cached user session. Additionally, it does authorization. It sets the user's
- * lastSeen time. It has several layers of security:
+ * It checks Play's session cookie and does authorization. It has several layers of security:
  * <p>
  * 1) First it checks if a username is in Play's session cookie and if this username belongs to a user in the database.
  * <p>
- * 2) We check whether the session ID stored in Play's session cookie is the same as stored in the UserSession in the
- * cache. After a user logs out this session ID is deleted in the cache and from the session cookie and thus subsequent
- * log-ins will fail.
+ * 2) Check if the session timed out. The time span is defined in the application.conf.
  * <p>
- * 3) Check if the session timed out. The time span is defined in the application.conf.
- * <p>
- * 4) Check if the session timed out due to inactivity of the user. With each request by the user the time of last
+ * 3) Check if the session timed out due to inactivity of the user. With each request by the user the time of last
  * activity gets refreshed in the session.
  * <p>
- * 5) Check if the logged-in user has the proper Role needed to access this page. This Role is an optional parameter in
+ * 4) Check if the logged-in user has the proper Role needed to access this page. This Role is an optional parameter in
  * the {@link AuthAction.Auth} annotation.
  * <p>
- * 6) It checks if the user was deactivated by an admin.
+ * 5) It checks if the user was deactivated by an admin.
  * <p>
  * The {@link AuthAction.Auth} annotation does not check the user's password. This is
  * done once during login (class {@link SignIn}).
@@ -51,11 +47,13 @@ public class AuthActionSessionCookie implements AuthAction.IAuth {
 
     private final Provider<Home> homeProvider;
     private final AuthService authenticationService;
+    private final UserService userService;
 
     @Inject
-    AuthActionSessionCookie(Provider<Home> homeProvider, AuthService authenticationService) {
+    AuthActionSessionCookie(Provider<Home> homeProvider, AuthService authenticationService, UserService userService) {
         this.homeProvider = homeProvider;
         this.authenticationService = authenticationService;
+        this.userService = userService;
     }
 
     public AuthResult authenticate(Http.Request request, User.Role role) {
@@ -93,7 +91,7 @@ public class AuthActionSessionCookie implements AuthAction.IAuth {
         }
 
         authenticationService.refreshSessionCookie(request.session());
-        authenticationService.setLastSeen(loggedInUser.getUsername());
+        userService.setLastSeen(loggedInUser);
 
         // Check authorization
         if (!loggedInUser.hasRole(role)) {

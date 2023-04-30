@@ -158,13 +158,14 @@ $(document).ready(function() {
             },
             {
                 "data": "startDate",
-                 "type": "date"
+                "type": "date",
+                "render": getFormattedDate
             },
             {
                 "data": "endDate",
                 "type": "date",
                 "visible": false,
-                "render": (data) => data ? data : "never"
+                "render": (data) => data ? getFormattedDate(data) : "never"
             },
             {
                 "data": "duration",
@@ -177,7 +178,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     return '<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Click to get this worker\'s results" ' +
-                        'href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + data + '/results">' + data + '</a>';
+                        'href="@{general.common.Common.getJatosUrlBasePath()}jatos/worker/' + data + '/results">' + data + '</a>';
                 }
             },
             {
@@ -192,7 +193,7 @@ $(document).ready(function() {
                     if (!data) return "none";
                     return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Click to get this group\'s results" ' +
-                        'href="@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
+                        'href="@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
                 }
             },
             { "data": "componentState" },
@@ -202,7 +203,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     if (data.length === 0) return "none";
                     var resultFiles = data.map(function(fileObj) {
-                        var url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${full.id}`;
+                        var url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${full.id}`;
                         return '<a href="' + url + '" download>' + fileObj.filename + ' (' + fileObj.sizeHumanReadable + ')</a>';
                     });
                     return resultFiles.join("<br>");
@@ -648,7 +649,7 @@ $(document).ready(function() {
         const componentResultId = resultsTable.row($(this).closest('tr').prev()).data().id;
         $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
         $.ajax({
-            url : `@{general.common.Common.getPlayHttpContext()}jatos/componentResult/${componentResultId}/data`,
+            url : `@{general.common.Common.getJatosUrlBasePath()}jatos/componentResult/${componentResultId}/data`,
             success : function(result) {
                 $('#componentResultDataModal .componentResultData').text(result);
                 $('#componentResultDataModal').modal('show');

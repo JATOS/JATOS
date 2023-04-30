@@ -173,18 +173,19 @@ $(document).ready(function() {
             },
             {
                 "data": "startDate",
-                "type": "date"
+                "type": "date",
+                "render": getFormattedDate
             },
             {
                 "data": "endDate",
                 "type": "date",
                 "visible": false,
-                "render": (data) => data ? data : "never"
+                "render": (data) => data ? getFormattedDate(data) : "never"
             },
             {
                 "data": "lastSeenDate",
                 "type": "date",
-                "render": (data) => data ? data : "never"
+                "render": (data) => data ? getFormattedDate(data) : "never"
             },
             {
                 "data": "duration",
@@ -197,7 +198,7 @@ $(document).ready(function() {
                 "render": function (data, type, full, meta) {
                     return '<a type="button" class="btn btn-study btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Opens this study" ' +
-                        'href="@{general.common.Common.getPlayHttpContext()}jatos/' + data + '">' + data + '</a>';
+                        'href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + data + '">' + data + '</a>';
                 }
             },
             { "data": "studyTitle" },
@@ -216,7 +217,7 @@ $(document).ready(function() {
                     if (!data) return "none";
                     return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Click to get this group\'s results" ' +
-                        'href="@{general.common.Common.getPlayHttpContext()}jatos/' + full.studyId + '/group/' + data + '/results">' + data + '</a>';
+                        'href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + full.studyId + '/group/' + data + '/results">' + data + '</a>';
                 }
             },
             {
@@ -508,7 +509,7 @@ $(document).ready(function() {
         else {
             var studyResultId = row.data().id;
             $.ajax({
-                url : "@{general.common.Common.getPlayHttpContext()}jatos/studyResult/" + studyResultId + "/componentResults",
+                url : "@{general.common.Common.getJatosUrlBasePath()}jatos/studyResult/" + studyResultId + "/componentResults",
                 contentType: "application/json; charset=utf-8"
             }).done(function(result) {
                 var childRow = generateComponentResultsChildRow(result, studyResultId);
@@ -624,7 +625,7 @@ $(document).ready(function() {
             + '<td><b>Comp. Result ID</b></td>'
             + '<td><b>Comp. ID</b></td>'
             + '<td><b>Component Title</b></td>'
-            + '<td><b>Start Time (Server)</b></td>'
+            + '<td><b>Start Time</b></td>'
             + '<td><b>Duration</b></td>'
             + '<td><b>State</b></td>'
             + '<td><b>Data Size</b></td>'
@@ -644,7 +645,7 @@ $(document).ready(function() {
             var duration = (componentResult.duration) ? componentResult.duration : "not yet";
             var message = (componentResult.message) ? componentResult.message : "none";
             var resultFiles = componentResult.files.map(function(fileObj) {
-                var url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${componentResult.id}`;
+                var url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${componentResult.id}`;
                 return '<a href="' + url + '" download>' + fileObj.filename + '&nbsp;(' + fileObj.sizeHumanReadable + ')</a>';
             });
             if (resultFiles.length === 0) resultFiles.push("none");
@@ -679,7 +680,7 @@ $(document).ready(function() {
         var componentResultId = $(this).closest('tr').data().id;
         $('#componentResultDataModal .modal-title').text("Data of Component Result with ID " + componentResultId);
         $.ajax({
-            url: `@{general.common.Common.getPlayHttpContext()}jatos/componentResult/${componentResultId}/data`,
+            url: `@{general.common.Common.getJatosUrlBasePath()}jatos/componentResult/${componentResultId}/data`,
             success : function(result) {
                 $('#componentResultDataModal .componentResultData').text(result);
                 $('#componentResultDataModal').modal('show');

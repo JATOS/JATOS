@@ -273,7 +273,7 @@ $(document).ready(function() {
         var componentId = edit.triggerRow.data().id;
         var newPosition = edit.triggerRow.data().position;
         $.ajax({
-            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() + "/componentOrder"
+            url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() + "/componentOrder"
                     + "?componentId=" + componentId + "&newPosition=" + newPosition,
             type : "POST",
             success : function(response) {
@@ -287,19 +287,19 @@ $(document).ready(function() {
     });
 
     $('#componentsTable tbody').on('click', '.runComponent', function() {
-        window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/"
+        window.location.href = "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/"
             + getComponentId(this) + "/run";
     });
 
     $('#componentsTable tbody').on('click', '.componentResults', function() {
-        window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/"
+        window.location.href = "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/"
             + getComponentId(this) + "/results";
     });
 
     $('#componentsTable tbody').on('click', '.cloneComponent', function() {
         $.ajax({
             type: 'GET',
-            url: "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
+            url: "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
             success: function(result) {
                 showMessages(JSON.parse(result));
                 componentsTable.ajax.reload();
@@ -322,7 +322,7 @@ $(document).ready(function() {
             + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
         askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
             $.ajax({
-                url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + componentId,
+                url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/" + componentId,
                 type : 'DELETE',
                 beforeSend: showWaitingModal,
                 success : function(result) {
@@ -344,7 +344,7 @@ $(document).ready(function() {
         var componentId = getComponentId(this);
         var active = $(this).hasClass('activeComponent');
         $.ajax({
-            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/" + componentId
+            url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/" + componentId
                     + "/properties/active?active=" + !active,
             type : "POST",
             success: function(active) {
@@ -475,7 +475,7 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
         success : function(response) {
             fillSidebar();
             var msg = 'Created clone "' + response.title + '". ' +
-                '<a href="@{general.common.Common.getPlayHttpContext()}jatos/' + response.id + '">Go to this study.</a>';
+                '<a href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + response.id + '">Go to this study.</a>';
             showInfo(msg, null, true);
         },
         error : function(err) {

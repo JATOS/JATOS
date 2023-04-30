@@ -5,8 +5,6 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
-import play.cache.NamedCache;
-import play.cache.SyncCacheApi;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -31,12 +29,10 @@ import static auth.gui.AuthAction.Auth;
 public class Tests extends Controller {
 
     private final UserDao userDao;
-    private final SyncCacheApi cache;
 
     @Inject
-    Tests(UserDao userDao, @NamedCache("user-session-cache") SyncCacheApi cache) {
+    Tests(UserDao userDao) {
         this.userDao = userDao;
-        this.cache = cache;
     }
 
     @Transactional
@@ -68,21 +64,6 @@ public class Tests extends Controller {
                 return badRequest();
             }
             if (!studyAssetsRoot.isDirectory()) {
-                return badRequest();
-            }
-        } catch (Exception e) {
-            return badRequest();
-        }
-        return ok();
-    }
-
-    @Transactional
-    @Auth(User.Role.ADMIN)
-    public Result testCache() {
-        try {
-            cache.set("test", "testValue");
-            String value = cache.get("test");
-            if (!value.equals("testValue")) {
                 return badRequest();
             }
         } catch (Exception e) {

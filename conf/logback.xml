@@ -1,13 +1,12 @@
 <configuration>
 
-    <conversionRule conversionWord="coloredLevel"
-                    converterClass="play.api.libs.logback.ColoredLevel"/>
+    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${application.home:-.}/logs/application.log</file>
+        <file>${jatos.logs.path}/${jatos.logs.filename}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Daily rollover with compression -->
-            <fileNamePattern>${application.home:-.}/logs/application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <fileNamePattern>${jatos.logs.path}/${jatos.logs.filename}-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
             <!-- keep 30 days worth of history -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
@@ -40,7 +39,7 @@
     <logger name="group" level="INFO"/>
 
     <root level="INFO">
-        <appender-ref ref="ASYNCFILE"/>
+        <appender-ref ref="${jatos.logs.appender}"/>
     </root>
 
 </configuration>

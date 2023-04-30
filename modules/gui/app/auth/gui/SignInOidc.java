@@ -60,7 +60,6 @@ public class SignInOidc extends Controller {
     private static final ALogger LOGGER = Logger.of(SignInOidc.class);
 
     private final AuthService authenticationService;
-    private final UserSessionCacheAccessor userSessionCacheAccessor;
     private final SignInFormValidation authenticationValidation;
     private final FormFactory formFactory;
     private final UserDao userDao;
@@ -69,11 +68,9 @@ public class SignInOidc extends Controller {
     private OIDCProviderMetadata oidcProviderMetadata;
 
     @Inject
-    SignInOidc(AuthService authenticationService, UserSessionCacheAccessor userSessionCacheAccessor,
-            SignInFormValidation authenticationValidation,
+    SignInOidc(AuthService authenticationService, SignInFormValidation authenticationValidation,
             FormFactory formFactory, UserService userService, UserDao userDao) {
         this.authenticationService = authenticationService;
-        this.userSessionCacheAccessor = userSessionCacheAccessor;
         this.authenticationValidation = authenticationValidation;
         this.formFactory = formFactory;
         this.userDao = userDao;
@@ -121,7 +118,6 @@ public class SignInOidc extends Controller {
             String username = userInfo.getSubject().getValue();
             authenticationService.writeSessionCookie(session(), username);
             userService.setLastLogin(username);
-            userSessionCacheAccessor.add(username);
         } catch (AuthException e) {
             LOGGER.warn(e.getMessage());
             FlashScopeMessaging.error(e.getMessage());

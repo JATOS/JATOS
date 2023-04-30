@@ -20,7 +20,7 @@
                 <span class="glyphicon glyphicon-book"></span>&nbsp;Logs&nbsp;<span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">
-                <li><a id="applicationLog" href="@{general.common.Common.getPlayHttpContext()}jatos/logs/application.log">application.log</a></li>
+                <li><a id="applicationLog" href="@{general.common.Common.getJatosUrlBasePath()}jatos/logs/@{general.common.Common.getLogsFilename()}">@{general.common.Common.getLogsFilename()}</a></li>
                 <li><a id="listLogsButton" href="#">Show all logs</a></li>
             </ul>
         </div>
@@ -31,8 +31,6 @@
             <span class="glyphicon glyphicon-info-sign"></span>&nbsp;System Info
         </button>
     </div>
-
-    <div class="well well-sm pull-right">Server Time - <span class="serverTime text-xl"></span></div>
 </div>
 
 <div id="updateJatos" class="well text-center" style="display: none">
@@ -75,7 +73,7 @@
     <div id="latestUsers" class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading text-center">
-                <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the logged-in user). The times are reset with every restart of JATOS. If a user does not appear in the table they probably never logged in after the last restart."></span></h3>
+                <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the logged-in user)."></span></h3>
             </div>
             <table class="table">
                 <thead>
@@ -201,10 +199,14 @@
                 <h2>JATOS configuration</h2>
                 <p>
                     <b>Version</b>:&nbsp;@general.common.Common.getJatosVersion()<br>
-                    <b>URL&nbsp;host</b>:&nbsp;@utils.common.Helpers.getRealHostUrl(request)<br>
-                    <b>URL&nbsp;basepath</b>:&nbsp;@general.common.Common.getPlayHttpContext()<br>
-                    <b>URL&nbsp;host&nbsp;+&nbsp;basepath</b>:&nbsp;@utils.common.Helpers.getRealBaseUrl(request)<br>
+                    <b>URL host</b>: <span id="configUrlHost"></span><br>
+                    <b>URL&nbsp;basepath</b>:&nbsp;@general.common.Common.getJatosUrlBasePath()<br>
+                    <b>URL&nbsp;host&nbsp;+&nbsp;basepath</b>: <span id="configUrlHostBase"></span><br>
+                    <b>Local&nbsp;IP</b>:&nbsp;@utils.common.Helpers.getLocalIpAddress()<br>
                     <b>Local&nbsp;basepath</b>:&nbsp;@general.common.Common.getBasepath()<br>
+                    <b>Logs path</b>:&nbsp;@general.common.Common.getLogsPath()<br>
+                    <b>Logs filename</b>:&nbsp;@general.common.Common.getLogsFilename()<br>
+                    <b>Logs appender</b>:&nbsp;@general.common.Common.getLogsAppender()<br>
                     <b>Study&nbsp;assets&nbsp;root&nbsp;path</b>:&nbsp;@general.common.Common.getStudyAssetsRootPath()<br>
                     <b>Result&nbsp;data&nbsp;max&nbsp;size</b>:&nbsp;@{utils.common.Helpers.humanReadableByteCount(general.common.Common.getResultDataMaxSize())}<br>
                     <b>Result&nbsp;uploads&nbsp;allowed</b>:&nbsp;@general.common.Common.isResultUploadsEnabled()<br>
@@ -262,7 +264,6 @@
                     <b>Correct URL host</b>: <span id="testRealHostUrlResult"></span><br>
                     <b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
                     <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
-                    <b>Access internal cache</b>: <span id="testCacheResult"></span><br>
                     <b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
                     <b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
                     <b>Open WebSocket</b>: <span id="testWebSocketResult"></span><br>
@@ -286,7 +287,7 @@ checkJatosReleaseInfo();
 function checkJatosReleaseInfo() {
     var urlQueryParams = new URLSearchParams(window.location.search).toString();
     $.getJSON({
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/releaseInfo?' + urlQueryParams,
+        url: '@{general.common.Common.getJatosUrlBasePath()}jatos/releaseInfo?' + urlQueryParams,
         success: function(releaseInfo) {
             $("#updateJatos").data("releaseInfo", releaseInfo);
             showJatosReleaseInfo(releaseInfo);
@@ -316,8 +317,7 @@ function showJatosReleaseInfo(releaseInfo) {
             showInfo("JATOS was successfully updated to " + releaseInfo.currentVersionFull);
             break;
         case "FAILED":
-            showError("Something went wrong in an JATOS update. More information can be found in"
-                    + " the logs (<i>logs/update.log</i> and <i>logs/application.log</i>).");
+            showError("Something went wrong in an JATOS update. More information can be found in the logs.");
             break;
         default:
             showError("Unknown UpdateState " + releaseInfo.currentUpdateState);
@@ -444,7 +444,7 @@ function updateAndRestart() {
     $("#updateJatosModal .modal-footer").hide();
     var backupAll = $('#updateJatosModal .backupAll').is(':checked');
     $.ajax({
-        url: '@{general.common.Common.getPlayHttpContext()}jatos/updateAndRestart?backupAll=' + backupAll,
+        url: '@{general.common.Common.getJatosUrlBasePath()}jatos/updateAndRestart?backupAll=' + backupAll,
         timeout: 0, // Do not timeout
         success: function() {
             $('#updateJatosModal').modal('hide');
@@ -471,7 +471,6 @@ function getJatosStatus() {
             $("#jatosStatus div:nth-child(3) .total").text(status.workerCountTotal);
             $("#jatosStatus div:nth-child(4) .value").text(status.userCount);
             $("#jatosStatus").show();
-            $("#adminToolbar .serverTime").text(getFormattedDate(status.serverTime));
             $("#latestUsers .table > tbody:last-child").append(fillLatestUsers(status.latestUsers));
             $("#latestStudyRuns .table > tbody:last-child").append(fillLatestStudyRuns(status.latestStudyRuns));
             $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
@@ -544,7 +543,7 @@ function generateListLogsHtml(logFiles) {
     var listLogsHtml = [];
     listLogsHtml.push("<ul>");
     logFiles.forEach(function(filename) {
-        var url = "@{general.common.Common.getPlayHttpContext()}jatos/logs/" + filename;
+        var url = "@{general.common.Common.getJatosUrlBasePath()}jatos/logs/" + filename;
         var html = '<li><a href="' + url + '" download>' + filename + '</a>';
         if (filename.includes(".log")) {
             html += '&nbsp;<button type="button" class="btn btn-default btn-sm">Show</button>';
@@ -578,22 +577,22 @@ $('#adminToolbar').on('click', '#tests', function() {
     testRealHostUrl();
     testDatabase();
     testStudyAssetsRootFolder();
-    testCache();
     testJatosJsViaStudyPath();
     testJatosJsViaAssetsPath();
     testWebSocket();
 });
 
 $('#adminToolbar').on('click', '#systemInfo', function() {
+    $('#configUrlHost').text(getRealHostUrl());
+    $('#configUrlHostBase').text(getRealBaseUrl());
     $('#systemInfoModal').modal('show');
 });
 
 function testRealHostUrl() {
-    var jatosHostUrl = "@utils.common.Helpers.getRealHostUrl(request)";
     var browserUrl = window.location.origin;
-    if (jatosHostUrl == browserUrl) {
+    if (getRealHostUrl() == browserUrl) {
         $('#testRealHostUrlResult').html('<font color="green">OK</font>');
-    } else if (jatosHostUrl.replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
+    } else if (getRealHostUrl().replace(/(^\w+:|^)\/\//, '') == browserUrl.replace(/(^\w+:|^)\/\//, '')) {
         $('#testRealHostUrlResult').html('<font color="orange">WARN (wrong protocol)</font>');
     } else {
         $('#testRealHostUrlResult').html('<font color="red">FAIL</font>');
@@ -626,23 +625,10 @@ function testStudyAssetsRootFolder() {
     });
 }
 
-function testCache() {
-    $.ajax({
-        type: 'GET',
-        url: '@controllers.gui.routes.Tests.testCache()',
-        success: function(result) {
-            $('#testCacheResult').html('<font color="green">OK</font>');
-        },
-        error : function(err) {
-            $('#testCacheResult').html('<font color="red">FAIL</font>');
-        }
-    });
-}
-
 function testJatosJsViaStudyPath() {
     $.ajax({
         type: 'GET',
-        url: '@{general.common.Common.getPlayHttpContext()}publix/1/1/jatos.js',
+        url: '@{general.common.Common.getJatosUrlBasePath()}publix/1/1/jatos.js',
         dataType: "text",
         success: function(result) {
             $('#testJatosJsViaStudyPathResult').html('<font color="green">OK</font>');
@@ -656,7 +642,7 @@ function testJatosJsViaStudyPath() {
 function testJatosJsViaAssetsPath() {
     $.ajax({
         type: 'GET',
-        url: '@{general.common.Common.getPlayHttpContext()}assets/javascripts/jatos.js',
+        url: '@{general.common.Common.getJatosUrlBasePath()}assets/javascripts/jatos.js',
         dataType: "text",
         success: function(result) {
             $('#testJatosJsViaAssetsPathResult').html('<font color="green">OK</font>');

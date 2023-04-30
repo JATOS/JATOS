@@ -213,6 +213,7 @@ var userTable = $('#userTable').DataTable({
             "class": "lastLogin",
             "data": "lastLogin",
             "type": "date",
+            "render": (data) => data ? getFormattedDate(data) : "never"
         },
         {
             "class": "text-center authMethod",
@@ -384,7 +385,7 @@ $('#userTable tbody').on('click', 'td.details-control', function() {
         var username = row.data().username;
         showWaitingModal();
         $.ajax({
-            url : "@{general.common.Common.getPlayHttpContext()}jatos/studiesData?username=" + username,
+            url : "@{general.common.Common.getJatosUrlBasePath()}jatos/studiesData?username=" + username,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
         }).done(function(result) {
@@ -442,7 +443,7 @@ function generateStudiesChildRow(studiesData, username) {
             + '<td>' + studyData.studyResultCount + '</td>'
             + '<td>' + studyData.resultDataSize.humanReadable + '</td>'
             + '<td>' + studyData.resultFileSize.humanReadable + '</td>'
-            + '<td>' + studyData.lastStarted + '</td>'
+            + '<td>' + getFormattedDate(studyData.lastStarted) + '</td>'
             + '</tr>');
         childRow.find("tr").last().after(row);
     });
@@ -570,7 +571,7 @@ $('#userTable tbody').on('click', '.activeButton', function() {
     var user = userTable.row(tr).data();
     var active = $(this).hasClass('activeUser');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/user/" + user.username
                 + "/properties/active?active=" + !active,
         type : "POST",
         success: function() {
@@ -591,7 +592,7 @@ $('#userTable tbody').on('click', '.superuserButton', function() {
     var user = userTable.row(tr).data();
     var superuserRole = $(this).hasClass('superuserRole');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/user/" + user.username
                 + "/properties/role?role=@models.common.User.Role.SUPERUSER&value=" + !superuserRole,
         type : "POST",
         success: function(superuserRole) {
@@ -616,7 +617,7 @@ $('#userTable tbody').on('click', '.adminButton', function() {
     var user = userTable.row(tr).data();
     var adminRole = $(this).hasClass('adminRole');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/user/" + user.username
                 + "/properties/role?role=@models.common.User.Role.ADMIN&value=" + !adminRole,
         type : "POST",
         success: function(adminRole) {

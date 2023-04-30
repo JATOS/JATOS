@@ -256,7 +256,7 @@ function loadStudyLinksSetup(batchId) {
 
     $.ajax({
         type: 'GET',
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batchId}/studyLinksSetupData`,
+        url: `@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/${batchId}/studyLinksSetupData`,
         success: function(studyLinksSetupData) {
             fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv);
         },
@@ -342,7 +342,7 @@ $('#batchTable').on('click', '.activeTypeButton', function() {
     var batch = getBatchData(this);
     var studyLinksSetupDiv = $(this).closest('.studyLinksSetupItem');
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + batch.id
                 + "/properties/workerType/" + workerType + "?allow=" + !allow,
         type : "POST",
         success: function(allowedWorkerTypes) {
@@ -405,7 +405,7 @@ function fillStudyLinksTable(batch, workerType) {
     studyLinksTable = $('#studyLinksModal').find('.table').DataTable({
         "ajax": {
             "type": "GET",
-            "url" : "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/studyLinksData?workerType=" + workerType,
+            "url" : "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + batch.id + "/studyLinksData?workerType=" + workerType,
             "error": function (err) {
                 if (err.responseText) {
                     showError(err.responseText, "#studyLinksModal .messages");
@@ -573,12 +573,12 @@ function fillStudyLinksTable(batch, workerType) {
 
     function renderStudyLink(studyCode, type, row) {
         return `<div class="directLink">
-            <span>@utils.common.Helpers.getRealBaseUrl(request)publix/${studyCode}</span>
+            <span>${getRealBaseUrl()}publix/${studyCode}</span>
             <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
             <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
             </div>
             <div class="confirmLink">
-            <span>@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=${studyCode}</span>
+            <span>${getRealBaseUrl()}publix/run?code=${studyCode}</span>
             <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard."><span class="glyphicon glyphicon-duplicate"></span></button>
             <button type="button" class="btn qrCodeButton btn-xs" data-toggle="tooltip" title="Show QR code for this link."><span class="glyphicon glyphicon-qrcode"></span></button>
             </div>`;
@@ -591,7 +591,7 @@ function fillStudyLinksTable(batch, workerType) {
         const count = isPersonalMultiple ? full.studyResultCount : "";
         const button = `<a type="button" class="btn btn-worker workerResultsButton" data-toggle="tooltip"
             data-placement="bottom" title="Shows study results of this worker"
-            href="@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/${batch.id}/results?workerType=${workerType}">${name}
+            href="@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/${batch.id}/results?workerType=${workerType}">${name}
             <span class="workerResultsBadge badge" data-toggle="tooltip" data-placement="bottom"
             title="Number of study results that belong to this worker">${count}</span></a>`;
         return full.studyResultState !== null ? button : "";
@@ -631,7 +631,7 @@ $('#batchTable').on('click', '.workerResultsButton', function() {
     var workerType = getWorkerTypeFromPanel(this);
     var batch = getBatchData(this);
     if (workerType) {
-        window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id
+        window.location.href =  "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + batch.id
             + "/results?workerType=" + workerType;
     }
 });
@@ -669,7 +669,7 @@ $('#studyLinksModal').on('click', '.activeStudyLinkButton', function() {
     var rowData = studyLinksTable.row(tr).data();
     var studyCode = rowData.studyCode;
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/batch/" + batch.id
                 + "/studyLink/" + studyCode + "?active=" + !active,
         type : "POST",
         success: function(active) {
@@ -691,7 +691,7 @@ $('#studyLinksModal').on('click', '.oneNewStudyLinkButton', function(e) {
     const batch = $('#studyLinksModal').data('batch');
     const workerType = $('#studyLinksModal').data('workerType');
     $.ajax({
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=${workerType}`,
+        url: `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=${workerType}`,
         success: () => studyLinksTable.ajax.reload(),
         error : (err) => showError(err.responseText)
     });
@@ -712,7 +712,7 @@ function showStudyLinksCreatorPersonalSingleModal(batch) {
     var title = "Create study links for worker type Personal Single in batch '" + batch.title + "'";
     showStudyLinksCreatorModal(title, text);
     $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
-        const url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=PersonalSingle`;
+        const url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=PersonalSingle`;
         requestLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
     });
 }
@@ -722,7 +722,7 @@ function showStudyLinksCreatorPersonalMultipleModal(batch) {
     var title = "Create study links for worker type Personal Multiple in batch '" + batch.title + "'";
     showStudyLinksCreatorModal(title, text);
     $('#studyLinksCreatorModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
-        var url = `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=PersonalMultiple`;
+        var url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@study.getId()/studyCodes?batchId=${batch.id}&type=PersonalMultiple`;
         requestLinksPersonal(url, showStudyLinksDisplayPersonalModal, batch);
     });
 }
@@ -798,7 +798,7 @@ $('#batchTable').on('click', '.generalMultipleStudyLinksSetup .studyLinkButton',
 
 function showStudyLinkGeneralSingleModal(batch) {
     $.ajax({
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=GeneralSingle`,
+        url: `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=GeneralSingle`,
         success: function(studyCodeResponse) {
             var title = "Study link for worker type General Single in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
@@ -818,7 +818,7 @@ function showStudyLinkGeneralSingleModal(batch) {
 
 function showStudyLinkGeneralMultipleModal(batch) {
     $.ajax({
-        url: `@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=GeneralMultiple`,
+        url: `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@{study.getId()}/studyCodes?batchId=${batch.id}&type=GeneralMultiple`,
         success: function(studyCodeResponse) {
             var title = "Study link for worker type General Multiple in batch '" + batch.title + "'";
             var preText = `<div class="directLink">This link will start the study directly.</div>
@@ -858,8 +858,8 @@ function showStudyLinksDisplayModal(title, preText, studyCodes, postText, warnin
 }
 
 function generateStudyLinksHtml(studyCodes) {
-    var directLinkUrls = studyCodes.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/' + l);
-    var confirmLinkUrls = studyCodes.map(l => '@utils.common.Helpers.getRealBaseUrl(request)publix/run?code=' + l);
+    var directLinkUrls = studyCodes.map(l => `${getRealBaseUrl()}publix/${l}`);
+    var confirmLinkUrls = studyCodes.map(l => `${getRealBaseUrl()}publix/run?code=${l}`);
     var qrButtonHtml = "";
     if (studyCodes.length == 1) {
         qrButtonHtml = `<button type="button" class="btn qrCodeButton btn-xs pull-right" data-toggle="tooltip" title="Show QR code for this link.">QR code&nbsp;<span class="glyphicon glyphicon-qrcode"></span></button>`;

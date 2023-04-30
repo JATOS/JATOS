@@ -161,7 +161,7 @@ $("#editProfileForm").submit(function(event) {
     var user = $(this).data();
     $.ajax({
         type: 'POST',
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/profile",
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/user/" + user.username + "/profile",
         data: $('#editProfileForm').serialize(),
         success: function(response) {
             removeAlerts("#editProfileModal");
@@ -322,7 +322,7 @@ $('#deleteUserForm').submit(function(event) {
     event.preventDefault();
     var user = $('#deleteUserForm').data();
     $.ajax({
-        url : "@{general.common.Common.getPlayHttpContext()}jatos/user/" + user.username + "/delete",
+        url : "@{general.common.Common.getJatosUrlBasePath()}jatos/user/" + user.username + "/delete",
         type : 'POST',
         data: $('#deleteUserForm').serialize(),
         success : function(result) {

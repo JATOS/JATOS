@@ -1,28 +1,38 @@
 package general
 
+import akka.actor.ActorSystem
+import daos.common.LoginAttemptDao
 import general.common.{Common, JatosUpdater}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+import play.db.jpa.JPAApi
 import services.gui.StudyLinkService
 import utils.common.ComponentResultMigration
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 /**
-  * Called during start-up
-  *
-  * @author Kristian Lange
-  */
+ * Called during start-up
+ *
+ * @author Kristian Lange
+ */
+//noinspection ScalaDeprecation
 class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             environment: play.Environment,
+                            actorSystem: ActorSystem,
+                            jpa: JPAApi,
                             jatosUpdater: JatosUpdater,
                             mySQLCharsetFix: MySQLCharsetFix,
                             studyLinkService: StudyLinkService,
-                            componentResultMigration: ComponentResultMigration) {
+                            componentResultMigration: ComponentResultMigration,
+                            loginAttemptDao: LoginAttemptDao) {
 
   private val logger = Logger(this.getClass)
 
@@ -31,6 +41,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   checkStudyAssetsRootDir()
   studyLinkService.createStudyLinksForExistingPersonalWorkers()
   componentResultMigration.fillDataFieldsForExistingComponentResults()
+  scheduleLoginAttemptCleaning()
 
   if (!environment.isProd) {
     logger.info("JATOS started")
@@ -49,9 +60,9 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   })
 
   /**
-    * Check if the address (IP:port) is already in use
-    * https://stackoverflow.com/a/48828373/1278769
-    */
+   * Check if the address (IP:port) is already in use
+   * https://stackoverflow.com/a/48828373/1278769
+   */
   private def isPortInUse: Boolean = {
     var socket: ServerSocket = null
     try {
@@ -66,8 +77,8 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   }
 
   /**
-    * Logs eventual update messages from the loader script and notify JatosUpdater
-    */
+   * Logs eventual update messages from the loader script and notify JatosUpdater
+   */
   private def checkUpdate(): Unit = {
     if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
       case "success" =>
@@ -86,8 +97,8 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   }
 
   /**
-    * Check whether studies assets root directory exists and create if not.
-    */
+   * Check whether studies assets root directory exists and create if not.
+   */
   private def checkStudyAssetsRootDir(): Unit = {
     val studyAssetsRoot = new File(Common.getStudyAssetsRootPath)
     val success = studyAssetsRoot.mkdirs
@@ -95,6 +106,26 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
       Common.getStudyAssetsRootPath)
     if (!studyAssetsRoot.isDirectory) logger.error(".checkStudyAssetsRootDir: Study assets root " +
       "directory " + Common.getStudyAssetsRootPath + " couldn't be created.")
+  }
+
+  /**
+   * Starts a scheduler that cleans the database of old LoginAttempts. It runs every hour and removes all
+   * LoginAttempts that are older than 1 minute.
+   */
+  private def scheduleLoginAttemptCleaning(): Unit = {
+    val task: Runnable = () => jpa.withTransaction(asJavaSupplier(() => {
+      () => loginAttemptDao.removeOldAttempts()
+    }))
+
+    implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
+    val scheduler = actorSystem.scheduler.schedule(
+      initialDelay = Duration(0, TimeUnit.SECONDS),
+      interval = Duration(1, TimeUnit.HOURS),
+      runnable = task)
+
+    lifecycle.addStopHook(() => Future {
+      scheduler.cancel()
+    })
   }
 
 }

@@ -6,7 +6,6 @@ import com.typesafe.config.ConfigValueType;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.Logger.ALogger;
-import play.api.Application;
 import play.mvc.Http;
 
 import javax.inject.Inject;
@@ -66,7 +65,7 @@ public class Common {
     private static String mac;
     private static int userPasswordLength;
     private static int userPasswordStrength;
-    private static String playHttpContext;
+    private static String jatosUrlBasePath;
     private static String jatosUpdateMsg;
     private static String jatosHttpAddress;
     private static int jatosHttpPort;
@@ -92,6 +91,9 @@ public class Common {
     private static boolean showResultFileSizeInStudyAdmin;
     private static boolean userRoleAllowSuperuser;
     private static boolean jatosApiAllowed;
+    private static String logsPath;
+    private static String logsFilename;
+    private static String logsAppender;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -108,9 +110,9 @@ public class Common {
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
     @Inject
-    Common(Application application, Config config) {
+    Common(Config config) {
         jatosVersion = BuildInfo.version();
-        basepath = fillBasePath(application);
+        basepath = config.getString("play.server.dir");
         studyAssetsRootPath = fillStudyAssetsRootPath(config);
         studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
         studyLogsPath = fillStudyLogsPath(config);
@@ -123,19 +125,19 @@ public class Common {
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
         jpaDefault = config.getString("jpa.default");
-        dbUrl = config.getString("db.default.url");
-        dbDriver = config.getString("db.default.driver");
+        dbUrl = config.getString("jatos.db.url");
+        dbDriver = config.getString("jatos.db.driver");
         mac = fillMac();
         userPasswordLength = config.getInt("jatos.user.password.length");
         userPasswordStrength = config.getInt("jatos.user.password.strength");
         if (userPasswordStrength > userPasswordStrengthRegexList.size()) {
             userPasswordStrength = 0;
         }
-        playHttpContext = config.getString("play.http.context");
+        jatosUrlBasePath = config.getString("jatos.urlBasePath");
         jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
-        jatosHttpAddress = config.getString("play.server.http.address");
+        jatosHttpAddress = config.getString("jatos.http.address");
         if (jatosHttpAddress.equals("0.0.0.0")) jatosHttpAddress = "127.0.0.1"; // Fix localhost IP
-        jatosHttpPort = config.getInt("play.server.http.port");
+        jatosHttpPort = config.getInt("jatos.http.port");
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
         if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.STRING) {
             ldapBaseDn = Collections.singletonList(config.getString("jatos.user.authentication.ldap.basedn"));
@@ -162,17 +164,9 @@ public class Common {
         showResultFileSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
-    }
-
-    private String fillBasePath(Application application) {
-        String tempBasePath = application.path().getAbsolutePath();
-        if (tempBasePath.endsWith(File.separator + ".")) {
-            tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 2);
-        }
-        if (tempBasePath.endsWith(File.separator)) {
-            tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 1);
-        }
-        return tempBasePath;
+        logsPath = config.getString("jatos.logs.path");
+        logsFilename = config.getString("jatos.logs.filename");
+        logsAppender = config.getString("jatos.logs.appender");
     }
 
     private String fillStudyAssetsRootPath(Config config) {
@@ -401,8 +395,8 @@ public class Common {
     /**
      * HTTP URL base path: will be the prefix for each URL, e.g. /jatos/test -> /myBasePath/jatos/test
      */
-    public static String getPlayHttpContext() {
-        return playHttpContext;
+    public static String getJatosUrlBasePath() {
+        return jatosUrlBasePath;
     }
 
     /**
@@ -591,5 +585,26 @@ public class Common {
      */
     public static boolean isJatosApiAllowed() {
         return jatosApiAllowed;
+    }
+
+    /**
+     * Path where the application logs are located
+     */
+    public static String getLogsPath() {
+        return logsPath;
+    }
+
+    /**
+     * Base name of JATOS log files without the suffix ('.log' or '.gz'). Default is 'application'.
+     */
+    public static String getLogsFilename() {
+        return logsFilename + ".log";
+    }
+
+    /**
+     * Log appender: can be 'ASYNCFILE' (default) or 'ASYNCSTDOUT'
+     */
+    public static String getLogsAppender() {
+        return logsAppender;
     }
 }

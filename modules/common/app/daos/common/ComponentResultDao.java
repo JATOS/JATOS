@@ -44,7 +44,7 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Overwrite data in 'data' fields (data, dateShort, dataSize)
+     * Overwrite data in 'data' fields (data, dataShort, dataSize)
      */
     public void replaceData(Long id, String data) {
         jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
@@ -66,7 +66,7 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Append data to 'data' field and replace data in 'dateShort' and 'dataSize'
+     * Append data to 'data' field and replace data in 'dataShort' and 'dataSize'
      */
     public void appendData(Long id, String data) {
         if (Common.usesMysql()) {

@@ -41,7 +41,7 @@ var sessionDataEditor;
 $('#batchTable').on('click', '.batchSessionButton', function() {
     var batch = getBatchData(this);
     if (!batch) {return} // should never happen
-    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
+    var dataUrl = "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + batch.id + "/batchSessionData";
     $('#sessionModal').data('type', 'batch');
     $('#sessionModal').data('data', batch);
     getSession(dataUrl);
@@ -51,7 +51,7 @@ $('#groupsModal').on('click', '.groupSessionButton', function() {
     var tr = $(this).closest('tr');
     var group = groupsTable.row(tr).data();
     if (!group) {return} // should never happen
-    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + group.id + "/groupSessionData";
+    var dataUrl = "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/group/" + group.id + "/groupSessionData";
     $('#sessionModal').data('type', 'group');
     $('#sessionModal').data('data', group);
     getSession(dataUrl);
@@ -136,10 +136,10 @@ $("#sessionForm").submit(function(event) {
     if (!id || !type) {return} // should never happen
 
     if (type == 'batch') {
-        var postUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + id + "/batchSessionData";
+        var postUrl = "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + id + "/batchSessionData";
         postSession(postUrl);
     } else if (type == 'group') {
-        var postUrl = "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + id + "/groupSessionData";
+        var postUrl = "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/group/" + id + "/groupSessionData";
         postSession(postUrl);
     }
 });

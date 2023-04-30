@@ -96,6 +96,11 @@ public class User {
     private Timestamp lastLogin;
 
     /**
+     * Time of last action (usually a request)
+     */
+    private Timestamp lastSeen;
+
+    /**
      * A user can be deactivated (by default they are active). If deactivated a user cannot login, but their studies
      * can be still run by workers.
      */
@@ -243,6 +248,14 @@ public class User {
 
     public void setLastLogin(Timestamp lastLogin) {
         this.lastLogin = lastLogin;
+    }
+
+    public Timestamp getLastSeen() {
+        return lastSeen;
+    }
+
+    public void setLastSeen(Timestamp lastSeen) {
+        this.lastSeen = lastSeen;
     }
 
     public boolean isActive() {

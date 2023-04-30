@@ -90,7 +90,7 @@ input[type=submit]:hover, button:hover {
         }
         document.querySelector('.runButton').addEventListener('click', function() {
             event.preventDefault();
-            window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyCode + "@Html(queryString)";
+            window.location.href = '@{general.common.Common.getJatosUrlBasePath()}publix/' + studyCode + "@Html(queryString)";
         });
     }
 
@@ -106,7 +106,7 @@ input[type=submit]:hover, button:hover {
     function run(event) {
         event.preventDefault();
         const studyCode = document.querySelector("#studyCode").value;
-        window.location.href = '@{general.common.Common.getPlayHttpContext()}publix/' + studyCode + "@Html(queryString)";
+        window.location.href = '@{general.common.Common.getJatosUrlBasePath()}publix/' + studyCode + "@Html(queryString)";
     }
 
 

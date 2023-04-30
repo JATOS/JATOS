@@ -306,7 +306,7 @@ public class IdCookieAccessor {
         Http.CookieBuilder cookieBuilder = builder(newIdCookie.getName(), cookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
                 .withHttpOnly(false)
-                .withPath(Common.getPlayHttpContext())
+                .withPath(Common.getJatosUrlBasePath())
                 .withSecure(Common.isIdCookiesSecure());
         // https://github.com/JATOS/JATOS/issues/208
         // https://github.com/JATOS/JATOS/issues/231

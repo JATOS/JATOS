@@ -180,7 +180,7 @@ public class IdCookieService {
         idCookie.setBatchId(batch.getId());
         idCookie.setCreationTime(System.currentTimeMillis());
         idCookie.setStudyAssets(Helpers.urlEncode(study.getDirName()));
-        idCookie.setUrlBasePath(Common.getPlayHttpContext());
+        idCookie.setUrlBasePath(Common.getJatosUrlBasePath());
         idCookie.setName(name);
         idCookie.setStudyId(study.getId());
         idCookie.setStudyResultId(studyResult.getId());

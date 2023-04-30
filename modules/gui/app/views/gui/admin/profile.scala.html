@@ -54,7 +54,7 @@ function fillStudyList(studyList) {
     }
     $.each(studyList, function(index, study) {
         html += '<li class="list-group-item">'
-                + '<a href="@{general.common.Common.getPlayHttpContext()}jatos/' + study.id + '">' + study.title + ' (ID: ' + study.id + ')</a>'
+                + '<a href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + study.id + '">' + study.title + ' (ID: ' + study.id + ')</a>'
                 + '</li>';
     });
     $("#usersStudyList").html(html);

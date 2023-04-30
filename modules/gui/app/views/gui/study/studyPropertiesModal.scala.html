@@ -166,7 +166,7 @@ $('#jatosHeader').on('click', '#createStudyLink', function() {
 $('#studyToolbar').on('click', '#studyPropertiesButton', function() {
     $.ajax({
         type: 'GET',
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/properties",
+        url: "@{general.common.Common.getJatosUrlBasePath()}jatos/" + studyId + "/properties",
         success: function(response) {
             removeAlerts("#studyPropertiesModal");
             removeFormErrors("#studyPropertiesModal");
@@ -215,7 +215,7 @@ function fillStudyPropertiesForm(properties) {
     if (properties['@models.gui.StudyProperties.LOCKED']) {
         showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#studyPropertiesModal .messages");
     }
-    $("#studyPropertiesForm").attr("action", "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/properties");
+    $("#studyPropertiesForm").attr("action", "@{general.common.Common.getJatosUrlBasePath()}jatos/" + studyId + "/properties");
 }
 
 function setupStudyJsonDataEditor() {
@@ -289,7 +289,7 @@ function submitStudyPropertiesForm() {
             var newStudyCreation = $("#studyPropertiesForm").attr("action") == "@controllers.gui.routes.Studies.submitCreated()"
             if (newStudyCreation) {
                 // New study's ID is in the response
-                window.location.href = "@{general.common.Common.getPlayHttpContext()}jatos/" + response;
+                window.location.href = "@{general.common.Common.getJatosUrlBasePath()}jatos/" + response;
             } else {
                 fillSidebar();
                 var title = $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val();

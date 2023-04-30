@@ -235,4 +235,13 @@ public class UserService {
         userDao.remove(user);
     }
 
+    /**
+     * Sets the time of the last activity of the given user
+     */
+    public void setLastSeen(User user) {
+        user.setLastSeen(new Timestamp(new Date().getTime()));
+        userDao.update(user);
+
+    }
+
 }

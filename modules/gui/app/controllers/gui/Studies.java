@@ -333,7 +333,7 @@ public class Studies extends Controller {
         // Get StudyLink and redirect to jatos-publix: start study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
-        String runUrl = Common.getPlayHttpContext() + "publix/"  + studyLink.getStudyCode();
+        String runUrl = Common.getJatosUrlBasePath() + "publix/"  + studyLink.getStudyCode();
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 

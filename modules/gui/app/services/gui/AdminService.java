@@ -1,7 +1,6 @@
 package services.gui;
 
 import auth.gui.AuthService;
-import auth.gui.UserSessionCacheAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import daos.common.ComponentResultDao;
@@ -18,7 +17,6 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,12 +35,10 @@ public class AdminService {
     private final ComponentResultDao componentResultDao;
     private final AuthService authenticationService;
     private final IOUtils ioUtils;
-    private final UserSessionCacheAccessor userSessionCacheAccessor;
 
     @Inject
-    AdminService(UserDao userDao, StudyDao studyDao, WorkerDao workerDao, StudyResultDao studyResultDao, ComponentResultDao componentResultDao,
-            AuthService authenticationService, IOUtils ioUtils,
-            UserSessionCacheAccessor userSessionCacheAccessor) {
+    AdminService(UserDao userDao, StudyDao studyDao, WorkerDao workerDao, StudyResultDao studyResultDao,
+            ComponentResultDao componentResultDao, AuthService authenticationService, IOUtils ioUtils) {
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
@@ -50,7 +46,6 @@ public class AdminService {
         this.componentResultDao = componentResultDao;
         this.authenticationService = authenticationService;
         this.ioUtils = ioUtils;
-        this.userSessionCacheAccessor = userSessionCacheAccessor;
     }
 
     public List<Map<String, Object>> getStudiesData(Collection<Study> studyList,
@@ -82,9 +77,9 @@ public class AdminService {
             }
             Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
             if (srsOpt.isPresent()) {
-                studyInfo.put("lastStarted", Helpers.formatDate(srsOpt.get().getStartDate()));
+                studyInfo.put("lastStarted", srsOpt.get().getStartDate());
             } else {
-                studyInfo.put("lastStarted", "never");
+                studyInfo.put("lastStarted", null);
             }
             studies.add(studyInfo);
         }
@@ -130,23 +125,12 @@ public class AdminService {
      * latest users.
      */
     public List<Map<String, String>> getLatestUsers(int limit) {
-        List<String> normalizedUsernameList = userDao.findAll().stream()
-                .map(User::getUsername)
-                .filter(u -> !u.equals(authenticationService.getLoggedInUser().getUsername()))
-                .collect(Collectors.toList());
-
-        Map<String, Instant> lastSeenMap = new HashMap<>();
-        for (String normalizedUsername : normalizedUsernameList) {
-            Optional<Instant> lastSeenOptional = userSessionCacheAccessor.getLastSeen(normalizedUsername);
-            lastSeenOptional.ifPresent(lastSeen -> lastSeenMap.put(normalizedUsername, lastSeen));
-        }
-
-        List<Map<String, String>> lastSeenMapOrdered = lastSeenMap.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(limit)
-                .map(e -> ImmutableMap.of(
-                        "username", e.getKey(),
-                        "time", e.getValue().toString()))
+        List<Map<String, String>> lastSeenMapOrdered = userDao.findLastSeen(limit).stream()
+                .filter(u -> u.getLastSeen() != null)
+                .filter(u -> !u.getUsername().equals(authenticationService.getLoggedInUser().getUsername()))
+                .map(u -> ImmutableMap.of(
+                        "username", u.getUsername(),
+                        "time", u.getLastSeen().toInstant().toString()))
                 .collect(Collectors.toList());
         return lastSeenMapOrdered;
     }

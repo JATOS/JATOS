@@ -184,10 +184,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         }
         if (message != null) {
-            return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId())
+            return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId())
                     .flashing("info", PublixErrorMessages.studyFinishedWithMessage(message));
         } else {
-            return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId());
+            return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId());
         }
     }
 
@@ -210,10 +210,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
             return ok(" "); // jQuery.ajax cannot handle empty responses
         }
         if (message != null) {
-            return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId())
+            return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId())
                     .flashing("info", PublixErrorMessages.studyFinishedWithMessage(message));
         } else {
-            return redirect(Common.getPlayHttpContext() + "jatos/" + study.getId());
+            return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId());
         }
     }
 

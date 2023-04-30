@@ -87,7 +87,7 @@ rem ### Functions ###
   if not exist "%JATOS_HOME%\logs" mkdir "%JATOS_HOME%\logs"
 
   rem # Start JATOS with configuration file and application secret
-  set JATOS_OPTS=-Dconfig.file="conf/production.conf" -Dplay.http.secret.key=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address% -Dfile.encoding="UTF-8"
+  set JATOS_OPTS=-Dconfig.file="conf/production.conf" -Djatos.secret=!SECRET! -Djatos.http.port=%port% -Djatos.http.address=%address% -Dfile.encoding="UTF-8"
   if _%DOUBLECLICKED%_==_1_ (
     set JATOS_OPTS=-Dpidfile.path="NUL" %JATOS_OPTS%
   ) else (

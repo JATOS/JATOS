@@ -98,7 +98,7 @@ function initMemberUserTable() {
     memberUserTable = $('#changeMemberUsersModal .table').DataTable({
         "ajax": {
             "type": "GET",
-            "url" : "@{general.common.Common.getPlayHttpContext()}jatos/" + studyId + "/memberUsers",
+            "url" : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + studyId + "/memberUsers",
             "error": function (err) {
                 if (err.responseText) {
                     showError(err.responseText, "#changeMemberUsersModal .messages");
@@ -158,7 +158,7 @@ function toggleTablePagination() {
 
 $('#changeMemberUsersModal').on('click', '#addAllMemberButton', function() {
     $.ajax({
-        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUsers',
+        url : '@{general.common.Common.getJatosUrlBasePath()}jatos/' + studyId + '/memberUsers',
         type : "POST",
         success: function(user) {
             removeAlerts("#changeMemberUsersModal");
@@ -173,7 +173,7 @@ $('#changeMemberUsersModal').on('click', '#addAllMemberButton', function() {
 
 $('#changeMemberUsersModal').on('click', '#removeAllMemberButton', function() {
     $.ajax({
-        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUsers',
+        url : '@{general.common.Common.getJatosUrlBasePath()}jatos/' + studyId + '/memberUsers',
         type : "DELETE",
         success: function(user) {
             removeAlerts("#changeMemberUsersModal");
@@ -190,7 +190,7 @@ $('#addMemberToStudyForm').submit(function(event) {
     event.preventDefault();
     var usernameToChange = $('#addMemberToStudyForm .username').val();
     $.ajax({
-        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUser?username=' + usernameToChange + '&isMember=true',
+        url : '@{general.common.Common.getJatosUrlBasePath()}jatos/' + studyId + '/memberUser?username=' + usernameToChange + '&isMember=true',
         type : "POST",
         success: function(user) {
             removeAlerts("#changeMemberUsersModal");
@@ -238,7 +238,7 @@ $('#changeMemberUsersModal .table').on('click', '.memberToggleButton', function(
         return;
     }
     $.ajax({
-        url : '@{general.common.Common.getPlayHttpContext()}jatos/' + studyId + '/memberUser?username=' + tableMember.username + '&isMember=' + !tableMember.isMember,
+        url : '@{general.common.Common.getJatosUrlBasePath()}jatos/' + studyId + '/memberUser?username=' + tableMember.username + '&isMember=' + !tableMember.isMember,
         type : "POST",
         success: function(user) {
             removeAlerts("#changeMemberUsersModal");

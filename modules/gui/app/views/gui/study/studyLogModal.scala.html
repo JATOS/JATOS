@@ -38,7 +38,7 @@ var studyLogPretty;
 $('#studyToolbar').on('click', '#showStudyLog', function() {
     $.ajax({
         type: 'GET',
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/log?entryLimit=100&download=false",
+        url: "@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@study.getId()/log?entryLimit=100&download=false",
         success: showStudyLogModal,
         error: function(response) {
             showError("Couldn't get study log.");
@@ -102,7 +102,7 @@ function showStudyLogRaw() {
 }
 
 $('#studyLogDownload').on('click', function() {
-    var url = '@{general.common.Common.getPlayHttpContext()}jatos/api/v1/studies/@study.getId()/log?download=true';
+    var url = '@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/studies/@study.getId()/log?download=true';
     var filename = "jatos_studylog_@{study.getUuid()}.log";
     window.downloadFileStream(url, null, filename);
 });

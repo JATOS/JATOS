@@ -1,5 +1,6 @@
 package auth.gui;
 
+import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.Common;
 import general.common.RequestScope;
@@ -16,7 +17,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Service class around authentication, session cookie and session cache handling. It works together with the
+ * Service class around authentication and the session cookie. It works together with the
  * {@link SignIn} controller and the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
  *
  * @author Kristian Lange
@@ -49,14 +50,13 @@ public class AuthService {
     public static final String LOGGED_IN_USER = "loggedInUser";
 
     private final UserDao userDao;
-    private final UserSessionCacheAccessor userSessionCacheAccessor;
+    private final LoginAttemptDao loginAttemptDao;
     private final SignInLdap ldapAuthentication;
 
     @Inject
-    AuthService(UserDao userDao, UserSessionCacheAccessor userSessionCacheAccessor,
-            SignInLdap ldapAuthentication) {
+    AuthService(UserDao userDao, LoginAttemptDao loginAttemptDao, SignInLdap ldapAuthentication) {
         this.userDao = userDao;
-        this.userSessionCacheAccessor = userSessionCacheAccessor;
+        this.loginAttemptDao = loginAttemptDao;
         this.ldapAuthentication = ldapAuthentication;
     }
 
@@ -82,11 +82,10 @@ public class AuthService {
     }
 
     /**
-     * Checks the user session cache whether this user tries to log in repeatedly
+     * Returns true if there were already 3 login attempts within the last minute with this username
      */
     public boolean isRepeatedLoginAttempt(String normalizedUsername) {
-        userSessionCacheAccessor.addLoginAttempt(normalizedUsername);
-        return userSessionCacheAccessor.isRepeatedLoginAttempt(normalizedUsername);
+        return loginAttemptDao.countLoginAttemptsOfLastMin(normalizedUsername) >= 3;
     }
 
     /**
@@ -115,9 +114,8 @@ public class AuthService {
     }
 
     /**
-     * Prepares Play's session cookie and the user session cache for the user
-     * with the given username to be logged-in. Does not authenticate the user (use
-     * authenticate() for this).
+     * Prepares Play's session cookie for the user with the given username to be logged-in. Does not authenticate the
+     * user (use authenticate() for this).
      */
     public void writeSessionCookie(Http.Session session, String normalizedUsername) {
         session.put(SESSION_USERNAME, normalizedUsername);
@@ -172,13 +170,6 @@ public class AuthService {
             // In case of any exception: timeout
             return true;
         }
-    }
-
-    /**
-     * Sets the time of the last activity of the given user
-     */
-    public void setLastSeen(String normalizedUsername) {
-        userSessionCacheAccessor.setLastSeen(normalizedUsername);
     }
 
 }

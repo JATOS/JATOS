@@ -157,7 +157,7 @@ $('#batchTable').on('click', '.batchPropertiesButton', function() {
     if (!batch) {return} // should never happen
     $.ajax({
         type: 'GET',
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batch.id + "/properties",
+        url: "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + batch.id + "/properties",
         success: function(properties) {
             removeAlerts('#batchPropertiesModal');
             removeFormErrors('#batchPropertiesModal');
@@ -272,7 +272,7 @@ $("#batchPropertiesForm").submit(function(event) {
     if (!batchProps) {return} // should never happen
     $.ajax({
         type: 'POST',
-        url: "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/batch/" + batchProps.id + "/properties",
+        url: "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/batch/" + batchProps.id + "/properties",
         data: $('#batchPropertiesForm').serialize(),
         success: function(response) {
             removeAlerts('#batchPropertiesModal');

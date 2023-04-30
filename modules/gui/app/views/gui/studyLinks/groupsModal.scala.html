@@ -20,8 +20,8 @@
                             <th data-toggle="tooltip" data-placement="top" title="A fixed group can't have new members join">Fixed</th>
                             <th data-toggle="tooltip" data-placement="top" title="All currently active workers (click on the workers to get to their results page)">Active Workers</th>
                             <th data-toggle="tooltip" data-placement="top" title="All workers who were once member in this group (click on the workers to get to their results page)">Past Workers</th>
-                            <th data-toggle="tooltip" data-placement="top" title="">Start Time (Server) <span class="glyphicon sortLogo gray-light"/></th>
-                            <th data-toggle="tooltip" data-placement="top" title="">End Time (Server) <span class="glyphicon sortLogo gray-light"/></th>
+                            <th data-toggle="tooltip" data-placement="top" title="">Start Time <span class="glyphicon sortLogo gray-light"/></th>
+                            <th data-toggle="tooltip" data-placement="top" title="">End Time <span class="glyphicon sortLogo gray-light"/></th>
                             <th data-toggle="tooltip" data-placement="top" title="Current state of the group">Group State <span class="glyphicon sortLogo gray-light"/></th>
                             <th class="groupSessionDataColumn"></th>
                         </tr>
@@ -67,7 +67,7 @@ function showGroupsModal(batch) {
 }
 
 function generateGroupsTable(batch) {
-    var dataUrl = "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/batch/" + batch.id + "/groups";
+    var dataUrl = "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/batch/" + batch.id + "/groups";
 
     if (groupsTable) {
         groupsTable.ajax.url(dataUrl).load();
@@ -134,14 +134,13 @@ function generateGroupsTable(batch) {
             {
                 "data": "startDate",
                 "type": "date",
-                "class": 'time'
+                "class": 'time',
+                "render": getFormattedDate
             },
             {
                 "data": "endDate",
                 "type": "date",
-                "render": function (data, type, full, meta) {
-                    return (data) ? data : "not yet";
-                }
+                "render": (data) => data ? getFormattedDate(data) : "not yet"
             },
             {
                 "data": "groupState",
@@ -202,7 +201,7 @@ function generateGroupsTable(batch) {
         data.forEach(function(workerId) {
             workerLinks.push('<a type="button" class="btn btn-worker btn-xs" data-toggle="tooltip" ' +
             'data-placement="bottom" title="Click to get to this worker\'s results page" ' +
-            'href="@{general.common.Common.getPlayHttpContext()}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
+            'href="@{general.common.Common.getJatosUrlBasePath()}jatos/worker/' + workerId + '/results">' + workerId + '</a>');
         });
         return workerLinks.join(' ');
     }
@@ -233,7 +232,7 @@ function generateGroupsTable(batch) {
         var groupId = groupsTable.row(tr).data().id;
         var fixed = $(this).hasClass('fixedGroup');
         $.ajax({
-            url : "@{general.common.Common.getPlayHttpContext()}jatos/" + @study.getId() +"/group/" + groupId
+            url : "@{general.common.Common.getJatosUrlBasePath()}jatos/" + @study.getId() +"/group/" + groupId
                     + "/fixed?fixed=" + !fixed,
             type : "POST",
             success: function(groupState) {
@@ -249,7 +248,7 @@ function generateGroupsTable(batch) {
     $('#groupsModal').on('click', '.groupResultsButton', function() {
         var tr = $(this).closest('tr');
         var groupId = groupsTable.row(tr).data().id;
-        window.location.href =  "@{general.common.Common.getPlayHttpContext()}jatos/@study.getId()/group/" + groupId + "/results";
+        window.location.href =  "@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/group/" + groupId + "/results";
     });
 }
 

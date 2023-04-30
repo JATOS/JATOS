@@ -9,7 +9,6 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaJpa,
   javaWs,
-  ehcache,
   evolutions,
   jdbc,
   guice,

@@ -210,7 +210,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     name = "JATOS_CONFIRMATION_CODE",
     value = confirmationCode,
     maxAge = Some(86400), // 1 day
-    path = Common.getPlayHttpContext,
+    path = Common.getJatosUrlBasePath,
     httpOnly = false)
 
 }

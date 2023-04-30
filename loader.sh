@@ -1,13 +1,6 @@
 #!/bin/bash
 # JATOS loader for Linux and MacOS X
 
-# IP address and port (DEPRECATED - use 'conf/production.conf' instead)
-#address="1.2.3.4"
-#port="80"
-
-# Don't change after here - unless you know what you're doing
-###########################################################
-
 # Get JATOS' path
 dir="$( cd "$( dirname "$0" )" && pwd )"
 pidfile="$dir/RUNNING_PID"
@@ -29,8 +22,8 @@ function start() {
 
     echo -n "Starting JATOS... "
 
-    # Generate application secret for the Play framework
-    secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
+    # If the application secret is not given in a environment variable JATOS_SECRET then generate a local one
+    JATOS_SECRET="${JATOS_SECRET:="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"}"
 
     if [[ ! -f "$dir/bin/jatos" ]]; then
         echo -e "\n$dir/bin/jatos doesn't exist!"
@@ -44,11 +37,10 @@ function start() {
     mkdir -p "$dir/logs"
 
     # Add address and port to arguments if set
-    [[ -z ${address+x} ]] || args+=(-Dhttp.address=$address)
-    [[ -z ${port+x} ]] || args+=(-Dhttp.port=$port)
+    [[ -z ${address+x} ]] || args+=(-Djatos.http.address=$address)
+    [[ -z ${port+x} ]] || args+=(-Djatos.http.port=$port)
 
     args+=(-Dconfig.file="$dir/conf/production.conf")
-    args+=(-Dplay.http.secret.key=$secret)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
     "$dir/bin/jatos" "${args[@]}" -J-server 2>>"$dir/logs/loader.log"
