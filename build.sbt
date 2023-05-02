@@ -32,7 +32,7 @@ dockerCommands := Seq(
   Cmd("ADD", "opt /opt"),
   Cmd("EXPOSE", "9000"),
   ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
-  ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
+  ExecCmd("RUN", "chown", "-R", "daemon:daemon", "/opt/docker"),
   ExecCmd("RUN", "chmod", "u+x", "loader.sh"),
   Cmd("VOLUME", "/opt/docker/logs"),
   Cmd("USER", "daemon"),
