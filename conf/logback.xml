@@ -39,7 +39,7 @@
     <logger name="group" level="INFO"/>
 
     <root level="INFO">
-        <appender-ref ref="${jatos.logs.appender}"/>
+        <appender-ref ref="${jatos.logs.appender:-ASYNCFILE}"/>
     </root>
 
 </configuration>
