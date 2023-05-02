@@ -154,7 +154,7 @@ function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uuid,
 function askConfirmationForStudyExistsDirNotExists(uploadedStudyTitle, uuid, uploadedDirName, currentDirName) {
     var title = 'Study import';
     var htmlText = `<p>It seems a study "${uploadedStudyTitle}" (UUID ${uuid}) already exist.</p>
-        <p>But strangely the currently the study doesn't seem to have a study assets directory associated with it. The directory's
+        <p>But currently the study doesn't seem to have a study assets directory associated with it. The directory's
         name was "${currentDirName}" but it doesn't exist on the disk. Maybe someone changed its name or deleted it?</p>
         <p>If you continue the uploaded study assets directory will be used instead of the non-existing current one.</p>
         <p>Do you want to proceed?</p>`;
