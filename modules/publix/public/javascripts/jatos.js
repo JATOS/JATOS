@@ -32,7 +32,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.8.1";
+	jatos.version = "3.8.2";
 	/**
 	 * How long in ms should JATOS wait before retrying the HTTP call.
 	 */
