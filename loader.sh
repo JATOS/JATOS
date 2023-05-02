@@ -6,6 +6,7 @@ dir="$( cd "$( dirname "$0" )" && pwd )"
 pidfile="$dir/RUNNING_PID"
 args=("${@:2}")
 
+# shellcheck disable=SC2120
 function start() {
 
     # Check if JATOS is already running
@@ -22,8 +23,8 @@ function start() {
 
     echo -n "Starting JATOS... "
 
-    # If the application secret is not given in a environment variable JATOS_SECRET then generate a local one
-    JATOS_SECRET="${JATOS_SECRET:="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"}"
+    # Generate an application secret
+    secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
 
     if [[ ! -f "$dir/bin/jatos" ]]; then
         echo -e "\n$dir/bin/jatos doesn't exist!"
@@ -37,13 +38,13 @@ function start() {
     mkdir -p "$dir/logs"
 
     # Add address and port to arguments if set
-    [[ -z ${address+x} ]] || args+=(-Djatos.http.address=$address)
-    [[ -z ${port+x} ]] || args+=(-Djatos.http.port=$port)
+    [[ -z ${address+x} ]] || args+=(-Djatos.http.address="$address")
+    [[ -z ${port+x} ]] || args+=(-Djatos.http.port="$port")
 
     args+=(-Dconfig.file="$dir/conf/production.conf")
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
-    "$dir/bin/jatos" "${args[@]}" -J-server 2>>"$dir/logs/loader.log"
+    env GENERATED_SECRET="$secret" "$dir/bin/jatos" "${args[@]}" -J-server 2>>"$dir/logs/loader.log"
 
     # Let Docker not exit in case of update restart: sleep infinity
     sleep infinity
