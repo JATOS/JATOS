@@ -239,8 +239,8 @@ paths:
           description: Invalid token
   /jatos/api/v1/studies/{id}/assets/structure:
     get:
-      summary: (since v3.8.2) Get the directory structure of a study assets directory in JSON
-      description: Every element has `name` (filename), `path` (location in the study assets), `type` (_file_ or _directory_), `creation` (creation timestamp), `lastModified` (last modification timestamp), `size` (file size), `checksum` (checksum of the file calculated with Adler32)
+      summary: Get the directory structure of a study assets directory in JSON
+      description: (since v3.8.2) Every element has `name` (filename), `path` (location in the study assets), `type` (_file_ or _directory_), `creation` (creation timestamp), `lastModified` (last modification timestamp), `size` (file size), `checksum` (checksum of the file calculated with Adler32)
       tags:
         - study
       parameters:
