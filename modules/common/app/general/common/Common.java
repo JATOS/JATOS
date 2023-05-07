@@ -16,11 +16,10 @@ import java.net.SocketException;
 import java.util.*;
 
 /**
- * This class provides configuration that is common to all modules of JATOS. It
- * mostly takes parameters from application.conf. It is initialized during JATOS
- * start (triggered in GuiceConfig). Since most fields are initialized by the
- * constructor during the JATOS' start (triggered in GuiceConfig), it's save to
- * access them via static getter methods.
+ * This class provides configuration properties that are common to all modules of JATOS. It mostly takes parameters from
+ * application.conf. It is initialized during JATOS start (triggered in GuiceConfig). Since most fields are initialized
+ * by the constructor during the JATOS' start (triggered in GuiceConfig), it's safe to access them via static getter
+ * methods.
  *
  * @author Kristian Lange
  */
@@ -61,7 +60,6 @@ public class Common {
     private static int userSessionInactivity;
     private static String dbUrl;
     private static String dbDriver;
-    private static String jpaDefault;
     private static String mac;
     private static int userPasswordLength;
     private static int userPasswordStrength;
@@ -124,20 +122,19 @@ public class Common {
         maxResultsDbQuerySize = config.getInt("jatos.maxResultsDbQuerySize");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
-        jpaDefault = config.getString("jpa.default");
-        dbUrl = config.getString("jatos.db.url");
-        dbDriver = config.getString("jatos.db.driver");
+        dbUrl = config.getString("db.default.url"); // Also jatos.db.url
+        dbDriver = config.getString("db.default.driver"); // Also jatos.db.driver
         mac = fillMac();
         userPasswordLength = config.getInt("jatos.user.password.length");
         userPasswordStrength = config.getInt("jatos.user.password.strength");
         if (userPasswordStrength > userPasswordStrengthRegexList.size()) {
             userPasswordStrength = 0;
         }
-        jatosUrlBasePath = config.getString("jatos.urlBasePath");
+        jatosUrlBasePath = config.getString("play.http.context"); // Also jatos.urlBasePath
         jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
-        jatosHttpAddress = config.getString("jatos.http.address");
+        jatosHttpAddress = config.getString("play.server.http.address"); // Also jatos.http.address
         if (jatosHttpAddress.equals("0.0.0.0")) jatosHttpAddress = "127.0.0.1"; // Fix localhost IP
-        jatosHttpPort = config.getInt("jatos.http.port");
+        jatosHttpPort = config.getInt("play.server.http.port"); // Also jatos.http.port
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
         if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.STRING) {
             ldapBaseDn = Collections.singletonList(config.getString("jatos.user.authentication.ldap.basedn"));
@@ -362,13 +359,6 @@ public class Common {
      */
     public static String getDbDriver() {
         return dbDriver;
-    }
-
-    /**
-     * JPA persistence unit as defined in application.conf
-     */
-    public static String getJpaDefault() {
-        return jpaDefault;
     }
 
     /**
