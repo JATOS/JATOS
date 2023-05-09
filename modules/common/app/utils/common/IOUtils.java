@@ -34,7 +34,7 @@ public class IOUtils {
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
-    public static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+    public static final File TMP_DIR = new File(Common.getTmpDir());
 
     /**
      * Reads the given file and returns the content as String.
@@ -380,12 +380,13 @@ public class IOUtils {
 
     /**
      * Returns the disk size in Bytes of all files inside the given study assets directory. It does not count the size
-     * of directories themselves (e.g. on Linux each directory takes 4kB).
+     * of directories themselves (e.g., on Linux, each directory takes 4kB).
      */
     public long getStudyAssetsDirSize(String dirName) {
         try {
             Path path = getStudyAssetsDir(dirName).toPath();
             if (!Files.exists(path)) return 0;
+            //noinspection resource
             return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
         } catch (IOException e) {
             return 0;
@@ -393,7 +394,7 @@ public class IOUtils {
     }
 
     /**
-     * Renames a component's HTML file. This file can be in a sub-directory of the study assets directory.
+     * Renames a component's HTML file. This file can be in a subdirectory of the study assets directory.
      *
      * @param oldHtmlFilePath The current local file path within the study assets
      * @param newHtmlFilePath The new local file path within the study assets
@@ -466,6 +467,7 @@ public class IOUtils {
         Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
         if (!Files.exists(path)) return 0;
         try {
+            //noinspection resource
             return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
         } catch (IOException e) {
             return 0;

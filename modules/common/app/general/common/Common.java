@@ -92,6 +92,7 @@ public class Common {
     private static String logsPath;
     private static String logsFilename;
     private static String logsAppender;
+    private static String tmpDir;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -164,6 +165,7 @@ public class Common {
         logsPath = config.getString("jatos.logs.path");
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
+        tmpDir = config.getIsNull("jatos.tmpDir") ? System.getProperty("java.io.tmpdir") : config.getString("jatos.tmpDir");
     }
 
     private String fillStudyAssetsRootPath(Config config) {
@@ -596,5 +598,12 @@ public class Common {
      */
     public static String getLogsAppender() {
         return logsAppender;
+    }
+
+    /**
+     * Path to the JATOS tmp directory. If not set, it is System.getProperty("java.io.tmpdir").
+     */
+    public static String getTmpDir() {
+        return tmpDir;
     }
 }
