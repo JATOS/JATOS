@@ -9,7 +9,7 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaJpa,
   javaWs,
-  evolutions,
+  "com.typesafe.play" %% "play-jdbc-evolutions" % "2.8.19" excludeAll(ExclusionRule(organization = "com.typesafe.play")),
   jdbc,
   guice,
   "org.hibernate" % "hibernate-core" % "5.4.24.Final",
