@@ -51,8 +51,6 @@ public class SignIn extends Controller {
         this.userDao = userDao;
         this.loginAttemptDao = loginAttemptDao;
         this.userService = userService;
-
-        userService.createAdminIfNotExists();
     }
 
     /**
