@@ -60,9 +60,10 @@ public class Home extends Controller {
         User loggedInUser = authenticationService.getLoggedInUser();
         List<Study> studyList = studyDao.findAllByUser(loggedInUser);
         String breadcrumbs = breadcrumbsService.generateForHome();
-        boolean freshlyLoggedIn = Duration.between(loggedInUser.getLastLogin().toInstant(), Instant.now())
-                .minusSeconds(30)
-                .isNegative();
+        boolean freshlyLoggedIn = loggedInUser.getLastLogin() != null &&
+                Duration.between(loggedInUser.getLastLogin().toInstant(), Instant.now())
+                        .minusSeconds(30)
+                        .isNegative();
         return status(httpStatus,
                 views.html.gui.home.render(studyList, freshlyLoggedIn, loggedInUser, breadcrumbs, Helpers.isLocalhost()));
     }
