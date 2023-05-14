@@ -28,14 +28,14 @@ libraryDependencies ++= Seq(
 dockerCommands := Seq(
   Cmd("FROM", "eclipse-temurin:11-jre-ubi9-minimal"),
   Cmd("LABEL", "maintainer=lange.kristian@gmail.com"),
-  Cmd("WORKDIR", "/opt/docker"),
-  Cmd("ADD", "opt /opt"),
+  Cmd("ARG", "APP_HOME=/opt/jatos"),
+  Cmd("ARG", "DATA_HOME=/opt/jatos_data"),
+  Cmd("WORKDIR", "${APP_HOME}"),
+  Cmd("RUN", "useradd -ms /bin/bash jatos"),
+  Cmd("COPY", "opt/docker ${APP_HOME}"),
+  Cmd("RUN", "mkdir -p ${APP_HOME}/logs ${APP_HOME}/tmp ${DATA_HOME} && chown -R jatos:jatos ${APP_HOME} ${DATA_HOME}"),
+  Cmd("USER", "jatos"),
   Cmd("EXPOSE", "9000"),
-  ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
-  ExecCmd("RUN", "chown", "-R", "daemon:daemon", "/opt/docker"),
-  ExecCmd("RUN", "chmod", "u+x", "loader.sh"),
-  Cmd("VOLUME", "/opt/docker/logs"),
-  Cmd("USER", "daemon"),
   ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
 
