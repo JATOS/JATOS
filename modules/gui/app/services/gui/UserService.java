@@ -16,8 +16,6 @@ import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
 import models.gui.NewUserModel;
-import play.Logger;
-import play.db.jpa.JPAApi;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
@@ -31,25 +29,22 @@ import java.util.Date;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class UserService {
 
-    private static final Logger.ALogger LOGGER = Logger.of(UserService.class);
-
     /**
-     * Default admin username; the admin user is created during first initialization of JATOS; don't confuse admin user
-     * with the Role ADMIN
+     * Default admin username; the admin user is created during the first initialization of JATOS; don't confuse admin
+     * user with the Role ADMIN
      */
     public static final String ADMIN_USERNAME = "admin";
     /**
-     * Default admin password; the admin user is created during first initialization of JATOS; don't confuse admin user
-     * with the Role ADMIN
+     * Default admin password; the admin user is created during the first initialization of JATOS; don't confuse admin
+     * user with the Role ADMIN
      */
     public static final String ADMIN_PASSWORD = "admin";
     /**
-     * Default admin name; the admin user is created during first initialization of JATOS; don't confuse admin user with
-     * the Role ADMIN
+     * Default admin name; the admin user is created during the first initialization of JATOS; don't confuse admin user
+     * with the Role ADMIN
      */
     public static final String ADMIN_NAME = "Admin";
 
@@ -59,18 +54,16 @@ public class UserService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final ApiTokenDao apiTokenDao;
-    private final JPAApi jpa;
 
     @Inject
     UserService(StudyService studyService, AuthService authenticationService, UserDao userDao,
-            StudyDao studyDao, WorkerDao workerDao, ApiTokenDao apiTokenDao, JPAApi jpa) {
+            StudyDao studyDao, WorkerDao workerDao, ApiTokenDao apiTokenDao) {
         this.studyService = studyService;
         this.authenticationService = authenticationService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.apiTokenDao = apiTokenDao;
-        this.jpa = jpa;
     }
 
     /**
@@ -82,27 +75,6 @@ public class UserService {
             throw new NotFoundException(MessagesStrings.userNotExist(normalizedUsername));
         }
         return user;
-    }
-
-    /**
-     * Check for user admin: In case the application is started the first time we need an initial user: admin. If admin
-     * can't be found, create one.
-     */
-    public void createAdminIfNotExists() {
-        jpa.withTransaction(() -> {
-            User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            if (admin == null) {
-                admin = new User(ADMIN_USERNAME, ADMIN_NAME, null);
-                createAndPersistUser(admin, ADMIN_PASSWORD, true, AuthMethod.DB);
-                LOGGER.info("Created Admin user");
-            }
-
-            // Some older JATOS versions miss the ADMIN role
-            if (!admin.isAdmin()) {
-                admin.addRole(Role.ADMIN);
-                userDao.update(admin);
-            }
-        });
     }
 
     /**
