@@ -144,17 +144,18 @@ public class Helpers {
 
     public static Map<String, String> getJVMInfo() {
         Map<String, String> info = new LinkedHashMap<>();
+        info.put("User", System.getProperty("user.name"));
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        info.put("Uptime", "" + humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
+        info.put("Uptime", humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
         info.put("Name", runtimeBean.getName());
         info.put("PID", runtimeBean.getName().split("@")[0]);
         info.put("Java name", runtimeBean.getVmName());
         info.put("Java version", System.getProperty("java.version"));
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        info.put("Thread count", "" + threadBean.getThreadCount());
-        info.put("Peak thread count", "" + threadBean.getPeakThreadCount());
+        info.put("Thread count", String.valueOf(threadBean.getThreadCount()));
+        info.put("Peak thread count", String.valueOf(threadBean.getPeakThreadCount()));
 
         // Using Runtime.getRuntime()
         info.put("Total memory", humanReadableByteCount(Runtime.getRuntime().totalMemory()));
@@ -174,10 +175,10 @@ public class Helpers {
         Map<String, String> info = new LinkedHashMap<>();
 
         OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
-        info.put("OS name", "" + systemBean.getName());
-        info.put("OS version", "" + systemBean.getVersion());
-        info.put("System load average", "" + systemBean.getSystemLoadAverage());
-        info.put("Available processors", "" + systemBean.getAvailableProcessors());
+        info.put("OS name", systemBean.getName());
+        info.put("OS version", systemBean.getVersion());
+        info.put("System load average", String.valueOf(systemBean.getSystemLoadAverage()));
+        info.put("Available processors", String.valueOf(systemBean.getAvailableProcessors()));
         info.put("System time", LocalDateTime.now().toString());
         return info;
     }
