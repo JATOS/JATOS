@@ -31,12 +31,19 @@ dockerCommands := Seq(
   Cmd("ARG", "APP_HOME=/opt/jatos"),
   Cmd("ARG", "DATA_HOME=/opt/jatos_data"),
   Cmd("WORKDIR", "${APP_HOME}"),
-  Cmd("RUN", "useradd -ms /bin/bash jatos"),
   Cmd("COPY", "opt/docker ${APP_HOME}"),
-  Cmd("RUN", "mkdir -p ${APP_HOME}/logs ${APP_HOME}/tmp ${DATA_HOME} && chown -R jatos:jatos ${APP_HOME} ${DATA_HOME}"),
+  Cmd("RUN", "groupadd -g 10001 jatos " +
+    "&& useradd -u 10000 -g jatos jatos " +
+    "&& mkdir -p ${APP_HOME}/logs ${APP_HOME}/tmp ${DATA_HOME} " +
+    "&& chown -R jatos:jatos ${APP_HOME} ${DATA_HOME}"),
   Cmd("USER", "jatos"),
   Cmd("EXPOSE", "9000"),
-  ExecCmd("ENTRYPOINT", "./loader.sh", "start")
+  ExecCmd("ENTRYPOINT", "./loader.sh", "start",
+    "-Djatos.tmpDir=/opt/jatos/tmp",
+    "-Djatos.logs.path=/opt/jatos/logs",
+    "-Djatos.studyAssetsRootPath=/opt/jatos_data/study_assets_root",
+    "-Djatos.resultUploads.path=/opt/jatos_data/result_uploads",
+    "-Djatos.studyLogs.path=/opt/jatos_data/study_logs")
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
