@@ -93,6 +93,7 @@ public class Common {
     private static String logsFilename;
     private static String logsAppender;
     private static String tmpDir;
+    private static boolean multiNode;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -166,6 +167,7 @@ public class Common {
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
         tmpDir = config.getIsNull("jatos.tmpDir") ? System.getProperty("java.io.tmpdir") : config.getString("jatos.tmpDir");
+        multiNode = config.getBoolean("jatos.multiNode");
     }
 
     private String fillStudyAssetsRootPath(Config config) {
@@ -605,5 +607,12 @@ public class Common {
      */
     public static String getTmpDir() {
         return tmpDir;
+    }
+
+    /**
+     * True indicates that this JATOS runs with others in a cluster
+     */
+    public static boolean isMultiNode() {
+        return multiNode;
     }
 }
