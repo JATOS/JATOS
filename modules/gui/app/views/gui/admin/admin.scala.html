@@ -220,6 +220,7 @@
                     <b>User&nbsp;session&nbsp;inactivity</b>:&nbsp;@general.common.Common.getUserSessionInactivity()<br>
                     <b>DB&nbsp;URL</b>:&nbsp;@general.common.Common.getDbUrl()<br>
                     <b>DB&nbsp;driver</b>:&nbsp;@general.common.Common.getDbDriver()<br>
+                    <b>Multi node</b>:&nbsp;@general.common.Common.isMultiNode()<br>
                     <b>Google&nbsp;OAuth&nbsp;allowed</b>:&nbsp;@general.common.Common.isOauthGoogleAllowed()<br>
                     <b>OIDC&nbsp;allowed</b>:&nbsp;@general.common.Common.isOidcAllowed()<br>
                     <b>OIDC&nbsp;Provider&nbsp;Config&nbsp;URL</b>:&nbsp;@general.common.Common.getOidcProviderConfigUrl()<br>
@@ -328,19 +329,26 @@ function showUpdateAvailable(releaseInfo) {
     var text;
     var version = getVersionName(releaseInfo);
     if (releaseInfo.isNewerVersion || !releaseInfo.isLatest) {
-        if (releaseInfo.isUpdateAllowed && !releaseInfo.isDifferentJava && releaseInfo.zipUrl) {
-            text = "Do you want to update to version&nbsp;" + version + "?";
+        if (@{general.common.Common.isMultiNode()}) {
+            if (releaseInfo.isLatest) {
+                text = `A new JATOS version is available: + ${version}`;
+            } else {
+                text = `Auto-update is not possible in a multi-node JATOS installation.`;
+            }
+            $("#updateJatos .updateJatosButton").hide();
+        } else if (releaseInfo.isUpdateAllowed && !releaseInfo.isDifferentJava && releaseInfo.zipUrl) {
+            text = `Do you want to update to version&nbsp;${version}?`;
             if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
             $("#updateJatos button").show();
         } else if (releaseInfo.isUpdateAllowed && releaseInfo.isDifferentJava && releaseInfo.zipJavaUrl) {
-            text = "Do you want to update to version&nbsp;" + version + "?"
-                    + " The new JATOS needs a different version of Java than yours. So you'll need JATOS"
-                    + " bundled with Java&nbsp;" + releaseInfo.newJavaVersion + ".";
+            text = `Do you want to update to version&nbsp;${version}?
+                    The new JATOS needs a different version of Java than yours. So you'll need JATOS
+                    bundled with Java&nbsp;${releaseInfo.newJavaVersion}.`;
             if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
             $("#updateJatos button").show();
         }
     } else {
-        text = "Your JATOS (version&nbsp;" + releaseInfo.currentVersion + ") is up-to-date.";
+        text = `Your JATOS (version&nbsp;${releaseInfo.currentVersion}) is up-to-date.`;
         $("#updateJatos .updateJatosButton").hide();
         $("#updateJatos .releaseNotesButton").hide();
     }
