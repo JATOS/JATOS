@@ -1,4 +1,4 @@
-package utils.common;
+package migrations.common;
 
 import com.diffplug.common.base.Errors;
 import daos.common.ComponentResultDao;
@@ -18,18 +18,24 @@ public class ComponentResultMigration {
 
     private final ComponentResultDao componentResultDao;
     private final JPAApi jpaApi;
+    private final JatosMigrations jatosMigrations;
 
     @Inject
-    ComponentResultMigration(ComponentResultDao componentResultDao, JPAApi jpaApi) {
+    ComponentResultMigration(ComponentResultDao componentResultDao, JPAApi jpaApi, JatosMigrations jatosMigrations) {
         this.componentResultDao = componentResultDao;
         this.jpaApi = jpaApi;
+        this.jatosMigrations = jatosMigrations;
     }
 
-    /**
-     * This method is only used during update from version <3.7.5. It creates for each existing
-     * ComponentResult entity the fields dataShort and dataSize.
-     */
-    public void fillDataFieldsForExistingComponentResults() {
+    public void run() {
+        try {
+            jatosMigrations.start(this::fill);
+        } catch (Exception e) {
+            throw new RuntimeException("ComponentResult Migration failed", e);
+        }
+    }
+
+    private void fill() {
         List<Long> crids = jpaApi.withTransaction(componentResultDao::findAllIdsWhereDataSizeIsNull);
         if (crids.isEmpty()) return;
 
@@ -41,4 +47,5 @@ public class ComponentResultMigration {
         }));
         LOGGER.info("Filled dataSize and dataShort fields in " + crids.size() + " ComponentResult entities");
     }
+
 }

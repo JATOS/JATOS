@@ -202,6 +202,7 @@
                     <b>URL host</b>: <span id="configUrlHost"></span><br>
                     <b>URL&nbsp;basepath</b>:&nbsp;@general.common.Common.getJatosUrlBasePath()<br>
                     <b>URL&nbsp;host&nbsp;+&nbsp;basepath</b>: <span id="configUrlHostBase"></span><br>
+                    <b>Multi node</b>:&nbsp;@general.common.Common.isMultiNode()<br>
                     <b>Local&nbsp;IP</b>:&nbsp;@utils.common.Helpers.getLocalIpAddress()<br>
                     <b>Local&nbsp;basepath</b>:&nbsp;@general.common.Common.getBasepath()<br>
                     <b>Logs path</b>:&nbsp;@general.common.Common.getLogsPath()<br>
@@ -220,7 +221,6 @@
                     <b>User&nbsp;session&nbsp;inactivity</b>:&nbsp;@general.common.Common.getUserSessionInactivity()<br>
                     <b>DB&nbsp;URL</b>:&nbsp;@general.common.Common.getDbUrl()<br>
                     <b>DB&nbsp;driver</b>:&nbsp;@general.common.Common.getDbDriver()<br>
-                    <b>Multi node</b>:&nbsp;@general.common.Common.isMultiNode()<br>
                     <b>Google&nbsp;OAuth&nbsp;allowed</b>:&nbsp;@general.common.Common.isOauthGoogleAllowed()<br>
                     <b>OIDC&nbsp;allowed</b>:&nbsp;@general.common.Common.isOidcAllowed()<br>
                     <b>OIDC&nbsp;Provider&nbsp;Config&nbsp;URL</b>:&nbsp;@general.common.Common.getOidcProviderConfigUrl()<br>
@@ -264,7 +264,11 @@
                 <p>
                     <b>Correct URL host</b>: <span id="testRealHostUrlResult"></span><br>
                     <b>Connect to database</b>: <span id="testDatabaseResult"></span><br>
-                    <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolderResult"></span><br>
+                    <b>Access to study assets root folder</b>: <span id="testStudyAssetsRootFolder"></span><br>
+                    <b>Access to result uploads folder</b>: <span id="testResultUploadsFolder">deactivated</span><br>
+                    <b>Access to logs folder</b>: <span id="testLogsFolder"></span><br>
+                    <b>Access to study logs folder</b>: <span id="testStudyLogsFolder">deactivated</span><br>
+                    <b>Access to tmp folder</b>: <span id="testTmpFolder"></span><br>
                     <b>Read jatos.js (via study path)</b>: <span id="testJatosJsViaStudyPathResult"></span><br>
                     <b>Read jatos.js (via assets path)</b>: <span id="testJatosJsViaAssetsPathResult"></span><br>
                     <b>Open WebSocket</b>: <span id="testWebSocketResult"></span><br>
@@ -584,7 +588,7 @@ $('#adminToolbar').on('click', '#tests', function() {
     $('#testsModal').modal('show');
     testRealHostUrl();
     testDatabase();
-    testStudyAssetsRootFolder();
+    testFolderAccess();
     testJatosJsViaStudyPath();
     testJatosJsViaAssetsPath();
     testWebSocket();
@@ -620,15 +624,17 @@ function testDatabase() {
     });
 }
 
-function testStudyAssetsRootFolder() {
+function testFolderAccess() {
     $.ajax({
         type: 'GET',
-        url: '@controllers.gui.routes.Tests.testStudyAssetsRootFolder()',
+        url: '@controllers.gui.routes.Tests.testFolderAccess()',
         success: function(result) {
-            $('#testStudyAssetsRootFolderResult').html('<font color="green">OK</font>');
-        },
-        error : function(err) {
-            $('#testStudyAssetsRootFolderResult').html('<font color="red">FAIL</font>');
+            let accessHtml = (a) => a ? '<font color="green">OK</font>' : '<font color="red">FAIL</font>';
+            $('#testStudyAssetsRootFolder').html(accessHtml(result.studyAssetsRoot));
+            @if(general.common.Common.isResultUploadsEnabled()){$('#testResultUploadsFolder').html(accessHtml(result.resultUploads));}
+            $('#testLogsFolder').html(accessHtml(result.logs));
+            @if(general.common.Common.isStudyLogsEnabled()){$('#testStudyLogsFolder').html(accessHtml(result.studyLogs));}
+            $('#testTmpFolder').html(accessHtml(result.tmp));
         }
     });
 }

@@ -12,8 +12,6 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.StudyLink;
 import models.common.workers.*;
-import play.Logger;
-import play.db.jpa.JPAApi;
 import scala.Option;
 import utils.common.Helpers;
 import utils.common.JsonUtils;
@@ -29,11 +27,8 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class StudyLinkService {
-
-    private static final Logger.ALogger LOGGER = Logger.of(StudyLinkService.class);
 
     private final BatchDao batchDao;
     private final WorkerDao workerDao;
@@ -41,19 +36,16 @@ public class StudyLinkService {
     private final WorkerService workerService;
     private final StudyService studyService;
     private final Checker checker;
-    private final JPAApi jpa;
 
     @Inject
     StudyLinkService(BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao,
-            WorkerService workerService, StudyService studyService,
-            Checker checker, JPAApi jpa) {
+            WorkerService workerService, StudyService studyService, Checker checker) {
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
         this.workerService = workerService;
         this.studyService = studyService;
         this.checker = checker;
-        this.jpa = jpa;
     }
 
     public List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, String workerType)
@@ -85,32 +77,6 @@ public class StudyLinkService {
             amount--;
         }
         return studyCodeList;
-    }
-
-    /**
-     * This method is only used during update from version <3.7.1. It creates for each existing
-     * PersonalSingleWorker and PersonalMultipleWorker a StudyLink.
-     */
-    public void createStudyLinksForExistingPersonalWorkers() {
-        jpa.withTransaction(() -> {
-            if (studyLinkDao.countAll() != 0) return;
-
-            int studyLinkCounter = 0;
-            List<Worker> allWorkers = workerDao.findAll();
-            for (Worker worker : allWorkers) {
-                if (worker.getWorkerType().equals(PersonalSingleWorker.WORKER_TYPE) ||
-                        worker.getWorkerType().equals(PersonalMultipleWorker.WORKER_TYPE)) {
-                    for (Batch batch : worker.getBatchList()) {
-                        if (studyLinkDao.findByBatchAndWorker(batch, worker).isPresent()) continue;
-                        StudyLink studyLink = new StudyLink(batch, worker);
-                        studyLinkDao.create(studyLink);
-                        studyLinkCounter++;
-                        LOGGER.info("Created study link " + studyLinkCounter);
-                    }
-                }
-            }
-            if (studyLinkCounter > 0) LOGGER.info("Created " + studyLinkCounter + " study links for existing workers");
-        });
     }
 
     public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,

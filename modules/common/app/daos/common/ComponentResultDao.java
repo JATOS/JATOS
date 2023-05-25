@@ -94,8 +94,8 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Only set the 'dataShort' and 'dataSize' field with data from 'data' (used only during update from old version of
-     * JATOS that didn't have those fields yet).
+     * Only set the 'dataShort' and 'dataSize' field with data from 'data' (used only during update from an old version
+     * of JATOS that didn't have those fields yet).
      */
     public void setDataSizeAndDataShort(Long id) {
         String data = getData(id);
@@ -176,7 +176,7 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Fetches all ComponentResults without 'dataSize' (is null). This is used only during update from old version of
+     * Fetches all ComponentResults without 'dataSize' (is null). This is used only during update from an old version of
      * JATOS that didn't have those fields yet.
      */
     public List<Long> findAllIdsWhereDataSizeIsNull() {
@@ -285,7 +285,7 @@ public class ComponentResultDao extends AbstractDao {
 
     /**
      * Returns a list of component result IDs that belong to the given list of study result IDs. The order of the
-     * study results is kept, e.g. if the study result IDs are sr1, sr2, sr3 - then in the returned list are first all
+     * study results is kept, e.g., if the study result IDs are sr1, sr2, sr3 - then in the returned list are first all
      * component result IDs of sr1, then all of sr2, and last all of sr3.
      */
     public List<Long> findOrderedIdsByOrderedStudyResultIds(List<Long> orderedSrids) {

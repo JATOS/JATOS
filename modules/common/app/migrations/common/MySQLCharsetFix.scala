@@ -1,4 +1,4 @@
-package general
+package migrations.common
 
 import general.common.Common
 import play.api.Logger
@@ -15,13 +15,21 @@ import scala.collection.mutable.ListBuffer
   * @author Kristian Lange
   */
 @Singleton
-class MySQLCharsetFix @Inject()(db: Database) {
+class MySQLCharsetFix @Inject()(db: Database, jatosMigrations: JatosMigrations) {
 
   private val logger = Logger(this.getClass)
 
   def run(): Unit = {
     if (!Common.usesMysql()) return
 
+    try jatosMigrations.start(() => this.fix())
+    catch {
+      case e: Exception =>
+        throw new RuntimeException("MySQLCharsetFix failed", e)
+    }
+  }
+
+  private def fix(): Unit = {
     val connection = db.getConnection()
     try {
       val statement = connection.createStatement()
@@ -42,7 +50,7 @@ class MySQLCharsetFix @Inject()(db: Database) {
       }
     } catch {
       case e: SQLException =>
-        logger.error("Error during converting tables in MySQL to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", e)
+        throw new RuntimeException("Error during converting tables in MySQL to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", e)
     } finally {
       connection.close()
     }

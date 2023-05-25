@@ -94,10 +94,6 @@ public class StudyLogger {
         if (!Common.isStudyLogsEnabled()) return;
         Path studyLogPath = Paths.get(getPath(study));
         try {
-            Path studyLogDirPath = Paths.get(Common.getStudyLogsPath());
-            if (!Files.isDirectory(studyLogDirPath)) {
-                Files.createDirectories(studyLogDirPath);
-            }
             if (Files.exists(studyLogPath)) {
                 LOGGER.error("A study log with " + studyLogPath + " exists already.");
                 retire(study);

@@ -13,7 +13,10 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * This class provides configuration properties that are common to all modules of JATOS. It mostly takes parameters from
@@ -27,22 +30,6 @@ import java.util.*;
 public class Common {
 
     private static final ALogger LOGGER = Logger.of(Common.class);
-
-    /**
-     * Property name in application config - path (file system) of study assets root directory
-     * (directory where all study assets are located)
-     */
-    private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";
-
-    /**
-     * Property name in application config - path (file system) to study logs
-     */
-    private static final String PROPERTY_JATOS_STUDY_LOGS_PATH = "jatos.studyLogs.path";
-
-    /**
-     * Property name in application config - path (file system) to result upload files
-     */
-    private static final String PROPERTY_JATOS_RESULT_UPLOADS_PATH = "jatos.resultUploads.path";
 
     private static String jatosVersion;
     private static final String jatosApiVersion = "1.0.1";
@@ -113,11 +100,14 @@ public class Common {
     Common(Config config) {
         jatosVersion = BuildInfo.version();
         basepath = config.getString("play.server.dir");
-        studyAssetsRootPath = fillStudyAssetsRootPath(config);
+        studyAssetsRootPath = obtainPath(config, "jatos.studyAssetsRootPath");
+        LOGGER.info("Path to study assets directory is " + studyAssetsRootPath);
         studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
-        studyLogsPath = fillStudyLogsPath(config);
+        studyLogsPath = obtainPath(config, "jatos.studyLogs.path");
+        LOGGER.info("Path to study logs directory is " + studyLogsPath);
         resultUploadsEnabled = config.getBoolean("jatos.resultUploads.enabled");
-        resultUploadsPath = fillResultUploadsPath(config);
+        resultUploadsPath = obtainPath(config, "jatos.studyLogs.path");
+        LOGGER.info("Path to uploads directory is " + resultUploadsPath);
         resultUploadsMaxFileSize = config.getBytes("jatos.resultUploads.maxFileSize");
         resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
         resultDataMaxSize = config.getBytes("jatos.resultData.maxSize");
@@ -163,41 +153,17 @@ public class Common {
         showResultFileSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
-        logsPath = config.getString("jatos.logs.path");
+        logsPath = obtainPath(config, "jatos.logs.path");
+        LOGGER.info("Path to logs directory is " + logsPath);
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
-        tmpDir = config.getIsNull("jatos.tmpDir") ? System.getProperty("java.io.tmpdir") : config.getString("jatos.tmpDir");
         multiNode = config.getBoolean("jatos.multiNode");
+        tmpDir = config.getIsNull("jatos.tmpDir") ? System.getProperty("java.io.tmpdir") : obtainPath(config, "jatos.tmpDir");
+        LOGGER.info("Path to tmp directory is " + tmpDir);
     }
 
-    private String fillStudyAssetsRootPath(Config config) {
-        String tempStudyAssetsRootPath = obtainPath(config, PROPERTY_STUDY_ASSETS_ROOT_PATH).orElseThrow(() ->
-                new RuntimeException("Missing configuration of path to study assets directory: "
-                        + "It must be set in application.conf under " + PROPERTY_STUDY_ASSETS_ROOT_PATH + "."));
-        LOGGER.info("Path to study assets directory is " + tempStudyAssetsRootPath);
-        return tempStudyAssetsRootPath;
-    }
-
-    private String fillStudyLogsPath(Config config) {
-        String tmpStudyLogPath = obtainPath(config, PROPERTY_JATOS_STUDY_LOGS_PATH).orElseThrow(() ->
-                new RuntimeException("Missing configuration of path to study logs directory: "
-                        + "It must be set in application.conf under " + PROPERTY_JATOS_STUDY_LOGS_PATH + "."));
-        LOGGER.info("Path to study logs directory is " + tmpStudyLogPath);
-        return tmpStudyLogPath;
-    }
-
-    private String fillResultUploadsPath(Config config) {
-        String tmpResultUploadsPath = obtainPath(config, PROPERTY_JATOS_RESULT_UPLOADS_PATH).orElseThrow(() ->
-                new RuntimeException("Missing configuration of path to uploads directory: "
-                        + "It must be set in application.conf under " + PROPERTY_JATOS_RESULT_UPLOADS_PATH + "."));
-        LOGGER.info("Path to uploads directory is " + tmpResultUploadsPath);
-        return tmpResultUploadsPath;
-    }
-
-    private Optional<String> obtainPath(Config config, String property) {
+    private String obtainPath(Config config, String property) {
         String path = config.getString(property);
-        if (Strings.isNullOrEmpty(path)) return Optional.empty();
-
         // Replace ~ with actual home directory
         path = path.replace("~", System.getProperty("user.home"));
         // Replace Unix-like file separator with actual system's one
@@ -206,7 +172,7 @@ public class Common {
         if (!(new File(path).isAbsolute())) {
             path = basepath + File.separator + path;
         }
-        return Optional.of(path);
+        return path;
     }
 
     private String fillMac() {

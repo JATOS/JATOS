@@ -56,7 +56,7 @@ GET      /jatos/updateAndRestart                                            @con
 # Tests controller
 GET      /jatos/test                                                        @controllers.gui.Tests.test()
 GET      /jatos/testDatabase                                                @controllers.gui.Tests.testDatabase()
-GET      /jatos/testStudyAssetsRootFolder                                   @controllers.gui.Tests.testStudyAssetsRootFolder()
+GET      /jatos/testFolderAccess                                            @controllers.gui.Tests.testFolderAccess()
 GET      /jatos/testWebSocket                                               @controllers.gui.Tests.testWebSocket()
 
 # Auth controllers

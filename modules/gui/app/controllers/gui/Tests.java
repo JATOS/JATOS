@@ -10,10 +10,13 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import static auth.gui.AuthAction.Auth;
 
@@ -54,22 +57,28 @@ public class Tests extends Controller {
 
     @Transactional
     @Auth(User.Role.ADMIN)
-    public Result testStudyAssetsRootFolder() {
+    public Result testFolderAccess() {
+        Map<String, Boolean> folderAccessResults = new HashMap<>();
+        folderAccessResults.put("studyAssetsRoot", testFolder(Common.getStudyAssetsRootPath()));
+        folderAccessResults.put("resultUploads", testFolder(Common.getResultUploadsPath()));
+        folderAccessResults.put("logs", testFolder(Common.getLogsPath()));
+        folderAccessResults.put("studyLogs", testFolder(Common.getStudyLogsPath()));
+        folderAccessResults.put("tmp", testFolder(Common.getTmpDir()));
+        return ok(JsonUtils.asJsonNode(folderAccessResults));
+    }
+
+    private boolean testFolder(String path) {
         try {
-            File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
-            if (!studyAssetsRoot.canRead()) {
-                return badRequest();
-            }
-            if (!studyAssetsRoot.canWrite()) {
-                return badRequest();
-            }
-            if (!studyAssetsRoot.isDirectory()) {
-                return badRequest();
+            File studyAssetsRoot = new File(path);
+            if (!studyAssetsRoot.canRead()
+                    || !studyAssetsRoot.canWrite()
+                    || !studyAssetsRoot.isDirectory()) {
+                return false;
             }
         } catch (Exception e) {
-            return badRequest();
+            return false;
         }
-        return ok();
+        return true;
     }
 
     @Transactional

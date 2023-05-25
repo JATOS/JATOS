@@ -3,11 +3,10 @@ package general
 import akka.actor.ActorSystem
 import daos.common.LoginAttemptDao
 import general.common.{Common, JatosUpdater}
+import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMigration}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.db.jpa.JPAApi
-import services.gui.StudyLinkService
-import utils.common.ComponentResultMigration
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
@@ -30,17 +29,25 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             jpa: JPAApi,
                             jatosUpdater: JatosUpdater,
                             mySQLCharsetFix: MySQLCharsetFix,
-                            studyLinkService: StudyLinkService,
+                            studyLinkMigration: StudyLinkMigration,
                             componentResultMigration: ComponentResultMigration,
                             loginAttemptDao: LoginAttemptDao) {
 
   private val logger = Logger(this.getClass)
 
+  if (Common.isMultiNode && !Common.usesMysql()) {
+    throw new RuntimeException("You cannot use an H2 database in multi node mode")
+  }
+
   mySQLCharsetFix.run()
   checkUpdate()
-  checkStudyAssetsRootDir()
-  studyLinkService.createStudyLinksForExistingPersonalWorkers()
-  componentResultMigration.fillDataFieldsForExistingComponentResults()
+  createDirIfNotExist(Common.getStudyAssetsRootPath)
+  if (Common.isStudyLogsEnabled) createDirIfNotExist(Common.getStudyLogsPath)
+  if (Common.isResultUploadsEnabled) createDirIfNotExist(Common.getResultUploadsPath)
+  createDirIfNotExist(Common.getLogsPath)
+  createDirIfNotExist(Common.getTmpDir)
+  studyLinkMigration.run()
+  componentResultMigration.run()
   scheduleLoginAttemptCleaning()
 
   if (!environment.isProd) {
@@ -96,16 +103,16 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
     }
   }
 
-  /**
-   * Check whether studies assets root directory exists and create if not.
-   */
-  private def checkStudyAssetsRootDir(): Unit = {
-    val studyAssetsRoot = new File(Common.getStudyAssetsRootPath)
-    val success = studyAssetsRoot.mkdirs
-    if (success) logger.info(".checkStudyAssetsRootDir: Created study assets root directory " +
-      Common.getStudyAssetsRootPath)
-    if (!studyAssetsRoot.isDirectory) logger.error(".checkStudyAssetsRootDir: Study assets root " +
-      "directory " + Common.getStudyAssetsRootPath + " couldn't be created.")
+  private def createDirIfNotExist(path: String): Unit = {
+    val dir = new File(path)
+    if (!dir.exists()) {
+      val success = dir.mkdirs
+      if (success) {
+        logger.info(".createDirIfNotExist: Created " + path)
+      } else {
+        logger.error(".createDirIfNotExist: Could not create directory " + path)
+      }
+    }
   }
 
   /**
