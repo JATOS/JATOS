@@ -50,7 +50,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   componentResultMigration.run()
   scheduleLoginAttemptCleaning()
 
-  if (!environment.isProd) {
+  if (!environment.isProd || Common.isMultiNode) {
     logger.info("JATOS started")
   } else if (!isPortInUse) {
     logger.info("JATOS started")
