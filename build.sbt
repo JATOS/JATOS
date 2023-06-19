@@ -28,22 +28,21 @@ libraryDependencies ++= Seq(
 dockerCommands := Seq(
   Cmd("FROM", "eclipse-temurin:11-jre-ubi9-minimal"),
   Cmd("LABEL", "maintainer=lange.kristian@gmail.com"),
-  Cmd("ARG", "APP_HOME=/opt/jatos"),
-  Cmd("ARG", "DATA_HOME=/opt/jatos_data"),
-  Cmd("WORKDIR", "${APP_HOME}"),
-  Cmd("COPY", "opt/docker ${APP_HOME}"),
+  Cmd("ENV", "JATOS_HOME=/opt/jatos"),
+  Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
+  Cmd("WORKDIR", "${JATOS_HOME}"),
+  Cmd("COPY", "opt/docker ${JATOS_HOME}"),
   Cmd("RUN", "groupadd -g 10001 jatos " +
     "&& useradd -u 10000 -g jatos jatos " +
-    "&& mkdir -p ${APP_HOME}/logs ${APP_HOME}/tmp ${DATA_HOME} " +
-    "&& chown -R jatos:jatos ${APP_HOME} ${DATA_HOME}"),
+    "&& mkdir -p ${JATOS_HOME}/logs ${JATOS_DATA} " +
+    "&& chown -R jatos:jatos ${JATOS_HOME} ${JATOS_DATA}"),
   Cmd("USER", "jatos"),
   Cmd("EXPOSE", "9000"),
   ExecCmd("ENTRYPOINT", "./loader.sh", "start",
-    "-Djatos.tmpDir=/opt/jatos/tmp",
-    "-Djatos.logs.path=/opt/jatos/logs",
     "-Djatos.studyAssetsRootPath=/opt/jatos_data/study_assets_root",
     "-Djatos.resultUploads.path=/opt/jatos_data/result_uploads",
-    "-Djatos.studyLogs.path=/opt/jatos_data/study_logs")
+    "-Djatos.studyLogs.path=/opt/jatos_data/study_logs",
+    "-Djatos.tmpDir=/opt/jatos_data/tmp")
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
