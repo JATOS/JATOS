@@ -21,8 +21,7 @@ import java.util.Map;
 import static auth.gui.AuthAction.Auth;
 
 /**
- * Controller with endpoints used by /jatos/test. Each endpoint test a different
- * aspect of JATOS.
+ * Controller with endpoints used by /jatos/test. Each endpoint tests a different aspect of JATOS.
  *
  * @author Kristian Lange
  */
@@ -85,7 +84,7 @@ public class Tests extends Controller {
     @Auth(User.Role.ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
-            // send response back to client
+            // send response back to a client
             return Flow.<String>create().map(msg -> msg);
         });
     }
