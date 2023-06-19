@@ -42,9 +42,10 @@ function start() {
     [[ -z ${port+x} ]] || args+=(-Djatos.http.port="$port")
 
     args+=(-Dconfig.file="$dir/conf/production.conf")
+    args+=(-J--add-opens=java.base/java.lang=ALL-UNNAMED) # hide Guice warning (illegal reflective access)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
-    env GENERATED_SECRET="$secret" "$dir/bin/jatos" "${args[@]}" -J-server 2>>"$dir/logs/loader.log"
+    env GENERATED_SECRET="$secret" "$dir/bin/jatos" "${args[@]}" -J-server 2> >(tee -a "$dir/logs/loader.log")
 
     # Let Docker not exit in case of update restart: sleep infinity
     sleep infinity
@@ -56,7 +57,7 @@ function update() {
     # Wait max 10s for JATOS to be fully stopped
     while [[ -f "$pidfile" ]] && kill -0 $(cat "$pidfile") 2>&1 >/dev/null; do
         if [[ $i -gt 10 ]]; then
-            echo "`date` JATOS didn't shut down. Cannot update. Exit." | tee ${updateLog}
+            echo "`date` JATOS didn't shut down. Cannot update. Exit." 2>&1 | tee "${updateLog}"
             exit 1
         fi
         sleep 1
@@ -66,7 +67,7 @@ function update() {
     # Check that we have exactly one update folder
     updateDirsCount=$(find ${dir} -maxdepth 1 -type d -name "update-*" | wc -l)
     if [[ $updateDirsCount -lt 1 ]]; then
-        echo "`date` No update folder found. Start JATOS without update." | tee $updateLog
+        echo "`date` No update folder found. Start JATOS without update." 2>&1 | tee "$updateLog"
         args+=('-DJATOS_UPDATE_MSG="update_folder_not_found"')
         return
     fi
@@ -76,10 +77,10 @@ function update() {
         return
     fi
     updateDir=(${dir}/update-*)
-    echo "`date` Start update of JATOS from folder ${updateDir}." | tee $updateLog
+    echo "`date` Start update of JATOS from folder ${updateDir}." 2>&1 | tee "$updateLog"
 
     if [[ -d "${dir}/jre" ]] && [[ -d "${updateDir}/jre" ]]; then
-      echo "`date` Remove old Java version" | tee $updateLog
+      echo "`date` Remove old Java version" 2>&1 | tee "$updateLog"
       rm -rf ${dir}/jre
     fi
 
@@ -87,22 +88,22 @@ function update() {
     mv -f ${dir}/conf/production.conf ${dir}/conf/production.bkp
 
     # Move everything from the update folder into the current JATOS folder
-    cp -a -v ${updateDir}/* ${dir} >> $updateLog
+    cp -a -v ${updateDir}/* ${dir} >> "$updateLog"
 
     # Remove update dir
     rm -rf ${updateDir}
 
     # Compare new and old production.conf and recover it
     if cmp -s ${dir}/conf/production.conf ${dir}/conf/production.bkp; then
-        echo "`date` New and old conf/production.conf are identical." | tee -a $updateLog
+        echo "`date` New and old conf/production.conf are identical." 2>&1 | tee -a "$updateLog"
         rm ${dir}/conf/production.bkp
     else
         mv ${dir}/conf/production.conf ${dir}/conf/production.new
         mv ${dir}/conf/production.bkp ${dir}/conf/production.conf
-        echo "`date` Recovered old conf/production.conf but there is a newer version stored in conf/production.new." | tee -a $updateLog
+        echo "`date` Recovered old conf/production.conf but there is a newer version stored in conf/production.new." 2>&1 | tee -a "$updateLog"
     fi
 
-    echo "`date` Update successfully finished." | tee -a $updateLog
+    echo "`date` Update successfully finished." 2>&1 | tee -a "$updateLog"
     args+=('-DJATOS_UPDATE_MSG=success')
 }
 
