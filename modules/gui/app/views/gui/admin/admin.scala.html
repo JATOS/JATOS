@@ -288,6 +288,10 @@ $('#studyAdmin').click(function() {
     window.location.href = '@controllers.gui.routes.Admin.studyAdmin()';
 });
 
+if ("@{general.common.Common.getLogsAppender()}".includes("STDOUT")) {
+    $("#logs").hide();
+}
+
 checkJatosReleaseInfo();
 function checkJatosReleaseInfo() {
     var urlQueryParams = new URLSearchParams(window.location.search).toString();
