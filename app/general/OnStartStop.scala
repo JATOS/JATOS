@@ -45,7 +45,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   if (Common.isStudyLogsEnabled) createDirIfNotExist(Common.getStudyLogsPath)
   if (Common.isResultUploadsEnabled) createDirIfNotExist(Common.getResultUploadsPath)
   createDirIfNotExist(Common.getLogsPath)
-  createDirIfNotExist(Common.getTmpDir)
+  createDirIfNotExist(Common.getTmpPath)
   studyLinkMigration.run()
   componentResultMigration.run()
   scheduleLoginAttemptCleaning()

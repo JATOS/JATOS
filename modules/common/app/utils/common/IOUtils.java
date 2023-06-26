@@ -34,7 +34,7 @@ public class IOUtils {
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
-    public static final File TMP_DIR = new File(Common.getTmpDir());
+    public static final File TMP_DIR = new File(Common.getTmpPath());
 
     /**
      * Reads the given file and returns the content as String.

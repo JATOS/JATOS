@@ -79,7 +79,7 @@ public class Common {
     private static String logsPath;
     private static String logsFilename;
     private static String logsAppender;
-    private static String tmpDir;
+    private static String tmpPath;
     private static boolean multiNode;
 
     /**
@@ -158,8 +158,10 @@ public class Common {
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
         multiNode = config.getBoolean("jatos.multiNode");
-        tmpDir = config.getIsNull("jatos.tmpDir") ? System.getProperty("java.io.tmpdir") : obtainPath(config, "jatos.tmpDir");
-        LOGGER.info("Path to tmp directory is " + tmpDir);
+        tmpPath = config.getIsNull("jatos.tmpPath")
+                ? System.getProperty("java.io.tmpdir") + File.separator + "jatos"
+                : obtainPath(config, "jatos.tmpPath");
+        LOGGER.info("Path to tmp directory is " + tmpPath);
     }
 
     private String obtainPath(Config config, String property) {
@@ -571,8 +573,8 @@ public class Common {
     /**
      * Path to the JATOS tmp directory. If not set, it is System.getProperty("java.io.tmpdir").
      */
-    public static String getTmpDir() {
-        return tmpDir;
+    public static String getTmpPath() {
+        return tmpPath;
     }
 
     /**

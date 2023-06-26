@@ -62,7 +62,7 @@ public class Tests extends Controller {
         folderAccessResults.put("resultUploads", testFolder(Common.getResultUploadsPath()));
         folderAccessResults.put("logs", testFolder(Common.getLogsPath()));
         folderAccessResults.put("studyLogs", testFolder(Common.getStudyLogsPath()));
-        folderAccessResults.put("tmp", testFolder(Common.getTmpDir()));
+        folderAccessResults.put("tmp", testFolder(Common.getTmpPath()));
         return ok(JsonUtils.asJsonNode(folderAccessResults));
     }
 
