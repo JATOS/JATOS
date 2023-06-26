@@ -32,17 +32,18 @@ dockerCommands := Seq(
   Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
   Cmd("WORKDIR", "${JATOS_HOME}"),
   Cmd("COPY", "opt/docker ${JATOS_HOME}"),
-  Cmd("RUN", "groupadd -g 10001 jatos " +
-    "&& useradd -u 10000 -g jatos jatos " +
+  Cmd("RUN", "groupadd -g 1000 jatos " +
+    "&& useradd -u 1000 -g jatos jatos " +
     "&& mkdir -p ${JATOS_HOME}/logs ${JATOS_DATA} " +
     "&& chown -R jatos:jatos ${JATOS_HOME} ${JATOS_DATA}"),
   Cmd("USER", "jatos"),
   Cmd("EXPOSE", "9000"),
-  ExecCmd("ENTRYPOINT", "./loader.sh", "start",
-    "-Djatos.studyAssetsRootPath=/opt/jatos_data/study_assets_root",
-    "-Djatos.resultUploads.path=/opt/jatos_data/result_uploads",
-    "-Djatos.studyLogs.path=/opt/jatos_data/study_logs",
-    "-Djatos.tmpDir=/opt/jatos_data/tmp")
+  Cmd("ENV", "JATOS_DB_URL=jdbc:h2:/opt/jatos_data/database/jatos;MODE=MYSQL;DATABASE_TO_UPPER=FALSE;IGNORECASE=TRUE;DEFAULT_LOCK_TIMEOUT=10000;SELECT_FOR_UPDATE_MVCC=FALSE"),
+  Cmd("ENV", "JATOS_STUDY_ASSETS_ROOT_PATH=/opt/jatos_data/study_assets_root"),
+  Cmd("ENV", "JATOS_RESULT_UPLOADS_PATH=/opt/jatos_data/result_uploads"),
+  Cmd("ENV", "JATOS_STUDY_LOGS_PATH=/opt/jatos_data/study_logs"),
+  Cmd("ENV", "JATOS_TMP_PATH=/opt/jatos_data/tmp"),
+  ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
@@ -97,7 +98,7 @@ mappings in Universal += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
 mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
 
 // Add VERSION to distribution
-mappings in Universal in packageBin += file(baseDirectory.value + "/VERSION") -> "VERSION"
+mappings in Universal += file(baseDirectory.value + "/VERSION") -> "VERSION"
 
 // Add conf/production.conf to distribution
 mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> "conf/production.conf"
