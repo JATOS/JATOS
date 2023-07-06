@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.8.2"
+version := "3.8.3"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
@@ -100,8 +100,8 @@ mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat")
 // Add VERSION to distribution
 mappings in Universal += file(baseDirectory.value + "/VERSION") -> "VERSION"
 
-// Add conf/production.conf to distribution
-mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> "conf/production.conf"
+// Add conf/jatos.conf to distribution
+mappings in Universal += file(baseDirectory.value + "/conf/jatos.conf") -> "conf/jatos.conf"
 
 // Don't include dev config to distribution
 mappings in Universal := (mappings in Universal).value filter {
