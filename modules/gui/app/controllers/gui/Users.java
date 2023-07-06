@@ -352,11 +352,12 @@ public class Users extends Controller {
 
         userService.removeUser(normalizedUsernameOfUserToRemove);
 
-        // If the user removes himself: logout
+        // If the user removes himself: logout by removing the session cookie
         if (normalizedUsernameOfUserToRemove.equals(normalizedLoggedInUsername)) {
-            authenticationService.clearSessionCookie(session());
+            return ok(" ").withNewSession();
+        } else {
+            return ok(" "); // jQuery.ajax cannot handle empty responses
         }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     private void checkUsernameIsOfLoggedInUser(String normalizedUsername, User loggedInUser) throws JatosGuiException {

@@ -24,7 +24,7 @@ import javax.inject.Singleton;
 import javax.naming.NamingException;
 
 /**
- * Controller that deals with authentication for users stored in JATOS DB and users authenticated by LDAP. OIDC auth is
+ * Controller that deals with authentication for users stored in JATOS' DB and users authenticated by LDAP. OIDC auth is
  * handled by the classes {@link SignInGoogle} and {@link SignInOidc}.There are two login views: 1) login HTML page,
  * and 2) an overlay. The second one is triggered by a session timeout or an inactivity timeout in JavaScript.
  *
@@ -141,9 +141,8 @@ public class SignIn extends Controller {
     @Auth
     public Result logout(Http.Request request) {
         LOGGER.info(".logout: " + request.session().get(AuthService.SESSION_USERNAME));
-        authenticationService.clearSessionCookie(request.session());
         FlashScopeMessaging.success("You've been logged out.");
-        return redirect(auth.gui.routes.SignIn.login());
+        return redirect(auth.gui.routes.SignIn.login()).withNewSession();
     }
 
     /**

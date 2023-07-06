@@ -19,13 +19,13 @@ import static play.mvc.Results.unauthorized;
 
 /**
  * Authentication via personal access tokens (API tokens) that can be used with JATOS API. API tokens are associated
- * with a user and have the same access rights as the user. For a successful authentication the token must be put in the
- * 'Authorization' header with a 'Bearer' prefix. JATOS' API token have a prefex 'jap_'. The {@link User} and the
+ * with a user and have the same access rights as the user. For a successful authentication, the token must be put in
+ * the 'Authorization' header with a 'Bearer' prefix. JATOS' API token has a prefex 'jap_'. The {@link User} and the
  * {@link ApiToken} objects are put in the {@link RequestScope} for later use during request processing.
  */
 @SuppressWarnings("deprecation")
 @Singleton
-public class AuthActionApiToken implements AuthAction.IAuth {
+public class AuthApiToken implements AuthAction.AuthMethod {
 
     public static final String API_TOKEN = "apiToken";
 
@@ -34,19 +34,20 @@ public class AuthActionApiToken implements AuthAction.IAuth {
     private final JPAApi jpa;
 
     @Inject
-    AuthActionApiToken(ApiTokenDao apiTokenDao, JPAApi jpa) {
+    AuthApiToken(ApiTokenDao apiTokenDao, JPAApi jpa) {
         this.apiTokenDao = apiTokenDao;
         this.jpa = jpa;
     }
 
+    @Override
     public AuthResult authenticate(Http.Request request, User.Role role) {
 
         if (!Helpers.isApiRequest(request)) {
-            return AuthResult.of(false);
+            return AuthResult.wrongMethod();
         }
 
         if (!Common.isJatosApiAllowed()) {
-            return AuthResult.of(forbidden("JATOS' current settings do not allow API usage"));
+            return AuthResult.denied(forbidden("JATOS' current settings do not allow API usage"));
         }
 
         // Check token checksum
@@ -57,20 +58,20 @@ public class AuthActionApiToken implements AuthAction.IAuth {
         String calculatedChecksum = HashUtils.getChecksum(cleanedToken);
         String givenChecksum = fullTokenStr.substring(fullTokenStr.length() - 6);
         if (!givenChecksum.equals(calculatedChecksum)) {
-            return AuthResult.of(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized("Invalid api token"));
         }
 
         // Search token by its hash in the database
         String tokenHash = HashUtils.getHash(fullTokenStr, HashUtils.SHA_256);
         Optional<ApiToken> apiTokenOptional = jpa.withTransaction(() -> apiTokenDao.findByHash(tokenHash));
         if (!apiTokenOptional.isPresent()) {
-            return AuthResult.of(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized("Invalid api token"));
         }
         ApiToken apiToken = apiTokenOptional.get();
 
         // Tokens can be deactivated
         if (!apiToken.isActive()) {
-            return AuthResult.of(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized("Invalid api token"));
         }
 
         // Check the token's user: since these are personal access tokens and the user which belongs to the token can
@@ -78,21 +79,21 @@ public class AuthActionApiToken implements AuthAction.IAuth {
         User user = apiToken.getUser();
         RequestScope.put(AuthService.LOGGED_IN_USER, user);
         if (!user.isActive()) {
-            return AuthResult.of(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized("Invalid api token"));
         }
 
         // Check authorization
         if (!user.hasRole(role)) {
-            return AuthResult.of(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized("Invalid api token"));
         }
 
-        // Check if token is expired
+        // Check if the token is expired
         if (apiToken.isExpired()) {
-            return AuthResult.of(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized("Invalid api token"));
         }
 
         RequestScope.put(API_TOKEN, apiToken);
-        return AuthResult.of(true);
+        return AuthResult.authenticated();
     }
 
 }

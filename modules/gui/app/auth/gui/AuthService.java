@@ -124,21 +124,6 @@ public class AuthService {
     }
 
     /**
-     * Refreshes the last activity timestamp in Play's session cookie. This is
-     * usually done with each HTTP call of the user.
-     */
-    public void refreshSessionCookie(Http.Session session) {
-        session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
-    }
-
-    /**
-     * Deletes the session cookie. This is usually done during a user logout.
-     */
-    public void clearSessionCookie(Http.Session session) {
-        session.clear();
-    }
-
-    /**
      * Returns true if the session login time as saved in Play's session cookie
      * is older than allowed.
      */

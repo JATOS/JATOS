@@ -3,7 +3,7 @@ package controllers.gui;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import auth.gui.AuthActionApiToken;
+import auth.gui.AuthApiToken;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -110,7 +110,7 @@ public class Api extends Controller {
      */
     @Auth
     public Result testToken() {
-        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(RequestScope.get(AuthActionApiToken.API_TOKEN))));
+        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(RequestScope.get(AuthApiToken.API_TOKEN))));
     }
 
     /**
