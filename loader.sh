@@ -41,8 +41,12 @@ function start() {
     [[ -z ${address+x} ]] || args+=(-Djatos.http.address="$address")
     [[ -z ${port+x} ]] || args+=(-Djatos.http.port="$port")
 
-    args+=(-Dconfig.file="$dir/conf/production.conf")
-    args+=(-J--add-opens=java.base/java.lang=ALL-UNNAMED) # hide Guice warning (illegal reflective access)
+    # Add config file, either jatos.conf or production.conf (jatos.conf has precedence)
+    [[ -e "$dir/conf/production.conf" ]] && args+=(-Dconfig.file="$dir/conf/production.conf")
+    [[ -e "$dir/conf/jatos.conf" ]] && args+=(-Dconfig.file="$dir/conf/jatos.conf")
+
+    # hide Guice warning (illegal reflective access)
+    args+=(-J--add-opens=java.base/java.lang=ALL-UNNAMED)
 
     # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
     env GENERATED_SECRET="$secret" "$dir/bin/jatos" "${args[@]}" -J-server 2> >(tee -a "$dir/logs/loader.log")
@@ -84,8 +88,9 @@ function update() {
       rm -rf ${dir}/jre
     fi
 
-    # Backup conf/production.conf
-    mv -f ${dir}/conf/production.conf ${dir}/conf/production.bkp
+    # Backup conf/production.conf or conf/jatos.conf -> jatos.bkp
+    [[ -e ${dir}/conf/production.conf ]] && mv -f ${dir}/conf/production.conf ${dir}/conf/jatos.bkp
+    [[ -e ${dir}/conf/jatos.conf ]] && mv -f ${dir}/conf/jatos.conf ${dir}/conf/jatos.bkp
 
     # Move everything from the update folder into the current JATOS folder
     cp -a -v ${updateDir}/* ${dir} >> "$updateLog"
@@ -93,14 +98,14 @@ function update() {
     # Remove update dir
     rm -rf ${updateDir}
 
-    # Compare new and old production.conf and recover it
-    if cmp -s ${dir}/conf/production.conf ${dir}/conf/production.bkp; then
-        echo "`date` New and old conf/production.conf are identical." 2>&1 | tee -a "$updateLog"
-        rm ${dir}/conf/production.bkp
+    # Compare new and old jatos.conf and recover it
+    if cmp -s ${dir}/conf/jatos.conf ${dir}/conf/jatos.bkp; then
+        echo "`date` New and old conf/jatos.conf are identical." 2>&1 | tee -a "$updateLog"
+        rm ${dir}/conf/jatos.bkp
     else
-        mv ${dir}/conf/production.conf ${dir}/conf/production.new
-        mv ${dir}/conf/production.bkp ${dir}/conf/production.conf
-        echo "`date` Recovered old conf/production.conf but there is a newer version stored in conf/production.new." 2>&1 | tee -a "$updateLog"
+        mv ${dir}/conf/jatos.conf ${dir}/conf/jatos.new
+        mv ${dir}/conf/jatos.bkp ${dir}/conf/jatos.conf
+        echo "`date` Recovered old conf/jatos.conf but there is a newer version stored in conf/jatos.new." 2>&1 | tee -a "$updateLog"
     fi
 
     echo "`date` Update successfully finished." 2>&1 | tee -a "$updateLog"
@@ -128,9 +133,9 @@ trap exit INT
 function stop() {
     # Check if JATOS is running
     if [[ ! -f "$pidfile" ]] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null; then
-        echo "This JATOS was not running"
+        # This JATOS was not running
         if [[ -f "$pidfile" ]]; then
-            echo "Removing old RUNNING_PID file"
+            # Removing old RUNNING_PID file
             rm -f $pidfile
         fi
         exit 1
