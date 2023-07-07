@@ -575,6 +575,7 @@ public class JatosUpdater {
         cmd.removeIf(a -> a.startsWith("-Duser.dir"));
         cmd.removeIf(a -> a.startsWith("-Dconfig.file")); // JATOS config file (will be added again by loader script)
         cmd.removeIf(a -> a.startsWith("-DJATOS_UPDATE_MSG")); // Msgs from a prior update
+        cmd.removeIf(a -> a.contains("--add-opens"));
         cmd.replaceAll(a -> a.startsWith("-X") ? "-J" + a : a); // Add '-J' to all -X args (e.g. -Xmx2g -> -J-Xmx2g)
 
         return cmd.toArray(new String[0]);
