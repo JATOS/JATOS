@@ -108,6 +108,9 @@ function update() {
         echo "`date` Recovered old conf/jatos.conf but there is a newer version stored in conf/jatos.new." 2>&1 | tee -a "$updateLog"
     fi
 
+    # Remove unused production.new from earlier updates
+    [[ -e ${dir}/conf/production.new ]] && rm ${dir}/conf/production.new
+
     echo "`date` Update successfully finished." 2>&1 | tee -a "$updateLog"
     args+=('-DJATOS_UPDATE_MSG=success')
 }
