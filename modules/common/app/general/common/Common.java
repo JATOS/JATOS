@@ -106,7 +106,7 @@ public class Common {
         studyLogsPath = obtainPath(config, "jatos.studyLogs.path");
         LOGGER.info("Path to study logs directory is " + studyLogsPath);
         resultUploadsEnabled = config.getBoolean("jatos.resultUploads.enabled");
-        resultUploadsPath = obtainPath(config, "jatos.studyLogs.path");
+        resultUploadsPath = obtainPath(config, "jatos.resultUploads.path");
         LOGGER.info("Path to uploads directory is " + resultUploadsPath);
         resultUploadsMaxFileSize = config.getBytes("jatos.resultUploads.maxFileSize");
         resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
