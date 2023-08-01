@@ -11,6 +11,7 @@ import play.mvc.Http;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
+import java.io.IOException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Arrays;
@@ -170,9 +171,15 @@ public class Common {
         path = path.replace("~", System.getProperty("user.home"));
         // Replace Unix-like file separator with actual system's one
         path = path.replace("/", File.separator);
-        // If relative path add JATOS' base path as prefix
+        // If it is a relative path, add JATOS' base path as prefix
         if (!(new File(path).isAbsolute())) {
             path = basepath + File.separator + path;
+        }
+        // Turn into a canonical path (e.g. remove '.' and '..')
+        try {
+            path = new File(path).getCanonicalFile().toString();
+        } catch (IOException e) {
+            throw new RuntimeException("Error in config property " + property + "=" + path);
         }
         return path;
     }
