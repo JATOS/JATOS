@@ -37,18 +37,14 @@ function start() {
     # Create log directory if not exist
     mkdir -p "$dir/logs"
 
-    # Add address and port to arguments if set
-    [[ -z ${address+x} ]] || args+=(-Djatos.http.address="$address")
-    [[ -z ${port+x} ]] || args+=(-Djatos.http.port="$port")
-
     # Add config file, either jatos.conf or production.conf (jatos.conf has precedence)
     [[ -e "$dir/conf/production.conf" ]] && args+=(-Dconfig.file="$dir/conf/production.conf")
     [[ -e "$dir/conf/jatos.conf" ]] && args+=(-Dconfig.file="$dir/conf/jatos.conf")
 
-    # hide Guice warning (illegal reflective access)
+    # Hide Guice warning (illegal reflective access)
     args+=(-J--add-opens=java.base/java.lang=ALL-UNNAMED)
 
-    # Start JATOS with configuration file, application secret, address, port, and pass on other arguments
+    # Start JATOS with configuration file, application secret and pass on other arguments
     env GENERATED_SECRET="$secret" "$dir/bin/jatos" "${args[@]}" -J-server 2> >(tee -a "$dir/logs/loader.log")
 
     # Let Docker not exit in case of update restart: sleep infinity
