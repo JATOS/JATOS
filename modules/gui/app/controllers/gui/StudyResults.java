@@ -91,8 +91,7 @@ public class StudyResults extends Controller {
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
-        return ok(views.html.gui.result.studyResults
-                .render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), study, dataUrl));
+        return ok(views.html.gui.result.studyResults.render(loggedInUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -115,8 +114,7 @@ public class StudyResults extends Controller {
                 : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(batchId, workerType).url();
-        return ok(views.html.gui.result.studyResults.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost(), study, dataUrl));
+        return ok(views.html.gui.result.studyResults.render(loggedInUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -139,8 +137,7 @@ public class StudyResults extends Controller {
         String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
                 breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(groupId).url();
-        return ok(views.html.gui.result.studyResults.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost(), study, dataUrl));
+        return ok(views.html.gui.result.studyResults.render(loggedInUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -159,8 +156,7 @@ public class StudyResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.workersStudyResults.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost(), worker));
+        return ok(views.html.gui.result.workersStudyResults.render(loggedInUser, breadcrumbs, worker));
     }
 
     /**

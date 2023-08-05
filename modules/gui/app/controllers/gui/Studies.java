@@ -104,7 +104,7 @@ public class Studies extends Controller {
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study
-                .render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), study, studyResultCount));
+                .render(loggedInUser, breadcrumbs, study, studyResultCount));
     }
 
     @Transactional

@@ -75,7 +75,7 @@ public class Admin extends Controller {
     public Result administration(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(null);
-        return ok(views.html.gui.admin.admin.render(request, loggedInUser, breadcrumbs, Helpers.isLocalhost()));
+        return ok(views.html.gui.admin.admin.render(request, loggedInUser, breadcrumbs));
     }
 
     /**
@@ -145,7 +145,7 @@ public class Admin extends Controller {
     public Result studyAdmin(Http.Request request) {
         User loggedInUser = authenticationService.getLoggedInUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDIES);
-        return ok(views.html.gui.admin.studyAdmin.render(request, loggedInUser, breadcrumbs, Helpers.isLocalhost()));
+        return ok(views.html.gui.admin.studyAdmin.render(request, loggedInUser, breadcrumbs));
     }
 
     /**

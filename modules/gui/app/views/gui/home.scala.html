@@ -1,7 +1,6 @@
-@(studyList: List[common.Study], freshlyLoggedIn: Boolean, loggedInUser: common.User, breadcrumbs: String,
-    localhost: Boolean)
+@(studyList: List[common.Study], freshlyLoggedIn: Boolean, loggedInUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
+@views.html.gui.main(loggedInUser, breadcrumbs) {
 
 <div id="branding" class="jumbotron hidden-xs hidden-sm" style="display: none">
     <div style="text-align: center;">
@@ -19,14 +18,12 @@
 </div>
 }
 
-@if(localhost){
-<div class="jumbotron text-center hidden-xs hidden-sm">
+<div id="whereAreMyFilesJumbotron" class="jumbotron text-center hidden-xs hidden-sm" style="display: none">
     <p>Where are my files?</p>
     Your study assets root path is: <samp class="text-l">@general.common.Common.getStudyAssetsRootPath()</samp><br>
     Your result upload files path is: <samp class="text-l">@general.common.Common.getResultUploadsPath()</samp><br>
     Your JATOS installation is in: <samp class="text-l">@general.common.Common.getBasepath()</samp>
 </div>
-}
 
 <ul class="list-group visible-xs visible-sm">
     @for(study <- studyList) {
@@ -60,6 +57,8 @@ function loadBranding() {
         }
     });
 }
+
+if (isLocalhost()) $("#whereAreMyFilesJumbotron").show();
 
 </script>
 }

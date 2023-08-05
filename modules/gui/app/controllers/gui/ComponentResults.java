@@ -82,8 +82,7 @@ public class ComponentResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.componentResults
-                .render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), study, component));
+        return ok(views.html.gui.result.componentResults.render(loggedInUser, breadcrumbs, study, component));
     }
 
     /**

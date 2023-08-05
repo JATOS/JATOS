@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)(body: Html)
+@(loggedInUser: common.User, breadcrumbs: String)(body: Html)
 
 <!DOCTYPE html>
 
@@ -226,14 +226,17 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
     }
 }
 
+function isLocalhost() {
+    return location.hostname === 'localhost' ||
+    location.hostname === '' ||
+    location.hostname === '[::1]' ||
+    location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
+}
+
 </script>
 <body>
 
-@if(localhost) {
-<nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-} else {
 <nav id="jatosHeader" class="navbar navbar-default navbar-fixed-top" role="navigation">
-}
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed"
@@ -242,17 +245,10 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
                     class="icon-bar"></span> <span class="icon-bar"></span> <span
                     class="icon-bar"></span>
             </button>
-            @if(localhost) {
-            <a class="navbar-brand" href="@controllers.gui.routes.Home.home">
-                <img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
-            </a>
-            <a id="jatosBrandName" class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS local</a>
-            } else {
             <a class="navbar-brand" href="@controllers.gui.routes.Home.home">
                 <img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="25pt">
             </a>
             <a id="jatosBrandName" class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
-            }
         </div>
         <div class="navbar-collapse collapse" id="jatos-navbar-collapse">
             <ul class="nav navbar-nav navbar-left">
@@ -354,6 +350,7 @@ showMessages(messagesRequestScope);
 var messagesFlashScope = @Html(general.gui.FlashScopeMessaging.getAsJson());
 showMessages(messagesFlashScope);
 checkForIE();
+setBrand();
 var breadcrumbs = @Html(breadcrumbs);
 showBreadcrumbs(breadcrumbs);
 fillSidebar();
@@ -390,6 +387,15 @@ function showMessages(messages, allowHtml = false) {
 function checkForIE() {
     if (window.navigator.userAgent.indexOf("MSIE ") > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
         showWarning("JATOS' GUI may not be fully functional in Internet Explorer. Please use other browsers, e.g. Firefox, Edge, Chrome. This applies to the GUI only - your actual studies will run without problems.");
+    }
+}
+
+function setBrand() {
+    if (isLocalhost()) {
+        $("#jatosHeader").removeClass('navbar-default');
+        $("#jatosHeader").addClass("navbar-inverse");
+        $("#jatosHeader .navbar-brand img").attr("src","@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
+        $("#jatosBrandName").html("JATOS&nbsp;local");
     }
 }
 

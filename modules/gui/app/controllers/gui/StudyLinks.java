@@ -96,8 +96,7 @@ public class StudyLinks extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
-        return ok(views.html.gui.studyLinks.studyLinks.render(loggedInUser,
-                breadcrumbs, Helpers.isLocalhost(), study, request));
+        return ok(views.html.gui.studyLinks.studyLinks.render(loggedInUser, breadcrumbs, study, request));
     }
 
     /**

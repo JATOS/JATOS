@@ -1,6 +1,6 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, request: Http.Request)
+@(loggedInUser: common.User, breadcrumbs: String, request: Http.Request)
 
-@views.html.gui.main(loggedInUser, breadcrumbs, localhost) {
+@views.html.gui.main(loggedInUser, breadcrumbs) {
 
 <div id="toolbar" class="btn-group">
     @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()) {

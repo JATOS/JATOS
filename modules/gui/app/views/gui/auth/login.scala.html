@@ -21,7 +21,7 @@
 </head>
 
 <body>
-<nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<nav id="jatosHeader" class="navbar navbar-default navbar-fixed-top" role="navigation">
 	<div class="container-fluid">
 		<div class="navbar-header">
 			<button type="button" class="navbar-toggle collapsed"
@@ -31,7 +31,7 @@
 					class="icon-bar"></span>
 			</button>
 			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">
-				<img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
+				<img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="25pt">
 			</a>
 			<a id="jatosBrandName" class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
 		</div>
@@ -93,17 +93,19 @@
 setBrand();
 
 function setBrand() {
-	@if(utils.common.Helpers.isLocalhost()) {
-		$(".navbar-brand img").attr("src", "@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
-		$("#jatosBrandName").text("JATOS local");
+	if(isLocalhost()) {
 		$("#jatosHeader").removeClass('navbar-default');
 		$("#jatosHeader").addClass('navbar-inverse');
-	} else {
-		$(".navbar-brand img").attr("src", "@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")");
-		$("#jatosBrandName").html("JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-		$("#jatosHeader").removeClass('navbar-inverse');
-		$("#jatosHeader").addClass('navbar-default');
+		$(".navbar-brand img").attr("src", "@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
+		$("#jatosBrandName").html("JATOS&nbsp;local");
 	}
+}
+
+function isLocalhost() {
+    return location.hostname === 'localhost' ||
+    location.hostname === '' ||
+    location.hostname === '[::1]' ||
+    location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
 }
 
 @for(error <- form.globalErrors) {

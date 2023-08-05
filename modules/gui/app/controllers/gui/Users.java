@@ -78,7 +78,7 @@ public class Users extends Controller {
     public Result userManager() {
         User loggedInUser = authenticationService.getLoggedInUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
-        return ok(views.html.gui.admin.userManager.render(loggedInUser, breadcrumbs, Helpers.isLocalhost()));
+        return ok(views.html.gui.admin.userManager.render(loggedInUser, breadcrumbs));
     }
 
     /**
@@ -148,7 +148,7 @@ public class Users extends Controller {
         checkUsernameIsOfLoggedInUser(normalizedUsername, loggedInUser);
 
         String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
-        return ok(views.html.gui.admin.profile.render(loggedInUser, breadcrumbs, Helpers.isLocalhost(), request));
+        return ok(views.html.gui.admin.profile.render(loggedInUser, breadcrumbs, request));
     }
 
     /**

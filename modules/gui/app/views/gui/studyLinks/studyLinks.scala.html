@@ -1,6 +1,6 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean, study: common.Study, request: Http.Request)
+@(loggedInUser: common.User, breadcrumbs: String, study: common.Study, request: Http.Request)
 
-@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 <div id="studyLinksToolbar" class="btn-toolbar toolbarFlexWrap" role="toolbar">
     <button id="createBatchButton" type="button" class="btn btn-batch" data-toggle="tooltip"
