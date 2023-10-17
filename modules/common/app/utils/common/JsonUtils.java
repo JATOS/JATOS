@@ -226,6 +226,9 @@ public class JsonUtils {
         metadata.put("id", sr.getId());
         metadata.put("uuid", sr.getUuid());
         metadata.put("studyCode", sr.getStudyCode());
+        if (!Strings.isNullOrEmpty(sr.getWorker().getComment())) {
+            metadata.put("comment", sr.getWorker().getComment());
+        }
         metadata.put("startDate", sr.getStartDate());
         metadata.put("endDate", sr.getEndDate());
         metadata.put("duration", getDurationPretty(sr.getStartDate(), sr.getEndDate()));
@@ -595,21 +598,7 @@ public class JsonUtils {
                 Worker worker = studyLink.getWorker();
 
                 studyLinkDataNode.put("workerId", worker.getId());
-
-                // Worker's comment
-                String comment;
-                switch (worker.getWorkerType()) {
-                    case PersonalSingleWorker.WORKER_TYPE:
-                        comment = ((PersonalSingleWorker) worker).getComment();
-                        break;
-                    case PersonalMultipleWorker.WORKER_TYPE:
-                        comment = ((PersonalMultipleWorker) worker).getComment();
-                        break;
-                    default:
-                        throw new IllegalArgumentException(
-                                ".studyLinkData: illegal workerType " + worker.getWorkerType());
-                }
-                studyLinkDataNode.put("comment", !StringUtils.isBlank(comment) ? comment : "none");
+                studyLinkDataNode.put("comment", !StringUtils.isBlank(worker.getComment()) ? worker.getComment() : "none");
 
                 // (last) StudyResult's state
                 Optional<StudyResult> lastStudyResult = worker.getLastStudyResult();

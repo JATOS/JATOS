@@ -23,9 +23,6 @@ public class PersonalSingleWorker extends Worker {
 
     public static final String WORKER_TYPE = "PersonalSingle";
     public static final String UI_WORKER_TYPE = "Personal Single";
-    public static final String COMMENT = "comment";
-
-    private String comment;
 
     public PersonalSingleWorker() {
     }
@@ -33,14 +30,6 @@ public class PersonalSingleWorker extends Worker {
     @JsonCreator
     public PersonalSingleWorker(String comment) {
         this.comment = comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public String getComment() {
-        return this.comment;
     }
 
     @Override
@@ -62,12 +51,10 @@ public class PersonalSingleWorker extends Worker {
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (comment != null && comment.length() > 255) {
-            errorList.add(new ValidationError(COMMENT,
-                    MessagesStrings.COMMENT_TOO_LONG));
+            errorList.add(new ValidationError(COMMENT, MessagesStrings.COMMENT_TOO_LONG));
         }
         if (comment != null && !Jsoup.isValid(comment, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENT,
-                    MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(COMMENT, MessagesStrings.NO_HTML_ALLOWED));
         }
         return errorList.isEmpty() ? null : errorList;
     }

@@ -18,10 +18,10 @@
         }
     }
     @if(worker.getWorkerType().equals(common.workers.PersonalMultipleWorker.WORKER_TYPE)) {
-        Comment: @worker.asInstanceOf[common.workers.PersonalMultipleWorker].getComment()
+        Comment: @worker.getComment()
     }
     @if(worker.getWorkerType().equals(common.workers.PersonalSingleWorker.WORKER_TYPE)) {
-        Comment: @worker.asInstanceOf[common.workers.PersonalSingleWorker].getComment()
+        Comment: @worker.getComment()
     }
     </div>
 </div>

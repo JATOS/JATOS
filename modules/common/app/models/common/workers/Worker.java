@@ -33,10 +33,17 @@ public abstract class Worker {
 
     public static final String DISCRIMINATOR = "workerType";
     public static final String UI_WORKER_TYPE = "uiWorkerType";
+    public static final String COMMENT = "comment";
 
     @Id
     @GeneratedValue
     private Long id;
+
+    /**
+     * Some comment the user can give during study link/worker creation (only for {@link PersonalSingleWorker} and
+     * {@link PersonalMultipleWorker}.
+     */
+    protected String comment;
 
     /**
      * Ordered list of StudyResults this worker has produced while running
@@ -101,6 +108,14 @@ public abstract class Worker {
 
     public Long getId() {
         return this.id;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getComment() {
+        return this.comment;
     }
 
     public void setStudyResultList(List<StudyResult> studyResultList) {
