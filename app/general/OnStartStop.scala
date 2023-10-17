@@ -50,15 +50,22 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   componentResultMigration.run()
   scheduleLoginAttemptCleaning()
 
-  if (!environment.isProd || Common.isMultiNode) {
+  if (isPortInUse && environment.isProd) {
+    // If port is already in use log with Logger or STDOUT
+    val msg = s"Error - Could     not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}"
+    if (Common.isLogsAppenderStdOut) println(msg) else logger.error(msg)
+  } else if (!environment.isProd) {
+    // During development use Logger only
     logger.info("JATOS started")
-  } else if (!isPortInUse) {
+  } else if (Common.isMultiNode) {
+    // In a multi-node environment use Logger only
     logger.info("JATOS started")
-    println("started")
-    println(s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
-      s"browser's address bar")
   } else {
-    println(s"Error - Could not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}")
+    // Log with Logger or STDOUT
+    if (Common.isLogsAppenderStdOut) logger.info("JATOS started") else println("started")
+    val msg = s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
+      s"browser's address bar"
+    if (!Common.isLogsAppenderStdOut) println(msg)
   }
 
   lifecycle.addStopHook(() => Future {

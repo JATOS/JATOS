@@ -578,6 +578,14 @@ public class Common {
     }
 
     /**
+     *
+     * Returns true if the Logger logs to STDOUT and false otherwise.
+     */
+    public static boolean isLogsAppenderStdOut() {
+        return "ASYNCSTDOUT".equals(logsAppender) || "STDOUT".equals(logsAppender);
+    }
+
+    /**
      * Path to the JATOS tmp directory. If not set, it is System.getProperty("java.io.tmpdir").
      */
     public static String getTmpPath() {

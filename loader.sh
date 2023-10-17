@@ -21,7 +21,7 @@ function start() {
 
     checkJava
 
-    echo -n "Starting JATOS... "
+    echo "Starting JATOS... "
 
     # Generate an application secret
     secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
