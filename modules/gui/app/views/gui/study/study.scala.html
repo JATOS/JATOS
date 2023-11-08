@@ -476,7 +476,7 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
             fillSidebar();
             var msg = 'Created clone "' + response.title + '". ' +
                 '<a href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + response.id + '">Go to this study.</a>';
-            showInfo(msg, null, true);
+            showSuccess(msg, null, true);
         },
         error : function(err) {
             showError(err.responseText);
