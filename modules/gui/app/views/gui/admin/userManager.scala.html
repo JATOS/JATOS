@@ -118,15 +118,6 @@
                             <input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password" autocomplete="off">
                         </div>
                     </div>
-
-                    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()){
-                    <div class="form-group row">
-                        <label class="control-label col-xs-4 adminPasswordLabel" for="adminPassword">Your password <sup>*</sup></label>
-                        <div class="col-xs-5">
-                            <input type="password" id="adminPassword" class="form-control @models.gui.NewUserModel.ADMIN_PASSWORD" name="@models.gui.NewUserModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
-                        </div>
-                    </div>
-                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -158,6 +149,7 @@ var userTable = $('#userTable').DataTable({
     "order": [[ 2, "asc" ]],
     "pageLength": 10,
     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+    "stateSave": true,
     "columns": [
         {
             "class": 'details-control studyCount',
@@ -189,8 +181,14 @@ var userTable = $('#userTable').DataTable({
             "class": "username",
             "data": "username",
             "render": function (data, type, full, meta) {
-                // Every 40 chars add a <br>
-                return (data) ? data.replace(/(.{40})/g, "$1<br>") : "none";
+                if (type === 'export' || type === 'sort') return data;
+                if (full.authMethod == "ORCID") {
+                    // Show link to ORCID
+                    return generateOrcidLink(data);
+                } else {
+                    // Every 40 chars add a <br>
+                    return (data) ? data.replace(/(.{40})/g, "$1<br>") : "none";
+                }
             }
         },
         {
@@ -222,10 +220,8 @@ var userTable = $('#userTable').DataTable({
             "render": function (authMethod, type, full, meta) {
                 switch(authMethod) {
                     case "@{common.User.AuthMethod.DB.name()}": return "local";
-                    case "@{common.User.AuthMethod.LDAP.name()}": return "LDAP";
                     case "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}": return "Google";
-                    case "@{common.User.AuthMethod.OIDC.name()}": return "OIDC";
-                    default: return "unknown";
+                    default: return authMethod;
                 }
             }
         },
@@ -295,7 +291,9 @@ var userTable = $('#userTable').DataTable({
                     "filename": function() { return "jatos_usernames_" + getDateTimeYYYYMMDDHHmmss() },
                     "titleAttr": 'Export usernames',
                     "exportOptions": {
-                        "columns": '.username'
+                        "columns": '.username',
+                        "orthogonal": 'export'
+
                     },
                     "action": function(e, dt, node, config) {
                         $(".dt-button-collection").hide();
@@ -343,8 +341,6 @@ $('#createUserButton').click(function(event) {
     $('#createUserModal .@models.gui.NewUserModel.PASSWORD_REPEAT').val('');
     $('#createUserModal .@models.gui.NewUserModel.AUTH_BY_LDAP').prop('checked', false);
     $('#createUserModal .passwordDiv').addClass('in');
-    $('#createUserModal .adminPasswordLabel').html("Password of user @loggedInUser.getUsername()&nbsp;<sup>*</sup>");
-    $('#createUserModal .@models.gui.NewUserModel.ADMIN_PASSWORD').val('');
     $('#createUserModal').modal('show');
 });
 
@@ -427,18 +423,19 @@ function generateStudiesChildRow(studiesData, username) {
 
     studiesData.forEach(function(studyData) {
         var trimmedStudyTitle = studyData.title.length > 80 ? studyData.title.substring(0, 77) + "..." : studyData.title;
-        var memberList;
-        if (studyData.members.length < 4 ) {
-            memberList = studyData.members.join("<br>");
+        let membersHtml;
+        if (studyRun.members.length < 4 ) {
+            membersHtml = studyData.members.map((m) => generateFullUserString(m.name, m.username, m.authMethod)).join("<br>");
         } else {
-            memberList = '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
-                    + 'data-trigger="focus" data-container="body" '
-                    + 'data-html="true" data-content="' + studyData.members.join("<br>") + '">show all</a>';
+            const m = studyData.members.map((m) => `${m.name} (${m.username})`).join("<br>");
+            membersHtml = `<button type="button" class="btn btn-default btn-sm" data-toggle="popover"
+                    data-trigger="focus" data-container="body" data-html="true" data-placement="left"
+                    data-content="${m}">show all</button>`;
         }
         var row = $('<tr class="info">'
             + '<td>' + studyData.id + '</td>'
             + '<td>' + trimmedStudyTitle + '</td>'
-            + '<td>' + memberList + '</td>'
+            + '<td>' + membersHtml + '</td>'
             + '<td>' + studyData.studyAssetsSize.humanReadable + '</td>'
             + '<td>' + studyData.studyResultCount + '</td>'
             + '<td>' + studyData.resultDataSize.humanReadable + '</td>'
@@ -533,9 +530,11 @@ function setAdminButton(buttonDiv, adminRole, username) {
 
 function setUserToolbar(toolbar, username, authMethod) {
     // Setup Edit button
-    if (authMethod == "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}" || authMethod == "@{common.User.AuthMethod.OIDC.name()}") {
+    if (authMethod == "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}"
+            || authMethod == "@{common.User.AuthMethod.OIDC.name()}"
+            || authMethod == "@{common.User.AuthMethod.ORCID.name()}") {
         toolbar.find('.userEditButton').attr('disabled', true);
-        toolbar.find('.userEditButton').attr('title', "Google/OIDC authenticated users can't be edited (they get their user data from the external identity provider).");
+        toolbar.find('.userEditButton').attr('title', "Google/OIDC/ORCID authenticated users can't be edited (they get their user data from the external identity provider).");
     }
 
     // Setup change password button
@@ -550,7 +549,7 @@ function setUserToolbar(toolbar, username, authMethod) {
         toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
     } else {
         toolbar.find('.userChangePasswordButton').attr('disabled', true);
-        toolbar.find('.userChangePasswordTooltip').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC or Google) can't be changed in JATOS");
+        toolbar.find('.userChangePasswordTooltip').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) can't be changed in JATOS");
     }
 
     // Setup delete user button
@@ -578,7 +577,6 @@ $('#userTable tbody').on('click', '.activeButton', function() {
             setActiveButton($(button).parent(), !active, user.username);
             user.active = !active;
             userTable.row(tr).data(user);
-            userTable.draw(); // Needed for the button width
         },
         error : function(err) {
             showError(err.responseText);
@@ -603,7 +601,6 @@ $('#userTable tbody').on('click', '.superuserButton', function() {
                 user.roleList = user.roleList.filter(item => item !== "@models.common.User.Role.SUPERUSER")
             }
             userTable.row(tr).data(user);
-            userTable.draw(); // Needed for the button width
         },
         error : function(err) {
             showError(err.responseText);
@@ -628,7 +625,6 @@ $('#userTable tbody').on('click', '.adminButton', function() {
                 user.roleList = user.roleList.filter(item => item !== "@models.common.User.Role.ADMIN")
             }
             userTable.row(tr).data(user);
-            userTable.draw(); // Needed for the button width
         },
         error : function(err) {
             showError(err.responseText);

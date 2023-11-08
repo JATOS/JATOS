@@ -10,7 +10,6 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import models.common.Study;
 import models.common.StudyResultStatus;
-import models.common.User;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -59,7 +58,11 @@ public class AdminService {
             studyInfo.put("title", study.getTitle());
             studyInfo.put("active", study.isActive());
             studyInfo.put("studyResultCount", studyResultCount);
-            studyInfo.put("members", study.getUserList().stream().map(User::toString).collect(Collectors.toList()));
+            studyInfo.put("members", study.getUserList().stream().map(u -> ImmutableMap.of(
+                    "username", u.getUsername(),
+                    "name", u.getName(),
+                    "authMethod", u.getAuthMethod().name()
+            )).collect(Collectors.toList()));
             if (studyAssetsSizeFlag) {
                 studyInfo.put("studyAssetsSize", getStudyAssetDirSize(study));
             } else {
@@ -130,6 +133,8 @@ public class AdminService {
                 .filter(u -> !u.getUsername().equals(authenticationService.getLoggedInUser().getUsername()))
                 .map(u -> ImmutableMap.of(
                         "username", u.getUsername(),
+                        "name", u.getName(),
+                        "authMethod", u.getAuthMethod().name(),
                         "time", u.getLastSeen().toInstant().toString()))
                 .collect(Collectors.toList());
         return lastSeenMapOrdered;
@@ -140,8 +145,11 @@ public class AdminService {
                 .map(srs -> ImmutableMap.of(
                         "studyTitle", srs.getStudy().getTitle(),
                         "time", srs.getLastSeenDate(),
-                        "members",
-                        srs.getStudy().getUserList().stream().map(User::toString).collect(Collectors.toList())))
+                        "members", srs.getStudy().getUserList().stream().map(u -> ImmutableMap.of(
+                                "username", u.getUsername(),
+                                "name", u.getName(),
+                                "authMethod", u.getAuthMethod().name()
+                        )).collect(Collectors.toList())))
                 .collect(Collectors.toList());
     }
 

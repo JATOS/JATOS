@@ -15,7 +15,6 @@ public class NewUserModel {
     public static final String PASSWORD = "password";
     public static final String PASSWORD_REPEAT = "passwordRepeat";
     public static final String AUTH_BY_LDAP = "authByLdap";
-    public static final String ADMIN_PASSWORD = "adminPassword";
 
     private String username;
 
@@ -27,25 +26,7 @@ public class NewUserModel {
 
     private String passwordRepeat;
 
-    /**
-     * If true LDAP authentication is used for this user
-     */
-    private boolean authByLdap = false;
-
-    /**
-     * If true Google OAuth / OpenId Connect (OIDC) authentication is used for this user
-     */
-    private boolean authByOAuthGoogle = false;
-
-    /**
-     * If true OpenId Connect (OIDC) authentication is used for this user
-     */
-    private boolean authByOidc = false;
-
-    /**
-     * Password from the logged-in admin user. Used for authentication.
-     */
-    private String adminPassword;
+    private User.AuthMethod authMethod = User.AuthMethod.DB;
 
     public String getUsername() {
         return User.normalizeUsername(username);
@@ -87,36 +68,24 @@ public class NewUserModel {
         this.passwordRepeat = passwordRepeat;
     }
 
+    public void setAuthMethod(User.AuthMethod authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public User.AuthMethod getAuthMethod() {
+        return authMethod;
+    }
+
     public boolean getAuthByLdap() {
-        return authByLdap;
+        return authMethod == User.AuthMethod.LDAP;
     }
 
     public void setAuthByLdap(boolean authByLdap) {
-        this.authByLdap = authByLdap;
+        this.authMethod = authByLdap ? User.AuthMethod.LDAP : User.AuthMethod.DB;
     }
 
-    public boolean getAuthByOAuthGoogle() {
-        return authByOAuthGoogle;
-    }
-
-    public void setAuthByOAuthGoogle(boolean authByOAuthGoogle) {
-        this.authByOAuthGoogle = authByOAuthGoogle;
-    }
-
-    public boolean getAuthByOidc() {
-        return authByOidc;
-    }
-
-    public void setAuthByOidc(boolean authByOidc) {
-        this.authByOidc = authByOidc;
-    }
-
-    public String getAdminPassword() {
-        return adminPassword;
-    }
-
-    public void setAdminPassword(String adminPassword) {
-        this.adminPassword = adminPassword;
+    public boolean getAuthByDb() {
+        return authMethod == User.AuthMethod.DB;
     }
 
     @Override

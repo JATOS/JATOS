@@ -19,6 +19,19 @@
 				</p>
 				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
 
+				} else if(loggedInUser.isOrcid()) {
+				<h3 class="form-login-heading">Please sign in again</h3>
+				<p class="explanation"></p>
+				<p>
+				<div id="signin-orcid">
+					<button class="btn btn-lg btn-default btn-block">
+						<img class="pull-left" height="25" src="@routes.Assets.versioned("lib/jatos-gui/images/ORCIDiD_iconvector.svg")">
+						Sign in with ORCID
+					</button>
+				</div>
+				</p>
+				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
+
 				} else if(loggedInUser.isOauthGoogle()) {
 				<h3 class="form-login-heading">Please sign in again</h3>
 				<p class="explanation"></p>
@@ -101,7 +114,20 @@ $("#loginForm").submit(function(event) {
 
 $('#signin-oidc button').click(function() {
 	$.ajax({
-		url : "@auth.gui.routes.SignInOidc.signIn()",
+		url : "@auth.gui.routes.SignInBasicOidc.signIn()",
+		success: function(uri) {
+			window.location.href = uri;
+		},
+		error : function(err) {
+			$("p.text-danger").remove();
+			$('.explanation').after(`<p class="text-danger">${err.responseText}</p>`);
+		}
+	});
+});
+
+$('#signin-orcid button').click(function() {
+	$.ajax({
+		url : "@auth.gui.routes.SignInOrcid.signIn()",
 		success: function(uri) {
 			window.location.href = uri;
 		},

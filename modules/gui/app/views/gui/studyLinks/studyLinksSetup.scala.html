@@ -239,8 +239,8 @@
                 <h4 class="modal-title">QR Code</h4>
             </div>
             <div class="modal-body">
-                <div id="qr-code" data-toggle="tooltip" title=""></div>
-                <div class="messages">Right-click on the QR code to copy or save the image.</div>
+                <div id="qrcode" data-toggle="tooltip" title=""></div>
+                <button id="qrcode_download" class="btn btn-worker center-block">Download</button>
             </div>
         </div>
     </div>
@@ -880,19 +880,26 @@ $('#studyLinksDisplayModal, #studyLinksModal').on('click', '.qrCodeButton', func
 });
 
 function showQRCode(url) {
-    $('#qr-code').empty();
+    $('#qrcode').empty();
     $('#qrCodeModal').off('shown.bs.modal');
+    $('#qrCodeModal .modal-title').text(`QR code for ${url}`);
+
     $('#qrCodeModal').on('shown.bs.modal', function (e) {
-        QrCreator.render({
+        let options = {
             text: url,
-            radius: 0.1,
-            ecLevel: 'H',
-            fill: '#000',
-            background: '#fff',
-            size: $("#qrCodeModal .modal-body").width(),
-        }, document.querySelector('#qr-code'));
+            correctLevel: QRCode.CorrectLevel.H
+        };
+        let qrcode = new QRCode(document.getElementById("qrcode"), options);
+
+        // It's necessary to set the canvas size because EasyQRCodeJS does it wrong
+        const width = $("#qrcode").width();
+        $('#qrcode canvas').width(width);
+        $('#qrcode canvas').height(width);
+
+        const studyCode = url.slice(-11);
+        const filename = `jatos-qr-studylink-${studyCode}`;
+        $('#qrcode_download').click(() => qrcode.download(filename));
     });
-    $('#qr-code').attr("title", url);
     $('#qrCodeModal').modal('show');
 }
 

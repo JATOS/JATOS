@@ -17,7 +17,7 @@
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/ace-1.4.2/ace.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.js")"></script>
-<script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/qr-creator.min.js")"></script>
+<script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/easy.qrcode.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/timeago.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")" type="module"></script>
 @if(loggedInUser.isOauthGoogle()) {
@@ -527,6 +527,19 @@ function getRealHostUrl() {
  */
 function getRealBaseUrl() {
     return location.protocol + '//' + location.host + '@general.common.Common.getJatosUrlBasePath()';
+}
+
+function generateOrcidLink(orcid) {
+    return `<a href="https://orcid.org/${orcid}" target="_blank" class="text-nowrap"><img alt="ORCID logo" src="@routes.Assets.versioned("lib/jatos-gui/images/ORCIDiD_iconvector.svg")" width="16" height="16" />&nbsp;${orcid}</a>`;
+}
+
+function generateFullUserString(name, username, authMethod) {
+    if (authMethod == "ORCID") {
+        return `${name} (${generateOrcidLink(username)})`;
+    } else {
+        return `${name} (${username})`;
+    }
+
 }
 
 </script>

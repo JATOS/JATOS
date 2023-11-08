@@ -63,9 +63,18 @@ public class Common {
     private static String oauthGoogleClientId;
     private static String oidcProviderConfigUrl;
     private static String oidcClientId;
+    private static String oidcClientSecret;
     private static String oidcIdTokenSigningAlgorithm;
     private static String oidcSignInButtonText;
     private static String oidcSignInButtonLogoUrl;
+    private static String oidcSuccessFeedback;
+    private static String orcidProviderConfigUrl;
+    private static String orcidClientId;
+    private static String orcidClientSecret;
+    private static String orcidIdTokenSigningAlgorithm;
+    private static String orcidSignInButtonText;
+    private static String orcidSignInButtonLogoUrl;
+    private static String orcidSuccessFeedback;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
@@ -140,9 +149,18 @@ public class Common {
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         oidcProviderConfigUrl = config.getString("jatos.user.authentication.oidc.providerConfigUrl");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
+        oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
         oidcSignInButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
         oidcSignInButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
+        oidcSuccessFeedback = config.getString("jatos.user.authentication.oidc.successFeedback");
+        orcidProviderConfigUrl = config.getString("jatos.user.authentication.orcid.providerConfigUrl");
+        orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
+        orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
+        orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
+        orcidSignInButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
+        orcidSignInButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
+        orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
@@ -440,8 +458,7 @@ public class Common {
     }
 
     public static boolean isOidcAllowed() {
-        // OIDC will be allowed in a later release
-        return false; // !Strings.isNullOrEmpty(oidcClientId);
+        return !Strings.isNullOrEmpty(oidcClientId);
     }
 
     /**
@@ -459,7 +476,14 @@ public class Common {
     }
 
     /**
-     * OpenId Connect (OIDC) Client ID
+     * OpenId Connect (OIDC) Client Secret.
+     */
+    public static String getOidcClientSecret() {
+        return oidcClientSecret;
+    }
+
+    /**
+     * OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
      */
     public static String getOidcIdTokenSigningAlgorithm() {
         return oidcIdTokenSigningAlgorithm;
@@ -477,6 +501,66 @@ public class Common {
      */
     public static String getOidcSignInButtonLogoUrl() {
         return oidcSignInButtonLogoUrl;
+    }
+
+    /**
+     * Success feedback text shown to the user if OIDC login was successful
+     */
+    public static String getOidcSuccessFeedback() {
+        return oidcSuccessFeedback;
+    }
+
+    public static boolean isOrcidAllowed() {
+        return !Strings.isNullOrEmpty(orcidClientId);
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) provider config URL (ends with ".well-known/openid-configuration")
+     */
+    public static String getOrcidProviderConfigUrl() {
+        return orcidProviderConfigUrl;
+    }
+
+    /**
+     * ORCID'S OpenId Connect (OIDC) Client ID
+     */
+    public static String getOrcidClientId() {
+        return orcidClientId;
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) Client Secret. Can be null if not used.
+     */
+    public static String getOrcidClientSecret() {
+        return orcidClientSecret;
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
+     */
+    public static String getOrcidIdTokenSigningAlgorithm() {
+        return orcidIdTokenSigningAlgorithm;
+    }
+
+    /**
+     * Text of ORCID button on the login page
+     */
+    public static String getOrcidSignInButtonText() {
+        return orcidSignInButtonText;
+    }
+
+    /**
+     * Logo URL of ORCID button on the login page
+     */
+    public static String getOrcidSignInButtonLogoUrl() {
+        return orcidSignInButtonLogoUrl;
+    }
+
+    /**
+     * Success feedback text shown to the user if ORCID sign-in was successful.
+     */
+    public static String getOrcidSuccessFeedback() {
+        return orcidSuccessFeedback;
     }
 
     /**

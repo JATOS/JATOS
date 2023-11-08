@@ -48,6 +48,7 @@ $(document).ready(function() {
         "order": [[ 6, "dsc" ]],
         "pageLength": 10,
         "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        "stateSave": true,
         "columns": [
             {
                 "data": null,
@@ -76,11 +77,12 @@ $(document).ready(function() {
                 "data": null,
                 "render": function (data, type, full, meta) {
                     if (data.members.length < 4 ) {
-                        return data.members.join("<br>");
+                        return data.members.map((m) => generateFullUserString(m.name, m.username, m.authMethod)).join("<br>");
                     } else {
-                        return '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
-                                + 'data-trigger="focus" data-container="body" '
-                                + 'data-html="true" data-content="' + data.members.join("<br>") + '">show all</a>';
+                        const m = data.members.map((m) => `${m.name} (${m.username})`).join("<br>");
+                        return `<button type="button" class="btn btn-default btn-sm" data-toggle="popover"
+                                data-trigger="focus" data-container="body" data-html="true"
+                                data-content="${m}">show all</button>`;
                     }
                 }
             },

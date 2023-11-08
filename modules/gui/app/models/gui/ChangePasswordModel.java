@@ -15,19 +15,12 @@ public class ChangePasswordModel {
     public static final String NEW_PASSWORD = "newPassword";
     public static final String NEW_PASSWORD_REPEAT = "newPasswordRepeat";
     public static final String OLD_PASSWORD = "oldPassword";
-    public static final String ADMIN_PASSWORD = "adminPassword";
 
     private String username;
 
     private String newPassword;
 
     private String newPasswordRepeat;
-
-    /**
-     * In case an admin wants to change the password of an user the admin has to
-     * send their own password too for authentication
-     */
-    private String adminPassword;
 
     /**
      * In case an user wants to change their own password we need their old
@@ -57,14 +50,6 @@ public class ChangePasswordModel {
 
     public void setNewPasswordRepeat(String newPasswordRepeat) {
         this.newPasswordRepeat = newPasswordRepeat;
-    }
-
-    public String getAdminPassword() {
-        return adminPassword;
-    }
-
-    public void setAdminPassword(String adminPassword) {
-        this.adminPassword = adminPassword;
     }
 
     public String getOldPassword() {

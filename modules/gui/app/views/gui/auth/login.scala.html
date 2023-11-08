@@ -43,8 +43,18 @@
 	<div class="row">
 		<div id="signin-oidc" class="col">
 			<button class="btn btn-lg btn-default btn-block">
-				<img class="pull-left" height="25" src="@general.common.Common.getOidcSignInButtonLogoUrl()">
+				<img class="pull-left" height="25" src="@{general.common.Common.getJatosUrlBasePath()+general.common.Common.getOidcSignInButtonLogoUrl()}">
 				@general.common.Common.getOidcSignInButtonText()
+			</button>
+		</div>
+	</div>
+	}
+	@if(general.common.Common.isOrcidAllowed()) {
+	<div class="row">
+		<div id="signin-orcid" class="col">
+			<button class="btn btn-lg btn-default btn-block">
+				<img class="pull-left" height="25" src="@{general.common.Common.getJatosUrlBasePath()+general.common.Common.getOrcidSignInButtonLogoUrl()}">
+				@general.common.Common.getOrcidSignInButtonText()
 			</button>
 		</div>
 	</div>
@@ -68,7 +78,7 @@
 		</div>
 	</div>
 	}
-	@if(general.common.Common.isOidcAllowed() || general.common.Common.isOauthGoogleAllowed()) {
+	@if(general.common.Common.isOidcAllowed() || general.common.Common.isOrcidAllowed() || general.common.Common.isOauthGoogleAllowed()) {
 	<div class="row">
 		<p class="login-text col">... or log in</p>
 	</div>
@@ -123,7 +133,20 @@ function isLocalhost() {
 
 $('#signin-oidc button').click(function() {
 	$.ajax({
-		url : "@auth.gui.routes.SignInOidc.signIn()",
+		url : "@auth.gui.routes.SignInBasicOidc.signIn()",
+		success: function(uri) {
+			window.location.href = uri;
+		},
+		error : function(err) {
+			$("p.text-danger").remove();
+			$('#password').after(`<p class="text-danger">${err.responseText}</p>`);
+		}
+	});
+});
+
+$('#signin-orcid button').click(function() {
+	$.ajax({
+		url : "@auth.gui.routes.SignInOrcid.signIn()",
 		success: function(uri) {
 			window.location.href = uri;
 		},

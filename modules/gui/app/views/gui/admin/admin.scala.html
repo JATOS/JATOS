@@ -221,15 +221,28 @@
                     <b>User&nbsp;session&nbsp;inactivity</b>:&nbsp;@general.common.Common.getUserSessionInactivity()<br>
                     <b>DB&nbsp;URL</b>:&nbsp;@general.common.Common.getDbUrl()<br>
                     <b>DB&nbsp;driver</b>:&nbsp;@general.common.Common.getDbDriver()<br>
+                    <b>Max&nbsp;results&nbsp;DB&nbsp;query&nbsp;size</b>:&nbsp;@general.common.Common.getMaxResultsDbQuerySize()<br>
+
                     <b>Google&nbsp;OAuth&nbsp;allowed</b>:&nbsp;@general.common.Common.isOauthGoogleAllowed()<br>
+                    @if(general.common.Common.isOauthGoogleAllowed()) {
+                    <b>Google&nbsp;OAuth&nbsp;Client&nbsp;ID</b>:&nbsp;@general.common.Common.getOauthGoogleClientId()<br>
+                    }
                     <b>OIDC&nbsp;allowed</b>:&nbsp;@general.common.Common.isOidcAllowed()<br>
+                    @if(general.common.Common.isOidcAllowed()) {
                     <b>OIDC&nbsp;Provider&nbsp;Config&nbsp;URL</b>:&nbsp;@general.common.Common.getOidcProviderConfigUrl()<br>
                     <b>OIDC&nbsp;Client&nbsp;ID</b>:&nbsp;@general.common.Common.getOidcClientId()<br>
+                    }
+                    <b>ORCID&nbsp;allowed</b>:&nbsp;@general.common.Common.isOrcidAllowed()<br>
+                    @if(general.common.Common.isOrcidAllowed()) {
+                    <b>ORCID&nbsp;Client&nbsp;ID</b>:&nbsp;@general.common.Common.getOrcidClientId()<br>
+                    }
+                    <b>LDAP&nbsp;allowed</b>:&nbsp;@general.common.Common.isLdapAllowed()<br>
+                    @if(general.common.Common.isLdapAllowed()) {
                     <b>LDAP&nbsp;URL</b>:&nbsp;@general.common.Common.getLdapUrl()<br>
                     <b>LDAP&nbsp;base&nbsp;DN</b>:&nbsp;@general.common.Common.getLdapBaseDn()<br>
                     <b>LDAP&nbsp;admin&nbsp;DN</b>:&nbsp;@general.common.Common.getLdapAdminDn()<br>
                     <b>LDAP&nbsp;timeout</b>:&nbsp;@general.common.Common.getLdapTimeout()<br>
-                    <b>Max&nbsp;results&nbsp;DB&nbsp;query&nbsp;size</b>:&nbsp;@general.common.Common.getMaxResultsDbQuerySize()<br>
+                    }
                 </p>
 
                 <h2>OS info</h2>
@@ -506,7 +519,7 @@ function fillLatestUsers(latestUsers) {
     latestUsers.forEach(function(e) {
         htmlArray.push("<tr>");
         htmlArray.push(`<td data-toggle="tooltip" title="${getFormattedDate(e.time)}">${timeago.format(e.time)}</td>`);
-        htmlArray.push("<td>" + e.username + "</td>");
+        htmlArray.push(`<td>${generateFullUserString(e.name, e.username, e.authMethod)}</td>`);
         htmlArray.push("</tr>");
     });
     return htmlArray.join("");
@@ -517,23 +530,24 @@ function fillLatestStudyRuns(latestStudyRuns) {
         return '<tr><td class="text-center" colspan="3">no data yet</td></tr>';
     }
 
-    var htmlArray = [];
+    const htmlArray = [];
     latestStudyRuns.forEach(function(studyRun) {
-        var trimmedStudyTitle = studyRun.studyTitle.length > 50
+        const trimmedStudyTitle = studyRun.studyTitle.length > 50
                 ? studyRun.studyTitle.substring(0, 47) + "..."
                 : studyRun.studyTitle;
-        var memberList;
+        let membersHtml;
         if (studyRun.members.length < 4 ) {
-            memberList = studyRun.members.join("<br>");
+            membersHtml = studyRun.members.map((m) => generateFullUserString(m.name, m.username, m.authMethod)).join("<br>");
         } else {
-            memberList = '<button type="button" class="btn btn-default btn-sm" data-toggle="popover" '
-                    + 'data-trigger="focus" data-container="body" data-html="true" data-placement="left" '
-                    + 'data-content="' + studyRun.members.join("<br>") + '">show all</button>';
+            const m = studyRun.members.map((m) => `${m.name} (${m.username})`).join("<br>");
+            membersHtml = `<button type="button" class="btn btn-default btn-sm" data-toggle="popover"
+                    data-trigger="focus" data-container="body" data-html="true" data-placement="left"
+                    data-content="${m}">show all</button>`;
         }
         htmlArray.push("<tr>");
         htmlArray.push(`<td><span data-toggle="tooltip" title="${getFormattedDate(studyRun.time)}">${timeago.format(studyRun.time)}</span></td>`);
-        htmlArray.push("<td>" + trimmedStudyTitle + "</td>");
-        htmlArray.push("<td>" + memberList + "</td>");
+        htmlArray.push(`<td>${trimmedStudyTitle}</td>`);
+        htmlArray.push(`<td>${membersHtml}</td>`);
         htmlArray.push("</tr>");
     });
     return htmlArray.join("");

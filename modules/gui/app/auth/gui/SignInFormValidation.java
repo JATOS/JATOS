@@ -44,9 +44,7 @@ public class SignInFormValidation {
         String passwordRepeat = form.get().getPasswordRepeat();
         String name = form.get().getName();
         String email = form.get().getEmail();
-        boolean authByLdap = form.get().getAuthByLdap();
-        boolean authByOAuthGoogle = form.get().getAuthByOAuthGoogle();
-        boolean authByOidc = form.get().getAuthByOidc();
+        boolean authByDb = form.get().getAuthByDb();
 
         if (normalizedUsername == null || normalizedUsername.isEmpty()) {
             return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.MISSING_USERNAME));
@@ -83,8 +81,8 @@ public class SignInFormValidation {
             form = form.withError(new ValidationError(NewUserModel.EMAIL, MessagesStrings.NO_HTML_ALLOWED));
         }
 
-        // Check password only if not authenticated by LDAP or OAuth
-        if (!authByLdap && !authByOAuthGoogle && !authByOidc) {
+        // Check password only if authenticated by DB
+        if (authByDb) {
             if (password == null || password.trim().isEmpty()) {
                 return form.withError(new ValidationError(NewUserModel.PASSWORD,
                         MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));

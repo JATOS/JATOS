@@ -1,10 +1,14 @@
 package auth.gui;
 
+import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.*;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -19,7 +23,6 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import controllers.gui.routes;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
-import general.common.Common;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
 import models.gui.NewUserModel;
@@ -34,7 +37,6 @@ import play.mvc.Result;
 import services.gui.UserService;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -48,40 +50,61 @@ import java.util.Optional;
  * just used for authentication - authorization and session management are still done with the session cookies from the
  * Play Framework.
  * <p>
+ * This class is meant to be extended by the actual OIDC implementations.
+ * <p>
  * Using library: Nimbus OAuth 2.0 SDK with OpenID Connect extensions
  * https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/guides/java-cookbook-for-openid-connect-public-clients
  *
  * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
-@Singleton
-public class SignInOidc extends Controller {
+public abstract class SignInOidc extends Controller {
 
     private static final ALogger LOGGER = Logger.of(SignInOidc.class);
 
-    private final AuthService authenticationService;
-    private final SignInFormValidation authenticationValidation;
-    private final FormFactory formFactory;
-    private final UserDao userDao;
-    private final UserService userService;
+    @Inject private AuthService authenticationService;
+    @Inject private SignInFormValidation authenticationValidation;
+    @Inject private FormFactory formFactory;
+    @Inject private UserDao userDao;
+    @Inject private UserService userService;
 
+    private final OidcConfig oidcConfig;
     private OIDCProviderMetadata oidcProviderMetadata;
 
-    @Inject
-    SignInOidc(AuthService authenticationService, SignInFormValidation authenticationValidation,
-            FormFactory formFactory, UserService userService, UserDao userDao) {
-        this.authenticationService = authenticationService;
-        this.authenticationValidation = authenticationValidation;
-        this.formFactory = formFactory;
-        this.userDao = userDao;
-        this.userService = userService;
+    /**
+     * All configuration needed for an OIDC auth method
+     */
+    public static class OidcConfig {
+
+        private final User.AuthMethod authMethod;
+        private final String providerConfigUrl;
+        private final String callbackUrl;
+        private final String clientId;
+        private final String clientSecret;
+        private final String idTokenSigningAlgorithm;
+        private final String successMsg;
+
+        OidcConfig(User.AuthMethod authMethod, String providerConfigUrl, String callbackUrl,
+                String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
+            this.authMethod = authMethod;
+            this.providerConfigUrl = providerConfigUrl;
+            this.callbackUrl = callbackUrl;
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+            this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
+            this.successMsg = successMsg;
+        }
+    }
+
+    SignInOidc(OidcConfig oidcConfig) {
+        this.oidcConfig = oidcConfig;
     }
 
     @GuiAccessLogging
     @Transactional
-    public Result signIn(Http.Request request) throws URISyntaxException, IOException, ParseException, AuthException {
-        ClientID clientID = new ClientID(Common.getOidcClientId());
-        URI callback = new URI(auth.gui.routes.SignInOidc.callback().absoluteURL(request));
+    public final Result signIn(Http.Request request) throws URISyntaxException, IOException, ParseException, AuthException {
+        ClientID clientID = new ClientID(oidcConfig.clientId);
+        URI callback = new URI(oidcConfig.callbackUrl);
         State state = new State();
         Nonce nonce = new Nonce();
         AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
@@ -102,11 +125,11 @@ public class SignInOidc extends Controller {
      * Callback handed to the OIDC provider to be called after authentication
      */
     @Transactional
-    public Result callback(Http.Request request) {
+    public final Result callback(Http.Request request) {
         try {
             AuthorizationCode authorizationCode = getAuthorisationCode(request);
 
-            OIDCTokens oidcTokens = requestToken(request, authorizationCode);
+            OIDCTokens oidcTokens = requestToken(authorizationCode);
 
             verifyIdToken(request, oidcTokens.getIDToken(), getProviderInfo());
 
@@ -115,19 +138,22 @@ public class SignInOidc extends Controller {
 
             persistUserIfNotExisting(userInfo);
 
-            String username = userInfo.getSubject().getValue();
-            authenticationService.writeSessionCookie(session(), username);
-            userService.setLastLogin(username);
+            String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
+            authenticationService.writeSessionCookie(session(), normalizedUsername);
+            userService.setLastLogin(normalizedUsername);
         } catch (AuthException e) {
-            LOGGER.warn(e.getMessage());
+            LOGGER.warn(".callback: " + e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
             return redirect(auth.gui.routes.SignIn.login());
         } catch (Exception e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(".callback: " + e.getMessage());
             FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
             return redirect(auth.gui.routes.SignIn.login());
         }
 
+        if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
+            FlashScopeMessaging.success(oidcConfig.successMsg);
+        }
         return redirect(routes.Home.home());
     }
 
@@ -135,7 +161,7 @@ public class SignInOidc extends Controller {
         if (oidcProviderMetadata != null) return oidcProviderMetadata;
 
         try {
-            URL providerConfigurationURL = new URI(Common.getOidcProviderConfigUrl()).toURL();
+            URL providerConfigurationURL = new URI(oidcConfig.providerConfigUrl).toURL();
             InputStream stream = providerConfigurationURL.openStream();
             String providerInfo;
             try (java.util.Scanner s = new java.util.Scanner(stream)) {
@@ -159,7 +185,7 @@ public class SignInOidc extends Controller {
         }
 
         if (response instanceof AuthenticationErrorResponse) {
-            throw new AuthException("OIDC error - " + response.toErrorResponse().getErrorObject());
+            throw new AuthException("OIDC error - " + response.toErrorResponse().getErrorObject().getDescription());
         }
 
         return response.toSuccessResponse().getAuthorizationCode();
@@ -169,26 +195,40 @@ public class SignInOidc extends Controller {
      * Construct the code grant from the code obtained from the authentication endpoint and the original callback URI
      * used at the authentication endpoint
      */
-    private OIDCTokens requestToken(Http.Request request, AuthorizationCode authorizationCode)
+    private OIDCTokens requestToken(AuthorizationCode authorizationCode)
             throws AuthException, URISyntaxException, ParseException, IOException {
-        URI callback = new URI(auth.gui.routes.SignInOidc.callback().absoluteURL(request));
-        AuthorizationGrant authorizationCodeGrant = new AuthorizationCodeGrant(authorizationCode, callback);
-        ClientID clientID = new ClientID(Common.getOidcClientId());
-        URI tokenEndpoint = getProviderInfo().getTokenEndpointURI();
-        TokenRequest tokenRequest = new TokenRequest(tokenEndpoint, clientID, authorizationCodeGrant);
+        URI callback = new URI(oidcConfig.callbackUrl);
+        TokenRequest tokenRequest = buildTokenRequest(authorizationCode, callback);
         TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenRequest.toHTTPRequest().send());
         if (!tokenResponse.indicatesSuccess()) {
-            throw new AuthException("OIDC error requesting access token");
+            throw new AuthException("OIDC error requesting access token - "
+                    + tokenResponse.toErrorResponse().getErrorObject().getDescription());
         }
         OIDCTokenResponse successResponse = (OIDCTokenResponse) tokenResponse.toSuccessResponse();
         return successResponse.getOIDCTokens();
     }
 
+    private TokenRequest buildTokenRequest(AuthorizationCode authorizationCode, URI callback)
+            throws ParseException, URISyntaxException, AuthException {
+        AuthorizationGrant authorizationCodeGrant = new AuthorizationCodeGrant(authorizationCode, callback);
+        ClientID clientID = new ClientID(oidcConfig.clientId);
+        URI tokenEndpoint = getProviderInfo().getTokenEndpointURI();
+        TokenRequest tokenRequest;
+        if (Strings.isNullOrEmpty(oidcConfig.clientSecret)) {
+            tokenRequest = new TokenRequest(tokenEndpoint, clientID, authorizationCodeGrant);
+        } else {
+            Secret clientSecret = new Secret(oidcConfig.clientSecret);
+            ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
+            tokenRequest = new TokenRequest(tokenEndpoint, clientAuth, authorizationCodeGrant);
+        }
+        return tokenRequest;
+    }
+
     private void verifyIdToken(Http.Request request, JWT idToken, OIDCProviderMetadata providerMetadata)
             throws AuthException, MalformedURLException {
         Issuer issuer = providerMetadata.getIssuer();
-        ClientID clientID = new ClientID(Common.getOidcClientId());
-        JWSAlgorithm jwsAlg = JWSAlgorithm.parse(Common.getOidcIdTokenSigningAlgorithm());
+        ClientID clientID = new ClientID(oidcConfig.clientId);
+        JWSAlgorithm jwsAlg = JWSAlgorithm.parse(oidcConfig.idTokenSigningAlgorithm);
         URL jwkSetURL = providerMetadata.getJWKSetURI().toURL();
         IDTokenValidator validator = new IDTokenValidator(issuer, clientID, jwsAlg, jwkSetURL);
         Nonce expectedNonce = request.session().getOptional("oidcNonce").map(Nonce::new).orElse(null);
@@ -206,31 +246,44 @@ public class SignInOidc extends Controller {
         HTTPResponse userInfoHTTPResponse = userInfoRequest.toHTTPRequest().send();
         UserInfoResponse userInfoResponse = UserInfoResponse.parse(userInfoHTTPResponse);
         if (!userInfoResponse.indicatesSuccess()) {
-            throw new AuthException("OIDC error - " + userInfoResponse.toErrorResponse().getErrorObject());
+            throw new AuthException("OIDC error - "
+                    + userInfoResponse.toErrorResponse().getErrorObject().getDescription());
         }
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
     private void persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
-        String username = userInfo.getSubject().getValue();
-        User existingUser = userDao.findByUsername(username);
+        String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
+        User existingUser = userDao.findByUsername(normalizedUsername);
         if (existingUser == null) {
             NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(username);
-            newUserModel.setName(userInfo.getName());
+            newUserModel.setUsername(normalizedUsername);
+            newUserModel.setName(getName(userInfo));
             newUserModel.setEmail(userInfo.getEmailAddress());
-            newUserModel.setAuthByOidc(true);
-            Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
+            newUserModel.setAuthMethod(oidcConfig.authMethod);
 
+            Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
             newUserForm = authenticationValidation.validateNewUser(newUserForm);
             if (newUserForm.hasErrors()) {
                 throw new AuthException("OIDC: user validation failed - " + newUserForm.errors().get(0).message());
             }
 
             userService.bindToUserAndPersist(newUserModel);
-        } else if (!existingUser.isOidc()) {
+        } else if (existingUser.getAuthMethod() != oidcConfig.authMethod) {
             throw new AuthException("User exists already - but does not use OIDC sign in");
         }
+    }
+
+    private String getName(UserInfo userInfo) {
+        if (!Strings.isNullOrEmpty(userInfo.getName())) {
+            return userInfo.getName();
+        }
+        if (!Strings.isNullOrEmpty(userInfo.getGivenName()) || !Strings.isNullOrEmpty(userInfo.getFamilyName())) {
+            String givenName = userInfo.getGivenName() != null ? userInfo.getGivenName() : "";
+            String familyName = userInfo.getFamilyName() != null ? userInfo.getFamilyName() : "";
+            return (givenName + " " + familyName).trim();
+        }
+        return userInfo.getSubject().getValue();
     }
 
 }

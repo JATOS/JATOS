@@ -3,7 +3,7 @@
 @views.html.gui.main(loggedInUser, breadcrumbs) {
 
 <div id="toolbar" class="btn-group">
-    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()) {
+    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc() && !loggedInUser.isOrcid()) {
     <button id="editProfile" type="button" class="btn btn-admin">Edit Profile</button>
     }
     @if(loggedInUser.isDb()) {
@@ -15,7 +15,7 @@
     }
 </div>
 
-<h4>You are member user in these studies:</h4>
+<h4>You are a member user in these studies:</h4>
 <ul id="usersStudyList" class="list-group">
     <!-- filled via JavaScript -->
 </ul>

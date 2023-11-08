@@ -118,9 +118,8 @@ public class SignInGoogle extends Controller {
             newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(name);
             newUserModel.setEmail(idTokenPayload.getEmail());
-            newUserModel.setAuthByOAuthGoogle(true);
+            newUserModel.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-
             newUserForm = authenticationValidation.validateNewUser(newUserForm);
             if (newUserForm.hasErrors()) {
                 throw new AuthException("Google sign in: user validation failed - " + newUserForm.errors().get(0).message());

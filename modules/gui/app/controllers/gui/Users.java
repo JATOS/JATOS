@@ -23,8 +23,9 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.*;
-import utils.common.Helpers;
+import services.gui.BreadcrumbsService;
+import services.gui.JatosGuiExceptionThrower;
+import services.gui.UserService;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -171,19 +172,8 @@ public class Users extends Controller {
     @Auth(Role.ADMIN)
     public Result create(Http.Request request) throws NamingException {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
-
-        // Validate
         form = authenticationValidation.validateNewUser(form);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
-
-        // Check admin password (except if Oauth Google and OIDC)
-        User loggedInUser = authenticationService.getLoggedInUser();
-        String adminPassword = form.get().getAdminPassword();
-        if (!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc()
-                && !authenticationService.authenticate(loggedInUser, adminPassword)) {
-            form = form.withError(new ValidationError(NewUserModel.ADMIN_PASSWORD, "Wrong password"));
-            return forbidden(form.errorsAsJson());
-        }
 
         userService.bindToUserAndPersist(form.get());
         return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -206,6 +196,10 @@ public class Users extends Controller {
 
         if (user.isOidc()) {
             return forbidden("OIDC authenticated users can't have their profile changed.");
+        }
+
+        if (user.isOrcid()) {
+            return forbidden("ORCID authenticated users can't have their profile changed.");
         }
 
         if (!loggedInUser.isAdmin()) {
@@ -240,14 +234,14 @@ public class Users extends Controller {
         if (user == null) {
             return badRequest("An user with username " + normalizedUsernameOfUserToChange + " doesn't exist.");
         }
-        if (user.isLdap() || user.isOauthGoogle() || user.isOidc()) {
-            return forbidden("It's not possible to change the password of LDAP, Google sign-in or OIDC authenticated users.");
+        if (!user.isDb()) {
+            return forbidden("It's not possible to change the password of non-local authenticated users.");
         }
 
-        // Only user 'admin' is allowed to change his own password
+        // Only the user 'admin' is allowed to change his own password
         if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
                 !loggedInUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
-            form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
+            form = form.withError(new ValidationError(ChangePasswordModel.USERNAME,
                     "It's not possible to change admin's password."));
             return forbidden(form.errorsAsJson());
         }
@@ -256,14 +250,6 @@ public class Users extends Controller {
         form = authenticationValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
-        // Authenticate loggedInUser (not for OIDC or OAuthGoogle users)
-        if (loggedInUser.isDb() || loggedInUser.isLdap()) {
-            String adminPassword = form.get().getAdminPassword();
-            if (!authenticationService.authenticate(loggedInUser, adminPassword)) {
-                form = form.withError(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD, "Wrong password"));
-                return forbidden(form.errorsAsJson());
-            }
-        }
         // Change password
         String newPassword = form.get().getNewPassword();
         userService.updatePassword(user, newPassword);
@@ -339,8 +325,9 @@ public class Users extends Controller {
                 }
                 break;
             case OIDC:
+            case ORCID:
             case OAUTH_GOOGLE:
-                // Google Oauth and OIDC users confirm with their email address (stored in username)
+                // Google OAuth, OIDC and ORCID users confirm with their username
                 String username = requestData.get("username");
                 if (!username.equals(loggedInUser.getUsername())) {
                     return forbidden(MessagesStrings.WRONG_USERNAME);

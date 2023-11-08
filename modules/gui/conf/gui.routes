@@ -62,9 +62,11 @@ GET      /jatos/testWebSocket                                               @con
 # Auth controllers
 GET      /jatos/login                                                       @auth.gui.SignIn.login()
 POST     /jatos/login                                                       @auth.gui.SignIn.authenticate(request: Request)
-POST     /jatos/signInWithGoogle                                            @auth.gui.SignInGoogle.signIn(request: Request)
-GET      /jatos/signInWithOidc                                              @auth.gui.SignInOidc.signIn(request: Request)
-GET      /jatos/oidcCallback                                                @auth.gui.SignInOidc.callback(request: Request)
+POST     /jatos/signin/google                                               @auth.gui.SignInGoogle.signIn(request: Request)
+GET      /jatos/signin/oidc/basic                                           @auth.gui.SignInBasicOidc.signIn(request: Request)
+GET      /jatos/signin/oidc/basic/callback                                  @auth.gui.SignInBasicOidc.callback(request: Request)
+GET      /jatos/signin/oidc/orcid                                           @auth.gui.SignInOrcid.signIn(request: Request)
+GET      /jatos/signin/oidc/orcid/callback                                  @auth.gui.SignInOrcid.callback(request: Request)
 GET      /jatos/logout                                                      @auth.gui.SignIn.logout(request: Request)
 
 # Home controller
