@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.8.4"
+version := "3.8.5-alpha"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
@@ -32,8 +32,8 @@ dockerCommands := Seq(
   Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
   Cmd("WORKDIR", "${JATOS_HOME}"),
   Cmd("COPY", "opt/docker ${JATOS_HOME}"),
-  Cmd("RUN", "groupadd -g 1000 jatos " +
-    "&& useradd -u 1000 -g jatos jatos " +
+  Cmd("RUN", "groupadd --gid 1000 jatos " +
+    "&& useradd --uid 1000 --gid 1000 jatos " +
     "&& mkdir -p ${JATOS_HOME}/logs ${JATOS_DATA} " +
     "&& chown -R jatos:jatos ${JATOS_HOME} ${JATOS_DATA}"),
   Cmd("USER", "jatos"),
