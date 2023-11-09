@@ -18,7 +18,7 @@ public class SignInOrcid extends SignInOidc {
     SignInOrcid() {
         super(new OidcConfig(
                 User.AuthMethod.ORCID,
-                Common.getOrcidProviderConfigUrl(),
+                Common.getOrcidDiscoveryUrl(),
                 auth.gui.routes.SignInOrcid.callback().url(),
                 Common.getOrcidClientId(),
                 Common.getOrcidClientSecret(),

@@ -61,14 +61,14 @@ public class Common {
     private static String ldapAdminPassword;
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
-    private static String oidcProviderConfigUrl;
+    private static String oidcDiscoveryUrl;
     private static String oidcClientId;
     private static String oidcClientSecret;
     private static String oidcIdTokenSigningAlgorithm;
     private static String oidcSignInButtonText;
     private static String oidcSignInButtonLogoUrl;
     private static String oidcSuccessFeedback;
-    private static String orcidProviderConfigUrl;
+    private static String orcidDiscoveryUrl;
     private static String orcidClientId;
     private static String orcidClientSecret;
     private static String orcidIdTokenSigningAlgorithm;
@@ -147,14 +147,14 @@ public class Common {
         ldapAdminPassword = config.getString("jatos.user.authentication.ldap.admin.password");
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
-        oidcProviderConfigUrl = config.getString("jatos.user.authentication.oidc.providerConfigUrl");
+        oidcDiscoveryUrl = config.getString("jatos.user.authentication.oidc.discoveryUrl");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
         oidcSignInButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
         oidcSignInButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
         oidcSuccessFeedback = config.getString("jatos.user.authentication.oidc.successFeedback");
-        orcidProviderConfigUrl = config.getString("jatos.user.authentication.orcid.providerConfigUrl");
+        orcidDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
@@ -462,10 +462,10 @@ public class Common {
     }
 
     /**
-     * OpenId Connect (OIDC) provider config URL (ends with ".well-known/openid-configuration")
+     * OpenId Connect (OIDC) provider discovery URL (ends with ".well-known/openid-configuration")
      */
-    public static String getOidcProviderConfigUrl() {
-        return oidcProviderConfigUrl;
+    public static String getOidcDiscoveryUrl() {
+        return oidcDiscoveryUrl;
     }
 
     /**
@@ -515,10 +515,10 @@ public class Common {
     }
 
     /**
-     * ORCID's OpenId Connect (OIDC) provider config URL (ends with ".well-known/openid-configuration")
+     * ORCID's OpenId Connect (OIDC) provider discovery URL (ends with ".well-known/openid-configuration")
      */
-    public static String getOrcidProviderConfigUrl() {
-        return orcidProviderConfigUrl;
+    public static String getOrcidDiscoveryUrl() {
+        return orcidDiscoveryUrl;
     }
 
     /**

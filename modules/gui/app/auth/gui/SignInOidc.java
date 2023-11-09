@@ -77,7 +77,7 @@ public abstract class SignInOidc extends Controller {
     public static class OidcConfig {
 
         private final User.AuthMethod authMethod;
-        private final String providerConfigUrl;
+        private final String discoveryUrl;
         private final String callbackUrlPath;
         private String callbackUrl; // Filled during signIn request
         private final String clientId;
@@ -85,10 +85,10 @@ public abstract class SignInOidc extends Controller {
         private final String idTokenSigningAlgorithm;
         private final String successMsg;
 
-        OidcConfig(User.AuthMethod authMethod, String providerConfigUrl, String callbackUrlPath,
+        OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath,
                 String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
             this.authMethod = authMethod;
-            this.providerConfigUrl = providerConfigUrl;
+            this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
@@ -163,7 +163,7 @@ public abstract class SignInOidc extends Controller {
         if (oidcProviderMetadata != null) return oidcProviderMetadata;
 
         try {
-            URL providerConfigurationURL = new URI(oidcConfig.providerConfigUrl).toURL();
+            URL providerConfigurationURL = new URI(oidcConfig.discoveryUrl).toURL();
             InputStream stream = providerConfigurationURL.openStream();
             String providerInfo;
             try (java.util.Scanner s = new java.util.Scanner(stream)) {
