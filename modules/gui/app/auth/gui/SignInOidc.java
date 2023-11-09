@@ -78,17 +78,18 @@ public abstract class SignInOidc extends Controller {
 
         private final User.AuthMethod authMethod;
         private final String providerConfigUrl;
-        private final String callbackUrl;
+        private final String callbackUrlPath;
+        private String callbackUrl; // Filled during signIn request
         private final String clientId;
         private final String clientSecret;
         private final String idTokenSigningAlgorithm;
         private final String successMsg;
 
-        OidcConfig(User.AuthMethod authMethod, String providerConfigUrl, String callbackUrl,
+        OidcConfig(User.AuthMethod authMethod, String providerConfigUrl, String callbackUrlPath,
                 String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
             this.authMethod = authMethod;
             this.providerConfigUrl = providerConfigUrl;
-            this.callbackUrl = callbackUrl;
+            this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
@@ -102,7 +103,8 @@ public abstract class SignInOidc extends Controller {
 
     @GuiAccessLogging
     @Transactional
-    public final Result signIn(Http.Request request) throws URISyntaxException, IOException, ParseException, AuthException {
+    public final Result signIn(Http.Request request, String realHostUrl) throws URISyntaxException, IOException, ParseException, AuthException {
+        oidcConfig.callbackUrl = realHostUrl + oidcConfig.callbackUrlPath;
         ClientID clientID = new ClientID(oidcConfig.clientId);
         URI callback = new URI(oidcConfig.callbackUrl);
         State state = new State();

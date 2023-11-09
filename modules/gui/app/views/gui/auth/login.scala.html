@@ -132,8 +132,9 @@ function isLocalhost() {
 }
 
 $('#signin-oidc button').click(function() {
+	const realHostUrl = location.protocol + '//' + location.host;
 	$.ajax({
-		url : "@auth.gui.routes.SignInBasicOidc.signIn()",
+		url : `@{general.common.Common.getJatosUrlBasePath()}jatos/signin/oidc/basic?realHostUrl=${realHostUrl}`,
 		success: function(uri) {
 			window.location.href = uri;
 		},
@@ -145,8 +146,9 @@ $('#signin-oidc button').click(function() {
 });
 
 $('#signin-orcid button').click(function() {
+	const realHostUrl = location.protocol + '//' + location.host;
 	$.ajax({
-		url : "@auth.gui.routes.SignInOrcid.signIn()",
+		url : `@{general.common.Common.getJatosUrlBasePath()}jatos/signin/oidc/orcid?realHostUrl=${realHostUrl}`,
 		success: function(uri) {
 			window.location.href = uri;
 		},
