@@ -469,14 +469,14 @@ public class Common {
     }
 
     /**
-     * OpenId Connect (OIDC) Client ID
+     * OpenId Connect (OIDC) client ID
      */
     public static String getOidcClientId() {
         return oidcClientId;
     }
 
     /**
-     * OpenId Connect (OIDC) Client Secret.
+     * OpenId Connect (OIDC) client secret. Can be null if not used.
      */
     public static String getOidcClientSecret() {
         return oidcClientSecret;
@@ -522,14 +522,14 @@ public class Common {
     }
 
     /**
-     * ORCID'S OpenId Connect (OIDC) Client ID
+     * ORCID'S OpenId Connect (OIDC) client ID
      */
     public static String getOrcidClientId() {
         return orcidClientId;
     }
 
     /**
-     * ORCID's OpenId Connect (OIDC) Client Secret. Can be null if not used.
+     * ORCID's OpenId Connect (OIDC) client secret.
      */
     public static String getOrcidClientSecret() {
         return orcidClientSecret;
