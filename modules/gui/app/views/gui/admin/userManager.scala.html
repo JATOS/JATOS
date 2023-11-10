@@ -424,7 +424,7 @@ function generateStudiesChildRow(studiesData, username) {
     studiesData.forEach(function(studyData) {
         var trimmedStudyTitle = studyData.title.length > 80 ? studyData.title.substring(0, 77) + "..." : studyData.title;
         let membersHtml;
-        if (studyRun.members.length < 4 ) {
+        if (studyData.members.length < 4 ) {
             membersHtml = studyData.members.map((m) => generateFullUserString(m.name, m.username, m.authMethod)).join("<br>");
         } else {
             const m = studyData.members.map((m) => `${m.name} (${m.username})`).join("<br>");
