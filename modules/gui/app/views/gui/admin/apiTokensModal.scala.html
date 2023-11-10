@@ -184,7 +184,7 @@ function generateApiTokenTable() {
             {
                 "data": null,
                 "render": function (data, type, full, meta) {
-                    if (data.expiration <= 0) return "never";
+                    if (data.expirationDate <= 0) return "never";
                     const expirationDate = getFormattedDate(data.expirationDate);
                     return data.isExpired ? `${expirationDate} <b>(expired)</b>` : expirationDate;
                 }
