@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.1
+  version: 1.0.2
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -157,6 +157,20 @@ paths:
               schema:
                 type: string
                 format: binary
+        '401':
+          description: Invalid token
+    delete:
+      summary: Delete a study
+      description: >-
+        **Deletes a study (including its components, batches, study links,
+        study assets and all result data and files). This cannot be undone**.
+      tags:
+        - study
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
         '401':
           description: Invalid token
   /jatos/api/v1/studies/{id}/properties:
@@ -642,7 +656,7 @@ paths:
         be deleted too. **Only results will be deleted, studies, components,
         batches, and groups remain untouched**. **This cannot be undone**.
       tags:
-        - danger zone
+        - results
       parameters:
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
