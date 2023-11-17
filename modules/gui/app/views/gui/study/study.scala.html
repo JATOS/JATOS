@@ -454,7 +454,7 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
         + "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
     askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
         $.ajax({
-            url : '@controllers.gui.routes.Studies.remove(study.getId())',
+            url : '@controllers.gui.routes.Api.deleteStudy(study.getId().toString())',
             type : 'DELETE',
             beforeSend: showWaitingModal,
             success : function(result) {

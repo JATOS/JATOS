@@ -261,6 +261,7 @@ public class Api extends Controller {
     public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath)
             throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStudyLocked(study);
 
         if (request.body().asMultipartFormData() == null) return badRequest("File missing");
         Http.MultipartFormData.FilePart<Object> filePart = request.body().asMultipartFormData().getFile("studyAssetsFile");
@@ -291,6 +292,8 @@ public class Api extends Controller {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStudyLocked(study);
+
         try {
             File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
             if (file.isDirectory()) throw new IOException("Directories can't be deleted.");
@@ -331,6 +334,22 @@ public class Api extends Controller {
     @Auth
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
         return importExport.exportStudy(id);
+    }
+
+    /**
+     * Deletes a study
+     *
+     * @param id Study's ID or UUID
+     */
+    @Transactional
+    @Auth
+    public Result deleteStudy(String id) throws ForbiddenException, NotFoundException, IOException {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        User loggedInUser = authenticationService.getLoggedInUser();
+        checker.checkStudyLocked(study);
+
+        studyService.removeStudyInclAssets(study, loggedInUser);
+        return ok();
     }
 
     /**

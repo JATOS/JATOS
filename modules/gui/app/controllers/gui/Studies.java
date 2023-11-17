@@ -207,22 +207,7 @@ public class Studies extends Controller {
         return ok();
     }
 
-    /**
-     * DELETE request to remove a study
-     */
-    @Transactional
-    @Auth
-    public Result remove(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
-        Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
-        checker.checkStudyLocked(study);
-
-        studyService.removeStudyInclAssets(study, loggedInUser);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
-    }
-
-    /**
+     /**
      * GET request to clones a study.
      */
     @Transactional
