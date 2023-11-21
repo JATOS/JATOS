@@ -598,7 +598,7 @@ public class JsonUtils {
                 Worker worker = studyLink.getWorker();
 
                 studyLinkDataNode.put("workerId", worker.getId());
-                studyLinkDataNode.put("comment", !StringUtils.isBlank(worker.getComment()) ? worker.getComment() : "none");
+                studyLinkDataNode.put("comment", worker.getComment());
 
                 // (last) StudyResult's state
                 Optional<StudyResult> lastStudyResult = worker.getLastStudyResult();
