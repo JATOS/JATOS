@@ -269,7 +269,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <input type="submit" class="confirmed btn btn-worker" value="Edit">
+                    <input type="submit" class="confirmed btn btn-worker" value="Save">
                 </div>
             </form>
         </div>
@@ -481,7 +481,7 @@ function fillStudyLinksTable(batch, workerType) {
             {
                 "data": "comment",
                 "render": function (data, type, full, meta) {
-                    return `<span>${data ? data : "none"}</span>
+                    return `${data ? data : '<span class="gray-light">none</span>'}
                         <button type="button" class="btn btn-default btn-xs commentEditButton" data-toggle="tooltip" title="Edit this comment.">
                         <span class="glyphicon glyphicon-edit"></span></button>`
                 }
@@ -490,7 +490,7 @@ function fillStudyLinksTable(batch, workerType) {
                 "data": "studyResultState",
                 "width": "20%",
                 "render": function (data, type, full, meta) {
-                    return data !== null ? data : "not yet";
+                    return data !== null ? data : '<span class="gray-light">not yet</span>';
                 }
             },
             {

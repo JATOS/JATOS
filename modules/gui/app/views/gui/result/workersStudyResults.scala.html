@@ -174,22 +174,22 @@ $(document).ready(function() {
             {
                 "data": "startDate",
                 "type": "date",
-                "render": getFormattedDate
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
             },
             {
                 "data": "endDate",
                 "type": "date",
                 "visible": false,
-                "render": (data) => data ? getFormattedDate(data) : "never"
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
             },
             {
                 "data": "lastSeenDate",
                 "type": "date",
-                "render": (data) => data ? getFormattedDate(data) : "never"
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
             },
             {
                 "data": "duration",
-                "render": (data) => data ? data : "not yet"
+                "render": (data) => data ? data : '<span class="gray-light">not yet</span>'
             },
             {
                 "data": "studyId",
@@ -207,14 +207,14 @@ $(document).ready(function() {
                 "data": "confirmationCode",
                 "visible": false,
                 "width": "1%",
-                "render": (data) => data ? data : "none"
+                "render": (data) => data ? data : '<span class="gray-light">none</span>'
             },
             {
                 "data": "groupId",
                 "width": "1%",
                 "visible": false,
                 "render": function (data, type, full, meta) {
-                    if (!data) return "none";
+                    if (!data) return '<span class="gray-light">none</span>';
                     return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Click to get this group\'s results" ' +
                         'href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + full.studyId + '/group/' + data + '/results">' + data + '</a>';
@@ -231,7 +231,7 @@ $(document).ready(function() {
             { "data": "studyState" },
             {
                 "data": function(data, type, dataToSet) {
-                    return data.message ? data.message : "none";
+                    return data.message ? data.message : '<span class="gray-light">none</span>';
                 },
                 "width": "20%"
             }
@@ -619,7 +619,7 @@ $(document).ready(function() {
     }
 
     function generateComponentResultsChildRow(componentResults, studyResultId) {
-        var childRow = $('<div class="slider" style="display: none">'
+        const childRow = $('<div class="slider" style="display: none">'
             + '<table class="table borderless" cellpadding="5" cellspacing="0" border="0">'
             + '<tr class="info header">'
             + '<td><b>Comp. Result ID</b></td>'
@@ -636,37 +636,38 @@ $(document).ready(function() {
             + '</div>');
 
         if (componentResults.length == 0) {
-            var row = $('<tr class="info"><td colspan="9">empty</td></tr>');
+            const row = $('<tr class="info"><td colspan="9">empty</td></tr>');
             childRow.find("tr").after(row);
             return childRow;
         }
 
         componentResults.forEach(function(componentResult) {
-            var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-            var message = (componentResult.message) ? componentResult.message : "none";
-            var resultFiles = componentResult.files.map(function(fileObj) {
-                var url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${componentResult.id}`;
+            const startDate = componentResult.startDate ? getFormattedDate(componentResult.startDate) : '<span class="gray-light">never</span>'
+            const duration = (componentResult.duration) ? componentResult.duration : '<span class="gray-light">not yet</span>';
+            const message = (componentResult.message) ? componentResult.message : '<span class="gray-light">none</span>';
+            const resultFiles = componentResult.files.map(function(fileObj) {
+                const url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${componentResult.id}`;
                 return '<a href="' + url + '" download>' + fileObj.filename + '&nbsp;(' + fileObj.sizeHumanReadable + ')</a>';
             });
-            if (resultFiles.length === 0) resultFiles.push("none");
-            var showAllButton = "";
+            if (resultFiles.length === 0) resultFiles.push('<span class="gray-light">none</span>');
+            let showAllButton = "";
             if (componentResult.dataShort.substr(componentResult.dataShort.length - 3) == "...") {
                 showAllButton = '<button type="button" class="btn btn-xs showAllButton" data-toggle="tooltip" '
                     + 'title="Show all result data of this component result.">show all</button>';
             }
 
-            var row1 = $('<tr class="info">'
+            let row1 = $('<tr class="info">'
                 + '<td>' + componentResult.id + '</td>'
                 + '<td>' + componentResult.componentId + '</td>'
                 + '<td>' + componentResult.componentTitle + '</td>'
-                + '<td>' + componentResult.startDate + '</td>'
+                + '<td>' + startDate + '</td>'
                 + '<td>' + duration + '</td>'
                 + '<td>' + componentResult.componentState + '</td>'
                 + '<td>' + componentResult.dataSizeHumanReadable + '</td>'
                 + '<td>' + resultFiles.join('<br>') + '</td>'
                 + '<td>' + message + '</td>'
                 + '</tr>');
-            var row2 = $('<tr class="info">'
+            let row2 = $('<tr class="info">'
                 + '<td colspan="9"><pre class="details-data">' + componentResult.dataShort + showAllButton +'</pre></td>'
                 + '</tr>');
             row2.data(componentResult);

@@ -159,17 +159,17 @@ $(document).ready(function() {
             {
                 "data": "startDate",
                 "type": "date",
-                "render": getFormattedDate
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
             },
             {
                 "data": "endDate",
                 "type": "date",
                 "visible": false,
-                "render": (data) => data ? getFormattedDate(data) : "never"
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
             },
             {
                 "data": "duration",
-                "render": (data) => data ? data : "not yet"
+                "render": (data) => data ? data : '<span class="gray-light">not yet</span>'
             },
             { "data": "batchTitle" },
             {
@@ -190,7 +190,7 @@ $(document).ready(function() {
                 "visible": false,
                 "width": "1%",
                 "render": function (data, type, full, meta) {
-                    if (!data) return "none";
+                    if (!data) return '<span class="gray-light">none</span>';
                     return '<a type="button" class="btn btn-batch btn-xs" data-toggle="tooltip" ' +
                         'data-placement="bottom" title="Click to get this group\'s results" ' +
                         'href="@{general.common.Common.getJatosUrlBasePath()}jatos/@study.getId()/group/' + data + '/results">' + data + '</a>';
@@ -201,7 +201,7 @@ $(document).ready(function() {
             {
                 "data": "files",
                 "render": function (data, type, full, meta) {
-                    if (data.length === 0) return "none";
+                    if (data.length === 0) return '<span class="gray-light">none</span>';
                     var resultFiles = data.map(function(fileObj) {
                         var url = `@{general.common.Common.getJatosUrlBasePath()}jatos/api/v1/results/files/${fileObj.filename}?componentResultId=${full.id}`;
                         return '<a href="' + url + '" download>' + fileObj.filename + ' (' + fileObj.sizeHumanReadable + ')</a>';
@@ -212,7 +212,7 @@ $(document).ready(function() {
             {
                 "data": "message",
                 "width": "20%",
-                "render": (data) => data ? data : "none"
+                "render": (data) => data ? data : '<span class="gray-light">none</span>'
             }
         ],
         select: {

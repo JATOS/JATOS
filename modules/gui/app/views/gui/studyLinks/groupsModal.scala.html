@@ -140,7 +140,7 @@ function generateGroupsTable(batch) {
             {
                 "data": "endDate",
                 "type": "date",
-                "render": (data) => data ? getFormattedDate(data) : "not yet"
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">not yet</span>'
             },
             {
                 "data": "groupState",
@@ -195,7 +195,7 @@ function generateGroupsTable(batch) {
     }
 
     function renderWorkerColumn(data, type, dataToSet) {
-        if (data.length == 0) return "none";
+        if (data.length == 0) return '<span class="gray-light">none</span>';
 
         var workerLinks = [];
         data.forEach(function(workerId) {

@@ -187,7 +187,7 @@ var userTable = $('#userTable').DataTable({
                     return generateOrcidLink(data);
                 } else {
                     // Every 40 chars add a <br>
-                    return (data) ? data.replace(/(.{40})/g, "$1<br>") : "none";
+                    return (data) ? data.replace(/(.{40})/g, "$1<br>") : '<span class="gray-light">none</span>';
                 }
             }
         },
@@ -196,7 +196,7 @@ var userTable = $('#userTable').DataTable({
             "data": "name",
             "render": function (data, type, full, meta) {
                 // Every 30 chars add a <br>
-                return (data) ? data.replace(/(.{30})/g, "$1<br>") : "none";
+                return (data) ? data.replace(/(.{30})/g, "$1<br>") : '<span class="gray-light">none</span>';
             }
         },
         {
@@ -204,14 +204,14 @@ var userTable = $('#userTable').DataTable({
             "data": "email",
             "render": function (data, type, full, meta) {
                 // Every 40 chars add a <br>
-                return (data) ? data.replace(/(.{40})/g, "$1<br>") : "none";
+                return (data) ? data.replace(/(.{40})/g, "$1<br>") : '<span class="gray-light">none</span>';
             }
         },
         {
             "class": "lastLogin",
             "data": "lastLogin",
             "type": "date",
-            "render": (data) => data ? getFormattedDate(data) : "never"
+            "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
         },
         {
             "class": "text-center authMethod",

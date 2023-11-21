@@ -135,7 +135,7 @@ $(document).ready(function() {
             {
                 "type": "date",
                 "data": "lastStarted",
-                "render": (data) => data ? getFormattedDate(data) : "never"
+                "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
             }
         ],
         "drawCallback": function( settings ) {
