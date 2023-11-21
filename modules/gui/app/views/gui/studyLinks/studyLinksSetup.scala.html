@@ -246,6 +246,37 @@
     </div>
 </div>
 
+<!-- Study link comment edit Modal (Personal Single or Personal Multiple) -->
+<div id="commentEditModal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" class="form-horizontal" role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span><span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title">Edit comment of study link</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="messages"></div>
+                    <p class="modalText"></p>
+                    <div class="form-group row">
+                        <label class="control-label col-xs-3" for="commentEditInput">Comment&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Use the comment to distinguish the worker(s) from others."></span></label>
+                        <div class="col-xs-9">
+                            <input id="commentEditInput" class="comment form-control" name="comment" type="text" placeholder="Comment">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="confirmed btn btn-worker" value="Edit">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <script @{helper.CSPNonce.attr}>
 
 function loadStudyLinksSetup(batchId) {
@@ -439,7 +470,7 @@ function fillStudyLinksTable(batch, workerType) {
                 "data": "studyCode",
                 "render": function(studyCode, type, row) {
                     return `<span>${studyCode}</span>
-                        <button type="button" class="btn clipboardButton btn-xs" data-toggle="tooltip" title="Copy this link to the clipboard.">
+                        <button type="button" class="btn btn-xs clipboardButton" data-toggle="tooltip" title="Copy this link to the clipboard.">
                         <span class="glyphicon glyphicon-duplicate"></span></button>`;
                 }
             },
@@ -449,6 +480,11 @@ function fillStudyLinksTable(batch, workerType) {
             },
             {
                 "data": "comment",
+                "render": function (data, type, full, meta) {
+                    return `<span>${data ? data : "none"}</span>
+                        <button type="button" class="btn btn-default btn-xs commentEditButton" data-toggle="tooltip" title="Edit this comment.">
+                        <span class="glyphicon glyphicon-edit"></span></button>`
+                }
             },
             {
                 "data": "studyResultState",
@@ -882,7 +918,7 @@ $('#studyLinksDisplayModal, #studyLinksModal').on('click', '.qrCodeButton', func
 function showQRCode(url) {
     $('#qrcode').empty();
     $('#qrCodeModal').off('shown.bs.modal');
-    $('#qrCodeModal .modal-title').text(`QR code for ${url}`);
+    $('#qrCodeModal .modal-title').text(`QR code for study link ${url}`);
 
     $('#qrCodeModal').on('shown.bs.modal', function (e) {
         let options = {
@@ -927,5 +963,40 @@ function toggleDirectAndConfirmLink(e) {
         $(this).parents('.modal').find('.linkUrls div.confirmLink button').addClass('pull-right');
     }
 }
+
+$('#studyLinksModal').on('click', '.commentEditButton', function(e) {
+    removeAlerts("#commentEditModal");
+    removeFormErrors("#commentEditModal");
+    clearForm("#commentEditModal");
+
+    const tr = $(this).closest('tr');
+    const rowData = studyLinksTable.row(tr).data();
+    $('#commentEditModal').data('workerId', rowData.workerId);
+    $('#commentEditModal .modal-title').text(`Edit comment of study code "${rowData.studyCode}"`);
+    $('#commentEditModal #commentEditInput').val(rowData.comment);
+
+    // Focus on comment input field in modal
+    $('#commentEditModal').on('shown.bs.modal', function () {
+        $('#commentEditInput').focus();
+    })
+    $('#commentEditModal').modal('show');
+});
+
+$("#commentEditModal form").submit(function(event) {
+    event.preventDefault();
+    const workerId = $('#commentEditModal').data('workerId');
+    $.ajax({
+        url: `@{general.common.Common.getJatosUrlBasePath()}jatos/worker/${workerId}/comment`,
+        type : "POST",
+        data : $('#commentEditModal form').serialize(),
+        success: function() {
+            $('#commentEditModal').modal('hide');
+            studyLinksTable.ajax.reload();
+        },
+        error : function(err) {
+            showError(err.responseText, "#commentEditModal .messages");
+        }
+    });
+});
 
 </script>

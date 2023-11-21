@@ -1,10 +1,11 @@
 package controllers.gui;
 
+import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
-import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.*;
+import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -12,7 +13,10 @@ import exceptions.gui.NotFoundException;
 import general.gui.RequestScopeMessaging;
 import models.common.*;
 import models.common.GroupResult.GroupState;
-import models.common.workers.*;
+import models.common.workers.JatosWorker;
+import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.PersonalSingleWorker;
+import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
 import models.gui.GroupSession;
@@ -22,14 +26,15 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import scala.Option;
 import services.gui.*;
-import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for all actions regarding study links, batches, and workers within the JATOS GUI.
@@ -47,11 +52,11 @@ public class StudyLinks extends Controller {
     private final AuthService authenticationService;
     private final WorkerService workerService;
     private final BatchService batchService;
-    private final StudyLinkService studyLinkService;
     private final GroupService groupService;
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final BatchDao batchDao;
+    private final WorkerDao workerDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
     private final StudyLinkDao studyLinkDao;
@@ -60,9 +65,9 @@ public class StudyLinks extends Controller {
     @Inject
     StudyLinks(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
             JsonUtils jsonUtils, AuthService authenticationService,
-            WorkerService workerService, BatchService batchService, StudyLinkService studyLinkService,
-            GroupService groupService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            BatchDao batchDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao, StudyLinkDao studyLinkDao,
+            WorkerService workerService, BatchService batchService,
+            GroupService groupService, BreadcrumbsService breadcrumbsService, StudyDao studyDao, BatchDao batchDao,
+            WorkerDao workerDao, StudyResultDao studyResultDao, GroupResultDao groupResultDao, StudyLinkDao studyLinkDao,
             FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
@@ -70,11 +75,11 @@ public class StudyLinks extends Controller {
         this.authenticationService = authenticationService;
         this.workerService = workerService;
         this.batchService = batchService;
-        this.studyLinkService = studyLinkService;
         this.groupService = groupService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.batchDao = batchDao;
+        this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
         this.studyLinkDao = studyLinkDao;
@@ -442,6 +447,29 @@ public class StudyLinks extends Controller {
         studyLink.setActive(active);
         studyLinkDao.update(studyLink);
         return ok(JsonUtils.asJsonNode(studyLink.isActive()));
+    }
+
+    /**
+     * POST request to change a Worker's comment. Traditionally, comments are stored with the Worker and not with the
+     * StudyLink.
+     */
+    @Transactional
+    @Auth
+    public Result editWorkerComment(Http.Request request, Long workerId) throws BadRequestException {
+        User loggedInUser = authenticationService.getLoggedInUser();
+        Worker worker = workerDao.findById(workerId);
+        try {
+            checker.checkWorker(worker, workerId);
+            checker.isUserAllowedToAccessWorker(loggedInUser, worker);
+        } catch (BadRequestException | ForbiddenException e) {
+            return forbidden("User is not allowed to access this Worker");
+        }
+
+        String comment = request.body().asFormUrlEncoded().get("comment")[0];
+        worker.setComment(comment);
+        workerService.validateWorker(worker);
+        workerDao.update(worker);
+        return ok();
     }
 
 }

@@ -149,6 +149,7 @@ GET      /jatos/:studyId/batch/:batchId/groups                              @con
 POST     /jatos/:studyId/group/:groupId/fixed                               @controllers.gui.StudyLinks.toggleGroupFixed(studyId: Long, groupId: Long, fixed: Boolean)
 GET      /jatos/:studyId/group/:groupId/groupSessionData                    @controllers.gui.StudyLinks.groupSessionData(studyId: Long, groupId: Long)
 POST     /jatos/:studyId/group/:groupId/groupSessionData                    @controllers.gui.StudyLinks.submitEditedGroupSessionData(request: Request, studyId: Long, groupId: Long)
+POST     /jatos/worker/:workerId/comment                                    @controllers.gui.StudyLinks.editWorkerComment(request: Request, workerId: Long)
 
 # Components controller
 POST     /jatos/:studyId/component                                          @controllers.gui.Components.submitCreated(studyId: Long)
