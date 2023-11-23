@@ -120,7 +120,7 @@ var jatos = {};
 	/**
 	 * Waiting time in ms between channel heartbeats
 	 */
-	jatos.channelHeartbeatInterval = 25000;
+	jatos.channelHeartbeatInterval = 10000;
 	/**
 	 * Waiting time in ms for JATOS answer to a channel heartbeat ('pong')
 	 */
@@ -227,11 +227,12 @@ var jatos = {};
 	 */
 	var waitingRequests = {};
 	/**
-	 * State booleans. If true jatos.js is in this state. Several states can be true
+	 * State booleans (flags). If true jatos.js is in this state. Several states can be true
 	 * at the same time.
 	 */
 	var initialized = false;
 	var jatosOnLoadEventFired = false;
+	var batchChannelAlive = false;
 	var startingComponent = false;
 	var endingStudy = false;
 	var studyRunInvalid = false;
@@ -250,6 +251,11 @@ var jatos = {};
 	 * Event fired when jatos.js is initialized (e.g. init data loaded and channels opened)
 	 */
 	var jatosOnLoadEvent = new Event("jatosOnLoad");
+    /**
+     * Events fired when the batch channel heartbeat works or fails
+     */
+	var batchChannelAliveEvent = new Event("batchChannelAlive");
+	var batchChannelDeadEvent = new Event("batchChannelDead");
 	/**
 	 * Callback function defined via jatos.onBatchSession
 	 */
@@ -533,6 +539,30 @@ var jatos = {};
 		}
 	}
 
+    /**
+     * Adds the callback function to the batchChannelAlive event listener. The batchChannelAlive event gets fired
+     * when jatos.js establishes a connection to JATOS which is detected by the heartbeat in the batch channel.
+     */
+    jatos.onConnected = function (callback) {
+        window.addEventListener("batchChannelAlive", callback);
+    }
+
+    /**
+     * Adds the callback function to the batchChannelDead event listener. The batchChannelDead event gets fired
+     * when jatos.js loses its connection to JATOS which is detected by the heartbeat in the batch channel.
+     */
+    jatos.onDisconnected = function (callback) {
+        window.addEventListener("batchChannelDead", callback);
+    }
+
+    /**
+     * Returns true if jatos.js established a connection to JATOS which is detected by the heartbeat in the batch
+     * channel. False otherwise.
+     */
+    jatos.isConnected = function () {
+        return batchChannelAlive;
+    }
+
 	/**
 	 * Open batch channel with retry and exponential backoff
 	 */
@@ -627,14 +657,25 @@ var jatos = {};
 		batchChannelHeartbeatTimer = setInterval(function () {
 			if (batchChannel.readyState == batchChannel.OPEN) {
 				batchChannel.send('{"heartbeat":"ping"}');
-				var timeout = setTimeout(function () {
-					console.warn("Batch channel heartbeat fail");
-					reopenBatchChannel();
-				}, jatos.channelHeartbeatTimeoutTime);
+				var timeout = setTimeout(handleBatchChannelHeartbeatFail,
+				    jatos.channelHeartbeatTimeoutTime);
 				batchChannelHeartbeatTimeoutTimers.push(timeout);
 			}
 		}, jatos.channelHeartbeatInterval);
 	}
+
+	/**
+     * Batch channel is dead: set batchChannelAlive flag,
+     * fire batchChannelDeadEvent and reopen batch channel
+     */
+	function handleBatchChannelHeartbeatFail() {
+        console.warn("Batch channel heartbeat fail");
+        if (batchChannelAlive) {
+            batchChannelAlive = false;
+            window.dispatchEvent(batchChannelDeadEvent);
+        }
+        reopenBatchChannel();
+    }
 
 	/**
 	 * Periodically checks whether the batch channel is closed and if yes
@@ -680,9 +721,14 @@ var jatos = {};
 			console.error(error);
 			return;
 		}
-		if (typeof batchMsg.heartbeat != 'undefined') {
-			// Batch channel is alive - clear all heartbeat timeouts
+		if (typeof batchMsg.heartbeat != 'undefined' && batchMsg.heartbeat == 'pong') {
+			// Batch channel is alive:  clear all heartbeat timeouts
+			// and set batchChannelAlive flag and fire batchChannelAliveEvent
 			clearBatchChannelHeartbeatTimeoutTimers();
+            if (!batchChannelAlive) {
+                batchChannelAlive = true;
+                window.dispatchEvent(batchChannelAliveEvent);
+            }
 			return;
 		}
 		if (typeof batchMsg.patches != 'undefined') {
@@ -706,6 +752,7 @@ var jatos = {};
 			batchSessionVersion = batchMsg.version;
 			if (isDeferredPending(openingBatchChannelDeferred)) {
 				// Batch channel opening is only done when we have the batch session version
+				console.info("Batch channel opened");
 				openingBatchChannelDeferred.resolve();
 			}
 		}
@@ -1723,6 +1770,7 @@ var jatos = {};
 			groupSessionVersion = groupMsg.sessionVersion;
 			if (isDeferredPending(openingGroupChannelDeferred)) {
 				// Group joining is only done after the session version is received
+				console.info("Group channel opened");
 				openingGroupChannelDeferred.resolve();
 			}
 		}
