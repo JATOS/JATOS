@@ -84,6 +84,7 @@ public class UserService {
      * Creates a user, sets password hash and persists him. Creates and persists a JatosWorker for the user.
      */
     public void bindToUserAndPersist(NewUserModel newUserModel) {
+        //noinspection deprecation
         jpa.withTransaction(() -> {
             User user = new User(newUserModel.getUsername(), newUserModel.getName(), newUserModel.getEmail());
             String password = newUserModel.getPassword();
@@ -174,6 +175,7 @@ public class UserService {
     }
 
     public void setLastSignin(String normalizedUsername) {
+        //noinspection deprecation
         jpa.withTransaction(() -> {
             User user = userDao.findByUsername(normalizedUsername);
             user.setLastLogin(new Timestamp(new Date().getTime()));

@@ -434,6 +434,7 @@ public class Api extends Controller {
         File file = resultStreamer.writeResultMetadata(request, wrapperObject);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
                 + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
+        //noinspection ResultOfMethodCallIgnored
         return ok().streamed(
                         Helpers.okFileStreamed(file, file::delete),
                         Optional.of(file.length()),
