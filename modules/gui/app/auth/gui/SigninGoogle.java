@@ -31,8 +31,8 @@ import java.util.Collections;
 /**
  * Class that handles the sign-in of users via Google OIDC sign-in button.
  * The actual authentication is done with Google's gsi/client JavaScript library in the browser. Here we just check the
- * Token ID, create the user if it doesn't exist yet und log in the user into JATOS. Google OIDC is just used for
- * authentication - authorization and session management are still done by JATOS and Play Framework.
+ * Token ID, create the user if it doesn't exist yet und sign in the user into JATOS. Google OIDC is just used for
+ * authentication - authorization and session management is still done by JATOS and Play Framework.
  *
  * More info: https://developers.google.com/identity/gsi/web
  *
@@ -40,37 +40,37 @@ import java.util.Collections;
  */
 @SuppressWarnings("deprecation")
 @Singleton
-public class SignInGoogle extends Controller {
+public class SigninGoogle extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(SignInGoogle.class);
+    private static final ALogger LOGGER = Logger.of(SigninGoogle.class);
 
-    private final AuthService authenticationService;
-    private final SignInFormValidation authenticationValidation;
+    private final AuthService authService;
+    private final SigninFormValidation signinFormValidation;
     private final FormFactory formFactory;
     private final UserDao userDao;
     private final UserService userService;
 
     @Inject
-    SignInGoogle(AuthService authenticationService, SignInFormValidation authenticationValidation,
+    SigninGoogle(AuthService authService, SigninFormValidation signinFormValidation,
             FormFactory formFactory, UserService userService, UserDao userDao) {
-        this.authenticationService = authenticationService;
-        this.authenticationValidation = authenticationValidation;
+        this.authService = authService;
+        this.signinFormValidation = signinFormValidation;
         this.formFactory = formFactory;
         this.userDao = userDao;
         this.userService = userService;
     }
 
     /**
-     * HTTP POST Endpoint for the login form
+     * HTTP POST Endpoint for the sign-in form
      */
     @Transactional
-    public Result signIn(Http.Request request) throws GeneralSecurityException, IOException {
+    public Result signin(Http.Request request) throws GeneralSecurityException, IOException {
         String idTokenString = request.body().asFormUrlEncoded().get("credential")[0];
         GoogleIdToken idToken = fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google sign in: Invalid ID token.");
             FlashScopeMessaging.error("Google sign in: Invalid ID token");
-            return redirect(auth.gui.routes.SignIn.login());
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
@@ -78,7 +78,7 @@ public class SignInGoogle extends Controller {
         if (!idTokenPayload.getEmailVerified()) {
             LOGGER.info("Google sign in: Couldn't sign in user due to email not verified");
             FlashScopeMessaging.error("Google sign in: Email not verified");
-            return redirect(auth.gui.routes.SignIn.login());
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         try {
@@ -86,12 +86,12 @@ public class SignInGoogle extends Controller {
         } catch (AuthException e) {
             LOGGER.warn(e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
-            return redirect(auth.gui.routes.SignIn.login());
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
-        authenticationService.writeSessionCookie(session(), normalizedUsername);
-        userService.setLastLogin(normalizedUsername);
+        authService.writeSessionCookie(session(), normalizedUsername);
+        userService.setLastSignin(normalizedUsername);
 
         return redirect(controllers.gui.routes.Home.home());
     }
@@ -120,7 +120,7 @@ public class SignInGoogle extends Controller {
             newUserModel.setEmail(idTokenPayload.getEmail());
             newUserModel.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-            newUserForm = authenticationValidation.validateNewUser(newUserForm);
+            newUserForm = signinFormValidation.validateNewUser(newUserForm);
             if (newUserForm.hasErrors()) {
                 throw new AuthException("Google sign in: user validation failed - " + newUserForm.errors().get(0).message());
             }

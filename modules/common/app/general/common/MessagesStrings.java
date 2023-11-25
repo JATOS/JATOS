@@ -56,7 +56,7 @@ public class MessagesStrings {
 
     // User
     public static final String INVALID_USER_OR_PASSWORD = "Invalid user or password";
-    public static final String FAILED_THREE_TIMES = "You have only three login attempts per minute.";
+    public static final String FAILED_THREE_TIMES = "You have only three sign-in attempts per minute.";
     public static final String WRONG_PASSWORD = "Wrong password";
     public static final String WRONG_USERNAME = "Wrong username";
     public static final String NOT_ALLOWED_TO_DELETE_USER = "You are not allowed to delete this user.";

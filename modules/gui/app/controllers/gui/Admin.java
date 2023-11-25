@@ -23,7 +23,6 @@ import services.gui.AdminService;
 import auth.gui.AuthService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
-import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -46,7 +45,7 @@ import java.util.stream.Stream;
 @Singleton
 public class Admin extends Controller {
 
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final StudyResultDao studyResultDao;
@@ -55,10 +54,9 @@ public class Admin extends Controller {
     private final AdminService adminService;
 
     @Inject
-    Admin(AuthService authenticationService,
-          BreadcrumbsService breadcrumbsService, StudyDao studyDao, StudyResultDao studyResultDao,
-          UserDao userDao, LogFileReader logFileReader, AdminService adminService) {
-        this.authenticationService = authenticationService;
+    Admin(AuthService authService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
+            StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService) {
+        this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
@@ -73,9 +71,9 @@ public class Admin extends Controller {
     @Transactional
     @Auth(Role.ADMIN)
     public Result administration(Http.Request request) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(null);
-        return ok(views.html.gui.admin.admin.render(request, loggedInUser, breadcrumbs));
+        return ok(views.html.gui.admin.admin.render(request, signedinUser, breadcrumbs));
     }
 
     /**
@@ -143,9 +141,9 @@ public class Admin extends Controller {
     @Transactional
     @Auth(Role.ADMIN)
     public Result studyAdmin(Http.Request request) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDIES);
-        return ok(views.html.gui.admin.studyAdmin.render(request, loggedInUser, breadcrumbs));
+        return ok(views.html.gui.admin.studyAdmin.render(request, signedinUser, breadcrumbs));
     }
 
     /**
@@ -182,10 +180,10 @@ public class Admin extends Controller {
     @Transactional
     @Auth
     public Result studyAssetsSize(Long studyId) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
-        if (!study.hasUser(loggedInUser) && !loggedInUser.isAdmin()) return forbidden("No access for this user");
+        if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
         return ok(JsonUtils.asJsonNode(adminService.getStudyAssetDirSize(study)));
     }
 
@@ -195,10 +193,10 @@ public class Admin extends Controller {
     @Transactional
     @Auth
     public Result resultDataSize(Long studyId) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
-        if (!study.hasUser(loggedInUser) && !loggedInUser.isAdmin()) return forbidden("No access for this user");
+        if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
         int studyResultCount = studyResultDao.countByStudy(study);
         return ok(JsonUtils.asJsonNode(adminService.getResultDataSize(study, studyResultCount)));
     }
@@ -209,10 +207,10 @@ public class Admin extends Controller {
     @Transactional
     @Auth(Role.ADMIN)
     public Result resultFileSize(Long studyId) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
-        if (!study.hasUser(loggedInUser) && !loggedInUser.isAdmin()) return forbidden("No access for this user");
+        if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
         int studyResultCount = studyResultDao.countByStudy(study);
         return ok(JsonUtils.asJsonNode(adminService.getResultFileSize(study, studyResultCount)));
     }

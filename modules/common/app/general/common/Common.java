@@ -65,15 +65,15 @@ public class Common {
     private static String oidcClientId;
     private static String oidcClientSecret;
     private static String oidcIdTokenSigningAlgorithm;
-    private static String oidcSignInButtonText;
-    private static String oidcSignInButtonLogoUrl;
+    private static String oidcSigninButtonText;
+    private static String oidcSigninButtonLogoUrl;
     private static String oidcSuccessFeedback;
     private static String orcidDiscoveryUrl;
     private static String orcidClientId;
     private static String orcidClientSecret;
     private static String orcidIdTokenSigningAlgorithm;
-    private static String orcidSignInButtonText;
-    private static String orcidSignInButtonLogoUrl;
+    private static String orcidSigninButtonText;
+    private static String orcidSigninButtonLogoUrl;
     private static String orcidSuccessFeedback;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
@@ -151,15 +151,15 @@ public class Common {
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
-        oidcSignInButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
-        oidcSignInButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
+        oidcSigninButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
+        oidcSigninButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
         oidcSuccessFeedback = config.getString("jatos.user.authentication.oidc.successFeedback");
         orcidDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
-        orcidSignInButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
-        orcidSignInButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
+        orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
+        orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
         orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
@@ -330,7 +330,7 @@ public class Common {
     }
 
     /**
-     * Time in minutes a user can be inactive before he will be logged-out
+     * Time in minutes a user can be inactive before they will be signed out
      * (defined in application.conf)
      */
     public static int getUserSessionInactivity() {
@@ -490,21 +490,21 @@ public class Common {
     }
 
     /**
-     * Text of OIDC button in login page
+     * Text of OIDC button in sign-in page
      */
-    public static String getOidcSignInButtonText() {
-        return oidcSignInButtonText;
+    public static String getOidcSigninButtonText() {
+        return oidcSigninButtonText;
     }
 
     /**
-     * Logo URL of OIDC button in login page
+     * Logo URL of OIDC button in sign-in page
      */
-    public static String getOidcSignInButtonLogoUrl() {
-        return oidcSignInButtonLogoUrl;
+    public static String getOidcSigninButtonLogoUrl() {
+        return oidcSigninButtonLogoUrl;
     }
 
     /**
-     * Success feedback text shown to the user if OIDC login was successful
+     * Success feedback text shown to the user if OIDC sign-in was successful
      */
     public static String getOidcSuccessFeedback() {
         return oidcSuccessFeedback;
@@ -543,17 +543,17 @@ public class Common {
     }
 
     /**
-     * Text of ORCID button on the login page
+     * Text of ORCID button on the sign-in page
      */
-    public static String getOrcidSignInButtonText() {
-        return orcidSignInButtonText;
+    public static String getOrcidSigninButtonText() {
+        return orcidSigninButtonText;
     }
 
     /**
-     * Logo URL of ORCID button on the login page
+     * Logo URL of ORCID button on the sign-in page
      */
-    public static String getOrcidSignInButtonLogoUrl() {
-        return orcidSignInButtonLogoUrl;
+    public static String getOrcidSigninButtonLogoUrl() {
+        return orcidSigninButtonLogoUrl;
     }
 
     /**

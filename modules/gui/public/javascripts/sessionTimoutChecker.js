@@ -1,7 +1,7 @@
 /**
  * Web worker used in JATOS to regularly check for user session timeouts
  * The actual session timeout handling is of course done on the server side.
- * These timeouts just cause an login overlay.
+ * These timeouts just cause an sign-in overlay.
  * 
  * http://www.jatos.org
  * Author Kristian Lange 2017
@@ -33,10 +33,10 @@ function checkSessionTimeouts() {
 	var currentTime = Date.now();
 	if (currentTime > sessionTimeoutTime) {
 		clearInterval(checkSessionTimeoutsInterval);
-		postMessage("You have been logged out due to session timeout.");
+		postMessage("You have been signed out due to session timeout.");
 	}
 	if (currentTime > sessionInactivityTime) {
 		clearInterval(checkSessionTimeoutsInterval);
-		postMessage("You have been logged out due to inactivity.");
+		postMessage("You have been signed out due to inactivity.");
 	}
 }

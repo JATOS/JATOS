@@ -91,7 +91,7 @@ public class User {
     private Set<Study> studyList = new HashSet<>();
 
     /**
-     * Time of last successful login
+     * Time of last successful sign-in
      */
     private Timestamp lastLogin;
 
@@ -101,7 +101,7 @@ public class User {
     private Timestamp lastSeen;
 
     /**
-     * A user can be deactivated (by default they are active). If deactivated a user cannot login, but their studies
+     * A user can be deactivated (by default they are active). If deactivated a user cannot sign in, but their studies
      * can be still run by workers.
      */
     private boolean active = true;

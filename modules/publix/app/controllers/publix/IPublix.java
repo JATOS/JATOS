@@ -100,7 +100,7 @@ public interface IPublix {
     /**
      * HTTP type: GET request
      *
-     * Finishes the study run (StudyResult state will be FINISHED or FAIL). Optionally it can be specified
+     * Finishes the study run (StudyResult state will be FINISHED or FAIL). Optionally, it can be specified
      * whether the study run was successful and a message can be logged.
      */
     Result finishStudy(Http.Request request, StudyResult studyResult, Boolean successful, String message)

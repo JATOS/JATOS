@@ -10,14 +10,14 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class SignInBasicOidc extends SignInOidc {
+public class SigninBasicOidc extends SigninOidc {
 
     @Inject
-    SignInBasicOidc() {
+    SigninBasicOidc() {
         super(new OidcConfig(
                 User.AuthMethod.OIDC,
                 Common.getOidcDiscoveryUrl(),
-                auth.gui.routes.SignInBasicOidc.callback().url(),
+                auth.gui.routes.SigninBasicOidc.callback().url(),
                 Common.getOidcClientId(),
                 Common.getOidcClientSecret(),
                 Common.getOidcIdTokenSigningAlgorithm(),

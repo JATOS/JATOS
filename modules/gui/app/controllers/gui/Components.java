@@ -43,7 +43,7 @@ public class Components extends Controller {
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
     private final ComponentService componentService;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final BatchService batchService;
     private final StudyDao studyDao;
     private final StudyLinkDao studyLinkDao;
@@ -52,12 +52,12 @@ public class Components extends Controller {
 
     @Inject
     Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, ComponentService componentService,
-            AuthService authenticationService, BatchService batchService, StudyDao studyDao,
+            AuthService authService, BatchService batchService, StudyDao studyDao,
             StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
         this.componentService = componentService;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.batchService = batchService;
         this.studyDao = studyDao;
         this.studyLinkDao = studyLinkDao;
@@ -73,12 +73,12 @@ public class Components extends Controller {
     @Auth
     public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId)
             throws JatosGuiException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
         Component component = componentDao.findById(componentId);
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForBatch(batch, study, batchId);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
@@ -94,8 +94,8 @@ public class Components extends Controller {
         }
 
         // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix: start study
-        StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
+        StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
+                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
         String runUrl = Common.getJatosUrlBasePath() + "publix/" + studyLink.getStudyCode();
         return redirect(runUrl)
                 .addingToSession(request, "jatos_run", "RUN_COMPONENT_START")
@@ -109,8 +109,8 @@ public class Components extends Controller {
     @Auth
     public Result submitCreated(Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checkStudyAndLocked(studyId, study, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checkStudyAndLocked(studyId, study, signedinUser);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -128,9 +128,9 @@ public class Components extends Controller {
     @Auth
     public Result properties(Long studyId, Long componentId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForComponent(studyId, componentId, component);
 
         ComponentProperties p = componentService.bindToProperties(component);
@@ -144,9 +144,9 @@ public class Components extends Controller {
     @Auth
     public Result submitEdited(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+        checkStudyAndLockedAndComponent(studyId, componentId, study, signedinUser, component);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -168,9 +168,9 @@ public class Components extends Controller {
     @Auth
     public Result toggleActive(Long studyId, Long componentId, Boolean active) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+        checkStudyAndLockedAndComponent(studyId, componentId, study, signedinUser, component);
 
         if (active != null) {
             componentDao.changeActive(component, active);
@@ -185,9 +185,9 @@ public class Components extends Controller {
     @Auth
     public Result cloneComponent(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+        checkStudyAndLockedAndComponent(studyId, componentId, study, signedinUser, component);
 
         Component clone = componentService.cloneWholeComponent(component);
         componentService.createAndPersistComponent(study, clone);
@@ -201,28 +201,28 @@ public class Components extends Controller {
     @Auth
     public Result remove(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+        checkStudyAndLockedAndComponent(studyId, componentId, study, signedinUser, component);
 
-        componentService.remove(component, loggedInUser);
+        componentService.remove(component, signedinUser);
         RequestScopeMessaging.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
         return ok(RequestScopeMessaging.getAsJson());
     }
 
-    private void checkStudyAndLocked(Long studyId, Study study, User loggedInUser) throws JatosGuiException {
+    private void checkStudyAndLocked(Long studyId, Study study, User signedinUser) throws JatosGuiException {
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStudyLocked(study);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
     }
 
-    private void checkStudyAndLockedAndComponent(Long studyId, Long componentId, Study study, User loggedInUser,
+    private void checkStudyAndLockedAndComponent(Long studyId, Long componentId, Study study, User signedinUser,
             Component component) throws JatosGuiException {
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStudyLocked(study);
             checker.checkStandardForComponent(studyId, componentId, component);
         } catch (ForbiddenException | NotFoundException e) {

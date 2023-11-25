@@ -1,6 +1,6 @@
-@(studyList: List[common.Study], freshlyLoggedIn: Boolean, loggedInUser: common.User, breadcrumbs: String)
+@(studyList: List[common.Study], freshlySignedin: Boolean, signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main(loggedInUser, breadcrumbs) {
+@views.html.gui.main(signedinUser, breadcrumbs) {
 
 <div id="branding" class="jumbotron hidden-xs hidden-sm" style="display: none">
     <div style="text-align: center;">
@@ -33,7 +33,7 @@
 
 <script @{helper.CSPNonce.attr}>
 
-@if(utils.common.Helpers.isAllowedSuperuser(loggedInUser)) {
+@if(utils.common.Helpers.isAllowedSuperuser(signedinUser)) {
 showInfo("As a Superuser you have access to all studies like a study member.");
 }
 
@@ -45,7 +45,7 @@ loadBranding();
 function loadBranding() {
     $.ajax({
         url: '@{general.common.Common.getJatosUrlBasePath()}jatos/branding',
-        @if(freshlyLoggedIn) {
+        @if(freshlySignedin) {
         headers: { 'Cache-Control': 'max-age=0' },
         }
         success: function(res) {

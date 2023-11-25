@@ -1,26 +1,26 @@
-@(loggedInUser: common.User)
+@(signedinUser: common.User)
 
-<!-- Login Modal (used in case of session timeout)-->
-<div class="modal fade" id="loginModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<!-- Signin Modal (used in case of session timeout)-->
+<div class="modal fade" id="signinModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
 			<div class="modal-body">
 
-				@if(loggedInUser.isOidc()) {
-				<h3 class="form-login-heading">Please sign in again</h3>
+				@if(signedinUser.isOidc()) {
+				<h3 class="form-signin-heading">Please sign in again</h3>
 				<p class="explanation"></p>
 				<p>
 					<div id="signin-oidc">
 						<button class="btn btn-lg btn-default btn-block">
-							<img class="pull-left" height="25" src="@{general.common.Common.getJatosUrlBasePath()+general.common.Common.getOidcSignInButtonLogoUrl()}">
-							@general.common.Common.getOidcSignInButtonText()
+							<img class="pull-left" height="25" src="@{general.common.Common.getJatosUrlBasePath()+general.common.Common.getOidcSigninButtonLogoUrl()}">
+							@general.common.Common.getOidcSigninButtonText()
 						</button>
 					</div>
 				</p>
-				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
+				<p>Or <a href="@auth.gui.routes.Signin.signin()">sign in as a different user</a>.</p>
 
-				} else if(loggedInUser.isOrcid()) {
-				<h3 class="form-login-heading">Please sign in again</h3>
+				} else if(signedinUser.isOrcid()) {
+				<h3 class="form-signin-heading">Please sign in again</h3>
 				<p class="explanation"></p>
 				<p>
 				<div id="signin-orcid">
@@ -30,16 +30,16 @@
 					</button>
 				</div>
 				</p>
-				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
+				<p>Or <a href="@auth.gui.routes.Signin.signin()">sign in as a different user</a>.</p>
 
-				} else if(loggedInUser.isOauthGoogle()) {
-				<h3 class="form-login-heading">Please sign in again</h3>
+				} else if(signedinUser.isOauthGoogle()) {
+				<h3 class="form-signin-heading">Please sign in again</h3>
 				<p class="explanation"></p>
 				<p>
 					<div id="signin-google">
 						<div id="g_id_onload"
 							 data-client_id="@{general.common.Common.getOauthGoogleClientId()}"
-							 data-login_uri="@auth.gui.routes.SignInGoogle.signIn()"
+							 data-login_uri="@auth.gui.routes.SigninGoogle.signin()"
 							 data-auto_prompt="false">
 						</div>
 						<div class="g_id_signin"
@@ -52,21 +52,21 @@
 						</div>
 					</div>
 				</p>
-				<p>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</p>
+				<p>Or <a href="@auth.gui.routes.Signin.signin()">sign in as a different user</a>.</p>
 
 				} else {
-				<form id="loginForm" method="post" class="form-horizontal" role="form">
-					<h2 class="form-login-heading">Please log in again</h2>
+				<form id="signinForm" method="post" class="form-horizontal" role="form">
+					<h2 class="form-signin-heading">Please sign in again</h2>
 					<label class="explanation"></label>
-					<input type="hidden" class="form-control username" name="@auth.gui.SignIn.Login.USERNAME" value="@loggedInUser.getUsername()" required>
+					<input type="hidden" class="form-control username" name="username" value="@signedinUser.getUsername()" required>
 					<div class="form-group">
 						<div class="col-sm-12">
-							<label>Password for @loggedInUser.getUsername()</label>
-							<input type="password" class="form-control" name="@auth.gui.SignIn.Login.PASSWORD" placeholder="Password" autocomplete="off" required autofocus>
+							<label>Password for @signedinUser.getUsername()</label>
+							<input type="password" class="form-control" name="password" placeholder="Password" autocomplete="off" required autofocus>
 						</div>
 					</div>
-					<button type="submit" class="btn btn-lg btn-primary btn-block">Log in</button>
-					<label>Or <a href="@auth.gui.routes.SignIn.login()">login as a different user</a>.</label>
+					<button type="submit" class="btn btn-lg btn-primary btn-block">Sign in</button>
+					<label>Or <a href="@auth.gui.routes.Signin.signin()">sign in as a different user</a>.</label>
 				</form>
 				}
 			</div>
@@ -82,32 +82,32 @@ if (window.Worker) {
 	sessionTimeoutWorker = new Worker('@routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
 	sessionTimeoutWorker.postMessage([@general.common.Common.getUserSessionTimeout(), @general.common.Common.getUserSessionInactivity()]);
 	sessionTimeoutWorker.onmessage = function(msg) {
-		showLoginModal(msg.data);
+		showSigninModal(msg.data);
 	}
 }
 
-function showLoginModal(explanationText) {
-	removeAlerts('#loginModal');
-	removeFormErrors('#loginModal');
-	$('#loginModal .explanation').text(explanationText);
-	clearForm("#loginForm");
-	$('#loginModal').modal('show');
+function showSigninModal(explanationText) {
+	removeAlerts('#signinModal');
+	removeFormErrors('#signinModal');
+	$('#signinModal .explanation').text(explanationText);
+	clearForm("#signinForm");
+	$('#signinModal').modal('show');
 }
 
-$("#loginForm").submit(function(event) {
+$("#signinForm").submit(function(event) {
 	event.preventDefault();
 	$.ajax({
 		type: 'POST',
-		url: "@auth.gui.routes.SignIn.authenticate()",
-		data: $('#loginForm').serialize(),
+		url: "@auth.gui.routes.Signin.authenticate()",
+		data: $('#signinForm').serialize(),
 		success: function(response) {
-			removeAlerts('#loginModal');
+			removeAlerts('#signinModal');
 			sessionTimeoutWorker.postMessage([@general.common.Common.getUserSessionTimeout(), @general.common.Common.getUserSessionInactivity()]);
-			$('#loginModal').modal('hide');
+			$('#signinModal').modal('hide');
 		},
 		error: function(response) {
-			removeAlerts('#loginModal');
-			showModalError("#loginModal .explanation", response);
+			removeAlerts('#signinModal');
+			showModalError("#signinModal .explanation", response);
 		}
 	});
 });
@@ -140,7 +140,7 @@ $('#signin-orcid button').click(function() {
 	});
 });
 
-// In case of another modal under the login modal make the other one scrollable after the login one closes
+// In case of another modal under the sign-in modal make the other one scrollable after the signin one closes
 // http://stackoverflow.com/questions/19305821
 $(document).on('hidden.bs.modal', '.modal', function () {
 	$('.modal:visible').length && $(document.body).addClass('modal-open');

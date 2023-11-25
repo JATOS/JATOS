@@ -405,17 +405,17 @@ public class PublixUtils {
     }
 
     /**
-     * Retrieves the currently logged-in user or throws an ForbiddenPublixException if none is logged-in.
+     * Retrieves the currently signed-in user or throws an ForbiddenPublixException if none is signed in.
      */
-    public User retrieveLoggedInUser(Http.Request request) throws ForbiddenPublixException {
+    public User retrieveSignedinUser(Http.Request request) throws ForbiddenPublixException {
         String normalizedUsername = request.session().getOptional(JatosPublix.SESSION_USERNAME)
-                .orElseThrow(() -> new ForbiddenPublixException("No user logged in"));
+                .orElseThrow(() -> new ForbiddenPublixException("No user signed in"));
 
-        User loggedInUser = userDao.findByUsername(normalizedUsername);
-        if (loggedInUser == null) {
+        User signedinUser = userDao.findByUsername(normalizedUsername);
+        if (signedinUser == null) {
             throw new ForbiddenPublixException("User " + normalizedUsername + " doesn't exist.");
         }
-        return loggedInUser;
+        return signedinUser;
     }
 
     /**

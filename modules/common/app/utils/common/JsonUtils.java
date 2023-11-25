@@ -445,7 +445,7 @@ public class JsonUtils {
         userData.put("roleList", user.getRoleList());
         userData.put("authMethod", user.getAuthMethod().name());
         userData.put("studyCount", user.getStudyList().size());
-        userData.put("lastLogin", user.getLastLogin());
+        userData.put("lastSignin", user.getLastLogin());
         List<Map<String, Object>> allStudiesData = new ArrayList<>();
         for (Study study : user.getStudyList()) {
             Map<String, Object> studyData = new HashMap<>();

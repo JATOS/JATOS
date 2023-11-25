@@ -17,7 +17,7 @@ import java.util.Hashtable;
  * @author Kristian Lange
  */
 @Singleton
-public class SignInLdap {
+public class SigninLdap {
 
     /**
      * Authenticates the given user via an external LDAP server. It throws an {@link NamingException} if the LDAP server can't

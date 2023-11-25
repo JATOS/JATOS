@@ -32,20 +32,20 @@ public class ApiTokens extends Controller {
 
     private final ApiTokenDao apiTokenDao;
     private final ApiTokenService apiTokenService;
-    private final AuthService authenticationService;
+    private final AuthService authService;
 
     @Inject
-    ApiTokens(ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthService authenticationService) {
+    ApiTokens(ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthService authService) {
         this.apiTokenDao = apiTokenDao;
         this.apiTokenService = apiTokenService;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
     }
 
     @Transactional
     @Auth
     public Result allTokenDataByUser() {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        List<ApiToken> tokenList = apiTokenDao.findByUser(loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
         ArrayNode tokenData = Json.newArray();
         for (ApiToken token : tokenList) {
             tokenData.add(Json.mapper().valueToTree(token));
@@ -57,21 +57,21 @@ public class ApiTokens extends Controller {
     @Transactional
     @Auth
     public Result generate(String name, Integer expires) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
         if (!Jsoup.isValid(name, Safelist.none())) return badRequest("No HTML allowed");
         if (expires == null || expires < 0) return badRequest("Expiration must be >= 0");
         expires = expires == 0 ? null : expires;
-        String apiTokenStr = apiTokenService.create(loggedInUser, name, expires);
+        String apiTokenStr = apiTokenService.create(signedinUser, name, expires);
         return ok(apiTokenStr);
     }
 
     @Transactional
     @Auth
     public Result remove(Long id) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);
-        if (token == null || token.getUser() != loggedInUser) return notFound("Token doesn't exist");
+        if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
         apiTokenDao.remove(token);
         return ok();
     }
@@ -79,9 +79,9 @@ public class ApiTokens extends Controller {
     @Transactional
     @Auth
     public Result toggleActive(Long id, Boolean active) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);
-        if (token == null || token.getUser() != loggedInUser) return notFound("Token doesn't exist");
+        if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
         token.setActive(active);
         apiTokenDao.update(token);
         return ok(" ");

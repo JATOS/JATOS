@@ -80,7 +80,7 @@ public class ImportExportService {
      * 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
      * 5) !study exists - !udir exists : new study - write both
      */
-    public ObjectNode importStudy(User loggedInUser, File file) throws IOException, ForbiddenException {
+    public ObjectNode importStudy(User signedinUser, File file) throws IOException, ForbiddenException {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
         Study uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
 
@@ -91,7 +91,7 @@ public class ImportExportService {
 
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
-        if (currentStudy.isPresent() && !currentStudy.get().hasUser(loggedInUser)) {
+        if (currentStudy.isPresent() && !currentStudy.get().hasUser(signedinUser)) {
             String errorMsg = MessagesStrings.studyImportNotUser();
             throw new ForbiddenException(errorMsg);
         }
@@ -132,7 +132,7 @@ public class ImportExportService {
         }
     }
 
-    public void importStudyConfirmed(User loggedInUser, boolean keepProperties, boolean keepAssets,
+    public void importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
@@ -146,7 +146,7 @@ public class ImportExportService {
         // 2) study exists  -  udir exists - udir != cdir
         // 3) study exists  - !udir exists
         if (currentStudy.isPresent()) {
-            overwriteExistingStudy(loggedInUser, keepProperties, keepAssets,
+            overwriteExistingStudy(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
             return;
         }
@@ -162,7 +162,7 @@ public class ImportExportService {
                 String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
                 uploadedStudy.setDirName(newDirName);
             }
-            importNewStudy(loggedInUser, tempUnzippedStudyDir, uploadedStudy);
+            importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
         }
     }
 
@@ -174,10 +174,10 @@ public class ImportExportService {
         Controller.session().remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
     }
 
-    private void overwriteExistingStudy(User loggedInUser, boolean keepProperties, boolean keepAssets,
+    private void overwriteExistingStudy(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
             throws IOException, ForbiddenException, NotFoundException {
-        checker.checkStandardForStudy(currentStudy, currentStudy.getId(), loggedInUser);
+        checker.checkStandardForStudy(currentStudy, currentStudy.getId(), signedinUser);
         checker.checkStudyLocked(currentStudy);
 
         if (!keepAssets) {
@@ -189,9 +189,9 @@ public class ImportExportService {
 
         if (!keepProperties) {
             if (keepCurrentAssetsName || keepAssets) {
-                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy, loggedInUser);
+                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy, signedinUser);
             } else {
-                studyService.updateStudy(currentStudy, uploadedStudy, loggedInUser);
+                studyService.updateStudy(currentStudy, uploadedStudy, signedinUser);
             }
             updateStudysComponents(currentStudy, uploadedStudy);
             RequestScopeMessaging.success(MessagesStrings
@@ -199,10 +199,10 @@ public class ImportExportService {
         }
     }
 
-    private void importNewStudy(User loggedInUser, File tempUnzippedStudyDir,
+    private void importNewStudy(User signedinUser, File tempUnzippedStudyDir,
             Study importedStudy) throws IOException {
         moveStudyAssetsDir(tempUnzippedStudyDir, null, importedStudy.getDirName());
-        studyService.createAndPersistStudy(loggedInUser, importedStudy);
+        studyService.createAndPersistStudy(signedinUser, importedStudy);
         RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
                 importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
     }

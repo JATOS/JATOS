@@ -35,8 +35,8 @@ public class ApiAccessLoggingAction extends Action<GuiAccessLogging> {
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		String username = "unknown";
-		if (RequestScope.get(AuthService.LOGGED_IN_USER) != null) {
-			username = ((User) RequestScope.get(AuthService.LOGGED_IN_USER)).getUsername();
+		if (RequestScope.get(AuthService.SIGNEDIN_USER) != null) {
+			username = ((User) RequestScope.get(AuthService.SIGNEDIN_USER)).getUsername();
 		}
 		apiLogger.info(request.method() + " " + request.uri() + " (" + username	+ ")");
 		return delegate.call(ctx);

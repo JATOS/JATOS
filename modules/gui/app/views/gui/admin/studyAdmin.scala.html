@@ -1,6 +1,6 @@
-@(request: Http.Request, loggedInUser: common.User, breadcrumbs: String)
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main(loggedInUser, breadcrumbs) {
+@views.html.gui.main(signedinUser, breadcrumbs) {
 
 <table id="studyAdminTable" class="table top-buffer">
     <thead>

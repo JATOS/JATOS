@@ -1,6 +1,6 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study, studyResultsCount: Integer)
+@(signedinUser: common.User, breadcrumbs: String, study: common.Study, studyResultsCount: Integer)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(signedinUser, breadcrumbs){
 
 <div id="studyDescription" class="panel panel-default" hidden>
     <div class="panel-body">
@@ -172,7 +172,7 @@
     </div>
 </div>
 
-@views.html.gui.study.changeMemberUsersModal(loggedInUser)
+@views.html.gui.study.changeMemberUsersModal(signedinUser)
 @views.html.gui.study.componentPropertiesModal(study)
 @views.html.gui.study.studyLogModal(study)
 

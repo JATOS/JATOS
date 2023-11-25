@@ -25,7 +25,7 @@ import javax.naming.NamingException;
 
 /**
  * Controller that deals with authentication for users stored in JATOS' DB and users authenticated by LDAP. OIDC auth is
- * handled by the classes {@link SignInGoogle} and {@link SignInOidc}.There are two login views: 1) login HTML page,
+ * handled by the classes {@link SigninGoogle} and {@link SigninOidc}.There are two sign-in views: 1) sign-in HTML page,
  * and 2) an overlay. The second one is triggered by a session timeout or an inactivity timeout in JavaScript.
  *
  * @author Kristian Lange
@@ -33,20 +33,20 @@ import javax.naming.NamingException;
 @SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
-public class SignIn extends Controller {
+public class Signin extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(SignIn.class);
+    private static final ALogger LOGGER = Logger.of(Signin.class);
 
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final FormFactory formFactory;
     private final UserDao userDao;
     private final LoginAttemptDao loginAttemptDao;
     private final UserService userService;
 
     @Inject
-    SignIn(AuthService authenticationService, FormFactory formFactory, UserDao userDao, LoginAttemptDao loginAttemptDao,
+    Signin(AuthService authService, FormFactory formFactory, UserDao userDao, LoginAttemptDao loginAttemptDao,
             UserService userService) {
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.formFactory = formFactory;
         this.userDao = userDao;
         this.loginAttemptDao = loginAttemptDao;
@@ -54,43 +54,43 @@ public class SignIn extends Controller {
     }
 
     /**
-     * Shows the login page
+     * Shows the sign-in page
      */
-    public Result login() {
-        return ok(views.html.gui.auth.login.render(formFactory.form(SignIn.Login.class)));
+    public Result signin() {
+        return ok(views.html.gui.auth.signin.render(formFactory.form(Signin.SigninData.class)));
     }
 
     /**
-     * HTTP POST Endpoint for the login form. It handles both Ajax and normal requests.
+     * HTTP POST Endpoint for the sign-in form. It handles both Ajax and normal requests.
      */
     @Transactional
     public Result authenticate(Http.Request request) {
-        Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest(request);
-        String normalizedUsername = User.normalizeUsername(loginForm.rawData().get("username"));
-        String password = loginForm.rawData().get("password");
+        Form<SigninData> signinForm = formFactory.form(SigninData.class).bindFromRequest(request);
+        String normalizedUsername = User.normalizeUsername(signinForm.rawData().get("username"));
+        String password = signinForm.rawData().get("password");
 
-        if (authenticationService.isRepeatedLoginAttempt(normalizedUsername)) {
-            return returnUnauthorizedDueToRepeatedLoginAttempt(loginForm, normalizedUsername, request.remoteAddress());
+        if (authService.isRepeatedSigninAttempt(normalizedUsername)) {
+            return returnUnauthorizedDueToRepeatedSigninAttempt(signinForm, normalizedUsername, request.remoteAddress());
         }
 
         boolean authenticated;
         try {
             User user = userDao.findByUsername(normalizedUsername);
-            authenticated = authenticationService.authenticate(user, password);
+            authenticated = authService.authenticate(user, password);
         } catch (NamingException e) {
-            return returnInternalServerErrorDueToLdapProblems(loginForm, e);
+            return returnInternalServerErrorDueToLdapProblems(signinForm, e);
         }
 
         if (!authenticated) {
             loginAttemptDao.create(new LoginAttempt(normalizedUsername));
-            if (authenticationService.isRepeatedLoginAttempt(normalizedUsername)) {
-                return returnUnauthorizedDueToRepeatedLoginAttempt(loginForm, normalizedUsername, request.remoteAddress());
+            if (authService.isRepeatedSigninAttempt(normalizedUsername)) {
+                return returnUnauthorizedDueToRepeatedSigninAttempt(signinForm, normalizedUsername, request.remoteAddress());
             } else {
-                return returnUnauthorizedDueToFailedAuth(loginForm, normalizedUsername, request.remoteAddress());
+                return returnUnauthorizedDueToFailedAuth(signinForm, normalizedUsername, request.remoteAddress());
             }
         } else {
-            authenticationService.writeSessionCookie(session(), normalizedUsername);
-            userService.setLastLogin(normalizedUsername);
+            authService.writeSessionCookie(session(), normalizedUsername);
+            userService.setLastSignin(normalizedUsername);
             loginAttemptDao.removeByUsername(normalizedUsername);
             if (Helpers.isAjax()) {
                 return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -100,7 +100,7 @@ public class SignIn extends Controller {
         }
     }
 
-    private Result returnUnauthorizedDueToRepeatedLoginAttempt(Form<Login> loginForm, String normalizedUsername,
+    private Result returnUnauthorizedDueToRepeatedSigninAttempt(Form<SigninData> signinForm, String normalizedUsername,
             String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress
                 + " failed repeatedly for username " + normalizedUsername);
@@ -108,51 +108,47 @@ public class SignIn extends Controller {
             return unauthorized(MessagesStrings.FAILED_THREE_TIMES);
         } else {
             return unauthorized(
-                    views.html.gui.auth.login.render(loginForm.withGlobalError(MessagesStrings.FAILED_THREE_TIMES)));
+                    views.html.gui.auth.signin.render(signinForm.withGlobalError(MessagesStrings.FAILED_THREE_TIMES)));
         }
     }
 
-    private Result returnUnauthorizedDueToFailedAuth(Form<Login> loginForm, String normalizedUsername,
+    private Result returnUnauthorizedDueToFailedAuth(Form<SigninData> signinForm, String normalizedUsername,
             String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " failed for username "
                 + normalizedUsername);
         if (Helpers.isAjax()) {
             return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
         } else {
-            return unauthorized(views.html.gui.auth.login
-                    .render(loginForm.withGlobalError(MessagesStrings.INVALID_USER_OR_PASSWORD)));
+            return unauthorized(views.html.gui.auth.signin
+                    .render(signinForm.withGlobalError(MessagesStrings.INVALID_USER_OR_PASSWORD)));
         }
     }
 
-    private Result returnInternalServerErrorDueToLdapProblems(Form<Login> loginForm, NamingException e) {
+    private Result returnInternalServerErrorDueToLdapProblems(Form<SigninData> signinForm, NamingException e) {
         LOGGER.warn("LDAP problems - " + e.toString());
         if (Helpers.isAjax()) {
             return internalServerError(MessagesStrings.LDAP_PROBLEMS);
         } else {
-            return internalServerError(views.html.gui.auth.login
-                    .render(loginForm.withGlobalError(MessagesStrings.LDAP_PROBLEMS)));
+            return internalServerError(views.html.gui.auth.signin
+                    .render(signinForm.withGlobalError(MessagesStrings.LDAP_PROBLEMS)));
         }
     }
 
     /**
-     * Removes user from session and shows login view with an logout message.
+     * Removes user from session and shows sign-in view with a sign-out message.
      */
     @Transactional
     @Auth
-    public Result logout(Http.Request request) {
-        LOGGER.info(".logout: " + request.session().get(AuthService.SESSION_USERNAME));
-        FlashScopeMessaging.success("You've been logged out.");
-        return redirect(auth.gui.routes.SignIn.login()).withNewSession();
+    public Result signout(Http.Request request) {
+        LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
+        FlashScopeMessaging.success("You've been signed out.");
+        return redirect(auth.gui.routes.Signin.signin()).withNewSession();
     }
 
     /**
-     * Simple model class needed for login template
+     * Simple model class needed for sign-in template
      */
-    public static class Login {
-
-        public static final String USERNAME = "username";
-        public static final String PASSWORD = "password";
-
+    public static class SigninData {
         public String username;
         public String password;
     }

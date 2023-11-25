@@ -1,4 +1,4 @@
-@(loggedInUser: common.User)
+@(signedinUser: common.User)
 
 <div class="modal fade" id="changeMemberUsersModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
     <div class="modal-dialog">
@@ -82,7 +82,7 @@ $('#studyToolbar').on('click', '#changeMemberUsersLink', function() {
     removeFormErrors("#changeMemberUsersModal");
     clearForm("#addMemberToStudyForm");
     initMemberUserTable();
-    @if(utils.common.Helpers.isAllowedSuperuser(loggedInUser)) {
+    @if(utils.common.Helpers.isAllowedSuperuser(signedinUser)) {
     showInfo("As a Superuser you have access to all studies like a study member.", "#changeMemberUsersModal .messages");
     }
     $('#changeMemberUsersModal').modal('show');
@@ -231,7 +231,7 @@ $('#changeMemberUsersModal .table').on('click', '.memberToggleButton', function(
     var tr = $(this).closest('tr');
     var tableMember = memberUserTable.row(tr).data();
     //var isMember = $(this).hasClass('isMember');
-    if (tableMember.username === "@loggedInUser.getUsername()" && !tableMember.removeConfirmation) {
+    if (tableMember.username === "@signedinUser.getUsername()" && !tableMember.removeConfirmation) {
         showWarning("Are you sure you want to remove yourself from this study? "
             + "Then click again on the member checkbox.", "#changeMemberUsersModal .messages");
         tableMember.removeConfirmation = true;

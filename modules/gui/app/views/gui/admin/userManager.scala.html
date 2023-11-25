@@ -1,16 +1,16 @@
-@(loggedInUser: common.User, breadcrumbs: String)
+@(signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(signedinUser, breadcrumbs){
 
 <table id="userTable" class="table top-buffer">
     <thead>
         <tr>
             <th data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user">Studies <span class="glyphicon sortLogo gray-light"/></th>
-            <th data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot login anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration.">Active</th>
+            <th data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration.">Active</th>
             <th>Username <span class="glyphicon sortLogo gray-light"/></th>
             <th>Name <span class="glyphicon sortLogo gray-light"/></th>
             <th>Email <span class="glyphicon sortLogo gray-light"/></th>
-            <th data-toggle="tooltip" data-placement="bottom" title="Last successful login of this user">Last Login <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Last successful sign-in of this user">Last sign-in <span class="glyphicon sortLogo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, Google or OIDC">Auth <span class="glyphicon sortLogo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser</th>
             <th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies.">Admin</th>
@@ -128,7 +128,7 @@
     </div>
 </div>
 
-@views.html.gui.admin.editProfile(loggedInUser)
+@views.html.gui.admin.editProfile(signedinUser)
 
 <script @{helper.CSPNonce.attr}>
 
@@ -208,8 +208,8 @@ var userTable = $('#userTable').DataTable({
             }
         },
         {
-            "class": "lastLogin",
-            "data": "lastLogin",
+            "class": "lastSignin",
+            "data": "lastSignin",
             "type": "date",
             "render": (data) => data ? getFormattedDate(data) : '<span class="gray-light">never</span>'
         },
@@ -310,7 +310,7 @@ var userTable = $('#userTable').DataTable({
                     "filename": function() { return "jatos_user_all_" + getDateTimeYYYYMMDDHHmmss() },
                     "titleAttr": 'Export all user data',
                     "exportOptions": {
-                        "columns": '.username, .name, .email, .activeUser, .studyCount, .lastLogin, .authMethod, .superuserRole, .adminRole',
+                        "columns": '.username, .name, .email, .activeUser, .studyCount, .lastSignin, .authMethod, .superuserRole, .adminRole',
                         "orthogonal": 'export'
                     },
                     "trim": true,
@@ -457,7 +457,7 @@ function setActiveButton(buttonDiv, active, username) {
         if (username == "@services.gui.UserService.ADMIN_USERNAME") {
             button.attr('disabled', true);
             buttonDiv.attr('title', "It is not possible to deactivate user 'admin'.");
-        } else if (username == "@loggedInUser.getUsername()") {
+        } else if (username == "@signedinUser.getUsername()") {
             button.attr('disabled', true);
             buttonDiv.attr('title', "You cannot deactivate yourself. Only another user with admin rights can do it.");
         } else {
@@ -508,7 +508,7 @@ function setAdminButton(buttonDiv, adminRole, username) {
         if (username == "@services.gui.UserService.ADMIN_USERNAME") {
             button.attr('disabled', true);
             buttonDiv.attr('title', "User admin's admin rights can't be removed.");
-        } else if (username == "@loggedInUser.getUsername()") {
+        } else if (username == "@signedinUser.getUsername()") {
             button.attr('disabled', true);
             buttonDiv.attr('title', "You can't remove your own admin rights. Only another user with admin rights can do it.");
         } else {
@@ -539,7 +539,7 @@ function setUserToolbar(toolbar, username, authMethod) {
 
     // Setup change password button
     if (username == "@services.gui.UserService.ADMIN_USERNAME") {
-        if ("@loggedInUser.getUsername()" != "@services.gui.UserService.ADMIN_USERNAME") {
+        if ("@signedinUser.getUsername()" != "@services.gui.UserService.ADMIN_USERNAME") {
             toolbar.find('.userChangePasswordButton').attr('disabled', true);
             toolbar.find('.userChangePasswordTooltip').attr('title', "Only user admin can change their own password.");
         } else {
@@ -556,7 +556,7 @@ function setUserToolbar(toolbar, username, authMethod) {
     if (username == "@services.gui.UserService.ADMIN_USERNAME") {
         toolbar.find('.userDeleteButton').attr('disabled', true);
         toolbar.find('.userDeleteTooltip').attr('title', "It's not possible to delete the admin user.");
-    } else if (username == "@loggedInUser.getUsername()") {
+    } else if (username == "@signedinUser.getUsername()") {
         toolbar.find('.userDeleteButton').attr('disabled', true);
         toolbar.find('.userDeleteTooltip').attr('title', "You cannot delete your user here - but you can delete yourself in the user page (click on your username in the JATOS header).");
     } else {

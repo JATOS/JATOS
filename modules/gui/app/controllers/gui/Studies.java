@@ -46,7 +46,7 @@ public class Studies extends Controller {
     private final Checker checker;
     private final StudyService studyService;
     private final UserService userService;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final BatchService batchService;
     private final StudyDao studyDao;
@@ -62,7 +62,7 @@ public class Studies extends Controller {
 
     @Inject
     Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, StudyService studyService,
-            UserService userService, AuthService authenticationService,
+            UserService userService, AuthService authService,
             BreadcrumbsService breadcrumbsService, BatchService batchService, StudyDao studyDao,
             ComponentDao componentDao, StudyResultDao studyResultDao, UserDao userDao,
             ComponentResultDao componentResultDao, StudyLinkDao studyLinkDao, JsonUtils jsonUtils,
@@ -71,7 +71,7 @@ public class Studies extends Controller {
         this.checker = checker;
         this.studyService = studyService;
         this.userService = userService;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.batchService = batchService;
         this.studyDao = studyDao;
@@ -93,8 +93,8 @@ public class Studies extends Controller {
     @Auth
     public Result study(Long studyId, int httpStatus) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checkStandardForStudy(studyId, study, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checkStandardForStudy(studyId, study, signedinUser);
         if (!study.isActive()) {
             RequestScopeMessaging.warning(
                     "This study was deactivated by an admin. Although you can still edit this study, it can't be run "
@@ -103,7 +103,7 @@ public class Studies extends Controller {
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study
-                .render(loggedInUser, breadcrumbs, study, studyResultCount));
+                .render(signedinUser, breadcrumbs, study, studyResultCount));
     }
 
     @Transactional
@@ -118,7 +118,7 @@ public class Studies extends Controller {
     @Transactional
     @Auth
     public Result submitCreated() {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -131,7 +131,7 @@ public class Studies extends Controller {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
 
-        Study study = studyService.createAndPersistStudy(loggedInUser, studyProperties);
+        Study study = studyService.createAndPersistStudy(signedinUser, studyProperties);
         return ok(study.getId().toString());
     }
 
@@ -142,8 +142,8 @@ public class Studies extends Controller {
     @Auth
     public Result properties(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         StudyProperties studyProperties = studyService.bindToProperties(study);
         return ok(JsonUtils.asJsonNode(studyProperties));
@@ -156,8 +156,8 @@ public class Studies extends Controller {
     @Auth
     public Result submitEdited(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
@@ -170,7 +170,7 @@ public class Studies extends Controller {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
 
-        studyService.updateStudy(study, studyProperties, loggedInUser);
+        studyService.updateStudy(study, studyProperties, signedinUser);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -181,15 +181,15 @@ public class Studies extends Controller {
     @Auth
     public Result toggleLock(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         study.setLocked(!study.isLocked());
         studyDao.update(study);
         if (study.isLocked()) {
-            studyLogger.log(study, loggedInUser, "Locked study");
+            studyLogger.log(study, signedinUser, "Locked study");
         } else {
-            studyLogger.log(study, loggedInUser, "Unlocked study");
+            studyLogger.log(study, signedinUser, "Unlocked study");
         }
         return ok(String.valueOf(study.isLocked()));
     }
@@ -213,11 +213,11 @@ public class Studies extends Controller {
     @Auth
     public Result cloneStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         Study clone = studyService.clone(study);
-        studyService.createAndPersistStudy(loggedInUser, clone);
+        studyService.createAndPersistStudy(signedinUser, clone);
         return ok(Json.toJson(ImmutableMap.of("id", clone.getId(), "title", clone.getTitle())));
     }
 
@@ -228,8 +228,8 @@ public class Studies extends Controller {
     @Auth
     public Result memberUsers(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         List<User> userList = userDao.findAll();
         return ok(jsonUtils.memberUserArrayOfStudy(userList, study));
@@ -242,9 +242,9 @@ public class Studies extends Controller {
     @Auth
     public Result toggleMemberUser(Long studyId, String username, boolean isMember) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         String normalizedUsername = User.normalizeUsername(username);
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
         User userToChange = userService.retrieveUser(normalizedUsername);
         studyService.changeUserMember(study, userToChange, isMember);
 
@@ -258,8 +258,8 @@ public class Studies extends Controller {
     @Auth
     public Result addAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         if (!Common.isStudyMembersAllowedToAddAllUsers()) {
             return forbidden("It's not allowed to add all users at once in this JATOS.");
@@ -276,8 +276,8 @@ public class Studies extends Controller {
     @Auth
     public Result removeAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         studyService.removeAllUserMembers(study);
         return ok(" "); // jQuery.ajax cannot handle empty responses
@@ -291,9 +291,9 @@ public class Studies extends Controller {
     public Result changeComponentOrder(Long studyId, Long componentId, String newPosition)
             throws JatosGuiException, ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
         checker.checkStandardForComponent(studyId, componentId, component);
         studyService.changeComponentPosition(newPosition, study, component);
@@ -310,13 +310,13 @@ public class Studies extends Controller {
             throws JatosGuiException, NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
 
         // Get StudyLink and redirect to jatos-publix: start study
-        StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, loggedInUser.getWorker())
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, loggedInUser.getWorker())));
+        StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
+                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
         String runUrl = Common.getJatosUrlBasePath() + "publix/"  + studyLink.getStudyCode();
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
@@ -328,8 +328,8 @@ public class Studies extends Controller {
     @Auth
     public Result tableDataByStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         List<Component> componentList = study.getComponentList();
         List<Integer> resultCountList = new ArrayList<>();
@@ -338,9 +338,9 @@ public class Studies extends Controller {
         return ok(dataAsJson);
     }
 
-    private void checkStandardForStudy(Long studyId, Study study, User loggedInUser) throws JatosGuiException {
+    private void checkStandardForStudy(Long studyId, Study study, User signedinUser) throws JatosGuiException {
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }

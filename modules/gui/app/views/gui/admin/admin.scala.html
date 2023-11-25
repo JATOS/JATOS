@@ -1,6 +1,6 @@
-@(request: Http.Request, loggedInUser: common.User, breadcrumbs: String)
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main(loggedInUser, breadcrumbs) {
+@views.html.gui.main(signedinUser, breadcrumbs) {
 
 <div id="adminToolbar" class="btn-toolbar" role="toolbar">
     <div class="btn-group">
@@ -73,7 +73,7 @@
     <div id="latestUsers" class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading text-center">
-                <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the logged-in user)."></span></h3>
+                <h3 class="panel-title">Latest Users&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="The 10 latest users and the last time they were active (except the signed-in user)."></span></h3>
             </div>
             <table class="table">
                 <thead>

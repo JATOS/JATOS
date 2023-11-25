@@ -1,6 +1,6 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study, request: Http.Request)
+@(signedinUser: common.User, breadcrumbs: String, study: common.Study, request: Http.Request)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(signedinUser, breadcrumbs){
 
 <div id="studyLinksToolbar" class="btn-toolbar toolbarFlexWrap" role="toolbar">
     <button id="createBatchButton" type="button" class="btn btn-batch" data-toggle="tooltip"
@@ -110,7 +110,7 @@
 @views.html.gui.studyLinks.studyLinksCreatorGeneralModal(study)
 @views.html.gui.studyLinks.groupsModal(study)
 @views.html.gui.studyLinks.sessionModal(study)
-@views.html.gui.studyLinks.studyLinksSetup(loggedInUser, study)
+@views.html.gui.studyLinks.studyLinksSetup(signedinUser, study)
 @views.html.gui.studyLinks.mTurkSourceCodeModal(study, request)
 
 <script @{helper.CSPNonce.attr}>

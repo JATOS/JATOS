@@ -44,16 +44,15 @@ public class ImportExport extends Controller {
     private static final ALogger LOGGER = Logger.of(ImportExport.class);
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final ImportExportService importExportService;
     private final StudyService studyService;
 
     @Inject
-    ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            AuthService authenticationService, ImportExportService importExportService,
-            StudyService studyService) {
+    ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthService authService,
+            ImportExportService importExportService, StudyService studyService) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.importExportService = importExportService;
         this.studyService = studyService;
     }
@@ -67,7 +66,7 @@ public class ImportExport extends Controller {
     @Auth
     public Result importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
 
         // Get file from request
         if (request.body().asMultipartFormData() == null) {
@@ -85,7 +84,7 @@ public class ImportExport extends Controller {
         JsonNode responseJson;
         try {
             File file = (File) filePart.getFile();
-            responseJson = importExportService.importStudy(loggedInUser, file);
+            responseJson = importExportService.importStudy(signedinUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
@@ -93,7 +92,7 @@ public class ImportExport extends Controller {
         }
 
         try {
-            importExportService.importStudyConfirmed(loggedInUser, keepProperties, keepAssets,
+            importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
         } finally {
             importExportService.cleanupAfterStudyImport();
@@ -108,7 +107,7 @@ public class ImportExport extends Controller {
     @Transactional
     @Auth
     public Result importStudy(Http.Request request) {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
 
         // Get file from request
         FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
@@ -124,7 +123,7 @@ public class ImportExport extends Controller {
         JsonNode responseJson;
         try {
             File file = (File) filePart.getFile();
-            responseJson = importExportService.importStudy(loggedInUser, file);
+            responseJson = importExportService.importStudy(signedinUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
@@ -140,7 +139,7 @@ public class ImportExport extends Controller {
     @Transactional
     @Auth
     public Result importStudyConfirmed(Http.Request request) throws JatosGuiException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
 
         // Get confirmation: overwrite study's properties and/or study assets
         JsonNode json = request.body().asJson();
@@ -155,7 +154,7 @@ public class ImportExport extends Controller {
         boolean renameAssets = json.findPath("renameAssets").booleanValue();
 
         try {
-            importExportService.importStudyConfirmed(loggedInUser, keepProperties, keepAssets,
+            importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
         } catch (ForbiddenException e) {
             return forbidden(e.getMessage());

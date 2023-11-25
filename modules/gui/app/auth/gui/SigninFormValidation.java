@@ -24,12 +24,12 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class SignInFormValidation {
+public class SigninFormValidation {
 
     private final UserDao userDao;
 
     @Inject
-    SignInFormValidation(UserDao userDao) {
+    SigninFormValidation(UserDao userDao) {
         this.userDao = userDao;
     }
 

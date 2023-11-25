@@ -44,7 +44,7 @@ public class JatosStudyAuthorisation extends StudyAuthorisation {
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
-        // User has to be logged in
+        // User has to be signed in
         String username = session.getOrDefault(JatosPublix.SESSION_USERNAME, "");
         if (!user.getUsername().equals(username)) {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));

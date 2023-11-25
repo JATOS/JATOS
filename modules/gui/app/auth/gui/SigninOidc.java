@@ -58,12 +58,12 @@ import java.util.Optional;
  * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
-public abstract class SignInOidc extends Controller {
+public abstract class SigninOidc extends Controller {
 
-    private static final ALogger LOGGER = Logger.of(SignInOidc.class);
+    private static final ALogger LOGGER = Logger.of(SigninOidc.class);
 
-    @Inject private AuthService authenticationService;
-    @Inject private SignInFormValidation authenticationValidation;
+    @Inject private AuthService authService;
+    @Inject private SigninFormValidation signinFormValidation;
     @Inject private FormFactory formFactory;
     @Inject private UserDao userDao;
     @Inject private UserService userService;
@@ -79,7 +79,7 @@ public abstract class SignInOidc extends Controller {
         private final User.AuthMethod authMethod;
         private final String discoveryUrl;
         private final String callbackUrlPath;
-        private String callbackUrl; // Filled during signIn request
+        private String callbackUrl; // Filled during signin request
         private final String clientId;
         private final String clientSecret;
         private final String idTokenSigningAlgorithm;
@@ -97,13 +97,13 @@ public abstract class SignInOidc extends Controller {
         }
     }
 
-    SignInOidc(OidcConfig oidcConfig) {
+    SigninOidc(OidcConfig oidcConfig) {
         this.oidcConfig = oidcConfig;
     }
 
     @GuiAccessLogging
     @Transactional
-    public final Result signIn(Http.Request request, String realHostUrl) throws URISyntaxException, IOException, ParseException, AuthException {
+    public final Result signin(Http.Request request, String realHostUrl) throws URISyntaxException, IOException, ParseException, AuthException {
         oidcConfig.callbackUrl = realHostUrl + oidcConfig.callbackUrlPath;
         ClientID clientID = new ClientID(oidcConfig.clientId);
         URI callback = new URI(oidcConfig.callbackUrl);
@@ -141,16 +141,16 @@ public abstract class SignInOidc extends Controller {
             persistUserIfNotExisting(userInfo);
 
             String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
-            authenticationService.writeSessionCookie(session(), normalizedUsername);
-            userService.setLastLogin(normalizedUsername);
+            authService.writeSessionCookie(session(), normalizedUsername);
+            userService.setLastSignin(normalizedUsername);
         } catch (AuthException e) {
             LOGGER.warn(".callback: " + e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
-            return redirect(auth.gui.routes.SignIn.login());
+            return redirect(auth.gui.routes.Signin.signin());
         } catch (Exception e) {
             LOGGER.error(".callback: " + e.getMessage());
             FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
-            return redirect(auth.gui.routes.SignIn.login());
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
@@ -265,7 +265,7 @@ public abstract class SignInOidc extends Controller {
             newUserModel.setAuthMethod(oidcConfig.authMethod);
 
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-            newUserForm = authenticationValidation.validateNewUser(newUserForm);
+            newUserForm = signinFormValidation.validateNewUser(newUserForm);
             if (newUserForm.hasErrors()) {
                 throw new AuthException("OIDC: user validation failed - " + newUserForm.errors().get(0).message());
             }

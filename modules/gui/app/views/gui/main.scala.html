@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String)(body: Html)
+@(signedinUser: common.User, breadcrumbs: String)(body: Html)
 
 <!DOCTYPE html>
 
@@ -20,7 +20,7 @@
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/easy.qrcode.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/timeago.min.js")"></script>
 <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")" type="module"></script>
-@if(loggedInUser.isOauthGoogle()) {
+@if(signedinUser.isOauthGoogle()) {
 <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async defer></script>
 }
 <meta charset="utf-8"/>
@@ -266,7 +266,7 @@ function isLocalhost() {
                         Import Study
                     </a>
                 </li>
-                @if(loggedInUser.isAdmin()) {
+                @if(signedinUser.isAdmin()) {
                 <li>
                     <a href="@controllers.gui.routes.Admin.administration()">
                         <span class="glyphicon glyphicon-cog"></span>
@@ -276,10 +276,10 @@ function isLocalhost() {
                 }
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li><a id="navUserText" href="@controllers.gui.routes.Users.profile(loggedInUser.getUsername())">
-                    <span class="glyphicon glyphicon-user"></span> @loggedInUser.getName()
+                <li><a id="navUserText" href="@controllers.gui.routes.Users.profile(signedinUser.getUsername())">
+                    <span class="glyphicon glyphicon-user"></span> @signedinUser.getName()
                 </a></li>
-                <li><a href="@{general.common.Common.getJatosUrlBasePath()}jatos/logout"><span class="glyphicon glyphicon-off"></span> Logout</a></li>
+                <li><a href="@{general.common.Common.getJatosUrlBasePath()}jatos/signout"><span class="glyphicon glyphicon-off"></span> Sign out</a></li>
             </ul>
         </div>
     </div>
@@ -339,7 +339,7 @@ function isLocalhost() {
     </div>
 </div>
 
-@views.html.gui.auth.loginModal(loggedInUser)
+@views.html.gui.auth.signinModal(signedinUser)
 @views.html.gui.study.studyImportModal()
 @views.html.gui.study.studyPropertiesModal()
 

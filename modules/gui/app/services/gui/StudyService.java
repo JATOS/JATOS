@@ -50,13 +50,13 @@ public class StudyService {
     private final WorkerDao workerDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final Checker checker;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
             BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthService authenticationService, Checker checker) {
+            StudyLogger studyLogger, AuthService authService, Checker checker) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -65,7 +65,7 @@ public class StudyService {
         this.workerDao = workerDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.checker = checker;
     }
 
@@ -156,12 +156,12 @@ public class StudyService {
     }
 
     /**
-     * Removes all member users from the given study except the logged-in user. Additionally removes all user's Jatos
-     * workers to the study's batches (except the logged-in user's workers).
+     * Removes all member users from the given study except the signed-in user. Additionally, removes all user's Jatos
+     * workers from the study's batches (except the signed-in user's workers).
      */
     public void removeAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
-        userList.remove(authenticationService.getLoggedInUser());
+        userList.remove(authService.getSignedinUser());
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
         study.getUserList().removeAll(userList);
@@ -204,16 +204,16 @@ public class StudyService {
      * Create and persist a Study with given properties. Creates and persists the default Batch. If the study has
      * components already it persists them too. Adds the given user to the users of this study.
      */
-    public Study createAndPersistStudy(User loggedInUser, StudyProperties studyProperties) {
+    public Study createAndPersistStudy(User signedinUser, StudyProperties studyProperties) {
         Study study = bindToStudy(studyProperties);
-        return createAndPersistStudy(loggedInUser, study);
+        return createAndPersistStudy(signedinUser, study);
     }
 
     /**
      * Persists the given Study. Creates and persists the default Batch. If the study has components already it persists
      * them too. Adds the given user to the users of this study.
      */
-    public Study createAndPersistStudy(User loggedInUser, Study study) {
+    public Study createAndPersistStudy(User signedinUser, Study study) {
         if (study.getUuid() == null) {
             study.setUuid(UUID.randomUUID().toString());
         }
@@ -232,13 +232,13 @@ public class StudyService {
         }
 
         // Add user
-        addUserToStudy(study, loggedInUser);
+        addUserToStudy(study, signedinUser);
 
         studyDao.update(study);
         studyLogger.create(study);
-        studyLogger.log(study, loggedInUser, "Created study");
+        studyLogger.log(study, signedinUser, "Created study");
         if (!Strings.isNullOrEmpty(study.getDescription())) {
-            studyLogger.logStudyDescriptionHash(study, loggedInUser);
+            studyLogger.logStudyDescriptionHash(study, signedinUser);
         }
         return study;
     }
@@ -261,24 +261,24 @@ public class StudyService {
     /**
      * Update properties of study with properties of updatedStudy.
      */
-    public void updateStudy(Study study, Study updatedStudy, User loggedInUser) {
+    public void updateStudy(Study study, Study updatedStudy, User signedinUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
                 updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
         study.setDirName(updatedStudy.getDirName());
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, loggedInUser);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 
     /**
      * Update properties of study with properties of updatedStudy but not Study's field dirName.
      */
-    public void updateStudyWithoutDirName(Study study, Study updatedStudy, User loggedInUser) {
+    public void updateStudyWithoutDirName(Study study, Study updatedStudy, User signedinUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
                 updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, loggedInUser);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 
     private void updateStudyCommon(Study study, Study updatedStudy) {
@@ -296,11 +296,11 @@ public class StudyService {
     /**
      * Update Study with given properties and persist. It doesn't update Study's dirName field.
      */
-    public void updateStudy(Study study, StudyProperties studyProperties, User loggedInUser) {
+    public void updateStudy(Study study, StudyProperties studyProperties, User signedinUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), studyProperties.getDescription());
         bindToStudyWithoutDirName(study, studyProperties);
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, loggedInUser);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 
     /**
@@ -372,10 +372,10 @@ public class StudyService {
      * Removes the given study, its components, component results, study results, group results and batches and persists
      * the changes to the database. It also deletes the study's assets from the disk.
      */
-    public void removeStudyInclAssets(Study study, User loggedInUser) throws IOException {
+    public void removeStudyInclAssets(Study study, User signedinUser) throws IOException {
         // Remove all study's batches and their StudyResults and GroupResults
         for (Batch batch : Lists.newArrayList(study.getBatchList())) {
-            batchService.remove(batch, loggedInUser);
+            batchService.remove(batch, signedinUser);
         }
 
         // Remove this study from all member users
@@ -388,22 +388,22 @@ public class StudyService {
         studyDao.remove(study);
 
         ioUtils.removeStudyAssetsDir(study.getDirName());
-        studyLogger.log(study, loggedInUser, "Removed study");
+        studyLogger.log(study, signedinUser, "Removed study");
         studyLogger.retire(study);
     }
 
     public Study getStudyFromIdOrUuid(String id) throws NotFoundException, ForbiddenException {
         Optional<Long> studyId = Helpers.parseLong(id.trim());
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Study study;
         if (studyId.isPresent()) {
             study = studyDao.findById(studyId.get());
             if (study == null) throw new NotFoundException("Couldn't find study with ID " + studyId.get());
-            checker.checkStandardForStudy(study, studyId.get(), loggedInUser);
+            checker.checkStandardForStudy(study, studyId.get(), signedinUser);
         } else {
             study = studyDao.findByUuid(id)
                     .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + id));
-            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+            checker.checkStandardForStudy(study, study.getId(), signedinUser);
         }
         return study;
     }

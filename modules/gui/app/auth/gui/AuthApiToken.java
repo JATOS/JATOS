@@ -77,7 +77,7 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         // Check the token's user: since these are personal access tokens and the user which belongs to the token can
         // be deactivated too
         User user = apiToken.getUser();
-        RequestScope.put(AuthService.LOGGED_IN_USER, user);
+        RequestScope.put(AuthService.SIGNEDIN_USER, user);
         if (!user.isActive()) {
             return AuthResult.denied(unauthorized("Invalid api token"));
         }

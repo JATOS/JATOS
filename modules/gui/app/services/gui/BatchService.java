@@ -94,7 +94,7 @@ public class BatchService {
      * Creates batch, initialises it and persists it. Updates study with new
      * batch.
      */
-    public void createAndPersistBatch(Batch batch, Study study, User loggedinUser) {
+    public void createAndPersistBatch(Batch batch, Study study, User signedinUser) {
         initBatch(batch, study);
         batch.setStudy(study);
         if (!study.hasBatch(batch)) {
@@ -102,7 +102,7 @@ public class BatchService {
         }
         batchDao.create(batch);
         studyDao.update(study);
-        studyLogger.log(study, loggedinUser, "Created batch", batch);
+        studyLogger.log(study, signedinUser, "Created batch", batch);
     }
 
     /**
@@ -222,17 +222,17 @@ public class BatchService {
 
     /**
      * Removes batch, all it's StudyResults, ComponentResults, GroupResults and
-     * Workers (if they don't belong to an other batch) and persists the changes
+     * Workers (if they don't belong to another batch) and persists the changes
      * to the database.
      */
-    public void remove(Batch batch, User loggedinUser) {
+    public void remove(Batch batch, User signedinUser) {
         // Remove this Batch from its study
         Study study = batch.getStudy();
         study.removeBatch(batch);
         studyDao.update(study);
 
         // Delete all StudyResults and all ComponentResults
-        resultRemover.removeAllStudyResults(batch, loggedinUser);
+        resultRemover.removeAllStudyResults(batch, signedinUser);
 
         // Delete all StudyLinks that belong to this Batch
         studyLinkDao.removeAllByBatch(batch);
@@ -247,7 +247,7 @@ public class BatchService {
         }
 
         batchDao.remove(batch);
-        studyLogger.log(study, loggedinUser, "Removed batch", batch);
+        studyLogger.log(study, signedinUser, "Removed batch", batch);
     }
 
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {

@@ -32,18 +32,18 @@ public class AdminService {
     private final WorkerDao workerDao;
     private final StudyResultDao studyResultDao;
     private final ComponentResultDao componentResultDao;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final IOUtils ioUtils;
 
     @Inject
     AdminService(UserDao userDao, StudyDao studyDao, WorkerDao workerDao, StudyResultDao studyResultDao,
-            ComponentResultDao componentResultDao, AuthService authenticationService, IOUtils ioUtils) {
+            ComponentResultDao componentResultDao, AuthService authService, IOUtils ioUtils) {
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
         this.componentResultDao = componentResultDao;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.ioUtils = ioUtils;
     }
 
@@ -124,13 +124,13 @@ public class AdminService {
     }
 
     /**
-     * Gets the last seen time of users that were active latest, except the logged in one. It is limited to 'limit'
+     * Gets the last seen time of users that were active latest, except the signed in one. It is limited to 'limit'
      * latest users.
      */
     public List<Map<String, String>> getLatestUsers(int limit) {
         List<Map<String, String>> lastSeenMapOrdered = userDao.findLastSeen(limit).stream()
                 .filter(u -> u.getLastSeen() != null)
-                .filter(u -> !u.getUsername().equals(authenticationService.getLoggedInUser().getUsername()))
+                .filter(u -> !u.getUsername().equals(authService.getSignedinUser().getUsername()))
                 .map(u -> ImmutableMap.of(
                         "username", u.getUsername(),
                         "name", u.getName(),

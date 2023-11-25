@@ -21,8 +21,6 @@ import general.common.Common;
 import general.common.StudyLogger;
 import models.common.*;
 import models.common.workers.JatosWorker;
-import models.common.workers.MTSandboxWorker;
-import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import play.Logger;
 import play.db.jpa.JPAApi;
@@ -56,7 +54,7 @@ public class ResultStreamer {
 
     private static final Logger.ALogger LOGGER = Logger.of(ResultStreamer.class);
 
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final StudyDao studyDao;
@@ -67,10 +65,10 @@ public class ResultStreamer {
     private final JPAApi jpaApi;
 
     @Inject
-    ResultStreamer(AuthService authenticationService, ComponentResultDao componentResultDao,
+    ResultStreamer(AuthService authService, ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyDao studyDao, JsonUtils jsonUtils, Checker checker,
             StudyLogger studyLogger, ComponentResultIdsExtractor componentResultIdsExtractor, JPAApi jpaApi) {
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyDao = studyDao;
@@ -222,13 +220,13 @@ public class ResultStreamer {
      * Uses a Akka Source to stream StudyResults (including their result data) that belong to the given Worker
      * from the database.
      */
-    public Source<ByteString, ?> streamStudyResultsByWorker(User loggedInUser, Worker worker) {
+    public Source<ByteString, ?> streamStudyResultsByWorker(User signedinUser, Worker worker) {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                         writer.write("[");
-                        fetchStudyResultsByWorkerPaginated(writer, worker, loggedInUser);
+                        fetchStudyResultsByWorkerPaginated(writer, worker, signedinUser);
                         writer.write("]");
                         writer.flush();
                     } catch (Exception e) {
@@ -293,27 +291,27 @@ public class ResultStreamer {
 
     public Source<ByteString, ?> streamComponentResultData(Http.Request request)
             throws BadRequestException, ForbiddenException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         List<Long> componentResultIdList = componentResultIdsExtractor.extract(request.body().asJson());
         componentResultIdList.addAll(componentResultIdsExtractor.extract(request.queryString()));
         List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
         List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
         for (Study study : studyList) {
-            checker.checkStandardForStudy(study, study.getId(), loggedInUser);
+            checker.checkStandardForStudy(study, study.getId(), signedinUser);
         }
-        studyList.forEach(s -> studyLogger.log(s, loggedInUser, "Exported result data"));
-        return streamComponentResultData(loggedInUser, componentResultIdList);
+        studyList.forEach(s -> studyLogger.log(s, signedinUser, "Exported result data"));
+        return streamComponentResultData(signedinUser, componentResultIdList);
     }
 
     /**
      * Returns an Akka Source that streams all data of the given component results specified by their IDs.
      */
-    private Source<ByteString, ?> streamComponentResultData(User loggedInUser, List<Long> componentResultIdList) {
+    private Source<ByteString, ?> streamComponentResultData(User signedinUser, List<Long> componentResultIdList) {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-                        fetchComponentResultDataByIds(writer, componentResultIdList, loggedInUser);
+                        fetchComponentResultDataByIds(writer, componentResultIdList, signedinUser);
                         writer.flush();
                     } catch (Exception e) {
                         LOGGER.error(".streamComponentResult: ", e);
@@ -389,24 +387,24 @@ public class ResultStreamer {
 
     public Source<ByteString, ?> streamResults(Http.Request request, ResultType resultType,
             Map<String, Object> wrapObject) throws BadRequestException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
-        return streamResults(crids, loggedInUser, resultType, wrapObject);
+        return streamResults(crids, signedinUser, resultType, wrapObject);
     }
 
     /**
      * Returns a Source that streams ComponentResults. The content of what is written into the Source can be
      * specified by a ResultsType.
      */
-    private Source<ByteString, ?> streamResults(List<Long> componentResultIds, User loggedInUser, ResultType resultsType,
+    private Source<ByteString, ?> streamResults(List<Long> componentResultIds, User signedinUser, ResultType resultsType,
             Map<String, Object> wrapObject) {
         return StreamConverters.asOutputStream()
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (ZipOutputStream zipOut = new ZipOutputStream(outputStream, UTF_8)) {
                         jpaApi.withTransaction(entityManager -> {
-                            Errors.rethrow().run(() -> writeResults(componentResultIds, loggedInUser, zipOut, resultsType, wrapObject));
+                            Errors.rethrow().run(() -> writeResults(componentResultIds, signedinUser, zipOut, resultsType, wrapObject));
                         });
                         zipOut.flush();
                     } catch (Exception e) {
@@ -420,17 +418,17 @@ public class ResultStreamer {
      */
     public File writeResultMetadata(Http.Request request, Map<String, Object> wrapObject)
             throws ForbiddenException, NotFoundException, IOException, BadRequestException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
-        return writeResults(crids, loggedInUser, null, ResultType.METADATA_ONLY, wrapObject);
+        return writeResults(crids, signedinUser, null, ResultType.METADATA_ONLY, wrapObject);
     }
 
     /**
      * Allows streaming of ComponentResults into a ZipOutputStream and on the same side can return a File containing all
      * metadata in JSON format. The content of what is written into the ZipOutputStream can be specified by a ResultsType.
      */
-    private File writeResults(List<Long> componentResultIds, User loggedInUser, ZipOutputStream zipOut,
+    private File writeResults(List<Long> componentResultIds, User signedinUser, ZipOutputStream zipOut,
             ResultType resultsType, Map<String, Object> wrapObject) throws IOException, NotFoundException, ForbiddenException {
         List<Long> studyResultIds = studyResultDao.findIdsByComponentResultIds(componentResultIds);
 
@@ -453,7 +451,7 @@ public class ResultStreamer {
         List<Long> studyIds = studyDao.findIdsByStudyResultIds(studyResultIds);
         for (Long studyId : studyIds) {
             Study study = studyDao.findById(studyId);
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
 
             if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                 jGenerator.writeStartObject();
@@ -471,7 +469,7 @@ public class ResultStreamer {
                 jGenerator.writeEndObject();
             }
             if (resultsType == ResultType.COMBINED || resultsType == ResultType.DATA_ONLY || resultsType == ResultType.FILES_ONLY) {
-                studyLogger.log(study, loggedInUser, "Exported results (files and/or data)");
+                studyLogger.log(study, signedinUser, "Exported results (files and/or data)");
             }
         }
 

@@ -50,7 +50,7 @@ public class UserService {
     public static final String ADMIN_NAME = "Admin";
 
     private final StudyService studyService;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
@@ -58,10 +58,10 @@ public class UserService {
     private final JPAApi jpa;
 
     @Inject
-    UserService(StudyService studyService, AuthService authenticationService, UserDao userDao,
+    UserService(StudyService studyService, AuthService authService, UserDao userDao,
             StudyDao studyDao, WorkerDao workerDao, ApiTokenDao apiTokenDao, JPAApi jpa) {
         this.studyService = studyService;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
@@ -129,8 +129,8 @@ public class UserService {
 
     public void toggleActive(String normalizedUsername, boolean active) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        if (user.equals(loggedInUser)) {
+        User signedinUser = authService.getSignedinUser();
+        if (user.equals(signedinUser)) {
             throw new ForbiddenException("A user is not allowed to deactivate themselves.");
         }
         if (user.getUsername().equals(ADMIN_USERNAME)) {
@@ -160,8 +160,8 @@ public class UserService {
      */
     public boolean changeAdminRole(String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        if (user.equals(loggedInUser)) {
+        User signedinUser = authService.getSignedinUser();
+        if (user.equals(signedinUser)) {
             throw new ForbiddenException(MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
         }
         if (user.getUsername().equals(ADMIN_USERNAME)) {
@@ -173,7 +173,7 @@ public class UserService {
         return user.isAdmin();
     }
 
-    public void setLastLogin(String normalizedUsername) {
+    public void setLastSignin(String normalizedUsername) {
         jpa.withTransaction(() -> {
             User user = userDao.findByUsername(normalizedUsername);
             user.setLastLogin(new Timestamp(new Date().getTime()));

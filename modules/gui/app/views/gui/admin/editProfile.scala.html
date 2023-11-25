@@ -1,4 +1,4 @@
-@(loggedInUser: common.User)
+@(signedinUser: common.User)
 
 <!-- Edit user profile Modal -->
 <div class="modal fade" id="editProfileModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
@@ -27,7 +27,7 @@
                     <div class="row">
                         <span class="deactivatedRow" style="display:none">
                             <label class="control-label col-xs-4"></label>
-                            <span class="col-xs-8">User is <b>deactivated</b> <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="A deactivated user cannot login anymore but their studies can still be run by participants."></span>.</span>
+                            <span class="col-xs-8">User is <b>deactivated</b> <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="A deactivated user cannot sign in anymore but their studies can still be run by participants."></span>.</span>
                         </span>
                         <span class="adminRoleRow" style="display:none">
                             <label class="control-label col-xs-4"></label>
@@ -95,7 +95,7 @@
                 <div class="modal-body">
                     <div class="messages"></div>
                     <p class="confirmationText"></p>
-                    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc() && !loggedInUser.isOrcid()){
+                    @if(!signedinUser.isOauthGoogle() && !signedinUser.isOidc() && !signedinUser.isOrcid()){
                     <div class="form-group row">
                         <label class="control-label col-xs-6 passwordLabel" for="passwordInput">Your password</label>
                         <div class="col-xs-5">
@@ -182,7 +182,7 @@ $("#editProfileForm").submit(function(event) {
     });
 });
 
-function showChangePasswordModal(user, loggedInUserChangesOwnPassword) {
+function showChangePasswordModal(user, signedinUserChangesOwnPassword) {
     removeAlerts("#changePasswordModal");
     removeFormErrors("#changePasswordModal");
 
@@ -191,9 +191,9 @@ function showChangePasswordModal(user, loggedInUserChangesOwnPassword) {
     $('#newPasswordInput').val('');
     $('#newPasswordRepeatInput').val('');
 
-    if (!@loggedInUser.isDb()) {
+    if (!@signedinUser.isDb()) {
         $('#changePasswordModal .oldPasswordDiv').hide();
-    } else if (loggedInUserChangesOwnPassword) {
+    } else if (signedinUserChangesOwnPassword) {
         $('#changePasswordModal .oldPasswordDiv').show();
         $('#changePasswordModal .newPasswordLabel').html("New password&nbsp;<sup>*</sup>");
     } else {
@@ -201,7 +201,7 @@ function showChangePasswordModal(user, loggedInUserChangesOwnPassword) {
         $('#changePasswordModal .newPasswordLabel').html(`New password for user ${user.username}&nbsp;<sup>*</sup>` );
     }
 
-    $('#changePasswordForm').data("loggedInUserChangesOwnPassword", loggedInUserChangesOwnPassword);
+    $('#changePasswordForm').data("signedinUserChangesOwnPassword", signedinUserChangesOwnPassword);
     $('#changePasswordModal .modal-title').html(`Change password for ${user.name} (${user.username})`);
     $('#changePasswordModal .username').val(user.username);
     $('#changePasswordModal').modal('show');
@@ -209,8 +209,8 @@ function showChangePasswordModal(user, loggedInUserChangesOwnPassword) {
 
 $("#changePasswordForm").submit(function(event) {
     event.preventDefault();
-    const loggedInUserChangesOwnPassword = $('#changePasswordForm').data("loggedInUserChangesOwnPassword");
-    const url = loggedInUserChangesOwnPassword ? "@controllers.gui.routes.Users.changePasswordByUser()" : "@controllers.gui.routes.Users.changePasswordByAdmin()";
+    const signedinUserChangesOwnPassword = $('#changePasswordForm').data("signedinUserChangesOwnPassword");
+    const url = signedinUserChangesOwnPassword ? "@controllers.gui.routes.Users.changePasswordByUser()" : "@controllers.gui.routes.Users.changePasswordByAdmin()";
     $.ajax({
         type: 'POST',
         url: url,
@@ -243,18 +243,18 @@ function showDeleteUserModal(user) {
 
     $('#deleteUserModal .modal-title').text(`Delete ${user.username} (${user.name})`);
     $('#deleteUserModal .confirmationText').html(generateDeleteUserConfirmationHtml(user));
-    if (@loggedInUser.isOauthGoogle()) {
+    if (@signedinUser.isOauthGoogle()) {
         $('#deleteUserModal .username').val('');
-        $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (@loggedInUser.getUsername())");
-    } else if (@loggedInUser.isOidc()) {
+        $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (@signedinUser.getUsername())");
+    } else if (@signedinUser.isOidc()) {
         $('#deleteUserModal .username').val('');
-        $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (@loggedInUser.getUsername())");
-    } else if (@loggedInUser.isOrcid()) {
+        $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (@signedinUser.getUsername())");
+    } else if (@signedinUser.isOrcid()) {
         $('#deleteUserModal .username').val('');
-        $('#deleteUserModal .usernameLabel').text(`Confirm by typing your ORCID ID (@loggedInUser.getUsername())`);
+        $('#deleteUserModal .usernameLabel').text(`Confirm by typing your ORCID ID (@signedinUser.getUsername())`);
     } else {
         $('#deleteUserModal .password').val('');
-        $('#deleteUserModal .passwordLabel').text(`Confirm with your (@loggedInUser.getUsername()) password`);
+        $('#deleteUserModal .passwordLabel').text(`Confirm with your (@signedinUser.getUsername()) password`);
     }
 
     $('#deleteUserModal .password').val('');
@@ -267,15 +267,15 @@ function showDeleteYourselfModal(user) {
     removeFormErrors("#deleteUserModal");
     $('#deleteUserModal .modal-title').text("Delete yourself");
 
-    if (@loggedInUser.isOauthGoogle()) {
+    if (@signedinUser.isOauthGoogle()) {
         $('#deleteUserModal .usernameLabel').text("Confirm by typing your email address (username)");
         $('#deleteUserModal .username').val('');
         $('#deleteUserModal .username').parents('.form-group').show();
-    } else if (@loggedInUser.isOidc()) {
+    } else if (@signedinUser.isOidc()) {
         $('#deleteUserModal .usernameLabel').text("Confirm by typing your user ID (username)");
         $('#deleteUserModal .username').val('');
         $('#deleteUserModal .username').parents('.form-group').show();
-    } else if (@loggedInUser.isOrcid()) {
+    } else if (@signedinUser.isOrcid()) {
         $('#deleteUserModal .usernameLabel').text("Confirm by typing your ORCID ID");
         $('#deleteUserModal .username').val('');
         $('#deleteUserModal .username').parents('.form-group').show();
@@ -300,7 +300,7 @@ function generateDeleteUserConfirmationHtml(user) {
 function generateDeleteYourselfConfirmationHtml() {
     var confirmationText = `<p>You are about to delete your user <b>${user.username} (${user.name}) from JATOS</b>. All studies with you as the only member user will be deleted too.</p>`;
     confirmationText += generateStudyList(user);
-    confirmationText += "<p><b>This can't be undone.</b> Afterwards you will be logged out of JATOS.</p>";
+    confirmationText += "<p><b>This can't be undone.</b> Afterwards you will be signed out of JATOS.</p>";
     return confirmationText;
 }
 
@@ -329,8 +329,8 @@ $('#deleteUserForm').submit(function(event) {
         type : 'POST',
         data: $('#deleteUserForm').serialize(),
         success : function(result) {
-            if (user.username === "@loggedInUser.getUsername()") {
-                window.location.href = '@auth.gui.routes.SignIn.login()';
+            if (user.username === "@signedinUser.getUsername()") {
+                window.location.href = '@auth.gui.routes.Signin.signin()';
             } else {
                 removeAlerts("#deleteUserModal");
                 removeFormErrors("#deleteUserModal");

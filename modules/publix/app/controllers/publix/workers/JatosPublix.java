@@ -59,7 +59,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     }
 
     /**
-     * Name of a key in the session. It stores the username of the logged in JATOS user.
+     * Name of a key in the session. It stores the username of the signed in JATOS user.
      */
     public static final String SESSION_USERNAME = "username";
 
@@ -89,7 +89,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
-        JatosWorker worker = publixUtils.retrieveLoggedInUser(request).getWorker();
+        JatosWorker worker = publixUtils.retrieveSignedinUser(request).getWorker();
         studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
         String componentUuid = null;
@@ -114,7 +114,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 + "studyResultId" + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
-                + "logged-in username " + username + ", "
+                + "signed-in username " + username + ", "
                 + "workerId " + worker.getId());
         studyLogger.log(studyLink, "Started study run with " + JatosWorker.UI_WORKER_TYPE + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor

@@ -61,14 +61,15 @@ GET      /jatos/testFolderAccess                                            @con
 GET      /jatos/testWebSocket                                               @controllers.gui.Tests.testWebSocket()
 
 # Auth controllers
-GET      /jatos/login                                                       @auth.gui.SignIn.login()
-POST     /jatos/login                                                       @auth.gui.SignIn.authenticate(request: Request)
-POST     /jatos/signin/google                                               @auth.gui.SignInGoogle.signIn(request: Request)
-GET      /jatos/signin/oidc/basic                                           @auth.gui.SignInBasicOidc.signIn(request: Request, realHostUrl: String)
-GET      /jatos/signin/oidc/basic/callback                                  @auth.gui.SignInBasicOidc.callback(request: Request)
-GET      /jatos/signin/oidc/orcid                                           @auth.gui.SignInOrcid.signIn(request: Request, realHostUrl: String)
-GET      /jatos/signin/oidc/orcid/callback                                  @auth.gui.SignInOrcid.callback(request: Request)
-GET      /jatos/logout                                                      @auth.gui.SignIn.logout(request: Request)
+GET      /jatos/signin                                                      @auth.gui.Signin.signin()
+GET      /jatos/login                                                       @auth.gui.Signin.signin()
+POST     /jatos/signin/local                                                @auth.gui.Signin.authenticate(request: Request)
+POST     /jatos/signin/google                                               @auth.gui.SigninGoogle.signin(request: Request)
+GET      /jatos/signin/oidc/basic                                           @auth.gui.SigninBasicOidc.signin(request: Request, realHostUrl: String)
+GET      /jatos/signin/oidc/basic/callback                                  @auth.gui.SigninBasicOidc.callback(request: Request)
+GET      /jatos/signin/oidc/orcid                                           @auth.gui.SigninOrcid.signin(request: Request, realHostUrl: String)
+GET      /jatos/signin/oidc/orcid/callback                                  @auth.gui.SigninOrcid.callback(request: Request)
+GET      /jatos/signout                                                     @auth.gui.Signin.signout(request: Request)
 
 # Home controller
 GET      /jatos/sidebarStudyList                                            @controllers.gui.Home.sidebarStudyList()

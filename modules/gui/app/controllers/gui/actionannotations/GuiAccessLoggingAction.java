@@ -37,8 +37,8 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 		String username = "unknown";
 		if (Controller.session(AuthService.SESSION_USERNAME) != null) {
 			username = Controller.session(AuthService.SESSION_USERNAME);
-		} else if (RequestScope.get(AuthService.LOGGED_IN_USER) != null) {
-			username = ((User) RequestScope.get(AuthService.LOGGED_IN_USER)).getUsername();
+		} else if (RequestScope.get(AuthService.SIGNEDIN_USER) != null) {
+			username = ((User) RequestScope.get(AuthService.SIGNEDIN_USER)).getUsername();
 		}
 		guiLogger.info(request.method() + " " + request.uri() + " (" + username	+ ")");
 		return delegate.call(ctx);

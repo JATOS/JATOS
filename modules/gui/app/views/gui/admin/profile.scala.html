@@ -1,16 +1,16 @@
-@(loggedInUser: common.User, breadcrumbs: String, request: Http.Request)
+@(signedinUser: common.User, breadcrumbs: String, request: Http.Request)
 
-@views.html.gui.main(loggedInUser, breadcrumbs) {
+@views.html.gui.main(signedinUser, breadcrumbs) {
 
 <div id="toolbar" class="btn-group">
-    @if(!loggedInUser.isOauthGoogle() && !loggedInUser.isOidc() && !loggedInUser.isOrcid()) {
+    @if(!signedinUser.isOauthGoogle() && !signedinUser.isOidc() && !signedinUser.isOrcid()) {
     <button id="editProfile" type="button" class="btn btn-admin">Edit Profile</button>
     }
-    @if(loggedInUser.isDb()) {
+    @if(signedinUser.isDb()) {
     <button id="changePassword" type="button" class="btn btn-admin">Change Password <span class="glyphicon glyphicon-lock"></span></button>
     }
     <button id="apiTokens" type="button" class="btn btn-admin">API Tokens</button>
-    @if(!loggedInUser.getUsername().equals(services.gui.UserService.ADMIN_USERNAME)) {
+    @if(!signedinUser.getUsername().equals(services.gui.UserService.ADMIN_USERNAME)) {
     <button id="deleteUser" type="button" class="btn btn-admin">Delete User <span class="glyphicon glyphicon-remove"></span></button>
     }
 </div>
@@ -20,11 +20,11 @@
     <!-- filled via JavaScript -->
 </ul>
 
-@views.html.gui.admin.editProfile(loggedInUser)
+@views.html.gui.admin.editProfile(signedinUser)
 @views.html.gui.admin.apiTokensModal(request)
 
 <script @{helper.CSPNonce.attr}>
-@if(loggedInUser.isSuperuser()) {
+@if(signedinUser.isSuperuser()) {
 showInfo("As a Superuser you have access to all studies like a study member.");
 }
 
@@ -34,7 +34,7 @@ loadUser();
 function loadUser() {
     $.ajax({
         type: 'GET',
-        url: "@controllers.gui.routes.Users.singleUserData(loggedInUser.getUsername())",
+        url: "@controllers.gui.routes.Users.singleUserData(signedinUser.getUsername())",
         success: function(response) {
             user = response;
             $('#navUserText').html(`<span class="glyphicon glyphicon-user"></span> ${user.name}`);

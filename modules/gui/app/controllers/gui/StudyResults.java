@@ -22,7 +22,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -42,7 +41,7 @@ public class StudyResults extends Controller {
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
@@ -55,14 +54,13 @@ public class StudyResults extends Controller {
     private final JsonUtils jsonUtils;
 
     @Inject
-    StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            Checker checker, AuthService authenticationService,
+    StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, AuthService authService,
             BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
             ResultStreamer resultStreamer, WorkerService workerService, StudyDao studyDao, BatchDao batchDao,
             StudyResultDao studyResultDao, GroupResultDao groupResultDao, WorkerDao workerDao, JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
@@ -82,16 +80,16 @@ public class StudyResults extends Controller {
     @Auth
     public Result studysStudyResults(Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
-        return ok(views.html.gui.result.studyResults.render(loggedInUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.result.studyResults.render(signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -102,9 +100,9 @@ public class StudyResults extends Controller {
     public Result batchesStudyResults(Long studyId, Long batchId, String workerType) throws JatosGuiException {
         Batch batch = batchDao.findById(batchId);
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForBatch(batch, study, batchId);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
@@ -114,7 +112,7 @@ public class StudyResults extends Controller {
                 : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(batchId, workerType).url();
-        return ok(views.html.gui.result.studyResults.render(loggedInUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.result.studyResults.render(signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -125,9 +123,9 @@ public class StudyResults extends Controller {
     public Result groupsStudyResults(Long studyId, Long groupId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForGroup(groupResult, study, groupId);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(e, studyId);
@@ -137,7 +135,7 @@ public class StudyResults extends Controller {
         String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
                 breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(groupId).url();
-        return ok(views.html.gui.result.studyResults.render(loggedInUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.result.studyResults.render(signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -146,17 +144,17 @@ public class StudyResults extends Controller {
     @Transactional
     @Auth
     public Result workersStudyResults(Long workerId) throws JatosGuiException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
         try {
             checker.checkWorker(worker, workerId);
-            checker.isUserAllowedToAccessWorker(loggedInUser, worker);
+            checker.isUserAllowedToAccessWorker(signedinUser, worker);
         } catch (BadRequestException | ForbiddenException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.workersStudyResults.render(loggedInUser, breadcrumbs, worker));
+        return ok(views.html.gui.result.workersStudyResults.render(signedinUser, breadcrumbs, worker));
     }
 
     /**
@@ -166,13 +164,13 @@ public class StudyResults extends Controller {
     @Transactional
     @Auth
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("studyResultIds")) return badRequest("Malformed JSON");
 
         List<Long> studyResultIdList = new ArrayList<>();
         request.body().asJson().get("studyResultIds").forEach(node -> studyResultIdList.add(node.asLong()));
-        resultRemover.removeStudyResults(studyResultIdList, loggedInUser);
+        resultRemover.removeStudyResults(studyResultIdList, signedinUser);
 
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
@@ -184,8 +182,8 @@ public class StudyResults extends Controller {
     @Auth
     public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForStudy(study, studyId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByStudy(study);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -199,8 +197,8 @@ public class StudyResults extends Controller {
     @Auth
     public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForBatch(batch, batch.getId(), loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForBatch(batch, batch.getId(), signedinUser);
         workerType = workerType != null ? workerService.extractWorkerType(workerType) : null;
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
@@ -214,8 +212,8 @@ public class StudyResults extends Controller {
     @Auth
     public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStandardForGroup(groupResult, groupResultId, loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForGroup(groupResult, groupResultId, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByGroup(groupResult);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -227,11 +225,11 @@ public class StudyResults extends Controller {
     @Transactional
     @Auth
     public Result tableDataByWorker(Long workerId) throws BadRequestException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
         checker.checkWorker(worker, workerId);
 
-        Source<ByteString, ?> source = resultStreamer.streamStudyResultsByWorker(loggedInUser, worker);
+        Source<ByteString, ?> source = resultStreamer.streamStudyResultsByWorker(signedinUser, worker);
         return ok().chunked(source).as("text/plain; charset=utf-8");
     }
 
@@ -242,8 +240,8 @@ public class StudyResults extends Controller {
     @Auth
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkStudyResult(studyResult, loggedInUser, false);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStudyResult(studyResult, signedinUser, false);
 
         return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
     }

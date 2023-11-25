@@ -235,13 +235,13 @@ public class ComponentService {
      * Remove Component: Remove it from the given study, remove all its ComponentResults, and remove the component
      * itself.
      */
-    public void remove(Component component, User loggedinUser) {
+    public void remove(Component component, User signedinUser) {
         Study study = component.getStudy();
         // Remove component from study
         study.removeComponent(component);
         studyDao.update(study);
         // Remove component's ComponentResults
-        resultRemover.removeAllComponentResults(component, loggedinUser);
+        resultRemover.removeAllComponentResults(component, signedinUser);
         componentDao.remove(component);
     }
 

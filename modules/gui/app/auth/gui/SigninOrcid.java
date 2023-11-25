@@ -12,14 +12,14 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class SignInOrcid extends SignInOidc {
+public class SigninOrcid extends SigninOidc {
 
     @Inject
-    SignInOrcid() {
+    SigninOrcid() {
         super(new OidcConfig(
                 User.AuthMethod.ORCID,
                 Common.getOrcidDiscoveryUrl(),
-                auth.gui.routes.SignInOrcid.callback().url(),
+                auth.gui.routes.SigninOrcid.callback().url(),
                 Common.getOrcidClientId(),
                 Common.getOrcidClientSecret(),
                 Common.getOrcidIdTokenSigningAlgorithm(),

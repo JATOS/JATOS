@@ -66,7 +66,7 @@ public class Api extends Controller {
 
     private final Admin admin;
     private final AdminService adminService;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
     private final ComponentResultDao componentResultDao;
@@ -81,7 +81,7 @@ public class Api extends Controller {
     private final IOUtils ioUtils;
 
     @Inject
-    Api(Admin admin, AdminService adminService, AuthService authenticationService,
+    Api(Admin admin, AdminService adminService, AuthService authService,
             ComponentResultIdsExtractor componentResultIdsExtractor,
             StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
             StudyLinkService studyLinkService,
@@ -90,7 +90,7 @@ public class Api extends Controller {
             StudyLogger studyLogger, IOUtils ioUtils) {
         this.admin = admin;
         this.adminService = adminService;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
         this.componentResultDao = componentResultDao;
@@ -173,8 +173,8 @@ public class Api extends Controller {
     @Auth
     public Result getAllStudyPropertiesByUser(Boolean withComponentProperties, Boolean withBatchProperties)
             throws IOException {
-        User loggedInUser = authenticationService.getLoggedInUser();
-        List<Study> studies = studyDao.findAllByUser(loggedInUser);
+        User signedinUser = authService.getSignedinUser();
+        List<Study> studies = studyDao.findAllByUser(signedinUser);
         ArrayNode studiesArray = Json.newArray();
         for (Study s : studies) {
             studiesArray.add(jsonUtils.studyAsJsonForApi(s, withComponentProperties, withBatchProperties));
@@ -345,10 +345,10 @@ public class Api extends Controller {
     @Auth
     public Result deleteStudy(String id) throws ForbiddenException, NotFoundException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         checker.checkStudyLocked(study);
 
-        studyService.removeStudyInclAssets(study, loggedInUser);
+        studyService.removeStudyInclAssets(study, signedinUser);
         return ok();
     }
 
@@ -391,10 +391,10 @@ public class Api extends Controller {
     @Auth
     public Result removeResults(Http.Request request)
             throws BadRequestException, ForbiddenException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
-        resultRemover.removeComponentResults(crids, loggedInUser, true);
+        resultRemover.removeComponentResults(crids, signedinUser, true);
         return ok();
     }
 
@@ -500,15 +500,15 @@ public class Api extends Controller {
     public Result exportSingleResultFile(Long componentResultId, String filename)
             throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkComponentResult(componentResult, loggedInUser, false);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkComponentResult(componentResult, signedinUser, false);
 
         File file;
         try {
             Study study = componentResult.getComponent().getStudy();
             file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
             if (!file.exists()) throw new IOException();
-            studyLogger.log(study, loggedInUser, "Exported single result file");
+            studyLogger.log(study, signedinUser, "Exported single result file");
         } catch (IOException e) {
             return notFound("File does not exist");
         }

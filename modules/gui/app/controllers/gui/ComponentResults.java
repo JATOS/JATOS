@@ -21,11 +21,9 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +39,7 @@ public class ComponentResults extends Controller {
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
-    private final AuthService authenticationService;
+    private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
@@ -51,12 +49,12 @@ public class ComponentResults extends Controller {
 
     @Inject
     ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-            AuthService authenticationService, BreadcrumbsService breadcrumbsService,
+            AuthService authService, BreadcrumbsService breadcrumbsService,
             ResultRemover resultRemover, ResultStreamer resultStreamer, StudyDao studyDao,
             ComponentDao componentDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.checker = checker;
-        this.authenticationService = authenticationService;
+        this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
@@ -72,17 +70,17 @@ public class ComponentResults extends Controller {
     @Auth
     public Result componentResults(Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
         try {
-            checker.checkStandardForStudy(study, studyId, loggedInUser);
+            checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForComponent(studyId, componentId, component);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(e);
         }
 
         String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.componentResults.render(loggedInUser, breadcrumbs, study, component));
+        return ok(views.html.gui.result.componentResults.render(signedinUser, breadcrumbs, study, component));
     }
 
     /**
@@ -92,14 +90,14 @@ public class ComponentResults extends Controller {
     @Transactional
     @Auth
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("componentResultIds")) return badRequest("Malformed JSON");
 
         List<Long> componentResultIdList = new ArrayList<>();
         request.body().asJson().get("componentResultIds").forEach(node -> componentResultIdList.add(node.asLong()));
         // Permission check is done in service for each result individually
-        resultRemover.removeComponentResults(componentResultIdList, loggedInUser, false);
+        resultRemover.removeComponentResults(componentResultIdList, signedinUser, false);
         return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
@@ -109,9 +107,9 @@ public class ComponentResults extends Controller {
     @Transactional
     @Auth
     public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
-        User loggedInUser = authenticationService.getLoggedInUser();
+        User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForComponent(componentId, component, loggedInUser);
+        checker.checkStandardForComponent(componentId, component, signedinUser);
 
         Source<ByteString, ?> dataSource = resultStreamer.streamComponentResults(component);
         return ok().chunked(dataSource).as("application/json");
@@ -124,8 +122,8 @@ public class ComponentResults extends Controller {
     @Auth
     public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        User loggedInUser = authenticationService.getLoggedInUser();
-        checker.checkComponentResult(componentResult, loggedInUser, false);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkComponentResult(componentResult, signedinUser, false);
         return ok(componentResultDao.getData(componentResultId));
     }
 

@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit;
 
 /**
  * Service class around authentication and the session cookie. It works together with the
- * {@link SignIn} controller and the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
+ * {@link Signin} controller and the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
  *
  * @author Kristian Lange
  */
@@ -29,35 +29,35 @@ public class AuthService {
     private static final ALogger LOGGER = Logger.of(AuthService.class);
 
     /**
-     * Parameter name in Play's session cookie: It contains the username of the logged-in user
+     * Parameter name in Play's session cookie: It contains the username of the signed-in user
      */
     public static final String SESSION_USERNAME = "username";
 
     /**
-     * Parameter name in Play's session cookie: It contains the timestamp of the login time
+     * Parameter name in Play's session cookie: It contains the timestamp of the sign-in time
      */
-    public static final String SESSION_LOGIN_TIME = "loginTime";
+    public static final String SESSION_SIGNIN_TIME = "signinTime";
 
     /**
-     * Parameter name in Play's session cookie: It contains a timestamp of the
-     * time of the last HTTP request done by the browser with this cookie
+     * Parameter name in Play's session cookie: It contains a timestamp of the last HTTP request done by the browser
+     * with this cookie
      */
     public static final String SESSION_LAST_ACTIVITY_TIME = "lastActivityTime";
 
     /**
-     * Key name used in RequestScope to store the logged-in User
+     * Key name used in RequestScope to store the signed-in User
      */
-    public static final String LOGGED_IN_USER = "loggedInUser";
+    public static final String SIGNEDIN_USER = "signedinUser";
 
     private final UserDao userDao;
     private final LoginAttemptDao loginAttemptDao;
-    private final SignInLdap ldapAuthentication;
+    private final SigninLdap signinLdap;
 
     @Inject
-    AuthService(UserDao userDao, LoginAttemptDao loginAttemptDao, SignInLdap ldapAuthentication) {
+    AuthService(UserDao userDao, LoginAttemptDao loginAttemptDao, SigninLdap signinLdap) {
         this.userDao = userDao;
         this.loginAttemptDao = loginAttemptDao;
-        this.ldapAuthentication = ldapAuthentication;
+        this.signinLdap = signinLdap;
     }
 
     /**
@@ -68,7 +68,7 @@ public class AuthService {
 
         switch (user.getAuthMethod()) {
             case LDAP:
-                return ldapAuthentication.authenticate(user.getUsername(), password);
+                return signinLdap.authenticate(user.getUsername(), password);
             case DB:
                 return authenticateViaDb(user.getUsername(), password);
             default:
@@ -82,56 +82,56 @@ public class AuthService {
     }
 
     /**
-     * Returns true if there were already 3 login attempts within the last minute with this username
+     * Returns true if there were already 3 sign-in attempts within the last minute with this username
      */
-    public boolean isRepeatedLoginAttempt(String normalizedUsername) {
+    public boolean isRepeatedSigninAttempt(String normalizedUsername) {
         return loginAttemptDao.countLoginAttemptsOfLastMin(normalizedUsername) >= 3;
     }
 
     /**
-     * Retrieves the logged-in user from Play's session. If a user is logged-in their username is stored in Play's
-     * session cookie. With the username a user can be retrieved from the database. Returns null if the session doesn't
+     * Retrieves the signed-in user from Play's session. If a user is signed-in their username is stored in Play's
+     * session cookie. With the username, a user can be retrieved from the database. Returns null if the session doesn't
      * contain a username or if the user doesn't exist in the database.
      * <p>
-     * In most cases getLoggedInUser() is faster since it doesn't have to query the database.
+     * In most cases, getSignedinUser() is faster since it doesn't have to query the database.
      */
-    public User getLoggedInUserBySessionCookie(Http.Session session) {
+    public User getSignedinUserBySessionCookie(Http.Session session) {
         String normalizedUsername = session.get(AuthService.SESSION_USERNAME);
-        User loggedInUser = null;
+        User signedinUser = null;
         if (normalizedUsername != null) {
-            loggedInUser = userDao.findByUsername(normalizedUsername);
+            signedinUser = userDao.findByUsername(normalizedUsername);
         }
-        return loggedInUser;
+        return signedinUser;
     }
 
     /**
-     * Gets the logged-in user from the RequestScope. It was put into the
+     * Gets the signed-in user from the RequestScope. It was put into the
      * RequestScope by the AuthenticationAction. Therefore, this method works
      * only if you use the @Authenticated annotation at your action.
      */
-    public User getLoggedInUser() {
-        return (User) RequestScope.get(LOGGED_IN_USER);
+    public User getSignedinUser() {
+        return (User) RequestScope.get(SIGNEDIN_USER);
     }
 
     /**
-     * Prepares Play's session cookie for the user with the given username to be logged-in. Does not authenticate the
+     * Prepares Play's session cookie for the user with the given username to be signed-in. Does not authenticate the
      * user (use authenticate() for this).
      */
     public void writeSessionCookie(Http.Session session, String normalizedUsername) {
         session.put(SESSION_USERNAME, normalizedUsername);
-        session.put(SESSION_LOGIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
+        session.put(SESSION_SIGNIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
         session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
     }
 
     /**
-     * Returns true if the session login time as saved in Play's session cookie
+     * Returns true if the session sign-in time as saved in Play's session cookie
      * is older than allowed.
      */
     public boolean isSessionTimeout(Http.Session session) {
         try {
-            Instant loginTime = Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_LOGIN_TIME)));
+            Instant signinTime = Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_SIGNIN_TIME)));
             Instant now = Instant.now();
-            Instant allowedUntil = loginTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
+            Instant allowedUntil = signinTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(".isSessionTimeout: " + e.getMessage());
