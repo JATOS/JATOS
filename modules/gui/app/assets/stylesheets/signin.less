@@ -1,5 +1,6 @@
 html,
-body {
+body,
+main {
   height: 100%;
 }
 
@@ -33,4 +34,16 @@ body {
 .signin-form input[type="password"] {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+}
+
+/* Fix padding of Google sign-in iFrame */
+iframe[src^="https://accounts.google.com"] {
+    color-scheme: normal;
+}
+
+.bi {
+  width: 1em;
+  height: 1em;
+  vertical-align: -.125em;
+  fill: currentcolor;
 }

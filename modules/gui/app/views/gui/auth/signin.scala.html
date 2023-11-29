@@ -2,7 +2,7 @@
 
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,25 +12,74 @@
     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
     <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.2/bootstrap.min.css")">
+    <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/font/bootstrap-icons.min.css")">
     <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/signin.css?v=" + general.common.Common.getJatosVersion())">
-    <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.2/bootstrap.min.js")"></script>
+    <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.2/bootstrap.bundle.min.js")"></script>
     <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.5.1.min.js")"></script>
     @if(general.common.Common.isOauthGoogleAllowed()) {
     <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async defer></script>
     }
 </head>
-<body class="d-flex align-items-center bg-body-tertiary">
+<body class="bg-body-tertiary">
 
-    <nav class="navbar fixed-top bg-body">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="https://www.jatos.org">
-                <img src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="25pt">
-                <span>JATOS</span>
+    <header class="navbar navbar-expand-lg bd-navbar sticky-top">
+        <nav class="container-xxl bd-gutter flex-wrap flex-lg-nowrap" aria-label="Main navigation">
+            <a class="navbar-brand p-0 me-0 me-lg-2" href="/">
+                <img class="my-1" src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="32">
             </a>
-        </div>
-    </nav>
 
-    <main class="signin-all w-100 m-auto">
+            <div class="d-flex">
+                <button class="navbar-toggler d-flex d-lg-none order-3 p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#bdNavbar" aria-controls="bdNavbar" aria-label="Toggle navigation">
+                    <svg class="bi" aria-hidden="true"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#three-dots")"></use></svg>
+                </button>
+            </div>
+
+            <div id="bdNavbar" class="offcanvas-lg offcanvas-end flex-grow-1" tabindex="-1" aria-labelledby="bdNavbarOffcanvasLabel" data-bs-scroll="true">
+                <div class="offcanvas-header px-4 pb-0">
+                    <h5 class="offcanvas-title" id="bdNavbarOffcanvasLabel">JATOS</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-bs-target="#bdNavbar"></button>
+                </div>
+
+                <div class="offcanvas-body px-4 pb-0">
+                    <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
+                        <li class="nav-item dropdown">
+                            <button id="bd-theme" class="btn btn-link nav-link link-body-emphasis py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center show" type="button" aria-expanded="true" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme (light)">
+                                <svg class="bi my-1 theme-icon-active"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#moon-stars-fill")"></use></svg>
+                                <span id="bd-theme-text" class="d-lg-none ms-2">Toggle theme</span>
+                            </button>
+
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text" data-bs-popper="static">
+                                <li>
+                                    <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="light" aria-pressed="false">
+                                        <svg class="bi me-2 opacity-50 theme-icon"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#sun-fill")"></use></svg>
+                                        Light
+                                        <svg class="bi ms-auto d-none"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#check2")"></use></svg>
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="true">
+                                        <svg class="bi me-2 opacity-50 theme-icon"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#moon-stars-fill")"></use></svg>
+                                        Dark
+                                        <svg class="bi ms-auto d-none"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#check2")"></use></svg>
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
+                                        <svg class="bi me-2 opacity-50 theme-icon"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#circle-half")"></use></svg>
+                                        Auto
+                                        <svg class="bi ms-auto d-none"><use href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/bootstrap-icons.svg#check2")"></use></svg>
+                                    </button>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="d-flex align-items-center">
+        <div class="signin-all w-100 m-auto">
         @if(general.common.Common.isOidcAllowed()) {
         <button id="signin-oidc" class="btn btn-outline-signin w-100 mb-2" type="button">
             <img class="float-start" height="25" src="@{general.common.Common.getJatosUrlBasePath()+general.common.Common.getOidcSigninButtonLogoUrl()}">
@@ -69,7 +118,6 @@
         <p class="signin-text"><b>Please sign in</b></p>
         }
 
-
         @helper.form(action = auth.gui.routes.Signin.authenticate, 'class -> "signin-form", 'role -> "form") {
         <div class="form-floating">
             <input type="text" name="username" id="username" class="form-control" placeholder="Username" value="@form("username").value().orElse("")" required autofocus>
@@ -81,68 +129,149 @@
         </div>
         <button class="btn btn-primary w-100 mt-2" type="submit">Sign in</button>
         }
+        </div>
     </main>
 </body>
 
 <script @{helper.CSPNonce.attr}>
+/*!
+ * Color mode toggler for Bootstrap's docs (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under the Creative Commons Attribution 3.0 Unported License.
+ */
 
-setBrand();
+(() => {
+  'use strict'
 
-function setBrand() {
-    if(isLocalhost()) {
-        $(".navbar").toggleClass("bg-body bg-dark").attr("data-bs-theme", "dark");
-        $(".navbar-brand img").attr("src", "@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
-        $(".navbar-brand span").text("JATOS local");
+  const getStoredTheme = () => localStorage.getItem('theme')
+  const setStoredTheme = theme => localStorage.setItem('theme', theme)
+
+  const getPreferredTheme = () => {
+    const storedTheme = getStoredTheme()
+    if (storedTheme) {
+      return storedTheme
     }
-}
 
-function isLocalhost() {
-    return location.hostname === 'localhost' ||
-    location.hostname === '' ||
-    location.hostname === '[::1]' ||
-    location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
-}
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
 
-@for(error <- form.globalErrors) {
-    $('#password').after('<p class="text-danger m-1">@error.message</p>');
-}
-@if(flash.containsKey(general.gui.FlashScopeMessaging.SUCCESS)) {
-    $('#password').after('<p class="text-success m-1">@flash.get(general.gui.FlashScopeMessaging.SUCCESS)</p>');
-}
-@if(flash.containsKey(general.gui.FlashScopeMessaging.WARNING)) {
-    $('#password').after('<p class="text-warning m-1">@flash.get(general.gui.FlashScopeMessaging.WARNING)</p>');
-}
-@if(flash.containsKey(general.gui.FlashScopeMessaging.ERROR)) {
-    $('#password').after('<p class="text-danger m-1">@flash.get(general.gui.FlashScopeMessaging.ERROR)</p>');
-}
+  const setTheme = theme => {
+    if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-bs-theme', 'dark')
+    } else {
+      document.documentElement.setAttribute('data-bs-theme', theme)
+    }
+  }
 
-$('#signin-oidc').click(function() {
-    const realHostUrl = location.protocol + '//' + location.host;
-    $.ajax({
-        url : `@{general.common.Common.getJatosUrlBasePath()}jatos/signin/oidc/basic?realHostUrl=${realHostUrl}`,
-        success: function(uri) {
-            window.location.href = uri;
-        },
-        error : function(err) {
-            $("p.text-danger").remove();
-            $('#password').after(`<p class="text-danger">${err.responseText}</p>`);
+  setTheme(getPreferredTheme())
+
+  const showActiveTheme = (theme, focus = false) => {
+    const themeSwitcher = document.querySelector('#bd-theme')
+
+    if (!themeSwitcher) {
+      return
+    }
+
+    const themeSwitcherText = document.querySelector('#bd-theme-text')
+    const activeThemeIcon = document.querySelector('.theme-icon-active use')
+    const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+    const svgOfActiveBtn = btnToActive.querySelector('svg use').getAttribute('href')
+
+    document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+      element.classList.remove('active')
+      element.setAttribute('aria-pressed', 'false')
+    })
+
+    btnToActive.classList.add('active')
+    btnToActive.setAttribute('aria-pressed', 'true')
+    activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+    const themeSwitcherLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
+    themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
+
+    if (focus) {
+      themeSwitcher.focus()
+    }
+  }
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    const storedTheme = getStoredTheme()
+    if (storedTheme !== 'light' && storedTheme !== 'dark') {
+      setTheme(getPreferredTheme())
+    }
+  })
+
+  window.addEventListener('DOMContentLoaded', () => {
+    showActiveTheme(getPreferredTheme())
+
+    document.querySelectorAll('[data-bs-theme-value]')
+      .forEach(toggle => {
+        toggle.addEventListener('click', () => {
+          const theme = toggle.getAttribute('data-bs-theme-value')
+          setStoredTheme(theme)
+          setTheme(theme)
+          showActiveTheme(theme, true)
+        })
+      })
+  })
+})()
+
+    setBrand();
+
+    function setBrand() {
+        if(isLocalhost()) {
+            $(".navbar").toggleClass("bg-body bg-dark").attr("data-bs-theme", "dark");
+            $(".navbar-brand img").attr("src", "@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
+            $(".navbar-brand span").text("JATOS local");
         }
-    });
-});
+    }
 
-$('#signin-orcid').click(function() {
-    const realHostUrl = location.protocol + '//' + location.host;
-    $.ajax({
-        url : `@{general.common.Common.getJatosUrlBasePath()}jatos/signin/oidc/orcid?realHostUrl=${realHostUrl}`,
-        success: function(uri) {
-            window.location.href = uri;
-        },
-        error : function(err) {
-            $("p.text-danger").remove();
-            $('#password').after(`<p class="text-danger">${err.responseText}</p>`);
-        }
+    function isLocalhost() {
+        return location.hostname === 'localhost' ||
+        location.hostname === '' ||
+        location.hostname === '[::1]' ||
+        location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
+    }
+
+    @for(error <- form.globalErrors) {
+        $('#password').after('<p class="text-danger m-1">@error.message</p>');
+    }
+    @if(flash.containsKey(general.gui.FlashScopeMessaging.SUCCESS)) {
+        $('#password').after('<p class="text-success m-1">@flash.get(general.gui.FlashScopeMessaging.SUCCESS)</p>');
+    }
+    @if(flash.containsKey(general.gui.FlashScopeMessaging.WARNING)) {
+        $('#password').after('<p class="text-warning m-1">@flash.get(general.gui.FlashScopeMessaging.WARNING)</p>');
+    }
+    @if(flash.containsKey(general.gui.FlashScopeMessaging.ERROR)) {
+        $('#password').after('<p class="text-danger m-1">@flash.get(general.gui.FlashScopeMessaging.ERROR)</p>');
+    }
+
+    $('#signin-oidc').click(function() {
+        const realHostUrl = location.protocol + '//' + location.host;
+        $.ajax({
+            url : `@{general.common.Common.getJatosUrlBasePath()}jatos/signin/oidc/basic?realHostUrl=${realHostUrl}`,
+            success: function(uri) {
+                window.location.href = uri;
+            },
+            error : function(err) {
+                $("p.text-danger").remove();
+                $('#password').after(`<p class="text-danger">${err.responseText}</p>`);
+            }
+        });
     });
-});
+
+    $('#signin-orcid').click(function() {
+        const realHostUrl = location.protocol + '//' + location.host;
+        $.ajax({
+            url : `@{general.common.Common.getJatosUrlBasePath()}jatos/signin/oidc/orcid?realHostUrl=${realHostUrl}`,
+            success: function(uri) {
+                window.location.href = uri;
+            },
+            error : function(err) {
+                $("p.text-danger").remove();
+                $('#password').after(`<p class="text-danger">${err.responseText}</p>`);
+            }
+        });
+    });
 
 </script>
 </html>
