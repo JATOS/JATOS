@@ -142,7 +142,9 @@ public class Signin extends Controller {
     public Result signout(Http.Request request) {
         LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
         FlashScopeMessaging.success("You've been signed out.");
-        return redirect(auth.gui.routes.Signin.signin()).withNewSession();
+        return redirect(auth.gui.routes.Signin.signin())
+                .withNewSession()
+                .discardingCookie(SigninGoogle.GOOGLE_PICTURE_URL);
     }
 
     /**

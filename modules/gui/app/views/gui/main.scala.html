@@ -280,20 +280,20 @@
             </svg>
         </a>
         <div class="d-flex">
-            <button class="navbar-toggler d-flex d-lg-none border border-0 shadow-none px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#jatosNavbar">
+            <button class="navbar-toggler d-flex d-lg-none border border-0 shadow-none px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarMenu">
                 <i class="bi-three-dots"></i>
             </button>
         </div>
-        <div class="offcanvas-lg offcanvas-end flex-grow-1" id="jatosNavbar" tabindex="-1" data-bs-scroll="true">
+        <div class="offcanvas-lg offcanvas-end flex-grow-1" id="navbarMenu" tabindex="-1" data-bs-scroll="true">
             <div class="offcanvas-header px-4 pb-0">
-                <h5 class="offcanvas-title" id="jatosNavbarOffcanvasLabel">JATOS</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#jatosNavbar"></button>
+                <h5 class="offcanvas-title" id="navbarMenuOffcanvasLabel">JATOS</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#navbarMenu"></button>
             </div>
             <div class="offcanvas-body p-4 pt-0 p-lg-0 align-items-center">
                 <hr class="d-lg-none">
                 <ul class="navbar-nav flex-row flex-wrap">
                     <li class="nav-item col-6 col-lg-auto" data-bs-toggle="tooltip" data-bs-title="Create a new study">
-                        <button id="createStudyLink" class="nav-link py-2 px-0 px-lg-3"><i class="bi-plus-lg pe-1"></i>New Study</button>
+                        <button class="nav-link py-2 px-0 px-lg-3" id="createStudyLink"><i class="bi-plus-lg pe-1"></i>New Study</button>
                     </li>
                     <li class="d-none"><input id="importStudyBrowser" type="file" name="study"></li>
                     <li class="nav-item col-6 col-lg-auto" data-bs-toggle="tooltip" data-bs-title="Import a study from the local file system">
@@ -307,10 +307,23 @@
                 </ul>
                 <hr class="d-lg-none">
                 <ul class="navbar-nav flex-row flex-wrap col-auto ms-auto align-items-center">
+                    <li class="nav-item col-6 col-lg-auto">
+                        <a class="nav-link" href="https://www.jatos.org/Whats-JATOS.html" target="_blank"><i class="bi-file-text"></i><span class="ps-1 d-lg-none">Docs</span></a>
+                    </li>
+                    <li class="nav-item col-6 col-lg-auto">
+                        <a class="nav-link" href="https://www.github.com/JATOS/JATOS" target="_blank"><i class="bi-github"></i><span class="ps-1 d-lg-none">GitHub</span></a>
+                    </li>
+                    <li class="nav-item col-6 col-lg-auto">
+                        <a class="nav-link" href="https://opencollective.com/" target="_blank"><i class="bi-opencollective"></i><span class="ps-1 d-lg-none">Open Collective</span></a>
+                    </li>
+                    <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
+                        <div class="vr d-none d-lg-flex h-100 mx-lg-2"></div>
+                        <hr class="d-lg-none my-2">
+                    </li>
                     <li class="nav-item dropdown" id="navUser">
                         <a class="nav-link dropdown-toggle px-0 px-lg-2 d-flex align-items-center" type="button" data-bs-toggle="dropdown" data-bs-display="static">
-                            <i class="bi-person-fill pe-1"></i><span class="pe-1">@signedinUser.getName()</span>
-                            <img class="rounded-circle border border-2 p-0" id="userImg" src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/person.svg")" width="32" height="32" alt="thumbnail">
+                            <span class="pe-1" id="navbarUsername">@signedinUser.getName()</span>
+                            <img class="rounded-circle border border-2 p-0" id="userImg" src="" width="32" height="32" alt="thumbnail">
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" data-bs-popper="static">
                             <li class="dropdown-header"></li>
@@ -365,7 +378,7 @@
         </div>
     </header>
 
-    <div class="row flex-grow-1 overflow-hidden g-0">
+    <div class="row overflow-hidden g-0">
 
         <div class="col-lg-2 mh-100 overflow-auto p-0 border border-right bg-body-tertiary">
             <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" data-bs-scroll="true">
@@ -620,14 +633,21 @@
     }
 
     (() => {
-        const loggedInUserEmail = "@signedinUser.getEmail()".toLowerCase().trim();
-        const loggedInUserUsername = "@signedinUser.getUsername()".toLowerCase().trim();
-        const email = loggedInUserEmail ? loggedInUserEmail : (loggedInUserUsername ? loggedInUserUsername : null);
-        if (!email) return;
+        $('#userImg').one(); // Ignore imgage loading errors
 
-        digestMessage(email).then((hash) => {
-            document.getElementById('userImg').src = `https://gravatar.com/avatar/${hash}?size=32`;
-        });
+        const googlePictureUrl = document.cookie.split("; ").find((row) => row.startsWith("G_PIC_URL="))?.split("=")[1];
+        if (googlePictureUrl) {
+            $('#userImg').attr("src", googlePictureUrl);
+        } else {
+            const signedinUserEmail = "@signedinUser.getEmail()".toLowerCase().trim();
+            const signedinUserUsername = "@signedinUser.getUsername()".toLowerCase().trim();
+            const email = signedinUserEmail ? signedinUserEmail : (signedinUserUsername ? signedinUserUsername : null);
+            if (!email) return;
+
+            digestMessage(email).then((hash) => {
+                $('#userImg').attr("src", `https://gravatar.com/avatar/${hash}?size=32&d=robohash`);
+            });
+        }
     })();
 
 </script>

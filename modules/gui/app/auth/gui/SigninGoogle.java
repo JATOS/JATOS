@@ -44,6 +44,8 @@ public class SigninGoogle extends Controller {
 
     private static final ALogger LOGGER = Logger.of(SigninGoogle.class);
 
+    public static final String GOOGLE_PICTURE_URL = "G_PIC_URL";
+
     private final AuthService authService;
     private final SigninFormValidation signinFormValidation;
     private final FormFactory formFactory;
@@ -93,7 +95,15 @@ public class SigninGoogle extends Controller {
         authService.writeSessionCookie(session(), normalizedUsername);
         userService.setLastSignin(normalizedUsername);
 
-        return redirect(controllers.gui.routes.Home.home());
+        String pictureUrl = idTokenPayload.get("picture") != null ? idTokenPayload.get("picture").toString() : "";
+        Http.Cookie pictureUrlCookie = Http.Cookie.builder(GOOGLE_PICTURE_URL, pictureUrl)
+                .withPath(Common.getJatosUrlBasePath())
+                .withSecure(false)
+                .withHttpOnly(false)
+                .withSameSite(Http.Cookie.SameSite.STRICT)
+                .build();
+
+        return redirect(controllers.gui.routes.Home.home()).withCookies(pictureUrlCookie);
     }
 
     /**

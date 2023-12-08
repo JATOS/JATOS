@@ -35,14 +35,14 @@
             </svg>
         </a>
         <div class="d-flex">
-            <button class="navbar-toggler d-flex d-lg-none border border-0 shadow-none px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#jatosNavbar">
+            <button class="navbar-toggler d-flex d-lg-none border border-0 shadow-none px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarMenu">
                 <i class="bi-three-dots"></i>
             </button>
         </div>
-        <div class="offcanvas-lg offcanvas-end flex-grow-1" id="jatosNavbar" tabindex="-1" data-bs-scroll="true">
+        <div class="offcanvas-lg offcanvas-end flex-grow-1" id="navbarMenu" tabindex="-1" data-bs-scroll="true">
             <div class="offcanvas-header px-4 pb-0">
-                <h5 class="offcanvas-title" id="jatosNavbarOffcanvasLabel">JATOS</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#jatosNavbar"></button>
+                <h5 class="offcanvas-title" id="navbarMenuOffcanvasLabel">JATOS</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#navbarMenu"></button>
             </div>
             <div class="offcanvas-body p-4 pt-0 p-lg-0 align-items-center">
                 <hr class="d-lg-none">
@@ -98,7 +98,7 @@
             }
 
             @if(general.common.Common.isOauthGoogleAllowed()) {
-            <div id="signin-google" class="mb-2">
+            <div id="signinGoogle" class="mb-2">
                 <div id="g_id_onload"
                      data-client_id="@{general.common.Common.getOauthGoogleClientId()}"
                      data-login_uri="@auth.gui.routes.SigninGoogle.signin()"

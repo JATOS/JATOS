@@ -32,13 +32,13 @@
       if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         if (typeof google !== 'undefined') {
           google.accounts.id.renderButton(
-              document.getElementById("signin-google"), { theme: "filled_black", size: "large", width: "300" });
+              document.getElementById("signinGoogle"), { theme: "filled_black", size: "large", width: "300" });
         }
       } else {
         const googleTheme = theme == "dark" ? "filled_black" : "outline";
         if (typeof google !== 'undefined') {
           google.accounts.id.renderButton(
-              document.getElementById("signin-google"), { theme: googleTheme, size: "large", width: "300" });
+              document.getElementById("signinGoogle"), { theme: googleTheme, size: "large", width: "300" });
         }
       }
   }
