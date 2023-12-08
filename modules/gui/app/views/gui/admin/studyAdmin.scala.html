@@ -70,7 +70,7 @@ $(document).ready(function() {
                 "data": "title",
                 "width": "30%",
                 "render": function (data, type, full, meta) {
-                    return data.length > 50 ? data.substring(0, 47) + "..." : data;
+                    return trimTextWithThreeDots(data, 50);
                 }
             },
             {

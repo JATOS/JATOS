@@ -217,13 +217,7 @@ var userTable = $('#userTable').DataTable({
             "class": "text-center authMethod",
             "data": "authMethod",
             "width": "1px",
-            "render": function (authMethod, type, full, meta) {
-                switch(authMethod) {
-                    case "@{common.User.AuthMethod.DB.name()}": return "local";
-                    case "@{common.User.AuthMethod.OAUTH_GOOGLE.name()}": return "Google";
-                    default: return authMethod;
-                }
-            }
+            "render": getAuthMethodText
         },
         {
             "class": 'superuserRole',
@@ -422,7 +416,6 @@ function generateStudiesChildRow(studiesData, username) {
     }
 
     studiesData.forEach(function(studyData) {
-        var trimmedStudyTitle = studyData.title.length > 80 ? studyData.title.substring(0, 77) + "..." : studyData.title;
         let membersHtml;
         if (studyData.members.length < 4 ) {
             membersHtml = studyData.members.map((m) => generateFullUserString(m.name, m.username, m.authMethod)).join("<br>");
@@ -434,7 +427,7 @@ function generateStudiesChildRow(studiesData, username) {
         }
         var row = $('<tr class="info">'
             + '<td>' + studyData.id + '</td>'
-            + '<td>' + trimmedStudyTitle + '</td>'
+            + '<td>' + trimTextWithThreeDots(studyData.title, 80) + '</td>'
             + '<td>' + membersHtml + '</td>'
             + '<td>' + studyData.studyAssetsSize.humanReadable + '</td>'
             + '<td>' + studyData.studyResultCount + '</td>'

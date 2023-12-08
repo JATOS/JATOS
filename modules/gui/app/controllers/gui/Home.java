@@ -92,17 +92,17 @@ public class Home extends Controller {
     }
 
     /**
-     * GET request that returns a list of all studies and their components belonging to the
-     * signed-in user for use in the GUI's sidebar.
+     * GET request that returns the data needed to draw the sidebar (e.g. a list of all studies that belong to the
+     * signed-in user).
      */
     @Transactional
     @Auth
-    public Result sidebarStudyList() {
+    public Result sidebarData() {
         User signedinUser = authService.getSignedinUser();
         List<Study> studyList = Helpers.isAllowedSuperuser(signedinUser)
                 ? studyDao.findAll()
                 : studyDao.findAllByUser(signedinUser);
-        return ok(jsonUtils.sidebarStudyList(studyList));
+        return ok(jsonUtils.sidebarData(studyList));
     }
 
 }

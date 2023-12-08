@@ -72,7 +72,7 @@ GET      /jatos/signin/oidc/orcid/callback                                  @aut
 GET      /jatos/signout                                                     @auth.gui.Signin.signout(request: Request)
 
 # Home controller
-GET      /jatos/sidebarStudyList                                            @controllers.gui.Home.sidebarStudyList()
+GET      /jatos/sidebarData                                                 @controllers.gui.Home.sidebarData()
 GET      /jatos                                                             @controllers.gui.Home.home()
 GET      /jatos/                                                            @controllers.gui.Home.home()
 GET      /                                                                  @controllers.gui.Home.home()

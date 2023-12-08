@@ -461,14 +461,15 @@ public class JsonUtils {
     /**
      * Returns the JSON data for the sidebar (study title, ID and components)
      */
-    public JsonNode sidebarStudyList(List<Study> studyList) {
-        List<SidebarStudy> sidebarStudyList = new ArrayList<>();
+    public JsonNode sidebarData(List<Study> studyList) {
+        List<SidebarStudy> sidebarData = new ArrayList<>();
         for (Study study : studyList) {
             SidebarStudy sidebarStudy = new SidebarStudy();
             sidebarStudy.id = study.getId();
             sidebarStudy.uuid = study.getUuid();
             sidebarStudy.title = study.getTitle();
             sidebarStudy.locked = study.isLocked();
+
             for (Component component : study.getComponentList()) {
                 SidebarComponent sidebarComponent =
                         new SidebarStudy.SidebarComponent();
@@ -477,10 +478,10 @@ public class JsonUtils {
                 sidebarComponent.title = component.getTitle();
                 sidebarStudy.componentList.add(sidebarComponent);
             }
-            sidebarStudyList.add(sidebarStudy);
+            sidebarData.add(sidebarStudy);
         }
-        sidebarStudyList.sort(new SidebarStudyComparator());
-        return asJsonNode(sidebarStudyList);
+        sidebarData.sort(new SidebarStudyComparator());
+        return asJsonNode(sidebarData);
     }
 
     /**
