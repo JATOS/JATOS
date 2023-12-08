@@ -1,24 +1,5 @@
-html,
-body,
-main {
-  height: 100%;
-}
-
 .signin-all {
     max-width: 300px;
-}
-
-.btn-outline-signin {
-    color: #000;
-    background-color: white;
-    background-image: none;
-    border-color: #ddd
-}
-
-.btn-outline-signin:hover {
-    color: #000;
-    background-color: #eee;
-    border-color: #ccc
 }
 
 .signin-form .form-floating:focus-within {
@@ -36,14 +17,12 @@ main {
   border-top-right-radius: 0;
 }
 
-/* Fix padding of Google sign-in iFrame */
-iframe[src^="https://accounts.google.com"] {
-    color-scheme: normal;
+/* Fix flickering */
+#signin-google {
+    height: 40px;
 }
 
-.bi {
-  width: 1em;
-  height: 1em;
-  vertical-align: -.125em;
-  fill: currentcolor;
+/* Fix white padding of Google sign-in iframe */
+iframe[src^="https://accounts.google.com"] {
+    color-scheme: normal;
 }
