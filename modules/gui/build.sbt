@@ -4,10 +4,6 @@ organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
 
-includeFilter in(Assets, LessKeys.less) := "*.less"
-
-excludeFilter in(Assets, LessKeys.less) := "_*.less"
-
 libraryDependencies ++= Seq(
   javaCore,
   javaJdbc,
