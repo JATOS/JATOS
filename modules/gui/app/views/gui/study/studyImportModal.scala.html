@@ -1,5 +1,5 @@
 <!-- Confirmation Modal - Study Import -->
-<div class="modal fade" id="confirmModalStudyImport" tabindex="-1" role="dialog" data-backdrop="static">
+<div class="modal fade" id="confirmModalStudyImport" tabindex="-1" data-backdrop="static">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -201,7 +201,7 @@ function postStudyImportConfirm(jsonData) {
         success: function(result) {
             var msgs = JSON.parse(result);
             showMessages(msgs, true);
-            fillSidebar();
+            drawSidebar();
             if (typeof componentsTable !== 'undefined') {
                 componentsTable.ajax.reload();
             }

@@ -3,7 +3,7 @@
 @views.html.gui.main(signedinUser, breadcrumbs) {
 
 <div id="adminToolbar" class="btn-toolbar" role="toolbar">
-    <div class="btn-group">
+    <div class="btn-group" role="group">
         <button id="userManager" type="button" class="btn btn-admin" data-toggle="tooltip" data-placement="bottom"
                 title="Create, deactivate, or delete users; change their passwords">
             <span class="glyphicon glyphicon-user"></span>&nbsp;User&nbsp;Manager
@@ -106,7 +106,7 @@
 </div>
 
 <!-- Update JATOS - release notes modal -->
-<div class="modal fade" id="releaseNotesModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="releaseNotesModal" data-backdrop="static" data-keyboard="true" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -126,7 +126,7 @@
 </div>
 
 <!-- Update JATOS - confirmation modal -->
-<div class="modal fade" id="updateJatosModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+<div class="modal fade" id="updateJatosModal" data-backdrop="static" data-keyboard="false" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -150,7 +150,7 @@
 </div>
 
 <!-- List logs directory Modal -->
-<div class="modal fade" id="listLogsModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="listLogsModal" data-backdrop="static" data-keyboard="true" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -168,7 +168,7 @@
 </div>
 
 <!-- Log Modal -->
-<div class="modal fade" id="logModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="logModal" data-backdrop="static" data-keyboard="true" tabindex="-1">
     <div class="modal-dialog modal-xxl">
         <div class="modal-content">
             <div class="modal-header">
@@ -185,7 +185,7 @@
 </div>
 
 <!-- System info Modal -->
-<div class="modal fade" id="systemInfoModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="systemInfoModal" data-backdrop="static" data-keyboard="true" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -264,7 +264,7 @@
 </div>
 
 <!-- Tests Modal -->
-<div class="modal fade" id="testsModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="testsModal" data-backdrop="static" data-keyboard="true" tabindex="-1">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header">
@@ -502,7 +502,8 @@ function getJatosStatus() {
             $("#jatosStatus").show();
             $("#latestUsers .table > tbody:last-child").append(fillLatestUsers(status.latestUsers));
             $("#latestStudyRuns .table > tbody:last-child").append(fillLatestStudyRuns(status.latestStudyRuns));
-            $('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
+            //$('[data-toggle="popover"]').popover(); // Activate tooltips with popper.js
+            $("#latestUsers .timeago, #latestStudyRuns .timeago").each((i, e) => timeago.render(e)); // Render timeago
         },
         error: function () {
             console.warn("Couldn't get JATOS status.");
@@ -518,7 +519,7 @@ function fillLatestUsers(latestUsers) {
     var htmlArray = [];
     latestUsers.forEach(function(e) {
         htmlArray.push("<tr>");
-        htmlArray.push(`<td data-toggle="tooltip" title="${getFormattedDate(e.time)}">${timeago.format(e.time)}</td>`);
+        htmlArray.push(`<td class="timeago" datetime="${new Date(e.time).toISOString()}" data-toggle="tooltip" title="${getFormattedDate(e.time)}"></td>`);
         htmlArray.push(`<td>${generateFullUserString(e.name, e.username, e.authMethod)}</td>`);
         htmlArray.push("</tr>");
     });
@@ -532,9 +533,6 @@ function fillLatestStudyRuns(latestStudyRuns) {
 
     const htmlArray = [];
     latestStudyRuns.forEach(function(studyRun) {
-        const trimmedStudyTitle = studyRun.studyTitle.length > 50
-                ? studyRun.studyTitle.substring(0, 47) + "..."
-                : studyRun.studyTitle;
         let membersHtml;
         if (studyRun.members.length < 4 ) {
             membersHtml = studyRun.members.map((m) => generateFullUserString(m.name, m.username, m.authMethod)).join("<br>");
@@ -545,8 +543,8 @@ function fillLatestStudyRuns(latestStudyRuns) {
                     data-content="${m}">show all</button>`;
         }
         htmlArray.push("<tr>");
-        htmlArray.push(`<td><span data-toggle="tooltip" title="${getFormattedDate(studyRun.time)}">${timeago.format(studyRun.time)}</span></td>`);
-        htmlArray.push(`<td>${trimmedStudyTitle}</td>`);
+        htmlArray.push(`<td><span class="timeago" datetime="${new Date(studyRun.time).toISOString()}" data-toggle="tooltip" title="${getFormattedDate(studyRun.time)}"></span></td>`);
+        htmlArray.push(`<td>${trimTextWithThreeDots(studyRun.studyTitle, 50)}</td>`);
         htmlArray.push(`<td>${membersHtml}</td>`);
         htmlArray.push("</tr>");
     });

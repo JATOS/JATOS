@@ -9,19 +9,14 @@
     </div>
 </div>
 
-<!-- Toolbar -->
-<div id="studyToolbar" class="btn-toolbar toolbarFlexWrap" role="toolbar">
-    <div class="btn-group toolbarFlexWrap" role="group">
-        <button id="runStudy" type="button" class="btn btn-study"
-                data-toggle="tooltip" data-placement="bottom"
-                title="Runs the study as a JATOS worker in the default batch">
-            Run <span class="glyphicon glyphicon-play"></span>
+<!-- Study toolbar -->
+<div class="btn-toolbar" id="studyToolbar" role="toolbar">
+    <div class="btn-group" role="group">
+        <button class="btn btn-study" id="runStudy" type="button"  data-bs-toggle="tooltip" title="Do a test run of your study">
+            <i class="bi-play-circle pe-1"></i>Run
         </button>
-        <button id="studyResults" type="button" class="btn btn-study"
-                data-toggle="tooltip" data-placement="bottom"
-                title="Shows study results">
-            Study Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
-                          title="Number of study results of this study">@studyResultsCount</span>
+        <button class="btn btn-study" id="studyResults" type="button" data-bs-toggle="tooltip" title="Show your study results">
+            Study Results <span class="badge rounded-pill" data-bs-toggle="tooltip" title="Number of study results of this study">@studyResultsCount</span>
         </button>
         <button id="studyPropertiesButton" type="button" class="btn btn-study"
                 data-toggle="tooltip" data-placement="bottom"
@@ -278,7 +273,7 @@ $(document).ready(function() {
             type : "POST",
             success : function(response) {
                 componentsTable.ajax.reload();
-                fillSidebar();
+                drawSidebar();
             },
             error : function(err) {
                 showError(err.responseText);
@@ -303,7 +298,7 @@ $(document).ready(function() {
             success: function(result) {
                 showMessages(JSON.parse(result));
                 componentsTable.ajax.reload();
-                fillSidebar();
+                drawSidebar();
             },
             error : function(err) {
                 showError(err.responseText);
@@ -328,7 +323,7 @@ $(document).ready(function() {
                 success : function(result) {
                     showMessages(JSON.parse(result));
                     componentsTable.ajax.reload();
-                    fillSidebar();
+                    drawSidebar();
                 },
                 error : function(err) {
                     showError(err.responseText);
@@ -405,7 +400,7 @@ $('#studyToolbar').on('click', '#lockStudy', function() {
         success : function(response) {
             studyLocked = response === 'true';
             setLockButton(studyLocked);
-            fillSidebar();
+            drawSidebar();
         },
         error : function(err) {
             showError(err.responseText);
@@ -473,7 +468,7 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
         url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
         type : 'GET',
         success : function(response) {
-            fillSidebar();
+            drawSidebar();
             var msg = 'Created clone "' + response.title + '". ' +
                 '<a href="@{general.common.Common.getJatosUrlBasePath()}jatos/' + response.id + '">Go to this study.</a>';
             showSuccess(msg, null, true);

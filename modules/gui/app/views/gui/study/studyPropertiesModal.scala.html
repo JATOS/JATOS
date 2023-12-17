@@ -1,4 +1,4 @@
-<div class="modal fade" id="studyPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+<div class="modal fade" id="studyPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="studyPropertiesForm" method="post" class="form-horizontal" role="form">
@@ -123,7 +123,7 @@
 </div>
 
 <!-- Rename study dir name confirmation  Modal -->
-<div class="modal fade" id="studyDirNameConfirmationModal" data-backdrop="static" tabindex="-1" role="dialog">
+<div class="modal fade" id="studyDirNameConfirmationModal" data-backdrop="static" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -291,7 +291,7 @@ function submitStudyPropertiesForm() {
                 // New study's ID is in the response
                 window.location.href = "@{general.common.Common.getJatosUrlBasePath()}jatos/" + response;
             } else {
-                fillSidebar();
+                drawSidebar();
                 var title = $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
                 $('#breadcrumbs li:last-child').text(title);
                 var studyDescription = $('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').val();

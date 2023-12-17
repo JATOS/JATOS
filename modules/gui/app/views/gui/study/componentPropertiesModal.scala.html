@@ -1,6 +1,6 @@
 @(study: common.Study)
 
-<div class="modal fade" id="componentPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+<div class="modal fade" id="componentPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="componentPropertiesForm" method="post" class="form-horizontal" role="form">
@@ -76,7 +76,7 @@
 </div>
 
 <!-- Rename HTML filename confirmation  Modal -->
-<div class="modal fade" id="htmlFileNameConfirmationModal" data-backdrop="static"  tabindex="-1" role="dialog">
+<div class="modal fade" id="htmlFileNameConfirmationModal" data-backdrop="static"  tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -230,7 +230,7 @@ function submitComponentPropertiesForm() {
             removeAlerts("#componentPropertiesModal");
             removeFormErrors("#componentPropertiesModal");
             $('#componentPropertiesModal').modal('hide');
-            fillSidebar();
+            drawSidebar();
             componentsTable.ajax.reload();
         },
         error : function(response) {

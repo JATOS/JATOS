@@ -5,11 +5,11 @@
 <table id="userTable" class="table top-buffer">
     <thead>
         <tr>
-            <th data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user">Studies <span class="glyphicon sortLogo gray-light"/></th>
+            <th data-toggle="tooltip" data-placement="bottom" title="Expand to see all studies that belong to this user">Studies <span class="glyphicon sort-logo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study administration.">Active</th>
-            <th>Username <span class="glyphicon sortLogo gray-light"/></th>
-            <th>Name <span class="glyphicon sortLogo gray-light"/></th>
-            <th>Email <span class="glyphicon sortLogo gray-light"/></th>
+            <th>Username <span class="glyphicon sort-logo gray-light"/></th>
+            <th>Name <span class="glyphicon sort-logo gray-light"/></th>
+            <th>Email <span class="glyphicon sort-logo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Last successful sign-in of this user">Last sign-in <span class="glyphicon sortLogo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Authentication method: locally stored, LDAP, Google or OIDC">Auth <span class="glyphicon sortLogo gray-light"/></th>
             <th data-toggle="tooltip" data-placement="bottom" title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser</th>
@@ -68,7 +68,7 @@
 </div>
 
 <!-- Create User Modal -->
-<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="true" tabindex="-1" role="dialog">
+<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="true" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="createUserForm" method="post" class="form-horizontal" role="form">
@@ -128,7 +128,7 @@
     </div>
 </div>
 
-@views.html.gui.admin.editProfile(signedinUser)
+@views.html.gui.admin.userSettings(signedinUser)
 
 <script @{helper.CSPNonce.attr}>
 

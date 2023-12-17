@@ -6,14 +6,14 @@
     <thead>
     <tr>
         <th data-toggle="tooltip" title="A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still see and edit the study and export its result data.">Active</th>
-        <th>ID <span class="glyphicon sortLogo gray-light"/></th>
-        <th>Title <span class="glyphicon sortLogo gray-light"/></th>
-        <th data-toggle="tooltip" title="All users who are member of this study">Members <span class="glyphicon sortLogo gray-light"/></th>
-        <th data-toggle="tooltip" title="Size of study assets folder">Study Assets Size <span class="glyphicon sortLogo gray-light"/></th>
-        <th data-toggle="tooltip" title="Number of study results">Result Count <span class="glyphicon sortLogo gray-light"/></th>
-        <th data-toggle="tooltip" title="Size of result data: total for all study runs (average per result in brackets)">Result Data Size <span class="glyphicon sortLogo gray-light"/></th>
-        <th data-toggle="tooltip" title="Size of uploaded result files: total for all study runs (average per result in brackets)">Result File Size <span class="glyphicon sortLogo gray-light"/></th>
-        <th data-toggle="tooltip" title="When was this study last started by a participant?">Last Started <span class="glyphicon sortLogo gray-light"/></th>
+        <th>ID <span class="glyphicon sort-logo gray-light"/></th>
+        <th>Title <span class="glyphicon sort-logo gray-light"/></th>
+        <th data-toggle="tooltip" title="All users who are member of this study">Members <span class="glyphicon sort-logo gray-light"/></th>
+        <th data-toggle="tooltip" title="Size of study assets folder">Study Assets Size <span class="glyphicon sort-logo gray-light"/></th>
+        <th data-toggle="tooltip" title="Number of study results">Result Count <span class="glyphicon sort-logo gray-light"/></th>
+        <th data-toggle="tooltip" title="Size of result data: total for all study runs (average per result in brackets)">Result Data Size <span class="glyphicon sort-logo gray-light"/></th>
+        <th data-toggle="tooltip" title="Size of uploaded result files: total for all study runs (average per result in brackets)">Result File Size <span class="glyphicon sort-logo gray-light"/></th>
+        <th data-toggle="tooltip" title="When was this study last started by a participant?">Last Started <span class="glyphicon sort-logo gray-light"/></th>
     </tr>
     </thead>
 </table>
@@ -69,9 +69,7 @@ $(document).ready(function() {
             {
                 "data": "title",
                 "width": "30%",
-                "render": function (data, type, full, meta) {
-                    return trimTextWithThreeDots(data, 50);
-                }
+                "render": (data) => trimTextWithThreeDots(data, 50)
             },
             {
                 "data": null,

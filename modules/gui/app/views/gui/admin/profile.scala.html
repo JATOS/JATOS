@@ -20,9 +20,6 @@
     <!-- filled via JavaScript -->
 </ul>
 
-@views.html.gui.admin.editProfile(signedinUser)
-@views.html.gui.admin.apiTokensModal(request)
-
 <script @{helper.CSPNonce.attr}>
 @if(signedinUser.isSuperuser()) {
 showInfo("As a Superuser you have access to all studies like a study member.");

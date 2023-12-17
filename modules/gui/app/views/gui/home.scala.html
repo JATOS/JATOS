@@ -2,20 +2,24 @@
 
 @views.html.gui.main(signedinUser, breadcrumbs) {
 
-<div id="branding" class="rounded-3 bg-body-tertiary text-center p-3 mb-3">
+<div id="branding" class="rounded-3 bg-body-tertiary text-center p-5 mb-3">
     <!-- The HTML for branding can be loaded dynamically from an external source. -->
-    <img class="m-3" src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
-    <h1>JATOS</h1>
-    <p>Version @general.common.Common.getJatosVersion()</p>
-    <p>Simply set up your own online studies.</p>
-    <p><a href="http://www.jatos.org/Whats-JATOS.html" class="btn btn-link" role="button" target="_blank">Learn more in our docs &raquo;</a></p>
+    <img class="mb-3" src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
+    <h1 data-bs-toggle="tooltip" title="Just Another Tool for Online Studies">JATOS</h1>
+    <div class="fw-light">Version @general.common.Common.getJatosVersion()</div>
+    <div class="fw-medium">Simply set up your own online studies.</div>
 </div>
 
-<div id="localFileLocation" class="rounded-3 bg-body-tertiary text-center p-3 mb-3 d-none">
-    <p class="fw-bold">Where are my files?</p>
-    Your study assets root path is: <span class="font-monospace fs-6">@general.common.Common.getStudyAssetsRootPath()</span><br>
-    Your result upload files path is: <span class="font-monospace fs-6">@general.common.Common.getResultUploadsPath()</span><br>
-    Your JATOS installation is in: <span class="font-monospace fs-6">@general.common.Common.getBasepath()</span>
+<div id="localFileLocation" class="rounded-3 bg-body-tertiary p-3 mb-3 d-none">
+    <h5 class="text-center">Where are my files?</h5>
+    <dl class="row text-break mb-0">
+        <dt class="col-sm-6 text-end">Your study assets root path is:</dt>
+        <dd class="col-sm-6 font-monospace">@general.common.Common.getStudyAssetsRootPath()</dd>
+        <dt class="col-sm-6 text-end">Your result upload files path is:</dt>
+        <dd class="col-sm-6 font-monospace">@general.common.Common.getResultUploadsPath()</dd>
+        <dt class="col-sm-6 text-end">Your JATOS installation is in:</dt>
+        <dd class="col-sm-6 font-monospace">@general.common.Common.getBasepath()</dd>
+    </dl>
 </div>
 
 <script @{helper.CSPNonce.attr}>
