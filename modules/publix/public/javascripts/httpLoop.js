@@ -74,7 +74,6 @@ function run() {
 			run(); // Run the next request in line
 		} else {
 			handleErrorAndRetry(false);
-			setTimeout(run, request.retryWait); // Run the next request after waiting a bit
 		}
 	};
 	xhr.ontimeout = function () { handleErrorAndRetry(true) };
@@ -104,6 +103,7 @@ function run() {
 			request.retry = request.retry - 1;
 			requests.unshift(request); // Retry this request before other requests
 		}
+		setTimeout(run, request.retryWait); // Run the next request after handling the error (regardless of error origin)
 	}
 
 	// Actual sending of data
