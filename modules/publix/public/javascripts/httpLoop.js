@@ -74,7 +74,6 @@ function run() {
 			run(); // Run the next request in line
 		} else {
 			handleErrorAndRetry(false);
-			setTimeout(run, request.retryWait); // Run the next request after waiting a bit
 		}
 	};
 	xhr.ontimeout = function () { handleErrorAndRetry(true) };
@@ -99,10 +98,12 @@ function run() {
 				msg.error = xhr.responseText.trim() || null;
 			}
 			self.postMessage(msg);
+			run(); // Run the next request in line without waiting
 		} else {
 			console.log("Retry " + request.method + " to " + request.url);
 			request.retry = request.retry - 1;
 			requests.unshift(request); // Retry this request before other requests
+			setTimeout(run, request.retryWait); // Run the next request after waiting a bit
 		}
 	}
 
