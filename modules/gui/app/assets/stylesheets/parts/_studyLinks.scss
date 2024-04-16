@@ -23,3 +23,9 @@
     --bs-pagination-active-bg: $batch-color;
     --bs-pagination-active-border-color: $batch-color;
 }
+
+#studyLinksDisplayModal .direct-link.hide,
+#studyLinksDisplayModal .confirm-link.hide {
+    visibility: hidden;
+    height: 0;
+}
