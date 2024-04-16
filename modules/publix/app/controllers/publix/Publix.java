@@ -131,14 +131,14 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         String studySessionData = request.body().asText();
         studyResultDao.updateStudySessionData(studyResult.getId(), studySessionData);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     @Override
     public Result heartbeat(Request request, StudyResult studyResult) {
         studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
         studyResultDao.update(studyResult);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     @Override
@@ -177,7 +177,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         }
 
         studyLogger.logResultDataStoring(componentResult.get(), postedResultData, append);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     @Override
@@ -271,7 +271,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         studyLogger.log(study, "Aborted study run", worker);
 
         if (Helpers.isAjax()) {
-            return ok(" "); // jQuery.ajax cannot handle empty responses
+            return ok();
         } else {
             return ok(views.html.publix.abort.render());
         }
@@ -293,7 +293,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
         studyLogger.log(study, "Finished study run", worker);
 
         if (Helpers.isAjax()) {
-            return ok(" "); // jQuery.ajax cannot handle empty responses
+            return ok();
         } else {
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
@@ -316,7 +316,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
                 + "componentId" + component.getId() + ", "
                 + "workerId " + worker.getId() + ", "
                 + "message '" + msg + "'");
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
 }

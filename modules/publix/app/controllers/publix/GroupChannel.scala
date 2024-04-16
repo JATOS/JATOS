@@ -44,7 +44,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
 
   @Inject
   @Named("group-dispatcher-registry-actor")
-  var groupDispatcherRegistry: ActorRef = _
+  private var groupDispatcherRegistry: ActorRef = _
 
   @Inject
   var groupAdministration: GroupAdministration = _
@@ -131,7 +131,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
         logger.info(s".reassign: studyResult ${studyResult.getId}, workerId ${worker.getId} reassigned from group" +
           s" ${currentGroupResult.getId} to group ${differentGroupResult.getId}")
     }
-    Ok(" ") // jQuery.ajax cannot handle empty responses
+    Ok("")
   }
 
   /**
@@ -150,12 +150,12 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     if (groupResult == null) {
       logger.info(s".leave: studyResult ${studyResult.getId}, workerId ${worker.getId} " +
         s"isn't member of a group - can't leave.")
-      return Ok(" ") // jQuery.ajax cannot handle empty responses
+      return Ok("")
     }
 
     closeGroupChannelAndLeaveGroup(studyResult)
     logger.info(s".leave: studyResult ${studyResult.getId}, workerId ${worker.getId} left group ${groupResult.getId}")
-    Ok(" ") // jQuery.ajax cannot handle empty responses
+    Ok("")
   }
 
   /**
@@ -246,7 +246,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     * Reassigns the given group channel that is associated with the given StudyResult. It moves the group channel from
     * the current GroupDispatcher to a different one that is associated with the given GroupResult.
     */
-  def reassignGroupChannel(studyResult: StudyResult,
+  private def reassignGroupChannel(studyResult: StudyResult,
                            currentGroupResult: GroupResult,
                            differentGroupResult: GroupResult): Unit = {
     val currentDispatcher = getDispatcher(currentGroupResult.getId).get

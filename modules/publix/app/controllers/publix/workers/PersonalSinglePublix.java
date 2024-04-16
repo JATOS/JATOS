@@ -101,7 +101,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
         Component component = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
-                + "studyResultId" + studyResult.getId() + ", "
+                + "studyResultId " + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId() + ", "

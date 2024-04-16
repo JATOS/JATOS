@@ -81,12 +81,12 @@ public class PublixErrorMessages {
 	}
 
 	public static String couldntExtractFromIdCookie(String idCookieName, String key) {
-		return "Couldn't extract " + key + " from JATOS ID cookie " + idCookieName + ". If this problem persists try" +
-				" deleting JATOS cookies for this domain in your browser.";
+		return "Couldn't extract " + key + " from JATOS ID cookie " + idCookieName + ". If this problem persists try " +
+				"deleting JATOS cookies for this domain in your browser.";
 	}
 
 	public static String couldntExtractIndexFromIdCookieName(String idCookieName) {
-		return "Couldn't extract index from ID cookie's name " + idCookieName + ". Try deleting JATOS cookies for" +
+		return "Couldn't extract index from ID cookie's name " + idCookieName + ". Try deleting JATOS cookies for " +
 		"this domain in your browser.";
 	}
 
@@ -95,7 +95,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String idCookieExistsAlready(Long studyResultId) {
-		return "An IdCookie with study result ID " + studyResultId + " exists already. Try deleting JATOS cookies for" +
+		return "An IdCookie with study result ID " + studyResultId + " already exists. Try deleting JATOS cookies for " +
 				"this domain in your browser.";
 	}
 

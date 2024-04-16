@@ -122,7 +122,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
-                + "studyResultId" + studyResult.getId() + ", "
+                + "studyResultId " + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId() + ", "

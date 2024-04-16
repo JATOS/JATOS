@@ -111,7 +111,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
         String username = request.session().getOptional(JatosPublix.SESSION_USERNAME).orElse("unknown");
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
-                + "studyResultId" + studyResult.getId() + ", "
+                + "studyResultId " + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "signed-in username " + username + ", "
@@ -181,7 +181,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         studyLogger.log(study, "Aborted study run", worker);
 
         if (Helpers.isAjax()) {
-            return ok(" "); // jQuery.ajax cannot handle empty responses
+            return ok();
         }
         if (message != null) {
             return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId())
@@ -207,7 +207,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         studyLogger.log(study, "Finished study run", worker);
 
         if (Helpers.isAjax()) {
-            return ok(" "); // jQuery.ajax cannot handle empty responses
+            return ok();
         }
         if (message != null) {
             return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId())
