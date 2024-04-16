@@ -81,9 +81,9 @@ public class Common {
     private static boolean studyMembersAllowedToAddAllUsers;
     private static boolean idCookiesSecure;
     private static Http.Cookie.SameSite idCookiesSameSite;
-    private static boolean showStudyAssetsSizeInStudyAdmin;
-    private static boolean showResultDataSizeInStudyAdmin;
-    private static boolean showResultFileSizeInStudyAdmin;
+    private static boolean showStudyAssetsSizeInStudyManager;
+    private static boolean showResultDataSizeInStudyManager;
+    private static boolean showResultFileSizeInStudyManager;
     private static boolean userRoleAllowSuperuser;
     private static boolean jatosApiAllowed;
     private static String logsPath;
@@ -97,13 +97,12 @@ public class Common {
      * (the regexes are from https://stackoverflow.com/questions/19605150)
      */
     private static final List<Pair<String, String>> userPasswordStrengthRegexList = Arrays.asList(
-            Pair.of("No restrictions on characters.", "^.*$"),
-            Pair.of("At least one Latin letter and one number.",
+            Pair.of("The password has no further restrictions on the type of characters.", "^.*$"),
+            Pair.of("The password must have at least one Latin letter and one number.",
                     "^(?=.*?[A-Za-z])(?=.*?[0-9]).{2,}$"),
-            Pair.of("At least one Latin letter, one number and one special character (#?!@$%^&*-).",
+            Pair.of("The password must have at least one Latin letter, one number and one special character (#?!@$%^&*-).",
                     "^(?=.*?[A-Za-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{3,}$"),
-            Pair.of("At least one uppercase Latin letter, one lowercase Latin letter, one number and one special "
-                            + "character (#?!@$%^&*-).",
+            Pair.of("The password must have at least one uppercase Latin letter, one lowercase Latin letter, one number and one special character (#?!@$%^&*-).",
                     "^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{4,}"));
 
     @Inject
@@ -167,9 +166,9 @@ public class Common {
         studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
         idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
         idCookiesSameSite = fillIdCookiesSameSite(config);
-        showStudyAssetsSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showStudyAssetsSize");
-        showResultDataSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultDataSize");
-        showResultFileSizeInStudyAdmin = config.getBoolean("jatos.studyAdmin.showResultFileSize");
+        showStudyAssetsSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showStudyAssetsSize");
+        showResultDataSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultDataSize");
+        showResultFileSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
         logsPath = obtainPath(config, "jatos.logs.path");
@@ -606,24 +605,24 @@ public class Common {
     }
 
     /**
-     * If false, the study assets folder size won't be calculated for the study admin page. Sometimes the filesystem is too slow to allow this.
+     * If false, the study assets folder size won't be calculated for the study manager page. Sometimes the filesystem is too slow to allow this.
      */
-    public static boolean showStudyAssetsSizeInStudyAdmin() {
-        return showStudyAssetsSizeInStudyAdmin;
+    public static boolean showStudyAssetsSizeInStudyManager() {
+        return showStudyAssetsSizeInStudyManager;
     }
 
     /**
-     * If false, the result data size won't be calculated for the study admin page. Sometime the database is too slow to allow this.
+     * If false, the result data size won't be calculated for the study manager page. Sometime the database is too slow to allow this.
      */
-    public static boolean showResultDataSizeInStudyAdmin() {
-        return showResultDataSizeInStudyAdmin;
+    public static boolean showResultDataSizeInStudyManager() {
+        return showResultDataSizeInStudyManager;
     }
 
     /**
-     * If false, the study result file size won't be calculated for the study admin page. Sometimes the filesystem is too slow to allow this.
+     * If false, the study result file size won't be calculated for the study manager page. Sometimes the filesystem is too slow to allow this.
      */
-    public static boolean showResultFileSizeInStudyAdmin() {
-        return showResultFileSizeInStudyAdmin;
+    public static boolean showResultFileSizeInStudyManager() {
+        return showResultFileSizeInStudyManager;
     }
 
     /**
