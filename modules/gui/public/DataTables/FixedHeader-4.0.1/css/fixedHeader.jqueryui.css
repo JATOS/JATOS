@@ -1,0 +1,11 @@
+table.dataTable.fixedHeader-floating,
+table.dataTable.fixedHeader-locked {
+  position: relative !important;
+  background-color: white;
+}
+
+@media print {
+  table.fixedHeader-floating {
+    display: none;
+  }
+}
