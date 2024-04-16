@@ -1,0 +1,5 @@
+// Change color of pagination button
+#studyMemberUsersModal .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $study-color;
+    --bs-pagination-active-border-color: $study-color;
+}

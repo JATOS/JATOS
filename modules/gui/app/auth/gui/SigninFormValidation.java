@@ -35,13 +35,12 @@ public class SigninFormValidation {
 
     /**
      * Validates a NewUserModel and returns a Form with errors. It also checks if the user already exists in the
-     * database. Usually this is done in the model class, but since here the user DAO is needed I put it in an extra
+     * database. Usually this is done in the model class, but since here the user DAO is needed, I put it in an extra
      * class. In the NewUserModel are still some simple validations.
      */
     public Form<NewUserModel> validateNewUser(Form<NewUserModel> form) {
         String normalizedUsername = User.normalizeUsername(form.get().getUsername());
         String password = form.get().getPassword();
-        String passwordRepeat = form.get().getPasswordRepeat();
         String name = form.get().getName();
         String email = form.get().getEmail();
         boolean authByDb = form.get().getAuthByDb();
@@ -87,10 +86,6 @@ public class SigninFormValidation {
                 return form.withError(new ValidationError(NewUserModel.PASSWORD,
                         MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
             }
-            if (passwordRepeat == null || passwordRepeat.trim().isEmpty()) {
-                return form.withError(new ValidationError(NewUserModel.PASSWORD_REPEAT,
-                        MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
-            }
 
             // Check password length as specified in config
             if (password.length() < Common.getUserPasswordMinLength()) {
@@ -102,11 +97,6 @@ public class SigninFormValidation {
             Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
             if (!password.matches(regex.getRight())) {
                 form = form.withError(new ValidationError(NewUserModel.PASSWORD, regex.getLeft()));
-            }
-
-            // Check both passwords equal
-            if (!password.equals(passwordRepeat)) {
-                form = form.withError(new ValidationError(NewUserModel.PASSWORD, MessagesStrings.PASSWORDS_DONT_MATCH));
             }
         }
 

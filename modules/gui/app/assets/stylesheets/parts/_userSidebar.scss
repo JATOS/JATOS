@@ -1,0 +1,50 @@
+minidenticon-svg svg {
+    border-radius: 50%;
+    background-color: currentColor;
+    height: 32px;
+    width: 32px;
+}
+
+#userSidebar .nav-link:hover,
+#userSidebar .dropdown-item:hover {
+    box-shadow: inset 0 0 0 9999px rgba(gray, 0.15);
+}
+
+#colorTheme .dropdown-item .bi-check2 {
+    visibility: hidden;
+}
+
+#colorTheme .dropdown-item.active .bi-check2 {
+    visibility: visible;
+}
+
+#colorTheme .dropdown-menu-end {
+    --bs-dropdown-min-width: 8rem;
+}
+
+#colorTheme .dropdown-item.active {
+    background: unset;
+    color: unset;
+}
+
+// Stack both input fields without gap
+#changeMyPasswordNewPassword:focus-within,
+#changeMyPasswordNewPasswordRepeat:focus-within {
+  z-index: 2;
+  position: relative;
+}
+
+#changeMyPasswordNewPassword {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+#changeMyPasswordNewPasswordRepeat {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+#changeMyPasswordModal button.password-visibility-toggle {
+    border-bottom-right-radius: 0 !important;
+}

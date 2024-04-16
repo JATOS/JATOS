@@ -1,0 +1,371 @@
+@(signedinUser: common.User)
+@import controllers.gui.routes._
+@import auth.gui.routes._
+@import general.common._
+
+@* User sidebar *@
+<aside class="offcanvas offcanvas-end rounded-start-4" tabindex="-1" id="userSidebar">
+    <div class="offcanvas-header d-flex">
+        <div class="me-2">
+            <img class="google-user-img rounded-circle border border-2 p-0 d-none" src="" width="32" height="32" alt="thumbnail">
+            <minidenticon-svg username="@signedinUser.getUsername()" saturation="70" lightness="50"></minidenticon-svg>
+        </div>
+        <div class="offcanvas-title flex-grow-1 text-wrap">
+            <span class="fw-bold" id="userSidebarUsername">@signedinUser.getUsername()</span>
+            (<span class="fw-medium" id="userSidebarName">@signedinUser.getName()</span>)
+            <span class="badge bg-secondary no-info-icon" id="userSidebarAuthMethod" data-toggle="tooltip" title="The account type you used to sign in.">xxx</span>
+            @if(signedinUser.isAdmin()) {
+            <span class="badge bg-secondary no-info-icon" data-toggle="tooltip" title="Users with admin rights can create/change/delete other users.">Admin</span>
+            }
+            @if(signedinUser.isSuperuser()) {
+            <span class="badge bg-secondary no-info-icon" data-toggle="tooltip" title="Superusers can access every study.">Superuser</span>
+            }
+        </div>
+        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="offcanvas"></button>
+    </div>
+
+    <div class="offcanvas-body">
+
+        <ul class="navbar-nav">
+            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+                <button class="nav-link w-100 text-start p-2" type="button" data-bs-toggle="modal" data-bs-target="#myUserSettingsModal">
+                    <i class="bi-gear-fill pe-1"></i>My settings
+                </button>
+            </li>
+
+            @if(signedinUser.isDb()) {
+            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+                <button class="nav-link w-100 text-start p-2" type="button" data-bs-toggle="modal" data-bs-target="#changeMyPasswordModal">
+                    <i class="bi-lock-fill pe-1"></i>My password
+                </button>
+            </li>
+            }
+
+            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+                <button class="nav-link w-100 text-start p-2" type="button" data-bs-toggle="modal" data-bs-target="#apiTokensModal">
+                    <i class="bi-key-fill pe-1"></i>My API tokens
+                </button>
+            </li>
+            <li class="nav-item"><hr></li>
+
+            @if(!signedinUser.getUsername().equals("admin")) {
+            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+                <button class="nav-link w-100 text-start p-2" id="deleteMyUserSidebarItem" type="button" data-bs-toggle="modal" data-bs-target="#deleteMyUserModal">
+                    <i class="bi-x-circle-fill pe-1"></i>Delete my user
+                </button>
+            </li>
+            <li class="nav-item"><hr></li>
+            }
+
+            @* Color theme *@
+            <li class="nav-item" id="colorTheme">
+                <button class="nav-link w-100 text-start p-2 dropdown-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colorThemeDetails">
+                        <span class="pe-1 theme-icon-active"><i class="bi-sun-fill"></i></span><span id="colorThemeText">Color theme</span>
+                </button>
+                <div class="collapse" id="colorThemeDetails">
+                    <button class="dropdown-item d-flex align-items-center ms-4 p-1" type="button"  data-bs-theme-value="light">
+                        <i class="bi-check2 me-2"></i>
+                        <span class="pe-1 theme-icon"><i class="bi-sun-fill"></i></span>
+                        Light
+                    </button>
+                    <button class="dropdown-item d-flex align-items-center ms-4 p-1" type="button"  data-bs-theme-value="dark">
+                        <i class="bi-check2 me-2"></i>
+                        <span class="pe-1 theme-icon"><i class="bi-moon-stars-fill"></i></span>
+                        Dark
+                    </button>
+                    <button class="dropdown-item d-flex align-items-center ms-4 p-1" type="button"  data-bs-theme-value="system">
+                        <i class="bi-check2 me-2"></i>
+                        <span class="pe-1 theme-icon"><i class="bi-circle-half"></i></span>
+                        System
+                    </button>
+                </div>
+            </li>
+            <li class="nav-item"><hr></li>
+
+            <li class="nav-item">
+                <a class="nav-link w-100 text-start p-2" href="@{Common.getJatosUrlBasePath()}jatos/signout">
+                    <i class="bi-door-closed pe-1"></i>Sign out
+                </a>
+            </li>
+        </ul>
+    </div>
+</aside>
+
+@* Edit user settings Modal *@
+<div class="modal fade" id="myUserSettingsModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="form-admin" id="myUserSettingsForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">My settings</h5>
+                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="myUserSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="myUserSettingsName" name="name" autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="myUserSettingsEmail" class="col-sm-3 col-form-label">Email</label>
+                        <div class="col-sm-9">
+                            <input type="email" class="form-control" id="myUserSettingsEmail" name="email" autocomplete="email">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="myUserSettingsConfirm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Change user password Modal *@
+<div class="modal fade" id="changeMyPasswordModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="form-admin" id="changeMyPasswordForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change password</h5>
+                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="changeMyPasswordOldPassword" class="col-sm-4 col-form-label input-required">Old password</label>
+                        <div class="col-sm-8">
+                            <input type="password" class="form-control" id="changeMyPasswordOldPassword" name="oldPassword" placeholder="Old password" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3" id="changeMyPasswordNewPasswordDiv">
+                        <label for="changeMyPasswordNewPassword" class="col-sm-4 col-form-label input-required">New password</label>
+                        <div class="col-sm-8">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="changeMyPasswordNewPassword" name="newPassword" placeholder="New password" autocomplete="off" required>
+                                <button class="btn btn-nav password-visibility-toggle" type="button"><i></i></button>
+                            </div>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="changeMyPasswordNewPasswordRepeat" name="newPasswordRepeat" placeholder="Repeat the new password" autocomplete="off" required>
+                            </div>
+                            <span class="form-text" id="changeMyPasswordStrengthDescription">xxx</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="changeMyPasswordUsername" name="username" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="changeMyPasswordConfirm">Change</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Delete user confirmation Modal *@
+<div class="modal fade" id="deleteMyUserModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="form-danger" id="deleteMyUserForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm user deletion</h5>
+                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="deleteMyUserConfirmationText"></div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="deleteMyUserSafetyCheck">
+                            <label class="form-check-label" for="deleteMyUserSafetyCheck">
+                                Check this box, if you really want to delete your user
+                            </label>
+                        </div>
+                    </div>
+                    @if(!signedinUser.isOauthGoogle() && !signedinUser.isOidc() && !signedinUser.isOrcid()){
+                    <div class="d-flex mb-3">
+                        <label for="deleteMyUserPassword" class="col-form-label input-required" id="deleteMyUserPasswordLabel">Your password</label>
+                        <div class="flex-grow-1 ms-2 p-0">
+                            <input type="password" class="form-control" id="deleteMyUserPassword" name="password" placeholder="Your password" autocomplete="off" required>
+                        </div>
+                    </div>
+                    } else {
+                    <div class="d-flex mb-3">
+                        <label for="deleteMyUserUsername" class="col-form-label input-required" id="deleteMyUserUsernameLabel">Your username</label>
+                        <div class="flex-grow-1 ms-2 p-0">
+                            <input type="text" class="form-control" id="deleteMyUserUsername"  name="username" autocomplete="off" required>
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteMyUserConfirm">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as PasswordVisibilityToggle from "@routes.Assets.versioned("lib/jatos-gui/javascripts/passwordVisibilityToggle.js")";
+
+    const alerts = new Alerts.Named("user-sidebar");
+    $("#myUserSettingsModal, #changeMyPasswordModal, #deleteMyUserModal").on('hide.bs.modal', alerts.hideAll);
+    $("#userSidebar").on('show.bs.offcanvas', Alerts.hideAll);
+
+    Helpers.preventFormSubmitViaEnter("#myUserSettingsForm, #changeMyPasswordForm, #deleteMyUserForm");
+
+    // Load the latest user data
+    let user;
+    loadUser();
+    function loadUser() {
+        $.ajax({
+            url: window.routes.Users.singleUserData(window.signedinUser.username),
+            success: function(response) {
+                user = response;
+                $("#userSidebarName").text(user.name);
+                $("#userSidebarUsername").text(user.username);
+                $("#userSidebarAuthMethod").html(Helpers.getAuthMethodText(user.authMethod));
+            },
+            error: function(response) {
+                Alerts.error(response.responseText);
+            }
+        });
+    }
+
+    $("#myUserSettingsModal").on('show.bs.modal', function() {
+        $("#myUserSettingsForm")[0].reset();
+        FormValidation.clear("#myUserSettingsForm");
+        $('#myUserSettingsName').val(user.name);
+        $('#myUserSettingsEmail').val(user.email);
+    });
+
+    $("#myUserSettingsConfirm").click(function(event) {
+        $.ajax({
+            type: 'POST',
+            url : window.routes.Users.edit(user.username),
+            data: $('#myUserSettingsForm').serialize(),
+            success: function(response) {
+                $('#myUserSettingsModal').modal('hide');
+                Alerts.success("Your user settings were changed successfully.");
+                loadUser();
+            },
+            error: function(response) {
+                alerts.warning("Your user settings were not changed.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#myUserSettingsForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+    $("#changeMyPasswordModal").on('show.bs.modal', function() {
+        $("#changeMyPasswordForm")[0].reset();
+        FormValidation.clear("#changeMyPasswordForm");
+        $('#changeMyPasswordModal .modal-title').html(`Change password for "${user.name}" (${user.username})`);
+        $("#changeMyPasswordUsername").val(user.username);
+        PasswordVisibilityToggle.setPasswordVisibility(false);
+        $('#changeMyPasswordStrengthDescription').html(window.common.userPasswordStrengthDescription
+                + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
+    });
+
+    $("#changeMyPasswordConfirm").click(function(event) {
+        $.ajax({
+            type: 'POST',
+            url: window.routes.Users.changePasswordByUser,
+            data: $('#changeMyPasswordForm').serialize(),
+            success: function(response) {
+                $('#changeMyPasswordModal').modal('hide');
+                Alerts.success("Your password was changed successfully.");
+            },
+            error: function(response) {
+                alerts.warning("Your password was not changed.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#changeMyPasswordForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+    $("#deleteMyUserModal").on('show.bs.modal', function() {
+        $("#deleteUserForm")[0].reset();
+        FormValidation.clear("#deleteMyUserModal");
+        $('#deleteMyUserModal .modal-title').text(`Delete ${user.username} (${user.name})`);
+        $('#deleteMyUserConfirmationText').html(generateDeleteMyUserConfirmationHtml(user));
+        if (user.studyList.filter(s => s.userSize === 1).length > 0) {
+            $("label[for='deleteMyUserSafetyCheck']").text("Check this box, if you really want to delete your user and the above-listed studies with all their results");
+        }
+        switch (user.authMethod) {
+            case "OAUTH_GOOGLE":
+                $('#deleteMyUserUsernameLabel').text(`Confirm by typing your email address (${user.username})`);
+                break;
+            case "OIDC":
+                $('#deleteMyUserUsernameLabel').text(`Confirm by typing your user ID (${user.username})`);
+                break;
+            case "ORCID":
+                $('#deleteMyUserUsernameLabel').text(`Confirm by typing your ORCID ID (${user.username})`);
+                break;
+            default:
+                $('#deleteMyUserPasswordLabel').text(`Confirm with your (${user.username}) password`);
+        }
+    });
+
+    function generateDeleteMyUserConfirmationHtml(user) {
+        let confirmationText = `<p>You are about to delete the user <b>"${user.name}" (${user.username})</b>.</p>`;
+        confirmationText += generateStudyList(user);
+        confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
+        return confirmationText;
+    }
+
+    function generateStudyList(user) {
+        // Only add the studies that have a user size of 1 (means this user is the only
+        // member and the study would be abandoned after user deletion) .
+        let studyList = "";
+        $.each(user.studyList, function(index, study) {
+            if (study.userSize === 1) {
+                studyList += `<li>${study.title} (ID: ${study.id})</li>`;
+            }
+        });
+        let text = "";
+        if (studyList !== "") {
+            text += "<p>All studies with this user as the only member user will be deleted too. <b>This would automatically delete the following studies with all their results</b>.";
+            text += "<ul>" + studyList + "</ul>";
+        }
+        return text;
+    }
+
+    $('#deleteMyUserConfirm').click(function(event) {
+        const safetyCheck = $('#deleteMyUserSafetyCheck').prop('checked');
+        if (!safetyCheck) {
+            alerts.error("Your user can only be deleted if the checkbox is checked.");
+            return
+        }
+
+        $.ajax({
+            url : window.routes.Users.remove(user.username),
+            type : 'POST',
+            data: $('#deleteMyUserForm').serialize(),
+            success : function(result) {
+                window.location.href = window.routes.Signin.signin;
+            },
+            error : function(response) {
+                FormValidation.clear("#deleteMyUserModal");
+                alerts.warning("Your user was not deleted.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#deleteMyUserModal", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+</script>

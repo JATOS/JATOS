@@ -39,12 +39,6 @@ public class Tests extends Controller {
 
     @Transactional
     @Auth(User.Role.ADMIN)
-    public Result test() {
-        return ok(views.html.gui.admin.test.render());
-    }
-
-    @Transactional
-    @Auth(User.Role.ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);

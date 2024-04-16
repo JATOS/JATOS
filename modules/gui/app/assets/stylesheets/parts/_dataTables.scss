@@ -1,0 +1,85 @@
+table.dataTable>tbody>tr.selected a {
+    color: inherit;
+}
+
+// Fix https://datatables.net/forums/discussion/78174/align-cells-left-after-2-0
+table.dataTable th.dt-type-numeric, table.dataTable th.dt-type-date, table.dataTable td.dt-type-numeric, table.dataTable td.dt-type-date {
+  text-align: unset !important;
+}
+
+// Remove 30px padding-right in some th
+table.dataTable thead > tr > th {
+    padding: 0 0.5em !important;
+}
+
+// Hide default ordering icons and use our own with .ordering-icon
+table.dataTable thead .dt-column-order,
+table.dataTable thead .dt-column-order::after,
+table.dataTable thead .dt-column-order::before {
+  right: 0 !important;
+  width: 0 !important;
+  content: none !important;
+}
+
+// Ordering logo: no ordering but orderable
+table.dataTable thead th.dt-orderable-asc .ordering-icon::after,
+table.dataTable thead th.dt-orderable-desc .ordering-icon::after {
+    font-family: 'bootstrap-icons' !important;
+    font-synthesis: none;
+    padding-left: 0.5em;
+    content: "\f127" !important; // bi-arrow-down-up
+}
+
+// Ordering logo: ascending ordering
+table.dataTable thead th.dt-ordering-asc .ordering-icon::after {
+    font-family: 'bootstrap-icons' !important;
+    font-synthesis: none;
+    content: "\f574" !important; // bi-sort-down-alt
+}
+
+// Ordering logo: descending odering
+table.dataTable thead th.dt-ordering-desc .ordering-icon::after {
+    font-family: 'bootstrap-icons' !important;
+    font-synthesis: none;
+    content: "\f575" !important; // bi-sort-down
+}
+
+// Fix width of dropdowns
+div.dt-buttons div.dropdown-menu {
+    width: unset !important;
+}
+
+// Fix width of nested dropdowns
+div.dt-buttons div.dropdown-menu div.btn-group {
+    width: 100% !important;
+}
+
+// Set table length margins
+div.dt-container div.dt-length select {
+    margin-left: .5em !important;
+    margin-right: 0em !important;
+}
+
+// If we don't do this, buttons might jump in size if on a mobile screen
+div.dt-buttons {
+    width: unset !important;
+}
+
+div.dataTables_scrollBody {
+  border-left: unset !important;
+}
+
+// Pull pagination buttons to the right
+.pagination {
+    float: right !important;
+}
+
+// Don't show pagination buttons as link
+.pagination .page-item:not(.active) .page-link {
+    color: inherit !important;
+}
+
+// Don't show focus box in pagination
+.pagination .page-link {
+    box-shadow: none !important;
+}

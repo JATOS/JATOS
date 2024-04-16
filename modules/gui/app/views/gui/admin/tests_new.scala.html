@@ -1,0 +1,88 @@
+@import controllers.gui.routes._
+@import general.common._
+
+@* Tests Modal *@
+<div class="modal fade" id="testsModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tests</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <li class="list-group-item fw-bold">Connect to database: <span id="testDatabaseResult"></span></li>
+                    <li class="list-group-item fw-bold">Access to study assets root folder: <span id="testStudyAssetsRootFolder"></span></li>
+                    <li class="list-group-item fw-bold">Access to result uploads folder: <span id="testResultUploadsFolder">deactivated</span></li>
+                    <li class="list-group-item fw-bold">Access to logs folder: <span id="testLogsFolder"></span></li>
+                    <li class="list-group-item fw-bold">Access to study logs folder: <span id="testStudyLogsFolder">deactivated</span></li>
+                    <li class="list-group-item fw-bold">Access to tmp folder: <span id="testTmpFolder"></span></li>
+                    <li class="list-group-item fw-bold">Read jatos.js (via study path): <span id="testJatosJsViaStudyPathResult"></span></li>
+                    <li class="list-group-item fw-bold">Read jatos.js (via assets path): <span id="testJatosJsViaAssetsPathResult"></span></li>
+                    <li class="list-group-item fw-bold">Open WebSocket: <span id="testWebSocketResult"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    $("#testsModal").on('show.bs.modal', function() {
+        testDatabase();
+        testFolderAccess();
+        testJatosJsViaStudyPath();
+        testJatosJsViaAssetsPath();
+        testWebSocket();
+    });
+
+    function testDatabase() {
+        $.ajax({
+            url: window.routes.tests.testDatabase,
+            success: () => success('#testDatabaseResult'),
+            error : () => error('#testDatabaseResult')
+        });
+    }
+
+    function testFolderAccess() {
+        $.ajax({
+            url: window.routes.tests.testFolderAccess,
+            success: function(result) {
+                const accessible = (a, elem) => a ? success(elem) : error(elem);
+                accessible(result.studyAssetsRoot, '#testStudyAssetsRootFolder');
+                if (window.common.isResultUploadsEnabled) accessible(result.resultUploads, '#testResultUploadsFolder');
+                accessible(result.logs, '#testLogsFolder');
+                if (window.common.isStudyLogsEnabled) accessible(result.studyLogs, '#testStudyLogsFolder');
+                accessible(result.tmp, '#testTmpFolder');
+            }
+        });
+    }
+
+    function testJatosJsViaStudyPath() {
+        $.ajax({
+            url: `${window.common.jatosUrlBasePath}publix/irrelevant/irrelevant/jatos.js`,
+            dataType: "text",
+            success: () => success('#testJatosJsViaStudyPathResult'),
+            error : () => error('#testJatosJsViaStudyPathResult')
+        });
+    }
+
+    function testJatosJsViaAssetsPath() {
+        $.ajax({
+            url: `${window.common.jatosUrlBasePath}assets/javascripts/jatos.js`,
+            dataType: "text",
+            success: () => success('#testJatosJsViaAssetsPathResult'),
+            error : () => error('#testJatosJsViaAssetsPathResult')
+        });
+    }
+
+    function testWebSocket() {
+        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        const webSocket = new WebSocket(protocol + window.location.host + window.routes.tests.testWebSocket);
+        webSocket.onerror = () => error('#testWebSocketResult');
+        webSocket.onmessage = (e) => e.data != "test message" ? error('#testWebSocketResult') : success('#testWebSocketResult');
+        webSocket.onopen = (e) => webSocket.send("test message");
+    }
+
+    const success = (element) => $(element).addClass("text-success").text('OK');
+    const error = (element) => $(element).addClass("text-danger").text('FAIL');
+</script>

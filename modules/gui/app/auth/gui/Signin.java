@@ -57,7 +57,7 @@ public class Signin extends Controller {
      * Shows the sign-in page
      */
     public Result signin() {
-        return ok(views.html.gui.auth.signin.render(formFactory.form(Signin.SigninData.class)));
+        return ok(views.html.gui.auth.signin_new.render(formFactory.form(Signin.SigninData.class)));
     }
 
     /**
@@ -93,7 +93,7 @@ public class Signin extends Controller {
             userService.setLastSignin(normalizedUsername);
             loginAttemptDao.removeByUsername(normalizedUsername);
             if (Helpers.isAjax()) {
-                return ok(" "); // jQuery.ajax cannot handle empty responses
+                return ok();
             } else {
                 return redirect(controllers.gui.routes.Home.home());
             }

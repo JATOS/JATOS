@@ -1,0 +1,148 @@
+@import controllers.gui.routes._
+
+@*
+* Global routes to JATOS GUI endpoints that cannot be reached by non-templates (e.g. JS modules in extra files)
+* The content is redundant to gui.routes
+*@
+
+<script @{helper.CSPNonce.attr} type="module">
+    window.routes = {};
+
+    window.routes.Api = {};
+    window.routes.Api.testToken = `${window.common.jatosUrlBasePath}jatos/api/v1/admin/token`;
+    window.routes.Api.exportStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/api/v1/studies/${studyId}`;
+    window.routes.Api.deleteStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/api/v1/studies/${studyId}`;
+    window.routes.Api.studyLog = (studyId, entryLimit, download) => `${window.common.jatosUrlBasePath}jatos/api/v1/studies/${studyId}/log?entryLimit=${entryLimit}&download=${download}`;
+    window.routes.Api.exportSingleResultFile = (componentResultId, filename) => `${window.common.jatosUrlBasePath}jatos/api/v1/results/files/${filename}?componentResultId=${componentResultId}`;
+    window.routes.Api.exportResults = (isApiCall) => `${window.common.jatosUrlBasePath}jatos/api/v1/results?isApiCall=${isApiCall}`;
+    window.routes.Api.exportResultData = (asPlainText, isApiCall) => `${window.common.jatosUrlBasePath}jatos/api/v1/results/data?asPlainText=${asPlainText}&isApiCall=${isApiCall}`;
+    window.routes.Api.exportResultFiles = `${window.common.jatosUrlBasePath}jatos/api/v1/results/files`;
+    window.routes.Api.exportResultMetadata = (isApiCall) => `${window.common.jatosUrlBasePath}jatos/api/v1/results/metadata?isApiCall=${isApiCall}`;
+    window.routes.Api.getStudyCodes = (studyId, batchId, workerType, comment, amount) => `${window.common.jatosUrlBasePath}jatos/api/v1/studies/${studyId}/studyCodes?batchId=${batchId}&type=${workerType}&comment=${comment}&amount=${amount}`;
+
+    window.routes.ApiTokens = {};
+    window.routes.ApiTokens.allTokenDataByUser = `${window.common.jatosUrlBasePath}jatos/user/allApiTokenData`;
+    window.routes.ApiTokens.generate = (name, expires) => `${window.common.jatosUrlBasePath}jatos/user/apiToken?name=${name}&expires=${expires}`;
+    window.routes.ApiTokens.remove = (id) => `${window.common.jatosUrlBasePath}jatos/user/apiToken/${id}`;
+    window.routes.ApiTokens.toggleActive = (id, active) => `${window.common.jatosUrlBasePath}jatos/user/apiToken/${id}/active?active=${active}`;
+
+    window.routes.Signin = {};
+    window.routes.Signin.signin = `${window.common.jatosUrlBasePath}jatos/signin`;
+    window.routes.SigninGoogle = {};
+    window.routes.SigninGoogle.signin = `${window.common.jatosUrlBasePath}jatos/signin/google`;
+    window.routes.SigninOrcid = {};
+    window.routes.SigninOrcid.signin = `${window.common.jatosUrlBasePath}jatos/signin/oidc/orcid?realHostUrl=${window.common.realHostUrl}`;
+    window.routes.SigninBasicOidc = {};
+    window.routes.SigninBasicOidc.signin = `${window.common.jatosUrlBasePath}jatos/signin/oidc/basic?realHostUrl=${window.common.realHostUrl}`;
+
+    window.routes.Home = {};
+    window.routes.Home.home = "@Home.home()";
+    window.routes.Home.sidebarData = "@Home.sidebarData()";
+    window.routes.Home.branding = "@Home.branding()";
+
+    window.routes.Studies = {};
+    window.routes.Studies.submitCreated = "@Studies.submitCreated()";
+    window.routes.Studies.properties = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/properties`;
+    window.routes.Studies.submitEdited = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/properties`;
+    window.routes.Studies.submitDescription = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/properties/description`;
+    window.routes.Studies.toggleLock = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/lock/toggle`;
+    window.routes.Studies.runStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/run`;
+    window.routes.Studies.cloneStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/clone`;
+    window.routes.Studies.tableDataByStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/componentsTableData`;
+    window.routes.Studies.changeComponentOrder = (studyId, componentId, newPosition) => `${window.common.jatosUrlBasePath}jatos/${studyId}/componentOrder?componentId=${componentId}&newPosition=${newPosition}`;
+    window.routes.Studies.study = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}`;
+    window.routes.Studies.toggleMemberUser = (studyId, username, isMember) => `${window.common.jatosUrlBasePath}jatos/${studyId}/memberUser?username=${username}&isMember=${isMember}`;
+    window.routes.Studies.addAllMemberUsers = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/memberUsers`;
+    window.routes.Studies.removeAllMemberUsers = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/memberUsers`;
+    window.routes.Studies.memberUsers = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/memberUsers`;
+    window.routes.Studies.toggleActive = (studyId, active) => `${window.common.jatosUrlBasePath}jatos/${studyId}/properties/active?active=${active}`;
+
+    window.routes.Components = {};
+    window.routes.Components.toggleActive = (studyId, componentId, active) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}/properties/active?active=${active}`;
+    window.routes.Components.remove = (studyId, componentId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}`;
+    window.routes.Components.runComponent = (studyId, componentId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}/run`;
+    window.routes.Components.cloneComponent = (studyId, componentId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}/clone`;
+    window.routes.Components.submitCreated = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/component`;
+    window.routes.Components.properties = (studyId, componentId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}/properties`;
+    window.routes.Components.submitEdited = (studyId, componentId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}/properties`;
+
+    window.routes.StudyResults = {};
+    window.routes.StudyResults = {};
+    window.routes.StudyResults.studysStudyResults = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/results`;
+    window.routes.StudyResults.workersStudyResults = (workerId) => `${window.common.jatosUrlBasePath}jatos/worker/${workerId}/results`;
+    window.routes.StudyResults.groupsStudyResults = (studyId, groupId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/group/${groupId}/results`;
+    window.routes.StudyResults.batchesStudyResults = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/results`;
+    window.routes.StudyResults.tableDataComponentResultsByStudyResult = (studyResultId) => `${window.common.jatosUrlBasePath}jatos/studyResult/${studyResultId}/componentResults`;
+    window.routes.StudyResults.tableDataByStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/tableData`;
+    window.routes.StudyResults.tableDataByWorker = (workerId) => `${window.common.jatosUrlBasePath}jatos/worker/${workerId}/tableData`;
+    window.routes.StudyResults.remove = `${window.common.jatosUrlBasePath}jatos/studyResult/delete`;
+
+    window.routes.ComponentResults = {};
+    window.routes.ComponentResults.componentResults = (studyId, componentId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/${componentId}/results`;
+    window.routes.ComponentResults.exportSingleResultData = (componentResultId) => `${window.common.jatosUrlBasePath}jatos/componentResult/${componentResultId}/data`;
+    window.routes.ComponentResults.tableDataByComponent = (componentId) => `${window.common.jatosUrlBasePath}jatos/componentResults/tableData?componentId=${componentId}`;
+    window.routes.ComponentResults.remove = `${window.common.jatosUrlBasePath}jatos/componentResults/delete`;
+
+    window.routes.StudyLinks = {};
+    window.routes.StudyLinks.studyLinks = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/studyLinks`;
+    window.routes.StudyLinks.submitCreatedBatch = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch`;
+    window.routes.StudyLinks.batchesByStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batches`;
+    window.routes.StudyLinks.toggleBatchActive = (studyId, batchId, active) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/properties/active?active=${active}`;
+    window.routes.StudyLinks.removeBatch = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}`;
+    window.routes.StudyLinks.batchProperties = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/properties`;
+    window.routes.StudyLinks.submitEditedBatchProperties = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/properties`;
+    window.routes.StudyLinks.batchSessionData = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/batchSessionData`;
+    window.routes.StudyLinks.submitEditedBatchSessionData = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/batchSessionData`;
+    window.routes.StudyLinks.groupSessionData = (studyId, groupId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/group/${groupId}/groupSessionData`;
+    window.routes.StudyLinks.submitEditedGroupSessionData = (studyId, groupId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/group/${groupId}/groupSessionData`;
+    window.routes.StudyLinks.groupsByBatch = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/groups`;
+    window.routes.StudyLinks.toggleGroupFixed = (studyId, groupId, fixed) => `${window.common.jatosUrlBasePath}jatos/${studyId}/group/${groupId}/fixed?fixed=${fixed}`;
+    window.routes.StudyLinks.studyLinksSetupData = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/studyLinksSetupData`;
+    window.routes.StudyLinks.toggleAllowedWorkerType = (studyId, batchId, workerType, allow) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/properties/workerType/${workerType}?allow=${allow}`;
+    window.routes.StudyLinks.studyLinksData = (studyId, batchId, workerType) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/studyLinksData?workerType=${workerType}`;
+    window.routes.StudyLinks.toggleStudyLinkActive = (studyId, batchId, studyCode, active) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/studyLink/${studyCode}?active=${active}`;
+    window.routes.StudyLinks.editWorkerComment = (workerId) => `${window.common.jatosUrlBasePath}jatos/worker/${workerId}/comment`;
+
+    window.routes.ImportExport = {};
+    window.routes.ImportExport.importStudy = "@ImportExport.importStudy()";
+    window.routes.ImportExport.importStudyConfirmed = "@ImportExport.importStudyConfirmed()";
+
+    window.routes.Users = {};
+    window.routes.Users.singleUserData = (username) => `${window.common.jatosUrlBasePath}jatos/user/${username}/userData`;
+    window.routes.Users.edit = (username) => `${window.common.jatosUrlBasePath}jatos/user/${username}/profile`;
+    window.routes.Users.remove = (username) => `${window.common.jatosUrlBasePath}jatos/user/${username}/delete`;
+    window.routes.Users.changePasswordByUser = `${window.common.jatosUrlBasePath}jatos/user/passwordByUser`;
+    window.routes.Users.changePasswordByAdmin = `${window.common.jatosUrlBasePath}jatos/user/passwordByAdmin`;
+    window.routes.Users.userManager = "@Users.userManager()";
+    window.routes.Users.allUserData = "@Users.allUserData()";
+    window.routes.Users.create = `${window.common.jatosUrlBasePath}jatos/user`;
+    window.routes.Users.toggleActive = (username, active) => `${window.common.jatosUrlBasePath}jatos/user/${username}/properties/active?active=${active}`;
+    window.routes.Users.toggleRole = (username, role, value) => `${window.common.jatosUrlBasePath}jatos/user/${username}/properties/role?role=${role}&value=${value}`;
+    window.routes.Users.studiesDataByUser = (username) => `${window.common.jatosUrlBasePath}jatos/studiesData?username=${username}`;
+
+    window.routes.Admin = {};
+    window.routes.Admin.studyManager = "@Admin.studyManager()";
+    window.routes.Admin.status = "@Admin.status()";
+    window.routes.Admin.listLogs = "@Admin.listLogs()";
+    window.routes.Admin.allStudiesData = "@Admin.allStudiesData()";
+    window.routes.Admin.logs = (filename, limit, reverse) => `${window.common.jatosUrlBasePath}jatos/logs/${filename}?limit=${limit}&reverse=${reverse}`;
+    window.routes.Admin.studyAssetsSize = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/studyAssetsSize`;
+    window.routes.Admin.resultDataSize = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/resultDataSize`;
+    window.routes.Admin.resultFileSize = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/resultFileSize`;
+
+    window.routes.Updates = {};
+    window.routes.Updates.getReleaseInfo = "@Updates.getReleaseInfo()";
+    window.routes.Updates.cancelUpdate = "@Updates.cancelUpdate()";
+    window.routes.Updates.downloadJatos = "@Updates.downloadJatos()";
+    window.routes.Updates.updateAndRestart = (backupAll) => `${window.common.jatosUrlBasePath}jatos/updateAndRestart?backupAll=${backupAll}`;
+
+    window.routes.tests = {};
+    window.routes.tests.testDatabase = "@Tests.testDatabase()";
+    window.routes.tests.testFolderAccess = "@Tests.testFolderAccess()";
+    window.routes.tests.testWebSocket = "@Tests.testWebSocket()";
+
+    window.routes.Publix = {};
+    // We need 'window.common.realBaseUrl' here to get the full URL
+    window.routes.Publix.studyEntry = (studyCode) => `${window.common.realBaseUrl}publix/run?code=${studyCode}`;
+    window.routes.Publix.run = (studyCode) => `${window.common.realBaseUrl}publix/${studyCode}`;
+</script>

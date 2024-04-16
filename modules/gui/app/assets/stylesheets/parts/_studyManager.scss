@@ -1,0 +1,5 @@
+// Change color of pagination button
+#studyManagerTable_wrapper .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $admin-color;
+    --bs-pagination-active-border-color: $admin-color;
+}

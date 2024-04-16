@@ -1,0 +1,283 @@
+@import controllers.gui.routes._
+@import auth.gui.routes._
+@import general.common._
+
+@* Show all API tokens Modal *@
+<div class="modal fade" id="apiTokensModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Your personal access tokens (API tokens) for the JATOS API</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-hover align-middle" id="apiTokensTable">
+                    <thead>
+                    <tr>
+                        <th>Active<span class="ordering-icon"></span></th>
+                        <th>ID<span class="ordering-icon"></span></th>
+                        <th>Name<span class="ordering-icon"></span></th>
+                        <th>Creation date<span class="ordering-icon"></span></th>
+                        <th>Expiration<span class="ordering-icon"></span></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Create API token Modal *@
+<div class="modal fade" id="apiTokenCreateModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="form-admin" id="apiTokenCreateForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">New personal access token</h5>
+                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="apiTokenCreateFormName" class="col-sm-3 col-form-label input-required" data-toggle="tooltip" title="Use the name to distinguish the tokens from one another">
+                            Name<span class="info-icon"></span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="apiTokenCreateFormName" type="text" name="name" placeholder="Name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="apiTokenCreateFormExpiration" class="col-sm-3 col-form-label" data-toggle="tooltip" title="Select token expiration time">
+                            Expiration
+                        </label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="apiTokenCreateFormExpiration">
+                                <option value="7">7 days</option>
+                                <option value="30" selected>30 days</option>
+                                <option value="60">60 days</option>
+                                <option value="90">90 days</option>
+                                <option value="0">Never</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="apiTokenCreateFormConfirmed">Generate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* API token display Modal *@
+<div class="modal fade" id="apiTokenDisplayModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New personal access token</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body"></div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")"
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
+    import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
+
+    const alerts = new Alerts.Named("api-tokens");
+    Helpers.preventFormSubmitViaEnter("#apiTokenCreateForm");
+    $("#apiTokensModal, #apiTokenCreateModal").on('hide.bs.modal', alerts.hideAll);
+
+    let apiTokensTable;
+
+    $("#apiTokensModal").on('show.bs.modal', generateApiTokensTable);
+
+    function generateApiTokensTable() {
+        if (apiTokensTable) {
+            apiTokensTable.clear().draw();
+            apiTokensTable.ajax.reload();
+            return
+        }
+        apiTokensTable = $('#apiTokensTable').DataTable({
+            "ajax": {
+                "url" : window.routes.ApiTokens.allTokenDataByUser,
+                "error": function (err) {
+                    if (err.responseText) {
+                        alerts.error(err.responseText);
+                    } else {
+                        alerts.error("Cannot read token data");
+                    }
+                }
+            },
+            "dom": `<'row'<'col-sm-12'B>>
+                    <'row'<'col-sm-12'tr>>
+                    <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 mt-2'p>>`,
+            "pageLength": 10,
+            "order": [[ 3, "desc" ]],
+            "autoWidth": false,
+            "lengthChange": false,
+            "stateSave": false,
+            "buttons": [
+                {
+                    "text": '<i class="bi-plus-lg fw-bold pe-1"></i>New Token',
+                    "className": "btn btn-admin mb-3",
+                    "attr": {
+                        "data-toggle": "tooltip",
+                        "title": "Generate a new personal access token",
+                        "id": "apiTokenCreateButton"
+                    }
+                }
+            ],
+            "columns": [
+                {
+                    "className": "token-active align-middle",
+                    "data": null,
+                    "width": "1%",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'sort') return data.active.toString();
+                        return `
+                            <label class="switch no-info-icon" data-toggle="tooltip" title="Use this switch to de-/activate this token.">
+                                <input type="checkbox" ${data.active ? "checked" : ""}>
+                                <span class="slider slider-admin round"></span>
+                            </label>`;
+                    }
+                },
+                {
+                    "data": "id",
+                    "width": "1%"
+                },
+                {
+                    "data": "name",
+                },
+                {
+                    "data": "creationDate",
+                    "render": (t) => new Date(t).toLocaleString('en-GB')
+                },
+                {
+                    "data": null,
+                    "render": function (data, type, full, meta) {
+                        if (data.expirationDate <= 0) return "never";
+                        const expirationDate = new Date(data.expirationDate).toLocaleString('en-GB');
+                        return data.isExpired ? `${expirationDate} <b>(expired)</b>` : expirationDate;
+                    }
+                },
+                {
+                    "data": null,
+                    "className": "delete-button-column",
+                    "width": "1%",
+                    "orderable": false,
+                    "render": function (data, type, full, meta) {
+                        return '<button type="button" class="btn btn-admin deleteButton text-nowrap">Delete<i class="bi-x-lg ps-1"></i></button>';
+                    }
+                },
+            ],
+            language: {
+                "lengthMenu": "Show: _MENU_",
+                "paginate": {
+                    "first": `<i class="bi-chevron-double-left"></i>`,
+                    "previous": `<i class="bi-chevron-left"></i>`,
+                    "next": `<i class="bi-chevron-right"></i>`,
+                    "last": `<i class="bi-chevron-double-right"></i>`
+                },
+                "emptyTable": "No tokens yet"
+            },
+            "rowCallback": disableRow
+        });
+    }
+
+    $('#apiTokensModal').on('click', "#apiTokenCreateButton", function() {
+        FormValidation.clear("#apiTokenCreateForm");
+        $('#apiTokenCreateFormName').val("");
+        $('#apiTokenCreateModal').modal('show');
+    });
+
+    $('#apiTokenCreateModal').on('shown.bs.modal', () => $('#apiTokenCreateFormName').focus());
+
+    const disableRow = (row, data) => $(row).toggleClass("disabled", !data.active || data.isExpired);
+
+    $('#apiTokenCreateFormConfirmed').click(function(e) {
+        const name = $('#apiTokenCreateFormName').val().trim();
+        const expires = $('#apiTokenCreateFormExpiration').val() * 60 * 60 * 24; // in seconds
+        $.ajax({
+            url : window.routes.ApiTokens.generate(name, expires),
+            type : "POST",
+            success: function(apiToken) {
+                $('#apiTokenCreateModal').modal('hide');
+                showApiTokenDisplayModal(name, apiToken);
+            },
+            error : function(err) {
+                FormValidation.show("#apiTokenCreateForm", {name: [err.responseText]});
+            }
+        });
+    });
+
+    function showApiTokenDisplayModal(name, apiToken) {
+        $('#apiTokenDisplayModal .modal-title').text(`New personal access token "${name}"`);
+        const html = `
+                <p>
+                    Please copy your personal access token now.<br>
+                    <b>For your security it won\'t be shown again.</b>
+                    <div class="card card-body">
+                        <span class="user-select-all">${apiToken}</span>
+                        <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-toggle="tooltip" title="Copy to clipboard"></span>
+                    </div>
+                </p>
+                <p>Test with <code>curl</code>:</p>
+                <div class="card card-body">
+                    <pre class="mb-0 me-2"><code class="user-select-all">curl -i -H "Authorization: Bearer ${apiToken}" ${window.common.realHostUrl}${window.routes.Api.testToken}</code></pre>
+                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-toggle="tooltip" title="Copy to clipboard"></span>
+                </div>`;
+        $('#apiTokenDisplayModal .modal-body').html(html);
+        $('#apiTokenDisplayModal').on('click', '.btn-clipboard', CopyToClipboard.onClick);
+        $('#apiTokenDisplayModal').modal('show');
+    }
+
+    $('#apiTokensModal').on('click', '.token-active input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const tr = $(checkbox).closest('tr');
+        const data = apiTokensTable.row(tr).data();
+        const active = $(checkbox).is(':checked');
+        $.ajax({
+            url : window.routes.ApiTokens.toggleActive(data.id, active),
+            type : "POST",
+            success: function() {
+                data.active = active;
+                $(checkbox).prop('checked', data.active);
+                disableRow(tr, data);
+            },
+            error : function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#apiTokensModal').on('click', '.deleteButton', function() {
+        const button = this;
+        const tr = $(this).closest('tr');
+        const data = apiTokensTable.row(tr).data();
+        const title = `Confirm Deletion of token "${data.name}"`;
+        const body = `<p>You are about to delete token "${data.name}" (ID ${data.id}).</p>
+            <p><b class="text-danger">This cannot be undone.</b> Do you want to proceed?</p>`;
+        ConfirmationModal.show({
+            title: title,
+            text: body,
+            btnText: 'Delete',
+            action: function() {
+                $.ajax({
+                    url : window.routes.ApiTokens.remove(data.id),
+                    type : "DELETE",
+                    success: () => apiTokensTable.ajax.reload(null, false),
+                    error: (err) => alerts.error(err.responseText)
+                });
+            }
+        });
+    });
+
+</script>

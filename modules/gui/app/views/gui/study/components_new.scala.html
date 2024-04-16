@@ -1,0 +1,228 @@
+@(study: common.Study)
+@import controllers.gui.routes._
+@import general.common._
+
+@* Components Table *@
+<table class="table table-hover w-100" id="componentsTable">
+    <thead>
+    <tr>
+        <th class="no-info-icon text-nowrap" data-toggle="tooltip" title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position"><i class="bi-arrow-down-up ps-2"></i><span class="info-icon"></span></th>
+        <th class="no-info-icon" data-toggle="tooltip" title="Activate or deactivate components. Inactive components will not show up in study runs.">Active<span class="info-icon"></span></th>
+        <th class="no-info-icon" data-toggle="tooltip" title="ID of this component">ID<span class="info-icon"></span></th>
+        <th class="no-info-icon" data-toggle="tooltip" title="Title of this component">Title<span class="info-icon"></span></th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+@* Template for button toolbar in Component's row *@
+<div id="componentToolbarTemplate" class="d-none">
+    <div class="float-end text-nowrap">
+        <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-toggle="tooltip" title="Do a test run only of this component">
+            <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
+        </a>
+        <button class="component-results btn btn-component" type="button" data-toggle="tooltip" title="Show the results only of this component">
+            <span class="d-none d-lg-inline">Component </span>Results<span class="badge text-component bg-white rounded-pill no-info-icon ms-1" data-toggle="tooltip" title="Number of component results only of this component"></span>
+        </button>
+        <button class="component-properties btn btn-component" type="button" data-toggle="tooltip" title="Change this component's properties">
+            <i class="bi-gear-fill"></i><span class="d-none d-lg-inline ps-1">Properties</span>
+        </button>
+        <div class="btn-group" role="group">
+            <button class="btn btn-component dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi-three-dots-vertical d-lg-none"></i><span class="d-none d-lg-inline ps-1">More</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-component">
+                <li class="no-info-icon" data-toggle="tooltip" title="Clone this component without its results and assets">
+                    <a class="dropdown-item clone-component" href="#"><i class="bi-copy pe-1"></i>Clone</a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li class="no-info-icon" data-toggle="tooltip" title="Deletes this component without its results and assets">
+                    <a class="dropdown-item remove-component" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
+
+    let componentsTable;
+    $(document).ready(function() {
+        // Don't remove pageLength - default is only 10 and it would display only 10 components
+        componentsTable = $('#componentsTable').DataTable({
+            "ajax": {
+                "url" : window.routes.Studies.tableDataByStudy(window.study.id),
+                "error": function (err) {
+                    if (err.responseText) {
+                        Alerts.error(err.responseText);
+                    } else {
+                        Alerts.error("Cannot read component data.");
+                    }
+                }
+            },
+            "pageLength": 100,
+            "dom": 't',
+            "scrollX": true,
+            "columnDefs": [
+                {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": "_all"
+                }
+            ],
+            "columns": [
+                {
+                    "data": "position",
+                    "render": function (data, type, full, meta) {
+                        return `<button type="button" class="btn btn-component drag-button" data-toggle="tooltip" title="Use this button to drag and drop this component to a new position">${data}</button>`;
+                    }
+                },
+                {
+                    "className": 'component-active align-middle',
+                    "data": "active",
+                    "render": function (data, type, full, meta) {
+                        return `
+                            <label class="switch no-info-icon" data-toggle="tooltip" title="Use this switch to de-/activate this component. Inactive components will not show up in study runs.">
+                                <input type="checkbox" ${data ? "checked" : ""}>
+                                <span class="slider slider-component round"></span>
+                            </label>`;
+                    }
+                },
+                {
+                    "className": "component-id align-middle",
+                    "data": "id",
+                },
+                {
+                    "className": "component-title align-middle text-nowrap",
+                    "data": "title",
+                    "render": function (data, type, full, meta) {
+                        return `<span class="no-info-icon" data-toggle="tooltip" title="${data}">${data}</span>`;
+                    }
+                },
+                {
+                    "data": null,
+                    "render": function (data, type, full, meta) {
+                        const toolbar = $('#componentToolbarTemplate').clone();
+                        $(toolbar).find('.component-results .badge').text(data.resultCount);
+                        return toolbar.html();
+                    }
+                }
+            ],
+            "language": {
+                "emptyTable": "No components yet - click on 'New Component' to add a new component"
+            },
+            rowReorder: {
+                "dataSrc": "position"
+            }
+        });
+
+        // Adjust the width of every component's drag button and toolbar to the widest one
+        componentsTable.on('column-sizing.dt', function (e, settings) {
+            // Newly created components of an empty study have a negative width (no
+            // clue why) - so set the width only if I have at least 2 components
+            if ($("button.component-results").length > 1) {
+                Helpers.setButtonWidthToMax("button.component-results");
+                Helpers.setButtonWidthToMax("button.drag-button");
+            }
+        });
+
+        componentsTable.on('draw', function () {
+            Helpers.setButtonWidthToMax("button.drag-button");
+            $('#componentsTable .run-component').each(setRunComponentHref);
+        });
+
+        function setRunComponentHref() {
+            const componentId = getComponentId(this);
+            $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId)}`);
+        }
+
+        componentsTable.on('row-reordered', function (e, details, edit) {
+            const cid = edit.triggerRow.data().id;
+            const np = edit.triggerRow.data().position;
+            $.ajax({
+                url : window.routes.Studies.changeComponentOrder(window.study.id, cid, np),
+                type : "POST",
+                success : function(response) {
+                    componentsTable.ajax.reload();
+                },
+                error : function(err) {
+                    Alerts.error(err.responseText);
+                }
+            });
+        });
+    });
+
+    $('#componentsTable').on('click', '.clone-component', function() {
+        $.ajax({
+            type: 'GET',
+            url: window.routes.Components.cloneComponent(window.study.id, getComponentId(this)),
+            success: function(result) {
+                Alerts.showList(JSON.parse(result));
+                componentsTable.ajax.reload();
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#componentsTable').on('click', '.remove-component', function() {
+        const element = this;
+        const componentId = getComponentId(this);
+        const componentTitle = getComponentTitle(this);
+        const title = `Confirm Deletion of component "${componentTitle}"`;
+        const htmlText = `
+            <p>You are about to delete component "<b>${componentTitle}</b>" (ID ${componentId}) <b>with all its results</b>.</p>
+            <p><b class="text-danger">This cannot be undone.</b></p>`;
+        const action = function() {
+            $.ajax({
+                url : window.routes.Components.remove(window.study.id, componentId),
+                type : 'DELETE',
+                beforeSend: WaitingModal.show,
+                success : function(result) {
+                    Alerts.showList(JSON.parse(result));
+                    componentsTable.ajax.reload();
+                },
+                error : function(err) {
+                    Alerts.error(err.responseText);
+                },
+                complete: WaitingModal.hide
+            });
+        };
+        ConfirmationModal.show({ title: title, text: htmlText, btnText: 'Delete', safetyCheck: true, action: action });
+    });
+
+    $('#componentsTable').on('click', '.component-active input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const cid = getComponentId(checkbox);
+        const active = $(checkbox).is(':checked');
+        $.ajax({
+            url : window.routes.Components.toggleActive(window.study.id, cid, active),
+            type : "POST",
+            success: function(active) {
+                $(checkbox).prop('checked', active);
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    function getComponentId(element) {
+        const tr = $(element).closest('tr');
+        const rowData = componentsTable.row(tr).data();
+        return rowData.id;
+    }
+
+    function getComponentTitle(element) {
+        const tr = $(element).closest('tr');
+        const rowData = componentsTable.row(tr).data();
+        return rowData.title;
+    }
+</script>

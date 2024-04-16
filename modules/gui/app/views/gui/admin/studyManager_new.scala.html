@@ -1,0 +1,206 @@
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
+
+@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+
+<main class="container-fluid overflow-auto mt-4">
+
+    <table class="table table-hover w-100" id="studyManagerTable">
+        <thead>
+            <tr>
+                <th class="no-info-icon" data-toggle="tooltip" title="A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still see and edit the study and export its result data.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th>ID<span class="ordering-icon"></span></th>
+                <th>Title<span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="All users who are member of this study">Members<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Size of study assets folder">Study assets size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Number of study results">Result count<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Size of result data: total for all study runs (average per result in brackets)">Result data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Size of uploaded result files: total for all study runs (average per result in brackets)">Result file size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="When was this study last started by a participant?">Last started<span class="info-icon"></span><span class="ordering-icon"></span></th>
+            </tr>
+        </thead>
+    </table>
+
+</main>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
+
+    let dataTable;
+    $(document).ready(function() {
+        dataTable = $('#studyManagerTable').DataTable({
+            "ajax": {
+                "url" : window.routes.Admin.allStudiesData,
+                "dataSrc": "",
+                "beforeSend": WaitingModal.show,
+                "error": () => Alerts.error("Error reading study data"),
+                "complete": WaitingModal.hide
+            },
+            "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-admin mt-1 mb-3'<'mb-2'f><'mb-2'l>>
+                    rt
+                    <'d-flex flex-row flex-wrap justify-content-between align-items-center mt-3'<'mb-2'i><'mb-2'p>>`,
+            "order": [[ 6, "dsc" ]],
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            "pageLength": 10,
+            "pagingType": "full_numbers",
+            "stateSave": true,
+            "scrollX": true,
+            "stateSaveParams": function (settings, data) {
+                data.search.search = "";
+            },
+            "columns": [
+                {
+                    "className": "active-study",
+                    "data": null,
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        if (type === 'export' || type === 'sort') return data.active.toString();
+                        return `
+                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="Click to de-/activate this user">
+                                <input type="checkbox" ${data.active ? "checked" : ""}>
+                                <span class="slider slider-admin round"></span>
+                            </label>
+                        `;
+                    }
+                },
+                {
+                    "data": "id"
+                },
+                {
+                    "data": "title",
+                    "width": "30%",
+                    "render": (data) => Helpers.trimTextWithThreeDots(data, 50)
+                },
+                {
+                    "data": "members",
+                    "render": Helpers.generateMembersHtml
+                },
+                {
+                    "data": "studyAssetsSize",
+                    "type": "num",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'sort') return data.size;
+                        if (data.humanReadable == "disabled") {
+                            return '<button type="button" class="study-assets-size btn btn-nav btn-sm">Show</a>';
+                        } else {
+                            return data.humanReadable;
+                        }
+                    }
+                },
+                {
+                    "data": "studyResultCount",
+                },
+                {
+                    "type": "num",
+                    "data": "resultDataSize",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'sort') return data.size;
+                        if (data.humanReadable == "disabled") {
+                            return '<button type="button" class="result-data-size btn btn-nav btn-sm">Show</a>';
+                        } else {
+                            return data.humanReadable;
+                        }
+                    }
+                },
+                {
+                    "type": "num",
+                    "data": "resultFileSize",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'sort') return data.size;
+                        if (data.humanReadable == "disabled") {
+                            return '<button type="button" class="result-file-size btn btn-nav btn-sm">Show</a>';
+                        } else {
+                            return data.humanReadable;
+                        }
+                    }
+                },
+                {
+                    "data": "lastStarted",
+                    "render": Helpers.getLocalTime
+                }
+            ],
+            language: {
+                "lengthMenu": "Show: _MENU_",
+                "paginate": {
+                    "first": `<i class="bi-chevron-double-left"></i>`,
+                    "previous": `<i class="bi-chevron-left"></i>`,
+                    "next": `<i class="bi-chevron-right"></i>`,
+                    "last": `<i class="bi-chevron-double-right"></i>`
+                },
+                "emptyTable": "No studies yet"
+            },
+            "drawCallback": function( settings ) {
+                Helpers.activatePopovers();
+                $(".dt-length select").removeClass("form-select-sm");
+                $(".dt-search input").removeClass("form-control-sm");
+            }
+        });
+    });
+
+    $('#studyManagerTable').on('click', '.active-study input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const isActive = $(checkbox).is(':checked');
+        const tr = $(this).closest('tr');
+        const studyInfo = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Studies.toggleActive(studyInfo.id, isActive),
+            type : "POST",
+            success: () => {
+                $(checkbox).prop('checked', isActive);
+                studyInfo.active = isActive;
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#studyManagerTable').on('click', '.study-assets-size', function() {
+        const button = this;
+        const tr = $(button).closest('tr');
+        const studyInfo = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Admin.studyAssetsSize(studyInfo.id),
+            success: function(response) {
+                $(button).parent().text(response.humanReadable);
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#studyManagerTable').on('click', '.result-data-size', function() {
+        const button = this;
+        const tr = $(button).closest('tr');
+        const studyInfo = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Admin.resultDataSize(studyInfo.id),
+            success: function(response) {
+                $(button).parent().text(response.humanReadable);
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#studyManagerTable').on('click', '.result-file-size', function() {
+        const button = this;
+        const tr = $(button).closest('tr');
+        const studyInfo = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Admin.resultFileSize(studyInfo.id),
+            success: function(response) {
+                $(button).parent().text(response.humanReadable);
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+});
+
+</script>
+}

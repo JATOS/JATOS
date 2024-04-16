@@ -1,11 +1,9 @@
 /**
- * Web worker used in JATOS to regularly check for user session timeouts
- * The actual session timeout handling is of course done on the server side.
- * These timeouts just cause an sign-in overlay.
- * 
- * http://www.jatos.org
- * Author Kristian Lange 2017
- * Licensed under Apache License 2.0
+ * Web worker used in JATOS to regularly check for user session timeouts.
+ * The actual session timeout handling is done on the server side.
+ *
+ * I use a web worker with regular checking of the times (with setInterval) instead of just using setTimeout directly,
+ * because I found that this is the safest way if JATOS' browser tab runs in the background.
  */
 
 "use strict";

@@ -1,0 +1,271 @@
+@(study: common.Study)
+
+@* Edit batch properties Modal *@
+<div class="modal fade" id="batchPropertiesModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Batch properties
+                    <div class="fs-6 fw-light text-truncate">
+                        <span data-toggle="tooltip" title="This ID is unique within this JATOS instance">ID</span>:
+                        <span class="ms-1 user-select-all" id="batchPropertiesId"></span>
+                    </div>
+                </h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-batch" id="batchPropertiesForm">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormTitle">
+                            Title<span class="input-required" data-toggle="tooltip" title="required"></span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="batchPropertiesFormTitle" name="title" placeholder="Your batch title" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormComments" data-toggle="tooltip" title="Something you want to share or just don't want to forget?">
+                            Comments
+                        </label>
+                        <div class="col-sm-9">
+                            <textarea rows="3" class="form-control" id="batchPropertiesFormComments" name="comments" placeholder="Your comments"></textarea>
+                        </div>
+                    </div>
+                    <fieldset class="row mb-3">
+                        <legend class="col-form-label col-sm-3 pt-0" data-toggle="tooltip" title="Which worker types are allowed to run this study?">Allowed types</legend>
+                        <div class="col-sm-9">
+                            <div class="form-check ps-0 pb-1">
+                                <label class="switch no-info-icon" data-toggle="tooltip" title="Creates a link that can be used only once and always assigns the results to the same worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
+                                    <input type="checkbox" id="batchPropertiesFormPersonalSingle" name="allowedWorkerTypes" value="PersonalSingle">
+                                    <span class="slider slider-batch round"></span>
+                                </label>
+                                Personal Single
+                            </div>
+                            <div class="form-check ps-0 pb-1">
+                                <label class="switch no-info-icon" data-toggle="tooltip" title="Creates a link that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
+                                    <input type="checkbox" id="batchPropertiesFormPersonalMultiple" name="allowedWorkerTypes" value="PersonalMultiple">
+                                    <span class="slider slider-batch round"></span>
+                                </label>
+                                Personal Multiple
+                            </div>
+                            <div class="form-check ps-0 pb-1">
+                                <label class="switch no-info-icon" data-toggle="tooltip" title="Creates a link that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website.">
+                                    <input type="checkbox" id="batchPropertiesFormGeneralSingle" name="allowedWorkerTypes" value="GeneralSingle">
+                                    <span class="slider slider-batch round"></span>
+                                </label>
+                                General Single
+                            </div>
+                            <div class="form-check ps-0 pb-1">
+                                <label class="switch no-info-icon" data-toggle="tooltip" title="Creates a link that can be used many times and that creates a new worker with each run. Typically used where it's no problem that participants can do the same study several times.">
+                                    <input type="checkbox" id="batchPropertiesFormGeneralMultiple" name="allowedWorkerTypes" value="GeneralMultiple">
+                                    <span class="slider slider-batch round"></span>
+                                </label>
+                                General Multiple
+                            </div>
+                            <div class="form-check ps-0">
+                                <label class="switch no-info-icon" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once.">
+                                    <input type="checkbox" class="MT" name="allowedWorkerTypes" value="MT">
+                                    <span class="slider slider-batch round"></span>
+                                </label>
+                                MTurk
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormMaxTotalWorkers" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have. It's unlimited if you don't specify it.">
+                            Max total workers
+                        </label>
+                        <div class="col-sm-5 col-md-3">
+                            <div class="input-group">
+                                <div class="input-group-text">
+                                    <input type="checkbox" class="form-check-input checkbox-batch mt-0" id="batchPropertiesFormMaxTotalWorkerLimited" name="maxTotalWorkerLimited">
+                                    <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                    <input type="hidden" name="maxTotalWorkerLimited" value="false" />
+                                </div>
+                                <input type="number" class="form-control" id="batchPropertiesFormMaxTotalWorkers" name="maxTotalWorkers" min="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormJsonData" data-toggle="tooltip" title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                            JSON input<br>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#batchPropertiesJsonEditor">Pretty</button>
+                        </label>
+                        <div class="col-sm-9">
+                            <div class="form-control" id="batchPropertiesJsonEditor"></div>
+                            <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
+                            <textarea id="batchPropertiesFormJsonData" name="jsonData" hidden></textarea>
+                        </div>
+                    </div>
+                    <div class="card card-body mt-5" id="batchPropertiesGroupProperties">
+                        <div class="card-title px-2">
+                            <h5>Group Properties</h5>
+                        </div>
+                        <p class="d-none card-text" id="batchPropertiesNotGroupStudyText">This is not a group study. You can enable this option in the study properties.</p>
+                        <div class="row mb-2">
+                            <label class="col-sm-4 col-form-label" for="batchPropertiesFormMaxTotalMembers" data-toggle="tooltip" title="Enter the total number of members a group can have, active or inactive. It's unlimited if you don't specify it.">
+                                Max total members
+                            </label>
+                            <div class="col-sm-5 col-md-3">
+                                <div class="input-group">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" class="form-check-input checkbox-batch mt-0" id="batchPropertiesFormMaxTotalMemberLimited" name="maxTotalMemberLimited">
+                                        <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                        <input type="hidden" name="maxTotalMemberLimited" value="false" />
+                                    </div>
+                                    <input type="number" class="form-control" id="batchPropertiesFormMaxTotalMembers" name="maxTotalMembers" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label class="col-sm-4 col-form-label" for="batchPropertiesFormMaxActiveMembers" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time. It's unlimited if you don't specify it.">
+                                Max active members
+                            </label>
+                            <div class="col-sm-5 col-md-3">
+                                <div class="input-group">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" class="form-check-input checkbox-batch mt-0" id="batchPropertiesFormMaxActiveMemberLimited" name="maxActiveMemberLimited">
+                                        <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                        <input type="hidden" name="maxActiveMemberLimited" value="false" />
+                                    </div>
+                                    <input type="number" class="form-control" id="batchPropertiesFormMaxActiveMembers" name="maxActiveMembers" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-batch" id="batchPropertiesConfirmed">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as Editor from "@routes.Assets.versioned("lib/jatos-gui/javascripts/editor.js")";
+
+    const alerts = new Alerts.Named("batch-properties");
+    $("#batchPropertiesModal").on('hide.bs.modal', alerts.hideAll);
+
+    $('#batchTable').on('click', '.batch-properties', function() {
+        var batch = getBatchData(this);
+        var batchRow = $(this).closest('.batch-row');
+        $.ajax({
+            url: window.routes.StudyLinks.batchProperties(window.study.id, batch.id),
+            success: function(properties) {
+                fillBatchPropertiesForm(batch, properties, batchRow);
+                $('#batchPropertiesModal').modal('show');
+            },
+            error: function(response) {
+                Alerts.error("Couldn't load batch properties.");
+            }
+        });
+    });
+
+    function fillBatchPropertiesForm(batch, properties, batchRow) {
+        $("#batchPropertiesForm")[0].reset();
+        FormValidation.clear("#batchPropertiesForm");
+        $('#batchPropertiesModal').data('batch', batch);
+        $('#batchPropertiesModal').data('properties', properties);
+        $('#batchPropertiesModal').data('batchRow', batchRow);
+
+        $('#batchPropertiesId').text(batch.id);
+        $('#batchPropertiesFormTitle').val(properties.title);
+        $('#batchPropertiesFormComments').val(properties.comments);
+
+        // Set allowed worker types checkboxes
+        $.each(properties.allowedWorkerTypes, function(index, workerType) {
+            $(`#batchPropertiesForm${workerType}`).prop('checked', true);
+        });
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", properties.maxTotalWorkerLimited,
+            "maxTotalWorkers", properties.maxTotalWorkers);
+
+        Editor.setup("json", properties.jsonData, "#batchPropertiesJsonEditor");
+
+        // Group properties
+        if (window.study.isGroupStudy) {
+            $('#batchPropertiesGroupProperties').removeClass("disabled");
+            $("#batchPropertiesGroupProperties input").attr("disabled", false);
+            $('#batchPropertiesNotGroupStudyText').addClass("d-none");
+        } else {
+            $('#batchPropertiesGroupProperties').addClass("disabled");
+            $("#batchPropertiesGroupProperties input").attr("disabled", true);
+            $('#batchPropertiesNotGroupStudyText').removeClass("d-none");
+        }
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", properties.maxTotalMemberLimited,
+            "maxTotalMembers", properties.maxTotalMembers);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", properties.maxActiveMemberLimited,
+            "maxActiveMembers", properties.maxActiveMembers);
+        if (window.study.isLocked) {
+            alerts.warning("Study is locked. It is not possible to edit the properties.");
+            Helpers.disableForm("#batchPropertiesForm");
+        }
+    }
+
+    function drawInputGroupWithCheckbox(formSelector, checkboxName, checkboxValue, inputName, inputValue) {
+        const checkboxElem = $(`${formSelector} input[name='${checkboxName}']`);
+        const inputElem = $(`${formSelector} input[name='${inputName}']`);
+        if (checkboxValue) {
+            checkboxElem.prop('checked', true);
+            inputElem.prop('disabled', false);
+            inputElem.removeClass('disabled');
+            inputElem.val(inputValue);
+            inputElem.attr('title', '');
+        } else {
+            checkboxElem.prop('checked', false);
+            inputElem.prop('disabled', true);
+            inputElem.addClass('disabled');
+            inputElem.val('');
+            inputElem.attr('title', 'Unlimited. If you want to set a specific number, check the checkbox first.');
+        }
+    }
+
+    $("#batchPropertiesFormMaxTotalWorkerLimited").change(function(e) {
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", this.checked, "maxTotalWorkers", 1);
+    });
+
+    $("#batchPropertiesFormMaxTotalMemberLimited").change(function(e) {
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", this.checked, "maxTotalMembers", 1);
+    });
+
+    $("#batchPropertiesFormMaxActiveMemberLimited").change(function(e) {
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", this.checked, "maxActiveMembers", 1);
+    });
+
+    $("#batchPropertiesConfirmed").click(function(event) {
+        // Put JSON from editor into textarea to let it be picked up by form.serialize
+        const jsonData = Editor.getValue('#batchPropertiesJsonEditor');
+        $("#batchPropertiesFormJsonData").val(jsonData);
+        var properties = $('#batchPropertiesModal').data('properties');
+        $.ajax({
+            type: 'POST',
+            url: window.routes.StudyLinks.submitEditedBatchProperties(window.study.id, properties.id),
+            data: $('#batchPropertiesForm').serialize(),
+            success: function(response) {
+                $('#batchPropertiesModal').modal('hide');
+                Alerts.success("The batch properties were changed successfully.");
+                $("#batchTable").DataTable().ajax.reload();
+            },
+            error: function(response) {
+                FormValidation.clear("#batchPropertiesForm");
+                alerts.warning("The batch was not saved.");
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#batchPropertiesForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+    function getBatchData(element) {
+        const batchRow = $(element).closest('tr');
+        return $("#batchTable").DataTable().row(batchRow).data();
+    }
+
+</script>

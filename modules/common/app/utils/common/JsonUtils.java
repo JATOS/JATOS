@@ -10,11 +10,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import general.common.Common;
 import models.common.*;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Json;
@@ -33,8 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility class the handles everything around JSON, like marshaling and
- * unmarshaling. Uses a custom Json JSON object mapper defined in
+ * Utility class that handles everything around JSON, like marshaling and
+ * unmarshaling. Uses a custom JSON object mapper defined in
  * {@link JsonObjectMapper}.
  *
  * @author Kristian Lange
@@ -211,7 +208,7 @@ public class JsonUtils {
      * Returns ComponentResult.dataShort limited to MAX_CHAR_PER_RESULT characters.
      */
     public String componentResultDataShortForUI(ComponentResult result) {
-        if (result == null || result.getDataShort() == null) return "none";
+        if (result == null || result.getDataShort() == null) return "";
         // Escape HTML tags and &
         String dataShort = StringEscapeUtils.escapeHtml4(result.getDataShort());
         if (result.getDataSize() < ComponentResult.DATA_SHORT_MAX_CHARS) {
@@ -264,6 +261,7 @@ public class JsonUtils {
         node.put("studyCode", sr.getStudyCode());
         node.put("studyTitle", sr.getStudy().getTitle());
         node.put("batchTitle", sr.getBatch().getTitle());
+        node.put("batchId", sr.getBatch().getId());
         String duration;
         if (sr.getEndDate() != null) {
             duration = getDurationPretty(sr.getStartDate(), sr.getEndDate());
@@ -292,11 +290,11 @@ public class JsonUtils {
      * Returns group result ID of the given StudyResult or null if it doesn't exist.
      * Get group result Id either from active or history group result.
      */
-    private String getGroupResultId(StudyResult studyResult) {
+    private Long getGroupResultId(StudyResult studyResult) {
         if (studyResult.getActiveGroupResult() != null) {
-            return studyResult.getActiveGroupResult().getId().toString();
+            return studyResult.getActiveGroupResult().getId();
         } else if (studyResult.getHistoryGroupResult() != null) {
-            return studyResult.getHistoryGroupResult().getId().toString();
+            return studyResult.getHistoryGroupResult().getId();
         } else {
             return null;
         }
@@ -335,8 +333,7 @@ public class JsonUtils {
         node.put("studyResultId", cr.getStudyResult().getId());
         node.put("studyCode", cr.getStudyResult().getStudyCode());
         node.put("studyResultUuid", cr.getStudyResult().getUuid());
-        String groupResultId = getGroupResultId(cr.getStudyResult());
-        node.put("groupId", groupResultId);
+        node.put("groupId", getGroupResultId(cr.getStudyResult()));
         node.put("batchTitle", cr.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
@@ -468,7 +465,11 @@ public class JsonUtils {
             sidebarStudy.id = study.getId();
             sidebarStudy.uuid = study.getUuid();
             sidebarStudy.title = study.getTitle();
-            sidebarStudy.locked = study.isLocked();
+            sidebarStudy.isLocked = study.isLocked();
+            sidebarStudy.isGroupStudy = study.isGroupStudy();
+            sidebarStudy.isActive = study.isActive();
+            sidebarStudy.isAllowPreview = study.isAllowPreview();
+            sidebarStudy.isLinearStudy = study.isLinearStudy();
 
             for (Component component : study.getComponentList()) {
                 SidebarComponent sidebarComponent =
@@ -501,7 +502,11 @@ public class JsonUtils {
         public Long id;
         public String uuid;
         public String title;
-        public boolean locked;
+        public boolean isLocked;
+        public boolean isGroupStudy;
+        public boolean isActive;
+        public boolean isAllowPreview;
+        public boolean isLinearStudy;
         public final List<SidebarComponent> componentList = new ArrayList<>();
 
         /**

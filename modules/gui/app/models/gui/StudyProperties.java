@@ -238,31 +238,27 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (title == null || title.trim().isEmpty()) {
-            errorList.add(
-                    new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
         }
         if (title != null && title.length() > 255) {
-            errorList.add(
-                    new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
         }
         if (title != null && !Jsoup.isValid(title, Safelist.none())) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (description != null
-                && !Jsoup.isValid(description, Safelist.none())) {
-            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
-        }
-        if (dirName == null || dirName.trim().isEmpty()) {
-            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.MISSING_DIR_NAME));
-        }
-        if (dirName != null && dirName.length() > 255) {
-            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
-        }
-        if (dirName != null && !IOUtils.checkFilename(dirName)) {
-            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
-        }
-        if (dirName != null && Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
-            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+        if (dirName != null) { // Only during study creation, dirName can be null
+            if (dirName.trim().isEmpty()) {
+                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.MISSING_DIR_NAME));
+            }
+            if (dirName.length() > 255) {
+                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
+            }
+            if (!IOUtils.checkFilename(dirName)) {
+                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+            }
+            if (Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
+                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+            }
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));

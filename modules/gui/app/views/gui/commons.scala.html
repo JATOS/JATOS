@@ -1,0 +1,62 @@
+@(study: Option[common.Study], signedinUser: Option[common.User])
+@import controllers.gui.routes._
+@import general.common._
+@import utils.common._
+
+@*
+* Global parameter that cannot be reached by non-templates (e.g., JS modules in extra files)
+*@
+
+<script @{helper.CSPNonce.attr} type="module">
+    window.common = {};
+    window.common.jatosVersion = "@Common.getJatosVersion";
+    window.common.realHostUrl = location.protocol + '//' + location.host;
+    window.common.realBaseUrl = `${window.common.realHostUrl}@Common.getJatosUrlBasePath`;
+    window.common.jatosUrlBasePath = "@Common.getJatosUrlBasePath";
+    window.common.isUserRoleAllowSuperuser = @Common.isUserRoleAllowSuperuser;
+    window.common.termsOfUseUrl = "@Common.termsOfUseUrl";
+    window.common.logsAppender = "@Common.getLogsAppender";
+    window.common.isMultiNode = @Common.isMultiNode;
+    window.common.isResultUploadsEnabled = @Common.isResultUploadsEnabled;
+    window.common.isStudyLogsEnabled = @Common.isStudyLogsEnabled;
+    window.common.userPasswordMinLength = @Common.getUserPasswordMinLength;
+    window.common.userPasswordStrengthDescription = "@Common.getUserPasswordStrengthRegex.getLeft";
+
+    window.common.isLdapAllowed = @Common.isLdapAllowed;
+
+    window.common.isOauthGoogleAllowed = @Common.isOauthGoogleAllowed;
+    window.common.oauthGoogleClientId = "@Common.getOauthGoogleClientId";
+
+    window.common.isOidcAllowed = @Common.isOidcAllowed;
+    window.common.oidcSigninButtonText = "@Common.getOidcSigninButtonText";
+    window.common.oidcSigninButtonLogoUrl = "@Common.getOidcSigninButtonLogoUrl";
+
+    window.common.isOrcidAllowed = @Common.isOrcidAllowed;
+    window.common.orcidSigninButtonText = "@Common.getOrcidSigninButtonText";
+    window.common.orcidSigninButtonLogoUrl = "@Common.getOrcidSigninButtonLogoUrl";
+
+    window.common.userSessionTimeout = "@Common.getUserSessionTimeout";
+    window.common.userSessionInactivity = "@Common.getUserSessionInactivity";
+
+    @if(study.isDefined) {
+    window.study = {};
+    window.study.id = @study.get.getId;
+    window.study.title = "@study.get.getTitle";
+    window.study.isLocked = @study.get.isLocked;
+    window.study.isGroupStudy = @study.get.isGroupStudy;
+    }
+
+    @if(signedinUser.isDefined) {
+    window.signedinUser = {};
+    window.signedinUser.username = "@signedinUser.get.getUsername";
+    window.signedinUser.name = "@signedinUser.get.getName";
+    window.signedinUser.studyList = "";
+    window.signedinUser.authMethod = "@signedinUser.get.getAuthMethod";
+    window.signedinUser.isDb = @signedinUser.get.isDb;
+    window.signedinUser.isOauthGoogle = @signedinUser.get.isOauthGoogle;
+    window.signedinUser.isOidc = @signedinUser.get.isOidc;
+    window.signedinUser.isOrcid = @signedinUser.get.isOrcid;
+    window.signedinUser.isAdmin = @signedinUser.get.isAdmin;
+    window.signedinUser.isSuperuser = @signedinUser.get.isSuperuser;
+    }
+</script>

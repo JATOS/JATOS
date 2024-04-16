@@ -58,13 +58,12 @@ public class Home extends Controller {
     @Auth
     public Result home(int httpStatus) {
         User signedinUser = authService.getSignedinUser();
-        List<Study> studyList = studyDao.findAllByUser(signedinUser);
         String breadcrumbs = breadcrumbsService.generateForHome();
         boolean freshlySignedin = signedinUser.getLastLogin() != null &&
                 Duration.between(signedinUser.getLastLogin().toInstant(), Instant.now())
                         .minusSeconds(30)
                         .isNegative();
-        return status(httpStatus, views.html.gui.home.render(studyList, freshlySignedin, signedinUser, breadcrumbs));
+        return status(httpStatus, views.html.gui.home_new.render(freshlySignedin, signedinUser, breadcrumbs));
     }
 
     @Transactional

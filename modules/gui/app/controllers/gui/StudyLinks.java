@@ -100,7 +100,7 @@ public class StudyLinks extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
-        return ok(views.html.gui.studyLinks.studyLinks.render(signedinUser, breadcrumbs, study, request));
+        return ok(views.html.gui.studyLinks.studyLinks_new.render(signedinUser, breadcrumbs, study, request));
     }
 
     /**
@@ -232,7 +232,7 @@ public class StudyLinks extends Controller {
             return forbidden("The Batch Session has been updated since you " +
                     "loaded this page. Reload before trying to save again.");
         }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -258,7 +258,7 @@ public class StudyLinks extends Controller {
             return forbidden("The Group Session has been updated since you " +
                     "loaded this page. Reload before trying to save again.");
         }
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -318,7 +318,7 @@ public class StudyLinks extends Controller {
         }
 
         batchService.updateBatch(currentBatch, batchProperties);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**

@@ -1,0 +1,9 @@
+// Fix white padding of Google sign-in iframe
+iframe[src^="https://accounts.google.com"] {
+    color-scheme: normal;
+}
+
+// Fix flickering
+#signinGoogle {
+    height: 40px;
+}

@@ -1,0 +1,62 @@
+@(freshlySignedin: Boolean, signedinUser: common.User, breadcrumbs: String)
+@import controllers.gui.routes._
+@import general.common._
+@import utils.common._
+
+@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+
+<main class="container-xxl overflow-auto mt-4">
+
+    <div id="branding" class="rounded-3 text-center p-5 mb-3">
+        <!-- The HTML for branding can be loaded dynamically from an external source. -->
+        <img class="mb-3 heartbeat-hover" src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
+        <div class="no-info-icon fw-bold fs-1" data-toggle="tooltip" title="Just Another Tool for Online Studies">J A T O S</div>
+        <div class="fw-light">Version @Common.getJatosVersion()</div>
+        <div class="fw-medium">Simply set up your own online studies.</div>
+    </div>
+
+    <div id="localFileLocation" class="rounded-3 bg-body-tertiary p-3 mb-3 d-none">
+        <h5 class="text-center">Where are my files?</h5>
+        <dl class="row text-break mb-0">
+            <dt class="col-sm-6 text-end">Your study assets root path is:</dt>
+            <dd class="col-sm-6 font-monospace">@Common.getStudyAssetsRootPath()</dd>
+            <dt class="col-sm-6 text-end">Your result upload files path is:</dt>
+            <dd class="col-sm-6 font-monospace">@Common.getResultUploadsPath()</dd>
+            <dt class="col-sm-6 text-end">Your JATOS installation is in:</dt>
+            <dd class="col-sm-6 font-monospace">@Common.getBasepath()</dd>
+        </dl>
+    </div>
+
+</main>
+
+}
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+
+    if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
+        Alerts.info("As a Superuser you have access to all studies like a study member.", 0);
+    }
+
+    if(window.common.termsOfUseUrl) {
+        Alerts.info(`By using this application you agree to the <a href="${window.common.termsOfUseUrl}" target=”_blank”>Terms of Use</a>.`, 0);
+    }
+
+    // Load branding
+    $.ajax({
+        url: '@{Common.getJatosUrlBasePath()}jatos/branding',
+        @if(freshlySignedin) {
+        headers: { 'Cache-Control': 'max-age=0' },
+        }
+        success: function(res) {
+            $('#branding').html(res);
+            $('#branding').show();
+        },
+        error: function () {
+            $('#branding').show();
+        }
+    });
+
+    if (Helpers.isLocalhost()) $("#localFileLocation").removeClass("d-none");
+</script>

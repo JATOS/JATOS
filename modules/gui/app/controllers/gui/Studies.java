@@ -31,6 +31,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -102,7 +103,7 @@ public class Studies extends Controller {
         }
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
-        return status(httpStatus, views.html.gui.study.study
+        return status(httpStatus, views.html.gui.study.study_new
                 .render(signedinUser, breadcrumbs, study, studyResultCount));
     }
 
@@ -124,7 +125,8 @@ public class Studies extends Controller {
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
-
+        studyProperties.setUuid(UUID.randomUUID().toString());
+        studyProperties.setDirName(studyProperties.getUuid());
         try {
             ioUtils.createStudyAssetsDir(studyProperties.getDirName());
         } catch (IOException e) {
@@ -171,7 +173,25 @@ public class Studies extends Controller {
         }
 
         studyService.updateStudy(study, studyProperties, signedinUser);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
+    }
+
+    /**
+     * POST request to update study properties
+     */
+    @Transactional
+    @Auth
+    public Result submitDescription(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
+        Study study = studyDao.findById(studyId);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStudyLocked(study);
+
+        // Todo check description
+
+        String description = request.body().asText();
+        studyService.updateDescription(study, description, signedinUser);
+        return ok();
     }
 
     /**
@@ -266,7 +286,7 @@ public class Studies extends Controller {
         }
 
         studyService.addAllUserMembers(study);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -280,7 +300,7 @@ public class Studies extends Controller {
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         studyService.removeAllUserMembers(study);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -298,7 +318,7 @@ public class Studies extends Controller {
         checker.checkStandardForComponent(studyId, componentId, component);
         studyService.changeComponentPosition(newPosition, study, component);
 
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**

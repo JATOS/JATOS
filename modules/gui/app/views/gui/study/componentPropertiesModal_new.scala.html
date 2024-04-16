@@ -1,0 +1,288 @@
+@(study: common.Study)
+@import controllers.gui.routes._
+@import general.common._
+
+@* Create component Modal *@
+<div class="modal fade" id="createComponentModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add component</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-component" id="createComponentForm">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="createComponentFormTitle">
+                            Title<span class="input-required" data-toggle="tooltip" title="required"></span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="createComponentFormTitle" name="title" placeholder="Your component title" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="createComponentFormHtmlFilePath" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a file path with subdirectories. This path must be within the directory of this study's assets. Use '/' as the directory separator - even on MS Windows.">
+                            HTML file path
+                        </label>
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <span class="input-group-text">/@study.getDirName()/</span>
+                                <input type="text" class="form-control" id="createComponentFormHtmlFilePath" name="htmlFilePath" placeholder="Path to the actual HTML file" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-component" id="createComponentConfirmed">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* Edit component properties Modal *@
+<div class="modal fade" id="componentPropertiesModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Component properties
+                    <div class="fs-6 fw-light text-truncate">
+                        <span data-toggle="tooltip" title="This ID is unique within this JATOS instance">ID</span>:
+                        <span class="ms-1 user-select-all" id="componentPropertiesId"></span>
+                    </div>
+                    <div class="fs-6 fw-light text-truncate">
+                        <span data-toggle="tooltip" title="Universally unique identifier - used to keep track of components between different JATOS instances">UUID</span>:
+                        <span class="ms-1 user-select-all" id="componentPropertiesUuid"></span>
+                    </div>
+                </h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-component" id="componentPropertiesForm">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormTitle">
+                            Title<span class="input-required" data-toggle="tooltip" title="required"></span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="componentPropertiesFormTitle" name="title" placeholder="Your component title" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormReloadable" data-toggle="tooltip" title="Allow reloading of this component. If this box is not checked, reloading this component's page will lead to the ending of the study with an error.">
+                            Allow reload
+                        </label>
+                        <div class="form-check col-sm-9 ps-3 pt-2">
+                            <label class="switch no-info-icon">
+                                <input type="checkbox" class="form-check-input checkbox-study" id="componentPropertiesFormReloadable" name="reloadable" value="true">
+                                <span class="slider slider-component round"></span>
+                            </label>
+                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            <input type="hidden" name="componentPropertiesFormReloadable" value="false" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormHtmlFilePath" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a file path with subdirectories. This path must be within the directory of this study's assets. Use '/' as the directory separator - even on MS Windows.">
+                            HTML file path
+                        </label>
+                        <label class="d-none" for="componentPropertiesFormHtmlFileRename"></label>
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <span class="input-group-text">/@study.getDirName()/</span>
+                                <input type="text" class="form-control" id="componentPropertiesFormHtmlFilePath" name="htmlFilePath" placeholder="Path to the actual HTML file" required>
+                                <input type="checkbox" id="componentPropertiesFormHtmlFileRename" name="htmlFileRename" value="true" hidden>
+                                <input type="hidden" name="htmlFileRename" value="false" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormComments" data-toggle="tooltip" title="Something you want to share or just don't want to forget?">
+                            Comments
+                        </label>
+                        <div class="col-sm-9">
+                            <textarea rows="2" class="form-control" id="componentPropertiesFormComments" name="comments" placeholder="Your comments"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormJsonData" data-toggle="tooltip" title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                            JSON input<br>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#componentPropertiesJsonEditor">Pretty</button>
+                        </label>
+                        <div class="col-sm-9">
+                            <div class="form-control" id="componentPropertiesJsonEditor"></div>
+                            <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
+                            <textarea id="componentPropertiesFormJsonData" name="jsonData" hidden></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-component" id="componentPropertiesConfirmed">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Rename HTML filename confirmation Modal *@
+<div class="modal fade" id="htmlFileNameConfirmationModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change HTML filename</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="htmlFileNameConfirmationText"></div>
+                <div class="form-check">
+                    <label class="form-check-label" for="htmlFileNameConfirmationKeep">Link to a different HTML file</label>
+                    <input type="checkbox" class="form-check-input checkbox-component" id="htmlFileNameConfirmationKeep">
+                    <div class="form-text" id="htmlFileNameConfirmationHelp"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-study" id="htmlFileNameConfirmed">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as Editor from "@routes.Assets.versioned("lib/jatos-gui/javascripts/editor.js")";
+
+    const alerts = new Alerts.Named("component-properties");
+    $("#createComponentModal, #componentPropertiesModal").on('hide.bs.modal', alerts.hideAll);
+
+    $("#createComponentModal").on('show.bs.modal', function() {
+        $("#createComponentForm")[0].reset();
+        FormValidation.clear("#createComponentForm");
+
+        // Disable all fields if study is locked
+        if (window.study.isLocked) {
+            alerts.warning("Study is locked. It is not possible to add a new component.");
+            Helpers.disableForm("#createComponentModal");
+        }
+    });
+
+    $("#createComponentConfirmed").click(function(event) {
+        $.ajax({
+            type : 'POST',
+            url : window.routes.Components.submitCreated(window.study.id),
+            data : $('#createComponentForm').serialize(),
+            success : function(response) {
+                $('#createComponentModal').modal('hide');
+                alerts.success("The component was added successfully.");
+                $('#componentsTable').DataTable().ajax.reload();
+            },
+            error : function(response) {
+                FormValidation.clear("#createComponentForm");
+                alerts.warning("The component was not saved.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#createComponentForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+    $('#componentsTable').on('click', '.component-properties', function() {
+        $.ajax({
+            url: window.routes.Components.properties(window.study.id, getComponentId(this)),
+            success: function(response) {
+                $("#componentPropertiesForm")[0].reset();
+                FormValidation.clear("#componentPropertiesForm");
+                fillComponentPropertiesForm(response);
+                $("#componentPropertiesModal").modal('show');
+            },
+            error: function(response) {
+                alerts.error("Couldn't load component properties.");
+            }
+        });
+    });
+
+    function fillComponentPropertiesForm(properties) {
+        $("#componentPropertiesForm")[0].reset();
+        FormValidation.clear("#componentPropertiesForm");
+        $('#componentPropertiesModal').data(properties);
+
+        $('#componentPropertiesId').text(properties.id);
+        $('#componentPropertiesUuid').text(properties.uuid);
+        $('#componentPropertiesFormTitle').val(properties.title);
+        $('#componentPropertiesFormReloadable').prop('checked', properties.reloadable);
+        $('#componentPropertiesFormHtmlFilePath').val(properties.htmlFilePath);
+        $('#componentPropertiesFormComments').val(properties.comments ? properties.comments : "");
+        Editor.setup("json", properties.jsonData, "#componentPropertiesJsonEditor");
+
+        // Disable all fields if study is locked
+        if (window.study.isLocked) {
+            alerts.warning("Study is locked. It is not possible to edit the properties.");
+            Helpers.disableForm("#componentPropertiesModal");
+        }
+    }
+
+    $("#componentPropertiesConfirmed").click(function(event) {
+        const oldFileName = $('#componentPropertiesModal').data().htmlFilePath;
+        const oldFileExists = $('#componentPropertiesModal').data().htmlFileExists;
+        const newFileName = $('#componentPropertiesFormHtmlFilePath').val().trim();
+        if (oldFileName === undefined || !oldFileExists || oldFileName == newFileName) {
+            submitComponentPropertiesForm();
+        } else {
+            const desciption = `<p>The HTML file linked to this component will be renamed from <b>${oldFileName}</b> to <b>${newFileName}</b>.</p>`;
+            $('#htmlFileNameConfirmationText').html(desciption);
+            $('#htmlFileNameConfirmationKeep').prop('checked', false);
+            const explanation = `If you check this box, this component will link to a different HTML file and the HTML file will <b>not</b> be renamed in the file system.`;
+            $('#htmlFileNameConfirmationHelp').html(explanation);
+            $('#htmlFileNameConfirmationModal').modal('show');
+        }
+    });
+
+    $('#htmlFileNameConfirmed').click(function() {
+        $('#htmlFileNameConfirmationModal').modal('hide');
+        // Put the checkbox result into the properties form
+        const keepHtmlFileName = $('#htmlFileNameConfirmationKeep').prop('checked');
+        $('#componentPropertiesFormHtmlFileRename').prop('checked', !keepHtmlFileName);
+        submitComponentPropertiesForm();
+    });
+
+    function submitComponentPropertiesForm() {
+        const componentId = $('#componentPropertiesModal').data().id;
+
+        // Put JSON from editor into textarea to let it be picked up by form.serialize
+        const jsonData = Editor.getValue('#componentPropertiesJsonEditor');
+        $("#componentPropertiesFormJsonData").val(jsonData);
+
+        $.ajax({
+            type : 'POST',
+            url : window.routes.Components.submitEdited(window.study.id, componentId),
+            data : $('#componentPropertiesForm').serialize(),
+            success : function(response) {
+                $('#componentPropertiesModal').modal('hide');
+                Alerts.success("The component properties were changed successfully.");
+                $('#componentsTable').DataTable().ajax.reload();
+            },
+            error : function(response) {
+                FormValidation.clear("#componentPropertiesForm");
+                alerts.warning("The component was not saved.");
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#componentPropertiesForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    }
+
+    function getComponentId(element) {
+        const tr = $(element).closest('tr');
+        const rowData = $('#componentsTable').DataTable().row(tr).data();
+        return rowData.id;
+    }
+
+</script>

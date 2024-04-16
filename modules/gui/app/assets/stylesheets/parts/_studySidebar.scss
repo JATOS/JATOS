@@ -1,0 +1,16 @@
+#studySidebar .dropdown-menu.show {
+    z-index: 1025;
+}
+
+#studySidebar .sticky-top {
+    background: var(--bs-body-bg);
+}
+
+#studySidebar .list-group-item.active {
+    background-color: $study-color;
+    border-color: $study-color;
+}
+
+#studySidebar .list-group-item:hover {
+    box-shadow: inset 0 0 0 9999px rgba(gray, 0.15);
+}

@@ -38,7 +38,7 @@ PUT      /jatos/api/v1/results/delete                                       @con
 # Admin controller
 GET      /jatos/admin                                                       @controllers.gui.Admin.administration(request: Request)
 GET      /jatos/status                                                      @controllers.gui.Admin.status()
-GET      /jatos/studyAdmin                                                  @controllers.gui.Admin.studyAdmin(request: Request)
+GET      /jatos/studyManager                                                @controllers.gui.Admin.studyManager(request: Request)
 GET      /jatos/allStudiesData                                              @controllers.gui.Admin.allStudiesData()
 GET      /jatos/studiesData                                                 @controllers.gui.Admin.studiesDataByUser(username)
 GET      /jatos/listLogs                                                    @controllers.gui.Admin.listLogs()
@@ -55,7 +55,6 @@ GET      /jatos/downloadJatos                                               @con
 GET      /jatos/updateAndRestart                                            @controllers.gui.Updates.updateAndRestart(backupAll: Boolean)
 
 # Tests controller
-GET      /jatos/test                                                        @controllers.gui.Tests.test()
 GET      /jatos/testDatabase                                                @controllers.gui.Tests.testDatabase()
 GET      /jatos/testFolderAccess                                            @controllers.gui.Tests.testFolderAccess()
 GET      /jatos/testWebSocket                                               @controllers.gui.Tests.testWebSocket()
@@ -105,19 +104,20 @@ GET      /jatos/:studyId/batch/:batchId/results                             @con
 GET      /jatos/batch/:batchId/tableData                                    @controllers.gui.StudyResults.tableDataByBatch(batchId: Long, workerType ?= null)
 GET      /jatos/:studyId/group/:groupId/results                             @controllers.gui.StudyResults.groupsStudyResults(studyId: Long, groupId: Long)
 GET      /jatos/group/:groupId/tableData                                    @controllers.gui.StudyResults.tableDataByGroup(groupId: Long)
-GET      /jatos/:studyId/results                                            @controllers.gui.StudyResults.studysStudyResults(studyId: Long)
-GET      /jatos/:studyId/resultsTableData                                   @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
 PUT      /jatos/studyResult/delete                                          @controllers.gui.StudyResults.remove(request: Request)
 GET      /jatos/studyResult/:studyResultId/componentResults                 @controllers.gui.StudyResults.tableDataComponentResultsByStudyResult(studyResultId: Long)
 GET      /jatos/componentResults/tableData                                  @controllers.gui.ComponentResults.tableDataByComponent(componentId: Long)
 PUT      /jatos/componentResults/delete                                     @controllers.gui.ComponentResults.remove(request: Request)
 GET      /jatos/componentResult/:componentResultId/data                     @controllers.gui.ComponentResults.exportSingleResultData(componentResultId: Long)
 GET      /jatos/:studyId/:componentId/results                               @controllers.gui.ComponentResults.componentResults(studyId: Long, componentId: Long)
+GET      /jatos/:studyId/tableData                                          @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
+GET      /jatos/:studyId/results                                            @controllers.gui.StudyResults.studysStudyResults(studyId: Long)
 
 # Studies controller
 POST     /jatos/study                                                       @controllers.gui.Studies.submitCreated()
 GET      /jatos/:studyId/properties                                         @controllers.gui.Studies.properties(studyId: Long)
 POST     /jatos/:studyId/properties                                         @controllers.gui.Studies.submitEdited(studyId: Long)
+POST     /jatos/:studyId/properties/description                             @controllers.gui.Studies.submitDescription(request: Request, studyId: Long)
 POST     /jatos/:studyId/properties/active                                  @controllers.gui.Studies.toggleActive(studyId: Long, active: Boolean)
 POST     /jatos/:studyId/memberUser                                         @controllers.gui.Studies.toggleMemberUser(studyId: Long, username, isMember: Boolean)
 POST     /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.addAllMemberUsers(studyId: Long)

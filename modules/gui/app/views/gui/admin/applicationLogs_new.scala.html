@@ -1,0 +1,91 @@
+@import controllers.gui.routes._
+@import general.common._
+
+@* List logs directory Modal *@
+<div class="modal fade" id="listLogsModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Content of JATOS' <i>logs</i> directory</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>You can download the files or click on 'Show' (if available) to see them right away.</p>
+                <div id="listLgsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Log Modal *@
+<div class="modal fade" id="logModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log (reverse order)</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre><code></code></pre>
+                <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-toggle="tooltip" title="Copy to clipboard"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+
+    const alerts = new Alerts.Named("application-logs");
+    $("#listLogsModal, #logModal").on('hide.bs.modal', alerts.hideAll);
+
+    // Hide 'Logs' button in admin toolbar if JATOS does not log into files but STDOUT
+    if (window.common.logsAppender.includes("STDOUT")) {
+        $("#adminToolbarLogs").hide();
+    }
+
+    $("#listLogsModal").on('show.bs.modal', function() {
+        $.ajax({
+            url: window.routes.Admin.listLogs,
+            success: function(logFiles) {
+                $('#listLgsList').html(generateListLogsHtml(logFiles));
+            },
+            error : function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+
+    function generateListLogsHtml(logFiles) {
+        const listLogsHtml = [];
+        listLogsHtml.push("<ul>");
+        logFiles.forEach((filename) => {
+            const url = window.routes.Admin.logs(filename, -1, false);
+            let html = `<li><a href="${url}" download>${filename}</a>`;
+            if (!filename.includes(".gz")) {
+                html += `<button type="button" class="btn btn-nav btn-sm ms-2" data-filename="${filename}" data-bs-toggle="modal" data-bs-target="#logModal">Show</button>`;
+            }
+            html += '</li>';
+            listLogsHtml.push(html);
+        });
+        listLogsHtml.push("</ul>");
+        return listLogsHtml.join("");
+    }
+
+    $("#logModal").on('show.bs.modal', function(e) {
+        const filename = $(e.relatedTarget).data("filename");
+        const url = window.routes.Admin.logs(filename, -1, true);
+        $('#logModal .modal-body pre code').text("");
+        $.ajax({
+            url: url,
+            success: function(result) {
+                $('#logModal .modal-title').text(`${filename} (reverse order)`);
+                $('#logModal .modal-body pre code').text(result);
+            },
+            error : function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+</script>

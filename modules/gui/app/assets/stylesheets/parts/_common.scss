@@ -1,0 +1,55 @@
+i.fw-bold {
+    -webkit-text-stroke: 1px;
+}
+
+.badge {
+    pointer-events: none !important;
+}
+
+.disabled {
+//	opacity: 0.4 !important;
+}
+
+// Show tooltips on disabled button too
+button[disabled] {
+    pointer-events: auto;
+}
+
+.hide-keep-width {
+    visibility: hidden;
+    height: 0;
+}
+
+.btn-xs {
+    --bs-btn-padding-y: .25rem;
+    --bs-btn-padding-x: .5rem;
+    --bs-btn-font-size: .75rem;
+}
+
+// Define width of xxl Modal
+@media (min-width: 576px) {
+    .modal-xxl {
+        --bs-modal-width: 500px;
+    }
+}
+
+// Define width of xxl Modal
+@media (min-width: 992px) {
+    .modal-xxl {
+        --bs-modal-width: 900px;
+    }
+}
+
+// Define width of xxl Modal
+@media (min-width: 1200px) {
+    .modal-xxl {
+        --bs-modal-width: 1140px;
+    }
+}
+
+// Define width of xxl Modal
+@media (min-width: 1500px) {
+    .modal-xxl {
+        --bs-modal-width: 1440px;
+    }
+}

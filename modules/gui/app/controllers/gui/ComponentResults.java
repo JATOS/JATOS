@@ -80,7 +80,7 @@ public class ComponentResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.componentResults.render(signedinUser, breadcrumbs, study, component));
+        return ok(views.html.gui.result.componentResults_new.render(signedinUser, breadcrumbs, study, component));
     }
 
     /**
@@ -98,7 +98,7 @@ public class ComponentResults extends Controller {
         request.body().asJson().get("componentResultIds").forEach(node -> componentResultIdList.add(node.asLong()));
         // Permission check is done in service for each result individually
         resultRemover.removeComponentResults(componentResultIdList, signedinUser, false);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**

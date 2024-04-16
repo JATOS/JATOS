@@ -1,0 +1,62 @@
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
+@import controllers.gui.routes._
+@import general.common._
+
+@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+
+<main class="container-xxl overflow-auto mt-4">
+
+    <div class="btn-toolbar mb-4" id="adminToolbar">
+        <div class="btn-group me-2 mb-2">
+            <button class="btn btn-admin" id="userManager" type="button" data-toggle="tooltip" title="Create, deactivate, or delete users and change their passwords">
+                <i class="bi-people-fill pe-1"></i>User Manager
+            </button>
+        </div>
+        <div class="btn-group me-2 mb-2">
+            <button class="btn btn-admin" id="studyManager" type="button" data-toggle="tooltip" title="Information about all studies, like users, disk size, database size. Possibility to deactivate a study.">
+                <i class="bi-building-gear pe-1"></i>Study Manager
+            </button>
+        </div>
+
+        <div class="btn-group me-2 mb-2">
+            <div class="btn-group" id="adminToolbarLogs">
+                <button class="btn btn-admin dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi-file-earmark-ruled pe-1"></i>Logs
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <button class="dropdown-item" id="applicationLog" type="button" data-filename="@Common.getLogsFilename()" data-bs-toggle="modal" data-bs-target="#logModal">Show @{Common.getLogsFilename()}</button>
+                    </li>
+                    <li>
+                        <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#listLogsModal">List all logs</button>
+                    </li>
+                </ul>
+            </div>
+            <button id="adminTests" type="button" class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#testsModal">
+                <i class="bi-file-check pe-1"></i>Tests
+            </button>
+            <button id="systemInfo" type="button" class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#systemInfoModal">
+                <i class="bi-info-square pe-1"></i>System Info
+            </button>
+        </div>
+    </div>
+
+    @views.html.gui.admin.jatosUpdate_new()
+    @views.html.gui.admin.jatosStatus_new()
+    @views.html.gui.admin.applicationLogs_new()
+    @views.html.gui.admin.tests_new()
+    @views.html.gui.admin.systemInfo_new()
+
+</main>
+
+}
+
+<script @{helper.CSPNonce.attr} type="module">
+    $('#userManager').click(function() {
+        window.location.href = window.routes.Users.userManager;
+    });
+
+    $('#studyManager').click(function() {
+        window.location.href = window.routes.Admin.studyManager;
+    });
+</script>

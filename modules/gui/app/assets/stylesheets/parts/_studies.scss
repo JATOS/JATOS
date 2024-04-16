@@ -1,0 +1,10 @@
+// Add background for sticky toolbar
+#studyToolbar {
+    background: var(--bs-body-bg);
+}
+
+#componentsTable .component-title {
+    max-width: 20em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}

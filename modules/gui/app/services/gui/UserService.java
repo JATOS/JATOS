@@ -75,7 +75,7 @@ public class UserService {
     public User retrieveUser(String normalizedUsername) throws NotFoundException {
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
-            throw new NotFoundException(MessagesStrings.userNotExist(normalizedUsername));
+            throw new NotFoundException("An user with username \"" + normalizedUsername + "\" doesn't exist.");
         }
         return user;
     }
@@ -83,13 +83,14 @@ public class UserService {
     /**
      * Creates a user, sets password hash and persists him. Creates and persists a JatosWorker for the user.
      */
-    public void bindToUserAndPersist(NewUserModel newUserModel) {
+    public User bindToUserAndPersist(NewUserModel newUserModel) {
         //noinspection deprecation
-        jpa.withTransaction(() -> {
+        return jpa.withTransaction(() -> {
             User user = new User(newUserModel.getUsername(), newUserModel.getName(), newUserModel.getEmail());
             String password = newUserModel.getPassword();
             AuthMethod authMethod = newUserModel.getAuthMethod();
             createAndPersistUser(user, password, false, authMethod);
+            return user;
         });
     }
 

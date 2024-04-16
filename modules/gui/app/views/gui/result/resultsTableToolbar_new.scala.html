@@ -1,0 +1,31 @@
+<div class="sticky-top" id="resultTableToolbars">
+
+    @* Upper toolbar (buttons get added dynamically) *@
+    <div class="d-flex user-select-none mb-2" id="resultsTableUpperToolbar">
+        <div class="btn-toolbar flex-nowrap"></div>
+    </div>
+
+    @* Lower toolbar (some things get added dynamically) *@
+    <div class="row align-items-start user-select-none" id="resultsTableLowerToolbar">
+        <div class="col-auto me-3 mb-2" id="resultsTableSelect">
+            <label class="info-icon mb-0 d-none d-lg-block" data-toggle="tooltip" title="Select or deselect table rows (results)">Select</label>
+        </div>
+        <div class="col me-3 mb-2" id="resultsTableSearch">
+            <label for="resultsTableSearchInput" class="form-label info-icon mb-0 d-none d-lg-block" data-toggle="tooltip" title="You can filter for table's content (metadata)">Filter</label>
+            <div class="btn-toolbar flex-nowrap">
+                <div class="input-group flex-nowrap me-2">
+                    <input type="search" class="form-control" id="resultsTableSearchInput">
+                    <button type="button" class="btn btn-secondary regex" data-bs-toggle="button" data-toggle="tooltip" title="Filter by regular expression">RegEx</button>
+                    <button type="button" class="btn btn-secondary caseSensitive" data-bs-toggle="button" data-toggle="tooltip" title="Filter case sensitive">Aa</button>
+                </div>
+                <button class="btn btn-secondary text-nowrap dropdown-toggle" type="button" data-bs-toggle="collapse" data-bs-target=".dtsb-searchBuilder" data-toggle="tooltip" title="Define complex filter criteria">Filter Builder</button>
+            </div>
+        </div>
+        <div class="col-auto mb-2">
+            <label class="info-icon mb-0 d-none d-lg-block" data-toggle="tooltip" title="Change the table's setup">Show</label>
+            <div class="btn-toolbar flex-nowrap">
+                <div id="resultsTableCustomize"></div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,98 @@
+#resultTableToolbars {
+    background: var(--bs-body-bg);
+}
+
+// Set background color in header
+#resultsTable thead th {
+    background: var(--bs-body-bg);
+}
+
+// Change color in selected rows
+#resultsTable tr.selected td {
+    box-shadow: inset 0 0 0 9999px rgba($study-color, 0.075);
+    color: var(--bs-table-color);
+}
+
+// Change color in selected and hovered rows
+#resultsTable tr.selected:hover td {
+    box-shadow: inset 0 0 0 9999px rgba($study-color, 0.15);
+    color: var(--bs-table-color);
+}
+
+// Fix color in selected buttons in a cell
+#resultsTable tr.selected td a.btn {
+    color: var(--bs-btn-color) !important;
+}
+
+// Fix color in selected buttons in a cell
+#resultsTable tr.selected td a.btn:hover {
+    color: var(--bs-btn-hover-color) !important;
+}
+
+// Fix color in selected links in a cell
+#resultsTable tr.selected td a {
+    color: var(--bs-link-color) !important;
+}
+
+// Fix color in selected links in a cell
+#resultsTable tr.selected td a:hover {
+    color: var(--bs-link-hover-color) !important;
+}
+
+// Additional info row (e.g. component results)
+#resultsTable tr.info:hover td {
+     box-shadow: unset;
+}
+
+// Additional info row (e.g. component results)
+#resultsTable tr.info tbody:hover tr td {
+    box-shadow: inset 0 0 0 9999px rgba($component-color, 0.075);
+}
+
+// Additional info row (e.g. component results)
+#resultsTable tr.info table td .card {
+    background: transparent;
+}
+
+// Additional info row (e.g. component results): rotate title 90 deg
+#resultsTable tr.info .title {
+    color: var(--bs-white);
+    font-weight: 600;
+    background: $component-color;
+    transform: rotate(180deg);
+    writing-mode: vertical-rl;
+}
+
+#resultsTable tr.info {
+    background: $component-color;
+}
+
+// Additional info row (e.g. component results)
+#resultsTable tr.info td table thead {
+    border-top: 0.35rem solid $component-color;
+    border-right: 0.35rem solid $component-color;
+}
+
+// Additional info row (e.g. component results)
+#resultsTable tr.info td table tbody {
+    border-top: 0.7rem solid $component-color;
+    border-right: 0.35rem solid $component-color;
+}
+
+// Additional info row (e.g. component results)
+#resultsTable tr.info td table tbody:last-child {
+    border-bottom: 0.35rem solid $component-color;
+    border-right: 0.35rem solid $component-color;
+}
+
+// Change color of pagination button in study results
+#resultsTable_wrapper .study-results .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $study-color;
+    --bs-pagination-active-border-color: $study-color;
+}
+
+// Change color of pagination button in component results
+#resultsTable_wrapper .components-results .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $component-color;
+    --bs-pagination-active-border-color: $component-color;
+}

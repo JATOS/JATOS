@@ -3,6 +3,7 @@ package controllers.gui;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import auth.gui.SigninFormValidation;
+import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -20,6 +21,7 @@ import play.data.Form;
 import play.data.FormFactory;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
+import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -79,7 +81,7 @@ public class Users extends Controller {
     public Result userManager() {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
-        return ok(views.html.gui.admin.userManager.render(signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.userManager_new.render(signedinUser, breadcrumbs));
     }
 
     /**
@@ -175,8 +177,8 @@ public class Users extends Controller {
         form = signinFormValidation.validateNewUser(form);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        userService.bindToUserAndPersist(form.get());
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        User newUser = userService.bindToUserAndPersist(form.get());
+        return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(newUser)));
     }
 
     /**
@@ -213,7 +215,7 @@ public class Users extends Controller {
         user.setName(form.get().getName());
         user.setEmail(form.get().getEmail());
         userDao.update(user);
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -232,7 +234,7 @@ public class Users extends Controller {
 
         User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
         if (user == null) {
-            return badRequest("An user with username " + normalizedUsernameOfUserToChange + " doesn't exist.");
+            return badRequest("An user with username \"" + normalizedUsernameOfUserToChange + "\" doesn't exist.");
         }
         if (!user.isDb()) {
             return forbidden("It's not possible to change the password of non-local authenticated users.");
@@ -246,6 +248,8 @@ public class Users extends Controller {
             return forbidden(form.errorsAsJson());
         }
 
+        // Admins do not have to repeat the password
+        form.get().setNewPasswordRepeat(form.get().getNewPassword());
         // Validate
         form = signinFormValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
@@ -254,7 +258,7 @@ public class Users extends Controller {
         String newPassword = form.get().getNewPassword();
         userService.updatePassword(user, newPassword);
 
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -290,7 +294,7 @@ public class Users extends Controller {
         String newPassword = form.get().getNewPassword();
         userService.updatePassword(signedinUser, newPassword);
 
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**
@@ -307,7 +311,7 @@ public class Users extends Controller {
         String normalizedSignedinUsername = signedinUser.getUsername();
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
         if (!signedinUser.isAdmin() && !normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
-            return forbidden(MessagesStrings.NOT_ALLOWED_TO_DELETE_USER);
+            return forbidden("You are not allowed to delete this user.");
         }
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
@@ -317,11 +321,11 @@ public class Users extends Controller {
                 try {
                     String password = requestData.get("password");
                     if (!authService.authenticate(signedinUser, password)) {
-                        return forbidden(MessagesStrings.WRONG_PASSWORD);
+                        return forbidden(Json.mapper().readTree("{\"password\": [\"wrong password\"]}"));
                     }
                 } catch (NamingException e) {
                     LOGGER.warn("LDAP problems - " + e);
-                    return internalServerError(MessagesStrings.LDAP_PROBLEMS);
+                    return internalServerError("Problems with LDAP. Ask your admin.");
                 }
                 break;
             case OIDC:
@@ -330,7 +334,7 @@ public class Users extends Controller {
                 // Google OAuth, OIDC and ORCID users confirm with their username
                 String username = requestData.get("username");
                 if (!username.equals(signedinUser.getUsername())) {
-                    return forbidden(MessagesStrings.WRONG_USERNAME);
+                    return forbidden("Wrong username");
                 }
                 break;
             default:
@@ -343,13 +347,13 @@ public class Users extends Controller {
         if (normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
             return ok(" ").withNewSession();
         } else {
-            return ok(" "); // jQuery.ajax cannot handle empty responses
+            return ok();
         }
     }
 
     private void checkUsernameIsOfSignedinUser(String normalizedUsername, User signedinUser) throws JatosGuiException {
         if (!normalizedUsername.equals(signedinUser.getUsername())) {
-            ForbiddenException e = new ForbiddenException(MessagesStrings.userNotAllowedToGetData(normalizedUsername));
+            ForbiddenException e = new ForbiddenException("You are not allowed to get data for user \"" + normalizedUsername + "\".");
             jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
         }
     }

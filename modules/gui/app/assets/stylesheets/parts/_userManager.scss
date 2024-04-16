@@ -1,0 +1,36 @@
+// Additional info row (e.g. component results): rotate title 90 deg
+#userAdminTable tr.info .title {
+    color: var(--bs-white);
+    font-weight: 600;
+    background: $admin-color;
+    transform: rotate(180deg);
+    writing-mode: vertical-rl;
+}
+
+#userAdminTable tr.info {
+    background: $admin-color;
+}
+
+// Additional info row (e.g. component results)
+#userAdminTable tr.info td table thead {
+    border-top: 0.35rem solid $admin-color;
+    border-right: 0.35rem solid $admin-color;
+}
+
+// Additional info row (e.g. component results)
+#userAdminTable tr.info td table tbody {
+    border-top: 0.7rem solid $admin-color;
+    border-right: 0.35rem solid $admin-color;
+}
+
+// Additional info row (e.g. component results)
+#userAdminTable tr.info td table tbody:last-child {
+    border-bottom: 0.35rem solid $admin-color;
+    border-right: 0.35rem solid $admin-color;
+}
+
+// Change color of pagination button
+#userAdminTable_wrapper .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $admin-color;
+    --bs-pagination-active-border-color: $admin-color;
+}

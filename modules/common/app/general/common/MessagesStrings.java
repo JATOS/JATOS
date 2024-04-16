@@ -181,16 +181,12 @@ public class MessagesStrings {
         return "The component with ID " + componentId + " doesn't belong to any study.";
     }
 
-    public static String userNotExist(String username) {
-        return "An user with username " + username + " doesn't exist.";
-    }
-
     public static String userPasswordMinLength(int minLength) {
         return "Passwords should be at least " + minLength + " characters long.";
     }
 
     public static String userNotAllowedToGetData(String username) {
-        return "You are not allowed to get data for user " + username + ".";
+        return "You are not allowed to get data for user \"" + username + "\".";
     }
 
     public static String componentNotExist(Long componentId) {

@@ -1,0 +1,48 @@
+// JATOS logo: set height (it often determines the height of the whole navbar)
+.navbar-brand svg {
+    height: 2.5rem;
+}
+
+// JATOS logo: change circle according to theme
+.navbar-brand svg ellipse {
+    fill: #444;
+}
+
+// JATOS logo: change circle according to theme
+.navbar-brand svg:hover ellipse {
+    fill: #333;
+}
+
+// JATOS logo: change circle according to theme
+[data-bs-theme="dark"] .navbar-brand svg ellipse {
+    fill: #ddd;
+}
+
+// JATOS logo: change circle according to theme
+[data-bs-theme="dark"] .navbar-brand svg:hover ellipse {
+    fill: #eee;
+}
+
+.navbar-brand svg.localhost path {
+    fill: #aaa;
+}
+
+// Change vertical stacking to horizontally
+.navbar .navbar-nav {
+    flex-direction: row !important;
+}
+
+// Set height like there is no avatar image
+#navUser button {
+    height: calc(var(--bs-btn-line-height) * var(--bs-btn-font-size) + (var(--bs-btn-padding-y) + var(--bs-btn-border-width)) * 2)
+}
+
+#navbarUserName  {
+    max-width: 10em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.navbar .dropdown-menu {
+    --bs-dropdown-link-active-bg: gray;
+}

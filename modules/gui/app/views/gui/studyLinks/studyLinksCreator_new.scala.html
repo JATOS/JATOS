@@ -1,0 +1,113 @@
+@* Study links creator Modal *@
+<div class="modal fade" id="studyLinksCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add study links</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-batch" id="studyLinksCreatorForm">
+                    <div class="row mb-2">
+                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorComment" data-toggle="tooltip" title="Use the comment to distinguish the links from others.">
+                            Comment
+                        </label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="studyLinksCreatorComment" name="comment" placeholder="Your comment">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorAmount" data-toggle="tooltip" title="Enter the number of links you want to create.">
+                            Amount
+                        </label>
+                        <div class="col-sm-5 col-md-3">
+                            <input type="number" min="1" max="100" value="1" class="form-control" id="studyLinksCreatorAmount" name="amount">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-batch" id="studyLinksCreatorConfirmed">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Study links display Modal *@
+<div class="modal fade" id="studyLinksDisplayModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Study links</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="messages"></div>
+                <div class="content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as QrCodeModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/qrCodeModal.js")";
+
+    const alerts = new Alerts.Named("study-links-creator");
+    $("#studyLinksCreatorModal").on('hide.bs.modal', alerts.hideAll);
+
+    $("#studyLinksCreatorModal").on('show.bs.modal', function() {
+        $("#studyLinksCreatorForm")[0].reset();
+        FormValidation.clear("#studyLinksCreatorForm");
+
+        const type = $('#studyLinksManagerModal').data('type');
+        const typeUI = Helpers.getWorkerTypeName(type);
+        $("#studyLinksCreatorModal .modal-title").text(`Add study links of type '${typeUI}'`);
+    });
+
+    $("#studyLinksCreatorConfirmed").click(function(event) {
+        const batch = $('#studyLinksManagerModal').data('batch');
+        const type = $('#studyLinksManagerModal').data('type');
+        const comment = encodeURIComponent($('#studyLinksCreatorComment').val());
+        const amount = $('#studyLinksCreatorAmount').val();
+        $.ajax({
+            url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, comment, amount),
+            success: (res) => {
+                $('#studyLinksManagerTable').DataTable().ajax.reload();
+                $('#studyLinksCreatorModal').modal('hide');
+                showStudyLinksDisplayModal(res.data, batch, type);
+            },
+            error : (err) => alerts.error(err.responseText)
+        });
+    });
+
+    function showStudyLinksDisplayModal(studyCodes, batch, type) {
+        const typeUI = Helpers.getWorkerTypeName(type);
+        $('#studyLinksDisplayModal').find('.modal-title').text(`Study links for type '${typeUI}' in batch '${batch.title}'`);
+        $('#studyLinksDisplayModal').modal('show');
+        return;
+
+
+        var htmlPreText =
+            `<div class="btn-group btn-toggle">
+                <button class="btn btn-xs btn-worker directLink active" data-toggle="tooltip" data-placement="bottom" title="Show links that start the study directly after clicking on them">Open Directly</button>
+                <button class="btn btn-xs btn-default confirmLink" data-toggle="tooltip" data-placement="bottom" title="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
+            </div>
+            <p>${preText}</p>`;
+        var htmlUrl = '<div class="well linkUrls">' + generateStudyLinksHtml(studyCodes) + '</div>';
+
+        if (warning) showWarning(warning, "#studyLinksDisplayModal .messages");
+
+        var htmlPostText = `<p>${postText}</p>`;
+        var content = htmlPreText + htmlUrl + htmlPostText;
+        $('#studyLinksDisplayModal').find('.content').html(content);
+        $('#studyLinksDisplayModal div.confirmLink').addClass('hideKeepWidth');
+        $('#studyLinksDisplayModal').modal('show');
+        $('#studyLinksDisplayModal .btn-toggle').click(toggleDirectAndConfirmLink);
+    }
+
+</script>

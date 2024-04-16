@@ -202,10 +202,11 @@ public class StudyService {
 
     /**
      * Create and persist a Study with given properties. Creates and persists the default Batch. If the study has
-     * components already it persists them too. Adds the given user to the users of this study.
+     * components already, it persists them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(User signedinUser, StudyProperties studyProperties) {
         Study study = bindToStudy(studyProperties);
+        study.setUuid(studyProperties.getUuid());
         return createAndPersistStudy(signedinUser, study);
     }
 
@@ -299,6 +300,16 @@ public class StudyService {
     public void updateStudy(Study study, StudyProperties studyProperties, User signedinUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), studyProperties.getDescription());
         bindToStudyWithoutDirName(study, studyProperties);
+        studyDao.update(study);
+        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+    }
+
+    /**
+     * Update Study's description and store new description hash in the study log
+     */
+    public void updateDescription(Study study, String description, User signedinUser) {
+        boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), description);
+        study.setDescription(description);
         studyDao.update(study);
         if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }

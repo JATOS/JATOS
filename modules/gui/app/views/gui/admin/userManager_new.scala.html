@@ -1,0 +1,800 @@
+@(signedinUser: common.User, breadcrumbs: String)
+@import controllers.gui.routes._
+@import general.common._
+
+@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+
+<main class="container-fluid overflow-auto mt-4">
+
+    <table class="table table-hover w-100" id="userAdminTable">
+        <thead>
+            <tr>
+                <th class="no-info-icon" data-toggle="tooltip" title="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="username">Username<span class="ordering-icon"></span></th>
+                <th>Name<span class="ordering-icon"></span></th>
+                <th>Email<span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Authentication method: either locally stored, LDAP, Google or OIDC">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-toggle="tooltip" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th></th>
+            </tr>
+        </thead>
+    </table>
+
+    @* Template for button toolbar in User's row *@
+    <div id="userToolbarDiv" class="d-none">
+        <div class="btn-group float-end text-nowrap">
+            <div class="user-settings btn-group no-info-icon" data-toggle="tooltip" title="Change name or email of this user">
+                <button class="btn btn-admin" type="button">
+                    <i class="bi-gear-fill"></i><span class="d-none d-lg-inline ps-1">Settings</span>
+                </button>
+            </div>
+            <div class="user-change-password btn-group no-info-icon" data-toggle="tooltip" title="Change the password of this user">
+                <button class="btn btn-admin" type="button">
+                    <i class="bi-lock-fill"></i><span class="d-none d-lg-inline ps-1">Password</span>
+                </button>
+            </div>
+            <div class="user-delete btn-group no-info-icon" data-toggle="tooltip" title="Delete this user from JATOS">
+                <button class="btn btn-admin" type="button">
+                    <i class="bi-x-circle-fill"></i><span class="d-none d-lg-inline ps-1">Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* Create User Modal *@
+    <div class="modal fade" id="createUserModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add a new user</h5>
+                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="form-admin" id="createUserForm">
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label" for="createUserUsername">
+                                Username<span class="input-required" data-toggle="tooltip" title="required"></span>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="createUserUsername" name="username" required>
+                                <span class="form-text">What will be the username of the new user? Username and password are used for authentication. E.g., email address.</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label" for="createUserName">
+                                Name<span class="input-required" data-toggle="tooltip" title="required"></span>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="createUserName" name="name" required>
+                                <span class="form-text">The name is not used for authentication and only further describes the user.</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label" for="createUserEmail">Email</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="createUserEmail" name="email">
+                                <span class="form-text">Optional email address of the user. This field is not used for authentication.</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 d-none" id="createUserAuthByLdapDiv">
+                            <legend class="col-sm-3 col-form-label pt-0">
+                                LDAP
+                            </legend>
+                            <div class="col-sm-9">
+                                <div class="form-check">
+                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authByLdap" id="createUserAuthByLdap" value="true" data-bs-toggle="collapse" data-bs-target="#createUserPasswordDiv">
+                                    <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                    <input type="hidden" name="authByLdap" value="false" />
+                                    <label class="form-check-label" for="createUserAuthByLdap">
+                                        Authenticate this user by your central LDAP service?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse show" id="createUserPasswordDiv">
+                            <div class="row">
+                                <label class="control-label col-sm-3" for="createUserPassword">
+                                    Password<span class="input-required" data-toggle="tooltip" title="required"></span>
+                                </label>
+                                <div class="col-sm-4">
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="createUserPassword" name="password" placeholder="Password" autocomplete="off">
+                                        <button class="btn btn-nav password-visibility-toggle" type="button"><i></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row offset-sm-3 mb-3">
+                                <div class="form-text">xxx</div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-admin" id="createUserConfirm">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Edit user settings Modal *@
+    <div class="modal fade" id="userSettingsModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="form-admin" id="userSettingsForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">User settings</h5>
+                        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <label for="userSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="userSettingsName" name="name" autocomplete="username">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="userSettingsEmail" class="col-sm-3 col-form-label">Email</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="userSettingsEmail" name="email" autocomplete="email">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-admin" id="userSettingsConfirm">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* Change user password Modal *@
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <form class="form-admin" id="changePasswordForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Change password</h5>
+                        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="changePasswordNewPassword" name="newPassword" placeholder="New password" autocomplete="off" required>
+                            <button class="btn btn-nav password-visibility-toggle" type="button"><i></i></button>
+                        </div>
+                        <span class="form-text" id="changePasswordStrengthDescription">xxx</span>
+                        <input type="hidden" id="changePasswordUsername" name="username" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-admin" id="changePasswordConfirm">Change</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* Delete user confirmation Modal *@
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="form-danger" id="deleteUserForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm user deletion</h5>
+                        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="deleteUserConfirmationText"></div>
+                        @if(signedinUser.isDb() || signedinUser.isLdap()){
+                        <input type="password" class="form-control" id="deleteUserAdminPassword" name="password" placeholder="Your password" autocomplete="off" required>
+                        <div class="form-text">Confirm with your (@signedinUser.getUsername()) password.</div>
+                        } else {
+                        <input type="text" class="form-control" id="deleteUserAdminUsername"  name="username" placeholder="Your username" autocomplete="off" required>
+                        <div class="form-text">Confirm by typing your username (@signedinUser.getUsername()).</div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="deleteUserConfirm">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as PasswordVisibilityToggle from "@routes.Assets.versioned("lib/jatos-gui/javascripts/passwordVisibilityToggle.js")";
+
+    const alerts = new Alerts.Named("user-manager");
+    $("#createUserModal, #userSettingsModal, #changePasswordModal, #deleteUserModal").on('hide.bs.modal', alerts.hideAll);
+
+    Helpers.preventFormSubmitViaEnter("#userSettingsForm, #changePasswordForm, #deleteUserForm");
+
+    let dataTable;
+    $(document).ready(function() {
+        dataTable = $('#userAdminTable').DataTable({
+            "ajax": {
+                "url": window.routes.Users.allUserData,
+                "dataSrc": "",
+                "beforeSend": WaitingModal.show,
+                "error": () => Alerts.error("Error reading user data"),
+                "complete": WaitingModal.hide
+            },
+            "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-admin gap-1 mt-1 mb-3'Bfl>
+                    rt
+                    <'d-flex flex-row flex-wrap justify-content-between align-items-center gap-1 mt-3'ip>`,
+            "order": [[ 2, "asc" ]],
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            "pageLength": 10,
+            "pagingType": "full_numbers",
+            "stateSave": true,
+            "stateSaveParams": function (settings, data) {
+                data.search.search = "";
+            },
+            "scrollX": true,
+            "columns": [
+                {
+                    "class": 'details-control',
+                    "data": "studyCount",
+                    "width": "1%",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'export' || type === 'sort') return data;
+                        if (data === 0) {
+                            return '<span class="text-body text-opacity-50">none</span>';
+                        } else {
+                            return `<button type="button" class="btn btn-admin collapse-study-data text-nowrap dropdown-toggle"
+                                data-toggle="tooltip" title="Show/hide studies">
+                                <span class="badge text-admin bg-white rounded-pill">${data}</span></button>`;
+                        }
+                    }
+                },
+                {
+                    "className": "active-user",
+                    "data": "active",
+                    "searchable": false,
+                    "width": "1%",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'export' || type === 'sort') return data.toString();
+                        let isDisabled = false;
+                        let tooltip = "";
+                        if (full.username === "admin") {
+                            isDisabled = true;
+                            tooltip = "It is not possible to deactivate user 'admin'.";
+                        } else if (full.username === window.signedinUser.username) {
+                            isDisabled = true;
+                            tooltip = "You cannot deactivate yourself. Only another user with admin rights can do it.";
+                        } else {
+                            tooltip = "Click to de-/activate this user";
+                        }
+                        return `
+                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="${tooltip}">
+                                <input type="checkbox" ${data ? "checked" : ""}>
+                                <span class="slider slider-admin round ${isDisabled ? "disabled" : ""}"></span>
+                            </label>
+                        `;
+                    }
+                },
+                {
+                    "data": "username",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'export' || type === 'sort') return data;
+                        if (full.authMethod == "ORCID") {
+                            // Show link to ORCID
+                            return Helpers.generateOrcidLink(data);
+                        } else {
+                            // Every 40 chars add a <br>
+                            return (data) ? data.replace(/(.{40})/g, "$1<br>") : '<span class="text-body text-opacity-50">none</span>';
+                        }
+                    }
+                },
+                {
+                    "data": "name",
+                    "render": function (data, type, full, meta) {
+                        // Every 30 chars add a <br>
+                        return (data) ? data.replace(/(.{30})/g, "$1<br>") : '<span class="text-body text-opacity-50">none</span>';
+                    }
+                },
+                {
+                    "data": "email",
+                    "render": function (data, type, full, meta) {
+                        // Every 40 chars add a <br>
+                        return (data) ? data.replace(/(.{40})/g, "$1<br>") : '<span class="text-body text-opacity-50">none</span>';
+                    }
+                },
+                {
+                    "data": "lastSignin",
+                    "render": Helpers.getLocalTime
+                },
+                {
+                    "data": "authMethod",
+                    "render": Helpers.getAuthMethodText
+                },
+                {
+                    "className": "superuser",
+                    "visible": window.common.isUserRoleAllowSuperuser,
+                    "data": null,
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        const isSuperuser = $.inArray("SUPERUSER", data.roleList) >= 0;
+                        if (type === 'export' || type === 'sort') return isSuperuser.toString();
+                        return `
+                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="Use this switch to de-/activate the superuser role for this user.">
+                                <input type="checkbox" ${isSuperuser ? "checked" : ""}>
+                                <span class="slider slider-admin round"></span>
+                            </label>
+                        `;
+                    }
+                },
+                {
+                    "className": "admin",
+                    "data": null,
+                    "defaultContent": '',
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        let isAdmin = $.inArray("ADMIN", data.roleList) >= 0;
+                        let isDisabled = false;
+                        let tooltip = "";
+                        if (type === 'export' || type === 'sort') return isAdmin.toString();
+                        // Special treatment of admin users
+                        if (data.username === "admin") {
+                            isDisabled = true;
+                            tooltip = "User admin's admin rights cannot be removed.";
+                        } else if (data.username === window.signedinUser.username) {
+                            isDisabled = true;
+                            tooltip = "You cannot remove your own admin rights. Only another user with admin rights can do it.";
+                        } else {
+                            tooltip = "Use this switch to de-/activate the admin role for this user.";
+                        }
+                        return `
+                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="${tooltip}">
+                                <input type="checkbox" ${isAdmin ? "checked" : ""}>
+                                <span class="slider slider-admin round ${isDisabled ? "disabled" : ""}"></span>
+                            </label>
+                        `;
+                    }
+                },
+                {
+                    "data": null,
+                    "orderable": false,
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        const toolbar = $('#userToolbarDiv').clone();
+                        fillUserToolbar(toolbar, data.username, data.authMethod);
+                        return toolbar.html();
+                    }
+                }
+            ],
+            "buttons": [
+                {
+                    "text": '<i class="bi-person-fill-add pe-1"></i>Add User',
+                    "attr":  {
+                        "id": "createUserButton",
+                        "data-bs-toggle": "modal",
+                        "data-bs-target": "#createUserModal"
+                    },
+                    "className": "btn btn-admin",
+                    "titleAttr": 'Add a new user'
+                },
+                {
+                    "extend": 'collection',
+                    "text": '<i class="bi-box-arrow-up-right pe-1"></i>Export',
+                    "className": "btn btn-admin",
+                    "titleAttr": 'Export table data in CSV',
+                    "buttons": [
+                        {
+                            "extend": 'csv',
+                            "text": "Usernames",
+                            "filename": () => { return "jatos_usernames_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
+                            "titleAttr": "Export usernames only",
+                            "className": "dropdown-item-admin",
+                            "exportOptions": {
+                                "columns": '.username',
+                                "orthogonal": 'export',
+                                "format": {
+                                    "header": function ( data, row, column, node ) {
+                                        // This is a hack to remove HTML tags
+                                        return $('<div></div>').append(data).text();
+                                    }
+                                },
+
+                            },
+                            "action": (e, dt, button, config, cb) => {
+                                $(".dt-button-collection").hide();
+                                WaitingModal.show();
+                                setTimeout(function(){
+                                    $.fn.dataTable.ext.buttons.csvHtml5.action(e, dt, button, config, cb);
+                                    WaitingModal.hide();
+                                }, 1000);
+                            }
+                        },
+                        {
+                            "extend": 'csv',
+                            "text": "All",
+                            "filename": () => { return "jatos_user_all_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
+                            "titleAttr": 'Export all user data',
+                            "exportOptions": {
+                                "columns": [':not(:last-child)'],
+                                "orthogonal": 'export',
+                                "format": {
+                                    "header": function ( data, row, column, node ) {
+                                        // This is a hack to remove HTML tags
+                                        return $('<div></div>').append(data).text();
+                                    }
+                                },
+                            },
+                            "trim": true,
+                            "action": (e, dt, button, config, cb) => {
+                                $(".dt-button-collection").hide();
+                                WaitingModal.show();
+                                setTimeout(() => {
+                                    $.fn.dataTable.ext.buttons.csvHtml5.action(e, dt, button, config, cb);
+                                    WaitingModal.hide();
+                                }, 1000);
+                            }
+                        }
+                    ]
+                }
+            ],
+            language: {
+                "lengthMenu": "Show: _MENU_",
+                "paginate": {
+                    "first": `<i class="bi-chevron-double-left"></i>`,
+                    "previous": `<i class="bi-chevron-left"></i>`,
+                    "next": `<i class="bi-chevron-right"></i>`,
+                    "last": `<i class="bi-chevron-double-right"></i>`
+                },
+                "emptyTable": "No users yet"
+            },
+            "initComplete": function(settings, json) {
+                $(".dt-buttons").removeClass("btn-group");
+            },
+            "drawCallback": function( settings ) {
+                Helpers.setButtonWidthToMax("button.collapse-study-data");
+                $(".dt-length select").removeClass("form-select-sm");
+                $(".dt-search input").removeClass("form-control-sm");
+            }
+        });
+    });
+
+    $("#createUserModal").on('show.bs.modal', function() {
+        $("#createUserForm")[0].reset();
+        if (window.common.isLdapAllowed) $("#createUserAuthByLdapDiv").removeClass("d-none");
+        $("#createUserPasswordDiv .form-text").html(window.common.userPasswordStrengthDescription
+                + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
+        $('#createUserPasswordDiv').removeClass('collapse').addClass('collapse.show');
+        PasswordVisibilityToggle.setPasswordVisibility(false);
+    });
+
+    $("#createUserConfirm").click(function(event) {
+        $.ajax({
+            type: 'POST',
+            url: window.routes.Users.create,
+            data: $('#createUserForm').serialize(),
+            success: function(user) {
+                $('#createUserModal').modal('hide');
+                FormValidation.clear("#createUserForm");
+                Alerts.success(`The user "${user.username}" was added successfully.`);
+                dataTable.row.add(user).draw();
+            },
+            error: function(response) {
+                FormValidation.clear("#createUserForm");
+                Alerts.warning("The user was not added.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#createUserForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+    $('#userAdminTable').on('click', 'td.details-control', function() {
+        const tr = $(this).closest('tr');
+        const row = dataTable.row(tr);
+        if (row.child.isShown()) {
+            const collapseElement = row.child().find(".collapse");
+            // First we collapse with Bootstrap and then we hide the DataTable row
+            collapseElement.off('hidden.bs.collapse').on('hidden.bs.collapse', row.child.hide);
+            new bootstrap.Collapse(collapseElement).hide();
+        } else {
+            WaitingModal.show();
+            const username = row.data().username;
+            $.ajax({
+                url: window.routes.Users.studiesDataByUser(username),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+            }).done(function(studiesData) {
+                const childRow = generateStudiesDataChildRow(studiesData, username);
+                // We first show the DataTables row and then de-collapse with Bootstrap
+                row.child(childRow).show(); // Let DataTables add the child row. But it's still collapsed.
+                tr.next().addClass('info').find("td:first").addClass("p-0");
+                Helpers.activatePopovers();
+                const collapseElement = row.child().find(".collapse");
+                new bootstrap.Collapse(collapseElement).show();
+            }).fail(function(err) {
+                Alerts.error(err.responseText);
+            }).always(WaitingModal.hide);
+        }
+    });
+
+    function generateStudiesDataChildRow(studiesData, username) {
+        const childRow = $(`
+            <div class="d-flex flex-row collapse">
+                <div class="title d-flex justify-content-end text-nowrap p-3 pb-5">Studies</div>
+                <table class="table table-borderless m-0">
+                    <thead>
+                        <tr>
+                            <th>Study ID</th>
+                            <th>Study title</th>
+                            <th data-toggle="tooltip" title="All users who are member of this study">All members</th>
+                            <th data-toggle="tooltip" title="The size of the study assets folder">Study assets size</th>
+                            <th data-toggle="tooltip" title="The number of the study results">Result count</th>
+                            <th data-toggle="tooltip" title="The size of the result data: total for all study runs and the average per result in brackets">Result data size</th>
+                            <th data-toggle="tooltip" title="The size of the uploaded result files: total for all study runs and the average per result in brackets">Result file size</th>
+                            <th data-toggle="tooltip" title="When was this study last started by a participant?">Last started</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        `);
+
+        if (studiesData.length == 0) {
+            const row = $('<tbody><tr class="info"><td colspan="8">empty</td></tr></>tbody>');
+            childRow.find("tbody").append(row);
+            return childRow;
+        }
+
+        studiesData.forEach(function(study) {
+            const row = $(`
+                <tbody>
+                    <tr class="info">
+                        <td>${study.id}</td>
+                        <td>${Helpers.trimTextWithThreeDots(study.title, 40)}</td>
+                        <td>${Helpers.generateMembersHtml(study.members)}</td>
+                        <td>${study.studyAssetsSize.humanReadable}</td>
+                        <td>${study.studyResultCount}</td>
+                        <td>${study.resultDataSize.humanReadable}</td>
+                        <td>${study.resultFileSize.humanReadable}</td>
+                        <td>${Helpers.getLocalTime(study.lastStarted)}</td>
+                    </tr>
+                </tbody>
+            `);
+            childRow.find("table").append(row);
+        });
+
+        return childRow;
+    }
+
+    $('#userAdminTable').on('click', '.active-user input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const isActive = $(checkbox).is(':checked');
+        const tr = $(this).closest('tr');
+        const user = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Users.toggleActive(user.username, isActive),
+            type : "POST",
+            success: () => {
+                $(checkbox).prop('checked', isActive);
+                user.active = isActive;
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#userAdminTable').on('click', '.superuser input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const isSuperuser = $(checkbox).is(':checked');
+        const tr = $(this).closest('tr');
+        const user = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Users.toggleRole(user.username, "SUPERUSER", isSuperuser),
+            type : "POST",
+            success: (isSuperuser) => {
+                $(checkbox).prop('checked', isSuperuser);
+                if (isSuperuser) {
+                    user.roleList.push("SUPERUSER");
+                } else {
+                    user.roleList = user.roleList.filter(item => item !== "SUPERUSER");
+                }
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#userAdminTable').on('click', '.admin input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const isAdmin = $(checkbox).is(':checked');
+        const tr = $(this).closest('tr');
+        const user = dataTable.row(tr).data();
+        $.ajax({
+            url : window.routes.Users.toggleRole(user.username, "ADMIN", isAdmin),
+            type : "POST",
+            success: (isAdmin) => {
+                $(checkbox).prop('checked', isAdmin);
+                if (isAdmin) {
+                    user.roleList.push("ADMIN");
+                } else {
+                    user.roleList = user.roleList.filter(item => item !== "ADMIN");
+                }
+            },
+            error : function(err) {
+                Alerts.error(err.responseText);
+            }
+        });
+    });
+
+    function fillUserToolbar(toolbar, username, authMethod) {
+        // Setup user settings button
+        if (authMethod == "OAUTH_GOOGLE" || authMethod == "OIDC" || authMethod == "ORCID") {
+            toolbar.find('.user-settings button').attr('disabled', true);
+            toolbar.find('.user-settings').attr('title', "Google/OIDC/ORCID authenticated users can't be edited (they get their user data from the external identity provider).");
+        }
+
+        // Setup change password button
+        if (username == "admin" && window.signedinUser.username != "admin") {
+            toolbar.find('.user-change-password button').attr('disabled', true);
+            toolbar.find('.user-change-password').attr('title', "Only user admin can change their own password.");
+        } else if (authMethod !== "DB") {
+            toolbar.find('.user-change-password button').attr('disabled', true);
+            toolbar.find('.user-change-password').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) can't be changed in JATOS");
+        }
+
+        // Setup delete user button
+        if (username == "admin") {
+            toolbar.find('.user-delete button').attr('disabled', true);
+            toolbar.find('.user-delete').attr('title', "It is not possible to delete the user 'admin'.");
+        } else if (username == window.signedinUser.username) {
+            toolbar.find('.user-delete button').attr('disabled', true);
+            toolbar.find('.user-delete').attr('title', "You cannot delete your own user here - but you can delete yourself in the user menu (click on your username in the header).");
+        }
+    }
+
+    $('#userAdminTable').on('click', '.user-settings button:not(:disabled)', function() {
+        const tr = $(this).closest("tr");
+        const user = dataTable.row(tr).data();
+
+        $("#userSettingsForm")[0].reset();
+        FormValidation.clear("#userSettingsForm");
+        $("#userSettingsModal .modal-title").text(`Change the settings of "${user.name}" (${user.username})`);
+        $('#userSettingsName').val(user.name);
+        $('#userSettingsEmail').val(user.email);
+        $("#userSettingsModal").modal('show');
+
+        $("#userSettingsConfirm").off("click").on("click", function(event) {
+            $.ajax({
+                type: 'POST',
+                url : window.routes.Users.edit(user.username),
+                data: $('#userSettingsForm').serialize(),
+                success: function() {
+                    $('#userSettingsModal').modal('hide');
+                    Alerts.success(`${user.username}'s settings were changed successfully.`);
+                    user.name = $('#userSettingsName').val();
+                    user.email = $('#userSettingsEmail').val();
+                    dataTable.row(tr).data(user);
+                },
+                error: function(response) {
+                    alerts.warning(`${user.username}'s settings were not changed.`, 5000);
+                    if (Helpers.isJson(response.responseText)) {
+                        FormValidation.show("#userSettingsForm", response.responseJSON);
+                    } else {
+                        alerts.error(response.responseText);
+                    }
+                }
+            });
+        });
+    });
+
+    $('#userAdminTable').on('click', '.user-change-password button:not(:disabled)', function() {
+        const tr = $(this).closest("tr");
+        const user = dataTable.row(tr).data();
+        $("#changePasswordForm")[0].reset();
+        FormValidation.clear("#changePasswordForm");
+        $("#changePasswordModal .modal-title").text(`Change the password of "${user.name}" (${user.username})`);
+        $("#changePasswordUsername").val(user.username);
+        PasswordVisibilityToggle.setPasswordVisibility(false);
+        $('#changePasswordStrengthDescription').html(window.common.userPasswordStrengthDescription
+                + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
+        $("#changePasswordModal").modal('show');
+
+        $("#changePasswordConfirm").off("click").on("click", function(event) {
+            $.ajax({
+                type: 'POST',
+                url: window.routes.Users.changePasswordByAdmin,
+                data: $('#changePasswordForm').serialize(),
+                success: function(response) {
+                    $('#changePasswordModal').modal('hide');
+                    Alerts.success(`${user.username}'s password was changed successfully.`);
+                },
+                error: function(response) {
+                    alerts.warning(`${user.username}'s password was not changed.`, 5000);
+                    if (Helpers.isJson(response.responseText)) {
+                        FormValidation.show("#changePasswordForm", response.responseJSON);
+                    } else {
+                        alerts.error(response.responseText);
+                    }
+                }
+            });
+        });
+    });
+
+    $('#userAdminTable').on('click', '.user-delete button:not(:disabled)', function() {
+        const tr = $(this).closest("tr");
+        const row = dataTable.row(tr);
+        const user = row.data();
+        $("#deleteUserForm")[0].reset();
+        FormValidation.clear("#deleteUserForm");
+        $("#deleteUserModal .modal-title").text(`Deletion of user "${user.name}" (${user.username})`);
+        $('#deleteUserConfirmationText').html(generateDeleteUserConfirmationHtml(user));
+        $("#deleteUserModal").modal('show');
+
+        $("#deleteUserConfirm").off("click").on("click", function(event) {
+            $.ajax({
+                type: 'POST',
+                url: window.routes.Users.remove(user.username),
+                data: $('#deleteUserForm').serialize(),
+                success: function(response) {
+                    row.remove().draw();
+                    $('#deleteUserModal').modal('hide');
+                    Alerts.success(`User "${user.username}" was deleted successfully.`);
+                },
+                error: function(response) {
+                    alerts.warning(`User ${user.username} was not deleted.`, 5000);
+                    if (Helpers.isJson(response.responseText)) {
+                        FormValidation.show("#deleteUserForm", response.responseJSON);
+                    } else {
+                        alerts.error(response.responseText);
+                    }
+                }
+            });
+        });
+    });
+
+    function generateDeleteUserConfirmationHtml(user) {
+        let confirmationText = `<p>You are about to delete the user <b>"${user.name}" (${user.username})</b>.</p>`;
+        confirmationText += generateStudyList(user);
+        confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
+        return confirmationText;
+    }
+
+    function generateStudyList(user) {
+        // Only add the studies that have a user size of 1 (means this user is the only
+        // member and the study would be abandoned after user deletion) .
+        let studyList = "";
+        $.each(user.studyList, function(index, study) {
+            if (study.userSize === 1) {
+                studyList += `<li>${study.title} (ID: ${study.id})</li>`;
+            }
+        });
+        let text = "";
+        if (studyList !== "") {
+            text += "<p>All studies with this user as the only member user will be deleted too. <b>This would automatically delete the following studies with all their results</b>.";
+            text += "<ul>" + studyList + "</ul>";
+        }
+        return text;
+    }
+
+</script>
+
+}

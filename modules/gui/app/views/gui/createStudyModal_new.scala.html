@@ -1,0 +1,64 @@
+<div class="modal fade" id="createStudyModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="createStudyForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add a new study</h5>
+                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <label class="col-sm-3 col-form-label" for="createStudyFormTitle">
+                            Title<span class="input-required" data-toggle="tooltip" title="required"></span>
+                        </label>
+                        <div class="form-study col-sm-9">
+                            <input type="text" class="form-control" id="createStudyFormTitle" name="title" placeholder="Your study title" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-study" id="createStudyConfirmed">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("user-navbar");
+
+    $("#createStudyModal").on('show.bs.modal', function() {
+        $("#createStudyForm")[0].reset();
+        FormValidation.clear("#createStudyForm");
+    });
+
+    $("#createStudyConfirmed").click(function(event) {
+        $.ajax({
+            type : 'POST',
+            url : window.routes.Studies.submitCreated,
+            data : $('#createStudyForm').serialize(),
+            success : function(response) {
+                // New study's ID is in the response
+                window.location.href = `${window.common.jatosUrlBasePath}jatos/${response}`;
+            },
+            error : function(response) {
+                FormValidation.clear("#createStudyForm");
+                alerts.warning("The study was not added.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#createStudyForm", response.responseJSON);
+                } else {
+                    alerts.error(response.responseText);
+                }
+            }
+        });
+    });
+
+    Helpers.preventFormSubmitViaEnter("#createStudyForm");
+
+    $("#createStudyModal").on('hide.bs.modal', alerts.hideAll);
+</script>

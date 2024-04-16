@@ -1,0 +1,111 @@
+@(study: common.Study)
+@import controllers.gui.routes._
+@import general.common._
+
+@* Study Log Modal *@
+<div class="modal fade" id="studyLogModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Study log for "@study.getTitle()"</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="btn-toolbar mb-3">
+                    <div class="btn-group me-2">
+                        <input type="radio" class="btn-check" name="options" id="studyLogPretty" autocomplete="off" checked>
+                        <label class="btn btn-study" for="studyLogPretty">Pretty</label>
+                        <input type="radio" class="btn-check" name="options" id="studyLogRaw" autocomplete="off">
+                        <label class="btn btn-study" for="studyLogRaw">Raw</label>
+                    </div>
+                    <button id="studyLogDownload" type="button" class="btn btn-study" data-toggle="tooltip" title="Download the whole study log in normal order">Download</button>
+                </div>
+                <p class="d-none" id="studyLogMessage"></p>
+                <div>In reverse order:</div>
+                <div class="card">
+                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-toggle="tooltip" title="Copy to clipboard"></span>
+                    <div class="card-body"><pre class="m-0"><code></code></pre></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
+
+    const alerts = new Alerts.Named("study-log");
+    $("#studyLogModal").on('hide.bs.modal', alerts.hideAll);
+
+    let studyLogRaw;
+    let studyLogPretty;
+
+    $("#studyLogModal").on('show.bs.modal', function() {
+        $.ajax({
+            url: window.routes.Api.studyLog(window.study.id, 100, false),
+            success: showStudyLogModal,
+            error: function(response) {
+                alerts.error("Couldn't get study log.");
+            }
+        });
+    });
+
+    function showStudyLogModal(response) {
+        studyLogRaw = response;
+        let studyLog;
+        try {
+            studyLog = JSON.parse(studyLogRaw);
+        } catch(e) {
+            alerts.error("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.");
+            showStudyLogRaw();
+            return;
+        }
+        if (typeof studyLog[0] === 'string' && studyLog[0].includes("Error")) {
+            alerts.error("Couldn't get study log.");
+        }
+        const entryLimit = studyLog.length - 1;
+        if (typeof studyLog[entryLimit] === 'string' && studyLog[entryLimit].includes("Log is cut here")) {
+            $("#studyLogMessage").removeClass("d-none").text(`This study log has more than ${entryLimit} entries.
+            Only the last ${entryLimit} entries are shown. To get the whole study log download it and display it locally.`);
+        }
+        studyLog.forEach(function(entry) {
+            if (entry.timestamp) {
+                entry.timestamp = new Date(entry.timestamp).toLocaleString('en-GB')
+            }
+        });
+        studyLogPretty = prettifyStudyLogJson(studyLog);
+        showStudyLogPretty();
+    }
+
+    function prettifyStudyLogJson(studyLog) {
+        return JSON.stringify(studyLog, function(key, value) {
+            if (key === "workerIds" || key === "dataHashes" || key === "componentUuids") {
+                return JSON.stringify(value);
+            }
+            return value;
+        }, 2).replace(/\\/g, '')
+                .replace(/\"\[/g, '[')
+                .replace(/\]\"/g,']')
+                .replace(/\"\{/g, '{')
+                .replace(/\}\"/g,'}');
+    }
+
+    $('#studyLogPretty').on('change', showStudyLogPretty);
+    $('#studyLogRaw').on('change', showStudyLogRaw);
+
+    function showStudyLogPretty() {
+        $('#studyLogModal code').text(studyLogPretty);
+    }
+
+    function showStudyLogRaw() {
+        $('#studyLogModal code').text(studyLogRaw);
+    }
+
+    $('#studyLogDownload').on('click', function() {
+        const url = window.routes.Api.studyLog(window.study.id, -1, true)
+        const filename = "jatos_studylog_@{study.getUuid()}.log";
+        FileSystemAccess.downloadFileStream(url, null, filename);
+    });
+</script>

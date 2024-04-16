@@ -89,7 +89,7 @@ public class StudyResults extends Controller {
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
-        return ok(views.html.gui.result.studyResults.render(signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.result.studyResults_new.render(signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -112,7 +112,7 @@ public class StudyResults extends Controller {
                 : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(batchId, workerType).url();
-        return ok(views.html.gui.result.studyResults.render(signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.result.studyResults_new.render(signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -135,7 +135,7 @@ public class StudyResults extends Controller {
         String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
                 breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(groupId).url();
-        return ok(views.html.gui.result.studyResults.render(signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.result.studyResults_new.render(signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -154,7 +154,7 @@ public class StudyResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.workersStudyResults.render(signedinUser, breadcrumbs, worker));
+        return ok(views.html.gui.result.workersStudyResults_new.render(signedinUser, breadcrumbs, worker));
     }
 
     /**
@@ -172,7 +172,7 @@ public class StudyResults extends Controller {
         request.body().asJson().get("studyResultIds").forEach(node -> studyResultIdList.add(node.asLong()));
         resultRemover.removeStudyResults(studyResultIdList, signedinUser);
 
-        return ok(" "); // jQuery.ajax cannot handle empty responses
+        return ok();
     }
 
     /**

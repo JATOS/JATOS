@@ -73,7 +73,7 @@ public class Admin extends Controller {
     public Result administration(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(null);
-        return ok(views.html.gui.admin.admin.render(request, signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.admin_new.render(request, signedinUser, breadcrumbs));
     }
 
     /**
@@ -136,26 +136,26 @@ public class Admin extends Controller {
     }
 
     /**
-     * Returns study admin page
+     * Returns study manager page
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result studyAdmin(Http.Request request) {
+    public Result studyManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
-        String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDIES);
-        return ok(views.html.gui.admin.studyAdmin.render(request, signedinUser, breadcrumbs));
+        String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDY_MANAGER);
+        return ok(views.html.gui.admin.studyManager_new.render(request, signedinUser, breadcrumbs));
     }
 
     /**
-     * Returns table data for study admin page
+     * Returns table data for study manager page
      */
     @Transactional
     @Auth(Role.ADMIN)
     public Result allStudiesData() {
         List<Study> studyList = studyDao.findAll();
-        boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyAdmin();
-        boolean resultDataSizeFlag = Common.showResultDataSizeInStudyAdmin();
-        boolean resultFileSizeFlag = Common.showResultFileSizeInStudyAdmin();
+        boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
+        boolean resultDataSizeFlag = Common.showResultDataSizeInStudyManager();
+        boolean resultFileSizeFlag = Common.showResultFileSizeInStudyManager();
         List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, studyAssetsSizeFlag,
                 resultDataSizeFlag, resultFileSizeFlag);
         return ok(JsonUtils.asJsonNode(studiesData));

@@ -115,7 +115,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
 
     private AuthResult callForbiddenDueToSessionTimeout(String normalizedUsername) {
         LOGGER.info("Session of user " + normalizedUsername + " has expired and the user has been signed out.");
-        String msg = "Your session has expired. You have been signed out.";
+        String msg = "Your session has expired. You have been signed out. Please sign in again.";
         if (Helpers.isAjax()) {
             return AuthResult.denied(forbidden(msg));
         } else {

@@ -1,0 +1,99 @@
+@(study: common.Study)
+@import controllers.gui.routes._
+@import general.common._
+
+@* Study description offcanvas *@
+<div class="offcanvas offcanvas-end rounded-start-4 shadow" id="studyDescriptionSidebar" tabindex="-1" data-bs-scroll="true" data-bs-backdrop="false">
+    <div class="offcanvas-header f-flex border-bottom">
+        <div class="offcanvas-title fw-bold flex-grow-1 text-truncate">
+            <div class="fw-light">Description of</div>
+            <div class="fs-5">@study.getTitle()</div>
+        </div>
+        <button class="btn btn-study text-nowrap ms-2" id="studyDescriptionEdit" type="button" data-toggle="tooltip" title="Switch between edit and view this description"><i class="bi-pencil-square me-1"></i>Edit</button>
+        <button class="btn btn-nav border border-0" id="studyDescriptionResize" type="button" data-toggle="tooltip" title="Maximise"><i class="bi-arrow-left-right"></i></button>
+        <button class="btn btn-close btn-nav" type="button" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="mb-3" id="studyDescription" data-markdown="@study.getDescription()"></div>
+        <div class="d-none" id="studyDescriptionEditorWrapper">
+            <div id="studyDescriptionEditorInfo">You can use <a href="https://www.markdownguide.org/getting-started/" target="_blank">Markdown</a> to format the description.</div>
+            <div class="form-control" id="studyDescriptionEditor"></div>
+            <div class="float-end pt-2" id="studyDescriptionEditorFooter">
+                <button type="button" class="btn btn-secondary" id="studyDescriptionEditorCancel">Cancel</button>
+                <button type="button" class="btn btn-study" id="studyDescriptionEditorSave">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Editor from "@routes.Assets.versioned("lib/jatos-gui/javascripts/editor.js")";
+    import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
+
+    const alerts = new Alerts.Named("study-description");
+
+    $("#studyDescriptionSidebar").on('hide.bs.offcanvas', alerts.hideAll);
+
+    $("#studyDescriptionSidebar").on('show.bs.offcanvas', draw);
+
+    function draw() {
+        const markdown = $("#studyDescription").data().markdown;
+        const html = markdown ? new showdown.Converter().makeHtml(markdown) : "Here could be a description of this study.";
+        $('#studyDescription').html(html);
+    }
+
+    $("#studyDescriptionResize").click(function() {
+        $("#studyDescriptionSidebar").toggleClass("w-100");
+    });
+
+    function toggleEditor() {
+        $("#studyDescriptionEditorWrapper").toggleClass("d-none");
+        $("#studyDescription").toggleClass("d-none");
+    }
+
+    $("#studyDescriptionEdit").click(function() {
+        toggleEditor();
+
+        if ($("#studyDescriptionEditorWrapper").hasClass("d-none")) {
+            // Generate HTML from Markdown
+            const markdown = Editor.getValue("#studyDescriptionEditor");
+            $("#studyDescription").data("markdown", markdown);
+            draw();
+        } else {
+            // Setup editor
+            const markdown = $("#studyDescription").data().markdown;
+            const bodySelector = "#studyDescriptionSidebar .offcanvas-body";
+            const editorHeight = $(bodySelector).height() - $("#studyDescriptionEditorFooter").outerHeight() - $("#studyDescriptionEditorInfo").outerHeight();
+            const editorLineHeight = Number($(bodySelector).css('line-height').replace(/\D/g, ''));
+            const maxLines = Math.round(editorHeight / editorLineHeight);
+            Editor.setup("markdown", markdown, "#studyDescriptionEditor", maxLines);
+            Editor.focus("#studyDescriptionEditor");
+        }
+    });
+
+    $("#studyDescriptionEditorSave").click(function() {
+        const markdown = Editor.getValue("#studyDescriptionEditor");
+        $.ajax({
+            type: 'POST',
+            url: window.routes.Studies.submitDescription(window.study.id),
+            contentType: 'text/plain; charset=utf-8',
+            processData: false,
+            data: markdown,
+            success: function(response) {
+                $("#studyDescription").data("markdown", markdown);
+                draw();
+                toggleEditor();
+                alerts.success("The study description was changed successfully.");
+            },
+            error: function(response) {
+                alerts.error(response.responseText);
+                alerts.warning("The study description was not saved.", 5000);
+            }
+        });
+    });
+
+    $("#studyDescriptionEditorCancel").click(toggleEditor);
+
+</script>

@@ -1,4 +1,8 @@
-#navbarMenu .dropdown-menu .active .bi-check2 {
+@import "bootstrap/scss/_functions.scss";
+@import 'parts/_jatosColors.scss';
+@import 'parts/_googleSignin.scss';
+
+#colorTheme .dropdown-menu .active .bi-check2 {
     display: block !important;
 }
 
@@ -23,14 +27,4 @@
 .signin-form input[type="password"] {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-}
-
-/* Fix flickering */
-#signinGoogle {
-    height: 40px;
-}
-
-/* Fix white padding of Google sign-in iframe */
-iframe[src^="https://accounts.google.com"] {
-    color-scheme: normal;
 }

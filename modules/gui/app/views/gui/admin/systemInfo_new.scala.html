@@ -1,0 +1,52 @@
+@import controllers.gui.routes._
+@import general.common._
+
+@* System info Modal *@
+<div class="modal fade" id="systemInfoModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">System info</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h4>JATOS configuration</h4>
+                <ul class="list-group" id="jatosConfig">
+                    @for((key, value) <- utils.common.Helpers.getJatosConfig()){
+                    <li class="list-group-item text-break"><b>@key</b>: @value</li>
+                    }
+                </ul>
+                <h4 class="mt-4">OS info</h4>
+                <ul class="list-group" id="osInfo">
+                    @for((key, value) <- utils.common.Helpers.getOSInfo()){
+                    <li class="list-group-item text-break"><b>@key</b>: @value</li>
+                    }
+                </ul>
+                <h4 class="mt-4">JVM info</h4>
+                <ul class="list-group" id="jvmInfo">
+                    @for((key, value) <- utils.common.Helpers.getJVMInfo()){
+                    <li class="list-group-item text-break"><b>@key</b>: @value</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+
+    // Add some config parameter that are only available in the browser
+    (() => {
+        const config = {
+            "URL host + basepath": window.common.realBaseUrl,
+            "URL basepath": window.common.jatosUrlBasePath,
+            "URL host": window.common.realHostUrl,
+            "Version": window.common.jatosVersion
+        };
+        for (const [key, value] of Object.entries(config)) {
+            $("#jatosConfig").prepend(`<li class="list-group-item text-break"><b>${key}</b>: ${value}</li>`);
+        }
+    })();
+</script>

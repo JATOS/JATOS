@@ -1,0 +1,25 @@
+// Put group properties title on card border
+#batchPropertiesGroupProperties .card-title {
+    position: absolute;
+    top: 0;
+    left: 15%;
+    transform: translate(-50%,-50%);
+    background: var(--bs-body-bg);
+}
+
+// Change color of pagination button
+#groupsTable_wrapper .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $batch-color;
+    --bs-pagination-active-border-color: $batch-color;
+}
+
+// Gray-out rows of used PersonalSingle links
+#studyLinksManagerTable tr:has(td span.used) td {
+    color: var(--bs-tertiary-color) !important;
+}
+
+// Change color of pagination button
+#studyLinksManagerTable_wrapper .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $batch-color;
+    --bs-pagination-active-border-color: $batch-color;
+}

@@ -1,0 +1,9 @@
+#apiTokensModal .pagination .page-item.active .page-link {
+    --bs-pagination-active-bg: $admin-color;
+    --bs-pagination-active-border-color: $admin-color;
+}
+
+// Gray out expired API token rows
+#apiTokensTable tr.disabled td:not(.delete-button-column, .token-active) {
+    color: var(--bs-tertiary-color) !important;
+}

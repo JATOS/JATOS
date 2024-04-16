@@ -1,0 +1,229 @@
+@(signedinUser: common.User, study: common.Study)
+@import controllers.gui.routes._
+@import general.common._
+@import utils.common._
+
+@* Change study's user members Modal *@
+<div class="modal fade" id="studyMemberUsersModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change which users are member of this study</h5>
+                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label for="changeMemberUsersUsername" class="form-label info-icon" data-toggle="tooltip" title="Only usernames of existing JATOS user.">
+                    Add user by username
+                </label>
+                <div class="row g-3">
+                    <div class="col-7">
+                        <form class="form-study mb-4" id="changeMemberUsersForm">
+                            <div class="input-group">
+                                    <input type="text" class="form-control" id="changeMemberUsersUsername" placeholder="username" required>
+                                    <input type="submit" class="btn btn-study" value="Add">
+                            </div>
+                        </form>
+                    </div>
+                    @if(Common.isStudyMembersAllowedToAddAllUsers()) {
+                    <div class="col">
+                        <button class="btn btn-study" id="changeMemberUsersAddAll" type="button" data-toggle="tooltip" title="Give all users access to this study">
+                            Add All
+                        </button>
+                    </div>
+                    }
+                </div>
+                <table class="table table-hover w-100 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name<span class="ordering-icon"></span></th>
+                            <th>
+                                <button class="btn btn-sm btn-study text-nowrap" id="changeMemberUsersRemoveAll" type="button" data-toggle="tooltip" title="Remove access rights to this study from all users except yourself">
+                                    Remove All
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    @* Member users are added in JS *@
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("change-members");
+
+    // Max length of each worker table before pagination kicks in
+    const paginationLength = 10;
+    let memberUserTable;
+
+    $("#studyMemberUsersModal").on('show.bs.modal', function() {
+        $("#changeMemberUsersForm")[0].reset();
+        FormValidation.clear("#changeMemberUsersForm");
+        initMemberUserTable();
+        memberUserTable.columns.adjust(); // Needed for columns width after toggle button drawing
+        @if(Helpers.isAllowedSuperuser(signedinUser)) {
+        alerts.info("As a Superuser you have access to all studies like a study member.");
+        }
+    });
+
+    $("#studyMemberUsersModal").on('hide.bs.modal', alerts.hideAll);
+
+    function initMemberUserTable() {
+        if (typeof memberUserTable != 'undefined') {
+            memberUserTable.ajax.reload();
+            memberUserTable.draw();
+            return;
+        }
+
+        memberUserTable = $('#studyMemberUsersModal .table').DataTable({
+            "ajax": {
+                "url" : window.routes.Studies.memberUsers(window.study.id),
+                "error": function (err) {
+                    if (err.responseText) {
+                        alerts.error(err.responseText);
+                    } else {
+                        alerts.error("Cannot read member users data.");
+                    }
+                }
+            },
+            "initComplete": toggleTablePagination,
+            "dom": "t<'row'<'mt-2'p>>",
+            "order": [[ 0, "asc" ]],
+            "pageLength": paginationLength,
+            "autoWidth": false,
+            "columns": [
+                {
+                    "data": "name"
+                },
+                {
+                    "data": null,
+                    "width": "1%",
+                    "orderable": false,
+                    "searchable": false,
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        if (data.isMember) {
+                            return `<div class="flex-direction text-nowrap">
+                                <button type="button" class="btn btn-sm btn-study change-member-users-toggle" data-toggle="tooltip" title="Click to remove this user from this study">
+                                    Remove
+                                </button>
+                            </div>`;
+                        } else {
+                            return `<div class="flex-direction text-nowrap">
+                                <button type="button" class="btn btn-sm btn-study change-member-users-toggle" data-toggle="tooltip" title="Click to add this user to the study again">
+                                    Add
+                                </button>
+                            </div>`;
+                        }
+                    }
+                }
+            ],
+            language: {
+                "paginate": {
+                    "first": `<i class="bi-chevron-double-left"></i>`,
+                    "previous": `<i class="bi-chevron-left"></i>`,
+                    "next": `<i class="bi-chevron-right"></i>`,
+                    "last": `<i class="bi-chevron-double-right"></i>`
+                }
+            }
+        });
+    }
+
+    function toggleTablePagination() {
+        const rowNumber = memberUserTable.rows().count();
+        const hidePaging = rowNumber <= paginationLength;
+        $('#studyMemberUsersModal .table').parent().find('.dataTables_paginate').toggle(!hidePaging);
+    }
+
+    $('#changeMemberUsersAddAll').click(function() {
+        $.ajax({
+            url : window.routes.Studies.addAllMemberUsers(window.study.id),
+            type : "POST",
+            success: function(user) {
+                memberUserTable.ajax.reload(toggleTablePagination);
+            },
+            error : function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#changeMemberUsersRemoveAll').click(function() {
+        $.ajax({
+            url : window.routes.Studies.removeAllMemberUsers(window.study.id),
+            type : "DELETE",
+            success: function(user) {
+                memberUserTable.ajax.reload(toggleTablePagination);
+            },
+            error : function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+
+    $('#changeMemberUsersForm').submit(function(event) {
+        event.preventDefault();
+        const username = $('#changeMemberUsersUsername').val();
+        $.ajax({
+            url: window.routes.Studies.toggleMemberUser(window.study.id, username, true),
+            type: "POST",
+            success: function(user) {
+                $("#changeMemberUsersForm")[0].reset();
+                alterTableAfterUserAdding(user);
+            },
+            error: function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+
+    function alterTableAfterUserAdding(user) {
+        let isAlreadyInTable = false;
+        memberUserTable.rows().every(function(rowIdx, tableLoop, rowLoop) {
+            const tableMember = this.data();
+            if (tableMember.username.toLowerCase() === user.username.toLowerCase()) {
+                isAlreadyInTable = true;
+                if (tableMember.isMember) {
+                    alerts.info(`User ${user.name} (${user.username}) is already member.`);
+                } else {
+                    const button = $(this.node()).find('.change-member-users-toggle');
+                    button.html($(button.html())
+                        .html('Remove')
+                        .attr('title', "Click to remove this user from this study"));
+                }
+                this.data(user);
+                return;
+            }
+        });
+        if (!isAlreadyInTable) {
+            memberUserTable.row.add(user).draw(false);
+            toggleTablePagination();
+        }
+    }
+
+    $('#studyMemberUsersModal').on('click', '.change-member-users-toggle', function() {
+        const button = this;
+        const tr = $(this).closest('tr');
+        const tableMember = memberUserTable.row(tr).data();
+        if (tableMember.username === window.signedinUser.username && !tableMember.removeConfirmation) {
+            alerts.warning('Are you sure you want to remove yourself from this study? Then click again on the "Remove" button.');
+            tableMember.removeConfirmation = true;
+            return;
+        }
+        $.ajax({
+            url: window.routes.Studies.toggleMemberUser(window.study.id, tableMember.username, !tableMember.isMember),
+            type: "POST",
+            success: function(user) {
+                memberUserTable.row(tr).data(user);
+            },
+            error: function(err) {
+                alerts.error(err.responseText);
+            }
+        });
+    });
+</script>

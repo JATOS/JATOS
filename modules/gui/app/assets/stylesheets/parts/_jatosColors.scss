@@ -1,0 +1,259 @@
+/*
+ * Define JATOS colors
+
+ * CSS:
+ * - Property names that are prefixed with --, like --example-name, represent custom properties that contain a value that can be used in other declarations using the var() function.
+ * - rgb/rgba
+ *
+ * SCSS
+ * -     The $ dollar sign is used to declare variables in Sass
+ */
+$study-color: #0d6efd;
+$component-color: #0dcaf0;
+$batch-color: #198754;
+$admin-color: #ffc107;
+
+.btn-nav {
+    //--bs-btn-font-weight: 600;
+    //--bs-btn-color: var(--bs-nav-link-color);
+    --bs-btn-bg: transparent;
+    --bs-btn-hover-color: var(--bs-nav-link-hover-color);;
+    --bs-gradient: var(--bs-navbar-toggler-transition);
+}
+
+[data-bs-theme="light"] .btn-nav {
+    --bs-btn-border-color: rgba(#000, 0.35);
+    --bs-btn-hover-bg: rgba(#000, 0.1);
+    --bs-btn-hover-border-color: rgba(#000, 0.65);
+}
+
+[data-bs-theme="dark"] .btn-nav {
+    --bs-btn-border-color: rgba(#fff, 0.35);
+    --bs-btn-hover-bg: rgba(#fff, 0.1);
+    --bs-btn-hover-border-color: rgba(#fff, 0.65);
+}
+
+.form-danger .form-select:focus,
+.form-danger .form-control:focus,
+.form-danger .form-check-input:focus,
+.form-danger .form-check-input:focus:checked {
+    border-color: var(--bs-danger);
+    box-shadow: 0 0 0 .25rem var(--bs-danger);
+}
+
+.form-danger .form-check-input:checked {
+    background-color: var(--bs-danger);
+    border-color: var(--bs-danger);
+}
+
+.text-bg-study {
+    background: $study-color;
+}
+
+.text-study {
+    color: $study-color;
+}
+
+input.checkbox-study:checked,
+input:checked + .slider-study {
+    background-color: $study-color;
+    border-color: $study-color;
+}
+
+input.checkbox-study:focus,
+input:focus + .slider-study {
+    box-shadow: 0 0 0 0.25rem $study-color;
+}
+
+input.checkbox-study:focus:checked,
+input:focus:checked + .slider-study {
+    background-color: #{shade-color($study-color, 10%)};
+    box-shadow: 0 0 0 0.25rem $study-color;
+}
+
+.form-study .form-select:focus,
+.form-study .form-control:focus {
+    border-color: rgba($study-color, 0.8);
+    box-shadow: 0 0 0 .25rem rgba($study-color, 0.5);
+}
+
+.dropdown-menu-study .dropdown-item:active,
+.dropdown-item-study:active {
+  background: $study-color;
+}
+
+.btn-study {
+    --bs-btn-font-weight: 600;
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-bg: $study-color;
+    --bs-btn-border-color: $study-color;
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: #{shade-color($study-color, 10%)};
+    --bs-btn-hover-border-color: #{shade-color($study-color, 10%)};
+    --bs-btn-focus-shadow-rgb: #{to-rgb($study-color)};
+    --bs-btn-active-color: var(--bs-btn-hover-color);
+    --bs-btn-active-bg: #{shade-color($study-color, 20%)};
+    --bs-btn-active-border-color: #{shade-color($study-color, 20%)};
+    --bs-btn-disabled-color: var(--bs-white);
+    --bs-btn-disabled-bg: #{shade-color($study-color, 5%)};
+    --bs-btn-disabled-border-color: #{shade-color($study-color, 5%)};
+}
+
+.text-bg-component {
+    background: $component-color;
+}
+
+.text-component {
+    color: $component-color;
+}
+
+input.checkbox-component:checked,
+input:checked + .slider-component {
+    background-color: $component-color;
+    border-color: $component-color;
+}
+
+input.checkbox-component:focus,
+input:focus + .slider-component {
+    box-shadow: 0 0 0 0.25rem $component-color;
+}
+
+input.checkbox-component:focus:checked,
+input:focus:checked + .slider-component {
+    background-color: #{shade-color($component-color, 10%)};
+    box-shadow: 0 0 0 0.25rem $component-color;
+}
+
+.form-component .form-select:focus,
+.form-component .form-control:focus {
+    border-color: rgba($component-color, 0.8);
+    box-shadow: 0 0 0 .25rem rgba($component-color, 0.5);
+}
+
+.dropdown-menu-component .dropdown-item:active,
+.dropdown-item-component:active {
+  background: $component-color;
+}
+
+.btn-component {
+    --bs-btn-font-weight: 600;
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-bg: $component-color;
+    --bs-btn-border-color: $component-color;
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: #{shade-color($component-color, 10%)};
+    --bs-btn-hover-border-color: #{shade-color($component-color, 10%)};
+    --bs-btn-focus-shadow-rgb: #{to-rgb($component-color)};
+    --bs-btn-active-color: var(--bs-btn-hover-color);
+    --bs-btn-active-bg: #{shade-color($component-color, 20%)};
+    --bs-btn-active-border-color: #{shade-color($component-color, 20%)};
+    --bs-btn-disabled-color: var(--bs-white);
+    --bs-btn-disabled-bg: #{shade-color($component-color, 5%)};
+    --bs-btn-disabled-border-color: #{shade-color($component-color, 5%)};
+}
+
+.text-bg-batch {
+    background: $batch-color;
+}
+
+.text-batch {
+    color: $batch-color;
+}
+
+input.checkbox-batch:checked,
+input:checked + .slider-batch {
+    background-color: $batch-color;
+    border-color: $batch-color;
+}
+
+input.checkbox-batch:focus,
+input:focus + .slider-batch {
+    box-shadow: 0 0 0 0.25rem $batch-color;
+}
+
+input.checkbox-batch:focus:checked,
+input:focus:checked + .slider-batch {
+    background-color: #{shade-color($batch-color, 10%)};
+    box-shadow: 0 0 0 0.25rem $batch-color;
+}
+
+.form-batch .form-select:focus,
+.form-batch .form-control:focus {
+    border-color: rgba($batch-color, 0.8);
+    box-shadow: 0 0 0 .25rem rgba($batch-color, 0.5);
+}
+
+.dropdown-menu-batch .dropdown-item:active,
+.dropdown-item-batch:active {
+  background: $batch-color;
+}
+
+.btn-batch {
+    --bs-btn-font-weight: 600;
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-bg: $batch-color;
+    --bs-btn-border-color: $batch-color;
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: #{shade-color($batch-color, 10%)};
+    --bs-btn-hover-border-color: #{shade-color($batch-color, 10%)};
+    --bs-btn-focus-shadow-rgb: #{to-rgb($batch-color)};
+    --bs-btn-active-color: var(--bs-btn-hover-color);
+    --bs-btn-active-bg: #{shade-color($batch-color, 20%)};
+    --bs-btn-active-border-color: #{shade-color($batch-color, 20%)};
+    --bs-btn-disabled-color: var(--bs-white);
+    --bs-btn-disabled-bg: #{shade-color($batch-color, 5%)};
+    --bs-btn-disabled-border-color: #{shade-color($batch-color, 5%)};
+}
+
+.text-bg-admin {
+    background: $admin-color;
+}
+
+.text-admin {
+    color: $admin-color;
+}
+
+input.checkbox-admin:checked,
+input:checked + .slider-admin {
+    background-color: $admin-color;
+    border-color: $admin-color;
+}
+
+input.checkbox-admin:focus,
+input:focus + .slider-admin {
+    box-shadow: 0 0 0 0.25rem $admin-color;
+}
+
+input.checkbox-admin:focus:checked,
+input:focus:checked + .slider-admin {
+    background-color: #{shade-color($admin-color, 10%)};
+    box-shadow: 0 0 0 0.25rem $admin-color;
+}
+
+.form-admin .form-select:focus,
+.form-admin .form-control:focus {
+    border-color: rgba($admin-color, 0.8);
+    box-shadow: 0 0 0 .25rem rgba($admin-color, 0.5);
+}
+
+.dropdown-menu-admin .dropdown-item:active,
+.dropdown-item-admin:active {
+  background: $admin-color;
+}
+
+.btn-admin {
+    --bs-btn-font-weight: 600;
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-bg: $admin-color;
+    --bs-btn-border-color: $admin-color;
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: #{shade-color($admin-color, 10%)};
+    --bs-btn-hover-border-color: #{shade-color($admin-color, 10%)};
+    --bs-btn-focus-shadow-rgb: #{to-rgb($admin-color)};
+    --bs-btn-active-color: var(--bs-btn-hover-color);
+    --bs-btn-active-bg: #{shade-color($admin-color, 20%)};
+    --bs-btn-active-border-color: #{shade-color($admin-color, 20%)};
+    --bs-btn-disabled-color: var(--bs-white);
+    --bs-btn-disabled-bg: #{shade-color($admin-color, 5%)};
+    --bs-btn-disabled-border-color: #{shade-color($admin-color, 5%)};
+}

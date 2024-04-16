@@ -1,8 +1,11 @@
 /**
  * Module that uses the File System Access API via browser-fs-access (https://github.com/GoogleChromeLabs/browser-fs-access)
  */
+export {downloadFileStream, abortFileDownload}
 
 import { fileSave, supported } from '../browser-fs-access-0.31.0/src/index.js';
+import * as WaitingModal from './waitingModal.js';
+import * as Alerts from './alerts.js';
 
 let downloadFileAbortController;
 
@@ -12,7 +15,7 @@ if (supported) {
     console.log('browser-fs-access: Using the fallback implementation.');
 }
 
-window.abortFileDownload = function () {
+function abortFileDownload() {
     if (downloadFileAbortController) downloadFileAbortController.abort();
 }
 
@@ -24,9 +27,9 @@ window.abortFileDownload = function () {
  *                                     not set it will be a GET.
  * @param {optional string} rawFileName - file name the stream will be saved under in the local file system.
  */
-window.downloadFileStream = async function (url, postData, rawFileName) {
+async function downloadFileStream(url, postData, rawFileName) {
     try {
-        showWaitingModal(true);
+        WaitingModal.show(true);
 
         downloadFileAbortController = new AbortController();
         var init;
@@ -92,11 +95,11 @@ window.downloadFileStream = async function (url, postData, rawFileName) {
         );
     } catch (err) {
         if (err.name !== 'AbortError') {
-            showError("Download failed");
+            Alerts.error("Download failed");
             console.error("Download failed (" + err + ")");
         }
     } finally {
-        hideWaitingModal();
+        WaitingModal.hide();
     }
 }
 
