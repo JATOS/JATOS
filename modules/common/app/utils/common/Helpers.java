@@ -169,6 +169,51 @@ public class Helpers {
         return info;
     }
 
+    public static Map<String, String> getJatosConfig() {
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("Multi node", String.valueOf(Common.isMultiNode()));
+        config.put("Local IP", getLocalIpAddress());
+        config.put("Local basepath", Common.getBasepath());
+        config.put("Logs path", Common.getLogsPath());
+        config.put("Logs filename", Common.getLogsFilename());
+        config.put("Logs appender", Common.getLogsAppender());
+        config.put("Tmp path", Common.getTmpPath());
+        config.put("Study assets root path", Common.getStudyAssetsRootPath());
+        config.put("Result data max size", humanReadableByteCount(Common.getResultDataMaxSize()));
+        config.put("Result uploads allowed", String.valueOf(Common.isResultUploadsEnabled()));
+        config.put("Result uploads path", Common.getResultUploadsPath());
+        config.put("Result uploads max file size", humanReadableByteCount(Common.getResultUploadsMaxFileSize()));
+        config.put("Result uploads limit per study run", humanReadableByteCount(Common.getResultUploadsLimitPerStudyRun()));
+        config.put("Study logs allowed", String.valueOf(Common.isStudyLogsEnabled()));
+        config.put("Study logs path", String.valueOf(Common.getStudyLogsPath()));
+        config.put("User session timeout", String.valueOf(Common.getUserSessionTimeout()));
+        config.put("User session inactivity", String.valueOf(Common.getUserSessionInactivity()));
+        config.put("DB URL", Common.getDbUrl());
+        config.put("DB driver", Common.getDbDriver());
+        config.put("Max results DB query size", String.valueOf(Common.getMaxResultsDbQuerySize()));
+        config.put("Google OAuth allowed", String.valueOf(Common.isOauthGoogleAllowed()));
+        if (Common.isOauthGoogleAllowed()) {
+            config.put("Google OAuth client ID", Common.getOauthGoogleClientId());
+        }
+        config.put("OIDC allowed", String.valueOf(Common.isOidcAllowed()));
+        if (Common.isOidcAllowed()) {
+            config.put("OIDC discovery URL", Common.getOidcDiscoveryUrl());
+            config.put("OIDC client ID", Common.getOidcClientId());
+        }
+        config.put("ORCID allowed", String.valueOf(Common.isOrcidAllowed()));
+        if (Common.isOrcidAllowed()) {
+            config.put("ORCID client ID", Common.getOrcidClientId());
+        }
+        config.put("LDAP allowed", String.valueOf(Common.isLdapAllowed()));
+        if (Common.isLdapAllowed()) {
+            config.put("LDAP URL", Common.getLdapUrl());
+            config.put("LDAP base DN", String.join(", ", Common.getLdapBaseDn()));
+            config.put("LDAP admin DN", Common.getLdapAdminDn());
+            config.put("LDAP timeout", String.valueOf(Common.getLdapTimeout()));
+        }
+        return config;
+    }
+
     public static String humanReadableDuration(Duration duration) {
         return duration.toString()
                 .substring(2)
