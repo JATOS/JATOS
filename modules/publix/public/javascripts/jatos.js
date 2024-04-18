@@ -1,7 +1,6 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2022
  * Licensed under Apache License 2.0
  *
  * Uses plugin jquery.ajax-retry:
