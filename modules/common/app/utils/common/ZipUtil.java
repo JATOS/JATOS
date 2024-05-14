@@ -48,6 +48,10 @@ public class ZipUtil {
             ZipEntry zipEntry = (ZipEntry) zipEnumeration.nextElement();
             String fileName = zipEntry.getName();
             file = new File(destDir, fileName);
+            String canonicalPath = file.getCanonicalPath();
+            if (!canonicalPath.startsWith(destDir.getCanonicalPath() + File.separator)) {
+                throw new IOException("Illegal name: " + fileName);
+            }
             if (fileName.endsWith(ZIP_FILE_SEPARATOR)) {
                 file.mkdirs();
                 continue;
