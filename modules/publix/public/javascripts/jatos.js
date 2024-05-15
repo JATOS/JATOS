@@ -270,7 +270,7 @@ var jatos = {};
 	// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
 	// a component's jQuery version. Afterwards call initJatos.
 	jatos.jQuery = {};
-	getScript('jatos-publix/javascripts/jquery-3.5.1.min.js', function () {
+	getScript('jatos-publix/javascripts/jquery-3.7.1.min.js', function () {
 		jatos.jQuery = jQuery.noConflict(true);
 		jatos.jQuery.ajaxSetup({
 			cache: true
