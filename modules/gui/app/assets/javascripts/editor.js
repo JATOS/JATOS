@@ -44,8 +44,7 @@ const getValue = (selector) => editors[selector].getSession().getValue();
 const focus = (selector) => editors[selector].focus();
 
 function setTheme() {
-    const theme = document.documentElement.getAttribute('data-bs-theme');
-    const aceTheme = theme == 'dark' ? 'ace/theme/tomorrow_night' : 'ace/theme/tomorrow';
+    const aceTheme = Helpers.getTheme() == 'dark' ? 'ace/theme/tomorrow_night' : 'ace/theme/tomorrow';
     for (const [selector, editor] of Object.entries(editors)) {
         editor.setTheme(aceTheme);
     }

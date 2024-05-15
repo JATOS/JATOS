@@ -1,19 +1,18 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
-@import controllers.gui.routes._
 @import general.common._
 
-@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+@views.html.gui.page.main_new(request, signedinUser, None, None, breadcrumbs) {
 
 <main class="container-xxl overflow-auto mt-4">
 
     <div class="btn-toolbar mb-4" id="adminToolbar">
         <div class="btn-group me-2 mb-2">
-            <button class="btn btn-admin" id="userManager" type="button" data-toggle="tooltip" title="Create, deactivate, or delete users and change their passwords">
+            <button class="btn btn-admin" id="userManager" type="button" data-bs-tooltip data-bs-title="Create, deactivate, or delete users and change their passwords">
                 <i class="bi-people-fill pe-1"></i>User Manager
             </button>
         </div>
         <div class="btn-group me-2 mb-2">
-            <button class="btn btn-admin" id="studyManager" type="button" data-toggle="tooltip" title="Information about all studies, like users, disk size, database size. Possibility to deactivate a study.">
+            <button class="btn btn-admin" id="studyManager" type="button" data-bs-tooltip data-bs-title="Information about all studies, like users, disk size, database size. Possibility to deactivate a study.">
                 <i class="bi-building-gear pe-1"></i>Study Manager
             </button>
         </div>
@@ -23,7 +22,7 @@
                 <button class="btn btn-admin dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="bi-file-earmark-ruled pe-1"></i>Logs
                 </button>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-admin">
                     <li>
                         <button class="dropdown-item" id="applicationLog" type="button" data-filename="@Common.getLogsFilename()" data-bs-toggle="modal" data-bs-target="#logModal">Show @{Common.getLogsFilename()}</button>
                     </li>

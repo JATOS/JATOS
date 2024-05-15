@@ -1,12 +1,16 @@
 <div class="modal fade" id="qrCodeModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">QR Code</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">
+                    QR Code
+                    <div class="fs-6 fw-light text-wrap">
+                        Study link:<span class="fst-italic user-select-all ms-1" id="qrCodeModalStudyLink"></span>
+                    </div>
+                </h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p id="qrCodeText"></p>
                 <div id="qrcode"></div>
                 <button id="qrcode_download" class="btn btn-batch mt-2 float-end">Download</button>
             </div>

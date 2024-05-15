@@ -1,0 +1,65 @@
+@* Create Batch Modal *@
+<div class="modal fade" id="batchCreatorModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Add a new batch</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-batch" id="batchCreatorForm">
+                    <div class="row">
+                        <label class="col-sm-3 col-form-label" for="batchCreatorTitle">
+                            Title<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="batchCreatorTitle" name="title" placeholder="Your batch title" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-batch" id="batchCreatorConfirmed">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("batch-creator");
+    $("#batchCreatorModal").on('hide.bs.modal', alerts.hideAll);
+
+    $("#batchCreatorModal").on('show.bs.modal', function() {
+        $("#batchCreatorForm")[0].reset();
+        FormValidation.clear("#batchCreatorForm");
+    });
+
+    Helpers.triggerButtonByEnter("#batchCreatorModal", "#batchCreatorConfirmed");
+
+    $("#batchCreatorConfirmed").click(function(event) {
+        $.ajax({
+            type: 'POST',
+            url: window.routes.StudyLinks.submitCreatedBatch(window.study.id),
+            data: $('#batchCreatorForm').serialize(),
+            success: function(response) {
+                $('#batchCreatorModal').modal('hide');
+                $('#batchTable').DataTable().ajax.reload();
+            },
+            error: function(err) {
+                FormValidation.clear("#batchCreatorForm");
+                alerts.warning("The batch was not added.", 5000);
+                if (Helpers.isJson(err.responseText)) {
+                    FormValidation.show("#batchCreatorForm", err.responseJSON);
+                } else if (err.responseText) {
+                    alerts.error(err.responseText);
+                } else {
+                    alerts.error("Couldn't create a new batch");
+                }
+            }
+        });
+    });
+</script>

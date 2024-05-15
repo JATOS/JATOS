@@ -12,7 +12,6 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.StudyLogger;
-import general.gui.RequestScopeMessaging;
 import models.common.*;
 import models.gui.StudyProperties;
 import play.data.Form;
@@ -32,6 +31,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -92,25 +93,22 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result study(Long studyId, int httpStatus) throws JatosGuiException {
+    @SaveLastVisitedPageUrl
+    public Result study(Http.Request request, Long studyId, int httpStatus) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checkStandardForStudy(studyId, study, signedinUser);
-        if (!study.isActive()) {
-            RequestScopeMessaging.warning(
-                    "This study was deactivated by an admin. Although you can still edit this study, it can't be run "
-                            + "by you nor by a participant. Please contact your admin.");
-        }
+        checkStandardForStudy(request, studyId, study, signedinUser);
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study_new
-                .render(signedinUser, breadcrumbs, study, studyResultCount));
+                .render(request, signedinUser, breadcrumbs, study, studyResultCount));
     }
 
     @Transactional
     @Auth
-    public Result study(Long studyId) throws JatosGuiException {
-        return study(studyId, Http.Status.OK);
+    @SaveLastVisitedPageUrl
+    public Result study(Http.Request request, Long studyId) throws JatosGuiException {
+        return study(request, studyId, Http.Status.OK);
     }
 
     /**
@@ -358,11 +356,11 @@ public class Studies extends Controller {
         return ok(dataAsJson);
     }
 
-    private void checkStandardForStudy(Long studyId, Study study, User signedinUser) throws JatosGuiException {
+    private void checkStandardForStudy(Http.Request request, Long studyId, Study study, User signedinUser) throws JatosGuiException {
         try {
             checker.checkStandardForStudy(study, studyId, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwHome(e);
+            jatosGuiExceptionThrower.throwHome(request, e);
         }
     }
 

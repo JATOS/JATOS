@@ -18,14 +18,20 @@
     color: var(--bs-tertiary-color) !important;
 }
 
+#studyLinksManagerTable_wrapper div.dt-length select {
+    margin-left: 0em !important;
+}
+
 // Change color of pagination button
 #studyLinksManagerTable_wrapper .pagination .page-item.active .page-link {
     --bs-pagination-active-bg: $batch-color;
     --bs-pagination-active-border-color: $batch-color;
 }
 
-#studyLinksDisplayModal .direct-link.hide,
-#studyLinksDisplayModal .confirm-link.hide {
+// Used by the study links toggle to hide study links
+.direct-link.hide,
+.confirm-link.hide {
     visibility: hidden;
     height: 0;
 }
+

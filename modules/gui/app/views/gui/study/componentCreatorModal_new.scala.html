@@ -1,0 +1,85 @@
+@* Create component Modal *@
+<div class="modal fade" id="componentCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Add component</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-component" id="componentCreatorForm">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentCreatorFormTitle">
+                            Title<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="componentCreatorFormTitle" name="title" placeholder="Your component title" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="componentCreatorFormHtmlFilePath" data-bs-tooltip data-bs-title="Enter the name of your HTML file that displays your component. You can also enter a file path with subdirectories. This path must be within the directory of this study's assets. Use '/' as the directory separator - even on MS Windows.">
+                            HTML file path
+                        </label>
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <span class="input-group-text" id="componentCreatorDirName"></span>
+                                <input type="text" class="form-control" id="componentCreatorFormHtmlFilePath" name="htmlFilePath" placeholder="Path to the actual HTML file" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-component" id="componentCreatorConfirmed">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("component-creator");
+    $("#componentCreatorModal").on('hide.bs.modal', alerts.hideAll);
+
+    $("#componentCreatorModal").on('show.bs.modal', function() {
+        $("#componentCreatorForm")[0].reset();
+        FormValidation.clear("#componentCreatorForm");
+
+        Helpers.generateModalSubtitles("#componentCreatorModal", {"Study title": window.study.title});
+
+        $("#componentCreatorDirName").text("/" + window.study.dirName + "/");
+
+        // Disable all fields if study is locked
+        Helpers.disableForm("#componentCreatorModal", window.study.isLocked);
+        if (window.study.isLocked) {
+            alerts.warning("Study is locked. It is not possible to add a new component.");
+        }
+    });
+
+    $("#componentCreatorConfirmed").click(function(event) {
+        $.ajax({
+            type : 'POST',
+            url : window.routes.Components.submitCreated(window.study.id),
+            data : $('#componentCreatorForm').serialize(),
+            success : function(response) {
+                $('#componentCreatorModal').modal('hide');
+                alerts.success("The component was added successfully.");
+                $('#componentsTable').DataTable().ajax.reload();
+            },
+            error : function(response) {
+                FormValidation.clear("#componentCreatorForm");
+                alerts.warning("The component was not saved.", 5000);
+                if (Helpers.isJson(response.responseText)) {
+                    FormValidation.show("#componentCreatorForm", response.responseJSON);
+                } else if (err.responseText) {
+                    alerts.error(err.responseText);
+                } else {
+                    alerts.error("Couldn't create component");
+                }
+            }
+        });
+    });
+</script>

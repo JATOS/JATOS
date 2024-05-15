@@ -1,13 +1,10 @@
-@import controllers.gui.routes._
-@import general.common._
-
 @* List logs directory Modal *@
 <div class="modal fade" id="listLogsModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Content of JATOS' <i>logs</i> directory</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Content of JATOS' <i>logs</i> directory</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>You can download the files or click on 'Show' (if available) to see them right away.</p>
@@ -21,13 +18,13 @@
 <div class="modal fade" id="logModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Log (reverse order)</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Log (reverse order)</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <pre><code></code></pre>
-                <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-toggle="tooltip" title="Copy to clipboard"></span>
+                <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
             </div>
         </div>
     </div>
@@ -51,9 +48,7 @@
             success: function(logFiles) {
                 $('#listLgsList').html(generateListLogsHtml(logFiles));
             },
-            error : function(err) {
-                alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get the logs")
         });
     });
 
@@ -64,7 +59,7 @@
             const url = window.routes.Admin.logs(filename, -1, false);
             let html = `<li><a href="${url}" download>${filename}</a>`;
             if (!filename.includes(".gz")) {
-                html += `<button type="button" class="btn btn-nav btn-sm ms-2" data-filename="${filename}" data-bs-toggle="modal" data-bs-target="#logModal">Show</button>`;
+                html += `<button type="button" class="btn btn-nav btn-sm show-log ms-2" data-filename="${filename}">Show</button>`;
             }
             html += '</li>';
             listLogsHtml.push(html);
@@ -73,8 +68,8 @@
         return listLogsHtml.join("");
     }
 
-    $("#logModal").on('show.bs.modal', function(e) {
-        const filename = $(e.relatedTarget).data("filename");
+    $("#listLogsModal").on('click', 'button.show-log', function(e) {
+        const filename = $(this).data("filename");
         const url = window.routes.Admin.logs(filename, -1, true);
         $('#logModal .modal-body pre code').text("");
         $.ajax({
@@ -82,10 +77,9 @@
             success: function(result) {
                 $('#logModal .modal-title').text(`${filename} (reverse order)`);
                 $('#logModal .modal-body pre code').text(result);
+                $("#logModal").modal('show');
             },
-            error : function(err) {
-                alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get the log")
         });
     });
 </script>

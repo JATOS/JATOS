@@ -49,8 +49,7 @@ public class WorkerService {
         putCountToMap.accept(PersonalMultipleWorker.WORKER_TYPE);
         putCountToMap.accept(GeneralSingleWorker.WORKER_TYPE);
         putCountToMap.accept(GeneralMultipleWorker.WORKER_TYPE);
-        putCountToMap.accept(MTWorker.WORKER_TYPE);
-        putCountToMap.accept(MTSandboxWorker.WORKER_TYPE);
+        putCountToMap.accept(MTWorker.WORKER_TYPE); // Incl. MTSandbox worker
         return resultsPerWorker;
     }
 

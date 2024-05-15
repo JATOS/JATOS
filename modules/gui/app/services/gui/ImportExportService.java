@@ -132,7 +132,7 @@ public class ImportExportService {
         }
     }
 
-    public void importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
+    public Long importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
@@ -148,12 +148,12 @@ public class ImportExportService {
         if (currentStudy.isPresent()) {
             overwriteExistingStudy(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
-            return;
+            return currentStudy.get().getId();
         }
 
         // 4) !study exists -  udir exists
         // 5) !study exists - !udir exists
-        if (!keepProperties && !keepAssets) { // if we have no current study do nothing
+        else if (!keepProperties && !keepAssets) { // if we have no current study do nothing
             boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
             if (uploadedDirExists && !renameAssets) {
                 throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameAssets' is set to false.");
@@ -162,7 +162,12 @@ public class ImportExportService {
                 String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
                 uploadedStudy.setDirName(newDirName);
             }
-            importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
+            Study newStudy = importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
+            return newStudy.getId();
+        }
+
+        else {
+            throw new IOException("Impossible to import study: no new study and the existing study is not allowed to be overwritten");
         }
     }
 
@@ -199,12 +204,12 @@ public class ImportExportService {
         }
     }
 
-    private void importNewStudy(User signedinUser, File tempUnzippedStudyDir,
-            Study importedStudy) throws IOException {
+    private Study importNewStudy(User signedinUser, File tempUnzippedStudyDir, Study importedStudy) throws IOException {
         moveStudyAssetsDir(tempUnzippedStudyDir, null, importedStudy.getDirName());
-        studyService.createAndPersistStudy(signedinUser, importedStudy);
+        Study newStudy = studyService.createAndPersistStudy(signedinUser, importedStudy);
         RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
                 importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
+        return newStudy;
     }
 
     /**

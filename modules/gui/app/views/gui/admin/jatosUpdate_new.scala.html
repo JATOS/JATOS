@@ -1,6 +1,3 @@
-@import controllers.gui.routes._
-@import general.common._
-
 <div class="card card-body bg-body-tertiary text-center mb-4" id="updateJatos">
     <h5 class="card-title">JATOS version</h5>
     <p class="card-text placeholder-glow mb-0" id="updateJatosMsg"><span class="placeholder col-5"></span></p>
@@ -12,9 +9,9 @@
 <div class="modal fade" id="releaseNotesModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Release notes</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Release notes</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body"></div>
             <div class="modal-footer">
@@ -29,8 +26,8 @@
 <div class="modal fade" id="updateJatosModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Update JATOS</h5>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Update JATOS</h5>
             </div>
             <div class="modal-body">
                 <div class="waiting"><img src="@routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")"> please wait</div>
@@ -130,14 +127,14 @@ function getVersionName(releaseInfo) {
 }
 
 function getFileSizeInMb(releaseInfo) {
-    var sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
+    const sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
     return  Math.round(sizeInByte / 1024 / 1024);
 }
 
 $("#updateJatos .updateJatosButton, #releaseNotesModal .updateJatosButton").click(function() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
-    var fileSizeInMb = getFileSizeInMb(releaseInfo);
+    const releaseInfo = $("#updateJatos").data("releaseInfo");
+    const version = getVersionName(releaseInfo);
+    const fileSizeInMb = getFileSizeInMb(releaseInfo);
     $("#releaseNotesModal").modal('hide');
     removeAlerts("#updateJatosModal");
     $("#updateJatosModal .modal-title").text("Update JATOS to " + version);
@@ -158,16 +155,14 @@ $("#updateJatos .updateJatosButton, #releaseNotesModal .updateJatosButton").clic
 function cancelUpdate() {
     $.ajax({
         url: '@controllers.gui.routes.Updates.cancelUpdate()',
-        error: function (err) {
-            showError(err.responseText)
-        }
+        error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't cancel the update")
     });
 }
 
 function downloadJatos() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var fileSizeInMb = getFileSizeInMb(releaseInfo);
-    var version = getVersionName(releaseInfo);
+    const releaseInfo = $("#updateJatos").data("releaseInfo");
+    const fileSizeInMb = getFileSizeInMb(releaseInfo);
+    const version = getVersionName(releaseInfo);
     $("#updateJatosModal .waiting").show();
     $("#updateJatosModal .modal-title").text("Downloading " + version + " (" + fileSizeInMb + " MB)");
     $("#updateJatosModal .confirmationText").hide();
@@ -178,16 +173,16 @@ function downloadJatos() {
         success: function() {
             showUpdateJatosModalDownloaded();
         },
-        error: function (err) {
+        error: function(err) {
             $('#updateJatosModal').modal('hide');
-            showError(err.responseText)
+            err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during the JATOS downloading: check the application logs");
         }
     });
 }
 
 function showUpdateJatosModalDownloaded() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
+    const releaseInfo = $("#updateJatos").data("releaseInfo");
+    const version = getVersionName(releaseInfo);
     $("#updateJatosModal .waiting").hide();
     $("#updateJatosModal .checkbox").show();
     $("#updateJatosModal .modal-title").text("Update & Restart");
@@ -203,13 +198,13 @@ function showUpdateJatosModalDownloaded() {
 }
 
 function updateAndRestart() {
-    var releaseInfo = $("#updateJatos").data("releaseInfo");
-    var version = getVersionName(releaseInfo);
+    const releaseInfo = $("#updateJatos").data("releaseInfo");
+    const version = getVersionName(releaseInfo);
     $("#updateJatosModal .waiting").show();
     $("#updateJatosModal .confirmationText").hide();
     $("#updateJatosModal .checkbox").hide();
     $("#updateJatosModal .modal-footer").hide();
-    var backupAll = $('#updateJatosModal .backupAll').is(':checked');
+    const backupAll = $('#updateJatosModal .backupAll').is(':checked');
     $.ajax({
         url: '@{general.common.Common.getJatosUrlBasePath()}jatos/updateAndRestart?backupAll=' + backupAll,
         timeout: 0, // Do not timeout
@@ -218,9 +213,9 @@ function updateAndRestart() {
             showInfo("Restarting now to finish update to version " + version
                     + ". It should take under a minute. Refresh this page every now and then.");
         },
-        error: function (err) {
+        error: function(err) {
             $('#updateJatosModal').modal('hide');
-            showError(err.responseText)
+            err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during update and restart: check the application logs")
         }
     });
 }

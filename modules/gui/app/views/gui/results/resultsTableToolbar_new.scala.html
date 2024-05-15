@@ -1,0 +1,35 @@
+<div class="sticky-top" id="resultTableToolbars">
+
+    @* Upper toolbar (buttons get added dynamically) *@
+    <div class="d-flex user-select-none mb-2" id="resultsTableUpperToolbar">
+        <div class="btn-toolbar flex-nowrap"></div>
+    </div>
+
+    @* Lower toolbar (some things get added dynamically) *@
+    <div class="row align-items-start user-select-none" id="resultsTableLowerToolbar">
+        <div class="col-auto me-3 mb-2" id="resultsTableSelect">
+            <label class="mb-0 d-none d-lg-block"><span class="info-icon" data-bs-tooltip data-bs-title="Select or deselect table rows (results)">Select</span></label>
+        </div>
+        <div class="col me-3 mb-2" id="resultsTableSearch">
+            <label for="resultsTableSearchInput" class="form-label mb-0 d-none d-lg-block"><span class="info-icon" data-bs-tooltip data-bs-title="You can filter for table's content (metadata)">Filter</span></label>
+            <div class="btn-toolbar flex-nowrap">
+                <div class="input-group flex-nowrap me-2">
+                    <input type="search" class="form-control" id="resultsTableSearchInput">
+                    <button type="button" class="btn btn-secondary regex" data-bs-toggle="button">
+                        <span class="no-info-icon" data-bs-tooltip data-bs-title="Filter by regular expression, e.g. to show only results that have a duration between 2 and 4 minutes you could use the regex '00:0[2-4]:'.">RegEx</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary case-sensitive" data-bs-toggle="button">
+                        <span class="no-info-icon" data-bs-tooltip data-bs-title="Filter case sensitive">Aa</span>
+                    </button>
+                </div>
+                <button class="btn btn-secondary text-nowrap dropdown-toggle" type="button" data-bs-toggle="collapse" data-bs-target=".dtsb-searchBuilder" data-bs-tooltip data-bs-title="Define complex filter criteria">Filter Builder</button>
+            </div>
+        </div>
+        <div class="col-auto mb-2">
+            <label class="mb-0 d-none d-lg-block"><span class="info-icon" data-bs-tooltip data-bs-title="Change the table's setup">Show</span></label>
+            <div class="btn-toolbar flex-nowrap">
+                <div id="resultsTableCustomize"></div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,13 +3,11 @@ package controllers.gui;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import auth.gui.SigninFormValidation;
-import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
-import general.common.MessagesStrings;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
@@ -37,6 +35,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
  * Controller with actions concerning users (incl. user manager)
@@ -78,10 +78,11 @@ public class Users extends Controller {
 
     @Transactional
     @Auth(Role.ADMIN)
-    public Result userManager() {
+    @SaveLastVisitedPageUrl
+    public Result userManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
-        return ok(views.html.gui.admin.userManager_new.render(signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.userManager_new.render(request, signedinUser, breadcrumbs));
     }
 
     /**
@@ -138,20 +139,6 @@ public class Users extends Controller {
         } catch (ForbiddenException e) {
             return forbidden(e.getMessage());
         }
-    }
-
-    /**
-     * Shows the profile view of a user
-     */
-    @Transactional
-    @Auth
-    public Result profile(String username, Http.Request request) throws JatosGuiException {
-        String normalizedUsername = User.normalizeUsername(username);
-        User signedinUser = authService.getSignedinUser();
-        checkUsernameIsOfSignedinUser(normalizedUsername, signedinUser);
-
-        String breadcrumbs = breadcrumbsService.generateForUser(signedinUser);
-        return ok(views.html.gui.admin.profile.render(signedinUser, breadcrumbs, request));
     }
 
     /**

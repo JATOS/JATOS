@@ -1,0 +1,68 @@
+@* Mechanical Turk Source Code Modal Template *@
+<div class="modal fade" id="mtSourceCodeModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-xxl">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Source Code for MTurk</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <b>Copy & paste</b> this code into the 'source' field of your study's design layout in Mechanical Turk (<a href="http://www.jatos.org/Connect-to-Mechanical-Turk.html" target="_blank">more information</a>). Change the code to your needs.
+                </div>
+                <div class="mb-3">
+                    To try it out you can imitate an MTurk Sandbox worker for JATOS by using (<a href="http://www.jatos.org/Tips-and-Tricks.html#imitate-a-run-from-mechanical-turk" target="_blank">more information</a>):
+                    <div>
+                        <a href="#" id="mtSandboxStudyLink" target="_blank"></a>
+                        <span class="btn-clipboard no-info-icon" data-bs-tooltip data-bs-title="Copy this link to the clipboard."></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
+                    <div class="card-body">
+                        <pre class="m-0"><code id="mtSourceCode">Code not loaded yet</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+
+    const alerts = new Alerts.Named("mturk-source-code");
+    $("#mtSourceCodeModal").on('hide.bs.modal', alerts.hideAll);
+
+    const mtSourceCodeTemplate = `@views.html.gui.studyLinks.mTurkSourceCodeTemplate_new()`.replaceAll("script-tag", "script");
+
+    $("#mtSourceCodeModal").on('show.bs.modal', function() {
+        const batch = $('#mtSourceCodeModal').data('batch');
+        $.ajax({
+            url: window.routes.Api.getStudyCodes(window.study.id, batch.id, "MTurk", "", 1),
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study code")
+        }).done(response => fillSourceCodeMTurkModal(response.data));
+    });
+
+    function fillSourceCodeMTurkModal(studyCode) {
+        const batch = $('#mtSourceCodeModal').data('batch');
+        const mtStudyLink = window.routes.Publix.run(studyCode);
+        const randomMtSandboxWorkerId = Math.floor(Math.random() * 1000000);
+        const mtSandboxStudyLink = `${mtStudyLink}?workerId=${randomMtSandboxWorkerId}&assignmentId=123&turkSubmitTo=sandbox`;
+
+        Helpers.generateModalSubtitles("#mtSourceCodeModal", {"Batch": batch.title});
+        $('#mtSandboxStudyLink').attr("href", mtSandboxStudyLink).text(mtSandboxStudyLink);
+
+        // Fill dummy variables in template source code
+        $('#mtSourceCode').text(mtSourceCodeTemplate.replace("studyLinkDummy", mtStudyLink));
+
+        if (!batch.active) {
+            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
+        }
+        if (!batch.allowedWorkerTypes.includes("MT")) {
+            alerts.warning(`Type MTurk is currently not allowed in this batch and study links belonging to this type will not run. Activate type "MTurk" to allow study runs.`);
+        }
+    }
+</script>
+

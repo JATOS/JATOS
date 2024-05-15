@@ -4,6 +4,10 @@ import * as Alerts from '../alerts.js';
 import * as Helpers from '../helpers.js';
 import * as WaitingModal from "../waitingModal.js";
 
+/*
+ * Handles toolbars in the result pages (study, component, worker). Draws two rows (upper and lower) with buttons for
+ * refresh, export, delete, select, filter, filter builder, customization of the table and page size
+ */
 class Toolbars {
 
     constructor({ dataTable, type, exportResultsCallback, deleteSelectedResultsCallback }) {
@@ -23,10 +27,12 @@ class Toolbars {
         this.listenToSearch();
 
         this.dataTable.on('draw', () => {
+            this.drawAllSelectCheckboxes();
             // Necessary - otherwise the button doesn't work with manually selected rows
             this.toggleDeselectAllButton();
-            Helpers.setButtonWidthToMax("button.collapse-result-data");
         });
+
+        Helpers.activateTooltipsOnDataTablesDropdowns(this.dataTable);
     }
 
     // Upper toolbar contains refresh, export, and delete button
@@ -38,7 +44,10 @@ class Toolbars {
                 {
                     "text": '<i class="bi-arrow-repeat"></i>',
                     "className": `btn ${this.btnClass} me-2`,
-                    "titleAttr": "Reload results and refresh the table",
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Reload results and refresh the table"
+                    },
                     "action": function ( e, dt, node, config ) {
                         this.disable();
                         dataTable.ajax.reload();
@@ -53,49 +62,52 @@ class Toolbars {
                 {
                     "extend": "collection",
                     "text": '<i class="bi-box-arrow-up-right pe-1"></i>Export Results',
-                    "titleAttr": "Export results to your local file system",
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Export results to your local file system"
+                    },
                     "className": `btn ${this.btnClass} me-2`,
                     "buttons": [
                         {
-                            "text": '<span data-toggle="tooltip" title="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
+                            "text": '<span data-bs-tooltip data-bs-title="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
                             "className": this.dropdownClass,
                             "action": () => this.exportResultsCallback(window.routes.Api.exportResults(false))
                         },
                         {
-                            "text": '<span data-toggle="tooltip" title="Exports data only from results, as zip package or plain text file">Data only</span>',
+                            "text": '<span data-bs-tooltip data-bs-title="Exports data only from results, as zip package or plain text file">Data only</span>',
                             "className": this.dropdownClass,
                             "extend": "collection",
                             "buttons": [
                                 {
-                                    "text": '<span data-toggle="tooltip" title="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP</span>',
+                                    "text": '<span data-bs-tooltip data-bs-title="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP</span>',
                                     "className": this.dropdownClass,
                                     "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(false,false))
                                 },
                                 {
-                                    "text": '<span data-toggle="tooltip" title="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text</span>',
+                                    "text": '<span data-bs-tooltip data-bs-title="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text</span>',
                                     "className": this.dropdownClass,
                                     "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(true,false))
                                 }
                             ]
                         },
                         {
-                            "text": '<span data-toggle="tooltip" title="Exports files only from results, packed in a zip file">Files only</span>',
+                            "text": '<span data-bs-tooltip data-bs-title="Exports files only from results, packed in a zip file">Files only</span>',
                             "className": "text-nowrap dropdown-item-study",
                             "action": () => this.exportResultsCallback(window.routes.Api.exportResultFiles)
                         },
                         {
-                            "text": '<span data-toggle="tooltip" title="Exports only the metadata of the results. Choose between JSON and CSV format.">Metadata only</span>',
+                            "text": '<span data-bs-tooltip data-bs-title="Exports only the metadata of the results. Choose between JSON and CSV format.">Metadata only</span>',
                             "extend": "collection",
                             "collectionLayout": "dropdown",
                             "className": "w-100 dropdown-item-study",
                             "buttons": [
                                 {
-                                    "text": '<span data-toggle="tooltip" title="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON</span>',
+                                    "text": '<span data-bs-tooltip data-bs-title="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON</span>',
                                     "className": this.dropdownClass,
                                     "action": () => this.exportResultsCallback(window.routes.Api.exportResultMetadata(false))
                                 },
                                 {
-                                    "text": '<span data-toggle="tooltip" title="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV</span>',
+                                    "text": '<span data-bs-tooltip data-bs-title="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV</span>',
                                     "extend": "csv",
                                     "filename": () => "jatos_results_metadata_" + Helpers.getDateTimeYYYYMMDDHHmmss(),
                                     "footer": false,
@@ -139,7 +151,10 @@ class Toolbars {
             "buttons": [
                 {
                     "text": '<i class="bi-x-circle-fill pe-1"></i>Delete',
-                    "titleAttr": "Delete results in JATOS",
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Delete results in JATOS"
+                    },
                     "className": `btn ${this.btnClass} text-nowrap`,
                     "action": this.deleteSelectedResultsCallback
                 }
@@ -167,33 +182,45 @@ class Toolbars {
                 {
                     "extend": "selectAll",
                     "text": "All",
-                    "titleAttr": "Select all results (including the ones on different table pages)"
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Select all results (including the ones on different table pages)"
+                    }
                 },
                 {
                     "extends": "selectAll",
                     "text": "Visible",
-                    "action": function(e, dt, node, config) {
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Select only the currently visible results on this page"
+                    },
+                    "action": (e, dt, node, config) => {
                         dt.rows().deselect();
                         dt.rows({ page: 'current' }).select();
                     },
-                    "titleAttr": "Select only the currently visible results on this page"
                 },
                 {
                     "extends": "selectAll",
                     "text": "Filtered",
-                    "action": function(e, dt, node, config) {
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Select only the filtered results (including the ones on different table pages)"
+                    },
+                    "action": (e, dt, node, config) => {
                         dt.rows().deselect();
                         dt.rows({ search: 'applied' }).select();
                     },
-                    "titleAttr": "Select only the filtered results (including the ones on different table pages)"
                 },
                 {
                     "extend": "selectNone",
                     "text": "Deselect",
-                    "action": function(e, dt, node, config) {
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Deselect all results"
+                    },
+                    "action": (e, dt, node, config) => {
                         dt.rows().deselect();
                     },
-                    "titleAttr": "Deselect all results"
                 }
             ]
         });
@@ -203,7 +230,10 @@ class Toolbars {
                 {
                     "extend": "colvis",
                     "text": "Customize",
-                    "titleAttr": "Show/hide columns of this table",
+                    "attr": {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Show/hide columns of this table"
+                    },
                     "columns": ":not(.no-colvis)"
                 }
             ]
@@ -234,37 +264,46 @@ class Toolbars {
         $('.dt-length').insertAfter('#resultsTableCustomize');
     }
 
-    listenToSelects = () => {
-        this.dataTable.on('select', (e, dt, type, indexes) => {
-            if (type == "row") {
-                this.dataTable.rows(indexes).nodes().to$().each((index, selectedRow) => {
-                    $(selectedRow).find('.select-checkbox').removeClass('btn-secondary').addClass(this.btnClass);
-                    $(selectedRow).find('.select-checkbox i').removeClass('bi-square').addClass('bi-check-lg');
-                });
-            }
+    drawAllSelectCheckboxes = () => {
+        this.dataTable.rows().iterator('row', (context, index) => {
+            this.drawSelectCheckbox(this.dataTable.row(index).node());
         });
+    }
 
-        this.dataTable.on('deselect', (e, dt, type, indexes) => {
+    drawSelectCheckbox = (row) => {
+        const isSelected = $(row).hasClass("selected");
+        $(row).find('.select-checkbox')
+            .toggleClass('btn-secondary', !isSelected)
+            .toggleClass(this.btnClass, isSelected);
+        $(row).find('.select-checkbox i')
+            .toggleClass('bi-square', !isSelected)
+            .toggleClass('bi-check-lg', isSelected);
+    }
+
+    listenToSelects = () => {
+        this.dataTable.on('select deselect', (e, dt, type, indexes) => {
             if (type == "row") {
                 this.dataTable.rows(indexes).nodes().to$().each((index, selectedRow) => {
-                    $(selectedRow).find('.select-checkbox').removeClass(this.btnClass).addClass('btn-secondary');
-                    $(selectedRow).find('.select-checkbox i').removeClass('bi-check-lg').addClass('bi-square');
+                    this.drawSelectCheckbox(selectedRow);
                 });
+                this.toggleDeselectAllButton();
             }
         });
     }
 
     listenToSearch = () => {
-        const searchResultsTable = () => {
-            this.dataTable.search(
-                $('#resultsTableSearch input').val(),
-                $('#resultsTableSearch .regex').hasClass('active'),
-                !$('#resultsTableSearch .regex').hasClass('active'),
-                !$('#resultsTableSearch .caseSensitive').hasClass('active')
-            ).draw();
-        }
-        $('#resultsTableSearch input').on('keyup click', searchResultsTable);
-        $('#resultsTableSearch button.regex, button.caseSensitive').on('click', searchResultsTable);
+        // Firefox doesn't empty search field on page reload, so we do it manually
+        $('#resultsTableSearch input').val("");
+
+        // More about DataTables search: https://datatables.net/reference/api/search()
+        const searchCallback = () => {
+            const input = $('#resultsTableSearch input').val();
+            const isRegex = $('#resultsTableSearch .regex').hasClass('active');
+            const isCaseSensitive = $('#resultsTableSearch .case-sensitive').hasClass('active');
+            this.dataTable.search(input, isRegex, !isRegex, !isCaseSensitive).draw();
+        };
+        $('#resultsTableSearch input').on('keyup click', searchCallback);
+        $('#resultsTableSearch button.regex, button.case-sensitive').on('click', searchCallback);
     }
 
     toggleDeselectAllButton = () => {

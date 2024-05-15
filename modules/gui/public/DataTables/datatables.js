@@ -4,20 +4,20 @@
  *
  * To rebuild or modify this file with the latest versions of the included
  * software please visit:
- *   https://datatables.net/download/#bs5/dt-2.0.2/af-2.7.0/b-3.0.1/b-colvis-3.0.1/b-html5-3.0.1/b-print-3.0.1/cr-2.0.0/date-1.5.2/fc-5.0.0/fh-4.0.1/kt-2.12.0/r-3.0.0/rg-1.5.0/rr-1.5.0/sc-2.4.1/sb-1.7.0/sp-2.3.0/sl-2.0.0/sr-1.4.0
+ *   https://datatables.net/download/#bs5/dt-2.0.5/af-2.7.0/b-3.0.2/b-colvis-3.0.2/b-html5-3.0.2/b-print-3.0.2/cr-2.0.1/date-1.5.2/fc-5.0.0/fh-4.0.1/kt-2.12.0/r-3.0.2/rg-1.5.0/rr-1.5.0/sc-2.4.1/sb-1.7.1/sp-2.3.1/sl-2.0.1/sr-1.4.1
  *
  * Included libraries:
- *   DataTables 2.0.2, AutoFill 2.7.0, Buttons 3.0.1, Column visibility 3.0.1, HTML5 export 3.0.1, Print view 3.0.1, ColReorder 2.0.0, DateTime 1.5.2, FixedColumns 5.0.0, FixedHeader 4.0.1, KeyTable 2.12.0, Responsive 3.0.0, RowGroup 1.5.0, RowReorder 1.5.0, Scroller 2.4.1, SearchBuilder 1.7.0, SearchPanes 2.3.0, Select 2.0.0, StateRestore 1.4.0
+ *   DataTables 2.0.5, AutoFill 2.7.0, Buttons 3.0.2, Column visibility 3.0.2, HTML5 export 3.0.2, Print view 3.0.2, ColReorder 2.0.1, DateTime 1.5.2, FixedColumns 5.0.0, FixedHeader 4.0.1, KeyTable 2.12.0, Responsive 3.0.2, RowGroup 1.5.0, RowReorder 1.5.0, Scroller 2.4.1, SearchBuilder 1.7.1, SearchPanes 2.3.1, Select 2.0.1, StateRestore 1.4.1
  */
 
-/*! DataTables 2.0.2
+/*! DataTables 2.0.5
  * © SpryMedia Ltd - datatables.net/license
  */
 
 /**
  * @summary     DataTables
  * @description Paginate, search and order HTML tables
- * @version     2.0.2
+ * @version     2.0.5
  * @author      SpryMedia Ltd
  * @contact     www.datatables.net
  * @copyright   SpryMedia Ltd.
@@ -563,7 +563,7 @@
 		 *
 		 *  @type string
 		 */
-		build:"bs5/dt-2.0.2/af-2.7.0/b-3.0.1/b-colvis-3.0.1/b-html5-3.0.1/b-print-3.0.1/cr-2.0.0/date-1.5.2/fc-5.0.0/fh-4.0.1/kt-2.12.0/r-3.0.0/rg-1.5.0/rr-1.5.0/sc-2.4.1/sb-1.7.0/sp-2.3.0/sl-2.0.0/sr-1.4.0",
+		builder: "bs5/dt-2.0.5/af-2.7.0/b-3.0.2/b-colvis-3.0.2/b-html5-3.0.2/b-print-3.0.2/cr-2.0.1/date-1.5.2/fc-5.0.0/fh-4.0.1/kt-2.12.0/r-3.0.2/rg-1.5.0/rr-1.5.0/sc-2.4.1/sb-1.7.1/sp-2.3.1/sl-2.0.1/sr-1.4.1",
 	
 	
 		/**
@@ -1108,7 +1108,8 @@
 	
 	var _re_dic = {};
 	var _re_new_lines = /[\r\n\u2028]/g;
-	var _re_html = /<.*?>/g;
+	var _re_html = /<([^>]*>)/g;
+	var _max_str_len = Math.pow(2, 28);
 	
 	// This is not strict ISO8601 - Date.parse() is quite lax, although
 	// implementations differ between browsers.
@@ -1296,10 +1297,24 @@
 	};
 	
 	// Replaceable function in api.util
-	var _stripHtml = function ( d ) {
-		return d
-			.replace( _re_html, '' ) // Complete tags
-			.replace(/<script/i, ''); // Safety for incomplete script tag
+	var _stripHtml = function (input) {
+		// Irrelevant check to workaround CodeQL's false positive on the regex
+		if (input.length > _max_str_len) {
+			throw new Error('Exceeded max str len');
+		}
+	
+		var previous;
+	
+		input = input.replace(_re_html, ''); // Complete tags
+	
+		// Safety for incomplete script tag - use do / while to ensure that
+		// we get all instances
+		do {
+			previous = input;
+			input = input.replace(/<script/i, '');
+		} while (input !== previous);
+	
+		return previous;
 	};
 	
 	// Replaceable function in api.util
@@ -2014,7 +2029,7 @@
 			"mData": oDefaults.mData ? oDefaults.mData : iCol,
 			idx: iCol,
 			searchFixed: {},
-			colEl: $('<col>')
+			colEl: $('<col>').attr('data-dt-column', iCol)
 		} );
 		oSettings.aoColumns.push( oCol );
 	
@@ -2642,9 +2657,15 @@
 			type = 'sort';
 		}
 	
+		var row = settings.aoData[rowIdx];
+	
+		if (! row) {
+			return undefined;
+		}
+	
 		var draw           = settings.iDraw;
 		var col            = settings.aoColumns[colIdx];
-		var rowData        = settings.aoData[rowIdx]._aData;
+		var rowData        = row._aData;
 		var defaultContent = col.sDefaultContent;
 		var cellData       = col.fnGetData( rowData, type, {
 			settings: settings,
@@ -3429,8 +3450,15 @@
 		_fnCallbackFire( oSettings, 'aoFooterCallback', 'footer', [ $(oSettings.nTFoot).children('tr')[0],
 			_fnGetDataMaster( oSettings ), iDisplayStart, iDisplayEnd, aiDisplay ] );
 	
-		body.children().detach();
-		body.append( $(anRows) );
+		// replaceChildren is faster, but only became widespread in 2020,
+		// so a fall back in jQuery is provided for older browsers.
+		if (body[0].replaceChildren) {
+			body[0].replaceChildren.apply(body[0], anRows);
+		}
+		else {
+			body.children().detach();
+			body.append( $(anRows) );
+		}
 	
 		// Empty table needs a specific class
 		$(oSettings.nTableWrapper).toggleClass('dt-empty-footer', $('tr', oSettings.nTFoot).length === 0);
@@ -3698,15 +3726,15 @@
 	
 		settings.nTableWrapper = insert[0];
 	
-		var top = _layoutArray( settings, settings.layout, 'top' );
-		var bottom = _layoutArray( settings, settings.layout, 'bottom' );
-		var renderer = _fnRenderer( settings, 'layout' );
-	
 		if (settings.sDom) {
 			// Legacy
 			_fnLayoutDom(settings, settings.sDom, insert);
 		}
 		else {
+			var top = _layoutArray( settings, settings.layout, 'top' );
+			var bottom = _layoutArray( settings, settings.layout, 'bottom' );
+			var renderer = _fnRenderer( settings, 'layout' );
+		
 			// Everything above - the renderer will actually insert the contents into the document
 			top.forEach(function (item) {
 				renderer( settings, insert, item );
@@ -3892,7 +3920,7 @@
 								}
 	
 								if (! columnDef.sTitle && unique) {
-									columnDef.sTitle = cell.innerHTML.replace( /<.*?>/g, "" );
+									columnDef.sTitle = _stripHtml(cell.innerHTML);
 									columnDef.autoTitle = true;
 								}
 							}
@@ -4513,7 +4541,7 @@
 					word = '';
 				}
 	
-				return word.replace('"', '');
+				return word.replace(/"/g, '');
 			} );
 	
 			var match = not.length
@@ -5045,20 +5073,27 @@
 		// uses a cell which has a longer string, but isn't the widest! For example 
 		// "Chief Executive Officer (CEO)" is the longest string in the demo, but
 		// "Systems Administrator" is actually the widest string since it doesn't collapse.
+		// Note the use of translating into a column index to get the `col` element. This
+		// is because of Responsive which might remove `col` elements, knocking the alignment
+		// of the indexes out.
 		if (settings.aiDisplay.length) {
 			// Get the column sizes from the first row in the table
-			var colSizes = table.find('tbody tr').eq(0).find('th, td').map(function () {
-				return $(this).outerWidth();
+			var colSizes = table.find('tbody tr').eq(0).find('th, td').map(function (vis) {
+				return {
+					idx: _fnVisibleToColumnIndex(settings, vis),
+					width: $(this).outerWidth()
+				}
 			});
 	
 			// Check against what the colgroup > col is set to and correct if needed
-			$('col', settings.colgroup).each(function (i) {
-				var colWidth = this.style.width.replace('px', '');
+			for (var i=0 ; i<colSizes.length ; i++) {
+				var colEl = settings.aoColumns[ colSizes[i].idx ].colEl[0];
+				var colWidth = colEl.style.width.replace('px', '');
 	
-				if (colWidth !== colSizes[i]) {
-					this.style.width = colSizes[i] + 'px';
+				if (colWidth !== colSizes[i].width) {
+					colEl.style.width = colSizes[i].width + 'px';
 				}
-			});
+			}
 		}
 	
 		// 3. Copy the colgroup over to the header and footer
@@ -5466,9 +5501,12 @@
 					// Allow the processing display to show
 					setTimeout( function () {
 						_fnSort( settings );
-						_fnSortDisplay( settings );
-						_fnReDraw( settings, false, false );
+						_fnSortDisplay( settings, settings.aiDisplay );
+	
+						// Sort processing done - redraw has its own processing display
 						_fnProcessingDisplay( settings, false );
+	
+						_fnReDraw( settings, false, false );
 	
 						if (callback) {
 							callback();
@@ -5483,8 +5521,7 @@
 	 * Sort the display array to match the master's order
 	 * @param {*} settings
 	 */
-	function _fnSortDisplay(settings) {
-		var display = settings.aiDisplay;
+	function _fnSortDisplay(settings, display) {
 		var master = settings.aiDisplayMaster;
 		var masterMap = {};
 		var map = {};
@@ -6852,6 +6889,10 @@
 		for ( i=0, ien=ext.length ; i<ien ; i++ ) {
 			struct = ext[i];
 	
+			if (struct.name === '__proto__') {
+				continue;
+			}
+	
 			// Value
 			obj[ struct.name ] = struct.type === 'function' ?
 				_api_scope( scope, struct.val, struct ) :
@@ -7514,16 +7555,7 @@
 			order  = opts.order,   // applied, current, index (original - compatibility with 1.9)
 			page   = opts.page;    // all, current
 	
-		if ( _fnDataSource( settings ) == 'ssp' ) {
-			// In server-side processing mode, most options are irrelevant since
-			// rows not shown don't exist and the index order is the applied order
-			// Removed is a special case - for consistency just return an empty
-			// array
-			return search === 'removed' ?
-				[] :
-				_range( 0, displayMaster.length );
-		}
-		else if ( page == 'current' ) {
+		if ( page == 'current' ) {
 			// Current page implies that order=current and filter=applied, since it is
 			// fairly senseless otherwise, regardless of what order and search actually
 			// are
@@ -7705,11 +7737,7 @@
 		var matched = _selector_run( 'row', selector, run, settings, opts );
 	
 		if (opts.order === 'current' || opts.order === 'applied') {
-			var master = settings.aiDisplayMaster;
-	
-			matched.sort(function(a, b) {  
-				return master.indexOf(a) - master.indexOf(b);
-			});
+			_fnSortDisplay(settings, matched);
 		}
 	
 		return matched;
@@ -7794,11 +7822,6 @@
 			var idx = settings.aiDisplayMaster.indexOf(row);
 			if (idx !== -1) {
 				settings.aiDisplayMaster.splice(idx, 1);
-			}
-	
-			idx = settings.aiDisplay.indexOf(row);
-			if (idx !== -1) {
-				settings.aiDisplay.splice(idx, 1);
 			}
 	
 			// For server-side processing tables - subtract the deleted row from the count
@@ -7950,8 +7973,9 @@
 	{
 		if ( state && state.childRows ) {
 			api
-				.rows( state.childRows.map(function (id){
-					return id.replace(/:/g, '\\:')
+				.rows( state.childRows.map(function (id) {
+					// Escape any `:` characters from the row id, unless previously escaped
+					return id.replace(/(?<!\\):/g, '\\:');
 				}) )
 				.every( function () {
 					_fnCallbackFire( api.settings()[0], null, 'requestChild', [ this ] )
@@ -8232,6 +8256,17 @@
 	};
 	
 	
+	var __column_header = function ( settings, column, row ) {
+		var header = settings.aoHeader;
+		var target = row !== undefined
+			? row
+			: settings.bSortCellsTop // legacy support
+				? 0
+				: header.length - 1;
+	
+		return header[target][column].cell;
+	};
+	
 	var __column_selector = function ( settings, selector, opts )
 	{
 		var
@@ -8264,7 +8299,8 @@
 				return columns.map(function (col, idx) {
 					return s(
 							idx,
-							__columnData( settings, idx, 0, 0, rows )
+							__columnData( settings, idx, 0, 0, rows ),
+							__column_header( settings, idx )
 						) ? idx : null;
 				});
 			}
@@ -8409,15 +8445,8 @@
 	} );
 	
 	_api_registerPlural( 'columns().header()', 'column().header()', function ( row ) {
-		return this.iterator( 'column', function ( settings, column ) {
-			var header = settings.aoHeader;
-			var target = row !== undefined
-				? row
-				: settings.bSortCellsTop // legacy support
-					? 0
-					: header.length - 1;
-	
-			return header[target][column].cell;
+		return this.iterator( 'column', function (settings, column) {
+			return __column_header(settings, column, row);
 		}, 1 );
 	} );
 	
@@ -9570,7 +9599,7 @@
 	 *  @type string
 	 *  @default Version number
 	 */
-	DataTable.version = "2.0.2";
+	DataTable.version = "2.0.5";
 	
 	/**
 	 * Private data store, containing all of the settings objects that are
@@ -10425,24 +10454,24 @@
 			 */
 			"oPaginate": {
 				/**
-				 * Label and character for first page button
+				 * Label and character for first page button («)
 				 */
-				"sFirst": "«",
+				"sFirst": "\u00AB",
 	
 				/**
-				 * Last page button
+				 * Last page button (»)
 				 */
-				"sLast": "»",
+				"sLast": "\u00BB",
 	
 				/**
-				 * Next page button
+				 * Next page button (›)
 				 */
-				"sNext": "›",
+				"sNext": "\u203A",
 	
 				/**
-				 * Previous page button
+				 * Previous page button (‹)
 				 */
-				"sPrevious": "‹",
+				"sPrevious": "\u2039",
 			},
 	
 			/**
@@ -11671,568 +11700,6 @@
 	 */
 	
 	
-	/**
-	 * DataTables extensions
-	 * 
-	 * This namespace acts as a collection area for plug-ins that can be used to
-	 * extend DataTables capabilities. Indeed many of the build in methods
-	 * use this method to provide their own capabilities (sorting methods for
-	 * example).
-	 *
-	 * Note that this namespace is aliased to `jQuery.fn.dataTableExt` for legacy
-	 * reasons
-	 *
-	 *  @namespace
-	 */
-	DataTable.ext = _ext = {
-		/**
-		 * Buttons. For use with the Buttons extension for DataTables. This is
-		 * defined here so other extensions can define buttons regardless of load
-		 * order. It is _not_ used by DataTables core.
-		 *
-		 *  @type object
-		 *  @default {}
-		 */
-		buttons: {},
-	
-	
-		/**
-		 * Element class names
-		 *
-		 *  @type object
-		 *  @default {}
-		 */
-		classes: {},
-	
-	
-		/**
-		 * DataTables build type (expanded by the download builder)
-		 *
-		 *  @type string
-		 */
-		build:"bs5/dt-2.0.2/af-2.7.0/b-3.0.1/b-colvis-3.0.1/b-html5-3.0.1/b-print-3.0.1/cr-2.0.0/date-1.5.2/fc-5.0.0/fh-4.0.1/kt-2.12.0/r-3.0.0/rg-1.5.0/rr-1.5.0/sc-2.4.1/sb-1.7.0/sp-2.3.0/sl-2.0.0/sr-1.4.0",
-	
-	
-		/**
-		 * Error reporting.
-		 * 
-		 * How should DataTables report an error. Can take the value 'alert',
-		 * 'throw', 'none' or a function.
-		 *
-		 *  @type string|function
-		 *  @default alert
-		 */
-		errMode: "alert",
-	
-	
-		/**
-		 * Legacy so v1 plug-ins don't throw js errors on load
-		 */
-		feature: [],
-	
-		/**
-		 * Feature plug-ins.
-		 * 
-		 * This is an object of callbacks which provide the features for DataTables
-		 * to be initialised via the `layout` option.
-		 */
-		features: {},
-	
-	
-		/**
-		 * Row searching.
-		 * 
-		 * This method of searching is complimentary to the default type based
-		 * searching, and a lot more comprehensive as it allows you complete control
-		 * over the searching logic. Each element in this array is a function
-		 * (parameters described below) that is called for every row in the table,
-		 * and your logic decides if it should be included in the searching data set
-		 * or not.
-		 *
-		 * Searching functions have the following input parameters:
-		 *
-		 * 1. `{object}` DataTables settings object: see
-		 *    {@link DataTable.models.oSettings}
-		 * 2. `{array|object}` Data for the row to be processed (same as the
-		 *    original format that was passed in as the data source, or an array
-		 *    from a DOM data source
-		 * 3. `{int}` Row index ({@link DataTable.models.oSettings.aoData}), which
-		 *    can be useful to retrieve the `TR` element if you need DOM interaction.
-		 *
-		 * And the following return is expected:
-		 *
-		 * * {boolean} Include the row in the searched result set (true) or not
-		 *   (false)
-		 *
-		 * Note that as with the main search ability in DataTables, technically this
-		 * is "filtering", since it is subtractive. However, for consistency in
-		 * naming we call it searching here.
-		 *
-		 *  @type array
-		 *  @default []
-		 *
-		 *  @example
-		 *    // The following example shows custom search being applied to the
-		 *    // fourth column (i.e. the data[3] index) based on two input values
-		 *    // from the end-user, matching the data in a certain range.
-		 *    $.fn.dataTable.ext.search.push(
-		 *      function( settings, data, dataIndex ) {
-		 *        var min = document.getElementById('min').value * 1;
-		 *        var max = document.getElementById('max').value * 1;
-		 *        var version = data[3] == "-" ? 0 : data[3]*1;
-		 *
-		 *        if ( min == "" && max == "" ) {
-		 *          return true;
-		 *        }
-		 *        else if ( min == "" && version < max ) {
-		 *          return true;
-		 *        }
-		 *        else if ( min < version && "" == max ) {
-		 *          return true;
-		 *        }
-		 *        else if ( min < version && version < max ) {
-		 *          return true;
-		 *        }
-		 *        return false;
-		 *      }
-		 *    );
-		 */
-		search: [],
-	
-	
-		/**
-		 * Selector extensions
-		 *
-		 * The `selector` option can be used to extend the options available for the
-		 * selector modifier options (`selector-modifier` object data type) that
-		 * each of the three built in selector types offer (row, column and cell +
-		 * their plural counterparts). For example the Select extension uses this
-		 * mechanism to provide an option to select only rows, columns and cells
-		 * that have been marked as selected by the end user (`{selected: true}`),
-		 * which can be used in conjunction with the existing built in selector
-		 * options.
-		 *
-		 * Each property is an array to which functions can be pushed. The functions
-		 * take three attributes:
-		 *
-		 * * Settings object for the host table
-		 * * Options object (`selector-modifier` object type)
-		 * * Array of selected item indexes
-		 *
-		 * The return is an array of the resulting item indexes after the custom
-		 * selector has been applied.
-		 *
-		 *  @type object
-		 */
-		selector: {
-			cell: [],
-			column: [],
-			row: []
-		},
-	
-	
-		/**
-		 * Legacy configuration options. Enable and disable legacy options that
-		 * are available in DataTables.
-		 *
-		 *  @type object
-		 */
-		legacy: {
-			/**
-			 * Enable / disable DataTables 1.9 compatible server-side processing
-			 * requests
-			 *
-			 *  @type boolean
-			 *  @default null
-			 */
-			ajax: null
-		},
-	
-	
-		/**
-		 * Pagination plug-in methods.
-		 * 
-		 * Each entry in this object is a function and defines which buttons should
-		 * be shown by the pagination rendering method that is used for the table:
-		 * {@link DataTable.ext.renderer.pageButton}. The renderer addresses how the
-		 * buttons are displayed in the document, while the functions here tell it
-		 * what buttons to display. This is done by returning an array of button
-		 * descriptions (what each button will do).
-		 *
-		 * Pagination types (the four built in options and any additional plug-in
-		 * options defined here) can be used through the `paginationType`
-		 * initialisation parameter.
-		 *
-		 * The functions defined take two parameters:
-		 *
-		 * 1. `{int} page` The current page index
-		 * 2. `{int} pages` The number of pages in the table
-		 *
-		 * Each function is expected to return an array where each element of the
-		 * array can be one of:
-		 *
-		 * * `first` - Jump to first page when activated
-		 * * `last` - Jump to last page when activated
-		 * * `previous` - Show previous page when activated
-		 * * `next` - Show next page when activated
-		 * * `{int}` - Show page of the index given
-		 * * `{array}` - A nested array containing the above elements to add a
-		 *   containing 'DIV' element (might be useful for styling).
-		 *
-		 * Note that DataTables v1.9- used this object slightly differently whereby
-		 * an object with two functions would be defined for each plug-in. That
-		 * ability is still supported by DataTables 1.10+ to provide backwards
-		 * compatibility, but this option of use is now decremented and no longer
-		 * documented in DataTables 1.10+.
-		 *
-		 *  @type object
-		 *  @default {}
-		 *
-		 *  @example
-		 *    // Show previous, next and current page buttons only
-		 *    $.fn.dataTableExt.oPagination.current = function ( page, pages ) {
-		 *      return [ 'previous', page, 'next' ];
-		 *    };
-		 */
-		pager: {},
-	
-	
-		renderer: {
-			pageButton: {},
-			header: {}
-		},
-	
-	
-		/**
-		 * Ordering plug-ins - custom data source
-		 * 
-		 * The extension options for ordering of data available here is complimentary
-		 * to the default type based ordering that DataTables typically uses. It
-		 * allows much greater control over the the data that is being used to
-		 * order a column, but is necessarily therefore more complex.
-		 * 
-		 * This type of ordering is useful if you want to do ordering based on data
-		 * live from the DOM (for example the contents of an 'input' element) rather
-		 * than just the static string that DataTables knows of.
-		 * 
-		 * The way these plug-ins work is that you create an array of the values you
-		 * wish to be ordering for the column in question and then return that
-		 * array. The data in the array much be in the index order of the rows in
-		 * the table (not the currently ordering order!). Which order data gathering
-		 * function is run here depends on the `dt-init columns.orderDataType`
-		 * parameter that is used for the column (if any).
-		 *
-		 * The functions defined take two parameters:
-		 *
-		 * 1. `{object}` DataTables settings object: see
-		 *    {@link DataTable.models.oSettings}
-		 * 2. `{int}` Target column index
-		 *
-		 * Each function is expected to return an array:
-		 *
-		 * * `{array}` Data for the column to be ordering upon
-		 *
-		 *  @type array
-		 *
-		 *  @example
-		 *    // Ordering using `input` node values
-		 *    $.fn.dataTable.ext.order['dom-text'] = function  ( settings, col )
-		 *    {
-		 *      return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
-		 *        return $('input', td).val();
-		 *      } );
-		 *    }
-		 */
-		order: {},
-	
-	
-		/**
-		 * Type based plug-ins.
-		 *
-		 * Each column in DataTables has a type assigned to it, either by automatic
-		 * detection or by direct assignment using the `type` option for the column.
-		 * The type of a column will effect how it is ordering and search (plug-ins
-		 * can also make use of the column type if required).
-		 *
-		 * @namespace
-		 */
-		type: {
-			/**
-			 * Automatic column class assignment
-			 */
-			className: {},
-	
-			/**
-			 * Type detection functions.
-			 *
-			 * The functions defined in this object are used to automatically detect
-			 * a column's type, making initialisation of DataTables super easy, even
-			 * when complex data is in the table.
-			 *
-			 * The functions defined take two parameters:
-			 *
-		     *  1. `{*}` Data from the column cell to be analysed
-		     *  2. `{settings}` DataTables settings object. This can be used to
-		     *     perform context specific type detection - for example detection
-		     *     based on language settings such as using a comma for a decimal
-		     *     place. Generally speaking the options from the settings will not
-		     *     be required
-			 *
-			 * Each function is expected to return:
-			 *
-			 * * `{string|null}` Data type detected, or null if unknown (and thus
-			 *   pass it on to the other type detection functions.
-			 *
-			 *  @type array
-			 *
-			 *  @example
-			 *    // Currency type detection plug-in:
-			 *    $.fn.dataTable.ext.type.detect.push(
-			 *      function ( data, settings ) {
-			 *        // Check the numeric part
-			 *        if ( ! data.substring(1).match(/[0-9]/) ) {
-			 *          return null;
-			 *        }
-			 *
-			 *        // Check prefixed by currency
-			 *        if ( data.charAt(0) == '$' || data.charAt(0) == '&pound;' ) {
-			 *          return 'currency';
-			 *        }
-			 *        return null;
-			 *      }
-			 *    );
-			 */
-			detect: [],
-	
-			/**
-			 * Automatic renderer assignment
-			 */
-			render: {},
-	
-	
-			/**
-			 * Type based search formatting.
-			 *
-			 * The type based searching functions can be used to pre-format the
-			 * data to be search on. For example, it can be used to strip HTML
-			 * tags or to de-format telephone numbers for numeric only searching.
-			 *
-			 * Note that is a search is not defined for a column of a given type,
-			 * no search formatting will be performed.
-			 * 
-			 * Pre-processing of searching data plug-ins - When you assign the sType
-			 * for a column (or have it automatically detected for you by DataTables
-			 * or a type detection plug-in), you will typically be using this for
-			 * custom sorting, but it can also be used to provide custom searching
-			 * by allowing you to pre-processing the data and returning the data in
-			 * the format that should be searched upon. This is done by adding
-			 * functions this object with a parameter name which matches the sType
-			 * for that target column. This is the corollary of <i>afnSortData</i>
-			 * for searching data.
-			 *
-			 * The functions defined take a single parameter:
-			 *
-		     *  1. `{*}` Data from the column cell to be prepared for searching
-			 *
-			 * Each function is expected to return:
-			 *
-			 * * `{string|null}` Formatted string that will be used for the searching.
-			 *
-			 *  @type object
-			 *  @default {}
-			 *
-			 *  @example
-			 *    $.fn.dataTable.ext.type.search['title-numeric'] = function ( d ) {
-			 *      return d.replace(/\n/g," ").replace( /<.*?>/g, "" );
-			 *    }
-			 */
-			search: {},
-	
-	
-			/**
-			 * Type based ordering.
-			 *
-			 * The column type tells DataTables what ordering to apply to the table
-			 * when a column is sorted upon. The order for each type that is defined,
-			 * is defined by the functions available in this object.
-			 *
-			 * Each ordering option can be described by three properties added to
-			 * this object:
-			 *
-			 * * `{type}-pre` - Pre-formatting function
-			 * * `{type}-asc` - Ascending order function
-			 * * `{type}-desc` - Descending order function
-			 *
-			 * All three can be used together, only `{type}-pre` or only
-			 * `{type}-asc` and `{type}-desc` together. It is generally recommended
-			 * that only `{type}-pre` is used, as this provides the optimal
-			 * implementation in terms of speed, although the others are provided
-			 * for compatibility with existing Javascript sort functions.
-			 *
-			 * `{type}-pre`: Functions defined take a single parameter:
-			 *
-		     *  1. `{*}` Data from the column cell to be prepared for ordering
-			 *
-			 * And return:
-			 *
-			 * * `{*}` Data to be sorted upon
-			 *
-			 * `{type}-asc` and `{type}-desc`: Functions are typical Javascript sort
-			 * functions, taking two parameters:
-			 *
-		     *  1. `{*}` Data to compare to the second parameter
-		     *  2. `{*}` Data to compare to the first parameter
-			 *
-			 * And returning:
-			 *
-			 * * `{*}` Ordering match: <0 if first parameter should be sorted lower
-			 *   than the second parameter, ===0 if the two parameters are equal and
-			 *   >0 if the first parameter should be sorted height than the second
-			 *   parameter.
-			 * 
-			 *  @type object
-			 *  @default {}
-			 *
-			 *  @example
-			 *    // Numeric ordering of formatted numbers with a pre-formatter
-			 *    $.extend( $.fn.dataTable.ext.type.order, {
-			 *      "string-pre": function(x) {
-			 *        a = (a === "-" || a === "") ? 0 : a.replace( /[^\d\-\.]/g, "" );
-			 *        return parseFloat( a );
-			 *      }
-			 *    } );
-			 *
-			 *  @example
-			 *    // Case-sensitive string ordering, with no pre-formatting method
-			 *    $.extend( $.fn.dataTable.ext.order, {
-			 *      "string-case-asc": function(x,y) {
-			 *        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-			 *      },
-			 *      "string-case-desc": function(x,y) {
-			 *        return ((x < y) ? 1 : ((x > y) ? -1 : 0));
-			 *      }
-			 *    } );
-			 */
-			order: {}
-		},
-	
-		/**
-		 * Unique DataTables instance counter
-		 *
-		 * @type int
-		 * @private
-		 */
-		_unique: 0,
-	
-	
-		//
-		// Depreciated
-		// The following properties are retained for backwards compatibility only.
-		// The should not be used in new projects and will be removed in a future
-		// version
-		//
-	
-		/**
-		 * Version check function.
-		 *  @type function
-		 *  @depreciated Since 1.10
-		 */
-		fnVersionCheck: DataTable.fnVersionCheck,
-	
-	
-		/**
-		 * Index for what 'this' index API functions should use
-		 *  @type int
-		 *  @deprecated Since v1.10
-		 */
-		iApiIndex: 0,
-	
-	
-		/**
-		 * Software version
-		 *  @type string
-		 *  @deprecated Since v1.10
-		 */
-		sVersion: DataTable.version
-	};
-	
-	
-	//
-	// Backwards compatibility. Alias to pre 1.10 Hungarian notation counter parts
-	//
-	$.extend( _ext, {
-		afnFiltering: _ext.search,
-		aTypes:       _ext.type.detect,
-		ofnSearch:    _ext.type.search,
-		oSort:        _ext.type.order,
-		afnSortData:  _ext.order,
-		aoFeatures:   _ext.feature,
-		oStdClasses:  _ext.classes,
-		oPagination:  _ext.pager
-	} );
-	
-	
-	$.extend( DataTable.ext.classes, {
-		container: 'dt-container',
-		empty: {
-			row: 'dt-empty'
-		},
-		info: {
-			container: 'dt-info'
-		},
-		length: {
-			container: 'dt-length',
-			select: 'dt-input'
-		},
-		order: {
-			canAsc: 'dt-orderable-asc',
-			canDesc: 'dt-orderable-desc',
-			isAsc: 'dt-ordering-asc',
-			isDesc: 'dt-ordering-desc',
-			none: 'dt-orderable-none',
-			position: 'sorting_'
-		},
-		processing: {
-			container: 'dt-processing'
-		},
-		scrolling: {
-			body: 'dt-scroll-body',
-			container: 'dt-scroll',
-			footer: {
-				self: 'dt-scroll-foot',
-				inner: 'dt-scroll-footInner'
-			},
-			header: {
-				self: 'dt-scroll-head',
-				inner: 'dt-scroll-headInner'
-			}
-		},
-		search: {
-			container: 'dt-search',
-			input: 'dt-input'
-		},
-		table: 'dataTable',	
-		tbody: {
-			cell: '',
-			row: ''
-		},
-		thead: {
-			cell: '',
-			row: ''
-		},
-		tfoot: {
-			cell: '',
-			row: ''
-		},
-		paging: {
-			active: 'current',
-			button: 'dt-paging-button',
-			container: 'dt-paging',
-			disabled: 'disabled'
-		}
-	} );
-	
-	
 	var extPagination = DataTable.ext.pager;
 	
 	// Paging buttons configuration
@@ -12972,9 +12439,9 @@
 					var ariaType = '';
 					var indexes = columns.indexes();
 					var sortDirs = columns.orderable(true).flatten();
-					var orderedColumns = sorting.map( function (val) {
+					var orderedColumns = ',' + sorting.map( function (val) {
 						return val.col;
-					} ).join(',');
+					} ).join(',') + ',';
 	
 					cell
 						.removeClass(
@@ -12985,7 +12452,7 @@
 						.toggleClass( orderClasses.canAsc, orderable && sortDirs.includes('asc') )
 						.toggleClass( orderClasses.canDesc, orderable && sortDirs.includes('desc') );
 					
-					var sortIdx = orderedColumns.indexOf( indexes.toArray().join(',') );
+					var sortIdx = orderedColumns.indexOf( ',' + indexes.toArray().join(',') + ',' );
 	
 					if ( sortIdx !== -1 ) {
 						// Get the ordering direction for the columns under this cell
@@ -13000,7 +12467,7 @@
 					}
 	
 					// The ARIA spec says that only one column should be marked with aria-sort
-					if ( sortIdx === 0 && orderedColumns.length === indexes.count() ) {
+					if ( sortIdx === 0 ) {
 						var firstSort = sorting[0];
 						var sortOrder = col.asSorting;
 	
@@ -13096,7 +12563,7 @@
 		});
 	
 		// For the first info display in the table, we add a callback and aria information.
-		if (! $('#' + tid+'_info', settings.nWrapper).length) {
+		if (! settings._infoEl) {
 			n.attr({
 				'aria-live': 'polite',
 				id: tid+'_info',
@@ -13105,6 +12572,8 @@
 	
 			// Table is described by our info div
 			$(settings.nTable).attr( 'aria-describedby', tid+'_info' );
+	
+			settings._infoEl = n;
 		}
 	
 		return n;
@@ -13262,7 +12731,7 @@
 	
 	// opts
 	// - type - button configuration
-	// - numbers - number of buttons to show - must be odd
+	// - buttons - number of buttons to show - must be odd
 	DataTable.feature.register( 'paging', function ( settings, opts ) {
 		// Don't show the paging input if the table doesn't have paging enabled
 		if (! settings.oFeatures.bPaginate) {
@@ -13270,9 +12739,15 @@
 		}
 	
 		opts = $.extend({
-			numbers: DataTable.ext.pager.numbers_length,
-			type: settings.sPaginationType
-		}, opts)
+			buttons: DataTable.ext.pager.numbers_length,
+			type: settings.sPaginationType,
+			boundaryNumbers: true
+		}, opts);
+	
+		// To be removed in 2.1
+		if (opts.numbers) {
+			opts.buttons = opts.numbers;
+		}
 	
 		var host = $('<div/>').addClass( settings.oClasses.paging.container + ' paging_' + opts.type );
 		var draw = function () {
@@ -13304,7 +12779,7 @@
 			buttons = plugin()
 				.map(function (val) {
 					return val === 'numbers'
-						? _pagingNumbers(page, pages, opts.numbers)
+						? _pagingNumbers(page, pages, opts.buttons, opts.boundaryNumbers)
 						: val;
 				})
 				.flat();
@@ -13446,12 +12921,15 @@
 	 * @param {*} page Current page
 	 * @param {*} pages Total number of pages
 	 * @param {*} buttons Target number of number buttons
+	 * @param {boolean} addFirstLast Indicate if page 1 and end should be included
 	 * @returns Buttons to show
 	 */
-	function _pagingNumbers ( page, pages, buttons ) {
+	function _pagingNumbers ( page, pages, buttons, addFirstLast ) {
 		var
 			numbers = [],
-			half = Math.floor(buttons / 2);
+			half = Math.floor(buttons / 2),
+			before = addFirstLast ? 2 : 1,
+			after = addFirstLast ? 1 : 0;
 	
 		if ( pages <= buttons ) {
 			numbers = _range(0, pages);
@@ -13474,17 +12952,30 @@
 			}
 		}
 		else if ( page <= half ) {
-			numbers = _range(0, buttons-2);
-			numbers.push('ellipsis', pages-1);
+			numbers = _range(0, buttons-before);
+			numbers.push('ellipsis');
+	
+			if (addFirstLast) {
+				numbers.push(pages-1);
+			}
 		}
 		else if ( page >= pages - 1 - half ) {
-			numbers = _range(pages-(buttons-2), pages);
-			numbers.unshift(0, 'ellipsis');
+			numbers = _range(pages-(buttons-before), pages);
+			numbers.unshift('ellipsis');
+	
+			if (addFirstLast) {
+				numbers.unshift(0);
+			}
 		}
 		else {
-			numbers = _range(page-half+2, page+half-1);
-			numbers.push('ellipsis', pages-1);
-			numbers.unshift(0, 'ellipsis');
+			numbers = _range(page-half+before, page+half-after);
+			numbers.push('ellipsis');
+			numbers.unshift('ellipsis');
+	
+			if (addFirstLast) {
+				numbers.push(pages-1);
+				numbers.unshift(0);
+			}
 		}
 	
 		return numbers;
@@ -13652,7 +13143,7 @@
 
 
 /*! DataTables Bootstrap 5 integration
- * 2020 SpryMedia Ltd - datatables.net/license
+ * © SpryMedia Ltd - datatables.net/license
  */
 
 (function( factory ){
@@ -13703,8 +13194,7 @@ var DataTable = $.fn.dataTable;
 
 
 /**
- * DataTables integration for Bootstrap 5. This requires Bootstrap 5 and
- * DataTables 2 or newer.
+ * DataTables integration for Bootstrap 5.
  *
  * This file sets the defaults and adds options to DataTables to style its
  * controls using Bootstrap. See https://datatables.net/manual/styling/bootstrap
@@ -15151,7 +14641,7 @@ return DataTable;
 }));
 
 
-/*! Buttons for DataTables 3.0.1
+/*! Buttons for DataTables 3.0.2
  * © SpryMedia Ltd - datatables.net/license
  */
 
@@ -16875,6 +16365,14 @@ Buttons.instanceSelector = function (group, buttons) {
 			// Index selector
 			ret.push(buttons[input].inst);
 		}
+		else if (typeof input === 'object' && input.nodeName) {
+			// Element selector
+			for (var j = 0; j < buttons.length; j++) {
+				if (buttons[j].inst.dom.container[0] === input) {
+					ret.push(buttons[j].inst);
+				}
+			}
+		}
 		else if (typeof input === 'object') {
 			// Actual instance selector
 			ret.push(input);
@@ -17032,20 +16530,17 @@ Buttons.stripData = function (str, config) {
 	}
 
 	// Always remove script tags
-	str = str.replace(
-		/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-		''
-	);
+	str = Buttons.stripHtmlScript(str);
 
 	// Always remove comments
-	str = str.replace(/<!\-\-.*?\-\->/g, '');
+	str = Buttons.stripHtmlComments(str);
 
 	if (!config || config.stripHtml) {
-		str = str.replace(/<[^>]*>/g, '');
+		str = DataTable.util.stripHtml(str);
 	}
 
 	if (!config || config.trim) {
-		str = str.replace(/^\s+|\s+$/g, '');
+		str = str.trim();
 	}
 
 	if (!config || config.stripNewlines) {
@@ -17072,6 +16567,40 @@ Buttons.stripData = function (str, config) {
  */
 Buttons.entityDecoder = function (fn) {
 	_entityDecoder = fn;
+};
+
+/**
+ * Common function for stripping HTML comments
+ *
+ * @param {*} input 
+ * @returns 
+ */
+Buttons.stripHtmlComments = function (input) {
+	var previous;  
+	
+	do {  
+		previous = input;
+		input = input.replace(/(<!--.*?--!?>)|(<!--[\S\s]+?--!?>)|(<!--[\S\s]*?$)/g, '');
+	} while (input !== previous);  
+
+	return input;  
+};
+
+/**
+ * Common function for stripping HTML script tags
+ *
+ * @param {*} input 
+ * @returns 
+ */
+Buttons.stripHtmlScript = function (input) {
+	var previous;  
+	
+	do {  
+		previous = input;
+		input = input.replace(/<script\b[^<]*(?:(?!<\/script[^>]*>)<[^<]*)*<\/script[^>]*>/gi, '');
+	} while (input !== previous);  
+
+	return input;  
 };
 
 /**
@@ -17149,7 +16678,7 @@ Buttons.defaults = {
  * @type {string}
  * @static
  */
-Buttons.version = '3.0.1';
+Buttons.version = '3.0.2';
 
 $.extend(_dtButtons, {
 	collection: {
@@ -17672,7 +17201,7 @@ var _filename = function (config, dt) {
 	}
 
 	if (filename.indexOf('*') !== -1) {
-		filename = filename.replace('*', $('head > title').text()).trim();
+		filename = filename.replace(/\*/g, $('head > title').text()).trim();
 	}
 
 	// Strip characters which the OS will object to
@@ -17713,7 +17242,7 @@ var _title = function (config, dt) {
 	return title === null
 		? null
 		: title.indexOf('*') !== -1
-		? title.replace('*', $('head > title').text() || 'Exported data')
+		? title.replace(/\*/g, $('head > title').text() || 'Exported data')
 		: title;
 };
 
@@ -17764,7 +17293,8 @@ var _exportData = function (dt, inOpts) {
 					return Buttons.stripData(d, config);
 				}
 			},
-			customizeData: null
+			customizeData: null,
+			customizeZip: null
 		},
 		inOpts
 	);
@@ -18243,24 +17773,19 @@ $.extend(DataTable.ext.buttons, {
 				return conf.text;
 			}
 
-			// Use DataTables' internal data structure until this is presented
-			// is a public API. The other option is to use
-			// `$( column(col).node() ).text()` but the node might not have been
-			// populated when Buttons is constructed.
+			var title = dt.column(conf.columns).title();
 			var idx = dt.column(conf.columns).index();
-			var title = dt.settings()[0].aoColumns[idx].sTitle;
-
-			if (!title) {
-				title = dt.column(idx).header().innerHTML;
-			}
 
 			title = title
 				.replace(/\n/g, ' ') // remove new lines
 				.replace(/<br\s*\/?>/gi, ' ') // replace line breaks with spaces
-				.replace(/<select(.*?)<\/select>/g, '') // remove select tags, including options text
-				.replace(/<!\-\-.*?\-\->/g, '') // strip HTML comments
-				.replace(/<.*?>/g, '') // strip HTML
-				.replace(/^\s+|\s+$/g, ''); // trim
+				.replace(/<select(.*?)<\/select\s*>/gi, ''); // remove select tags, including options text
+
+			// Strip HTML comments
+			title = DataTable.Buttons.stripHtmlComments(title);
+
+			// Use whatever HTML stripper DataTables is configured for
+			title = DataTable.util.stripHtml(title).trim();
 
 			return conf.columnText ? conf.columnText(dt, idx, title) : title;
 		}
@@ -19713,8 +19238,9 @@ DataTable.ext.buttons.excelHtml5 = {
 						hidden: 1
 					},
 					text:
-						_sheetname(config) +
-						'!$A$' +
+						'\'' +
+						_sheetname(config).replace(/'/g, '\'\'') +
+						'\'!$A$' +
 						dataStartRow +
 						':' +
 						createCellPos(data.header.length - 1) +
@@ -19752,6 +19278,12 @@ DataTable.ext.buttons.excelHtml5 = {
 		if (filename > 175) {
 			filename = filename.substr(0, 175);
 		}
+
+		// Let the developer customize the final zip file if they want to before it is generated and sent to the browser
+		if (config.customizeZip) {
+			config.customizeZip(zip, data, filename);
+		}
+
 
 		if (zip.generateAsync) {
 			// JSZip 3+
@@ -20297,7 +19829,7 @@ return DataTable;
 }));
 
 
-/*! ColReorder 2.0.0
+/*! ColReorder 2.0.1
  * © SpryMedia Ltd - datatables.net/license
  */
 
@@ -21128,17 +20660,17 @@ var ColReorder = /** @class */ (function () {
         enable: true,
         order: null
     };
-    ColReorder.version = '2.0.0';
+    ColReorder.version = '2.0.1';
     return ColReorder;
 }());
 
-/*! ColReorder 2.0.0
+/*! ColReorder 2.0.1
  * © SpryMedia Ltd - datatables.net/license
  */
 /**
  * @summary     ColReorder
  * @description Provide the ability to reorder columns in a DataTable
- * @version     2.0.0
+ * @version     2.0.1
  * @author      SpryMedia Ltd
  * @contact     datatables.net
  * @copyright   SpryMedia Ltd.
@@ -26151,7 +25683,7 @@ return DataTable;
 }));
 
 
-/*! Responsive 3.0.0
+/*! Responsive 3.0.2
  * © SpryMedia Ltd - datatables.net/license
  */
 
@@ -26205,7 +25737,7 @@ var DataTable = $.fn.dataTable;
 /**
  * @summary     Responsive
  * @description Responsive tables plug-in for DataTables
- * @version     3.0.0
+ * @version     3.0.2
  * @author      SpryMedia Ltd
  * @copyright   SpryMedia Ltd.
  *
@@ -26346,7 +25878,9 @@ $.extend(Responsive.prototype, {
 					var idx = dt.column.index('toData', i);
 
 					if (that.s.current[idx] === false) {
-						$(this).css('display', 'none');
+						$(this)
+							.css('display', 'none')
+							.addClass('dtr-hidden');
 					}
 				});
 			}
@@ -26466,12 +26000,6 @@ $.extend(Responsive.prototype, {
 
 			that._resizeAuto();
 			that._resize();
-
-			// If columns were hidden, then DataTables needs to adjust the
-			// column sizing
-			if ($.inArray(false, that.s.current)) {
-				dt.columns.adjust();
-			}
 		});
 
 		// First pass - draw the table for the current viewport size
@@ -26481,6 +26009,38 @@ $.extend(Responsive.prototype, {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Private methods
 	 */
+
+	/**
+	 * Insert a `col` tag into the correct location in a `colgroup`.
+	 *
+	 * @param {jQuery} colGroup The `colgroup` tag
+	 * @param {jQuery} colEl The `col` tag
+	 */
+	_colGroupAttach: function (colGroup, colEls, idx) {
+		var found = null;
+
+		// No need to do anything if already attached
+		if (colEls[idx].get(0).parentNode === colGroup[0]) {
+			return;
+		}
+
+		// Find the first `col` after our own which is already attached
+		for (var i = idx+1; i < colEls.length; i++) {
+			if (colGroup[0] === colEls[i].get(0).parentNode) {
+				found = i;
+				break;
+			}
+		}
+
+		if (found !== null) {
+			// Insert before
+			colEls[idx].insertBefore(colEls[found][0]);
+		}
+		else {
+			// If wasn't found, insert at the end
+			colGroup.append(colEls[idx]);
+		}
+	},
 
 	/**
 	 * Get and store nodes from a cell - use for node moving renderers
@@ -27129,10 +26689,15 @@ $.extend(Responsive.prototype, {
 		var changed = false;
 		var visible = 0;
 		var dtSettings = dt.settings()[0];
+		var colGroup = $(dt.table().node()).children('colgroup');
+		var colEls = dtSettings.aoColumns.map(function (col) {
+			return col.colEl;
+		});
 
 		dt.columns()
 			.eq(0)
 			.each(function (colIdx, i) {
+				//console.log(colIdx, i);
 				// Do nothing on DataTables' hidden column - DT removes it from the table
 				// so we need to slide back
 				if (! dt.column(colIdx).visible()) {
@@ -27150,13 +26715,19 @@ $.extend(Responsive.prototype, {
 
 				// DataTables 2 uses `col` to define the width for a column
 				// and this needs to run each time, as DataTables will change
-				// the column width
+				// the column width. We may need to reattach if we've removed
+				// an element previously.
 				if (! columnsVis[i]) {
-					$(dtSettings.aoColumns[colIdx].colEl).detach();
+					colEls[i].detach();
+				}
+				else {
+					that._colGroupAttach(colGroup, colEls, i);
 				}
 			});
 
 		if (changed) {
+			dt.columns.adjust();
+
 			this._redrawChildren();
 
 			// Inform listeners of the change
@@ -27252,8 +26823,7 @@ $.extend(Responsive.prototype, {
 			emptyRow.append('<td/>');
 		}
 
-		// Body rows - we don't need to take account of DataTables' column
-		// visibility since we implement our own here (hence the `display` set)
+		// Body rows
 		dt.rows({ page: 'current' }).every(function (rowIdx) {
 			var node = this.node();
 
@@ -27264,7 +26834,7 @@ $.extend(Responsive.prototype, {
 			// We clone the table's rows and cells to create the sizing table
 			var tr = node.cloneNode(false);
 
-			dt.cells(rowIdx, '*').every(function (rowIdx2, colIdx) {
+			dt.cells(rowIdx, visibleColumns).every(function (rowIdx2, colIdx) {
 				// If nodes have been moved out (listHiddenNodes), we need to
 				// clone from the store
 				var store = that.s.childNodeStore[rowIdx + '-' + colIdx];
@@ -27282,6 +26852,8 @@ $.extend(Responsive.prototype, {
 			clonedBody.append(tr);
 		});
 
+		// Any cells which were hidden by Responsive in the host table, need to
+		// be visible here for the calculations
 		clonedBody.find('th, td').css('display', '');
 
 		// Footer
@@ -27914,7 +27486,7 @@ Api.registerPlural(
  * @name Responsive.version
  * @static
  */
-Responsive.version = '3.0.0';
+Responsive.version = '3.0.2';
 
 $.fn.dataTable.Responsive = Responsive;
 $.fn.DataTable.Responsive = Responsive;
@@ -28026,12 +27598,12 @@ DataTable.Responsive.bootstrap = function (bs) {
 };
 
 _display.modal = function (options) {
-	if (!modal) {
+	if (!modal && _bs.Modal) {
 		modal = new _bs.Modal(_modal[0]);
 	}
 
 	return function (row, update, render, closeCallback) {
-		if (!$.fn.modal) {
+		if (! modal) {
 			return _original(row, update, render, closeCallback);
 		}
 		else {
@@ -28057,8 +27629,7 @@ _display.modal = function (options) {
 				_modal
 					.data('dtr-row-idx', row.index())
 					.one('hidden.bs.modal', closeCallback)
-					.appendTo('body')
-					.modal();
+					.appendTo('body');
 
 				modal.show();
 			}
@@ -31003,8 +30574,8 @@ return DataTable;
 }));
 
 
-/*! SearchBuilder 1.7.0
--dev * ©SpryMedia Ltd - datatables.net/license/mit
+/*! SearchBuilder 1.7.1
+ * ©SpryMedia Ltd - datatables.net/license/mit
  */
 
 (function( factory ){
@@ -31190,10 +30761,10 @@ var DataTable = $.fn.dataTable;
         Criteria._escapeHTML = function (txt) {
             return txt
                 .toString()
-                .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>')
-                .replace(/&quot;/g, '"');
+                .replace(/&quot;/g, '"')
+                .replace(/&amp;/g, '&');
         };
         /**
          * Redraw the DataTable with the current search parameters
@@ -32009,7 +31580,7 @@ var DataTable = $.fn.dataTable;
             input: 'dtsb-input',
             inputCont: 'dtsb-inputCont',
             italic: 'dtsb-italic',
-            joiner: 'dtsp-joiner',
+            joiner: 'dtsb-joiner',
             left: 'dtsb-left',
             notItalic: 'dtsb-notItalic',
             option: 'dtsb-option',
@@ -34620,7 +34191,7 @@ var DataTable = $.fn.dataTable;
                 _this.dom.clearAll.remove();
             });
         };
-        SearchBuilder.version = '1.7.0';
+        SearchBuilder.version = '1.7.1';
         SearchBuilder.classes = {
             button: 'dtsb-button',
             clearAll: 'dtsb-clearAll',
@@ -34728,8 +34299,8 @@ var DataTable = $.fn.dataTable;
         return SearchBuilder;
     }());
 
-    /*! SearchBuilder 1.7.0
-    -dev * ©SpryMedia Ltd - datatables.net/license/mit
+    /*! SearchBuilder 1.7.1
+     * ©SpryMedia Ltd - datatables.net/license/mit
      */
     setJQuery($);
     setJQuery$1($);
@@ -34910,7 +34481,8 @@ $.extend(true, DataTable.SearchBuilder.classes, {
 $.extend(true, DataTable.Group.classes, {
     add: 'btn btn-secondary dtsb-add',
     clearGroup: 'btn btn-secondary dtsb-clearGroup',
-    logic: 'btn btn-secondary dtsb-logic'
+    logic: 'btn btn-secondary dtsb-logic',
+    search: 'btn btn-secondary dtsb-search'
 });
 $.extend(true, DataTable.Criteria.classes, {
     condition: 'form-select dtsb-condition',
@@ -34919,7 +34491,6 @@ $.extend(true, DataTable.Criteria.classes, {
     input: 'form-control dtsb-input',
     left: 'btn btn-secondary dtsb-left',
     right: 'btn btn-secondary dtsb-right',
-    search: 'btn btn-secondary dtsb-search',
     select: 'form-select',
     value: 'dtsb-value'
 });
@@ -34929,7 +34500,7 @@ return DataTable;
 }));
 
 
-/*! SearchPanes 2.3.0
+/*! SearchPanes 2.3.1
  * © SpryMedia Ltd - datatables.net/license
  */
 
@@ -35072,10 +34643,7 @@ var DataTable = $.fn.dataTable;
                 countButton: $$5('<button type="button"><span></span></button>')
                     .addClass(this.classes.paneButton)
                     .addClass(this.classes.countButton),
-                dtP: $$5('<table width="100%"><thead><tr><th>' +
-                    (this.s.colExists
-                        ? $$5(this.s.dt.column(this.s.index).header()).text()
-                        : this.s.customPaneSettings.header || 'Custom Pane') + '</th><th/></tr></thead></table>'),
+                dtP: $$5('<table width="100%"><thead><tr><th></th><th></th></tr></thead></table>'),
                 lower: $$5('<div/>').addClass(this.classes.subRow2).addClass(this.classes.narrowButton),
                 nameButton: $$5('<button type="button"><span></span></button>')
                     .addClass(this.classes.paneButton)
@@ -35090,6 +34658,15 @@ var DataTable = $.fn.dataTable;
                 topRow: $$5('<div/>').addClass(this.classes.topRow),
                 upper: $$5('<div/>').addClass(this.classes.subRow1).addClass(this.classes.narrowSearch)
             };
+            var title = '';
+            if (this.s.colExists) {
+                title = $$5(this.s.dt.column(this.s.index).header()).text();
+                this.dom.dtP.find('th').eq(0).text(title);
+            }
+            else {
+                title = this.s.customPaneSettings.header || 'Custom Pane';
+                this.dom.dtP.find('th').eq(0).html(title);
+            }
             // Set the value of name incase ordering is desired
             if (this.s.colOpts.name) {
                 this.s.name = this.s.colOpts.name;
@@ -35098,9 +34675,7 @@ var DataTable = $.fn.dataTable;
                 this.s.name = this.s.customPaneSettings.name;
             }
             else {
-                this.s.name = this.s.colExists ?
-                    $$5(this.s.dt.column(this.s.index).header()).text() :
-                    this.s.customPaneSettings.header || 'Custom Pane';
+                this.s.name = title;
             }
             var tableNode = this.s.dt.table(0).node();
             // Custom search function for table
@@ -35772,7 +35347,12 @@ var DataTable = $.fn.dataTable;
             if (bins === void 0) { bins = this.s.rowData.bins; }
             // Retrieve the rendered data from the cell using the fastData function
             // rather than the cell().render API method for optimisation
-            var fastData = settings.fastData;
+            var fastData = settings.fastData
+                ? settings.fastData
+                : function (row, col, orth) {
+                    // Legacy DT1
+                    return settings.oApi._fnGetCellData(settings, row, col, orth);
+                };
             if (typeof this.s.colOpts.orthogonal === 'string') {
                 var rendered = fastData(rowIdx, this.s.index, this.s.colOpts.orthogonal);
                 this.s.rowData.filterMap.set(rowIdx, rendered);
@@ -36250,10 +35830,10 @@ var DataTable = $.fn.dataTable;
         SearchPane.prototype._escapeHTML = function (txt) {
             return txt
                 .toString()
-                .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>')
-                .replace(/&quot;/g, '"');
+                .replace(/&quot;/g, '"')
+                .replace(/&amp;/g, '&');
         };
         /**
          * Gets the options for the row for the customPanes
@@ -36698,7 +36278,12 @@ var DataTable = $.fn.dataTable;
             var orth = typeof this.s.colOpts.orthogonal === 'string'
                 ? this.s.colOpts.orthogonal
                 : this.s.colOpts.orthogonal.search;
-            var fastData = this.s.dt.settings()[0].fastData;
+            var fastData = settings.fastData
+                ? settings.fastData
+                : function (row, col, orth) {
+                    // Legacy DT1
+                    return settings.oApi._fnGetCellData(settings, row, col, orth);
+                };
             var filter = fastData(rowIdx, this.s.index, orth);
             var add = function (f) {
                 if (!bins[f]) {
@@ -37635,7 +37220,14 @@ var DataTable = $.fn.dataTable;
                 // Otherwise add the paneStartup function to the list of functions
                 // that are to be run when the table is initialised. This will garauntee that the
                 // panes are initialised before the init event and init Complete callback is fired
-                this.s.dt.settings()[0].aoInitComplete.push(function () { return _this._startup(table); });
+                if (dataTable$1.versionCheck('2')) {
+                    this.s.dt.settings()[0].aoInitComplete.push(function () { return _this._startup(table); });
+                }
+                else {
+                    this.s.dt.settings()[0].aoInitComplete.push({
+                        fn: function () { return _this._startup(table); }
+                    });
+                }
             }
         };
         /**
@@ -37910,7 +37502,7 @@ var DataTable = $.fn.dataTable;
                 this.dom.clearAll.removeClass(this.classes.disabledButton).removeAttr('disabled');
             }
         };
-        SearchPanes.version = '2.3.0';
+        SearchPanes.version = '2.3.1';
         SearchPanes.classes = {
             clear: 'dtsp-clear',
             clearAll: 'dtsp-clearAll',
@@ -38287,7 +37879,7 @@ var DataTable = $.fn.dataTable;
         return SearchPanesST;
     }(SearchPanes));
 
-    /*! SearchPanes 2.3.0
+    /*! SearchPanes 2.3.1
      * © SpryMedia Ltd - datatables.net/license
      */
     setJQuery$4($);
@@ -38537,7 +38129,7 @@ return DataTable;
 }));
 
 
-/*! Select for DataTables 2.0.0
+/*! Select for DataTables 2.0.1
  * © SpryMedia Ltd - datatables.net/license/mit
  */
 
@@ -38591,7 +38183,7 @@ var DataTable = $.fn.dataTable;
 // Version information for debugger
 DataTable.select = {};
 
-DataTable.select.version = '2.0.0';
+DataTable.select.version = '2.0.1';
 
 DataTable.select.init = function (dt) {
 	var ctx = dt.settings()[0];
@@ -39206,7 +38798,9 @@ function init(ctx) {
 
 			// Row
 			if (d._select_selected) {
-				$(row).addClass(ctx._select.className);
+				$(row)
+					.addClass(ctx._select.className)
+					.find('input.dt-select-checkbox').prop('checked', true);
 			}
 
 			// Cells and columns - if separated out, we would need to do two
@@ -39216,7 +38810,7 @@ function init(ctx) {
 					ctx.aoColumns[i]._select_selected ||
 					(d._selected_cells && d._selected_cells[i])
 				) {
-					$(d.anCells[i]).addClass(ctx._select.className);
+					$(d.anCells[i]).addClass(ctx._select.className)
 				}
 			}
 		}
@@ -39639,12 +39233,23 @@ apiRegisterPlural('rows().select()', 'row().select()', function (select) {
 		for (var i=0 ; i<dtColumns.length ; i++) {
 			var col = dtColumns[i];
 
+			// Regenerate the column type if not present
+			if (col.sType === null) {
+				api.columns().types()
+			}
+			
 			if (col.sType === 'select-checkbox') {
-				// Make sure the checkbox shows the right state
-				$('input.dt-select-checkbox', dtData.anCells[i]).prop('checked', true);
+				var cells = dtData.anCells;
 
-				// Invalidate the sort data for this column
-				dtData._aSortData[i] = null;
+				// Make sure the checkbox shows the right state
+				if (cells && cells[i]) {
+					$('input.dt-select-checkbox', cells[i]).prop('checked', true);
+				}
+
+				// Invalidate the sort data for this column, if not already done
+				if (dtData._aSortData !== null) {
+					dtData._aSortData[i] = null;
+				}
 			}
 		}
 	});
@@ -39762,12 +39367,23 @@ apiRegisterPlural('rows().deselect()', 'row().deselect()', function () {
 		for (var i=0 ; i<dtColumns.length ; i++) {
 			var col = dtColumns[i];
 
+			// Regenerate the column type if not present
+			if (col.sType === null) {
+				api.columns().types()
+			}
+			
 			if (col.sType === 'select-checkbox') {
-				// Make sure the checkbox shows the right state
-				$('input.dt-select-checkbox', dtData.anCells[i]).prop('checked', false);
+				var cells = dtData.anCells;
 
-				// Invalidate the sort data for this column
-				dtData._aSortData[i] = null;
+				// Make sure the checkbox shows the right state
+				if (cells && cells[i]) {
+					$('input.dt-select-checkbox', dtData.anCells[i]).prop('checked', false);
+				}
+
+				// Invalidate the sort data for this column, if not already done
+				if (dtData._aSortData !== null) {
+					dtData._aSortData[i] = null;
+				}
 			}
 		}
 	});
@@ -40099,7 +39715,7 @@ return DataTable;
 }));
 
 
-/*! StateRestore 1.4.0
+/*! StateRestore 1.4.1
  * © SpryMedia Ltd - datatables.net/license
  */
 
@@ -40199,7 +39815,7 @@ var DataTable = $.fn.dataTable;
                 removeContents: $$2('<div class="' + this.classes.confirmationText + '"><span>' +
                     this.s.dt
                         .i18n('stateRestore.removeConfirm', this.c.i18n.removeConfirm)
-                        .replace(/%s/g, this.s.identifier) +
+                        .replace(/%s/g, StateRestore.entityEncode(this.s.identifier)) +
                     '</span></div>'),
                 removeError: $$2('<span class="' + this.classes.modalError + '">' +
                     this.s.dt.i18n('stateRestore.removeError', this.c.i18n.removeError) +
@@ -40211,7 +39827,7 @@ var DataTable = $.fn.dataTable;
                     '<label class="' + this.classes.confirmationMessage + '">' +
                     this.s.dt
                         .i18n('stateRestore.renameLabel', this.c.i18n.renameLabel)
-                        .replace(/%s/g, this.s.identifier) +
+                        .replace(/%s/g, StateRestore.entityEncode(this.s.identifier)) +
                     '</label>' +
                     '</div>'),
                 renameInput: $$2('<input class="' + this.classes.input + '" type="text"></input>'),
@@ -40680,6 +40296,22 @@ var DataTable = $.fn.dataTable;
             }
         };
         /**
+         * Encode HTML entities
+         *
+         * @param d String to encode
+         * @returns Encoded string
+         * @todo When DT1 support is dropped, switch to using `DataTable.util.escapeHtml`
+         */
+        StateRestore.entityEncode = function (d) {
+            return typeof d === 'string' ?
+                d
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;') :
+                d;
+        };
+        /**
          * Performs a deep compare of two state objects, returning true if they match
          *
          * @param state1 The first object to compare
@@ -40839,7 +40471,7 @@ var DataTable = $.fn.dataTable;
             });
             $$2(document).on('keyup', function (e) { return _this._keyupFunction(e); });
         };
-        StateRestore.version = '1.4.0';
+        StateRestore.version = '1.4.1';
         StateRestore.classes = {
             background: 'dtsr-background',
             closeButton: 'dtsr-popover-close',
@@ -41461,8 +41093,8 @@ var DataTable = $.fn.dataTable;
                             split: split
                         },
                         extend: 'stateRestore',
-                        text: state.s.identifier,
-                        popoverTitle: state.s.identifier
+                        text: StateRestore.entityEncode(state.s.identifier),
+                        popoverTitle: StateRestore.entityEncode(state.s.identifier)
                     });
                 }
             }
@@ -41812,8 +41444,8 @@ var DataTable = $.fn.dataTable;
             var keys = Object.keys(localStorage);
             var _loop_2 = function (key) {
                 // eslint-disable-next-line no-useless-escape
-                if (key.match(new RegExp('^DataTables_stateRestore_.*_' + location.pathname.replace(/\//g, '/') + '$')) ||
-                    key.match(new RegExp('^DataTables_stateRestore_.*_' + location.pathname.replace(/\//g, '/') +
+                if (key.match(new RegExp('^DataTables_stateRestore_.*_' + location.pathname + '$')) ||
+                    key.match(new RegExp('^DataTables_stateRestore_.*_' + location.pathname +
                         '_' + this_2.s.dt.table().node().id + '$'))) {
                     var loadedState_1 = JSON.parse(localStorage.getItem(key));
                     if (loadedState_1.stateRestore.isPreDefined ||
@@ -41963,7 +41595,7 @@ var DataTable = $.fn.dataTable;
         return StateRestoreCollection;
     }());
 
-    /*! StateRestore 1.4.0
+    /*! StateRestore 1.4.1
      * © SpryMedia Ltd - datatables.net/license
      */
     setJQuery$1($);
@@ -42260,8 +41892,8 @@ var DataTable = $.fn.dataTable;
                         split: split
                     },
                     extend: 'stateRestore',
-                    text: state.s.identifier,
-                    popoverTitle: state.s.identifier
+                    text: StateRestore.entityEncode(state.s.identifier),
+                    popoverTitle: StateRestore.entityEncode(state.s.identifier)
                 });
             }
             dt.button('SaveStateRestore:name').collectionRebuild(stateButtons);
@@ -42407,8 +42039,8 @@ var DataTable = $.fn.dataTable;
                         split: split
                     },
                     extend: 'stateRestore',
-                    text: state.s.identifier,
-                    popoverTitle: state.s.identifier
+                    text: StateRestore.entityEncode(state.s.identifier),
+                    popoverTitle: StateRestore.entityEncode(state.s.identifier)
                 });
             }
         }

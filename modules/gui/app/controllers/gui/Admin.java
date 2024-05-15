@@ -35,6 +35,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.*;
+
 /**
  * Controller class around administration (updates are handled in Updates and user manager in Users)
  *
@@ -70,6 +72,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
+    @SaveLastVisitedPageUrl
     public Result administration(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(null);
@@ -140,6 +143,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
+    @SaveLastVisitedPageUrl
     public Result studyManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDY_MANAGER);

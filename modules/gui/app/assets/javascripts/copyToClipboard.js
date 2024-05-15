@@ -1,6 +1,10 @@
 export { onClick }
 
-// Handle copy-to-clipboard button clicks
+import * as Helpers from "./helpers.js";
+
+$(".btn-clipboard").on("click", onClick);
+
+// Use this function to add an event handler manually
 function onClick(event) {
     const button = this;
 
@@ -10,32 +14,55 @@ function onClick(event) {
     $(button).addClass("btn-clipboard-copied");
     setTimeout(() => $(button).removeClass("btn-clipboard-copied"), 2000);
 
-    // Temporarily remove tooltip
-    $(button).removeAttr("title");
+    // Dispose tooltip
+    const tooltip = bootstrap.Tooltip.getInstance(button);
+    if (tooltip) {
+        tooltip.dispose();
+    }
+    $(button).removeAttr("data-bs-tooltip data-bs-title data-bs-delay data-bs-trigger");
 
-    // Show popover
-    const popover = new bootstrap.Popover(button, {
-        content: "Copied!",
-        placement: "top",
-        fallbackPlacements: ['top', 'bottom', 'left', 'right']
-    });
-    popover.toggle();
+    // Create and show popover
+    let popover = bootstrap.Popover.getInstance(button);
+    if (!popover) {
+        popover = new bootstrap.Popover(button, {
+            content: "Copied!",
+            placement: "top",
+            fallbackPlacements: ['top', 'bottom', 'left', 'right']
+        });
 
-    //event.stopPropagation();
+        // With the next click, anywhere, hide popover and enable the tooltip again
+        $(button).on('shown.bs.popover', function() {
+            $(document).one("click", function() {
+                popover.hide();
+            });
+        });
+    }
+    popover.show();
 
-    // With the next click, anywhere, hide popover and restore to the tooltip
-    $(document).click(function() {
-        popover.hide();
-        $(button).attr("title", "Copy to clipboard");
-    });
 }
 
 function copyToClipboard(element) {
-    const textToCopy = element.textContent.trim();
+    const textToCopy = getText(element);
+
     // navigator clipboard api needs a secure context (https)
     if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(textToCopy);
+        // It gets copied even when reject is fired - weird
+        navigator.clipboard.writeText(textToCopy).catch(() => {});
     } else {
         window.prompt("Copy to clipboard: Ctrl+C, Enter", textToCopy);
+    }
+}
+
+// Recursive function that extracts the text content of a hierarchy of DOM elements. It thereby ignores elements that
+// have a class "hide". It assumes that all text content is in its own element without other child elements.
+function getText(element) {
+    if (element.children.length > 0 ) {
+        return Array.from(element.children)
+            .filter(e => !e.classList.contains("hide")) // filter out elements with class "hide"
+            .map(e => getText(e))
+            .filter(text => text != "") // filter out empty text elements
+            .join("\n");
+    } else {
+        return element.textContent;
     }
 }

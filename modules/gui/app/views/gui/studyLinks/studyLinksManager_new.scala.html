@@ -1,30 +1,27 @@
-@(signedinUser: common.User, study: common.Study)
+@*
+ * Study link manager is the Modal that pops up if someone clicks on the Study Links button of Personal types and that
+ * shows all study links and lets you create new ones.
+ *@
 
 @* Study link manager Modal (Personal Single or Personal Multiple) *@
 <div class="modal fade" id="studyLinksManagerModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
     <div class="modal-dialog modal-xxl">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Study Links</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Study Links</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <table class="table table-hover w-100" id="studyLinksManagerTable">
+                <table class="table table-hover align-middle w-100" id="studyLinksManagerTable">
                     <thead>
                         <tr>
-                            <th class="no-info-icon" data-toggle="tooltip" title="Activate / inactivate this study link - only activated links can be used to run this study">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-toggle="tooltip" title="ID of the worker that belongs to this study link">Worker&nbsp;ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-toggle="tooltip" title="This code, handed to workers, can be used in the /publix/run page to start the study.">Study&nbsp;Code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th>
-                                <span class="align-bottom">Study Links</span>
-                                <span class="btn-group btn-toggle ms-2">
-                                    <button class="btn btn-xs btn-batch direct-link active mb-1" data-toggle="tooltip" title="Show links that start the study directly after clicking on them">Open Directly</button>
-                                    <button class="btn btn-xs btn-outline-secondary confirm-link mb-1" data-toggle="tooltip" title="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
-                                </span>
-                            </th>
-                            <th class="no-info-icon" data-toggle="tooltip" title="Comment given during creation of study link">Comment<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-toggle="tooltip" title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last."><span class="state">Study&nbsp;Result&nbsp;State</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="results no-info-icon" data-toggle="tooltip" title="">Study Results<span class="info-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip data-bs-title="Activate / inactivate this study link - only activated links can be used to run this study">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip data-bs-title="ID of the worker that belongs to this study link">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip data-bs-title="This code, handed to workers, can be used in the /publix/run page to start the study.">Stud code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th><span class="align-bottom">Study Links</span><span id="studyLinksManagerStudyLinksToggle"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip data-bs-title="Comment given during creation of study link">Comment<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip data-bs-title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last."><span class="state">Study result state</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="results no-info-icon" data-bs-tooltip data-bs-title="Get the study results of this type and batch">Study results<span class="info-icon"></span></th>
                         </tr>
                     </thead>
                 </table>
@@ -37,9 +34,9 @@
 <div class="modal fade" id="editCommentModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit comment of a study link</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Edit comment of a study link</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form class="form-batch" id="editCommentForm">
@@ -65,33 +62,35 @@
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
     import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
-    import * as QrCodeModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/qrCodeModal.js")";
-
-// todo "createdRow" callback
-// todo responsive iphone SE layout
+    import * as StudyLinks from "@routes.Assets.versioned("lib/jatos-gui/javascripts/studyLinks.js")";
 
     const alerts = new Alerts.Named("study-links-manager");
     $("#studyLinksManagerModal, #editCommentModal").on('hide.bs.modal', alerts.hideAll);
 
-    const paginationLength = 10;
+    const studyLinksToggle = new StudyLinks.LinksWithToggle();
+
     let studyLinksTable;
 
     $('#batchTable').on('click', '.study-links-manager', function(e) {
-        const batch = getBatchData(this);
+        const batch = Helpers.getDataFromDataTableRow($("#batchTable").DataTable(), this);
         const type = $(this).parents('.study-links-setup').data('type');
-        const typeUI = Helpers.getWorkerTypeName(type);
+        const typeUI = Helpers.getWorkerTypeUIName(type);
         if (type === "PersonalSingle") {
-            $('#studyLinksManagerModal th .state').text('Study Result State');
-            $('#studyLinksManagerModal th.results').html('Study Result<span class="info-icon"></span>');
+            $('#studyLinksManagerModal th .state').text('Study result state');
+            $('#studyLinksManagerModal th.results').html('Study result<span class="info-icon"></span>');
         } else if (type === "PersonalMultiple") {
-            $('#studyLinksManagerModal th .state').text('Study Result State (latest)');
-            $('#studyLinksManagerModal th.results').html('Study Results<span class="info-icon"></span>');
+            $('#studyLinksManagerModal th .state').text('Study result state (latest)');
+            $('#studyLinksManagerModal th.results').html('Study results<span class="info-icon"></span>');
         } else {
             Alerts.error("Error showing study links manager: unknown type");
         }
-        $('#studyLinksManagerModal .modal-title').text(`Study links for type '${typeUI}' in batch '${batch.title}'`);
+        Helpers.generateModalSubtitles("#studyLinksManagerModal", {"Batch": batch.title, "Type": typeUI});
+
+        if (!batch.active) {
+            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
+        }
         if (!batch.allowedWorkerTypes.includes(type)) {
-            alerts.warning(`Type '${typeUI}' is currently not allowed in this batch.`);
+            alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
         }
         fillStudyLinksTable(batch, type);
         $('#studyLinksManagerModal').data('batch', batch);
@@ -103,19 +102,16 @@
         studyLinksTable = $('#studyLinksManagerTable').DataTable({
             "ajax": {
                 "url": window.routes.StudyLinks.studyLinksData(window.study.id, batch.id, workerType),
-                "error": () => Alerts.error(`Couldn't load study links for type "${workerType}" in batch "${batch.title}".`)
+                "error": () => Alerts.error(`Couldn't load study links for type "${Helpers.getWorkerTypeUIName(workerType)}" in batch "${batch.title}".`)
             },
             "destroy": true,
             "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-batch gap-1 mt-1 mb-3'Bfl>
                     rt
                     <'d-flex flex-row flex-wrap justify-content-between align-items-center gap-1 mt-3'ip>`,
-            "pageLength": paginationLength,
+            "pageLength": 10,
             "pagingType": "full_numbers",
-            "stateSave": true,
-            "stateSaveParams": function (settings, data) {
-                data.search.search = "";
-            },
             "order": [[ 1, "desc" ]],
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "scrollX": true,
             "columns": [
                 {
@@ -123,11 +119,12 @@
                     "data": null,
                     "width": "1%",
                     "render": (data, type, full, meta) => {
-                        if (workerType === "PersonalSingle" && full.studyResultState !== null && full.studyResultState !== "PRE") {
-                            return '<span class="used" data-toggle="tooltip" title="This link was already used.">used</span>';
+                        if (type === 'export' || type === 'sort') return full.active.toString();
+                        if (workerType === "PersonalSingle" && isLinkUsed(workerType, full)) {
+                            return '<span class="used" data-bs-tooltip data-bs-title="Links of type Personal Single can be used only once by a participant. This link was already used.">used</span>';
                         } else {
                             return `
-                                <label class="switch no-info-icon align-middle" data-toggle="tooltip" title="Use this switch to de-/activate this study link.">
+                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Use this switch to de-/activate this study link.">
                                     <input type="checkbox" ${full.active ? "checked" : ""}>
                                     <span class="slider slider-batch round"></span>
                                 </label>`;
@@ -139,24 +136,28 @@
                 },
                 {
                     "data": "studyCode",
+                    "className": "study-code",
                     "render": function(studyCode, type, row) {
                         return `
                             <div class="text-nowrap">
                                 <span>${studyCode}</span>
-                                <span class="btn-clipboard no-info-icon" data-toggle="tooltip" title="Copy to clipboard"></span>
+                                <span class="btn-clipboard no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
                             </div>`;
                     }
                 },
                 {
                     "data": "studyCode",
                     "orderable": false,
-                    "render": renderStudyLink
+                    "render": function (data, type, full, meta) {
+                        if (type === 'display') return studyLinksToggle.renderLink(data);
+                        else return data;
+                    }
                 },
                 {
                     "data": "comment",
                     "render": function (data, type, full, meta) {
                         const comment = data ? data : '<span class="text-body text-opacity-50">none</span>';
-                        return `<span class="btn-edit edit-comment no-info-icon" data-toggle="tooltip" title="Edit this comment by clicking on it">
+                        return `<span class="btn-edit edit-comment no-info-icon" data-bs-tooltip data-bs-title="Edit this comment by clicking on it">
                             ${comment}</span>`;
                     }
                 },
@@ -171,33 +172,33 @@
                     "render": renderWorkerResultsButton
                 }
             ],
-            "createdRow": function(row, data, index) {
-                //renderColumnActive($(row).find('.activeStudyLinkButton'), data.active, data.studyResultState);
-            },
             "buttons": [
                 {
                     "text": '<i class="bi-plus-lg fw-bold pe-1"></i><i class="bi-link-45deg"></i>',
                     "attr":  {
-                        "id": "oneNewStudyLinkButton"
+                        "id": "oneNewStudyLinkButton",
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Shortcut to create just one study link without comment",
                     },
                     "className": "btn btn-batch",
-                    "titleAttr": 'Shortcut to create just one study link without comment'
                 },
                 {
                     "text": '<i class="bi-plus-lg fw-bold pe-1"></i>New Study Links<i class="bi-link-45deg ps-1"></i>',
                     "attr":  {
-                        "id": "newStudyLinksButton"
+                        "id": "newStudyLinksButton",
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Create new study links",
                     },
                     "className": "btn btn-batch",
-                    "titleAttr": 'Create new study links'
                 },
                 {
                     "text": '<i class="bi-arrow-repeat"></i>',
                     "attr":  {
-                        "id": "refreshButton"
+                        "id": "refreshButton",
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Refresh the table",
                     },
                     "className": "btn btn-batch",
-                    "titleAttr": 'Refresh the table',
                     action: function(e, dt, node, config) {
                         this.disable();
                         studyLinksTable.ajax.reload();
@@ -218,86 +219,94 @@
             },
             "initComplete": function(settings, json) {
                 generateShowButtonGroup();
-                $(".dt-buttons").not("#studyLinksTable_show").removeClass("btn-group");
+                studyLinksToggle.renderToggle("#studyLinksManagerStudyLinksToggle", "#studyLinksManagerTable", "ms-1");
+                $("#studyLinksManagerTable_wrapper .dt-buttons").not("#studyLinksTableShow").removeClass("btn-group");
+                Helpers.activateTooltips('#studyLinksManagerModal');
             },
-            "drawCallback": function( settings ) {
-                setWorkerResultsButtonWidthToMax();
-                showDirectOrConfirmStudyLink();
-                //toggleTablePagination();
-                $(".dt-length select").removeClass("form-select-sm");
-                $(".dt-search input").removeClass("form-control-sm");
+            "drawCallback": function(settings) {
+                adjustColumns();
+                $(".study-code .btn-clipboard").click(CopyToClipboard.onClick);
+                $("#studyLinksManagerTable_wrapper .dt-length").addClass("text-start");
+                $("#studyLinksManagerTable_wrapper .dt-length select").removeClass("form-select-sm");
+                $("#studyLinksManagerTable_wrapper .dt-search input").removeClass("form-control-sm");
+                Helpers.activateTooltips('#studyLinksManagerModal');
             }
         });
 
         function generateShowButtonGroup() {
             new $.fn.dataTable.Buttons(studyLinksTable, {
-                    "name": "showButtonGroup",
-                    "className": "ms-2",
-                    "buttons": [
-                        {
-                            "text": "All",
-                            "className": "btn-batch",
-                            "init": (dt, node, config) => node.removeClass("btn-secondary"),
-                            "titleAttr": 'Show all study links',
-                            "action": function(e, dt, node, config) {
-                                dt.column(0).search("").draw();
-                            }
+                "name": "showButtonGroup",
+                "buttons": [
+                    {
+                        "text": "All",
+                        "className": "btn-batch",
+                        "init": (dt, node, config) => node.removeClass("btn-secondary"),
+                        "attr":  {
+                            "data-bs-tooltip": "",
+                            "data-bs-title": "Show all study links",
                         },
-                        {
-                            "text": "Active",
-                            "className": "btn-outline-secondary",
-                            "init": (dt, node, config) => node.removeClass("btn-secondary"),
-                            "titleAttr": 'Show only active study links',
-                            "action": (e, dt, node, config) => dt.column(0).search((str, data, idx) => data.active).draw()
-                        },
-                        {
-                            "text": "Deactivated",
-                            "className": "btn-outline-secondary",
-                            "init": (dt, node, config) => node.removeClass("btn-secondary"),
-                            "titleAttr": 'Show only deactivated study links',
-                            "action": (e, dt, node, config) => dt.column(0).search((str, data, idx) => !data.active).draw()
-                        },
-                        {
-                            "text": "Used",
-                            "className": "btn-outline-secondary",
-                            "init": (dt, node, config) => node.removeClass("btn-secondary"),
-                            "titleAttr": 'Show only study links that were already used by a participant. Only for link type Personal Single.',
-                            "action": function(e, dt, node, config) {
-                                const workerType = $('#studyLinksManagerModal').data('type');
-                                dt.column(0).search((str, data, idx) =>
-                                    workerType === "PersonalSingle"
-                                    && data.studyResultState !== null
-                                    && data.studyResultState !== "PRE"
-                                ).draw();
-                            }
+                        "action": function(e, dt, node, config) {
+                            $(node).tooltip("dispose");
+                            dt.column(0).search("").draw();
                         }
-                    ]
+                    },
+                    {
+                        "text": "Active",
+                        "className": "btn-outline-secondary",
+                        "init": (dt, node, config) => node.removeClass("btn-secondary"),
+                        "attr":  {
+                            "data-bs-tooltip": "",
+                            "data-bs-title": "Show only active study links",
+                        },
+                        "action": (e, dt, node, config) => {
+                            $(node).tooltip("dispose");
+                            dt.column(0).search((str, data, idx) => data.active && !isLinkUsed(workerType, data)).draw();
+                        }
+                    },
+                    {
+                        "text": "Deactivated",
+                        "className": "btn-outline-secondary",
+                        "init": (dt, node, config) => node.removeClass("btn-secondary"),
+                        "attr":  {
+                            "data-bs-tooltip": "",
+                            "data-bs-title": "Show only deactivated study links",
+                        },
+                        "action": (e, dt, node, config) => {
+                            $(node).tooltip("dispose");
+                            dt.column(0).search((str, data, idx) => !data.active).draw();
+                        }
+                    },
+                    {
+                        "text": "Used",
+                        "className": "btn-outline-secondary",
+                        "init": (dt, node, config) => {
+                            node.removeClass("btn-secondary");
+                            //if (workerType !== "PersonalSingle") node.disable();
+                        },
+                        "attr":  {
+                            "data-bs-tooltip": "",
+                            "data-bs-title": "Show only study links that were already used by a participant.",
+                        },
+                        "action": function(e, dt, node, config) {
+                            $(node).tooltip("dispose");
+                            dt.column(0).search((str, data, idx) => isLinkUsed(workerType, data)).draw();
+                        }
+                    }
+                ]
             });
+
             studyLinksTable.buttons('showButtonGroup', null).containers()
-                    .attr('id', 'studyLinksTable_show')
-                    .prependTo('.dt-length');
+                    .attr('id', 'studyLinksTableShow')
+                    .addClass('me-2')
+                    .prependTo('#studyLinksManagerTable_wrapper .dt-length');
             $('<label for="studyLinksTable_show" class="me-2">Show:</label>').prependTo('.dt-length');
 
-            $('#studyLinksTable_show').on('click', 'button', function() {
+            $('#studyLinksTableShow').on('click', 'button', function() {
                 $(this).parent().children('button').each((i, button) => {
                     $(button).removeClass('btn-batch').addClass('btn-outline-secondary');
                 });
                 $(this).removeClass('btn-outline-secondary').addClass('btn-batch');
             });
-        }
-
-        function renderStudyLink(studyCode, type, row) {
-            return `
-                <div class="direct-link text-nowrap">
-                    <span>${window.routes.Publix.run(studyCode)}</span>
-                    <span class="btn-clipboard no-info-icon" data-toggle="tooltip" title="Copy this link to the clipboard."></span>
-                    <span class="btn-qr-code no-info-icon" data-toggle="tooltip" title="Show QR code for this link."></span>
-                </div>
-                <div class="confirm-link text-nowrap">
-                    <span>${window.routes.Publix.studyEntry(studyCode)}</span>
-                    <span class="btn-clipboard no-info-icon" data-toggle="tooltip" title="Copy this link to the clipboard."></span>
-                    <span class="btn-qr-code no-info-icon" data-toggle="tooltip" title="Show QR code for this link."></span>
-                </div>`;
         }
 
         function renderWorkerResultsButton(data, type, full) {
@@ -306,49 +315,37 @@
             const count = workerType === "PersonalMultiple" ? full.studyResultCount : "";
             const hideBadge = workerType === "PersonalSingle";
             const button = `
-                <a type="button" class="btn btn-batch btn-sm worker-results-button no-info-icon text-nowrap"
-                    data-toggle="tooltip" title="Shows study results of this study link"
+                <a type="button" class="btn btn-batch worker-results-button no-info-icon text-nowrap"
+                    data-bs-tooltip data-bs-title="Shows study results of this study link"
                     href="${window.routes.StudyResults.workersStudyResults(full.workerId)}">
                     ${name}
                     <span class="badge text-batch bg-white rounded-pill no-info-icon ms-1 ${hideBadge ? "d-none" : ""}"
-                        data-toggle="tooltip" title="Number of study results that belong to this study link">
+                        data-bs-tooltip data-bs-title="Number of study results that belong to this study link">
                         ${count}
                     </span>
                 </a>`;
             return full.studyResultState !== null ? button : '<span class="text-body text-opacity-50">none</span>';
         }
 
-        function setWorkerResultsButtonWidthToMax() {
-            // That's an ugly hack: just using datatables "drawCallback" doesn't work. For some reason the
-            // buttons have an width of near 0. Here we wait until the first button has a width of > 1 and
-            // only then trigger the button resizing.
-            var buttons = $("#studyLinksManagerTable .worker-results-button");
-            if (!(buttons && buttons.length && $(buttons[0]).width() > 1)) {
-                window.requestAnimationFrame(setWorkerResultsButtonWidthToMax);
+        function adjustColumns() {
+            // This is an ugly hack: just using 'DataTable.columns.adjust()' in "drawCallback" doesn't work. For some reason
+            // all table elements have a negative width in the beginning for some time. Here we wait until the first 'th'
+            // element has a width of > 1 and only then trigger the column resizing.
+            const firstRow = $("#studyLinksManagerTable th").first();
+            if (firstRow.width() <= 1) {
+                window.requestAnimationFrame(adjustColumns);
             } else {
                 Helpers.setButtonWidthToMax("#studyLinksManagerTable .worker-results-button");
                 studyLinksTable.columns.adjust();
             }
         };
-
-        function showDirectOrConfirmStudyLink() {
-            if ($('th button.direct-link').hasClass('active')) {
-                $('td div.direct-link').removeClass('hide-keep-width');
-                $('td div.confirm-link').addClass('hide-keep-width');
-            } else {
-                $('td div.direct-link').addClass('hide-keep-width');
-                $('td div.confirm-link').removeClass('hide-keep-width');
-            }
-        }
-
-        function toggleTablePagination() {
-            var rowNumber = studyLinksTable.rows().count();
-            var hidePaging = rowNumber <= paginationLength;
-            $('#studyLinksManagerTable .dataTables_paginate').toggle(!hidePaging);
-        }
     }
 
     $('#studyLinksManagerModal').on('click', '#newStudyLinksButton', function(e) {
+        const batch = $('#studyLinksManagerModal').data('batch');
+        const type = $('#studyLinksManagerModal').data('type');
+        $("#studyLinksCreatorModal").data("batch", batch);
+        $("#studyLinksCreatorModal").data("type", type);
         $('#studyLinksCreatorModal').modal('show');
     });
 
@@ -358,7 +355,7 @@
         $.ajax({
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, "", 1),
             success: () => studyLinksTable.ajax.reload(),
-            error : (err) => alerts.error(err.responseText)
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study codes")
         });
     });
 
@@ -366,13 +363,6 @@
         this.disable();
         studyLinksTable.ajax.reload();
         setTimeout(this.enable, 3000);
-    });
-
-    $('#studyLinksManagerModal').on('click', '.btn-clipboard', CopyToClipboard.onClick);
-
-    $('#studyLinksManagerModal').on('click', '.btn-qr-code', function(e) {
-        var url = $(this).parent().find('span').text();
-        QrCodeModal.show(url, `This is the QR code for the study link <i>${url}</i>.`);
     });
 
     $('#studyLinksManagerModal').on('click', '.link-active input', function(e) {
@@ -389,34 +379,9 @@
                 linkData.active = active;
                 $(checkbox).prop('checked', linkData.active);
             },
-            error: () => alerts.error(err.responseText)
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle study link activation")
         });
     });
-
-    $('#studyLinksManagerModal .btn-toggle').click(toggleDirectAndConfirmLink);
-
-    // This function has to work in #studyLinksDisplayModal and #studyLinksManagerModal
-    function toggleDirectAndConfirmLink(e) {
-        e.stopPropagation();
-
-        $(this).find('.btn').toggleClass('active');
-        if ($(this).find('.btn-batch').length > 0) {
-            $(this).find('.btn').toggleClass('btn-batch');
-        }
-        $(this).find('.btn').toggleClass('btn-outline-secondary');
-
-        if ($(this).find('button.direct-link').hasClass('active')) {
-            $(this).parents('.modal').find('div.direct-link').removeClass('hide-keep-width');
-            $(this).parents('.modal').find('.linkUrls div.direct-link button').addClass('float-end');
-            $(this).parents('.modal').find('div.confirm-link').addClass('hide-keep-width');
-            $(this).parents('.modal').find('.linkUrls div.confirm-link button').removeClass('float-end');
-        } else {
-            $(this).parents('.modal').find('div.direct-link').addClass('hide-keep-width');
-            $(this).parents('.modal').find('.linkUrls div.direct-link button').removeClass('float-end');
-            $(this).parents('.modal').find('div.confirm-link').removeClass('hide-keep-width');
-            $(this).parents('.modal').find('.linkUrls div.confirm-link button').addClass('float-end');
-        }
-    }
 
     $('#studyLinksManagerModal').on('click', '.edit-comment', function(e) {
         $("#editCommentForm")[0].reset();
@@ -424,12 +389,14 @@
 
         const tr = $(this).closest('tr');
         const linkData = studyLinksTable.row(tr).data();
-        $('#editCommentModal .modal-title').text(`Edit comment of the study link with code "${linkData.studyCode}"`);
+        Helpers.generateModalSubtitles("#editCommentModal", {"Study code": linkData.studyCode});
         $('#editCommentModal #editCommentInput').val(linkData.comment);
 
         $('#editCommentModal').data('workerId', linkData.workerId);
         $('#editCommentModal').modal('show');
     });
+
+    Helpers.triggerButtonByEnter("#editCommentModal", "#editCommentConfirmed");
 
     $("#editCommentConfirmed").click(function(event) {
         const workerId = $('#editCommentModal').data('workerId');
@@ -442,17 +409,17 @@
                 studyLinksTable.ajax.reload();
             },
             error : function(err) {
-                FormValidation.show("#editCommentForm", {comment: [err.responseText]});
+                const errMsg = err.responseText ? err.responseText : "Couldn't change study link comment";
+                FormValidation.show("#editCommentForm", {comment: [errMsg]});
             }
         });
     });
 
-    function getBatchData(element) {
-        let row = $(element).closest('tr');
-        if (!row.hasClass('batch-row')) {
-            row = row.prev()[0];
+    function isLinkUsed(workerType, linkData) {
+        if (workerType === "PersonalSingle") {
+            return linkData.studyResultState !== null && linkData.studyResultState !== "PRE";
+        } else {
+            return linkData.studyResultState !== null;
         }
-        return $("#batchTable").DataTable().row(row).data();
     }
-
 </script>

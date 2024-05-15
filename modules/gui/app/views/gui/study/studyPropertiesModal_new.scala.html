@@ -1,38 +1,34 @@
-@(study: common.Study)
-@import controllers.gui.routes._
-@import general.common._
-
 @* Edit study properties Modal *@
 <div class="modal fade" id="studyPropertiesModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">
                     Study properties
-                    <div class="fs-6 fw-light text-truncate">
-                        <span data-toggle="tooltip" title="This ID is unique within this JATOS instance">ID</span>:
-                        <span class="ms-1 user-select-all" id="studyPropertiesId"></span>
+                    <div class="fs-6 text-truncate">
+                        <span data-bs-tooltip data-bs-title="This ID is unique within this JATOS instance">ID</span>:
+                        <span class="fw-light ms-1 user-select-all" id="studyPropertiesId"></span>
                     </div>
-                    <div class="fs-6 fw-light text-truncate">
-                        <span data-toggle="tooltip" title="Universally unique identifier - used to keep track of studies between different JATOS instances">UUID</span>:
-                        <span class="ms-1 user-select-all" id="studyPropertiesUuid"></span>
+                    <div class="fs-6 text-truncate">
+                        <span data-bs-tooltip data-bs-title="Universally unique identifier - used to keep track of studies between different JATOS instances">UUID</span>:
+                        <span class="fw-light ms-1 user-select-all" id="studyPropertiesUuid"></span>
                     </div>
                 </h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form class="form-study" id="studyPropertiesForm">
                     <div class="row mb-3">
                         <label class="col-sm-3 col-form-label" for="studyPropertiesFormTitle">
-                            Title<span class="input-required" data-toggle="tooltip" title="required"></span>
+                            Title<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
                         </label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="studyPropertiesFormTitle" name="title" placeholder="Your study title" required>
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormDirName" data-toggle="tooltip" title="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved.">
-                            Study assets' directory name<span class="input-required" data-toggle="tooltip" title="required"></span>
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormDirName" data-bs-tooltip data-bs-title="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved.">
+                            Study assets' directory name<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
                         </label>
                         <label class="d-none" for="studyPropertiesFormDirRename"></label>
                         <div class="col-sm-9">
@@ -42,7 +38,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormComments" data-toggle="tooltip" title="Something you want to share or just don't want to forget?">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormComments" data-bs-tooltip data-bs-title="Something you want to share or just don't want to forget?">
                             Comments
                         </label>
                         <div class="col-sm-9">
@@ -50,7 +46,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyEntryMsg" data-toggle="tooltip" title="This message can be shown to the participant before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent participants to prematurely start the study.">
+                        <label class="col-sm-3 col-form-label" for="studyEntryMsg" data-bs-tooltip data-bs-title="This message can be shown to the participant before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent participants to prematurely start the study.">
                             Study entry message
                         </label>
                         <div class="col-sm-9">
@@ -58,7 +54,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormEndRedirectUrl" data-toggle="tooltip" title="Choose the URL that JATOS should redirect to after a run of this study is finished. If left empty a default page will be shown.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormEndRedirectUrl" data-bs-tooltip data-bs-title="Choose the URL that JATOS should redirect to after a run of this study is finished. If left empty a default page will be shown.">
                             End redirect URL
                         </label>
                         <div class="col-sm-9">
@@ -66,18 +62,18 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormJsonData" data-toggle="tooltip" title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
-                            JSON input<br>
-                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#studyPropertiesJsonEditor">Pretty</button>
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormJsonData" data-bs-tooltip data-bs-title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                            Study input<br>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#studyPropertiesJsonEditor" data-bs-tooltip data-bs-title="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="studyPropertiesJsonEditor"></div>
-                            <!-- We use a hidden textarea here to transfer the JSON data into the form POST -->
+                            @* We use a hidden textarea here to transfer the JSON data into the form POST *@
                             <textarea id="studyPropertiesFormJsonData" name="jsonData" hidden></textarea>
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormGroupStudy" data-toggle="tooltip" title="Is this a group study?">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormGroupStudy" data-bs-tooltip data-bs-title="Is this a group study?">
                             Group study
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">
@@ -85,12 +81,12 @@
                                 <input type="checkbox" class="form-check-input checkbox-study" id="studyPropertiesFormGroupStudy" name="groupStudy" value="true">
                                 <span class="slider slider-study round"></span>
                             </label>
-                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
                             <input type="hidden" name="groupStudy" value="false" />
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormLinearStudy" data-toggle="tooltip" title="Should the study flow be linear only? This still allows reloading of components. Check this box to allow only to move to subsequent components.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormLinearStudy" data-bs-tooltip data-bs-title="Should the study flow be linear only? This still allows reloading of components. Check this box to allow only to move to subsequent components.">
                             Linear study flow
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">
@@ -98,12 +94,12 @@
                                 <input type="checkbox" class="form-check-input checkbox-study" id="studyPropertiesFormLinearStudy" name="linearStudy" value="true">
                                 <span class="slider slider-study round"></span>
                             </label>
-                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
                             <input type="hidden" name="linearStudy" value="false" />
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormAllowPreview" data-toggle="tooltip" title="Allows a preview of the study run (only with Personal Single or General Single workers). If previews are allowed a study link can be used multiple times by the worker as long as the run stays in the first component. As soon as the second component is started the usual study link restrictions apply.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormAllowPreview" data-bs-tooltip data-bs-title="Allows a preview of the study run (only with Personal Single or General Single workers). If previews are allowed a study link can be used multiple times by the worker as long as the run stays in the first component. As soon as the second component is started the usual study link restrictions apply.">
                             Allow preview
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">
@@ -111,7 +107,7 @@
                                 <input type="checkbox" class="form-check-input checkbox-study" id="studyPropertiesFormAllowPreview" name="allowPreview" value="true">
                                 <span class="slider slider-study round"></span>
                             </label>
-                            <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                            @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
                             <input type="hidden" name="allowPreview" value="false" />
                         </div>
                     </div>
@@ -130,9 +126,9 @@
 <div class="modal fade" id="studyDirNameConfirmationModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Change study assets' directory name</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Change study assets' directory name</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="studyDirNameConfirmationText"></div>
@@ -167,9 +163,7 @@
                 FormValidation.clear("#studyPropertiesForm");
                 fillStudyPropertiesForm(response);
             },
-            error: function(response) {
-                alerts.error("Couldn't load study properties.");
-            }
+            error: (err) => alerts.error("Couldn't load study properties.")
         });
     });
 
@@ -192,9 +186,9 @@
         $('#studyPropertiesFormAllowPreview').prop('checked', properties.allowPreview);
 
         // Disable all fields if study is locked
+        Helpers.disableForm("#studyPropertiesModal", window.study.isLocked);
         if (window.study.isLocked) {
             alerts.warning("Study is locked. It is not possible to edit the properties.");
-            Helpers.disableForm("#studyPropertiesModal");
         }
     }
 
@@ -204,12 +198,16 @@
         if (oldDirName == newDirName) {
             submitStudyPropertiesForm();
         } else {
-            const descriptionText = `<p>The name of the study assets' directory linked to this study changed from
-                    <b><i>${oldDirName}</i></b> to <b><i>${newDirName}</i></b>.</p>`;
+            const descriptionText = `
+                    <p>The name of the study assets' directory linked to this study changed from
+                        <span class="text-break"><b><i>${oldDirName}</i></b></span>
+                        to
+                        <span class="text-break"><b><i>${newDirName}</i></b></span>.
+                    </p>`;
             $('#studyDirNameConfirmationText').html(descriptionText);
             $('#studyDirNameConfirmationKeep').prop('checked', false);
             const explanationText = `If you check this box, only the property will be renamed, but the actual directory in the file system will not. Therefore,
-                    this study will be linked to the different directory <i>${newDirName}</i> (that might or might not exist in the file system).`;
+                    this study will be linked to the different directory <span class="text-break"><i>${newDirName}</i></span> (that might or might not exist in the file system).`;
             $('#studyDirNameConfirmationHelp').html(explanationText);
             $('#studyDirNameConfirmationModal').modal('show');
         }
@@ -238,15 +236,17 @@
                 $('#studyPropertiesModal').modal('hide');
                 Alerts.success("The study properties were changed successfully.");
                 const title = $('#studyPropertiesFormTitle').val();
-                $('#breadcrumbs .breadcrumb-item').last().text(title);
+                $('#breadcrumbs .nav-item:last').text(title);
             },
             error : function(response) {
                 FormValidation.clear("#studyPropertiesForm");
                 alerts.warning("Study properties were not saved", 5000);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#studyPropertiesForm", response.responseJSON);
+                } else if (err.responseText) {
+                    alerts.error(err.responseText);
                 } else {
-                    alerts.error(response.responseText);
+                    alerts.error("Couldn't change study properties");
                 }
             }
         });

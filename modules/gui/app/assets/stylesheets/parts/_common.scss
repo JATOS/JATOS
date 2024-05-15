@@ -2,14 +2,6 @@ i.fw-bold {
     -webkit-text-stroke: 1px;
 }
 
-.badge {
-    pointer-events: none !important;
-}
-
-.disabled {
-//	opacity: 0.4 !important;
-}
-
 // Show tooltips on disabled button too
 button[disabled] {
     pointer-events: auto;

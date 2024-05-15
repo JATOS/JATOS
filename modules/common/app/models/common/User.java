@@ -106,6 +106,11 @@ public class User {
      */
     private boolean active = true;
 
+    /**
+     * URL of the last visited page in JATOS' UI.
+     */
+    private String lastVisitedPageUrl;
+
     public User(String username, String name, String email) {
         setUsername(username);
         this.name = name;
@@ -268,6 +273,14 @@ public class User {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public void setLastVisitedPageUrl(String lastVisitedPageUrl) {
+        this.lastVisitedPageUrl = lastVisitedPageUrl;
+    }
+
+    public String getLastVisitedPageUrl() {
+        return this.lastVisitedPageUrl;
     }
 
     @Override

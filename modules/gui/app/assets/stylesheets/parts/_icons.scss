@@ -1,6 +1,6 @@
 // Show info icon (indicate that tooltips are available) when 'data-toggle="tooltip" is present or if explicitly set with '.info-icon'
 .info-icon::after,
-:not(button):not([role="button"]):not(.no-info-icon):not(.input-required)[data-toggle="tooltip"]::after {
+:not(button):not([role="button"]):not(.no-info-icon):not(.input-required)[data-bs-tooltip]::after {
     font-family: 'bootstrap-icons';
     font-synthesis: none;
     content: "\f430"; // bi-info-circle-fill
@@ -66,4 +66,16 @@
 
 .btn-edit:hover::after {
     opacity: 1.0;
+}
+
+.btn-close2::after {
+    font-family: 'bootstrap-icons';
+    font-synthesis: none;
+    content: "\f659"; // bi-x-lg
+}
+
+.btn-resize::after {
+    font-family: 'bootstrap-icons';
+    font-synthesis: none;
+    content: "\f12B"; // bi-arrow-left-right
 }

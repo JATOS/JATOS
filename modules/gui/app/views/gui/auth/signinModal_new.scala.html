@@ -1,51 +1,53 @@
-@(signedinUser: common.User)
-@import controllers.gui.routes._
-@import auth.gui.routes._
-@import general.common._
+@*
+ * This module deals with the sign-in Modal that appears after a session timeout or an inactivity timeout. It does
+ * not do the actual sign-out, this is done in the backend, here is just the showing of the sign-in Modal.
+ *@
 
 @* Signin Modal (used in case of session timeout) *@
 <div class="modal fade" id="signinModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
 			<div class="modal-body">
-				<div class="d-none" id="signinOidcDiv">
+				<div class="d-none" id="oidcSigninDiv">
 					<h3>Please sign in again</h3>
 					<p class="explanation"></p>
-					<button class="btn btn-outline-secondary w-100 mb-2">
-						<img class="float-start" height="25" src="">@Common.getOidcSigninButtonText()
+					<button class="btn btn-outline-secondary w-100 mb-2" id="oidcSigninButton"  type="button">
+						<img class="float-start" id="oidcSigninButtonLogoImg" height="25" src="">
+						<span id="oidcSigninButtonText"></span>
 					</button>
-					<div>Or <a href="@Signin.signin()">sign in as a different user</a>.</div>
+					<div>Or <a href="#" class="signin-link">sign in as a different user</a>.</div>
 				</div>
-				<div class="d-none" id="signinOrcidDiv">
+				<div class="d-none" id="orcidSigninDiv">
 					<h3>Please sign in again</h3>
 					<p class="explanation"></p>
-					<button class="btn btn-outline-secondary w-100 mb-2">
-						<img class="float-start" height="25" src="">@Common.getOrcidSigninButtonText()
+					<button class="btn btn-outline-secondary w-100 mb-2" id="orcidSigninButton"  type="button">
+						<img class="float-start" id="orcidSigninButtonLogoImg" height="25" src="">
+						<span id="orcidSigninButtonText"></span>
 					</button>
-					<div>Or <a href="@Signin.signin()">sign in as a different user</a>.</div>
+					<div>Or <a href="#" class="signin-link">sign in as a different user</a>.</div>
 				</div>
-				<div class="d-none" id="signinGoogleDiv">
+				<div class="d-none" id="googleSigninDiv">
 					<h3>Please sign in again</h3>
 					<p class="explanation"></p>
 					<div class="mb-2" id="signinGoogle"></div>
-					<p>Or <a href="@Signin.signin()">sign in as a different user</a>.</p>
+					<p>Or <a href="#" class="signin-link">sign in as a different user</a>.</p>
 				</div>
-				<div class="d-none" id="signinPasswordDiv">
-					<form class="form-admin" id="signinForm">
-						<h3>Please sign in again</h3>
-						<p class="explanation"></p>
-						<div class="form-group mb-2">
+				<div class="d-none" id="passwordSigninDiv">
+					<h3>Please sign in again</h3>
+					<p class="explanation"></p>
+					<div class="form-group mb-2">
+						<form class="form-admin" id="passwordSigninForm">
 							<div class="col-sm-12">
-								<label for="signinPassword">Password for @signedinUser.getUsername()</label>
+								<label for="passwordSigninPassword">Password for ***</label>
 								<div class="input-group">
-									<input type="password" class="form-control" id="signinPassword" name="password" placeholder="Password" autocomplete="off" required autofocus>
-									<input type="hidden" class="form-control username d-none" name="username" value="@signedinUser.getUsername()">
-									<button type="submit" class="btn btn-admin" id="signinConfirm">Sign in</button>
+									<input type="password" class="form-control" id="passwordSigninPassword" name="password" placeholder="Password" autocomplete="off" required autofocus>
+									<input type="hidden" class="form-control d-none" id="passwordSigninUsername" name="username">
+									<button type="button" class="btn btn-admin" id="passwordSigninConfirmed">Sign in</button>
 								</div>
 							</div>
-						</div>
-						<div>Or <a href="@Signin.signin()">sign in as a different user</a>.</div>
-					</form>
+						</form>
+					</div>
+					<div>Or <a href="#" class="signin-link">sign in as a different user</a>.</div>
 				</div>
 			</div>
 		</div>
@@ -53,84 +55,102 @@
 </div>
 
 <script @{helper.CSPNonce.attr} type="module">
-	/*
-	 * This module deals with the sign-in Modal that appears after a session timeout or an inactivity timeout. It does
-	 * not do the actual sign-out, this is done in the backend, here is just the showing of the sign-in Modal.
-	 */
-
 	import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
 	import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")"
 	import * as GoogleSignin from "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")";
 
-	const sessionTimeoutWorker = new Worker('@routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
-	sessionTimeoutWorker.postMessage([window.common.userSessionTimeout, window.common.userSessionInactivity]);
-	sessionTimeoutWorker.onmessage = (msg) => showSigninModal(msg.data);
+	let sessionTimeoutWorker;
+
+	if (!window.common.keepSignedin) {
+		sessionTimeoutWorker = new Worker('@routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
+		resetSessionTimeout();
+		sessionTimeoutWorker.onmessage = (msg) => showSigninModal(msg.data);
+	}
+
+	function resetSessionTimeout() {
+		sessionTimeoutWorker.postMessage({
+			// We multiply with 60000 because the values are in minutes
+			// and minus 5000 because we want to timeout earlier than the backend
+			userSessionTimeout: window.common.userSessionTimeout * 60000 - 5000,
+			userSessionInactivity: window.common.userSessionInactivity * 60000 - 5000,
+			userSigninTime: window.common.userSigninTime
+		});
+	}
 
 	function showSigninModal(explanationText) {
 		FormValidation.clear('#signinModal');
 		$('#signinModal .explanation').text(explanationText);
 		$('#signinModal').modal('show');
-		switch ("@signedinUser.getAuthMethod()") {
+
+		switch (window.signedinUser.authMethod) {
 			case "OIDC":
-				$("#signinOidcDiv img").attr("src", Helpers.getOidcLogoUrl());
-				$("#signinOidcDiv").removeClass("d-none");
+				$("#oidcSigninButtonText").text(window.common.oidcSigninButtonText);
+				$("#oidcSigninButtonLogoImg").attr("src", Helpers.getOidcLogoUrl());
+				$("#oidcSigninDiv").removeClass("d-none");
 				break;
 			case "ORCID":
-				$("#signinOrcidDiv img").attr("src", Helpers.getOrcidLogoUrl());
-				$("#signinOrcidDiv").removeClass("d-none");
+				$("#orcidSigninButtonText").text(window.common.orcidSigninButtonText);
+        		$("#orcidSigninButtonLogoImg").attr("src", Helpers.getOrcidLogoUrl());
+				$("#orcidSigninDiv").removeClass("d-none");
 				break;
 			case "OAUTH_GOOGLE":
 				// 266 is the hard-coded width of the Google signin button in a Bootstrap Modal. I found no better way.
 				GoogleSignin.drawButton(266);
-				$("#signinGoogleDiv").removeClass("d-none");
+				$("#googleSigninDiv").removeClass("d-none");
 				break;
 			default:
-				$("#signinForm")[0].reset();
-				$("#signinPasswordDiv").removeClass("d-none");
+				$("#passwordSigninForm")[0].reset();
+				$("#passwordSigninUsername").val(window.signedinUser.username);
+				$("label[for='passwordSigninPassword']").text(`Password for ${window.signedinUser.username}`);
+				$("#passwordSigninDiv").removeClass("d-none");
 		}
+		$(".signin-link").attr("href", window.routes.Signin.signin);
 	}
 
-	$('#signinOidcDiv button').click(function() {
+	$('#oidcSigninButton').click(function() {
 		$.ajax({
-			url: window.routes.SigninBasicOidc.signin,
+			url: window.routes.SigninBasicOidc.signin(false),
 			success: function(uri) {
-				sessionTimeoutWorker.postMessage([window.common.userSessionTimeout, window.common.userSessionInactivity]);
-				$('#signinModal').modal('hide');
+				window.location.replace(uri);
 			},
 			error: function(err) {
 				$("p.text-danger").remove();
-				$('.explanation').after(`<p class="text-danger">${err.responseText}</p>`);
+				const errMsg = err.responseText ? err.responseText : "An error occurred during OIDC sign-in";
+				$('.explanation').after(`<p class="text-danger">${errMsg}</p>`);
 			}
 		});
 	});
 
-	$('#signinOrcidDiv button').click(function() {
+	$('#orcidSigninButton').click(function() {
 		$.ajax({
-			url: window.routes.SigninOrcid.signin,
+			url: window.routes.SigninOrcid.signin(false),
 			success: function(uri) {
-				sessionTimeoutWorker.postMessage([window.common.userSessionTimeout, window.common.userSessionInactivity]);
-				$('#signinModal').modal('hide');
+				window.location.replace(uri);
 			},
 			error: function(err) {
 				$("p.text-danger").remove();
-				$('.explanation').after(`<p class="text-danger">${err.responseText}</p>`);
+				const errMsg = err.responseText ? err.responseText : "An error occurred during ORCID sign-in";
+				$('.explanation').after(`<p class="text-danger">${errMsg}</p>`);
 			}
 		});
 	});
 
-	$("#signinForm").submit(function(event) {
-		event.preventDefault();
+	Helpers.triggerButtonByEnter("#passwordSigninForm", "#passwordSigninConfirmed");
+
+	$("#passwordSigninConfirmed").click(function(event) {
 		$.ajax({
 			type: 'POST',
-			url: "@Signin.authenticate()",
-			data: $('#signinForm').serialize(),
+			url: window.routes.Signin.authenticate,
+			data: $('#passwordSigninForm').serialize(),
 			success: function(response) {
-				sessionTimeoutWorker.postMessage([window.common.userSessionTimeout, window.common.userSessionInactivity]);
+				window.common.userSigninTime = response.userSigninTime;
+				resetSessionTimeout();
 				$('#signinModal').modal('hide');
 			},
-			error: function(response) {
-				$("#signinForm")[0].reset();
-				FormValidation.show("#signinForm", {password: [response.responseText]});
+			error: function(err) {
+				$("#passwordSigninPassword").val("");
+				const errMsg = err.responseText ? err.responseText : "An error occurred during local sign-in";
+				FormValidation.show("#passwordSigninForm", {password: [errMsg]});
 			}
 		});
 	});

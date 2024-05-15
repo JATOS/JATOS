@@ -1,0 +1,162 @@
+<aside class="offcanvas offcanvas-start rounded-end-4" id="studySidebar" tabindex="-1">
+
+    <div class="offcanvas-header align-items-start">
+        <div class="offcanvas-title fw-bold fs-4">My studies</div>
+        <div class="dropdown flex-grow-1">
+            <button class="btn btn-study dropdown-toggle ms-3" type="button" data-bs-toggle="dropdown">
+                <i class="bi-plus-lg fw-bold pe-1"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
+                    <button class="dropdown-item" id="importStudy" type="button">
+                        <i class="bi-box-arrow-in-down-right pe-1"></i>Import Study
+                    </button>
+                </li>
+                <li data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
+                    <button class="dropdown-item" id="createStudy" type="button" data-bs-toggle="modal" data-bs-target="#studyCreatorModal">
+                        <i class="bi-plus-lg fw-bold pe-1"></i>New Study
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-close2 btn-xs btn-nav" data-bs-dismiss="offcanvas"></button>
+    </div>
+
+    <div class="offcanvas-body pt-0">
+        <div class="input-group form-study sticky-top pb-3 pt-1">
+            <span class="input-group-text"><i class="bi-search"></i></span>
+            <input class="form-control" id="studySearchInput" type="search" placeholder="Search studies...">
+        </div>
+        <div class="vstack w-100">
+            <div class="list-group list-group-flush flex-column overflow-y-auto">Loading studies ...</div>
+        </div>
+    </div>
+
+    <div class="d-none"><input id="importStudyBrowser" type="file" name="study"></div>
+
+</aside>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+
+    $("#studySidebar").on('show.bs.offcanvas', () => {
+        Alerts.hideAll();
+        drawStudyList();
+    });
+
+    $("#studySidebar").on('focusout', saveSearch);
+
+    function drawStudyList() {
+        $.ajax({
+            url: window.routes.Home.sidebarData,
+            success: (result) => fillStudyList(result),
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get study data for sidebar")
+        });
+    }
+
+    function fillStudyList(studyArray) {
+        $("#studySidebar .list-group").empty().addClass("d-none");
+        studyArray.forEach((study) => {
+            const isSelectedStudy = window.study && window.study.id === study.id ? "active" : "";
+            const componentListTooltip = study.componentList.map(c => `<li>${c.title}</li>`).join("");
+            const componentBadgeTooltipHtml = study.componentList.length > 0
+                    ? `<div class="text-start"><b>This study has ${study.componentList.length} component(s)</b>:<ol class="mb-0">${componentListTooltip}</ol></div>`
+                    : "This study has no components yet.";
+            const componentsBadge = renderBadge(study.componentList.length, "text-bg-component", componentBadgeTooltipHtml);
+            const deactivatedBadge = !study.isActive
+                    ? renderBadge(
+                            '<i class="bi-exclamation-triangle-fill"></i>',
+                            "text-bg-warning",
+                            "<b>This study got deactivated by an JATOS admin.</b> A deactivated study cannot be started by participants anymore (but an already started study run can be continued). You can still open and edit this study and export its result data.")
+                    : "";
+            const lockedBadge = study.isLocked
+                    ? renderBadge(
+                            '<i class="bi-lock-fill"></i>',
+                            "text-bg-warning",
+                            "This study is locked.")
+                    : "";
+            const groupStudyBadge = study.isGroupStudy
+                    ? renderBadge(
+                            '<i class="bi-people-fill"></i>',
+                            "text-bg-secondary",
+                            "This study is a group study.")
+                    : "";
+            const allowPreviewBadge = study.isAllowPreview
+                    ? renderBadge(
+                            '<i class="bi-basket2-fill"></i>',
+                            "text-bg-secondary",
+                            "This study allows previews.")
+                    : "";
+            const linearStudyBadge = study.isLinearStudy
+                    ? renderBadge(
+                            '<i class="bi-forward-fill"></i>',
+                            "text-bg-secondary",
+                            "This study only allows a linear study flow.")
+                    : "";
+            const html = `
+                    <a href="${window.routes.Studies.study(study.id)}" class="list-group-item no-info-icon ${isSelectedStudy}">
+                        <div class="d-flex w-100 align-items-center justify-content-between">
+                            <div class="fw-bold d-inline-block text-truncate">${study.title}</div>
+                            <div class="d-inline-flex gap-1 text-nowrap">${componentsBadge}${deactivatedBadge}${lockedBadge}${groupStudyBadge}${allowPreviewBadge}${linearStudyBadge}</div>
+                        </div>
+                        <div class="mb-1 fs-6 fw-light text-truncate">
+                            ID: ${study.id} | UUID: ${study.uuid}
+                        </div>
+                    </a>`;
+
+            $("#studySidebar .list-group").append(html);
+        });
+        Helpers.activateTooltips("#studySidebar");
+        recoverSearch();
+        $("#studySidebar .list-group").removeClass("d-none");
+    }
+
+    function renderBadge(badgeContent, badgeColorClass, tooltipContent) {
+        return `
+            <span class="badge rounded-pill no-info-icon ${badgeColorClass}"
+                    data-bs-tooltip
+                    data-bs-custom-class="study-sidebar-tooltip"
+                    data-bs-container="body"
+                    data-bs-html="true"
+                    data-bs-delay="0"
+                    data-bs-title="${Helpers.escapeHtml(tooltipContent)}">
+                ${badgeContent}
+            </span>`;
+    }
+
+    $("#studySearchInput").on("keyup", function() {
+        const value = $(this).val().toLowerCase();
+        $("#studySidebar a.list-group-item").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+
+    function recoverSearch() {
+        const searchObject = getSearchObjectFromStorage();
+        const username = window.signedinUser.username;
+        const searchValue = searchObject[username] ? searchObject[username] : "";
+        document.getElementById("studySearchInput").value = searchValue;
+        $('#studySearchInput').keyup();
+    }
+
+    function saveSearch() {
+        const searchObject = getSearchObjectFromStorage();
+        const username = window.signedinUser.username;
+        const searchValue = document.getElementById("studySearchInput").value;
+        searchObject[username] = searchValue;
+        localStorage.setItem("studySidebarSearch", JSON.stringify(searchObject));
+    }
+
+    function getSearchObjectFromStorage() {
+        const storageItem = localStorage.getItem("studySidebarSearch");
+        let searchObject = {};
+        try {
+            if (storageItem) searchObject = JSON.parse(storageItem);
+        } catch (e) {
+            console.warning("Unable to parse localStorage object 'studySidebarSearch': restart with an empty one");
+        }
+        return searchObject;
+    }
+</script>
+

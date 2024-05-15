@@ -1,0 +1,72 @@
+@* This is the source code for an MTurk project, design layout. It's intended to be copy-pasted by a user to
+the 'source' field in MTurk. *@
+
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<section class="container" id="SurveyLink"
+         style="margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;">
+  <div class="row col-xs-12 col-md-12">
+
+    @* Instructions *@
+    <div class="panel panel-primary">
+      <div class="panel-heading"><strong>Instructions</strong></div>
+
+      <div class="panel-body">
+        <p id="previewHit">This is a <strong>preview</strong> of the study. When you've accepted the HIT a link to the
+          study will be shown. At the end of the study, you will receive a code to paste into the box below to receive
+          credit for taking our study.</p>
+        <p id="acceptedHit" style="display: none">Select the link below to complete the study. At the end of the study,
+          you will receive a code to paste into the box below to receive credit for taking our study.</p>
+        <p><strong>Make sure to leave this window open as you complete the study.</strong> When you are finished, you
+          will return to this page to paste the code into the box.</p>
+      </div>
+    </div>
+    @* End Instruction *@
+
+    <table>
+      <tbody>
+      <tr>
+        <td><strong>Study link:</strong></td>
+        <td><a href="" id="studyUrl" target="_blank">link will be shown when HIT is accepted</a></td>
+      </tr>
+      <tr>
+        <td><strong>Provide the study's confirmation code here to receive credits:</strong></td>
+        <td style="vertical-align: middle;">
+          <input class="form-control" id="surveycode" name="surveycode" placeholder="e.g. ab123456-1234-1234-a123-a12b3ce4f567" type="text" />
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  td {
+    font-size: 1.0em;
+    padding: 5px 5px;
+  }
+</style>
+
+@* We cannot use the script tag here because it's evaluated by the browser while loading *@
+<script-tag>
+  // Hint: What is called a study in JATOS is called a survey in MT
+  var studyLink = "studyLinkDummy";
+  var query = document.URL.split("?")[1];
+
+  window.onload = function () {
+    if ((typeof query === "undefined") || query.indexOf("ASSIGNMENT_ID_NOT_AVAILABLE") > -1) {
+      // Show preview
+      document.getElementById("previewHit").style.display = "block";
+      document.getElementById("acceptedHit").style.display = "none";
+      var studyUrlHref = "";
+      var studyUrlText = "link will be shown when HIT is accepted";
+    } else {
+      // Show accepted HIT
+      document.getElementById("previewHit").style.display = "none";
+      document.getElementById("acceptedHit").style.display = "block";
+      var studyUrlHref = studyLink + "?" + query;
+      var studyUrlText = "link to HIT";
+    }
+    document.getElementById("studyUrl").setAttribute("href", studyUrlHref);
+    document.getElementById("studyUrl").innerHTML = studyUrlText;
+  }
+</script-tag>

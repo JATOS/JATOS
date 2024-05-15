@@ -28,12 +28,13 @@
 
     window.routes.Signin = {};
     window.routes.Signin.signin = `${window.common.jatosUrlBasePath}jatos/signin`;
+    window.routes.Signin.authenticate = `${window.common.jatosUrlBasePath}jatos/signin/local`;
     window.routes.SigninGoogle = {};
     window.routes.SigninGoogle.signin = `${window.common.jatosUrlBasePath}jatos/signin/google`;
     window.routes.SigninOrcid = {};
-    window.routes.SigninOrcid.signin = `${window.common.jatosUrlBasePath}jatos/signin/oidc/orcid?realHostUrl=${window.common.realHostUrl}`;
+    window.routes.SigninOrcid.signin = (keepSignedin) => `${window.common.jatosUrlBasePath}jatos/signin/oidc/orcid?realHostUrl=${encodeURIComponent(window.common.realHostUrl)}&keepSignedin=${keepSignedin}`;
     window.routes.SigninBasicOidc = {};
-    window.routes.SigninBasicOidc.signin = `${window.common.jatosUrlBasePath}jatos/signin/oidc/basic?realHostUrl=${window.common.realHostUrl}`;
+    window.routes.SigninBasicOidc.signin = (keepSignedin) => `${window.common.jatosUrlBasePath}jatos/signin/oidc/basic?realHostUrl=${encodeURIComponent(window.common.realHostUrl)}&keepSignedin=${keepSignedin}`;
 
     window.routes.Home = {};
     window.routes.Home.home = "@Home.home()";
@@ -72,6 +73,7 @@
     window.routes.StudyResults.workersStudyResults = (workerId) => `${window.common.jatosUrlBasePath}jatos/worker/${workerId}/results`;
     window.routes.StudyResults.groupsStudyResults = (studyId, groupId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/group/${groupId}/results`;
     window.routes.StudyResults.batchesStudyResults = (studyId, batchId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/results`;
+    window.routes.StudyResults.batchesStudyResultsForType = (studyId, batchId, workerType) => `${window.common.jatosUrlBasePath}jatos/${studyId}/batch/${batchId}/results?workerType=${workerType}`;
     window.routes.StudyResults.tableDataComponentResultsByStudyResult = (studyResultId) => `${window.common.jatosUrlBasePath}jatos/studyResult/${studyResultId}/componentResults`;
     window.routes.StudyResults.tableDataByStudy = (studyId) => `${window.common.jatosUrlBasePath}jatos/${studyId}/tableData`;
     window.routes.StudyResults.tableDataByWorker = (workerId) => `${window.common.jatosUrlBasePath}jatos/worker/${workerId}/tableData`;
@@ -140,6 +142,9 @@
     window.routes.tests.testDatabase = "@Tests.testDatabase()";
     window.routes.tests.testFolderAccess = "@Tests.testFolderAccess()";
     window.routes.tests.testWebSocket = "@Tests.testWebSocket()";
+
+    window.routes.assets = {};
+    window.routes.assets = (filename) => `${window.common.jatosUrlBasePath}assets/${filename}`;
 
     window.routes.Publix = {};
     // We need 'window.common.realBaseUrl' here to get the full URL

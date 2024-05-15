@@ -1,7 +1,8 @@
 package controllers.gui;
 
-import com.google.common.base.Strings;
 import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
+import com.google.common.base.Strings;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
 import general.common.Common;
@@ -12,7 +13,6 @@ import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import auth.gui.AuthService;
 import services.gui.BreadcrumbsService;
 import utils.common.Helpers;
 import utils.common.JsonUtils;
@@ -24,6 +24,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
  * Controller that provides actions for the home page
@@ -56,20 +58,22 @@ public class Home extends Controller {
      */
     @Transactional
     @Auth
-    public Result home(int httpStatus) {
+    @SaveLastVisitedPageUrl
+    public Result home(Http.Request request, int httpStatus) {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForHome();
         boolean freshlySignedin = signedinUser.getLastLogin() != null &&
                 Duration.between(signedinUser.getLastLogin().toInstant(), Instant.now())
                         .minusSeconds(30)
                         .isNegative();
-        return status(httpStatus, views.html.gui.home_new.render(freshlySignedin, signedinUser, breadcrumbs));
+        return status(httpStatus, views.html.gui.home_new.render(request, freshlySignedin, signedinUser, breadcrumbs));
     }
 
     @Transactional
     @Auth
-    public Result home() {
-        return home(Http.Status.OK);
+    @SaveLastVisitedPageUrl
+    public Result home(Http.Request request) {
+        return home(request, Http.Status.OK);
     }
 
     /**

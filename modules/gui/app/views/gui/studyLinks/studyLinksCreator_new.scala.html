@@ -1,15 +1,20 @@
-@* Study links creator Modal *@
+@*
+* Study link creator is the Modal that handles the creation of new study links of the single link types.
+* It allows you to add an arbitrary number of links and add a comment.
+*@
+
+@* Study links creator Modal for the single link types *@
 <div class="modal fade" id="studyLinksCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add study links</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Add study links</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form class="form-batch" id="studyLinksCreatorForm">
                     <div class="row mb-2">
-                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorComment" data-toggle="tooltip" title="Use the comment to distinguish the links from others.">
+                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorComment" data-bs-tooltip data-bs-title="Use the comment to distinguish the links from others.">
                             Comment
                         </label>
                         <div class="col-sm-9">
@@ -17,7 +22,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorAmount" data-toggle="tooltip" title="Enter the number of links you want to create.">
+                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorAmount" data-bs-tooltip data-bs-title="Enter the number of links you want to create.">
                             Amount
                         </label>
                         <div class="col-sm-5 col-md-3">
@@ -27,27 +32,26 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-batch" id="studyLinksCreatorConfirmed">Add</button>
             </div>
         </div>
     </div>
 </div>
 
-@* Study links display Modal *@
+@* Study links display Modal for the single link types*@
 <div class="modal fade" id="studyLinksDisplayModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Study links</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">New study links</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <span class="btn-group btn-toggle ms-2">
-                    <button class="btn btn-xs btn-batch direct-link active mb-1" data-toggle="tooltip" title="Show links that start the study directly after clicking on them">Open Directly</button>
-                    <button class="btn btn-xs btn-outline-secondary confirm-link mb-1" data-toggle="tooltip" title="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properites) and the worker has to click a button to start the study.">Confirm First</button>
-                </span>
-                <div class="card card-body" id="studyLinksDisplayLinks"></div>
+                <div id="studyLinksDisplayStudyLinksToggle"></div>
+                <div class="card">
+                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
+                    <div class="card-body" id="studyLinksDisplayStudyLinks"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -56,64 +60,63 @@
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
-    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
     import * as QrCodeModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/qrCodeModal.js")";
+    import * as StudyLinks from "@routes.Assets.versioned("lib/jatos-gui/javascripts/studyLinks.js")";
 
     const alerts = new Alerts.Named("study-links-creator");
-    $("#studyLinksCreatorModal").on('hide.bs.modal', alerts.hideAll);
+    $("#studyLinksCreatorModal, #studyLinksDisplayModal").on('hide.bs.modal', alerts.hideAll);
+
+    const studyLinksToggle = new StudyLinks.LinksWithToggle();
 
     $("#studyLinksCreatorModal").on('show.bs.modal', function() {
         $("#studyLinksCreatorForm")[0].reset();
         FormValidation.clear("#studyLinksCreatorForm");
+        $('#studyLinksCreatorModal').off('hidden.bs.modal'); // Necessary for the cancel button to work
 
-        const type = $('#studyLinksManagerModal').data('type');
-        const typeUI = Helpers.getWorkerTypeName(type);
-        $("#studyLinksCreatorModal .modal-title").text(`Add study links of type '${typeUI}'`);
+        const batch = $('#studyLinksCreatorModal').data('batch');
+        const type = $('#studyLinksCreatorModal').data('type');
+        const typeUI = Helpers.getWorkerTypeUIName(type);
+        Helpers.generateModalSubtitles("#studyLinksCreatorModal", {"Batch": batch.title, "Type": typeUI});
     });
 
     $("#studyLinksCreatorConfirmed").click(function(event) {
-        const batch = $('#studyLinksManagerModal').data('batch');
-        const type = $('#studyLinksManagerModal').data('type');
-        const comment = encodeURIComponent($('#studyLinksCreatorComment').val());
+        const batch = $('#studyLinksCreatorModal').data('batch');
+        const type = $('#studyLinksCreatorModal').data('type');
+        const comment = $('#studyLinksCreatorComment').val();
         const amount = $('#studyLinksCreatorAmount').val();
         $.ajax({
-            url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, comment, amount),
+            url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, encodeURIComponent(comment), amount),
             success: (res) => {
-                $('#studyLinksManagerTable').DataTable().ajax.reload();
+                // In case we have an open study links manager Modal reload its DataTable
+                if ($("#studyLinksManagerModal").hasClass('show')) $('#studyLinksManagerTable').DataTable().ajax.reload();
                 $('#studyLinksCreatorModal')
                     .modal('hide')
-                    .on('hidden.bs.modal', () => showStudyLinksDisplayModal(res.data, batch, type));
+                    .on('hidden.bs.modal', () => showStudyLinksDisplayModal(res.data, batch, type, comment));
             },
-            error : (err) => alerts.error(err.responseText)
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study codes")
         });
     });
 
-    function showStudyLinksDisplayModal(studyCodes, batch, type) {
-        const typeUI = Helpers.getWorkerTypeName(type);
-        $('#studyLinksDisplayModal').find('.modal-title').text(`Study links for type '${typeUI}' in batch '${batch.title}'`);
-        $('#studyLinksDisplayLinks').html(studyCodes.map(code => renderStudyLink(code)).join('\n'));
+    function showStudyLinksDisplayModal(studyCodes, batch, type, comment) {
+        const typeUI = Helpers.getWorkerTypeUIName(type);
+        comment = comment ? comment : "none";
+        Helpers.generateModalSubtitles("#studyLinksDisplayModal", {"Batch": batch.title, "Type": typeUI, "Comment": comment});
+
+        studyLinksToggle.renderToggle("#studyLinksDisplayStudyLinksToggle", "#studyLinksDisplayStudyLinks", "mb-1");
+        $("#studyLinksDisplayStudyLinks").empty();
+        studyLinksToggle.renderLinks(studyCodes, "#studyLinksDisplayStudyLinks");
+
         $('#studyLinksDisplayModal').modal('show');
-        return;
-    }
 
-    function renderStudyLink(studyCode) {
-        return `
-            <div class="direct-link text-nowrap">
-                ${window.routes.Publix.run(studyCode)}
-                <span class="btn-clipboard no-info-icon" data-toggle="tooltip" title="Copy this link to the clipboard."></span>
-                <span class="btn-qr-code no-info-icon" data-toggle="tooltip" title="Show QR code for this link."></span>
-            </div>
-            <div class="confirm-link text-nowrap">
-                ${window.routes.Publix.studyEntry(studyCode)}
-                <span class="btn-clipboard no-info-icon" data-toggle="tooltip" title="Copy this link to the clipboard."></span>
-                <span class="btn-qr-code no-info-icon" data-toggle="tooltip" title="Show QR code for this link."></span>
-            </div>`;
-    }
 
-    $('#studyLinksManagerModal .btn-toggle').click(function() {
-        // todo use .hide CSS class
-        // align with studyLinksManager_new toggleDirectAndConfirmLink
-    });
+        if (!batch.active) {
+            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
+        }
+        if (!batch.allowedWorkerTypes.includes(type)) {
+            alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
+        }
+    }
 
 </script>

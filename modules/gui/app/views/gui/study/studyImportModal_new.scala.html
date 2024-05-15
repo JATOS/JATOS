@@ -1,25 +1,22 @@
-@import controllers.gui.routes._
-@import general.common._
-
 @* Study import confirmation Modal *@
 <div class="modal fade" id="confirmStudyImportModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Study exists already</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Study exists already</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="confirmStudyImportDescription"></div>
                 <button class="btn btn-outline-secondary dropdown-toggle collapsed" id="confirmStudyImportDetailsButton" type="button" data-bs-toggle="collapse" data-bs-target="#confirmStudyImportDetails">Details</button>
                 <div class="pt-3 collapse" id="confirmStudyImportDetails" >
                     <div class="form-check">
-                        <label class="form-check-label" for="confirmStudyImportProperties">Overwrite study and component properties</label>
+                        <label class="form-check-label" for="confirmStudyImportProperties">Overwrite study</label>
                         <input type="checkbox" class="form-check-input" id="confirmStudyImportProperties">
                         <div class="form-text">Components included in the imported study will be created or updated. Components not included in the imported study will be inactivated but not deleted.</div>
                     </div>
                     <div class="form-check">
-                        <label class="form-check-label" for="confirmStudyImportDir">Overwrite study assets' directory</label>
+                        <label class="form-check-label" for="confirmStudyImportDir">Overwrite study assets directory</label>
                         <input type="checkbox" class="form-check-input" id="confirmStudyImportDir">
                         <div class="form-text">This directory contains the study's files like HTML, CSS, and JavaScript files and images.</div>
                     </div>
@@ -37,6 +34,7 @@
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
     import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
+    import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
 
     const alerts = new Alerts.Named("study-import");
 
@@ -64,7 +62,8 @@
             },
             error : function(err) {
                 WaitingModal.hide();
-                alerts.error(err.responseText);
+                const errMsg = err.responseText ? err.responseText : "Something went wrong during study import";
+                alerts.error(errMsg);
             },
             complete: function() {
                 $("#importStudyBrowser")[0].value = '';
@@ -84,16 +83,20 @@
             askConfirmationForStudyExistsDirNotExists(response.uploadedStudyTitle, response.uuid, response.uploadedDirName, response.currentDirName)
         } else if (!response.studyExists && response.uploadedDirExists) {
             // 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
-            askConfirmationForStudyNotExistsDirExists(response.uploadedStudyTitle, response.uploadedDirName, response.newDirName);
+            askConfirmationForStudyNotExistsDirExists(response.uploadedStudyTitle, response.uuid, response.uploadedDirName, response.newDirName);
         } else if (!response.studyExists && !response.uploadedDirExists) {
             // 5) !study exists - !udir exists : write both
-            askConfirmationForStudyNotExistsDirNotExists(response.uploadedStudyTitle, response.uploadedDirName);
+            askConfirmationForStudyNotExistsDirNotExists(response.uploadedStudyTitle, response.uuid, response.uploadedDirName);
         }
     }
 
     function askConfirmationForStudyExists(uploadedStudyTitle, uuid, uploadedDirName) {
-        const description = `<p>It seems a study "${uploadedStudyTitle}" (UUID ${uuid}) and its study assets directory
-                "${uploadedDirName}" already exist.</p><p>What do you want to do?</p>`;
+        const infoCard = getStudyInfoCard(uploadedStudyTitle, uuid, uploadedDirName);
+        const description = `
+            <p>You are about to import the study:</p>
+            ${infoCard}
+            <p>But a study with this UUID and this study assets directory already exists in this JATOS.</p>
+            <p>What do you want to do?</p>`;
         $('#confirmStudyImportDescription').html(description);
         $('#confirmStudyImportDetailsButton').addClass('collapsed');
         $('#confirmStudyImportDetails').removeClass('show');
@@ -116,11 +119,20 @@
     }
 
     function askConfirmationForStudyExistsAndRenameDir(uploadedStudyTitle, uuid, uploadedDirName, currentDirName) {
-        const description = `<p>It seems a study "${uploadedStudyTitle}" (UUID ${uuid}) already exist.</p>
-                <p>The imported study assets directory is "${uploadedDirName} - the current one is "${currentDirName}".
-                Usually, in this case, the directory is renamed to the imported version, but unfortunately this one already
-                exists and belongs to another study. If you agree, the <b>current directory name will be kept</b>.</p>
-                <p>What do you want to do?</p>`;
+        const infoCard = getStudyInfoCard(uploadedStudyTitle, uuid, uploadedDirName);
+        const description = `
+            <p>You are about to import the study:</p>
+            ${infoCard}
+            <p>
+                But it seems a study with this UUID already exists in this JATOS.
+            </p>
+            <p>
+                Additionally the assets directory of the imported study is named "${uploadedDirName}"
+                - but the directory name of the currently installed one is "${currentDirName}". Usually, in this case,
+                the directory is renamed to the imported version, but unfortunately this one already
+                exists and belongs to another study.
+            </p>
+            <p>If you agree, the <b>current directory name will be kept</b>. What do you want to do?</p>`;
         $('#confirmStudyImportDescription').html(description);
         $('#confirmStudyImportDetailsButton').addClass('collapsed');
         $('#confirmStudyImportDetails').removeClass('show');
@@ -143,30 +155,53 @@
 
     function askConfirmationForStudyExistsDirNotExists(uploadedStudyTitle, uuid, uploadedDirName, currentDirName) {
         const title = 'Study import';
-        const htmlText = `<p>It seems a study "${uploadedStudyTitle}" (UUID ${uuid}) already exist.</p>
-            <p>But currently the study doesn't seem to have a study assets directory associated with it. The directory's
-            name was "${currentDirName}" but it doesn't exist on the disk. Maybe someone changed its name or deleted it?</p>
+        const infoCard = getStudyInfoCard(uploadedStudyTitle, uuid, uploadedDirName);
+        const htmlText = `
+            <p>You are about to import the study:</p>
+            ${infoCard}
+            <p>A study with this UUID already exists in this JATOS.</p>
+            <p>
+                But currently the study doesn't seem to have a study assets directory associated with it. The directory's
+                name was "${currentDirName}" but it doesn't exist on the disk any more. Maybe someone changed its name or deleted it?
+            </p>
             <p>If you continue the uploaded study assets directory will be used instead of the non-existing current one.</p>
             <p>Do you want to proceed?</p>`;
         const action = () => postStudyImportConfirm({ keepProperties: false, keepAssets : false, renameAssets: true });
         ConfirmationModal.show({ title: title, text: htmlText, btnClass: "btn-study", btnText: 'Import', action: action });
     }
 
-    function askConfirmationForStudyNotExistsDirExists(uploadedStudyTitle, uploadedDirName, newDirName) {
-        const title = 'Study import - but study assets directory already exists';
-        const htmlText = `<p>You are about to import the study "${uploadedStudyTitle}" and its directory "${uploadedDirName}".
-            Unfortunately, a directory with this name already exists. If you proceed, the directory will be renamed
-            to "${newDirName}".</p><p>Do you want to proceed?</p>`;
+    function askConfirmationForStudyNotExistsDirExists(uploadedStudyTitle, uuid, uploadedDirName, newDirName) {
+        const title = 'Study import';
+        const infoCard = getStudyInfoCard(uploadedStudyTitle, uuid, uploadedDirName);
+        const htmlText = `
+            <p>You are about to import the study:</p>
+            ${infoCard}
+            <p>
+                Unfortunately, a study assets directory with this name already exists in this JATOS. If you proceed,
+                the study assets directory of your uploaded study will be renamed to "${newDirName}".
+            </p>
+            <p>Do you want to proceed?</p>`;
         const action = () => postStudyImportConfirm({ keepProperties: false, keepAssets : false, renameAssets: true });
         ConfirmationModal.show({ title: title, text: htmlText, btnClass: "btn-study", btnText: 'Import', action: action });
     }
 
-    function askConfirmationForStudyNotExistsDirNotExists(uploadedStudyTitle, uploadedDirName) {
+    function askConfirmationForStudyNotExistsDirNotExists(uploadedStudyTitle, uuid, uploadedDirName) {
         const title = "Study import";
-        const htmlText = `<p>You are about to import the study "${uploadedStudyTitle}" and
-                its directory "${uploadedDirName}".</p><p>Do you want to proceed?</p>`;
+        const infoCard = getStudyInfoCard(uploadedStudyTitle, uuid, uploadedDirName);
+        const htmlText = `
+            <p>You are about to import the study:</p>
+            ${infoCard}
+            <p>Do you want to proceed?</p>`;
         const action = () => postStudyImportConfirm({ keepProperties: false, keepAssets : false, renameAssets: false });
         ConfirmationModal.show({ title: title, text: htmlText, btnClass: "btn-study", btnText: "Import", action: action });
+    }
+
+    function getStudyInfoCard(title, uuid, dirName) {
+        return InfoCard.render([
+            {"name": "Study title", "value": title},
+            {"name": "Study UUID", "value": uuid, "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances"},
+            {"name": "Study assets", "value": dirName, "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."}
+        ]);
     }
 
     function postStudyImportConfirm({keepProperties, keepAssets, keepCurrentAssetsName, renameAssets}) {
@@ -180,12 +215,10 @@
                     "keepAssets": keepAssets,
                     "keepCurrentAssetsName": keepCurrentAssetsName,
                     "renameAssets": renameAssets}),
-            success: function(result) {
-                alerts.showList(JSON.parse(result));
+            success: function(studyId) {
+                window.location.href = window.routes.Studies.study(studyId);
             },
-            error: function(err) {
-                alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Something went wrong during study import")
         });
     }
 

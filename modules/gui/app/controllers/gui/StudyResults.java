@@ -2,9 +2,9 @@ package controllers.gui;
 
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.google.common.base.Strings;
-import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
@@ -16,7 +16,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import models.common.*;
-import models.common.workers.*;
+import models.common.workers.Worker;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
@@ -78,18 +80,19 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result studysStudyResults(Long studyId) throws JatosGuiException {
+    @SaveLastVisitedPageUrl
+    public Result studysStudyResults(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         try {
             checker.checkStandardForStudy(study, studyId, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(e, studyId);
+            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
-        return ok(views.html.gui.result.studyResults_new.render(signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.results.studyResults_new.render(request, signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -97,7 +100,8 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result batchesStudyResults(Long studyId, Long batchId, String workerType) throws JatosGuiException {
+    @SaveLastVisitedPageUrl
+    public Result batchesStudyResults(Http.Request request, Long studyId, Long batchId, String workerType) throws JatosGuiException {
         Batch batch = batchDao.findById(batchId);
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -105,14 +109,14 @@ public class StudyResults extends Controller {
             checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForBatch(batch, study, batchId);
         } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(e, studyId);
+            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
 
         String breadcrumbsTitle = Strings.isNullOrEmpty(workerType) ? BreadcrumbsService.RESULTS
                 : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(batchId, workerType).url();
-        return ok(views.html.gui.result.studyResults_new.render(signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.results.studyResults_new.render(request, signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -120,7 +124,8 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result groupsStudyResults(Long studyId, Long groupId) throws JatosGuiException {
+    @SaveLastVisitedPageUrl
+    public Result groupsStudyResults(Http.Request request, Long studyId, Long groupId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupId);
         User signedinUser = authService.getSignedinUser();
@@ -128,14 +133,14 @@ public class StudyResults extends Controller {
             checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForGroup(groupResult, study, groupId);
         } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(e, studyId);
+            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
 
         String breadcrumbsTitle = BreadcrumbsService.RESULTS;
         String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
                 breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(groupId).url();
-        return ok(views.html.gui.result.studyResults_new.render(signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.results.studyResults_new.render(request, signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -143,18 +148,19 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result workersStudyResults(Long workerId) throws JatosGuiException {
+    @SaveLastVisitedPageUrl
+    public Result workersStudyResults(Http.Request request, Long workerId) throws JatosGuiException {
         User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
         try {
             checker.checkWorker(worker, workerId);
             checker.isUserAllowedToAccessWorker(signedinUser, worker);
         } catch (BadRequestException | ForbiddenException e) {
-            jatosGuiExceptionThrower.throwHome(e);
+            jatosGuiExceptionThrower.throwHome(request, e);
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.workersStudyResults_new.render(signedinUser, breadcrumbs, worker));
+        return ok(views.html.gui.results.workersStudyResults_new.render(request, signedinUser, breadcrumbs, worker));
     }
 
     /**

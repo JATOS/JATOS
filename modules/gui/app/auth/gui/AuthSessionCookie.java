@@ -75,14 +75,14 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         }
         RequestScope.put(AuthService.SIGNEDIN_USER, signedinUser);
 
-        // Check session timeout
-        if (authService.isSessionTimeout(request.session())) {
-            return callForbiddenDueToSessionTimeout(signedinUser.getUsername());
-        }
-
-        // Check inactivity timeout
-        if (authService.isInactivityTimeout(request.session())) {
-            return callForbiddenDueToInactivityTimeout(signedinUser.getUsername());
+        // Check session timeout and inactivity timeout (only if keepSignedin flag is not set)
+        if (!authService.isSessionKeepSignedin(request.session())) {
+            if (authService.isSessionTimeout(request.session())) {
+                return callForbiddenDueToSessionTimeout(signedinUser.getUsername());
+            }
+            if (authService.isInactivityTimeout(request.session())) {
+                return callForbiddenDueToInactivityTimeout(signedinUser.getUsername());
+            }
         }
 
         // Check user deactivated by admin
@@ -92,7 +92,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
 
         // Check authorization
         if (!signedinUser.hasRole(role)) {
-            return callForbiddenDueToAuthorization(signedinUser.getUsername(), request.path());
+            return callForbiddenDueToAuthorization(request, signedinUser.getUsername(), request.path());
         }
 
         userService.setLastSeen(signedinUser);
@@ -146,7 +146,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         }
     }
 
-    private AuthResult callForbiddenDueToAuthorization(String normalizedUsername, String urlPath) {
+    private AuthResult callForbiddenDueToAuthorization(Http.Request request, String normalizedUsername, String urlPath) {
         String msg = "User " + normalizedUsername + " isn't allowed to access page " + urlPath + ".";
         LOGGER.warn(msg);
         // Do not clear the session cookie - do not sign out
@@ -154,7 +154,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
             return AuthResult.denied(forbidden(msg));
         } else {
             RequestScopeMessaging.error(msg);
-            return AuthResult.denied(homeProvider.get().home(Http.Status.FORBIDDEN));
+            return AuthResult.denied(homeProvider.get().home(request, Http.Status.FORBIDDEN));
         }
     }
 

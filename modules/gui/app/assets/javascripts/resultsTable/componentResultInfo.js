@@ -1,8 +1,9 @@
-export { ComponentResultInfo }
+export { ComponentResultInfo, getResultDataShortHtml }
 
 import * as Alerts from '../alerts.js';
 import * as Helpers from '../helpers.js';
 import * as WaitingModal from "../waitingModal.js";
+import * as CopyToClipboard from "../copyToClipboard.js";
 
 class ComponentResultInfo {
     constructor(dataTable) {
@@ -22,19 +23,21 @@ class ComponentResultInfo {
                 url : window.routes.StudyResults.tableDataComponentResultsByStudyResult(studyResultId),
                 contentType: "application/json; charset=utf-8"
             }).done((results) => {
-                const childRow = this.#generateComponentResultsChildRow(results, studyResultId);
+                const childRow = this.generateComponentResultsChildRow(results, studyResultId);
                 // We first show the DataTables row and then de-collapse with Bootstrap
                 row.child(childRow).show(); // Let DataTables add the child row. But it's still collapsed.
                 tr.next().addClass('info').find("td:first").addClass("p-0");
                 const collapseElement = row.child().find(".collapse");
                 new bootstrap.Collapse(collapseElement).show();
+                Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
-                Alerts.error(err.responseText);
+                const errMsg = err.responseText ? err.responseText : "Couldn't get component result data";
+                Alerts.error(errMsg);
             });
         }
     }
 
-    #generateComponentResultsChildRow = (componentResults, studyResultId) => {
+    generateComponentResultsChildRow = (componentResults, studyResultId) => {
         // We cannot collapse a "tr" element directly. Therefore, we add an extra "div".
         const childRow = $(`
             <div class="d-flex flex-row collapse">
@@ -42,15 +45,15 @@ class ComponentResultInfo {
                 <table class="table table-borderless m-0">
                     <thead>
                         <tr>
-                            <th data-toggle="tooltip" title="The ID of the component result">Comp. Result ID</th>
-                            <th data-toggle="tooltip" title="The ID of the component">Comp. ID</th>
-                            <th data-toggle="tooltip" title="The title of the component">Component Title</th>
-                            <th data-toggle="tooltip" title="The start time of the component run (in local time)">Start Time</th>
-                            <th data-toggle="tooltip" title="The duration from start to end. Format is [days:]hours:minutes:seconds.">Duration</th>
-                            <th data-toggle="tooltip" title="The current state of the component run, like @common.ComponentResult.ComponentState.allStatesAsString()">State</th>
-                            <th data-toggle="tooltip" title="The size of the result data">Data Size</th>
-                            <th data-toggle="tooltip" title="The files (file size in brackets) that were uploaded during the run of the component">Files (Size)</th>
-                            <th data-toggle="tooltip" title="The message that was send (optionally) in the end of the component run">Message</th>
+                            <th data-bs-tooltip data-bs-title="The ID of the component result">Comp. Result ID</th>
+                            <th data-bs-tooltip data-bs-title="The ID of the component">Comp. ID</th>
+                            <th data-bs-tooltip data-bs-title="The title of the component">Component Title</th>
+                            <th data-bs-tooltip data-bs-title="The start time of the component run (in local time)">Start Time</th>
+                            <th data-bs-tooltip data-bs-title="The duration from start to end. Format is [days:]hours:minutes:seconds.">Duration</th>
+                            <th data-bs-tooltip data-bs-title="The current state of the component run">State</th>
+                            <th data-bs-tooltip data-bs-title="The size of the result data">Data Size</th>
+                            <th data-bs-tooltip data-bs-title="The files (file size in brackets) that were uploaded during the run of the component">Files (Size)</th>
+                            <th data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the component run">Message</th>
                         </tr>
                     </thead>
                 </table>
@@ -72,18 +75,13 @@ class ComponentResultInfo {
             });
             if (resultFiles.length === 0) resultFiles.push('<span class="text-body text-opacity-50">none</span>');
 
-            let showAllButton = "";
-            // If the last three chars of the dataShort field are "..." add the show-all button
-            if (componentResult.dataShort.substr(componentResult.dataShort.length - 3) == "...") {
-                showAllButton = '<button type="button" class="btn btn-nav btn-sm show-all" data-toggle="tooltip" title="Show all result data of this component result.">Show All</button>';
-            }
             const resultDataDiv = `
                 <div class="card mx-4 mb-2">
                     <div class="card-header">
                         Data
                     </div>
                     <div class="card-body">
-                        <pre class="text-wrap text-break m-0">${componentResult.dataShort}${showAllButton}</pre>
+                        ${getResultDataShortHtml(componentResult)}
                     </div>
                 </div>
             `;
@@ -95,7 +93,7 @@ class ComponentResultInfo {
                         <td class="ps-4">${componentResult.id}</td>
                         <td>${componentResult.componentId}</td>
                         <td>${componentResult.componentTitle}</td>
-                        <td>${Helpers.getLocalTime(componentResult.startDate)}</td>
+                        <td>${Helpers.getLocalTimeDataTables(componentResult.startDate)}</td>
                         <td>${duration}</td>
                         <td>${componentResult.componentState}</td>
                         <td>${componentResult.dataSizeHumanReadable}</td>
@@ -107,10 +105,22 @@ class ComponentResultInfo {
                     </tr>
                 </tbody>
             `);
+            row.on('click', '.btn-clipboard', CopyToClipboard.onClick);
             row.data(componentResult);
             childRow.find("table").append(row);
         });
 
         return childRow;
     }
+}
+
+function getResultDataShortHtml(componentResult) {
+    const dataShort = componentResult.dataShort.length != 0 ? componentResult.dataShort : "no data";
+
+    // If the last three chars of the dataShort field are "..." add the show-all button and hide the copy-to-clipboard button
+    const isTooLong = componentResult.dataShort.substr(componentResult.dataShort.length - 3) === "...";
+    const showAllButton = isTooLong ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip data-bs-title="Show all result data of this component result.">Show All</button>' : "";
+    const copyToClipboardButton = !isTooLong ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>' : "";
+
+    return `<pre class="d-inline m-0"><code class="text-wrap text-break">${dataShort}</code></pre>${showAllButton}${copyToClipboardButton}`;
 }

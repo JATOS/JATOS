@@ -1,23 +1,21 @@
-@(signedinUser: common.User, breadcrumbs: String)
-@import controllers.gui.routes._
-@import general.common._
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+@views.html.gui.page.main_new(request, signedinUser, None, None, breadcrumbs) {
 
 <main class="container-fluid overflow-auto mt-4">
 
-    <table class="table table-hover w-100" id="userAdminTable">
+    <table class="table table-hover align-middle w-100" id="userManagerTable">
         <thead>
             <tr>
-                <th class="no-info-icon" data-toggle="tooltip" title="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="username">Username<span class="ordering-icon"></span></th>
                 <th>Name<span class="ordering-icon"></span></th>
                 <th>Email<span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Authentication method: either locally stored, LDAP, Google or OIDC">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Users with admin rights can e.g. create/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Authentication method, e.g. either locally stored, LDAP, Google, OIDC or ORCID">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Users with the admin rights can e.g. create/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
             </tr>
         </thead>
@@ -25,18 +23,18 @@
 
     @* Template for button toolbar in User's row *@
     <div id="userToolbarDiv" class="d-none">
-        <div class="btn-group float-end text-nowrap">
-            <div class="user-settings btn-group no-info-icon" data-toggle="tooltip" title="Change name or email of this user">
+        <div class="float-end text-nowrap">
+            <div class="user-settings btn-group no-info-icon" data-bs-tooltip data-bs-title="Change name or email of this user">
                 <button class="btn btn-admin" type="button">
                     <i class="bi-gear-fill"></i><span class="d-none d-lg-inline ps-1">Settings</span>
                 </button>
             </div>
-            <div class="user-change-password btn-group no-info-icon" data-toggle="tooltip" title="Change the password of this user">
+            <div class="user-change-password btn-group no-info-icon" data-bs-tooltip data-bs-title="Change the password of this user">
                 <button class="btn btn-admin" type="button">
                     <i class="bi-lock-fill"></i><span class="d-none d-lg-inline ps-1">Password</span>
                 </button>
             </div>
-            <div class="user-delete btn-group no-info-icon" data-toggle="tooltip" title="Delete this user from JATOS">
+            <div class="user-delete btn-group no-info-icon" data-bs-tooltip data-bs-title="Delete this user from JATOS">
                 <button class="btn btn-admin" type="button">
                     <i class="bi-x-circle-fill"></i><span class="d-none d-lg-inline ps-1">Delete</span>
                 </button>
@@ -45,67 +43,67 @@
     </div>
 
     @* Create User Modal *@
-    <div class="modal fade" id="createUserModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
+    <div class="modal fade" id="userCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add a new user</h5>
-                    <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+                <div class="modal-header align-items-start">
+                    <h5 class="modal-title text-truncate flex-grow-1">Add a new user</h5>
+                    <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form class="form-admin" id="createUserForm">
+                    <form class="form-admin" id="userCreatorForm">
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="createUserUsername">
-                                Username<span class="input-required" data-toggle="tooltip" title="required"></span>
+                            <label class="col-sm-3 col-form-label" for="userCreatorUsername">
+                                Username<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" id="createUserUsername" name="username" required>
+                                <input type="text" class="form-control" id="userCreatorUsername" name="username" required>
                                 <span class="form-text">What will be the username of the new user? Username and password are used for authentication. E.g., email address.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="createUserName">
-                                Name<span class="input-required" data-toggle="tooltip" title="required"></span>
+                            <label class="col-sm-3 col-form-label" for="userCreatorName">
+                                Name<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" id="createUserName" name="name" required>
+                                <input type="text" class="form-control" id="userCreatorName" name="name" required>
                                 <span class="form-text">The name is not used for authentication and only further describes the user.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="createUserEmail">Email</label>
+                            <label class="col-sm-3 col-form-label" for="userCreatorEmail">Email</label>
                             <div class="col-sm-9">
-                                <input type="email" class="form-control" id="createUserEmail" name="email">
+                                <input type="email" class="form-control" id="userCreatorEmail" name="email">
                                 <span class="form-text">Optional email address of the user. This field is not used for authentication.</span>
                             </div>
                         </div>
 
-                        <div class="row mb-3 d-none" id="createUserAuthByLdapDiv">
+                        <div class="row mb-3 d-none" id="userCreatorAuthByLdapDiv">
                             <legend class="col-sm-3 col-form-label pt-0">
                                 LDAP
                             </legend>
                             <div class="col-sm-9">
                                 <div class="form-check">
-                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authByLdap" id="createUserAuthByLdap" value="true" data-bs-toggle="collapse" data-bs-target="#createUserPasswordDiv">
-                                    <!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authByLdap" id="userCreatorAuthByLdap" value="true" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
+                                    @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
                                     <input type="hidden" name="authByLdap" value="false" />
-                                    <label class="form-check-label" for="createUserAuthByLdap">
+                                    <label class="form-check-label" for="userCreatorAuthByLdap">
                                         Authenticate this user by your central LDAP service?
                                     </label>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="collapse show" id="createUserPasswordDiv">
+                        <div class="collapse show" id="userCreatorPasswordDiv">
                             <div class="row">
-                                <label class="control-label col-sm-3" for="createUserPassword">
-                                    Password<span class="input-required" data-toggle="tooltip" title="required"></span>
+                                <label class="control-label col-sm-3" for="userCreatorPassword">
+                                    Password<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
                                 </label>
                                 <div class="col-sm-4">
                                     <div class="input-group">
-                                        <input type="password" class="form-control" id="createUserPassword" name="password" placeholder="Password" autocomplete="off">
+                                        <input type="password" class="form-control" id="userCreatorPassword" name="password" placeholder="Password" autocomplete="off">
                                         <button class="btn btn-nav password-visibility-toggle" type="button"><i></i></button>
                                     </div>
                                 </div>
@@ -117,8 +115,7 @@
                     </form>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-admin" id="createUserConfirm">Add</button>
+                        <button type="button" class="btn btn-admin" id="userCreatorConfirm">Add</button>
                     </div>
                 </div>
             </div>
@@ -129,12 +126,12 @@
     <div class="modal fade" id="userSettingsModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
         <div class="modal-dialog">
             <div class="modal-content">
-                <form class="form-admin" id="userSettingsForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title">User settings</h5>
-                        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
+                <div class="modal-header align-items-start">
+                    <h5 class="modal-title text-truncate flex-grow-1">Change user settings</h5>
+                    <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="form-admin" id="userSettingsForm">
                         <div class="row mb-3">
                             <label for="userSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
                             <div class="col-sm-9">
@@ -147,12 +144,12 @@
                                 <input type="email" class="form-control" id="userSettingsEmail" name="email" autocomplete="email">
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-admin" id="userSettingsConfirm">Save</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="userSettingsConfirm">Save</button>
+                </div>
             </div>
         </div>
     </div>
@@ -161,24 +158,24 @@
     <div class="modal fade" id="changePasswordModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
-                <form class="form-admin" id="changePasswordForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Change password</h5>
-                        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
+                <div class="modal-header align-items-start">
+                    <h5 class="modal-title text-truncate flex-grow-1">Change password</h5>
+                    <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="form-admin" id="changePasswordForm">
                         <div class="input-group">
                             <input type="password" class="form-control" id="changePasswordNewPassword" name="newPassword" placeholder="New password" autocomplete="off" required>
                             <button class="btn btn-nav password-visibility-toggle" type="button"><i></i></button>
                         </div>
                         <span class="form-text" id="changePasswordStrengthDescription">xxx</span>
                         <input type="hidden" id="changePasswordUsername" name="username" required>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-admin" id="changePasswordConfirm">Change</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="changePasswordConfirm">Change</button>
+                </div>
             </div>
         </div>
     </div>
@@ -187,12 +184,12 @@
     <div class="modal fade" id="deleteUserModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
         <div class="modal-dialog">
             <div class="modal-content">
-                <form class="form-danger" id="deleteUserForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Confirm user deletion</h5>
-                        <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
+                <div class="modal-header align-items-start">
+                    <h5 class="modal-title text-truncate flex-grow-1">Confirm user deletion</h5>
+                    <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="form-danger" id="deleteUserForm">
                         <div id="deleteUserConfirmationText"></div>
                         @if(signedinUser.isDb() || signedinUser.isLdap()){
                         <input type="password" class="form-control" id="deleteUserAdminPassword" name="password" placeholder="Your password" autocomplete="off" required>
@@ -201,12 +198,12 @@
                         <input type="text" class="form-control" id="deleteUserAdminUsername"  name="username" placeholder="Your username" autocomplete="off" required>
                         <div class="form-text">Confirm by typing your username (@signedinUser.getUsername()).</div>
                         }
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" id="deleteUserConfirm">Delete</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteUserConfirm">Delete</button>
+                </div>
             </div>
         </div>
     </div>
@@ -221,13 +218,11 @@
     import * as PasswordVisibilityToggle from "@routes.Assets.versioned("lib/jatos-gui/javascripts/passwordVisibilityToggle.js")";
 
     const alerts = new Alerts.Named("user-manager");
-    $("#createUserModal, #userSettingsModal, #changePasswordModal, #deleteUserModal").on('hide.bs.modal', alerts.hideAll);
-
-    Helpers.preventFormSubmitViaEnter("#userSettingsForm, #changePasswordForm, #deleteUserForm");
+    $("#userCreatorModal, #userSettingsModal, #changePasswordModal, #deleteUserModal").on('hide.bs.modal', alerts.hideAll);
 
     let dataTable;
     $(document).ready(function() {
-        dataTable = $('#userAdminTable').DataTable({
+        dataTable = $('#userManagerTable').DataTable({
             "ajax": {
                 "url": window.routes.Users.allUserData,
                 "dataSrc": "",
@@ -242,10 +237,6 @@
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "pageLength": 10,
             "pagingType": "full_numbers",
-            "stateSave": true,
-            "stateSaveParams": function (settings, data) {
-                data.search.search = "";
-            },
             "scrollX": true,
             "columns": [
                 {
@@ -258,7 +249,7 @@
                             return '<span class="text-body text-opacity-50">none</span>';
                         } else {
                             return `<button type="button" class="btn btn-admin collapse-study-data text-nowrap dropdown-toggle"
-                                data-toggle="tooltip" title="Show/hide studies">
+                                data-bs-tooltip data-bs-title="Show/hide study information">
                                 <span class="badge text-admin bg-white rounded-pill">${data}</span></button>`;
                         }
                     }
@@ -281,10 +272,12 @@
                         } else {
                             tooltip = "Click to de-/activate this user";
                         }
+                        const checked = data ? "checked" : "";
+                        const disabled = isDisabled ? "disabled" : "";
                         return `
-                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="${tooltip}">
-                                <input type="checkbox" ${data ? "checked" : ""}>
-                                <span class="slider slider-admin round ${isDisabled ? "disabled" : ""}"></span>
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="${tooltip}">
+                                <input type="checkbox" ${checked} ${disabled}>
+                                <span class="slider slider-admin round" ${disabled}></span>
                             </label>
                         `;
                     }
@@ -318,7 +311,7 @@
                 },
                 {
                     "data": "lastSignin",
-                    "render": Helpers.getLocalTime
+                    "render": Helpers.getLocalTimeDataTables
                 },
                 {
                     "data": "authMethod",
@@ -333,7 +326,7 @@
                         const isSuperuser = $.inArray("SUPERUSER", data.roleList) >= 0;
                         if (type === 'export' || type === 'sort') return isSuperuser.toString();
                         return `
-                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="Use this switch to de-/activate the superuser role for this user.">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="Use this switch to de-/activate the superuser role for this user.">
                                 <input type="checkbox" ${isSuperuser ? "checked" : ""}>
                                 <span class="slider slider-admin round"></span>
                             </label>
@@ -358,10 +351,10 @@
                             isDisabled = true;
                             tooltip = "You cannot remove your own admin rights. Only another user with admin rights can do it.";
                         } else {
-                            tooltip = "Use this switch to de-/activate the admin role for this user.";
+                            tooltip = "Use this switch to de-/activate admin rights for this user.";
                         }
                         return `
-                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="${tooltip}">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="${tooltip}">
                                 <input type="checkbox" ${isAdmin ? "checked" : ""}>
                                 <span class="slider slider-admin round ${isDisabled ? "disabled" : ""}"></span>
                             </label>
@@ -383,25 +376,31 @@
                 {
                     "text": '<i class="bi-person-fill-add pe-1"></i>Add User',
                     "attr":  {
-                        "id": "createUserButton",
+                        "id": "userCreatorButton",
                         "data-bs-toggle": "modal",
-                        "data-bs-target": "#createUserModal"
+                        "data-bs-target": "#userCreatorModal",
                     },
                     "className": "btn btn-admin",
-                    "titleAttr": 'Add a new user'
                 },
                 {
                     "extend": 'collection',
                     "text": '<i class="bi-box-arrow-up-right pe-1"></i>Export',
                     "className": "btn btn-admin",
-                    "titleAttr": 'Export table data in CSV',
+                    "attr":  {
+                        "data-bs-tooltip": "",
+                        "data-bs-title": "Export table data in CSV"
+                    },
                     "buttons": [
                         {
                             "extend": 'csv',
                             "text": "Usernames",
                             "filename": () => { return "jatos_usernames_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
-                            "titleAttr": "Export usernames only",
                             "className": "dropdown-item-admin",
+                            "attr":  {
+                                "data-bs-tooltip": "",
+                                "data-bs-title": "Export usernames only in CSV format",
+                                "data-bs-placement": "right"
+                            },
                             "exportOptions": {
                                 "columns": '.username',
                                 "orthogonal": 'export',
@@ -425,8 +424,12 @@
                         {
                             "extend": 'csv',
                             "text": "All",
+                            "attr":  {
+                                "data-bs-tooltip": "",
+                                "data-bs-title": "Export all user data in CSV format",
+                                "data-bs-placement": "right"
+                            },
                             "filename": () => { return "jatos_user_all_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
-                            "titleAttr": 'Export all user data',
                             "exportOptions": {
                                 "columns": [':not(:last-child)'],
                                 "orthogonal": 'export',
@@ -461,49 +464,53 @@
                 "emptyTable": "No users yet"
             },
             "initComplete": function(settings, json) {
-                $(".dt-buttons").removeClass("btn-group");
+                $("#userManagerTable_wrapper .dt-buttons").removeClass("btn-group");
             },
             "drawCallback": function( settings ) {
-                Helpers.setButtonWidthToMax("button.collapse-study-data");
-                $(".dt-length select").removeClass("form-select-sm");
-                $(".dt-search input").removeClass("form-control-sm");
+                Helpers.setButtonWidthToMax("#userManagerTable_wrapper button.collapse-study-data");
+                Helpers.activateTooltips('#userManagerTable_wrapper');
+                $("#userManagerTable_wrapper .dt-length select").removeClass("form-select-sm");
+                $("#userManagerTable_wrapper .dt-search input").removeClass("form-control-sm");
+                Helpers.activateTooltipsOnDataTablesDropdowns(this.api());
             }
         });
     });
 
-    $("#createUserModal").on('show.bs.modal', function() {
-        $("#createUserForm")[0].reset();
-        if (window.common.isLdapAllowed) $("#createUserAuthByLdapDiv").removeClass("d-none");
-        $("#createUserPasswordDiv .form-text").html(window.common.userPasswordStrengthDescription
+    $("#userCreatorModal").on('show.bs.modal', function() {
+        $("#userCreatorForm")[0].reset();
+        if (window.common.isLdapAllowed) $("#userCreatorAuthByLdapDiv").removeClass("d-none");
+        $("#userCreatorPasswordDiv .form-text").html(window.common.userPasswordStrengthDescription
                 + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
-        $('#createUserPasswordDiv').removeClass('collapse').addClass('collapse.show');
+        $('#userCreatorPasswordDiv').removeClass('collapse').addClass('collapse.show');
         PasswordVisibilityToggle.setPasswordVisibility(false);
     });
 
-    $("#createUserConfirm").click(function(event) {
+    $("#userCreatorConfirm").click(function(event) {
         $.ajax({
             type: 'POST',
             url: window.routes.Users.create,
-            data: $('#createUserForm').serialize(),
+            data: $('#userCreatorForm').serialize(),
             success: function(user) {
-                $('#createUserModal').modal('hide');
-                FormValidation.clear("#createUserForm");
+                $('#userCreatorModal').modal('hide');
+                FormValidation.clear("#userCreatorForm");
                 Alerts.success(`The user "${user.username}" was added successfully.`);
                 dataTable.row.add(user).draw();
             },
             error: function(response) {
-                FormValidation.clear("#createUserForm");
+                FormValidation.clear("#userCreatorForm");
                 Alerts.warning("The user was not added.", 5000);
                 if (Helpers.isJson(response.responseText)) {
-                    FormValidation.show("#createUserForm", response.responseJSON);
+                    FormValidation.show("#userCreatorForm", response.responseJSON);
+                } else if (err.responseText) {
+                    alerts.error(err.responseText);
                 } else {
-                    alerts.error(response.responseText);
+                    alerts.error("Couldn't create a new user");
                 }
             }
         });
     });
 
-    $('#userAdminTable').on('click', 'td.details-control', function() {
+    $('#userManagerTable').on('click', 'td.details-control', function() {
         const tr = $(this).closest('tr');
         const row = dataTable.row(tr);
         if (row.child.isShown()) {
@@ -523,11 +530,13 @@
                 // We first show the DataTables row and then de-collapse with Bootstrap
                 row.child(childRow).show(); // Let DataTables add the child row. But it's still collapsed.
                 tr.next().addClass('info').find("td:first").addClass("p-0");
-                Helpers.activatePopovers();
+                Helpers.activatePopovers('#userManagerTable');
                 const collapseElement = row.child().find(".collapse");
                 new bootstrap.Collapse(collapseElement).show();
+                Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
-                Alerts.error(err.responseText);
+                const errMsg = err.responseText ? err.responseText : "Couldn't get study data by user";
+                Alerts.error(errMsg);
             }).always(WaitingModal.hide);
         }
     });
@@ -541,12 +550,12 @@
                         <tr>
                             <th>Study ID</th>
                             <th>Study title</th>
-                            <th data-toggle="tooltip" title="All users who are member of this study">All members</th>
-                            <th data-toggle="tooltip" title="The size of the study assets folder">Study assets size</th>
-                            <th data-toggle="tooltip" title="The number of the study results">Result count</th>
-                            <th data-toggle="tooltip" title="The size of the result data: total for all study runs and the average per result in brackets">Result data size</th>
-                            <th data-toggle="tooltip" title="The size of the uploaded result files: total for all study runs and the average per result in brackets">Result file size</th>
-                            <th data-toggle="tooltip" title="When was this study last started by a participant?">Last started</th>
+                            <th data-bs-tooltip data-bs-title="All users who are member of this study">All members</th>
+                            <th data-bs-tooltip data-bs-title="The size of the study assets folder">Study assets size</th>
+                            <th data-bs-tooltip data-bs-title="The number of the study results">Result count</th>
+                            <th data-bs-tooltip data-bs-title="The size of the result data: total for all study runs and the average per result in brackets">Result data size</th>
+                            <th data-bs-tooltip data-bs-title="The size of the uploaded result files: total for all study runs and the average per result in brackets">Result file size</th>
+                            <th data-bs-tooltip data-bs-title="When was this study last started by a participant?">Last started</th>
                         </tr>
                     </thead>
                 </table>
@@ -570,7 +579,7 @@
                         <td>${study.studyResultCount}</td>
                         <td>${study.resultDataSize.humanReadable}</td>
                         <td>${study.resultFileSize.humanReadable}</td>
-                        <td>${Helpers.getLocalTime(study.lastStarted)}</td>
+                        <td>${Helpers.getLocalTimeDataTables(study.lastStarted)}</td>
                     </tr>
                 </tbody>
             `);
@@ -580,7 +589,7 @@
         return childRow;
     }
 
-    $('#userAdminTable').on('click', '.active-user input', function(e) {
+    $('#userManagerTable').on('click', '.active-user input', function(e) {
         e.preventDefault();
         const checkbox = this;
         const isActive = $(checkbox).is(':checked');
@@ -593,13 +602,11 @@
                 $(checkbox).prop('checked', isActive);
                 user.active = isActive;
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle user activation")
         });
     });
 
-    $('#userAdminTable').on('click', '.superuser input', function(e) {
+    $('#userManagerTable').on('click', '.superuser input', function(e) {
         e.preventDefault();
         const checkbox = this;
         const isSuperuser = $(checkbox).is(':checked');
@@ -616,13 +623,11 @@
                     user.roleList = user.roleList.filter(item => item !== "SUPERUSER");
                 }
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle superuser role")
         });
     });
 
-    $('#userAdminTable').on('click', '.admin input', function(e) {
+    $('#userManagerTable').on('click', '.admin input', function(e) {
         e.preventDefault();
         const checkbox = this;
         const isAdmin = $(checkbox).is(':checked');
@@ -639,45 +644,49 @@
                     user.roleList = user.roleList.filter(item => item !== "ADMIN");
                 }
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle admin rights")
         });
     });
 
     function fillUserToolbar(toolbar, username, authMethod) {
         // Setup user settings button
         if (authMethod == "OAUTH_GOOGLE" || authMethod == "OIDC" || authMethod == "ORCID") {
-            toolbar.find('.user-settings button').attr('disabled', true);
-            toolbar.find('.user-settings').attr('title', "Google/OIDC/ORCID authenticated users can't be edited (they get their user data from the external identity provider).");
+            disableButton(toolbar.find('.user-settings button'));
+            toolbar.find('.user-settings').attr('data-bs-title', "Google/OIDC/ORCID authenticated users cannot be edited (they get their user data from the external identity provider).");
         }
 
         // Setup change password button
         if (username == "admin" && window.signedinUser.username != "admin") {
-            toolbar.find('.user-change-password button').attr('disabled', true);
-            toolbar.find('.user-change-password').attr('title', "Only user admin can change their own password.");
+            disableButton(toolbar.find('.user-change-password button'));
+            toolbar.find('.user-change-password').attr('data-bs-title', "Only user admin can change their own password.");
         } else if (authMethod !== "DB") {
-            toolbar.find('.user-change-password button').attr('disabled', true);
-            toolbar.find('.user-change-password').attr('title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) can't be changed in JATOS");
+            disableButton(toolbar.find('.user-change-password button'));
+            toolbar.find('.user-change-password').attr('data-bs-title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) cannot be changed in JATOS");
         }
 
         // Setup delete user button
         if (username == "admin") {
-            toolbar.find('.user-delete button').attr('disabled', true);
-            toolbar.find('.user-delete').attr('title', "It is not possible to delete the user 'admin'.");
+            disableButton(toolbar.find('.user-delete button'));
+            toolbar.find('.user-delete').attr('data-bs-title', "It is not possible to delete the user 'admin'.");
         } else if (username == window.signedinUser.username) {
-            toolbar.find('.user-delete button').attr('disabled', true);
-            toolbar.find('.user-delete').attr('title', "You cannot delete your own user here - but you can delete yourself in the user menu (click on your username in the header).");
+            disableButton(toolbar.find('.user-delete button'));
+            toolbar.find('.user-delete').attr('data-bs-title', "You cannot delete your own user here - but you can delete yourself in the user menu (click on your username in the header).");
         }
     }
 
-    $('#userAdminTable').on('click', '.user-settings button:not(:disabled)', function() {
+    function disableButton($btn) {
+        $btn.attr('disabled', true)
+            .removeClass("btn-admin")
+            .addClass("btn-outline-secondary");
+    }
+
+    $('#userManagerTable').on('click', '.user-settings button:not(:disabled)', function() {
         const tr = $(this).closest("tr");
         const user = dataTable.row(tr).data();
 
         $("#userSettingsForm")[0].reset();
         FormValidation.clear("#userSettingsForm");
-        $("#userSettingsModal .modal-title").text(`Change the settings of "${user.name}" (${user.username})`);
+        Helpers.generateModalSubtitles("#userSettingsModal", {"Username": user.username});
         $('#userSettingsName').val(user.name);
         $('#userSettingsEmail').val(user.email);
         $("#userSettingsModal").modal('show');
@@ -698,20 +707,22 @@
                     alerts.warning(`${user.username}'s settings were not changed.`, 5000);
                     if (Helpers.isJson(response.responseText)) {
                         FormValidation.show("#userSettingsForm", response.responseJSON);
+                    } else if (err.responseText) {
+                        alerts.error(err.responseText);
                     } else {
-                        alerts.error(response.responseText);
+                        alerts.error("Couldn't change user settings");
                     }
                 }
             });
         });
     });
 
-    $('#userAdminTable').on('click', '.user-change-password button:not(:disabled)', function() {
+    $('#userManagerTable').on('click', '.user-change-password button:not(:disabled)', function() {
         const tr = $(this).closest("tr");
         const user = dataTable.row(tr).data();
         $("#changePasswordForm")[0].reset();
         FormValidation.clear("#changePasswordForm");
-        $("#changePasswordModal .modal-title").text(`Change the password of "${user.name}" (${user.username})`);
+        Helpers.generateModalSubtitles("#changePasswordModal", {"Username": user.username});
         $("#changePasswordUsername").val(user.username);
         PasswordVisibilityToggle.setPasswordVisibility(false);
         $('#changePasswordStrengthDescription').html(window.common.userPasswordStrengthDescription
@@ -731,21 +742,23 @@
                     alerts.warning(`${user.username}'s password was not changed.`, 5000);
                     if (Helpers.isJson(response.responseText)) {
                         FormValidation.show("#changePasswordForm", response.responseJSON);
+                    } else if (err.responseText) {
+                        alerts.error(err.responseText);
                     } else {
-                        alerts.error(response.responseText);
+                        alerts.error("Couldn't change user password");
                     }
                 }
             });
         });
     });
 
-    $('#userAdminTable').on('click', '.user-delete button:not(:disabled)', function() {
+    $('#userManagerTable').on('click', '.user-delete button:not(:disabled)', function() {
         const tr = $(this).closest("tr");
         const row = dataTable.row(tr);
         const user = row.data();
         $("#deleteUserForm")[0].reset();
         FormValidation.clear("#deleteUserForm");
-        $("#deleteUserModal .modal-title").text(`Deletion of user "${user.name}" (${user.username})`);
+        Helpers.generateModalSubtitles("#deleteUserModal", {"Username": user.username});
         $('#deleteUserConfirmationText').html(generateDeleteUserConfirmationHtml(user));
         $("#deleteUserModal").modal('show');
 
@@ -763,8 +776,10 @@
                     alerts.warning(`User ${user.username} was not deleted.`, 5000);
                     if (Helpers.isJson(response.responseText)) {
                         FormValidation.show("#deleteUserForm", response.responseJSON);
+                    } else if (err.responseText) {
+                        alerts.error(err.responseText);
                     } else {
-                        alerts.error(response.responseText);
+                        alerts.error("Couldn't delete user");
                     }
                 }
             });

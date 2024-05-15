@@ -1,43 +1,42 @@
-@(signedinUser: common.User, study: common.Study)
-@import controllers.gui.routes._
 @import general.common._
-@import utils.common._
 
 @* Change study's user members Modal *@
 <div class="modal fade" id="studyMemberUsersModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Change which users are member of this study</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="text-truncate modal-title flex-grow-1">
+                    <span data-bs-tooltip data-bs-title="Check and change who has access to this study">Member users</span>
+                </h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <label for="changeMemberUsersUsername" class="form-label info-icon" data-toggle="tooltip" title="Only usernames of existing JATOS user.">
+                <label for="changeMemberUsersUsername" class="form-label info-icon" data-bs-tooltip data-bs-title="Only usernames of existing JATOS user.">
                     Add user by username
                 </label>
                 <div class="row g-3">
                     <div class="col-7">
                         <form class="form-study mb-4" id="changeMemberUsersForm">
                             <div class="input-group">
-                                    <input type="text" class="form-control" id="changeMemberUsersUsername" placeholder="username" required>
-                                    <input type="submit" class="btn btn-study" value="Add">
+                                <input type="text" class="form-control" id="changeMemberUsersUsername" placeholder="username" required>
+                                <button type="button" class="btn btn-study" id="changeMemberUsersConfirmed">Add</button>
                             </div>
                         </form>
                     </div>
                     @if(Common.isStudyMembersAllowedToAddAllUsers()) {
                     <div class="col">
-                        <button class="btn btn-study" id="changeMemberUsersAddAll" type="button" data-toggle="tooltip" title="Give all users access to this study">
+                        <button class="btn btn-study" id="changeMemberUsersAddAll" type="button" data-bs-tooltip data-bs-title="Give all users access to this study">
                             Add All
                         </button>
                     </div>
                     }
                 </div>
-                <table class="table table-hover w-100 align-middle">
+                <table class="table table-hover align-middle w-100" id="studyMemberUsersTable">
                     <thead>
                         <tr>
                             <th>Name<span class="ordering-icon"></span></th>
                             <th>
-                                <button class="btn btn-sm btn-study text-nowrap" id="changeMemberUsersRemoveAll" type="button" data-toggle="tooltip" title="Remove access rights to this study from all users except yourself">
+                                <button class="btn btn-study text-nowrap" id="changeMemberUsersRemoveAll" type="button" data-bs-tooltip data-bs-title="Remove access rights to this study from all users except yourself">
                                     Remove All
                                 </button>
                             </th>
@@ -57,17 +56,16 @@
 
     const alerts = new Alerts.Named("change-members");
 
-    // Max length of each worker table before pagination kicks in
-    const paginationLength = 10;
     let memberUserTable;
 
     $("#studyMemberUsersModal").on('show.bs.modal', function() {
         $("#changeMemberUsersForm")[0].reset();
         FormValidation.clear("#changeMemberUsersForm");
+        Helpers.generateModalSubtitles("#studyMemberUsersModal", {"Study": window.study.title});
         initMemberUserTable();
         memberUserTable.columns.adjust(); // Needed for columns width after toggle button drawing
-        @if(Helpers.isAllowedSuperuser(signedinUser)) {
-        alerts.info("As a Superuser you have access to all studies like a study member.");
+        if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
+            alerts.info("As a Superuser you have access to all studies like a study member.");
         }
     });
 
@@ -80,21 +78,15 @@
             return;
         }
 
-        memberUserTable = $('#studyMemberUsersModal .table').DataTable({
+        memberUserTable = $('#studyMemberUsersTable').DataTable({
             "ajax": {
                 "url" : window.routes.Studies.memberUsers(window.study.id),
-                "error": function (err) {
-                    if (err.responseText) {
-                        alerts.error(err.responseText);
-                    } else {
-                        alerts.error("Cannot read member users data.");
-                    }
-                }
+                "error": () => Alerts.error("Cannot read member users data.")
             },
-            "initComplete": toggleTablePagination,
             "dom": "t<'row'<'mt-2'p>>",
             "order": [[ 0, "asc" ]],
-            "pageLength": paginationLength,
+            "pageLength": 10,
+            "pagingType": "full_numbers",
             "autoWidth": false,
             "columns": [
                 {
@@ -109,13 +101,13 @@
                     "render": function (data, type, full, meta) {
                         if (data.isMember) {
                             return `<div class="flex-direction text-nowrap">
-                                <button type="button" class="btn btn-sm btn-study change-member-users-toggle" data-toggle="tooltip" title="Click to remove this user from this study">
+                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip data-bs-title="Click to remove this user from this study">
                                     Remove
                                 </button>
                             </div>`;
                         } else {
                             return `<div class="flex-direction text-nowrap">
-                                <button type="button" class="btn btn-sm btn-study change-member-users-toggle" data-toggle="tooltip" title="Click to add this user to the study again">
+                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip data-bs-title="Click to add this user to the study again">
                                     Add
                                 </button>
                             </div>`;
@@ -130,14 +122,19 @@
                     "next": `<i class="bi-chevron-right"></i>`,
                     "last": `<i class="bi-chevron-double-right"></i>`
                 }
+            },
+            "drawCallback": function(settings, json) {
+                toggleTablePagination(this.api());
+                Helpers.activateTooltips('#studyMemberUsersModal');
             }
         });
     }
 
-    function toggleTablePagination() {
-        const rowNumber = memberUserTable.rows().count();
-        const hidePaging = rowNumber <= paginationLength;
-        $('#studyMemberUsersModal .table').parent().find('.dataTables_paginate').toggle(!hidePaging);
+    function toggleTablePagination(dataTable) {
+        const rowNumber = dataTable.rows().count();
+        const pageLength = dataTable.page.len(); // Get DataTable's "pageLength" property
+        const hidePaging = rowNumber <= pageLength;
+        $(dataTable).find('.dt-paging').toggleClass("d-none", hidePaging);
     }
 
     $('#changeMemberUsersAddAll').click(function() {
@@ -145,11 +142,9 @@
             url : window.routes.Studies.addAllMemberUsers(window.study.id),
             type : "POST",
             success: function(user) {
-                memberUserTable.ajax.reload(toggleTablePagination);
+                memberUserTable.ajax.reload();
             },
-            error : function(err) {
-                alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't add all users")
         });
     });
 
@@ -157,17 +152,14 @@
         $.ajax({
             url : window.routes.Studies.removeAllMemberUsers(window.study.id),
             type : "DELETE",
-            success: function(user) {
-                memberUserTable.ajax.reload(toggleTablePagination);
-            },
-            error : function(err) {
-                alerts.error(err.responseText);
-            }
+            success: () => memberUserTable.ajax.reload(),
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't remove all users")
         });
     });
 
-    $('#changeMemberUsersForm').submit(function(event) {
-        event.preventDefault();
+    Helpers.triggerButtonByEnter("#changeMemberUsersForm", "#changeMemberUsersConfirmed");
+
+    $('#changeMemberUsersConfirmed').click(function(event) {
         const username = $('#changeMemberUsersUsername').val();
         $.ajax({
             url: window.routes.Studies.toggleMemberUser(window.study.id, username, true),
@@ -176,9 +168,7 @@
                 $("#changeMemberUsersForm")[0].reset();
                 alterTableAfterUserAdding(user);
             },
-            error: function(err) {
-                alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle member user")
         });
     });
 
@@ -194,7 +184,7 @@
                     const button = $(this.node()).find('.change-member-users-toggle');
                     button.html($(button.html())
                         .html('Remove')
-                        .attr('title', "Click to remove this user from this study"));
+                        .attr('data-bs-title', "Click to remove this user from this study"));
                 }
                 this.data(user);
                 return;
@@ -202,7 +192,7 @@
         });
         if (!isAlreadyInTable) {
             memberUserTable.row.add(user).draw(false);
-            toggleTablePagination();
+            toggleTablePagination(memberUserTable);
         }
     }
 
@@ -221,9 +211,7 @@
             success: function(user) {
                 memberUserTable.row(tr).data(user);
             },
-            error: function(err) {
-                alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle member user")
         });
     });
 </script>

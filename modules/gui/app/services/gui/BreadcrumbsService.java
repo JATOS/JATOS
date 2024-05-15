@@ -20,10 +20,11 @@ import javax.inject.Singleton;
 public class BreadcrumbsService {
 
     public static final String RESULTS = "Results";
-    public static final String STUDY_LINKS = "Study Links";
+    public static final String COMPONENT_RESULTS = "Component results";
+    public static final String STUDY_LINKS = "Study links";
     public static final String ADMINISTRATION = "Administration";
-    public static final String USER_MANAGER = "User Manager";
-    public static final String STUDY_MANAGER = "Study Manager";
+    public static final String USER_MANAGER = "User manager";
+    public static final String STUDY_MANAGER = "Study manager";
 
     public String generateForHome() {
         return generateForHome(null);
@@ -44,21 +45,6 @@ public class BreadcrumbsService {
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(ADMINISTRATION, "");
-        }
-        return asJson(breadcrumbs);
-    }
-
-    public String generateForUser(User user) {
-        return generateForUser(user, null);
-    }
-
-    public String generateForUser(User user, String last) {
-        Breadcrumbs breadcrumbs = new Breadcrumbs();
-        if (last != null) {
-            breadcrumbs.addBreadcrumb(user.toString(), routes.Users.profile(user.getUsername()).url());
-            breadcrumbs.addBreadcrumb(last, "");
-        } else {
-            breadcrumbs.addBreadcrumb(user.toString(), "");
         }
         return asJson(breadcrumbs);
     }

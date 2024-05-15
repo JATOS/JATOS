@@ -1,34 +1,32 @@
-@(study: common.Study)
-
-<!-- Show Batch or Group Session Data Modal -->
+@* Show Batch or Group Session Data Modal *@
 <div class="modal fade" id="sessionModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Current session data</h5>
-                <button type="button" class="btn btn-close btn-nav" data-bs-dismiss="modal"></button>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Current session data</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-2">
+                <div class="mb-2" id="sessionInfo">
                     <i class="bi-exclamation-triangle text-warning pe-1"></i>
                     Changing session data can affect your running study. You should only edit them if you know what you are doing.
                 </div>
                 <form class="form-batch" id="sessionForm">
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="sessionFormJsonData" data-toggle="tooltip" title="Edit your session data here.">
-                            JSON input<br>
-                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#sessionJsonEditor">Pretty</button>
+                        <label class="col-sm-2 col-form-label" for="sessionFormJsonData" data-bs-tooltip data-bs-title="Edit your session data here">
+                            Session data<br>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#sessionJsonEditor" data-bs-tooltip data-bs-title="Format your session's JSON nicely">Pretty</button>
                         </label>
-                        <div class="col-sm-9">
+                        <div class="col-sm-10">
                             <div class="form-control" id="sessionJsonEditor"></div>
-                            <!-- We use hidden textarea and input here to transfer the JSON data and version to the form POST -->
+                            @* We use hidden textarea and input here to transfer the JSON data and version to the form POST *@
                             <textarea id="sessionFormJsonData" name="data" hidden></textarea>
                             <input type="hidden" id="sessionFormVersion" name="version" />
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="sessionModalFooter">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-batch" id="sessionConfirmed">Save</button>
             </div>
@@ -46,7 +44,7 @@
     $("#sessionModal").on('hide.bs.modal', alerts.hideAll);
 
     $('#batchTable').on('click', '.batch-session', function() {
-        const batch = getBatchData(this);
+        const batch = Helpers.getDataFromDataTableRow($("#batchTable").DataTable(), this);
         const dataUrl = window.routes.StudyLinks.batchSessionData(window.study.id, batch.id);
         $('#sessionModal').data('type', 'batch');
         $('#sessionModal').data('properties', batch);
@@ -65,12 +63,8 @@
     function loadSession(dataUrl) {
         $.ajax({
             url: dataUrl,
-            success: function(session) {
-                fillSessionModal(session);
-            },
-            error: function(response) {
-                Alerts.error("Couldn't load session data.");
-            }
+            success: fillSessionModal,
+            error: (err) => Alerts.error("Couldn't load session data.")
         });
     }
 
@@ -80,12 +74,17 @@
         const type = $('#sessionModal').data('type');
         const properties = $('#sessionModal').data('properties');
         if (type == 'batch') {
-            $('#sessionModal .modal-title').text(`Current batch session data for batch "${properties.title}"`);
+            $('#sessionModal .modal-title').text("Current batch session data");
+            Helpers.generateModalSubtitles("#sessionModal", {"Batch": properties.title});
         } else if (type == 'group') {
-            $('#sessionModal .modal-title').text(`Current group session data for group with ID ${properties.id}`);
+            $('#sessionModal .modal-title').text("Current group session data");
+            Helpers.generateModalSubtitles("#sessionModal", {"Group ID": properties.id});
         }
+
         const sessionData = session.data ? session.data : "{}";
         Editor.setup("json", sessionData, "#sessionJsonEditor");
+        Editor.focus("#sessionJsonEditor");
+
         $('#sessionFormVersion').val(session.version);
         $('#sessionModal').modal('show');
     }
@@ -116,21 +115,17 @@
                 $('#sessionModal').modal('hide');
                 Alerts.success("The session data were changed successfully.");
             },
-            error: function(response) {
+            error: function(err) {
                 FormValidation.clear("#sessionForm");
                 alerts.warning("The session data were not saved.");
-                if (Helpers.isJson(response.responseText)) {
-                    FormValidation.show("#sessionForm", response.responseJSON);
+                if (Helpers.isJson(err.responseText)) {
+                    FormValidation.show("#sessionForm", err.responseJSON);
+                } else if (err.responseText) {
+                    alerts.error(err.responseText);
                 } else {
-                    alerts.error(response.responseText);
+                    alerts.error("Couldn't change session data");
                 }
             }
         });
     }
-
-    function getBatchData(element) {
-        const batchRow = $(element).closest('tr');
-        return $("#batchTable").DataTable().row(batchRow).data();
-    }
-
 </script>

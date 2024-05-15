@@ -1,0 +1,111 @@
+@* Shortcut to create all different types of study links. *@
+
+<div class="modal fade" id="studyLinksCreatorAllTypesModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Get study links</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-batch" id="studyLinksCreatorAllTypesForm">
+                    <div class="row mb-2">
+                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorAllTypesBatchSelect">
+                            Choose batch
+                        </label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="studyLinksCreatorAllTypesBatchSelect"></select>
+                            <span class="form-text" id="studyLinksCreatorAllTypesAllowedInBatch"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <label class="col-sm-3 col-form-label" for="studyLinksCreatorAllTypesTypeSelect">
+                            Choose type
+                        </label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="studyLinksCreatorAllTypesTypeSelect"></select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-batch" id="studyLinksCreatorAllTypesConfirmed">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+
+    $("#studyLinksCreatorAllTypesModal").on('show.bs.modal', function() {
+        $("#studyLinksCreatorAllTypesForm")[0].reset();
+        $("#studyLinksCreatorAllTypesBatchSelect").empty();
+        $("#studyLinksCreatorAllTypesTypeSelect").empty();
+        $('#studyLinksCreatorAllTypesModal').off('hidden.bs.modal');
+
+        const batchList = $("#batchTable").DataTable().data();
+        $.each(batchList, function(index, batch) {
+            const allowedTypes = batch.allowedWorkerTypes.filter(t => t !== "Jatos" && t !== "MTSandbox");
+            const option = $(`<option value="${batch.id}">${batch.title}</option>`)
+                .data("allowed-types", allowedTypes)
+                .data("batch", batch);
+            $("#studyLinksCreatorAllTypesBatchSelect").append(option);
+        });
+
+        const availableTypes = Object.entries(Helpers.getWorkerTypeNames())
+            .filter(([k, v]) => k !== "MTSandbox" && k !== "Jatos"); // Filter out types that we do not want here
+        $.each(availableTypes, function(index, type) {
+            $("#studyLinksCreatorAllTypesTypeSelect").append(`<option value="${type[0]}">${type[1]}</option>`);
+        });
+
+        $("#studyLinksCreatorAllTypesBatchSelect").trigger("change");
+    });
+
+    $("#studyLinksCreatorAllTypesBatchSelect").change(function() {
+        const $selectedOption = $(this).find(":selected");
+        const batch = $selectedOption.data("batch");
+        const allowedTypes = $selectedOption.data("allowed-types")
+                .map(t => `<b>${Helpers.getWorkerTypeUIName(t)}</b>`)
+                .join(", ");
+        const batchDeactivated = `<i class="bi-exclamation-triangle text-warning pe-1"></i>
+                <span class="text-warning">Batch "${batch.title}" is currently <b>deactivated</b>.</span>`
+        const html = `
+                ${!batch.active ? batchDeactivated : ""}
+                In batch "${batch.title}" the currently allowed types are: ${allowedTypes ? allowedTypes : "none"}`;
+        $("#studyLinksCreatorAllTypesAllowedInBatch").html(html);
+    });
+
+    $('#studyLinksCreatorAllTypesConfirmed').click('click', function(e) {
+        const type = $("#studyLinksCreatorAllTypesTypeSelect option:selected").val();
+        const batch = $("#studyLinksCreatorAllTypesBatchSelect option:selected").data("batch");
+
+        switch (type) {
+        case 'PersonalSingle':
+        case 'PersonalMultiple':
+            $("#studyLinksCreatorModal").data("type", type);
+            $("#studyLinksCreatorModal").data("batch", batch);
+            $('#studyLinksCreatorAllTypesModal')
+                    .modal('hide')
+                    .on('hidden.bs.modal', () => $("#studyLinksCreatorModal").modal('show'));
+            break;
+        case 'GeneralSingle':
+        case 'GeneralMultiple':
+            $('#singleStudyLinkDisplayModal').data('batch', batch);
+            $('#singleStudyLinkDisplayModal').data('type', type);
+            $('#studyLinksCreatorAllTypesModal')
+                    .modal('hide')
+                    .on('hidden.bs.modal', () => $("#singleStudyLinkDisplayModal").modal('show'));
+            break;
+        case 'MT':
+            $('#mtSourceCodeModal').data('batch', batch);
+            $('#studyLinksCreatorAllTypesModal')
+                    .modal('hide')
+                    .on('hidden.bs.modal', () => $("#mtSourceCodeModal").modal('show'));
+            break;
+        }
+    });
+
+</script>

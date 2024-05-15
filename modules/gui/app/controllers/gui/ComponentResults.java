@@ -27,6 +27,8 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+
 /**
  * Controller that deals with requests regarding ComponentResult.
  *
@@ -68,7 +70,8 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result componentResults(Long studyId, Long componentId) throws JatosGuiException {
+    @SaveLastVisitedPageUrl
+    public Result componentResults(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
@@ -76,11 +79,11 @@ public class ComponentResults extends Controller {
             checker.checkStandardForStudy(study, studyId, signedinUser);
             checker.checkStandardForComponent(studyId, componentId, component);
         } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwHome(e);
+            jatosGuiExceptionThrower.throwHome(request, e);
         }
 
-        String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.result.componentResults_new.render(signedinUser, breadcrumbs, study, component));
+        String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.COMPONENT_RESULTS);
+        return ok(views.html.gui.results.componentResults_new.render(request, signedinUser, breadcrumbs, study, component));
     }
 
     /**

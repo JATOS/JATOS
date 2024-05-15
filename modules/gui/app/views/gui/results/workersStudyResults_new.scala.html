@@ -1,0 +1,356 @@
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String, worker: common.workers.Worker)
+
+@views.html.gui.page.main_new(request, signedinUser, None, Some(worker), breadcrumbs) {
+
+<main class="container-fluid overflow-auto mt-4">
+
+    @* Result table *@
+    <table class="table table-hover align-middle w-100" id="resultsTable" >
+        <thead>
+            <tr>
+                @* If you change something in the head, copy-paste it into the footer too! *@
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the component results. The component results contain the actual result data and result files."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The time of the last heartbeat of the study run (in local time)">Last seen<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The duration from start to end or if the study isn't finished yet from start to last seen. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the study's results page">Study ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Title of the study">Study<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Title of the batch">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the batch this study belongs to">Batch ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's worker ID (not to be confused with JATOS' worker ID)">MTurk worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's confirmation code">MTurk confirmation code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Are there any uploaded result files? Open the component results to actually see them.">Files<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The current state of this study run, like @common.StudyResult.StudyState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the study run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                @* If you change something in the head, copy-paste it into the footer too! *@
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the component results. The component results contain the actual result data and result files."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The time of the last heartbeat of the study run (in local time)">Last seen<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The duration from start to end or if the study isn't finished yet from start to last seen. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the study's results page">Study ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Title of the study">Study<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Title of the batch">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the batch this study belongs to">Batch ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's worker ID (not to be confused with JATOS' worker ID)">MTurk worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's confirmation code">MTurk confirmation code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Are there any uploaded result files? Open the component results to actually see them.">Files<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The current state of this study run, like @common.StudyResult.StudyState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the study run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
+            </tr>
+        </tfoot>
+    </table>
+
+    @views.html.gui.results.componentResultDataModal_new()
+    @views.html.gui.results.resultsTableToolbar_new()
+
+</main>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import { Toolbars } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/toolbars.js")";
+    import { ComponentResultInfo } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/componentResultInfo.js")";
+    import { isAllSelected } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/utils.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
+    import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
+    import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
+    import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
+
+    const info = [
+        {"name": "Worker ID", "value": window.worker.id, "tooltip": "This ID is unique for this worker, in this JATOS instance, regardless of its type"},
+        {"name": "Worker type", "value": Helpers.getWorkerTypeUIName(window.worker.workerType), "tooltip": "Type of this worker. It corresponds to the type of the study link that was used for the study run."},
+    ];
+    switch(window.worker.workerType) {
+        case "Jatos":
+            const workerInfoUser = window.worker.isJatosUserDefined ? window.worker.jatosUserName : "unknown (user was probably deleted)";
+            info.push({"name": "User", "value": workerInfoUser, "tooltip": "This is the username of the JATOS user that is associated to this worker."});
+            break;
+        case "PersonalSingle":
+        case "PersonalMultiple":
+            const comment = window.worker.comment ? window.worker.comment : "no comment";
+            info.push({"name": "Comment", "value": comment, "tooltip": "This is the comment that was originally given to the study link."});
+            break;
+        case "MT":
+        case "MTSandbox":
+            info.push({"name": "MTurk worker ID", "value": window.worker.mtWorkerId, "tooltip": "This is the ID of the MTurk worker. It was passed on to JATOS by MTurk. Don't confuse this with JATOS worker ID."});
+            break;
+    }
+    $("#resultsTable").before(InfoCard.render(info));
+
+    let dataTable;
+    $(document).ready(function() {
+        dataTable = $('#resultsTable').DataTable({
+            "ajax": {
+                "url" : window.routes.StudyResults.tableDataByWorker(window.worker.id),
+                "dataSrc": "",
+                "beforeSend": WaitingModal.show,
+                "error": () => Alerts.error("Error reading result data"),
+                "complete": WaitingModal.hide
+            },
+            "dom": "lfrt<'row my-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 study-results'p>>",
+            "order": [[ 2, "desc" ]],
+            "lengthMenu": [[10, 25, 50, 100, 250, 500, 1000, 2500, -1], [10, 25, 50, 100, 250, 500, 1000, 2500, "All"]],
+            "pageLength": 10,
+            "pagingType": "full_numbers",
+            "stateSave": true,
+            "scrollX": true,
+            "stateSaveParams": function (settings, data) {
+                // does not work in FF
+                data.search.search = "";
+                data.start = 0;
+            },
+            "columns": [
+                {
+                    "className": "details-control no-colvis",
+                    "orderable": false,
+                    "data": "componentResultCount",
+                    "render": function (data, type, full, meta) {
+                        const tooltip = data > 0
+                                    ? `This study result has ${data} component result(s). Click to show the component results.`
+                                    : "This study result has no component results (yet).";
+                        return `<button type="button" class="btn btn-study text-nowrap collapse-result-data dropdown-toggle"
+                                data-bs-tooltip data-bs-title="${tooltip}">
+                                <span class="badge text-study bg-white rounded-pill">${data}</span></button>`;
+                    }
+                },
+                {
+                    "className": "no-colvis",
+                    "data": null,
+                    "orderable": false,
+                    "render": function (data, type, full, meta) {
+                            return `<button type="button" class="btn btn-secondary select-checkbox" data-bs-tooltip
+                                data-bs-title="Check this box to select this result for export or deleting."><i class="bi-square"></i></button>`;
+                    }
+                },
+                {
+                    "data": "id",
+                    "width": "1%"
+                },
+                {
+                    "data": "uuid",
+                    "className": "text-break",
+                    "visible": false,
+                    "width": "10%"
+                },
+                {
+                    "data": "studyCode",
+                    "visible": false,
+                    "width": "1%"
+                },
+                {
+                    "data": "startDate",
+                    "render": Helpers.getLocalTimeDataTables
+                },
+                {
+                    "data": "endDate",
+                    "visible": false,
+                    "render": Helpers.getLocalTimeDataTables
+                },
+                {
+                    "data": "lastSeenDate",
+                    "render": Helpers.getLocalTimeDataTables
+                },
+                {
+                    "data": "duration",
+                    "render": d => d ? d : '<span class="text-body text-opacity-50">not yet</span>'
+                },
+                {
+                    "data": "studyId",
+                    "width": "1%",
+                    "visible": false,
+                    "render": function (data, type, full, meta) {
+                        if (type === 'display') {
+                            return `<a role="button" class="btn btn-study" data-bs-tooltip data-bs-title="Click to go to this study's results page"
+                                href="${window.routes.StudyResults.studysStudyResults(data)}">${data}</a>`;
+                        }
+                        return data;
+                    }
+                },
+                {
+                    "data": "studyTitle"
+                },
+                {
+                    "data": "batchTitle"
+                },
+                {
+                    "data": "batchId",
+                    "visible": false,
+                    "width": "1%",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'display') {
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to go to this batch's results page"
+                                href="${window.routes.StudyResults.batchesStudyResults(full.studyId, data)}">${data}</a>`;
+                        }
+                        return data;
+                    }
+                },
+                {
+                    "data": "mtWorkerId",
+                    "visible": false,
+                    "width": "1%",
+                    "render": id => id ? id : '<span class="text-body text-opacity-50">none</span>'
+                },
+                {
+                    "data": "confirmationCode",
+                    "visible": false,
+                    "width": "1%",
+                    "render": cc => cc ? cc : '<span class="text-body text-opacity-50">none</span>'
+                },
+                {
+                    "data": "groupId",
+                    "width": "1%",
+                    "visible": false,
+                    "render": function (data, type, full, meta) {
+                        if (type === 'display') {
+                            if (!data) return '<span class="text-body text-opacity-50">none</span>';
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to get this group's results page"
+                                href="${window.routes.StudyResults.groupsStudyResults(full.studyId, data)}">${data}</a>`;
+                        }
+                        return data;
+                    }
+                },
+                {
+                    "data": "hasResultFiles",
+                    "visible": false,
+                    "width": "1%",
+                    "render": data => data ? '<i class="bi-check2"></i>' : '<i class="bi-dash-lg"></i>'
+                },
+                { "data": "studyState" },
+                {
+                    "data": "message",
+                    "render": data => data ? data : '<span class="text-body text-opacity-50">none</span>'
+                }
+            ],
+            "select": {
+                "style": 'multi',
+                "selector": 'td:nth-child(2)'
+            },
+            "buttons": [],
+            "searchBuilder": {
+                columns: ':not(:first-child):not(:nth-child(2)):not(th:contains(Files))'
+            },
+            "language": {
+                "lengthMenu": "Show: _MENU_",
+                "searchBuilder": {
+                    "clearAll": "Reset",
+                    "title": "Custom Filter Builder",
+                    "data": "Field"
+                },
+                "paginate": {
+                    "first": `<i class="bi-chevron-double-left"></i>`,
+                    "previous": `<i class="bi-chevron-left"></i>`,
+                    "next": `<i class="bi-chevron-right"></i>`,
+                    "last": `<i class="bi-chevron-double-right"></i>`
+                },
+                "emptyTable": "No results yet"
+            },
+            "drawCallback": function(settings) {
+                Helpers.setButtonWidthToMax("#resultsTable_wrapper button.collapse-result-data");
+                Helpers.activateTooltips('#resultsTable_wrapper');
+            }
+        });
+
+        new Toolbars({
+            dataTable: dataTable,
+            type: "study",
+            exportResultsCallback: exportResults,
+            deleteSelectedResultsCallback: deleteSelectedResults
+        }).generate();
+    });
+
+    // Toggle export file button disabled if no files available
+    $('#resultsTableUpperToolbar').on('click', '#resultsTableExport', function() {
+        $("#resultsTableExport .exportFilesButton").addClass("disabled");
+        if (dataTable.rows().data().toArray().find(function(studyResult) { return studyResult.hasResultFiles })) {
+            $("#resultsTableExport .exportFilesButton").removeClass("disabled");
+        }
+    });
+
+    $('#resultsTable').on('click', 'td.details-control', function() {
+        const tr = $(this).closest('tr');
+        new ComponentResultInfo(dataTable).generate(tr);
+    });
+
+    function exportResults(url) {
+        $(".dt-button-collection").hide();
+        WaitingModal.show(true);
+        const selectedTrs = dataTable.rows('.selected').nodes();
+        const ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            const rowData = dataTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        WaitingModal.hide();
+        if (ids.length == 0) {
+            Alerts.error("No results selected", 5000);
+            return;
+        }
+        const data = JSON.stringify({"studyResultIds": ids});
+        FileSystemAccess.downloadFileStream(url, data);
+    }
+
+    function deleteSelectedResults(e, dt, node, config) {
+        $(".dt-button-collection").hide();
+        WaitingModal.show();
+        const selectedTrs = dataTable.rows('.selected').nodes();
+        const ids = [];
+        $.each(selectedTrs, function(index, selectedTr) {
+            const rowData = dataTable.row(selectedTr).data();
+            ids.push(rowData.id);
+        });
+        if (ids.length <= 0) {
+            WaitingModal.hide();
+            Alerts.error("No results selected", 5000);
+            return;
+        }
+
+        let htmlText;
+        if (isAllSelected()) {
+            htmlText = `<p>You are about to delete <b>ALL</b> (<b class="text-danger">EVERYTHING!</b>) study results <b>with all their component results</b>.</p>
+                <p><b class="text-danger">This cannot be undone.</b> Do you want to proceed?</p>`;
+        } else if(ids.length == 1) {
+            htmlText = `<p>You are about to delete the study result with the ID ${ids.join(", ")} <b>with all its component results</b>.</p>
+                <p><b class="text-danger">This cannot be undone.</b> Do you want to proceed?</p>`;
+        } else {
+            htmlText = `<p>You are about to delete ${ids.length} study results with the IDs ${ids.join(", ")} <b>with all their component results</b>.</p>
+                <p><b class="text-danger">This cannot be undone.</b> Do you want to proceed?</p>`;
+        }
+        const title = "Confirm deletion of results";
+        const action = function() {
+            WaitingModal.show();
+            $.ajax({
+                url : window.routes.StudyResults.remove,
+                type : 'PUT',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({"studyResultIds": ids}),
+                success : function(result) {
+                    $.each(selectedTrs, function(index, selectedTr) {
+                        dataTable.row(selectedTr).remove().draw();
+                    });
+                },
+                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't delete result"),
+                complete: WaitingModal.hide
+            });
+        };
+        WaitingModal.hide();
+        ConfirmationModal.show({ title: title, text: htmlText, btnText: 'Delete', action: action});
+    }
+</script>
+}

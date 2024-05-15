@@ -1,0 +1,40 @@
+@* Component result data Modal *@
+<div class="modal fade" id="componentResultDataModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1"></h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-body">
+                    <pre class="m-0"><code class="text-wrap text-break" id="componentResultData"></code></pre>
+                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
+
+    $('#resultsTable').on('click', '.info button.show-all', function() {
+        const componentResultId = $(this).closest('[id|=componentResultInfo]').data().id;
+        $('#componentResultDataModal .modal-title').text("Data of component result with ID " + componentResultId);
+        $('#componentResultData').text("");
+        $.ajax({
+            url: window.routes.ComponentResults.exportSingleResultData(componentResultId),
+            success : function(result) {
+                $('#componentResultData').text(result);
+                $('#componentResultDataModal').modal('show');
+            },
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get result data")
+        });
+    });
+
+    $('#componentResultDataModal').on('click', '.btn-clipboard', CopyToClipboard.onClick);
+
+</script>

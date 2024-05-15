@@ -1,21 +1,21 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.main_new(signedinUser, None, breadcrumbs) {
+@views.html.gui.page.main_new(request, signedinUser, None, None, breadcrumbs) {
 
 <main class="container-fluid overflow-auto mt-4">
 
-    <table class="table table-hover w-100" id="studyManagerTable">
+    <table class="table table-hover align-middle w-100" id="studyManagerTable">
         <thead>
             <tr>
-                <th class="no-info-icon" data-toggle="tooltip" title="A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still see and edit the study and export its result data.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th>ID<span class="ordering-icon"></span></th>
                 <th>Title<span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="All users who are member of this study">Members<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Size of study assets folder">Study assets size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Number of study results">Result count<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Size of result data: total for all study runs (average per result in brackets)">Result data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="Size of uploaded result files: total for all study runs (average per result in brackets)">Result file size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-toggle="tooltip" title="When was this study last started by a participant?">Last started<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="All users who are member of this study">Members<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Size of study assets folder">Study assets size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Number of study results">Result count<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Size of result data: total for all study runs (average per result in brackets)">Result data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="Size of uploaded result files: total for all study runs (average per result in brackets)">Result file size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip data-bs-title="When was this study last started by a participant?">Last started<span class="info-icon"></span><span class="ordering-icon"></span></th>
             </tr>
         </thead>
     </table>
@@ -47,6 +47,7 @@
             "stateSave": true,
             "scrollX": true,
             "stateSaveParams": function (settings, data) {
+                // does not work in FF
                 data.search.search = "";
             },
             "columns": [
@@ -57,7 +58,7 @@
                     "render": function (data, type, full, meta) {
                         if (type === 'export' || type === 'sort') return data.active.toString();
                         return `
-                            <label class="switch no-info-icon mt-1" data-toggle="tooltip" title="Click to de-/activate this user">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="Click to de-/activate this study. A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">
                                 <input type="checkbox" ${data.active ? "checked" : ""}>
                                 <span class="slider slider-admin round"></span>
                             </label>
@@ -69,7 +70,6 @@
                 },
                 {
                     "data": "title",
-                    "width": "30%",
                     "render": (data) => Helpers.trimTextWithThreeDots(data, 50)
                 },
                 {
@@ -117,7 +117,7 @@
                 },
                 {
                     "data": "lastStarted",
-                    "render": Helpers.getLocalTime
+                    "render": Helpers.getLocalTimeDataTables
                 }
             ],
             language: {
@@ -131,9 +131,10 @@
                 "emptyTable": "No studies yet"
             },
             "drawCallback": function( settings ) {
-                Helpers.activatePopovers();
-                $(".dt-length select").removeClass("form-select-sm");
-                $(".dt-search input").removeClass("form-control-sm");
+                Helpers.activateTooltips('#studyManagerTable');
+                Helpers.activatePopovers('#studyManagerTable');
+                $("#studyManagerTable_wrapper .dt-length select").removeClass("form-select-sm");
+                $("#studyManagerTable_wrapper .dt-search input").removeClass("form-control-sm");
             }
         });
     });
@@ -151,9 +152,7 @@
                 $(checkbox).prop('checked', isActive);
                 studyInfo.active = isActive;
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle study activation")
         });
     });
 
@@ -166,9 +165,7 @@
             success: function(response) {
                 $(button).parent().text(response.humanReadable);
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get study assets size")
         });
     });
 
@@ -181,9 +178,7 @@
             success: function(response) {
                 $(button).parent().text(response.humanReadable);
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get result data size")
         });
     });
 
@@ -196,11 +191,9 @@
             success: function(response) {
                 $(button).parent().text(response.humanReadable);
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't result file size")
         });
-});
+    });
 
 </script>
 }

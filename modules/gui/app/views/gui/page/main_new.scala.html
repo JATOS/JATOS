@@ -1,0 +1,96 @@
+@(request: Http.Request, signedinUser: common.User, studyOption: Option[common.Study], workerOption: Option[common.workers.Worker], breadcrumbs: String)(content: Html)
+@import general.common._
+@import general.gui._
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>JATOS</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/colorThemeToggler.js")"></script>
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("/favicon-96x96.png")" sizes="96x96">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("/favicon-16x16.png")" sizes="16x16">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("/favicon-32x32.png")" sizes="32x32">
+        <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.3/bootstrap.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/font/bootstrap-icons.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/main.css?v=" + Common.getJatosVersion())">
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.7.1.min.js")"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.js")"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/easy.qrcode.js")"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.3/bootstrap.bundle.min.js")"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/minidenticons.min.js")" type="module"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/showdown-2.1.0/showdown.min.js")"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/ace-1.5.0/ace.js")"></script>
+        @views.html.gui.settings(request, studyOption, Some(signedinUser), workerOption)
+        @views.html.gui.routes()
+        @if(Common.isOauthGoogleAllowed()) {
+        <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async></script>
+        }
+    </head>
+
+    <body class="container-fluid d-flex flex-column vh-100 overflow-hidden p-0">
+
+        @views.html.gui.page.navbar_new(signedinUser, breadcrumbs)
+        @views.html.gui.page.studySidebar_new()
+        @views.html.gui.page.userSidebar_new(signedinUser)
+
+        @************ Here goes the actual page content ************@
+        @content
+
+        @views.html.gui.page.waitingModal_new()
+        @views.html.gui.page.confirmationModal_new()
+        @views.html.gui.auth.signinModal_new()
+
+        <div class="toast-container top-0 end-0"></div>
+
+    </body>
+
+</html>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+
+    // Show messages from RequestScope and FlashScope
+    const messagesRequestScope = @Html(RequestScopeMessaging.getAsJson());
+    Alerts.showList(messagesRequestScope);
+    const messagesFlashScope = @Html(FlashScopeMessaging.getAsJson());
+    Alerts.showList(messagesFlashScope);
+
+    $(document).ready(() => Helpers.activateTooltips());
+
+    // Always focus on the first input element in a Modal
+    $('.modal').on('shown.bs.modal', function() {
+        $(this).find("input:text:visible:first").focus();
+    });
+
+    // Always focus on the first input element in a Offcanvas
+    $('.offcanvas').on('shown.bs.offcanvas', function() {
+        $(this).find("input:first").focus();
+    });
+
+    // Deal with modal backdrop and multiple modals in a stack
+    $(document).on('show.bs.modal', '.modal', function() {
+        if (this.id === "signinModal") return;
+
+        // For the newest Modal in the stack: set the z-index to 1040+2i (i be the number of shown Modals).
+        // 1040 is Bootstrap's default z-index for Modals.
+        const zIndex = 1040 + (2 * $('.modal.show').length);
+        $(this).css('z-index', zIndex);
+
+        // Set the z-index for each backdrop to 1039+2*i. The setTimeout is important!
+        setTimeout(() => {
+            $(".modal-backdrop").each((i, backdrop) => {
+                $(backdrop).css('z-index', 1039+2*i);
+            });
+        }, 0);
+    });
+
+    // Fix for Bootstrap 5 tooltips: sometimes they don't get disposed, e.g. with a button click or a Modal opening
+    $(document).on("click", function() {
+        $("[data-bs-tooltip]").tooltip("hide");
+    });
+</script>
+

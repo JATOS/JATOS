@@ -1,6 +1,7 @@
 package auth.gui;
 
 import auth.gui.AuthAction.Auth;
+import com.google.common.collect.ImmutableMap;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
@@ -10,14 +11,13 @@ import models.common.LoginAttempt;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
-import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.UserService;
-import utils.common.Helpers;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -56,8 +56,8 @@ public class Signin extends Controller {
     /**
      * Shows the sign-in page
      */
-    public Result signin() {
-        return ok(views.html.gui.auth.signin_new.render(formFactory.form(Signin.SigninData.class)));
+    public Result signin(Http.Request request) {
+        return ok(views.html.gui.auth.signin_new.render(request));
     }
 
     /**
@@ -65,73 +65,54 @@ public class Signin extends Controller {
      */
     @Transactional
     public Result authenticate(Http.Request request) {
-        Form<SigninData> signinForm = formFactory.form(SigninData.class).bindFromRequest(request);
-        String normalizedUsername = User.normalizeUsername(signinForm.rawData().get("username"));
-        String password = signinForm.rawData().get("password");
+        SigninData signinData = formFactory.form(SigninData.class).bindFromRequest(request).withDirectFieldAccess(true).get();
+        String normalizedUsername = User.normalizeUsername(signinData.getUsername());
+        String password = signinData.getPassword();
 
         if (authService.isRepeatedSigninAttempt(normalizedUsername)) {
-            return returnUnauthorizedDueToRepeatedSigninAttempt(signinForm, normalizedUsername, request.remoteAddress());
+            return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, request.remoteAddress());
         }
 
+        User user = userDao.findByUsername(normalizedUsername);
         boolean authenticated;
         try {
-            User user = userDao.findByUsername(normalizedUsername);
             authenticated = authService.authenticate(user, password);
         } catch (NamingException e) {
-            return returnInternalServerErrorDueToLdapProblems(signinForm, e);
+            return returnInternalServerErrorDueToLdapProblems(e);
         }
 
         if (!authenticated) {
             loginAttemptDao.create(new LoginAttempt(normalizedUsername));
             if (authService.isRepeatedSigninAttempt(normalizedUsername)) {
-                return returnUnauthorizedDueToRepeatedSigninAttempt(signinForm, normalizedUsername, request.remoteAddress());
+                return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, request.remoteAddress());
             } else {
-                return returnUnauthorizedDueToFailedAuth(signinForm, normalizedUsername, request.remoteAddress());
+                return returnUnauthorizedDueToFailedAuth(normalizedUsername, request.remoteAddress());
             }
         } else {
-            authService.writeSessionCookie(session(), normalizedUsername);
+            authService.writeSessionCookie(session(), normalizedUsername, signinData.getKeepSignedin());
             userService.setLastSignin(normalizedUsername);
             loginAttemptDao.removeByUsername(normalizedUsername);
-            if (Helpers.isAjax()) {
-                return ok();
-            } else {
-                return redirect(controllers.gui.routes.Home.home());
-            }
+            return ok(JsonUtils.asJsonNode(ImmutableMap.of(
+                    "redirectUrl", authService.getRedirectPageAfterSignin(user),
+                    "userSigninTime", Long.valueOf(session().get(AuthService.SESSION_SIGNIN_TIME)))));
         }
     }
 
-    private Result returnUnauthorizedDueToRepeatedSigninAttempt(Form<SigninData> signinForm, String normalizedUsername,
-            String remoteAddress) {
+    private Result returnUnauthorizedDueToRepeatedSigninAttempt(String normalizedUsername, String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress
                 + " failed repeatedly for username " + normalizedUsername);
-        if (Helpers.isAjax()) {
-            return unauthorized(MessagesStrings.FAILED_THREE_TIMES);
-        } else {
-            return unauthorized(
-                    views.html.gui.auth.signin.render(signinForm.withGlobalError(MessagesStrings.FAILED_THREE_TIMES)));
-        }
+        return unauthorized(MessagesStrings.FAILED_THREE_TIMES);
     }
 
-    private Result returnUnauthorizedDueToFailedAuth(Form<SigninData> signinForm, String normalizedUsername,
-            String remoteAddress) {
+    private Result returnUnauthorizedDueToFailedAuth(String normalizedUsername, String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " failed for username "
                 + normalizedUsername);
-        if (Helpers.isAjax()) {
-            return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
-        } else {
-            return unauthorized(views.html.gui.auth.signin
-                    .render(signinForm.withGlobalError(MessagesStrings.INVALID_USER_OR_PASSWORD)));
-        }
+        return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
     }
 
-    private Result returnInternalServerErrorDueToLdapProblems(Form<SigninData> signinForm, NamingException e) {
+    private Result returnInternalServerErrorDueToLdapProblems(NamingException e) {
         LOGGER.warn("LDAP problems - " + e.toString());
-        if (Helpers.isAjax()) {
-            return internalServerError(MessagesStrings.LDAP_PROBLEMS);
-        } else {
-            return internalServerError(views.html.gui.auth.signin
-                    .render(signinForm.withGlobalError(MessagesStrings.LDAP_PROBLEMS)));
-        }
+        return internalServerError(MessagesStrings.LDAP_PROBLEMS);
     }
 
     /**
@@ -142,9 +123,7 @@ public class Signin extends Controller {
     public Result signout(Http.Request request) {
         LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
         FlashScopeMessaging.success("You've been signed out.");
-        return redirect(auth.gui.routes.Signin.signin())
-                .withNewSession()
-                .discardingCookie(SigninGoogle.GOOGLE_PICTURE_URL);
+        return redirect(auth.gui.routes.Signin.signin()).withNewSession();
     }
 
     /**
@@ -153,6 +132,31 @@ public class Signin extends Controller {
     public static class SigninData {
         public String username;
         public String password;
+        public boolean keepSignedin = false;
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setKeepSignedin(boolean keepSignedin) {
+            this.keepSignedin = keepSignedin;
+        }
+
+        public boolean getKeepSignedin() {
+            return keepSignedin;
+        }
     }
 
 }

@@ -1,5 +1,6 @@
 package auth.gui;
 
+import com.google.common.base.Strings;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.Common;
@@ -15,6 +16,7 @@ import javax.inject.Singleton;
 import javax.naming.NamingException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 /**
  * Service class around authentication and the session cookie. It works together with the
@@ -22,7 +24,6 @@ import java.time.temporal.ChronoUnit;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class AuthService {
 
@@ -43,6 +44,12 @@ public class AuthService {
      * with this cookie
      */
     public static final String SESSION_LAST_ACTIVITY_TIME = "lastActivityTime";
+
+    /**
+     * Parameter name in Play's session cookie: true if the user wants to be kept signed in.
+     * This means the session does not time out.
+     */
+    public static final String SESSION_KEEP_SIGNEDIN = "keepSignedin";
 
     /**
      * Key name used in RequestScope to store the signed-in User
@@ -95,6 +102,7 @@ public class AuthService {
      * <p>
      * In most cases, getSignedinUser() is faster since it doesn't have to query the database.
      */
+    @SuppressWarnings("deprecation")
     public User getSignedinUserBySessionCookie(Http.Session session) {
         String normalizedUsername = session.get(AuthService.SESSION_USERNAME);
         User signedinUser = null;
@@ -117,19 +125,33 @@ public class AuthService {
      * Prepares Play's session cookie for the user with the given username to be signed-in. Does not authenticate the
      * user (use authenticate() for this).
      */
-    public void writeSessionCookie(Http.Session session, String normalizedUsername) {
+    @SuppressWarnings("deprecation")
+    public void writeSessionCookie(Http.Session session, String normalizedUsername, boolean keepSignedin) {
         session.put(SESSION_USERNAME, normalizedUsername);
         session.put(SESSION_SIGNIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
         session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
+        session.put(SESSION_KEEP_SIGNEDIN, String.valueOf(Common.getUserSessionAllowKeepSignedin() && keepSignedin));
+    }
+
+    /**
+     * Returns true if the user decided to be kept signed (checkbox on the sign-in page) AND if it is allowed to be kept
+     * signed in.
+     */
+    public boolean isSessionKeepSignedin(Http.Session session) {
+        Optional<String> keepSignedin = session.getOptional(SESSION_KEEP_SIGNEDIN);
+        boolean allowKeepSignedin = Common.getUserSessionAllowKeepSignedin();
+        return allowKeepSignedin && keepSignedin.isPresent() && keepSignedin.get().equals("true");
     }
 
     /**
      * Returns true if the session sign-in time as saved in Play's session cookie
      * is older than allowed.
      */
+    @SuppressWarnings("deprecation")
     public boolean isSessionTimeout(Http.Session session) {
         try {
-            Instant signinTime = Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_SIGNIN_TIME)));
+            String signinTimeStr = session.get(SESSION_SIGNIN_TIME);
+            Instant signinTime = Instant.ofEpochMilli(Long.parseLong(signinTimeStr));
             Instant now = Instant.now();
             Instant allowedUntil = signinTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
@@ -146,7 +168,8 @@ public class AuthService {
      */
     public boolean isInactivityTimeout(Http.Session session) {
         try {
-            Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
+            String lastActivityTimeStr = session.getOptional(SESSION_LAST_ACTIVITY_TIME).orElseThrow(IllegalArgumentException::new);
+            Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(lastActivityTimeStr));
             Instant now = Instant.now();
             Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
             return allowedUntil.isBefore(now);
@@ -155,6 +178,15 @@ public class AuthService {
             // In case of any exception: timeout
             return true;
         }
+    }
+
+    /**
+     * Returns the URL of the page the user visited last - or the URL of the home page.
+     */
+    public String getRedirectPageAfterSignin(User user) {
+        return !Strings.isNullOrEmpty(user.getLastVisitedPageUrl())
+                ? Common.getJatosUrlBasePath() + user.getLastVisitedPageUrl()
+                : controllers.gui.routes.Home.home().url();
     }
 
 }

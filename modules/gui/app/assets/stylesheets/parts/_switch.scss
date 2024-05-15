@@ -36,6 +36,11 @@
   transition: .4s;
 }
 
+input[checked=checked] + .slider:before,
 input:checked + .slider:before {
   transform: translateX(1.2em);
+}
+
+.slider[disabled] {
+	opacity: 0.4 !important;
 }

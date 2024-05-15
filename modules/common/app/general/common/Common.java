@@ -46,6 +46,7 @@ public class Common {
     private static int maxResultsDbQuerySize;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
+    private static boolean userSessionAllowKeepSignedin;
     private static String dbUrl;
     private static String dbDriver;
     private static String mac;
@@ -78,6 +79,7 @@ public class Common {
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
+    private static String locale;
     private static boolean studyMembersAllowedToAddAllUsers;
     private static boolean idCookiesSecure;
     private static Http.Cookie.SameSite idCookiesSameSite;
@@ -123,6 +125,7 @@ public class Common {
         maxResultsDbQuerySize = config.getInt("jatos.maxResultsDbQuerySize");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
+        userSessionAllowKeepSignedin = config.getBoolean("jatos.userSession.allowKeepSignedin");
         dbUrl = config.getString("db.default.url"); // Also jatos.db.url
         dbDriver = config.getString("db.default.driver"); // Also jatos.db.driver
         mac = fillMac();
@@ -163,6 +166,7 @@ public class Common {
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
+        locale = config.getString("jatos.locale");
         studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
         idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
         idCookiesSameSite = fillIdCookiesSameSite(config);
@@ -334,6 +338,16 @@ public class Common {
      */
     public static int getUserSessionInactivity() {
         return userSessionInactivity;
+    }
+
+    /**
+     * If true, the user has the possibility (a checkbox on the GUI's signin page) to keep the user session and to not
+     * get signed out automatically due to user a session timeout (neither through normal timeout nor inactivity).
+     * If set to true and the user chooses to keep being signed in, the user session is kept until the user signs out
+     * manually or the session cookie is deleted.
+     */
+    public static boolean getUserSessionAllowKeepSignedin() {
+        return userSessionAllowKeepSignedin;
     }
 
     /**
@@ -572,7 +586,7 @@ public class Common {
     /**
      * URL to the terms of use that will be shown in a link on the home page
      */
-    public static String termsOfUseUrl() {
+    public static String getTermsOfUseUrl() {
         return termsOfUseUrl;
     }
 
@@ -581,6 +595,13 @@ public class Common {
      */
     public static String getBrandingUrl() {
         return brandingUrl;
+    }
+
+    /**
+     * Locale used in the GUI. If not set, the browser's 'navigator.language' is used.
+     */
+    public static String getLocale() {
+        return locale;
     }
 
     /**

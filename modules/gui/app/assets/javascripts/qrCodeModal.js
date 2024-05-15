@@ -1,9 +1,16 @@
 export { show }
 
-function show(url, text) {
+$(".btn-qr-code").on("click", show);
+
+// Use this function to add an event handler manually
+function show() {
+    const button = this;
+    const url = button.parentElement.textContent.trim();
+    const text = button.dataset.qrCodeText;
+
     $('#qrcode').empty();
     $('#qrCodeModal').off('shown.bs.modal');
-    $('#qrCodeText').html(text);
+    $('#qrCodeModalStudyLink').html(text);
 
     $('#qrCodeModal').on('shown.bs.modal', function (e) {
         let options = {

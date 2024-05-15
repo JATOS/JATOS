@@ -1,0 +1,85 @@
+@(request: Http.Request, study: Option[common.Study], signedinUser: Option[common.User], worker: Option[common.workers.Worker])
+@import general.common._
+@import utils.common._
+
+@*
+* Global parameter that cannot be reached by non-templates (e.g., JS modules in extra files)
+*@
+
+<script @{helper.CSPNonce.attr} type="module">
+    window.common = {};
+    window.common.jatosVersion = "@Common.getJatosVersion";
+    window.common.realHostUrl = location.protocol + '//' + location.host;
+    window.common.realBaseUrl = `${window.common.realHostUrl}@Common.getJatosUrlBasePath`;
+    window.common.jatosUrlBasePath = "@Common.getJatosUrlBasePath";
+    window.common.isUserRoleAllowSuperuser = @Common.isUserRoleAllowSuperuser;
+    window.common.termsOfUseUrl = "@Common.getTermsOfUseUrl";
+    window.common.locale = "@Common.getLocale";
+    window.common.logsAppender = "@Common.getLogsAppender";
+    window.common.isMultiNode = @Common.isMultiNode;
+    window.common.isResultUploadsEnabled = @Common.isResultUploadsEnabled;
+    window.common.isStudyLogsEnabled = @Common.isStudyLogsEnabled;
+    window.common.userPasswordMinLength = @Common.getUserPasswordMinLength;
+    window.common.userPasswordStrengthDescription = "@Common.getUserPasswordStrengthRegex.getLeft";
+
+    window.common.isLdapAllowed = @Common.isLdapAllowed;
+
+    window.common.isOauthGoogleAllowed = @Common.isOauthGoogleAllowed;
+    window.common.oauthGoogleClientId = "@Common.getOauthGoogleClientId";
+
+    window.common.isOidcAllowed = @Common.isOidcAllowed;
+    window.common.oidcSigninButtonText = "@Common.getOidcSigninButtonText";
+    window.common.oidcSigninButtonLogoUrl = "@Common.getOidcSigninButtonLogoUrl";
+
+    window.common.isOrcidAllowed = @Common.isOrcidAllowed;
+    window.common.orcidSigninButtonText = "@Common.getOrcidSigninButtonText";
+    window.common.orcidSigninButtonLogoUrl = "@Common.getOrcidSigninButtonLogoUrl";
+
+    window.common.userSessionTimeout = @Common.getUserSessionTimeout;
+    window.common.userSessionInactivity = @Common.getUserSessionInactivity;
+    window.common.allowKeepSignedin = @Common.getUserSessionAllowKeepSignedin;
+    window.common.userSigninTime = @{request.session().getOptional("signinTime").orElse("-1")};
+    window.common.keepSignedin = @{(request.session().getOptional("keepSignedin").orElse("false")).toBoolean};
+    window.common.googlePictureUrl = "@{request.session().getOptional("googlePictureUrl").orElse("")}";
+
+    @if(study.isDefined) {
+    window.study = {};
+    window.study.id = @study.get.getId;
+    window.study.uuid = "@study.get.getUuid";
+    window.study.title = "@study.get.getTitle";
+    window.study.isLocked = @study.get.isLocked;
+    window.study.isActive = @study.get.isActive;
+    window.study.isGroupStudy = @study.get.isGroupStudy;
+    window.study.dirName = "@study.get.getDirName";
+    }
+
+    @if(signedinUser.isDefined) {
+    window.signedinUser = {};
+    window.signedinUser.username = "@signedinUser.get.getUsername";
+    window.signedinUser.name = "@signedinUser.get.getName";
+    window.signedinUser.studyList = "";
+    window.signedinUser.authMethod = "@signedinUser.get.getAuthMethod";
+    window.signedinUser.isDb = @signedinUser.get.isDb;
+    window.signedinUser.isOauthGoogle = @signedinUser.get.isOauthGoogle;
+    window.signedinUser.isOidc = @signedinUser.get.isOidc;
+    window.signedinUser.isOrcid = @signedinUser.get.isOrcid;
+    window.signedinUser.isAdmin = @signedinUser.get.isAdmin;
+    window.signedinUser.isSuperuser = @signedinUser.get.isSuperuser;
+    }
+
+    @if(worker.isDefined) {
+    window.worker = {};
+    window.worker.id = @worker.get.getId;
+    window.worker.workerType = "@worker.get.getWorkerType";
+    window.worker.comment = "@worker.get.getComment";
+    @if(worker.get.getWorkerType().equals("MT") || worker.get.getWorkerType().equals("MTSandbox")){
+    window.worker.mtWorkerId = "@worker.get.asInstanceOf[common.workers.MTWorker].getMTWorkerId";
+    }
+    @if(worker.get.getWorkerType().equals("Jatos") && worker.get.asInstanceOf[common.workers.JatosWorker].getUser() != null){
+    window.worker.isJatosUserDefined = true;
+    window.worker.jatosUserName = "@worker.get.asInstanceOf[common.workers.JatosWorker].getUser.getName";
+    }else{
+    window.worker.isJatosUserDefined = false;
+    }
+    }
+</script>

@@ -1,6 +1,6 @@
-@(form: Form[auth.gui.Signin.SigninData])
+@(request: Http.Request)
+
 @import controllers.gui.routes._
-@import auth.gui.routes._
 @import general.common._
 @import general.gui._
 
@@ -20,8 +20,8 @@
     <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/font/bootstrap-icons.min.css")">
     <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/signin.css?v=" + Common.getJatosVersion())">
     <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.3/bootstrap.bundle.min.js")"></script>
-    <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.5.1.min.js")"></script>
-    @views.html.gui.commons(None, None)
+    <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.7.1.min.js")"></script>
+    @views.html.gui.settings(request, None, None, None)
     @views.html.gui.routes()
     @if(Common.isOauthGoogleAllowed()) {
     <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client"></script>
@@ -77,63 +77,72 @@
     </header>
 
     <main class="d-flex align-items-center vh-100">
-        <div class="signin-all w-100 m-auto">
-            <button id="signinOidc" class="btn btn-outline-secondary w-100 mb-2 d-none" type="button">
-                <img class="float-start" height="25" src="">@Common.getOidcSigninButtonText()
+        <div class="w-100 m-auto" id="signinAll">
+            <button class="btn btn-outline-secondary w-100 mb-2 d-none" id="oidcSigninButton" type="button">
+                <img class="float-start" id="oidcSigninButtonLogoImg" height="25" src="">
+                <span id="oidcSigninButtonText"></span>
             </button>
 
-            <button id="signinOrcid" class="btn btn-outline-secondary w-100 mb-2 d-none" type="button">
-                <img class="float-start" height="25" src="">@Common.getOrcidSigninButtonText()
+            <button class="btn btn-outline-secondary w-100 mb-2 d-none" id="orcidSigninButton"  type="button">
+                <img class="float-start" id="orcidSigninButtonLogoImg" height="25" src="">
+                <span id="orcidSigninButtonText"></span>
             </button>
 
             <div id="signinGoogle" class="mb-2 d-none"></div>
 
             <p id="signinText"></p>
 
-            @helper.form(action = auth.gui.routes.Signin.authenticate, 'class -> "signin-form", 'role -> "form") {
-            <div class="form-floating form-admin">
-                <input type="text" name="username" id="username" class="form-control" placeholder="Username" autocomplete="on" value="@form("username").value().orElse("")" required autofocus>
-                <label for="username">Username</label>
-            </div>
-            <div class="form-floating form-admin">
-                <input type="password" name="password" id="password" class="form-control" placeholder="Password" autocomplete="off" required>
-                <label for="password">Password</label>
-            </div>
-            <button class="btn btn-admin w-100 mt-2" type="submit">Sign in</button>
-            }
+            <form class="form-admin" id="signinForm">
+                <div class="form-floating">
+                    <input type="text" name="username" id="username" class="form-control" placeholder="Username" autocomplete="on" required autofocus>
+                    <label for="username">Username</label>
+                </div>
+                <div class="form-floating">
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Password" autocomplete="off" required>
+                    <label for="password">Password</label>
+                </div>
+                <div class="m-2 d-none" id="allowKeepSignedin">
+                    <label class="switch no-info-icon align-middle">
+                        <input type="checkbox" name="keepSignedin" value="1">
+                        <span class="slider slider-admin round"></span>
+                    </label>
+                    <span class="align-middle ms-2">Keep me signed in</span>
+                </div>
+                <button type="button" class="btn btn-admin w-100 mt-2" id="signinConfirmed">Sign in</button>
+            </form>
         </div>
     </main>
 </body>
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")"
     import * as GoogleSignin from "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")";
 
     if (Helpers.isLocalhost()) $(".navbar-brand svg").toggleClass("d-none");
 
     if (window.common.isOidcAllowed) {
-        $("#signinOidc img").attr("src", Helpers.getOidcLogoUrl());
-        $("#signinOidc").removeClass("d-none");
+        $("#oidcSigninButtonText").text(window.common.oidcSigninButtonText);
+        $("#oidcSigninButtonLogoImg").attr("src", Helpers.getOidcLogoUrl());
+        $("#oidcSigninButton").removeClass("d-none");
     }
 
     if (window.common.isOrcidAllowed) {
-        $("#signinOrcid img").attr("src", Helpers.getOrcidLogoUrl());
-        $("#signinOrcid").removeClass("d-none");
+        $("#orcidSigninButtonText").text(window.common.orcidSigninButtonText);
+        $("#orcidSigninButtonLogoImg").attr("src", Helpers.getOrcidLogoUrl());
+        $("#orcidSigninButton").removeClass("d-none");
     }
 
-    if (window.common.isOauthGoogleAllowed) {
-        $("#signinGoogle").removeClass("d-none");
-    }
+    $("#signinGoogle").toggleClass("d-none", !window.common.isOauthGoogleAllowed);
 
     if (window.common.isOidcAllowed || window.common.isOrcidAllowed || window.common.isOauthGoogleAllowed) {
-        $("#signinText").addClass("mt-5").text("... or sign in");
+        $("#signinText").addClass("mt-5").text("... or sign in with your local account");
     } else {
         $("#signinText").addClass("fw-bolder").text("Please sign in");
     }
 
-    @for(error <- form.globalErrors) {
-        $('#password').after('<p class="text-danger m-1">@error.message</p>');
-    }
+    $("#allowKeepSignedin").toggleClass("d-none", !window.common.allowKeepSignedin);
+
     @if(flash.containsKey(FlashScopeMessaging.SUCCESS)) {
         $('#password').after('<p class="text-success m-1">@flash.get(FlashScopeMessaging.SUCCESS)</p>');
     }
@@ -144,31 +153,55 @@
         $('#password').after('<p class="text-danger m-1">@flash.get(FlashScopeMessaging.ERROR)</p>');
     }
 
-    $('#signinOidc').click(function() {
+    $('#oidcSigninButton').click(function() {
+        const keepSignedin = $("#signinForm input[name=keepSignedin]").prop("checked");
         $.ajax({
-            url: window.routes.SigninBasicOidc.signin,
+            url: window.routes.SigninBasicOidc.signin(keepSignedin),
             success: function(uri) {
                 window.location.href = uri;
             },
             error: function(err) {
                 $("p.text-danger").remove();
-                $('#password').after(`<p class="text-danger">${err.responseText}</p>`);
+                const errMsg = err.responseText ? err.responseText : "An error occurred during sign-in";
+                $('#password').after(`<p class="text-danger">${errMsg}</p>`);
             }
         });
     });
 
-    $('#signinOrcid').click(function() {
+    $('#orcidSigninButton').click(function() {
+        const keepSignedin = $("#signinForm input[name=keepSignedin]").prop("checked");
         $.ajax({
-            url: window.routes.SigninOrcid.signin,
+            url: window.routes.SigninOrcid.signin(keepSignedin),
             success: function(uri) {
                 window.location.href = uri;
             },
             error: function(err) {
                 $("p.text-danger").remove();
-                $('#password').after(`<p class="text-danger">${err.responseText}</p>`);
+                const errMsg = err.responseText ? err.responseText : "An error occurred during sign-in";
+                $('#password').after(`<p class="text-danger">${errMsg}</p>`);
             }
         });
     });
 
+    // Sometimes the checkbox stays checked after reloads
+    $("#signinForm input[name=keepSignedin]").prop("checked", false);
+
+    Helpers.triggerButtonByEnter("#signinForm", "#signinConfirmed");
+
+    $("#signinConfirmed").click(function(event) {
+        $.ajax({
+			type: 'POST',
+			url: window.routes.Signin.authenticate,
+			data: $('#signinForm').serialize(),
+			success: function(response) {
+			    window.location.replace(response.redirectUrl);
+			},
+			error: function(err) {
+				$("#password").val("");
+				const errMsg = err.responseText ? err.responseText : "An error occurred during sign-in";
+				FormValidation.show("#signinForm", {password: [errMsg]});
+			}
+		});
+    });
 </script>
 </html>

@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+
 /**
  * Controller for all actions regarding study links, batches, and workers within the JATOS GUI.
  *
@@ -90,17 +92,18 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
+    @SaveLastVisitedPageUrl
     public Result studyLinks(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         try {
             checker.checkStandardForStudy(study, studyId, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(e, studyId);
+            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
-        return ok(views.html.gui.studyLinks.studyLinks_new.render(signedinUser, breadcrumbs, study, request));
+        return ok(views.html.gui.studyLinks.studyLinks_new.render(request, signedinUser, breadcrumbs, study));
     }
 
     /**

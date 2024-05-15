@@ -103,7 +103,7 @@ function showToast(msg, type, delay, name) {
                     <i class="${icon} text-${iconColor} fs-4 pe-2"></i>
                     <strong class="me-auto">${headerText}</strong>
                     <small class="timeago" datetime="${new Date().toISOString()}"></small>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    <button type="button" class="btn btn-close2 btn-xs btn-nav ms-2" data-bs-dismiss="toast"></button>
                 </div>
                 <div class="toast-body">${msg}</div>
             </div>`;

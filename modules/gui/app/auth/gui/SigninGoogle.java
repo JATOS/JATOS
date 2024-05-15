@@ -44,8 +44,6 @@ public class SigninGoogle extends Controller {
 
     private static final ALogger LOGGER = Logger.of(SigninGoogle.class);
 
-    public static final String GOOGLE_PICTURE_URL = "G_PIC_URL";
-
     private final AuthService authService;
     private final SigninFormValidation signinFormValidation;
     private final FormFactory formFactory;
@@ -83,8 +81,9 @@ public class SigninGoogle extends Controller {
             return redirect(auth.gui.routes.Signin.signin());
         }
 
+        User user;
         try {
-            persistUserIfNotExisting(idTokenPayload);
+            user = persistUserIfNotExisting(idTokenPayload);
         } catch (AuthException e) {
             LOGGER.warn(e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
@@ -92,18 +91,12 @@ public class SigninGoogle extends Controller {
         }
 
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
-        authService.writeSessionCookie(session(), normalizedUsername);
+        authService.writeSessionCookie(session(), normalizedUsername, false);
         userService.setLastSignin(normalizedUsername);
 
         String pictureUrl = idTokenPayload.get("picture") != null ? idTokenPayload.get("picture").toString() : "";
-        Http.Cookie pictureUrlCookie = Http.Cookie.builder(GOOGLE_PICTURE_URL, pictureUrl)
-                .withPath(Common.getJatosUrlBasePath())
-                .withSecure(false)
-                .withHttpOnly(false)
-                .withSameSite(Http.Cookie.SameSite.STRICT)
-                .build();
-
-        return redirect(controllers.gui.routes.Home.home()).withCookies(pictureUrlCookie);
+        String redirectPage = authService.getRedirectPageAfterSignin(user);
+        return redirect(redirectPage).addingToSession(request, "googlePictureUrl", pictureUrl);
     }
 
     /**
@@ -118,11 +111,11 @@ public class SigninGoogle extends Controller {
         return verifier.verify(idTokenString);
     }
 
-    private void persistUserIfNotExisting(GoogleIdToken.Payload idTokenPayload) throws AuthException {
+    private User persistUserIfNotExisting(GoogleIdToken.Payload idTokenPayload) throws AuthException {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
 
-        User existingUser = userDao.findByUsername(normalizedUsername);
-        if (existingUser == null) {
+        User user = userDao.findByUsername(normalizedUsername);
+        if (user == null) {
             String name = (String) idTokenPayload.get("name");
             NewUserModel newUserModel = new NewUserModel();
             newUserModel.setUsername(normalizedUsername);
@@ -136,9 +129,10 @@ public class SigninGoogle extends Controller {
             }
 
             userService.bindToUserAndPersist(newUserModel);
-        } else if (!existingUser.isOauthGoogle()) {
+        } else if (!user.isOauthGoogle()) {
             throw new AuthException("User exists already - but does not use Google sign in");
         }
+        return user;
     }
 
 }

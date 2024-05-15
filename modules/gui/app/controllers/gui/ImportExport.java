@@ -8,7 +8,6 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
 import models.common.Study;
 import models.common.User;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -153,17 +152,18 @@ public class ImportExport extends Controller {
         boolean keepCurrentAssetsName = json.findPath("keepCurrentAssetsName").booleanValue();
         boolean renameAssets = json.findPath("renameAssets").booleanValue();
 
+        long importedStudyId = 0L;
         try {
-            importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            importedStudyId = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
         } catch (ForbiddenException e) {
             return forbidden(e.getMessage());
         } catch (Exception e) {
-            jatosGuiExceptionThrower.throwHome(e);
+            jatosGuiExceptionThrower.throwHome(request, e);
         } finally {
             importExportService.cleanupAfterStudyImport();
         }
-        return ok(RequestScopeMessaging.getAsJson());
+        return ok(Long.toString(importedStudyId));
     }
 
     /**

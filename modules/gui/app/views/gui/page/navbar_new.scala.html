@@ -1,0 +1,102 @@
+@(signedinUser: common.User, breadcrumbs: String)
+@import controllers.gui.routes._
+
+<header class="navbar sticky-top flex-nowrap p-0 bg-body-tertiary user-select-none shadow">
+    <div class="container-fluid">
+
+        @* Study sidebar toggle *@
+        <button class="btn btn-nav text-nowrap" type="button" data-bs-toggle="offcanvas" data-bs-target="#studySidebar" data-bs-tooltip data-bs-title="Show list of all your studies">
+            <i class="bi-list pe-lg-1"></i><span class="d-none d-lg-inline">Studies</span>
+        </button>
+
+        @* JATOS logo *@
+        <a class="navbar-brand ps-3 m-0" href="@Home.home()">
+            <svg class="heartbeat-hover" xmlns="http://www.w3.org/2000/svg" width="49" height="32" viewBox="0 0 400 400" xml:space="preserve" role="img">
+                <ellipse stroke-width="0" stroke="#000" ry="165" rx="165.25045" id="svg_6" cy="199.75001" cx="200"/>
+                <path id="svg_1" d="m357.887,134.484c-15.67,15.667 -41.07,15.667 -56.739,0c-15.67,-15.667 -15.666,-41.066 0.004,-56.733c15.665,-15.67 41.065,-15.668 56.731,-0.003c15.668,15.668 15.668,41.071 0.004,56.736z" stroke-miterlimit="10" stroke-width="2" stroke="#F9B517" fill="#FDCD08"/>
+                <path id="svg_2" d="m192.113,178.582c-4.421,3.64 -11.165,-2.84 -18.446,-11.689l0,0c-7.283,-8.846 -12.349,-16.711 -7.924,-20.354l65.759,-54.132c4.424,-3.64 11.173,2.84 18.453,11.689l0,0c7.286,8.847 12.349,16.709 7.926,20.352l-65.768,54.134z" stroke-miterlimit="10" stroke-width="2" stroke="#F9B517" fill="#FDCD08"/>
+                <path id="svg_3" d="m157.837,205.812c-20.586,5.752 -30.277,8.31 -40.333,-3.909c-10.06,-12.22 28.426,11.635 14.717,-27.208c-4.798,-13.602 19.472,-21.436 29.53,-9.214c10.056,12.214 7.118,37.251 -3.914,40.331z" fill="#F4921F"/>
+                <path id="svg_4" d="m226.694,222.792c-5.279,5.275 -14.02,0.886 -22.128,-7.22l0,0c-8.105,-8.102 -12.5,-16.852 -7.222,-22.128l76.108,-76.104c5.279,-5.28 102.479,-12.649 121.845,-7.802l1.978,3.848c-4.349,20.936 -89.199,28.021 -94.476,33.298l-76.105,76.108z" stroke-miterlimit="10" stroke-width="2" stroke="#F9B517" fill="#FDCD08"/>
+                <path id="svg_5" d="m175.909,212.907c5.278,-5.279 14.02,-0.884 22.126,7.218l0,0c8.107,8.105 12.499,16.85 7.223,22.131l-76.109,76.1c-5.279,5.281 -102.481,-3.949 -121.848,-8.795l-1.977,-3.85c4.348,-20.936 89.2,-11.422 94.479,-16.697l76.106,-76.107z" stroke-miterlimit="10" stroke-width="2" stroke="#F9B517" fill="#FDCD08"/>
+            </svg>
+        </a>
+
+        @* Breadcrumbs (only if screen > lg) *@
+        <nav class="flex-grow-1 d-none d-md-block me-5" id="breadcrumbs">
+            <ol class="navbar-nav d-flex align-items-center"></ol>
+        </nav>
+
+        <ul class="navbar-nav align-items-center text-nowrap gap-2">
+
+            @* External links (only if screen > lg) *@
+            <li class="nav-item d-none d-lg-block">
+                <a class="nav-link no-info-icon mx-1" href="https://www.jatos.org/Whats-JATOS.html" data-bs-tooltip data-bs-title="JATOS documentation" target="_blank">
+                    <i class="bi-file-text-fill"></i>
+                </a>
+            </li>
+            <li class="nav-item d-none d-lg-block">
+                <a class="nav-link no-info-icon mx-1" href="https://www.github.com/JATOS/JATOS" data-bs-tooltip data-bs-title="Source on GitHub" target="_blank">
+                    <i class="bi-github"></i>
+                </a>
+            </li>
+            <li class="nav-item d-none d-lg-block">
+                <a class="nav-link no-info-icon mx-1" href="https://www.jatos.org/Support-us" data-bs-tooltip data-bs-title="Support JATOS" target="_blank">
+                    <i class="bi-heart-fill"></i>
+                </a>
+            </li>
+            <li class="nav-item d-none d-lg-block vr mx-2 my-1"></li>
+
+            @* Administration link *@
+            @if(signedinUser.isAdmin()) {
+            <li class="nav-item">
+                <a class="btn btn-nav no-info-icon" type="button" href="@Admin.administration()" data-bs-tooltip data-bs-title="Everything for JATOS admins">
+                    <i class="bi-wrench-adjustable pe-lg-1"></i><span class="d-none d-lg-inline">Administration</span>
+                </a>
+            </li>
+            }
+
+            @* User sidebar toggle *@
+            <li class="nav-item" id="navUser">
+                <button class="btn btn-nav d-flex align-items-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#userSidebar">
+                    <span class="d-none d-lg-block pe-1" id="navbarUserName">@signedinUser.getName()</span>
+                    <img class="google-user-img rounded-circle border border-2 p-0 d-none" src="" width="32" height="32" alt="thumbnail">
+                    <minidenticon-svg username="@signedinUser.getUsername()" saturation="70" lightness="50"></minidenticon-svg>
+                </button>
+            </li>
+        </ul>
+    </div>
+</header>
+
+@views.html.gui.study.studyCreatorModal_new()
+@views.html.gui.study.studyImportModal_new()
+@views.html.gui.admin.apiTokensModal_new()
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as GoogleSignin from "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")";
+
+    $("#navUser .dropdown-toggle, #colorTheme .dropdown-toggle").on('show.bs.dropdown', Alerts.hideAll);
+
+    // Notify user of localhost installation
+    if (Helpers.isLocalhost()) {
+        $(".navbar-brand svg").addClass("localhost");
+    }
+
+    // Draw breadcrumbs
+    const breadcrumbs = @Html(breadcrumbs);
+    const breadcrumbHtml = [];
+    $.each(breadcrumbs, function(index, breadcrumb) {
+        breadcrumbHtml.push(`<li class="nav-item"><span class="nav-link navbar-text p-0"><i class="bi-chevron-right px-2"></i></span></li>`);
+        if (breadcrumb.url === null || breadcrumb.url === "") {
+            breadcrumbHtml.push(`<li class="nav-item"><span class="nav-link navbar-text">${breadcrumb.name}</span></li>`);
+        } else {
+            breadcrumbHtml.push(`<li class="nav-item"><a class="nav-link" href="${breadcrumb.url}">${breadcrumb.name}</a></li>`);
+        }
+    });
+    $("#breadcrumbs ol").html(breadcrumbHtml.join(""));
+
+    // Load Google user picture if signed in by Google
+    GoogleSignin.drawUserImg();
+
+</script>

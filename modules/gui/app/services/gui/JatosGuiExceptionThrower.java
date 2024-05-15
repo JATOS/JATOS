@@ -94,14 +94,14 @@ public class JatosGuiExceptionThrower {
 	 * it's a Ajax request, it just returns the exception's message. The HTTP
 	 * status code is determined by the exception type.
 	 */
-	public void throwHome(Exception e) throws JatosGuiException {
+	public void throwHome(Http.Request request, Exception e) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
 		if (Helpers.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = homeProvider.get().home(httpStatus);
+			result = homeProvider.get().home(request, httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}
@@ -111,14 +111,14 @@ public class JatosGuiExceptionThrower {
 	 * non Ajax it shows study's study view. Distinguishes between normal and
 	 * Ajax request.
 	 */
-	public void throwStudy(String errorMsg, int httpStatus, Long studyId)
+	public void throwStudy(Http.Request request, String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
 		Result result;
 		if (Helpers.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = studiesProvider.get().study(studyId, httpStatus);
+			result = studiesProvider.get().study(request, studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -129,14 +129,14 @@ public class JatosGuiExceptionThrower {
 	 * view. If it's a Ajax request, it just returns the exception's message.
 	 * The HTTP status code is determined by the exception type.
 	 */
-	public void throwStudy(Exception e, Long studyId) throws JatosGuiException {
+	public void throwStudy(Http.Request request, Exception e, Long studyId) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
 		if (Helpers.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = studiesProvider.get().study(studyId, httpStatus);
+			result = studiesProvider.get().study(request, studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}

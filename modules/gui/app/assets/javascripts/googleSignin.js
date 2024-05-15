@@ -1,5 +1,7 @@
 export { drawButton, drawUserImg }
 
+import * as Helpers from "./helpers.js";
+
 let initialized = false;
 let buttonWidth = 300;
 
@@ -19,8 +21,7 @@ function drawButton(width) {
         initialized = true;
     }
     if (Number.isInteger(width)) buttonWidth = width;
-    const theme = document.documentElement.getAttribute('data-bs-theme');
-    const googleTheme = theme == "dark" ? "filled_black" : "outline";
+    const googleTheme = Helpers.getTheme() === "dark" ? "filled_black" : "outline";
     google.accounts.id.renderButton(document.getElementById("signinGoogle"), {
             theme: googleTheme,
             size: "large",
@@ -30,8 +31,8 @@ function drawButton(width) {
 
 // Load Google user picture (if signed in by Google). Get the picture URL from the Google cookie.
 function drawUserImg() {
-    if (!window.signedinUser?.isOauthGoogle) return
-    const googlePictureUrl = document.cookie.split("; ").find((row) => row.startsWith("G_PIC_URL="))?.split("=")[1];
+    if (!window.signedinUser || window.signedinUser.isOauthGoogle) return
+    const googlePictureUrl = window.common.googlePictureUrl;
     if (googlePictureUrl) {
         $('.google-user-img').one(); // Ignore imgage loading errors
         $('.google-user-img').attr("src", googlePictureUrl);

@@ -1,55 +1,53 @@
-@(signedinUser: common.User, breadcrumbs: String, study: common.Study, studyResultsCount: Integer)
-@import controllers.gui.routes._
-@import general.common._
+@(request: Http.Request, signedinUser: common.User, breadcrumbs: String, study: common.Study, studyResultsCount: Integer)
 
-@views.html.gui.main_new(signedinUser, Some(study), breadcrumbs) {
+@views.html.gui.page.main_new(request, signedinUser, Some(study), None, breadcrumbs) {
 
 <main class="container-xxl overflow-auto mt-4">
 
     @* Study toolbar *@
-    <div class="sticky-top pb-4 text-nowrap flex-wrap" id="studyToolbar" role="toolbar">
-            <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-toggle="tooltip" title="Do a test run of your study">
+    <div class="sticky-top text-nowrap d-flex flex-wrap gap-1 pb-4" id="studyToolbar" role="toolbar">
+            <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip data-bs-title="Do a test run of your study">
                 <i class="bi-play-circle"></i><span class="d-none d-xl-inline ps-1">Run</span>
             </a>
-            <button class="btn btn-study" id="studyResults" type="button" data-toggle="tooltip" title="Show this study's results">
-                <span class="d-none d-xl-inline">Study </span>Results<span class="badge text-study bg-white rounded-pill no-info-icon ms-1" data-toggle="tooltip" title="Number of study results of this study">@studyResultsCount</span>
+            <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip data-bs-title="Show this study's results">
+                Results<span class="badge text-study bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results of this study">@studyResultsCount</span>
             </button>
-            <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-toggle="tooltip" title="Change this study's properties">
+            <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip data-bs-title="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <button class="btn btn-study" id="exportStudy" type="button" data-toggle="tooltip" title="Export this study to your local file system (including its components and study assets but without its results)">
+            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip data-bs-title="Export this study to your local file system (including its components and study assets but without its results)">
                 <i class="bi-box-arrow-up-right"></i><span class="d-none d-xl-inline ps-1">Export</span>
             </button>
-            <button class="btn btn-study" id="lockStudy" type="button" data-toggle="tooltip" data-placement="bottom" title="">
+            <button class="btn btn-study" id="lockStudy" type="button" data-bs-tooltip data-bs-title="Lock/unlock this study. A locked study cannot be changed (e.g. its properties), but its study links will still work. This is useful during data collection to prevent accidental changes in a study setup.">
                 <i class="bi-unlock-fill"></i>
             </button>
-            <button class="btn btn-study" type="button" data-bs-toggle="offcanvas" data-bs-target="#studyDescriptionSidebar" data-toggle="tooltip" title="The description of this study like defined in the study properties">
+            <button class="btn btn-study" type="button" data-bs-toggle="offcanvas" data-bs-target="#studyDescriptionSidebar" data-bs-tooltip data-bs-title="The description of this study like defined in the study properties">
                 <i class="bi-file-text-fill"></i><span class="d-none d-xl-inline ps-1">Description</span>
             </button>
             <div class="btn-group me-3" role="group">
-                <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown" data-toggle="tooltip" title="More options">
+                <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="bi-three-dots-vertical d-xl-none"></i><span class="d-none d-xl-inline ps-1">More</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-study">
-                    <li class="no-info-icon" data-toggle="tooltip" title="Clone this study without its results">
+                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Clone this study without its results">
                         <a class="dropdown-item" id="cloneStudy" href="#"><i class="bi-copy pe-1"></i>Clone</a>
                     </li>
-                    <li class="no-info-icon" data-toggle="tooltip" title="Change which users can access this study">
-                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Change Users</a>
+                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Change which users can access this study">
+                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Change users</a>
                     </li>
-                    <li class="no-info-icon" data-toggle="tooltip" title="Show this study's study log">
-                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study Log</a>
+                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Show this study's study log">
+                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study log</a>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li class="no-info-icon" data-toggle="tooltip" title="Delete this study including its components, assets and results">
+                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Delete this study including its components, assets and results">
                         <a class="dropdown-item" id="removeStudy" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                     </li>
                 </ul>
             </div>
-            <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#createComponentModal" type="button" data-toggle="tooltip" title="Add a new component">
+            <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#componentCreatorModal" type="button" data-bs-tooltip data-bs-title="Add a new component">
                 <i class="bi-plus-lg fw-bold"></i><span class="d-none d-xl-inline ps-1">New Component</span>
             </button>
-            <button class="btn btn-batch" id="studyLinksButton" type="button" data-toggle="tooltip" title="Get study links that you can distribute to your participants and let them run your study">
+            <button class="btn btn-batch" id="studyLinksButton" type="button" data-bs-tooltip data-bs-title="Get study links that you can distribute to your participants and let them run your study">
                 <i class="bi-link-45deg"></i><span class="d-none d-xl-inline ps-1">Study Links</span>
             </button>
     </div>
@@ -59,11 +57,12 @@
 </main>
 }
 
-@views.html.gui.study.studyPropertiesModal_new(study)
+@views.html.gui.study.studyPropertiesModal_new()
 @views.html.gui.study.studyDescription_new(study)
-@views.html.gui.study.studyMemberUsersModal_new(signedinUser, study)
-@views.html.gui.study.componentPropertiesModal_new(study)
-@views.html.gui.study.studyLogModal_new(study)
+@views.html.gui.study.studyMemberUsersModal_new()
+@views.html.gui.study.componentCreatorModal_new()
+@views.html.gui.study.componentPropertiesModal_new()
+@views.html.gui.study.studyLogModal_new()
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
@@ -71,6 +70,15 @@
     import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
     import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
+    import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
+
+    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a participant. Please contact your admin.");
+
+    $("#studyToolbar").before(InfoCard.render([
+        {"name": "Study ID", "value": window.study.id, "tooltip": "This ID is unique within this JATOS instance"},
+        {"name": "Study UUID", "value": window.study.uuid, "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances"},
+        {"name": "Study assets", "value": window.study.dirName, "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."}
+    ]));
 
     drawLockButton();
 
@@ -83,9 +91,7 @@
                 drawLockButton();
 
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle study lock")
         });
     });
 
@@ -93,11 +99,9 @@
         if (window.study.isLocked) {
             $('#lockStudy').html('<i class="bi-lock-fill"></i>');
             $('#lockStudy').removeClass('btn-study').addClass('btn-warning');
-            $("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
         } else {
             $('#lockStudy').html('<i class="bi-unlock-fill"></i>');
             $('#lockStudy').removeClass('btn-warning').addClass('btn-study');
-            $("#lockStudy").attr("title", "Press to lock this study and prohibit changes. Your study links will still work.");
         }
     }
 
@@ -114,12 +118,12 @@
 
     $('#exportStudy').click(function() {
         const url = window.routes.Api.exportStudy(window.study.id);
-        const filename = '@{study.getTitle()}.jzip';
+        const filename = window.study.title + ".jzip";
         FileSystemAccess.downloadFileStream(url, null, filename);
     });
 
     $('#removeStudy').click(function() {
-        const title = `Confirm Deletion of study "${window.study.title}"`;
+        const title = "Confirm deletion of a study";
         const htmlText = `<p>You are about to delete the study "<b>${window.study.title}" (ID ${window.study.id})
             with all its components, results, and the entire study assets directory</b>.</p>
             <p><b class="text-danger">This cannot be undone.</b></p>`;
@@ -131,9 +135,7 @@
                 success : function(result) {
                     window.location.replace(window.routes.Home.home);
                 },
-                error : function(err) {
-                    Alerts.error(err.responseText);
-                },
+                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't delete study"),
                 complete: WaitingModal.hide
             });
         };
@@ -147,9 +149,7 @@
                 Alerts.success(`Created clone "${response.title}". <a href="${window.routes.Studies.study(response.id)}">Go to this study.</a>`);
                 StudySidebar.draw();
             },
-            error : function(err) {
-                Alerts.error(err.responseText);
-            }
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't clone study")
         });
     });
 </script>

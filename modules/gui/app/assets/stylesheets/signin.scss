@@ -1,6 +1,7 @@
 @import "bootstrap/scss/_functions.scss";
 @import 'parts/_jatosColors.scss';
 @import 'parts/_googleSignin.scss';
+@import 'parts/_switch.scss';
 
 #colorTheme .dropdown-menu .active .bi-check2 {
     display: block !important;
@@ -10,21 +11,21 @@
     --bs-dropdown-min-width: 8rem;
 }
 
-.signin-all {
+#signinAll {
     max-width: 300px;
 }
 
-.signin-form .form-floating:focus-within {
+#signinForm .form-floating:focus-within {
   z-index: 2;
 }
 
-.signin-form input[type="text"] {
+#signinForm input[type="text"] {
   margin-bottom: -1px;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-.signin-form input[type="password"] {
+#signinForm input[type="password"] {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }

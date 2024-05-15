@@ -1,21 +1,9 @@
-/*
- * Define JATOS colors
-
- * CSS:
- * - Property names that are prefixed with --, like --example-name, represent custom properties that contain a value that can be used in other declarations using the var() function.
- * - rgb/rgba
- *
- * SCSS
- * -     The $ dollar sign is used to declare variables in Sass
- */
-$study-color: #0d6efd;
-$component-color: #0dcaf0;
+$study-color: #3333ff;
+$component-color: #0099ff;
 $batch-color: #198754;
-$admin-color: #ffc107;
+$admin-color: #ff6600;
 
 .btn-nav {
-    //--bs-btn-font-weight: 600;
-    //--bs-btn-color: var(--bs-nav-link-color);
     --bs-btn-bg: transparent;
     --bs-btn-hover-color: var(--bs-nav-link-hover-color);;
     --bs-gradient: var(--bs-navbar-toggler-transition);
@@ -83,7 +71,6 @@ input:focus:checked + .slider-study {
 }
 
 .btn-study {
-    --bs-btn-font-weight: 600;
     --bs-btn-color: var(--bs-white);
     --bs-btn-bg: $study-color;
     --bs-btn-border-color: $study-color;
@@ -136,7 +123,6 @@ input:focus:checked + .slider-component {
 }
 
 .btn-component {
-    --bs-btn-font-weight: 600;
     --bs-btn-color: var(--bs-white);
     --bs-btn-bg: $component-color;
     --bs-btn-border-color: $component-color;
@@ -189,7 +175,6 @@ input:focus:checked + .slider-batch {
 }
 
 .btn-batch {
-    --bs-btn-font-weight: 600;
     --bs-btn-color: var(--bs-white);
     --bs-btn-bg: $batch-color;
     --bs-btn-border-color: $batch-color;
@@ -242,7 +227,6 @@ input:focus:checked + .slider-admin {
 }
 
 .btn-admin {
-    --bs-btn-font-weight: 600;
     --bs-btn-color: var(--bs-white);
     --bs-btn-bg: $admin-color;
     --bs-btn-border-color: $admin-color;
