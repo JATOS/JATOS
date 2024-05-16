@@ -23,6 +23,8 @@ import services.gui.AdminService;
 import auth.gui.AuthService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
+import utils.common.Helpers;
+import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -54,10 +56,12 @@ public class Admin extends Controller {
     private final UserDao userDao;
     private final LogFileReader logFileReader;
     private final AdminService adminService;
+    private final IOUtils ioUtils;
 
     @Inject
     Admin(AuthService authService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService) {
+            StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService,
+            IOUtils ioUtils) {
         this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
@@ -65,6 +69,7 @@ public class Admin extends Controller {
         this.userDao = userDao;
         this.logFileReader = logFileReader;
         this.adminService = adminService;
+        this.ioUtils = ioUtils;
     }
 
     /**
@@ -100,7 +105,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result log(Integer lineLimit) {
+    public Result log(Integer lineLimit) throws IOException {
         return logs("application.log", lineLimit, true);
     }
 
@@ -113,13 +118,13 @@ public class Admin extends Controller {
     @Transactional
     @Auth(Role.ADMIN)
     public Result logs(String filename, Integer lineLimit, boolean reverse) {
+        filename = Helpers.urlDecode(filename);
+        if (!ioUtils.existsAndSecure(Common.getLogsPath(), filename)) return notFound();
+
         if (reverse) {
             return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=UTF-8");
         } else {
             Path logPath = Paths.get(Common.getLogsPath(), filename);
-            if (Files.notExists(logPath)) {
-                return notFound();
-            }
             Source<ByteString, ?> source = FileIO.fromPath(logPath);
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
             String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);

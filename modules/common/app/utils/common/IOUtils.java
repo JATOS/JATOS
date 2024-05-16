@@ -133,6 +133,18 @@ public class IOUtils {
     }
 
     /**
+     * Checks filePath for path traversal attacks and existence
+     */
+    public boolean existsAndSecure(String path, String filePath) {
+        try {
+            getExistingFileSecurely(path, filePath);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
      * Gets the File object which resides under filePath within the study assets' directory.
      */
     public File getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
@@ -226,7 +238,7 @@ public class IOUtils {
             if (filepath.startsWith("/")) filepath = filepath.substring(1); // remove leading '/'
 
             if (filepath.endsWith("/")) assetsFilePathStr = filepath + filename;
-            else if (filepath.equals("")) assetsFilePathStr = filename;
+            else if (filepath.isEmpty()) assetsFilePathStr = filename;
             else assetsFilePathStr = filepath;
         } else {
             assetsFilePathStr = filename;
