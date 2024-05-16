@@ -27,6 +27,7 @@
 
     window.common.isOauthGoogleAllowed = @Common.isOauthGoogleAllowed;
     window.common.oauthGoogleClientId = "@Common.getOauthGoogleClientId";
+    window.common.googlePictureUrl = "@{request.session().getOptional("googlePictureUrl").orElse("")}";
 
     window.common.isOidcAllowed = @Common.isOidcAllowed;
     window.common.oidcSigninButtonText = "@Common.getOidcSigninButtonText";
@@ -41,7 +42,6 @@
     window.common.allowKeepSignedin = @Common.getUserSessionAllowKeepSignedin;
     window.common.userSigninTime = @{request.session().getOptional("signinTime").orElse("-1")};
     window.common.keepSignedin = @{(request.session().getOptional("keepSignedin").orElse("false")).toBoolean};
-    window.common.googlePictureUrl = "@{request.session().getOptional("googlePictureUrl").orElse("")}";
 
     @if(study.isDefined) {
     window.study = {};
