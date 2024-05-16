@@ -1,7 +1,6 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2022
  * Licensed under Apache License 2.0
  *
  * Uses plugin jquery.ajax-retry:
@@ -32,7 +31,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "3.8.5";
+	jatos.version = "3.8.6";
 	/**
 	 * How long in ms should JATOS wait before retrying the HTTP call.
 	 */

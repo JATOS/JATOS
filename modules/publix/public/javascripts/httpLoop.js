@@ -1,17 +1,17 @@
 /**
  * httpLoop.js
- * 
+ *
  * Web worker used in jatos.js - Background queue for ajax requests
- * 
- * While the study continues, this worker sends the requests in 
+ *
+ * While the study continues, this worker sends the requests in
  * the background without blocking the study's thread. The request
  * order is kept. All end/abort study functions wait until all
  * requests here are done.
- * 
+ *
  * http://www.jatos.org
  * Author Kristian Lange 2020
  * Licensed under Apache License 2.0
- * 
+ *
  * Uses "HTML5 `FormData` polyfill for Browsers."
  * https://github.com/jimmywarting/FormData
  * Copyright (c) 2017 Jimmy Wärting
@@ -71,21 +71,20 @@ function run() {
 				status: xhr.status,
 				requestId: request.id
 			});
-			run(); // Run the next request in line
+			run(); // Run the next request in line without waiting
 		} else {
 			handleErrorAndRetry(false);
-			setTimeout(run, request.retryWait); // Run the next request after waiting a bit
 		}
 	};
 	xhr.ontimeout = function () { handleErrorAndRetry(true) };
 	xhr.onerror = function () { handleErrorAndRetry(false) };
 
-    // Embedded function (can access objects request and xhr)
+	// Embedded function (can access objects request and xhr)
 	function handleErrorAndRetry(timeout) {
-	    // Do not retry if 1) a BadRequest or 2) retry is not wanted or 3) all retry attempts were already used
+		// Do not retry if 1) a BadRequest, or 2) retry is not wanted, or 3) all retry attempts were already used
 		if ((xhr.status && xhr.status == 400)
-		        || "retry" in request === false
-		        || request.retry <= 0) {
+			|| "retry" in request === false
+			|| request.retry <= 0) {
 			var msg = {
 				requestId: request.id,
 				url: request.url,
@@ -98,11 +97,14 @@ function run() {
 				msg.statusText = xhr.statusText;
 				msg.error = xhr.responseText.trim() || null;
 			}
-			self.postMessage(msg);
+			console.error(`Failed ${request.method} to ${request.url}`);
+			self.postMessage(msg); // Do not retry the request and post message back to sender
+			run(); // Run the next request in line without waiting
 		} else {
-			console.log("Retry " + request.method + " to " + request.url);
+			console.warn(`Retry ${request.method} to ${request.url} - ${request.retry} retry attempts left`);
 			request.retry = request.retry - 1;
 			requests.unshift(request); // Retry this request before other requests
+			setTimeout(run, request.retryWait); // Run the next request after waiting a bit
 		}
 	}
 
@@ -154,7 +156,7 @@ function run() {
 				File.prototype[stringTag] = 'File'
 			}
 		}
-	
+
 		// Fix so you can construct your own File
 		try {
 			new File([], '') // eslint-disable-line
@@ -189,7 +191,7 @@ function run() {
 				return blob
 			}
 		}
-	
+
 		function normalizeValue([name, value, filename]) {
 			if (value instanceof Blob) {
 				// Should always returns a new File instance
@@ -208,7 +210,7 @@ function run() {
 				throw new TypeError(`${expected} argument required, but only ${args.length} present.`)
 			}
 		}
-	
+
 		function normalizeArgs(name, value, filename) {
 			return value instanceof Blob
 				// normalize name and filename if adding an attachment
@@ -233,7 +235,7 @@ function run() {
 				cb(arr[i])
 			}
 		}
-	
+
 		/**
 		 * @implements {Iterable}
 		 */
@@ -287,7 +289,7 @@ function run() {
 				var [a, s, d] = normalizeArgs.apply(null, arguments)
 				this._data.push([a, s, d])
 			}
-	
+
 			/**
 			 * Delete all fields values given name
 			 *
@@ -307,7 +309,7 @@ function run() {
 
 				this._data = res
 			}
-	
+
 			/**
 			 * Iterate over all fields as [name, value]
 			 *
@@ -318,7 +320,7 @@ function run() {
 					yield normalizeValue(this._data[i])
 				}
 			}
-	
+
 			/**
 			 * Iterate over all fields
 			 *
@@ -351,7 +353,7 @@ function run() {
 				}
 				return null
 			}
-	
+
 			/**
 			 * Return all fields values given name
 			 *
@@ -387,7 +389,7 @@ function run() {
 				}
 				return false
 			}
-	
+
 			/**
 			 * Iterate over all fields name
 			 *
@@ -431,7 +433,7 @@ function run() {
 
 				this._data = result
 			}
-	
+
 			/**
 			 * Iterate over all fields
 			 *
@@ -458,7 +460,7 @@ function run() {
 
 				return fd
 			}
-	
+
 			/**
 			 * [_blob description]
 			 *
@@ -491,7 +493,7 @@ function run() {
 					type: 'multipart/form-data; boundary=' + boundary
 				})
 			}
-	
+
 			/**
 			 * The class itself is iterable
 			 * alias for formdata.entries()
@@ -501,7 +503,7 @@ function run() {
 			[Symbol.iterator]() {
 				return this.entries()
 			}
-	
+
 			/**
 			 * Create the default string description.
 			 *
@@ -511,7 +513,7 @@ function run() {
 				return '[object FormData]'
 			}
 		}
-	
+
 		if (stringTag) {
 			/**
 			 * Create the default string description.
@@ -519,7 +521,7 @@ function run() {
 			 */
 			FormDataPolyfill.prototype[stringTag] = 'FormData'
 		}
-	
+
 		// Patch xhr's send method to call _blob transparently
 		if (_send) {
 			const setRequestHeader = global.XMLHttpRequest.prototype.setRequestHeader
@@ -551,7 +553,7 @@ function run() {
 				}
 			}
 		}
-	
+
 		// Patch fetch's function to call _blob transparently
 		if (_fetch) {
 			const _fetch = global.fetch
@@ -576,5 +578,5 @@ function run() {
 		}
 
 		global['FormData'] = FormDataPolyfill
-	} 
+	}
 })();
