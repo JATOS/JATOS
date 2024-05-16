@@ -56,7 +56,7 @@
     }
 
     function fillStudyList(studyArray) {
-        $("#studySidebar .list-group").empty("No studies yet").addClass("d-none");
+        $("#studySidebar .list-group").empty().addClass("d-none");
         studyArray.forEach((study) => {
             const isSelectedStudy = window.study && window.study.id === study.id ? "active" : "";
             const componentListTooltip = study.componentList.map(c => `<li>${c.title}</li>`).join("");
@@ -109,6 +109,7 @@
         });
         Helpers.activateTooltips("#studySidebar");
         recoverSearch();
+        $('#studySidebar .list-group').is(':empty').text("No studies yet");
         $("#studySidebar .list-group").removeClass("d-none");
     }
 
