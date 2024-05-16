@@ -1,5 +1,4 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
-@import general.common._
 
 @views.html.gui.page.main_new(request, signedinUser, None, None, breadcrumbs) {
 
@@ -24,7 +23,7 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-admin">
                     <li>
-                        <button class="dropdown-item" id="applicationLog" type="button" data-filename="@Common.getLogsFilename()" data-bs-toggle="modal" data-bs-target="#logModal">Show @{Common.getLogsFilename()}</button>
+                        <button class="dropdown-item" id="applicationLog" type="button">Show xxx.log</button>
                     </li>
                     <li>
                         <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#listLogsModal">List all logs</button>
@@ -42,7 +41,7 @@
 
     @views.html.gui.admin.jatosUpdate_new()
     @views.html.gui.admin.jatosStatus_new()
-    @views.html.gui.admin.applicationLogs_new()
+    @views.html.gui.admin.logs_new()
     @views.html.gui.admin.tests_new()
     @views.html.gui.admin.systemInfo_new()
 

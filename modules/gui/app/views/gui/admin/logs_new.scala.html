@@ -42,6 +42,13 @@
         $("#adminToolbarLogs").hide();
     }
 
+    $("#applicationLog").text("Show " + window.common.logsFilename);
+
+    $("#applicationLog").click(function() {
+        $("#logModal").data("filename", window.common.logsFilename);
+        $("#logModal").modal('show');
+    });
+
     $("#listLogsModal").on('show.bs.modal', function() {
         $.ajax({
             url: window.routes.Admin.listLogs,
@@ -70,8 +77,14 @@
 
     $("#listLogsModal").on('click', 'button.show-log', function(e) {
         const filename = $(this).data("filename");
-        const url = window.routes.Admin.logs(filename, -1, true);
+        $("#logModal").data("filename", filename);
+        $("#logModal").modal('show');
+    });
+
+    $("#logModal").on('show.bs.modal', function() {
         $('#logModal .modal-body pre code').text("");
+        const filename = $(this).data("filename");
+        const url = window.routes.Admin.logs(encodeURIComponent(filename), -1, true);
         $.ajax({
             url: url,
             success: function(result) {
@@ -82,4 +95,6 @@
             error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get the log")
         });
     });
+
+
 </script>
