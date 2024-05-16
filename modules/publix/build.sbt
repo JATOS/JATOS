@@ -1,5 +1,5 @@
 name := "jatos-publix"
-version := "3.8.6"
+version := "3.9.1"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
