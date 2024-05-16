@@ -56,7 +56,7 @@
     }
 
     function fillStudyList(studyArray) {
-        $("#studySidebar .list-group").empty().addClass("d-none");
+        $("#studySidebar .list-group").empty("No studies yet").addClass("d-none");
         studyArray.forEach((study) => {
             const isSelectedStudy = window.study && window.study.id === study.id ? "active" : "";
             const componentListTooltip = study.componentList.map(c => `<li>${c.title}</li>`).join("");
@@ -154,7 +154,7 @@
         try {
             if (storageItem) searchObject = JSON.parse(storageItem);
         } catch (e) {
-            console.warning("Unable to parse localStorage object 'studySidebarSearch': restart with an empty one");
+            console.info("Unable to parse localStorage object 'studySidebarSearch': restart with an empty one");
         }
         return searchObject;
     }
