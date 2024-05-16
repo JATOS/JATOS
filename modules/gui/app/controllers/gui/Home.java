@@ -66,7 +66,7 @@ public class Home extends Controller {
                 Duration.between(signedinUser.getLastLogin().toInstant(), Instant.now())
                         .minusSeconds(30)
                         .isNegative();
-        return status(httpStatus, views.html.gui.home_new.render(request, freshlySignedin, signedinUser, breadcrumbs));
+        return status(httpStatus, views.html.gui.home.render(request, freshlySignedin, signedinUser, breadcrumbs));
     }
 
     @Transactional

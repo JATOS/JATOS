@@ -1,6 +1,6 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String)
 
-@views.html.gui.page.main_new(request, signedinUser, None, None, breadcrumbs) {
+@views.html.gui.page.main(request, signedinUser, None, None, breadcrumbs) {
 
 <main class="container-xxl overflow-auto mt-4">
 
@@ -39,11 +39,11 @@
         </div>
     </div>
 
-    @views.html.gui.admin.jatosUpdate_new()
-    @views.html.gui.admin.jatosStatus_new()
-    @views.html.gui.admin.logs_new()
-    @views.html.gui.admin.tests_new()
-    @views.html.gui.admin.systemInfo_new()
+    @views.html.gui.admin.jatosUpdate()
+    @views.html.gui.admin.jatosStatus()
+    @views.html.gui.admin.logs()
+    @views.html.gui.admin.tests()
+    @views.html.gui.admin.systemInfo()
 
 </main>
 

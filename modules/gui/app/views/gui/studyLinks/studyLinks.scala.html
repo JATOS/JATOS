@@ -1,6 +1,6 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String, study: common.Study)
 
-@views.html.gui.page.main_new(request, signedinUser, Some(study), None, breadcrumbs) {
+@views.html.gui.page.main(request, signedinUser, Some(study), None, breadcrumbs) {
 
 <main class="container-xxl overflow-auto mt-4">
 
@@ -56,16 +56,16 @@
         </div>
     </div>
 
-    @views.html.gui.studyLinks.batchCreator_new()
-    @views.html.gui.studyLinks.batchPropertiesModal_new()
-    @views.html.gui.studyLinks.sessionModal_new()
-    @views.html.gui.studyLinks.groupsModal_new()
-    @views.html.gui.studyLinks.studyLinksSetup_new()
-    @views.html.gui.studyLinks.studyLinksManager_new()
-    @views.html.gui.studyLinks.qrCodeModal_new()
-    @views.html.gui.studyLinks.studyLinksCreator_new()
-    @views.html.gui.studyLinks.studyLinksCreatorAllTypesModal_new()
-    @views.html.gui.studyLinks.mTurkSourceCodeModal_new()
+    @views.html.gui.studyLinks.batchCreator()
+    @views.html.gui.studyLinks.batchPropertiesModal()
+    @views.html.gui.studyLinks.sessionModal()
+    @views.html.gui.studyLinks.groupsModal()
+    @views.html.gui.studyLinks.studyLinksSetup()
+    @views.html.gui.studyLinks.studyLinksManager()
+    @views.html.gui.studyLinks.qrCodeModal()
+    @views.html.gui.studyLinks.studyLinksCreator()
+    @views.html.gui.studyLinks.studyLinksCreatorAllTypesModal()
+    @views.html.gui.studyLinks.mTurkSourceCodeModal()
 </main>
 
 <script @{helper.CSPNonce.attr} type="module">

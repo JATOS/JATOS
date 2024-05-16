@@ -57,7 +57,7 @@ public class Signin extends Controller {
      * Shows the sign-in page
      */
     public Result signin(Http.Request request) {
-        return ok(views.html.gui.auth.signin_new.render(request));
+        return ok(views.html.gui.auth.signin.render(request));
     }
 
     /**

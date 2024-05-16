@@ -92,7 +92,7 @@ public class StudyResults extends Controller {
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByStudy(study.getId()).url();
-        return ok(views.html.gui.results.studyResults_new.render(request, signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.results.studyResults.render(request, signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -116,7 +116,7 @@ public class StudyResults extends Controller {
                 : BreadcrumbsService.RESULTS + " of " + Worker.getUIWorkerType(workerType) + " workers";
         String breadcrumbs = breadcrumbsService.generateForBatch(study, batch, breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByBatch(batchId, workerType).url();
-        return ok(views.html.gui.results.studyResults_new.render(request, signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.results.studyResults.render(request, signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -140,7 +140,7 @@ public class StudyResults extends Controller {
         String breadcrumbs = breadcrumbsService.generateForGroup(study, groupResult.getBatch(), groupResult,
                 breadcrumbsTitle);
         String dataUrl = controllers.gui.routes.StudyResults.tableDataByGroup(groupId).url();
-        return ok(views.html.gui.results.studyResults_new.render(request, signedinUser, breadcrumbs, study, dataUrl));
+        return ok(views.html.gui.results.studyResults.render(request, signedinUser, breadcrumbs, study, dataUrl));
     }
 
     /**
@@ -160,7 +160,7 @@ public class StudyResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
-        return ok(views.html.gui.results.workersStudyResults_new.render(request, signedinUser, breadcrumbs, worker));
+        return ok(views.html.gui.results.workersStudyResults.render(request, signedinUser, breadcrumbs, worker));
     }
 
     /**

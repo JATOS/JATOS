@@ -1,6 +1,6 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String, study: common.Study, studyResultsCount: Integer)
 
-@views.html.gui.page.main_new(request, signedinUser, Some(study), None, breadcrumbs) {
+@views.html.gui.page.main(request, signedinUser, Some(study), None, breadcrumbs) {
 
 <main class="container-xxl overflow-auto mt-4">
 
@@ -52,17 +52,17 @@
             </button>
     </div>
 
-    @views.html.gui.study.components_new(study)
+    @views.html.gui.study.components(study)
 
 </main>
 }
 
-@views.html.gui.study.studyPropertiesModal_new()
-@views.html.gui.study.studyDescription_new(study)
-@views.html.gui.study.studyMemberUsersModal_new()
-@views.html.gui.study.componentCreatorModal_new()
-@views.html.gui.study.componentPropertiesModal_new()
-@views.html.gui.study.studyLogModal_new()
+@views.html.gui.study.studyPropertiesModal()
+@views.html.gui.study.studyDescription(study)
+@views.html.gui.study.studyMemberUsersModal()
+@views.html.gui.study.componentCreatorModal()
+@views.html.gui.study.componentPropertiesModal()
+@views.html.gui.study.studyLogModal()
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";

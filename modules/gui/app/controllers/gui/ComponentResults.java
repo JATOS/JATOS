@@ -83,7 +83,7 @@ public class ComponentResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.COMPONENT_RESULTS);
-        return ok(views.html.gui.results.componentResults_new.render(request, signedinUser, breadcrumbs, study, component));
+        return ok(views.html.gui.results.componentResults.render(request, signedinUser, breadcrumbs, study, component));
     }
 
     /**

@@ -1,6 +1,6 @@
 @(request: Http.Request, signedinUser: common.User, breadcrumbs: String, study: common.Study, component: common.Component)
 
-@views.html.gui.page.main_new(request, signedinUser, Some(study), None, breadcrumbs) {
+@views.html.gui.page.main(request, signedinUser, Some(study), None, breadcrumbs) {
 
 <main class="container-fluid overflow-auto mt-4">
 
@@ -53,8 +53,8 @@
         </tfoot>
     </table>
 
-    @views.html.gui.results.componentResultDataModal_new()
-    @views.html.gui.results.resultsTableToolbar_new()
+    @views.html.gui.results.componentResultDataModal()
+    @views.html.gui.results.resultsTableToolbar()
 
 </main>
 

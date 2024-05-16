@@ -82,7 +82,7 @@ public class Users extends Controller {
     public Result userManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
-        return ok(views.html.gui.admin.userManager_new.render(request, signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.userManager.render(request, signedinUser, breadcrumbs));
     }
 
     /**

@@ -35,7 +35,7 @@
     const alerts = new Alerts.Named("mturk-source-code");
     $("#mtSourceCodeModal").on('hide.bs.modal', alerts.hideAll);
 
-    const mtSourceCodeTemplate = `@views.html.gui.studyLinks.mTurkSourceCodeTemplate_new()`.replaceAll("script-tag", "script");
+    const mtSourceCodeTemplate = `@views.html.gui.studyLinks.mTurkSourceCodeTemplate()`.replaceAll("script-tag", "script");
 
     $("#mtSourceCodeModal").on('show.bs.modal', function() {
         const batch = $('#mtSourceCodeModal').data('batch');

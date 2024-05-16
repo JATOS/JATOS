@@ -100,7 +100,7 @@ public class Studies extends Controller {
         checkStandardForStudy(request, studyId, study, signedinUser);
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
-        return status(httpStatus, views.html.gui.study.study_new
+        return status(httpStatus, views.html.gui.study.study
                 .render(request, signedinUser, breadcrumbs, study, studyResultCount));
     }
 

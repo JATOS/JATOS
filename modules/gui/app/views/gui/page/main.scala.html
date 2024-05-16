@@ -32,16 +32,16 @@
 
     <body class="container-fluid d-flex flex-column vh-100 overflow-hidden p-0">
 
-        @views.html.gui.page.navbar_new(signedinUser, breadcrumbs)
-        @views.html.gui.page.studySidebar_new()
-        @views.html.gui.page.userSidebar_new(signedinUser)
+        @views.html.gui.page.navbar(signedinUser, breadcrumbs)
+        @views.html.gui.page.studySidebar()
+        @views.html.gui.page.userSidebar(signedinUser)
 
         @************ Here goes the actual page content ************@
         @content
 
-        @views.html.gui.page.waitingModal_new()
-        @views.html.gui.page.confirmationModal_new()
-        @views.html.gui.auth.signinModal_new()
+        @views.html.gui.page.waitingModal()
+        @views.html.gui.page.confirmationModal()
+        @views.html.gui.auth.signinModal()
 
         <div class="toast-container top-0 end-0"></div>
 
