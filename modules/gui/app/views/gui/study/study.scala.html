@@ -9,8 +9,8 @@
             <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip data-bs-title="Do a test run of your study">
                 <i class="bi-play-circle"></i><span class="d-none d-xl-inline ps-1">Run</span>
             </a>
-            <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip data-bs-title="Show this study's results">
-                Results<span class="badge text-study bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results of this study">@studyResultsCount</span>
+            <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip data-bs-title="Show this study results">
+                Results<span class="badge text-study bg-white rounded-pill ms-1">@studyResultsCount</span>
             </button>
             <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip data-bs-title="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
@@ -79,6 +79,11 @@
         {"name": "Study UUID", "value": window.study.uuid, "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances"},
         {"name": "Study assets", "value": window.study.dirName, "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."}
     ]));
+
+    const studyResultButtonTooltip = @studyResultsCount > 0
+            ? "This study has @studyResultsCount study result(s) so far. Click here to go to the study result page."
+            : "This study has no study results yet. Maybe do a test run to generate one.";
+    $("#studyResults").attr("data-bs-title", studyResultButtonTooltip);
 
     drawLockButton();
 

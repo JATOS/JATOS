@@ -311,18 +311,26 @@
 
         function renderWorkerResultsButton(data, type, full) {
             const workerType = $('#studyLinksManagerModal').data('type');
-            const name = workerType === "PersonalMultiple" ? "Results" : "Result";
-            const count = workerType === "PersonalMultiple" ? full.studyResultCount : "";
-            const hideBadge = workerType === "PersonalSingle";
+            let buttonText, count, hideBadge, tooltip;
+            if (workerType === "PersonalMultiple") {
+                buttonText = "Results";
+                count = full.studyResultCount,
+                hideBadge = false;
+                tooltip = count > 0
+                    ? `This study link has ${count} result(s) so far. Click here to go to a result page that only shows the study results of this study link.`
+                    : "This study link has no results yet.";
+            } else {
+                buttonText = "Result";
+                count = "";
+                hideBadge = true;
+                tooltip = "Click here to go to a result page that only shows the study result of this study link.";
+            }
             const button = `
                 <a type="button" class="btn btn-batch worker-results-button no-info-icon text-nowrap"
-                    data-bs-tooltip data-bs-title="Shows study results of this study link"
+                    data-bs-tooltip data-bs-title="${tooltip}"
                     href="${window.routes.StudyResults.workersStudyResults(full.workerId)}">
-                    ${name}
-                    <span class="badge text-batch bg-white rounded-pill no-info-icon ms-1 ${hideBadge ? "d-none" : ""}"
-                        data-bs-tooltip data-bs-title="Number of study results that belong to this study link">
-                        ${count}
-                    </span>
+                    ${buttonText}
+                    <span class="badge text-batch bg-white rounded-pill ms-1 ${hideBadge ? "d-none" : ""}">${count}</span>
                 </a>`;
             return full.studyResultState !== null ? button : '<span class="text-body text-opacity-50">none</span>';
         }

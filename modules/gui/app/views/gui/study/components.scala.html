@@ -22,7 +22,7 @@
             <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
         </a>
         <button class="component-results btn btn-component" type="button" data-bs-tooltip data-bs-title="Show the results only of this component">
-            <span class="d-none d-lg-inline">Component </span>Results<span class="badge text-component bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of component results only of this component"></span>
+            <span class="d-none d-lg-inline">Component </span>Results<span class="badge text-component bg-white rounded-pill ms-1"></span>
         </button>
         <button class="component-properties btn btn-component" type="button" data-bs-tooltip data-bs-title="Change this component's properties">
             <i class="bi-gear-fill"></i><span class="d-none d-lg-inline ps-1">Properties</span>
@@ -106,6 +106,10 @@
                     "render": function (data, type, full, meta) {
                         const toolbar = $('#componentToolbarTemplate').clone();
                         $(toolbar).find('.component-results .badge').text(data.resultCount);
+                        const tooltip = data.resultCount > 0
+                                ? `This component has ${data.resultCount} component result(s) so far. Click here to go to this component's result page.`
+                                : "This component has no component results yet.";
+                        $(toolbar).find('.component-results').attr("data-bs-title", tooltip);
                         return toolbar.html();
                     }
                 }

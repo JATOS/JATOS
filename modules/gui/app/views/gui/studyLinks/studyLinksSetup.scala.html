@@ -14,10 +14,10 @@
             </div>
             <div class="text-nowrap float-end">
                 <button class="btn btn-batch study-links-manager" type="button" data-bs-tooltip data-bs-title="Show existing and create new study links for the type Personal Single">
-                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Links<span class="study-links-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of existing study links for this type"></span>
+                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Links<span class="study-links-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
                 <button class="btn btn-batch worker-results-button" type="button" data-bs-tooltip data-bs-title="Show all study results that belong to this batch and type Personal Single">
-                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results that belong to this batch and type Personal Single"></span>
+                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
             </div>
         </div>
@@ -32,10 +32,10 @@
             </div>
             <div class="text-nowrap float-end">
                 <button class="btn btn-batch study-links-manager" type="button" data-bs-tooltip data-bs-title="Show existing and create new study links for the type Personal Multiple">
-                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Links<span class="study-links-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of existing study links for this type"></span>
+                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Links<span class="study-links-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
                 <button class="btn btn-batch worker-results-button" type="button" data-bs-tooltip data-bs-title="Show all study results that belong to this batch and type Personal Multiple">
-                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results that belong to this batch and type Personal Multiple"></span>
+                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
             </div>
         </div>
@@ -49,11 +49,11 @@
                 <span data-bs-tooltip data-bs-title="Study links with the type General Single can be used many times - but only once in the same browser. There is only one link of this type per batch. They are typically used to be distributed in a mailing list or posting in social media.">General Single</span>
             </div>
             <div class="text-nowrap float-end">
-                <button class="btn btn-batch study-link-button" type="button" data-bs-tooltip data-bs-title="Show existing and create new study links for the type General Single">
-                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Link<span class="study-links-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of existing study links for this type"></span>
+                <button class="btn btn-batch study-link-button" type="button" data-bs-tooltip data-bs-title="Show the study link for type General Single">
+                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Link<span class="study-links-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
                 <button class="btn btn-batch worker-results-button" type="button" data-bs-tooltip data-bs-title="Show all study results that belong to this batch and type General Single">
-                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results that belong to this batch and type General Single"></span>
+                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
             </div>
         </div>
@@ -67,11 +67,11 @@
                 <span data-bs-tooltip data-bs-title="Study links with the type General Multiple can be used many times - even in the same browser. There is only one link of this type per batch. They are typically used to be distributed in a mailing list or posting in social media.">General Multiple</span>
             </div>
             <div class="text-nowrap float-end">
-                <button class="btn btn-batch study-link-button" type="button" data-bs-tooltip data-bs-title="Show existing and create new study links for the type General Multiple">
-                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Link<span class="study-links-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of existing study links for this type"></span>
+                <button class="btn btn-batch study-link-button" type="button" data-bs-tooltip data-bs-title="Show the study link for type General Multiple">
+                    <span class="d-none d-xl-inline"><i class="bi-link-45deg pe-1"></i>Study </span>Link<span class="study-links-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
                 <button class="btn btn-batch worker-results-button" type="button" data-bs-tooltip data-bs-title="Show all study results that belong to this batch and type General Multiple">
-                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results that belong to this batch and type General Multiple"></span>
+                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
             </div>
         </div>
@@ -89,7 +89,7 @@
                     <span class="d-none d-xl-inline"><i class="bi-code-slash pe-1"></i>Source </span>Code
                 </button>
                 <button class="btn btn-batch worker-results-button" type="button" data-bs-tooltip data-bs-title="Show all study results that belong to this batch and type MTurk">
-                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip data-bs-title="Number of study results that belong to this batch and type MTurk"></span>
+                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill ms-1"></span>
                 </button>
             </div>
         </div>
@@ -155,19 +155,30 @@
     function fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv) {
         setAllowedTypes(studyLinksSetupDiv, studyLinksSetupData.allowedWorkerTypes);
 
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="PersonalSingle"] .study-links-badge').text(studyLinksSetupData.personalSingleLinkCount);
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="PersonalMultiple"] .study-links-badge').text(studyLinksSetupData.personalMultipleLinkCount);
+        renderStudyLinksManagerButton("PersonalSingle", studyLinksSetupData.personalSingleLinkCount, studyLinksSetupDiv);
+        renderStudyLinksManagerButton("PersonalMultiple", studyLinksSetupData.personalMultipleLinkCount, studyLinksSetupDiv);
 
-        let resultCount = studyLinksSetupData.studyResultCountsPerWorker.PersonalSingle;
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="PersonalSingle"] .worker-results-badge').text(resultCount);
-        resultCount = studyLinksSetupData.studyResultCountsPerWorker.PersonalMultiple;
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="PersonalMultiple"] .worker-results-button .worker-results-badge').text(resultCount);
-        resultCount = studyLinksSetupData.studyResultCountsPerWorker.GeneralSingle;
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="GeneralSingle"] .worker-results-button .worker-results-badge').text(resultCount);
-        resultCount = studyLinksSetupData.studyResultCountsPerWorker.GeneralMultiple;
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="GeneralMultiple"] .worker-results-button .worker-results-badge').text(resultCount);
-        resultCount = studyLinksSetupData.studyResultCountsPerWorker.MT;
-        $(studyLinksSetupDiv).find('.study-links-setup[data-type="MT"] .worker-results-button .worker-results-badge').text(resultCount);
+        renderResultsButton("PersonalSingle", studyLinksSetupData.studyResultCountsPerWorker.PersonalSingle, studyLinksSetupDiv);
+        renderResultsButton("PersonalMultiple", studyLinksSetupData.studyResultCountsPerWorker.PersonalMultiple, studyLinksSetupDiv);
+        renderResultsButton("GeneralSingle", studyLinksSetupData.studyResultCountsPerWorker.GeneralSingle, studyLinksSetupDiv);
+        renderResultsButton("GeneralMultiple", studyLinksSetupData.studyResultCountsPerWorker.GeneralMultiple, studyLinksSetupDiv);
+        renderResultsButton("MT", studyLinksSetupData.studyResultCountsPerWorker.MT, studyLinksSetupDiv);
+    }
+
+    function renderStudyLinksManagerButton(type, count, studyLinksSetupDiv) {
+        $(studyLinksSetupDiv).find(`.study-links-setup[data-type="${type}"] .study-links-badge`).text(count);
+        const tooltip = count > 0
+                ? `${count} study link(s) belong to this type so far. Click here to manage them (show existing or create new study links).`
+                : "This type has no study links yet. Click here to create and manage study links for this type.";
+        $(studyLinksSetupDiv).find(`.study-links-setup[data-type="${type}"] .study-links-manager`).attr("data-bs-title", tooltip);
+    }
+
+    function renderResultsButton(type, count, studyLinksSetupDiv) {
+        $(studyLinksSetupDiv).find(`.study-links-setup[data-type="${type}"] .worker-results-badge`).text(count);
+        const tooltip = count > 0
+                ? `This type has ${count} result(s) so far. Click here to go to a result page that only shows the study results of this type.`
+                : "This type has no results yet.";
+        $(studyLinksSetupDiv).find(`.study-links-setup[data-type="${type}"] .worker-results-button`).attr("data-bs-title", tooltip);
     }
 
     function setAllowedTypes(studyLinksSetupDiv, allowedTypes) {
