@@ -6,11 +6,10 @@ $(".btn-qr-code").on("click", show);
 function show() {
     const button = this;
     const url = button.parentElement.textContent.trim();
-    const text = button.dataset.qrCodeText;
 
     $('#qrcode').empty();
     $('#qrCodeModal').off('shown.bs.modal');
-    $('#qrCodeModalStudyLink').html(text);
+    $('#qrCodeModalStudyLink').html(url);
 
     $('#qrCodeModal').on('shown.bs.modal', function (e) {
         let options = {
