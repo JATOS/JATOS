@@ -2,25 +2,25 @@
 <div class="card card-body bg-body-tertiary text-center mb-4" id="jatosStatus">
     <div class="row">
         <div class="col-sm-3">
-            <span data-bs-tooltip data-bs-title="Number of studies (aka experiments) on this JATOS server. First is the number of currently stored studies and in brackets is the total number studies (including the deleted ones).">
+            <span data-bs-tooltip="Number of studies (aka experiments) on this JATOS server. First is the number of currently stored studies and in brackets is the total number studies (including the deleted ones).">
                 Studies
             </span>
             <div class="fs-4 fw-bold placeholder-glow" id="jatosStatusStudies"><span class="placeholder col-1"></span></div>
         </div>
         <div class="col-sm-3">
-            <span data-bs-tooltip data-bs-title="Number of all study results on this JATOS server - How many studies were run so far? First is the number of currently stored study results and in brackets is the total number of study results (including the deleted ones).">
+            <span data-bs-tooltip="Number of all study results on this JATOS server - How many studies were run so far? First is the number of currently stored study results and in brackets is the total number of study results (including the deleted ones).">
                 Study results
             </span>
             <div class="fs-4 fw-bold placeholder-glow" id="jatosStatusStudyResults"><span class="placeholder col-1"></span></div>
         </div>
         <div class="col-sm-3">
-            <span data-bs-tooltip data-bs-title="Number of all workers (aka participants) of all studies on this JATOS server. First is the number of currently stored workers and in brackets is the total number of workers (including the deleted ones).">
+            <span data-bs-tooltip="Number of all participants (aka workers) of all studies on this JATOS server. First is the number of currently stored workers and in brackets is the total number of workers (including the deleted ones).">
                 Workers
             </span>
             <div class="fs-4 fw-bold placeholder-glow" id="jatosStatusWorkers"><span class="placeholder col-1"></span></div>
         </div>
         <div class="col-sm-3">
-            <span data-bs-tooltip data-bs-title="Number of all users (aka experimenters) on this JATOS server">
+            <span data-bs-tooltip="Number of all users (aka experimenters) on this JATOS server">
                 Users
             </span>
             <div class="fs-4 fw-bold placeholder-glow" id="jatosStatusUsers"><span class="placeholder col-1"></span></div>
@@ -32,12 +32,12 @@
 <div class="row row-cols-1 row-cols-md-2 g-4">
     <div class="col">
         <div class="card h-100" id="latestUsers">
-            <h5 class="card-header text-center"data-bs-tooltip data-bs-title="The 10 latest users and the last time they were active (except the signed-in user).">Latest Users</h5>
+            <h5 class="card-header text-center"data-bs-tooltip="The 10 latest users and the last time they were active (except the signed-in user).">Latest Users</h5>
             <div class="card-body bg-body-tertiary">
                 <table class="table">
                     <thead>
                     <tr>
-                        <th data-bs-tooltip data-bs-title="Last time this user was active">Time</th>
+                        <th data-bs-tooltip="Last time this user was active">Time</th>
                         <th>User</th>
                     </tr>
                     </thead>
@@ -53,14 +53,14 @@
     </div>
     <div class="col">
         <div class="card h-100" id="latestStudyRuns">
-            <h5 class="card-header text-center" data-bs-tooltip data-bs-title="The 10 studies that were active last">Latest study runs</h5>
+            <h5 class="card-header text-center" data-bs-tooltip="The 10 studies that were active last">Latest study runs</h5>
             <div class="card-body bg-body-tertiary">
                 <table class="table">
                     <thead>
                     <tr>
-                        <th data-bs-tooltip data-bs-title="Time when this study run was last seen">Time</th>
+                        <th data-bs-tooltip="Time when this study run was last seen">Time</th>
                         <th>Study title</th>
-                        <th data-bs-tooltip data-bs-title="All users who are members of this study">Members</th>
+                        <th data-bs-tooltip="All users who are members of this study">Members</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -108,7 +108,7 @@
         latestUsers.forEach((e) => {
             htmlArray.push(`
                 <tr>
-                    <td class="timeago no-info-icon" datetime="${new Date(e.time).toISOString()}" data-bs-tooltip data-bs-title="${Helpers.getLocalTimeSimple(e.time)}"></td>
+                    <td class="timeago no-info-icon" datetime="${new Date(e.time).toISOString()}" data-bs-tooltip="${Helpers.getLocalTimeSimple(e.time)}"></td>
                     <td>${Helpers.generateFullUserString(e.name, e.username, e.authMethod)}</td>
                 </tr>
             `);
@@ -125,7 +125,7 @@
         latestStudyRuns.forEach((studyRun) => {
             htmlArray.push(`
                 <tr>
-                    <td><span class="timeago no-info-icon" datetime="${new Date(studyRun.time).toISOString()}" data-bs-tooltip data-bs-title="${Helpers.getLocalTimeSimple(studyRun.time)}"></span></td>
+                    <td><span class="timeago no-info-icon" datetime="${new Date(studyRun.time).toISOString()}" data-bs-tooltip="${Helpers.getLocalTimeSimple(studyRun.time)}"></span></td>
                     <td>${Helpers.trimTextWithThreeDots(studyRun.studyTitle, 50)}</td>
                     <td>${Helpers.generateMembersHtml(studyRun.members)}</td>
                 </tr>

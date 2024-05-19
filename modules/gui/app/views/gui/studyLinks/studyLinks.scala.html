@@ -6,10 +6,10 @@
 
     @* Toolbar *@
     <div class="d-flex gap-1 mb-4" id="studyLinksToolbar">
-        <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#batchCreatorModal" data-bs-tooltip data-bs-title="Add a new batch of workers">
+        <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#batchCreatorModal" data-bs-tooltip="Add a new batch of workers">
             <i class="bi-plus-lg fw-bold"></i><span class="d-none d-sm-inline ps-1">New Batch</span>
         </button>
-        <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#studyLinksCreatorAllTypesModal" data-bs-tooltip data-bs-title="Shortcut to get study links. You can choose the batch and link type. Study links are meant to be distributed to your participants so they can run the study.">
+        <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#studyLinksCreatorAllTypesModal" data-bs-tooltip="Shortcut to get study links. You can choose the batch and link type. Study links are meant to be distributed to your participants so they can run the study.">
             <i class="bi-link-45deg"></i><span class="d-none d-sm-inline ps-1">Get Study Links</span>
         </button>
     </div>
@@ -19,9 +19,9 @@
         <thead>
         <tr>
             <th></th>
-            <th class="no-info-icon" data-bs-tooltip data-bs-title="Activate / inactivate batches - study links from inactivated batches won't run">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
-            <th class="no-info-icon" data-bs-tooltip data-bs-title="ID of this batch">ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-            <th class="no-info-icon" data-bs-tooltip data-bs-title="Title of this batch">Batch title<span class="info-icon"></span><span class="ordering-icon"></span></th>
+            <th class="no-info-icon" data-bs-tooltip="Activate / inactivate batches - study links from inactivated batches won't run">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+            <th class="no-info-icon" data-bs-tooltip="ID of this batch">ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+            <th class="no-info-icon" data-bs-tooltip="Title of this batch">Batch title<span class="info-icon"></span><span class="ordering-icon"></span></th>
             <th></th>
         </tr>
         </thead>
@@ -30,17 +30,17 @@
     @* Template for button toolbar in batch's row *@
     <div class="d-none" id="batchToolbarTemplate" >
         <div class="float-end text-nowrap">
-            <button class="batch-properties btn btn-batch" type="button" data-bs-tooltip data-bs-title="Change this batch's properties">
+            <button class="batch-properties btn btn-batch" type="button" data-bs-tooltip="Change this batch's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <button class="batch-session btn btn-batch" type="button" data-bs-tooltip data-bs-title="Open and edit this batch's session data">
+            <button class="batch-session btn btn-batch" type="button" data-bs-tooltip="Open and edit this batch's session data">
                 <i class="bi-list-columns-reverse"></i><span class="d-none d-xl-inline ps-1">Batch Session Data</span>
             </button>
-            <button class="groups btn btn-batch" type="button" data-bs-tooltip data-bs-title="Show all groups of this batch">
+            <button class="groups btn btn-batch" type="button" data-bs-tooltip="Show all groups of this batch">
                 <i class="bi-people-fill"></i><span class="d-none d-xl-inline ps-1">Groups</span>
                 <span class="badge text-batch bg-white rounded-pill ms-1"></span>
             </button>
-            <button class="batch-results btn btn-batch" type="button" data-bs-tooltip data-bs-title="Show only the study results that belong to this batch">
+            <button class="batch-results btn btn-batch" type="button" data-bs-tooltip="Show only the study results that belong to this batch">
                 Results<span class="badge text-batch bg-white rounded-pill no-info-icon ms-1"></span>
             </button>
             <div class="btn-group" role="group">
@@ -48,7 +48,7 @@
                     <i class="bi-three-dots-vertical d-lg-none"></i><span class="d-none d-xl-inline ps-1">More</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-batch">
-                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Delete this batch">
+                    <li class="no-info-icon" data-bs-tooltip="Delete this batch">
                         <a class="dropdown-item remove-batch" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                     </li>
                 </ul>
@@ -96,7 +96,7 @@
                     "orderable": false,
                     "render": function (data, type, full, meta) {
                         return `<button type="button" class="btn btn-batch text-nowrap collapse-study-links-setup dropdown-toggle px-3"
-                            data-bs-tooltip data-bs-title="Open/close this batch"></button>`;
+                            data-bs-tooltip="Open/close this batch"></button>`;
                     }
                 },
                 {
@@ -106,7 +106,7 @@
                     "render": function (data, type, full, meta) {
                         if (type === 'export' || type === 'sort') return data.toString();
                         return `
-                            <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Use this switch to de-/activate this batch. In a deactivated batch study links belonging to this batch will not run.">
+                            <label class="switch no-info-icon" data-bs-tooltip="Use this switch to de-/activate this batch. In a deactivated batch study links belonging to this batch will not run.">
                                 <input type="checkbox" ${data ? "checked" : ""}>
                                 <span class="slider slider-batch round"></span>
                             </label>
@@ -134,12 +134,12 @@
                         const tooltipGroups = data.groupCount > 0
                                 ? `This batch has ${data.groupCount} group(s) so far. Click here to manage them.`
                                 : "This batch has no groups yet.";
-                        $(toolbar).find('.groups').attr("data-bs-title", tooltipGroups);
+                        $(toolbar).find('.groups').attr("data-bs-tooltip", tooltipGroups);
                         $(toolbar).find('.batch-results .badge').text(data.resultCount);
                         const tooltipResults = data.resultCount > 0
                                 ? `This batch has ${data.resultCount} result(s) so far. Click here to go to a result page that only shows the study results of this batch.`
                                 : "This batch has no results yet.";
-                        $(toolbar).find('.batch-results').attr("data-bs-title", tooltipResults);
+                        $(toolbar).find('.batch-results').attr("data-bs-tooltip", tooltipResults);
                         return toolbar.html();
                     }
                 }

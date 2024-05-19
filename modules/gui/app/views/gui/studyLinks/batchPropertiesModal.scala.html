@@ -10,14 +10,14 @@
                 <form class="form-batch" id="batchPropertiesForm">
                     <div class="row mb-3">
                         <label class="col-sm-3 col-form-label" for="batchPropertiesFormTitle">
-                            Title<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                            Title<span class="input-required" data-bs-tooltip="required"></span>
                         </label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="batchPropertiesFormTitle" name="title" placeholder="Your batch title" required>
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormComments" data-bs-tooltip data-bs-title="Something you want to share or just don't want to forget?">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormComments" data-bs-tooltip="Something you want to share or just don't want to forget?">
                             Comments
                         </label>
                         <div class="col-sm-9">
@@ -25,38 +25,38 @@
                         </div>
                     </div>
                     <fieldset class="row mb-3">
-                        <legend class="col-form-label col-sm-3 pt-0" data-bs-tooltip data-bs-title="Which types are allowed to run this study?">Allowed types</legend>
+                        <legend class="col-form-label col-sm-3 pt-0" data-bs-tooltip="Which types are allowed to run this study?">Allowed types</legend>
                         <div class="col-sm-9">
                             <div class="form-check ps-0 pb-1">
-                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Creates a link that can be used only once and always assigns the results to the same worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
+                                <label class="switch no-info-icon" data-bs-tooltip="Creates a link that can be used only once and always assigns the results to the same worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
                                     <input type="checkbox" id="batchPropertiesFormPersonalSingle" name="allowedWorkerTypes" value="PersonalSingle">
                                     <span class="slider slider-batch round"></span>
                                 </label>
                                 Personal Single
                             </div>
                             <div class="form-check ps-0 pb-1">
-                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Creates a link that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
+                                <label class="switch no-info-icon" data-bs-tooltip="Creates a link that can be used multiple times and always assigns the results to the same worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
                                     <input type="checkbox" id="batchPropertiesFormPersonalMultiple" name="allowedWorkerTypes" value="PersonalMultiple">
                                     <span class="slider slider-batch round"></span>
                                 </label>
                                 Personal Multiple
                             </div>
                             <div class="form-check ps-0 pb-1">
-                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Creates a link that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website.">
+                                <label class="switch no-info-icon" data-bs-tooltip="Creates a link that can be used only once per browser and creates a new worker with each run. Typically used to distribute in a mailing list or posting it in a public website.">
                                     <input type="checkbox" id="batchPropertiesFormGeneralSingle" name="allowedWorkerTypes" value="GeneralSingle">
                                     <span class="slider slider-batch round"></span>
                                 </label>
                                 General Single
                             </div>
                             <div class="form-check ps-0 pb-1">
-                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Creates a link that can be used many times and that creates a new worker with each run. Typically used where it's no problem that participants can do the same study several times.">
+                                <label class="switch no-info-icon" data-bs-tooltip="Creates a link that can be used many times and that creates a new worker with each run. Typically used where it's no problem that participants can do the same study several times.">
                                     <input type="checkbox" id="batchPropertiesFormGeneralMultiple" name="allowedWorkerTypes" value="GeneralMultiple">
                                     <span class="slider slider-batch round"></span>
                                 </label>
                                 General Multiple
                             </div>
                             <div class="form-check ps-0">
-                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once.">
+                                <label class="switch no-info-icon" data-bs-tooltip="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once.">
                                     <input type="checkbox" id="batchPropertiesFormMT" name="allowedWorkerTypes" value="MT">
                                     <span class="slider slider-batch round"></span>
                                 </label>
@@ -65,7 +65,7 @@
                         </div>
                     </fieldset>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormMaxTotalWorkers" data-bs-tooltip data-bs-title="Enter the total number of workers this batch is allowed to have. It's unlimited if you don't specify it.">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormMaxTotalWorkers" data-bs-tooltip="Enter the total number of workers this batch is allowed to have. It's unlimited if you don't specify it.">
                             Max total workers
                         </label>
                         <div class="col-sm-5 col-md-3">
@@ -80,9 +80,9 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormJsonData" data-bs-tooltip data-bs-title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormJsonData" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
                             Batch input<br>
-                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#batchPropertiesJsonEditor" data-bs-tooltip data-bs-title="Format your JSON nicely">Pretty</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#batchPropertiesJsonEditor" data-bs-tooltip="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="batchPropertiesJsonEditor"></div>
@@ -96,7 +96,7 @@
                         </div>
                         <p class="d-none card-text" id="batchPropertiesNotGroupStudyText">This is not a group study. You can enable this option in the study properties.</p>
                         <div class="row mb-2">
-                            <label class="col-sm-4 col-form-label" for="batchPropertiesFormMaxTotalMembers" data-bs-tooltip data-bs-title="Enter the total number of members a group can have, active or inactive. It's unlimited if you don't specify it.">
+                            <label class="col-sm-4 col-form-label" for="batchPropertiesFormMaxTotalMembers" data-bs-tooltip="Enter the total number of members a group can have, active or inactive. It's unlimited if you don't specify it.">
                                 Max total members
                             </label>
                             <div class="col-sm-5 col-md-3">
@@ -111,7 +111,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <label class="col-sm-4 col-form-label" for="batchPropertiesFormMaxActiveMembers" data-bs-tooltip data-bs-title="Enter the max number of active members a group can have at the same time. It's unlimited if you don't specify it.">
+                            <label class="col-sm-4 col-form-label" for="batchPropertiesFormMaxActiveMembers" data-bs-tooltip="Enter the max number of active members a group can have at the same time. It's unlimited if you don't specify it.">
                                 Max active members
                             </label>
                             <div class="col-sm-5 col-md-3">
@@ -205,13 +205,13 @@
             inputElem.prop('disabled', false);
             inputElem.removeClass('disabled');
             inputElem.val(inputValue);
-            inputElem.attr('data-bs-title', '');
+            inputElem.attr('data-bs-tooltip', '');
         } else {
             checkboxElem.prop('checked', false);
             inputElem.prop('disabled', true);
             inputElem.addClass('disabled');
             inputElem.val('');
-            inputElem.attr('data-bs-title', 'Unlimited. If you want to set a specific number, check the checkbox first.');
+            inputElem.attr('data-bs-tooltip', 'Unlimited. If you want to set a specific number, check the checkbox first.');
         }
     }
 

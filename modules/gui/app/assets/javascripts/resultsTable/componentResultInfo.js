@@ -45,15 +45,15 @@ class ComponentResultInfo {
                 <table class="table table-borderless m-0">
                     <thead>
                         <tr>
-                            <th data-bs-tooltip data-bs-title="The ID of the component result">Comp. Result ID</th>
-                            <th data-bs-tooltip data-bs-title="The ID of the component">Comp. ID</th>
-                            <th data-bs-tooltip data-bs-title="The title of the component">Component Title</th>
-                            <th data-bs-tooltip data-bs-title="The start time of the component run (in local time)">Start Time</th>
-                            <th data-bs-tooltip data-bs-title="The duration from start to end. Format is [days:]hours:minutes:seconds.">Duration</th>
-                            <th data-bs-tooltip data-bs-title="The current state of the component run">State</th>
-                            <th data-bs-tooltip data-bs-title="The size of the result data">Data Size</th>
-                            <th data-bs-tooltip data-bs-title="The files (file size in brackets) that were uploaded during the run of the component">Files (Size)</th>
-                            <th data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the component run">Message</th>
+                            <th data-bs-tooltip="The ID of the component result">Comp. Result ID</th>
+                            <th data-bs-tooltip="The ID of the component">Comp. ID</th>
+                            <th data-bs-tooltip="The title of the component">Component Title</th>
+                            <th data-bs-tooltip="The start time of the component run (in local time)">Start Time</th>
+                            <th data-bs-tooltip="The duration from start to end. Format is [days:]hours:minutes:seconds.">Duration</th>
+                            <th data-bs-tooltip="The current state of the component run">State</th>
+                            <th data-bs-tooltip="The size of the result data">Data Size</th>
+                            <th data-bs-tooltip="The files (file size in brackets) that were uploaded during the run of the component">Files (Size)</th>
+                            <th data-bs-tooltip="The message that was send (optionally) in the end of the component run">Message</th>
                         </tr>
                     </thead>
                 </table>
@@ -119,8 +119,8 @@ function getResultDataShortHtml(componentResult) {
 
     // If the last three chars of the dataShort field are "..." add the show-all button and hide the copy-to-clipboard button
     const isTooLong = componentResult.dataShort.substr(componentResult.dataShort.length - 3) === "...";
-    const showAllButton = isTooLong ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip data-bs-title="Show all result data of this component result.">Show All</button>' : "";
-    const copyToClipboardButton = !isTooLong ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>' : "";
+    const showAllButton = isTooLong ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip="Show all result data of this component result.">Show All</button>' : "";
+    const copyToClipboardButton = !isTooLong ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip="Copy to clipboard"></span>' : "";
 
     return `<pre class="d-inline m-0"><code class="text-wrap text-break">${dataShort}</code></pre>${showAllButton}${copyToClipboardButton}`;
 }

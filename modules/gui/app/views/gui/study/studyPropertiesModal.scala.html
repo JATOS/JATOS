@@ -6,11 +6,11 @@
                 <h5 class="modal-title text-truncate flex-grow-1">
                     Study properties
                     <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip data-bs-title="This ID is unique within this JATOS instance">ID</span>:
+                        <span data-bs-tooltip="This ID is unique within this JATOS instance">ID</span>:
                         <span class="fw-light ms-1 user-select-all" id="studyPropertiesId"></span>
                     </div>
                     <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip data-bs-title="Universally unique identifier - used to keep track of studies between different JATOS instances">UUID</span>:
+                        <span data-bs-tooltip="Universally unique identifier - used to keep track of studies between different JATOS instances">UUID</span>:
                         <span class="fw-light ms-1 user-select-all" id="studyPropertiesUuid"></span>
                     </div>
                 </h5>
@@ -20,15 +20,15 @@
                 <form class="form-study" id="studyPropertiesForm">
                     <div class="row mb-3">
                         <label class="col-sm-3 col-form-label" for="studyPropertiesFormTitle">
-                            Title<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                            Title<span class="input-required" data-bs-tooltip="required"></span>
                         </label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="studyPropertiesFormTitle" name="title" placeholder="Your study title" required>
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormDirName" data-bs-tooltip data-bs-title="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved.">
-                            Study assets' directory name<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormDirName" data-bs-tooltip="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved.">
+                            Study assets' directory name<span class="input-required" data-bs-tooltip="required"></span>
                         </label>
                         <label class="d-none" for="studyPropertiesFormDirRename"></label>
                         <div class="col-sm-9">
@@ -38,7 +38,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormComments" data-bs-tooltip data-bs-title="Something you want to share or just don't want to forget?">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormComments" data-bs-tooltip="Something you want to share or just don't want to forget?">
                             Comments
                         </label>
                         <div class="col-sm-9">
@@ -46,7 +46,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyEntryMsg" data-bs-tooltip data-bs-title="This message can be shown to the participant before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent participants to prematurely start the study.">
+                        <label class="col-sm-3 col-form-label" for="studyEntryMsg" data-bs-tooltip="This message can be shown to the participant before the study starts (if the study link format 'Confirm First' is chosen). It can be used as a confirmation (or simple consent) or to prevent participants to prematurely start the study.">
                             Study entry message
                         </label>
                         <div class="col-sm-9">
@@ -54,7 +54,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormEndRedirectUrl" data-bs-tooltip data-bs-title="Choose the URL that JATOS should redirect to after a run of this study is finished. If left empty a default page will be shown.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormEndRedirectUrl" data-bs-tooltip="Choose the URL that JATOS should redirect to after a run of this study is finished. If left empty a default page will be shown.">
                             End redirect URL
                         </label>
                         <div class="col-sm-9">
@@ -62,9 +62,9 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormJsonData" data-bs-tooltip data-bs-title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormJsonData" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
                             Study input<br>
-                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#studyPropertiesJsonEditor" data-bs-tooltip data-bs-title="Format your JSON nicely">Pretty</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#studyPropertiesJsonEditor" data-bs-tooltip="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="studyPropertiesJsonEditor"></div>
@@ -73,7 +73,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormGroupStudy" data-bs-tooltip data-bs-title="Is this a group study?">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormGroupStudy" data-bs-tooltip="Is this a group study?">
                             Group study
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">
@@ -86,7 +86,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormLinearStudy" data-bs-tooltip data-bs-title="Should the study flow be linear only? This still allows reloading of components. Check this box to allow only to move to subsequent components.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormLinearStudy" data-bs-tooltip="Should the study flow be linear only? This still allows reloading of components. Check this box to allow only to move to subsequent components.">
                             Linear study flow
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">
@@ -99,7 +99,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormAllowPreview" data-bs-tooltip data-bs-title="Allows a preview of the study run (only with Personal Single or General Single workers). If previews are allowed a study link can be used multiple times by the worker as long as the run stays in the first component. As soon as the second component is started the usual study link restrictions apply.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormAllowPreview" data-bs-tooltip="Allows a preview of the study run (only with Personal Single or General Single workers). If previews are allowed a study link can be used multiple times by the worker as long as the run stays in the first component. As soon as the second component is started the usual study link restrictions apply.">
                             Allow preview
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">

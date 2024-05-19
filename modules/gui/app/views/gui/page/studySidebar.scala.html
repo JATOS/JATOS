@@ -61,6 +61,7 @@
 
         studyArray.forEach((study) => {
             const isSelectedStudy = window.study && window.study.id === study.id ? "active" : "";
+            const studyTooltip = `<b>ID</b>: ${study.id} | <b>UUID</b>: ${study.uuid}`;
             const componentListTooltip = study.componentList.map(c => `<li>${c.title}</li>`).join("");
             const componentBadgeTooltipHtml = study.componentList.length > 0
                     ? `<div class="text-start"><b>This study has ${study.componentList.length} component(s)</b>:<ol class="mb-0">${componentListTooltip}</ol></div>`
@@ -99,7 +100,7 @@
             const html = `
                     <a href="${window.routes.Studies.study(study.id)}" class="list-group-item no-info-icon ${isSelectedStudy}">
                         <div class="d-flex w-100 align-items-center">
-                            <div class="fw-bold no-info-icon d-inline-block flex-grow-1 text-truncate" data-bs-tooltip data-bs-delay="0" data-bs-custom-class="study-sidebar-tooltip" data-bs-title="ID: ${study.id} | UUID: ${study.uuid}">${study.title}</div>
+                            <div class="fw-bold no-info-icon d-inline-block flex-grow-1 text-truncate" data-bs-tooltip="${studyTooltip}" data-bs-delay="0" data-bs-html="true" data-bs-custom-class="study-sidebar-tooltip">${study.title}</div>
                             <div class="d-inline-flex gap-1 text-nowrap">${componentsBadge}${deactivatedBadge}${lockedBadge}${groupStudyBadge}${allowPreviewBadge}${linearStudyBadge}</div>
                         </div>
                     </a>`;
@@ -114,12 +115,11 @@
     function renderBadge(badgeContent, badgeColorClass, tooltipContent) {
         return `
             <span class="badge rounded-pill no-info-icon ${badgeColorClass}"
-                    data-bs-tooltip
                     data-bs-custom-class="study-sidebar-tooltip"
                     data-bs-container="body"
                     data-bs-html="true"
                     data-bs-delay="0"
-                    data-bs-title="${Helpers.escapeHtml(tooltipContent)}">
+                    data-bs-tooltip="${Helpers.escapeHtml(tooltipContent)}">
                 ${badgeContent}
             </span>`;
     }

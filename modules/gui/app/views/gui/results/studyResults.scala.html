@@ -9,49 +9,49 @@
         <thead>
             <tr>
                 @* If you change something in the head, copy-paste it into the footer too! *@
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the component results. The component results contain the actual result data and result files."><span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The time of the last heartbeat of the study run (in local time)">Last seen<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The duration from start to end or if the study isn't finished yet from start to last seen. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The name of the batch this study belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the batch this study belongs to">Batch ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's worker ID (not to be confused with JATOS' worker ID)">MTurk worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's confirmation code">MTurk confirmation code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Are there any uploaded result files? Open the component results to actually see them.">Files<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The current state of this study run, like @common.StudyResult.StudyState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the study run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the component results. The component results contain the actual result data and result files."><span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The time of the last heartbeat of the study run (in local time)">Last seen<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The duration from start to end or if the study isn't finished yet from start to last seen. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The name of the batch this study belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the batch this study belongs to">Batch ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Mechanical Turk's worker ID (not to be confused with JATOS' worker ID)">MTurk worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Mechanical Turk's confirmation code">MTurk confirmation code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Are there any uploaded result files? Open the component results to actually see them.">Files<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The current state of this study run, like @common.StudyResult.StudyState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The message that was send (optionally) in the end of the study run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
             </tr>
         </thead>
         <tfoot>
             <tr>
                 @* If you change something in the head, copy-paste it into the footer too! *@
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the component results. The component results contain the actual result data and result files."><span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The time of the last heartbeat of the study run (in local time)">Last seen<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The duration from start to end or if the study isn't finished yet from start to last seen. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The name of the batch this study belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the batch this study belongs to">Batch ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's worker ID (not to be confused with JATOS' worker ID)">MTurk worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Mechanical Turk's confirmation code">MTurk confirmation code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Are there any uploaded result files? Open the component results to actually see them.">Files<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The current state of this study run, like @common.StudyResult.StudyState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the study run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the component results. The component results contain the actual result data and result files."><span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The time of the last heartbeat of the study run (in local time)">Last seen<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The duration from start to end or if the study isn't finished yet from start to last seen. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The name of the batch this study belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the batch this study belongs to">Batch ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Mechanical Turk's worker ID (not to be confused with JATOS' worker ID)">MTurk worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Mechanical Turk's confirmation code">MTurk confirmation code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Are there any uploaded result files? Open the component results to actually see them.">Files<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The current state of this study run, like @common.StudyResult.StudyState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The message that was send (optionally) in the end of the study run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
             </tr>
         </tfoot>
     </table>
@@ -108,7 +108,7 @@
                                     ? `This study result has ${data} component result(s). Click to show the component results.`
                                     : "This study result has no component results (yet).";
                             return `<button type="button" class="btn btn-study text-nowrap collapse-result-data dropdown-toggle"
-                                data-bs-tooltip data-bs-title="${tooltip}">
+                                data-bs-tooltip="${tooltip}">
                                 <span class="badge text-study bg-white rounded-pill">${data}</span></button>`;
                         }
                     }
@@ -118,8 +118,8 @@
                     "data": null,
                     "orderable": false,
                     "render": function (data, type, full, meta) {
-                        return `<button type="button" class="btn btn-secondary select-checkbox" data-bs-tooltip
-                            data-bs-title="Check this box to select this result for export or deleting."><i class="bi-square"></i></button>`;
+                        return `<button type="button" class="btn btn-secondary select-checkbox"
+                            data-bs-tooltip="Check this box to select this result for export or deleting."><i class="bi-square"></i></button>`;
                     }
                 },
                 {
@@ -161,7 +161,7 @@
                     "width": "1%",
                     "render": function (data, type, full, meta) {
                         if (type === 'display') {
-                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to go to this batch's results page"
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip="Click to go to this batch's results page"
                                 href="${window.routes.StudyResults.batchesStudyResults(window.study.id, data)}">${data}</a>`;
                         }
                         return data;
@@ -173,7 +173,7 @@
                     "width": "1%",
                     "render": function (data, type, full, meta) {
                         if (type === 'display') {
-                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to go to this worker's results page"
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip="Click to go to this worker's results page"
                                 href="${window.routes.StudyResults.workersStudyResults(data)}">${data}</a>`;
                         }
                         return data;
@@ -202,7 +202,7 @@
                     "render": function (data, type, full, meta) {
                         if (type === 'display') {
                             if (!data) return '<span class="text-body text-opacity-50">none</span>';
-                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to get this group's results page"
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip="Click to get this group's results page"
                                 href="${window.routes.StudyResults.groupsStudyResults(window.study.id, data)}">${data}</a>`;
                         }
                         return data;

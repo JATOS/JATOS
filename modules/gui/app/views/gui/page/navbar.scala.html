@@ -5,7 +5,7 @@
     <div class="container-fluid">
 
         @* Study sidebar toggle *@
-        <button class="btn btn-nav text-nowrap" type="button" data-bs-toggle="offcanvas" data-bs-target="#studySidebar" data-bs-tooltip data-bs-title="Show list of all your studies">
+        <button class="btn btn-nav text-nowrap" type="button" data-bs-toggle="offcanvas" data-bs-target="#studySidebar" data-bs-tooltip="Show list of all your studies">
             <i class="bi-list pe-lg-1"></i><span class="d-none d-lg-inline">Studies</span>
         </button>
 
@@ -30,17 +30,17 @@
 
             @* External links (only if screen > lg) *@
             <li class="nav-item d-none d-lg-block">
-                <a class="nav-link no-info-icon mx-1" href="https://www.jatos.org/Whats-JATOS.html" data-bs-tooltip data-bs-title="JATOS documentation" target="_blank">
+                <a class="nav-link no-info-icon mx-1" href="https://www.jatos.org/Whats-JATOS.html" data-bs-tooltip="JATOS documentation" target="_blank">
                     <i class="bi-file-text-fill"></i>
                 </a>
             </li>
             <li class="nav-item d-none d-lg-block">
-                <a class="nav-link no-info-icon mx-1" href="https://www.github.com/JATOS/JATOS" data-bs-tooltip data-bs-title="Source on GitHub" target="_blank">
+                <a class="nav-link no-info-icon mx-1" href="https://www.github.com/JATOS/JATOS" data-bs-tooltip="Source on GitHub" target="_blank">
                     <i class="bi-github"></i>
                 </a>
             </li>
             <li class="nav-item d-none d-lg-block">
-                <a class="nav-link no-info-icon mx-1" href="https://www.jatos.org/Support-us" data-bs-tooltip data-bs-title="Support JATOS" target="_blank">
+                <a class="nav-link no-info-icon mx-1" href="https://www.jatos.org/Support-us" data-bs-tooltip="Support JATOS" target="_blank">
                     <i class="bi-heart-fill"></i>
                 </a>
             </li>
@@ -49,7 +49,7 @@
             @* Administration link *@
             @if(signedinUser.isAdmin()) {
             <li class="nav-item">
-                <a class="btn btn-nav no-info-icon" type="button" href="@Admin.administration()" data-bs-tooltip data-bs-title="Everything for JATOS admins">
+                <a class="btn btn-nav no-info-icon" type="button" href="@Admin.administration()" data-bs-tooltip="Everything for JATOS admins">
                     <i class="bi-wrench-adjustable pe-lg-1"></i><span class="d-none d-lg-inline">Administration</span>
                 </a>
             </li>

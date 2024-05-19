@@ -7,15 +7,15 @@
     <table class="table table-hover align-middle w-100" id="userManagerTable">
         <thead>
             <tr>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="A deactivated user cannot sign in anymore but their studies can still be run by participants. To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="username">Username<span class="ordering-icon"></span></th>
                 <th>Name<span class="ordering-icon"></span></th>
                 <th>Email<span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Authentication method, e.g. either locally stored, LDAP, Google, OIDC or ORCID">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Users with the admin rights can e.g. create/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC or ORCID">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. create/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
             </tr>
         </thead>
@@ -24,17 +24,17 @@
     @* Template for button toolbar in User's row *@
     <div id="userToolbarDiv" class="d-none">
         <div class="float-end text-nowrap">
-            <div class="user-settings btn-group no-info-icon" data-bs-tooltip data-bs-title="Change name or email of this user">
+            <div class="user-settings btn-group no-info-icon" data-bs-tooltip="Change name or email of this user">
                 <button class="btn btn-admin" type="button">
                     <i class="bi-gear-fill"></i><span class="d-none d-lg-inline ps-1">Settings</span>
                 </button>
             </div>
-            <div class="user-change-password btn-group no-info-icon" data-bs-tooltip data-bs-title="Change the password of this user">
+            <div class="user-change-password btn-group no-info-icon" data-bs-tooltip="Change the password of this user">
                 <button class="btn btn-admin" type="button">
                     <i class="bi-lock-fill"></i><span class="d-none d-lg-inline ps-1">Password</span>
                 </button>
             </div>
-            <div class="user-delete btn-group no-info-icon" data-bs-tooltip data-bs-title="Delete this user from JATOS">
+            <div class="user-delete btn-group no-info-icon" data-bs-tooltip="Delete this user from JATOS">
                 <button class="btn btn-admin" type="button">
                     <i class="bi-x-circle-fill"></i><span class="d-none d-lg-inline ps-1">Delete</span>
                 </button>
@@ -54,7 +54,7 @@
                     <form class="form-admin" id="userCreatorForm">
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label" for="userCreatorUsername">
-                                Username<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                                Username<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="userCreatorUsername" name="username" required>
@@ -64,7 +64,7 @@
 
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label" for="userCreatorName">
-                                Name<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                                Name<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="userCreatorName" name="name" required>
@@ -99,7 +99,7 @@
                         <div class="collapse show" id="userCreatorPasswordDiv">
                             <div class="row">
                                 <label class="control-label col-sm-3" for="userCreatorPassword">
-                                    Password<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                                    Password<span class="input-required" data-bs-tooltip="required"></span>
                                 </label>
                                 <div class="col-sm-4">
                                     <div class="input-group">
@@ -250,7 +250,7 @@
                         } else {
                             const tooltip = `This user has ${data} studies so far. Click here to get information about them.`
                             return `<button type="button" class="btn btn-admin collapse-study-data text-nowrap dropdown-toggle"
-                                    data-bs-tooltip data-bs-title="${tooltip}">
+                                    data-bs-tooltip="${tooltip}">
                                     <span class="badge text-admin bg-white rounded-pill">${data}</span></button>`;
                         }
                     }
@@ -276,7 +276,7 @@
                         const checked = data ? "checked" : "";
                         const disabled = isDisabled ? "disabled" : "";
                         return `
-                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="${tooltip}">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip="${tooltip}">
                                 <input type="checkbox" ${checked} ${disabled}>
                                 <span class="slider slider-admin round" ${disabled}></span>
                             </label>
@@ -327,7 +327,7 @@
                         const isSuperuser = $.inArray("SUPERUSER", data.roleList) >= 0;
                         if (type === 'export' || type === 'sort') return isSuperuser.toString();
                         return `
-                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="Use this switch to de-/activate the superuser role for this user.">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip="Use this switch to de-/activate the superuser role for this user.">
                                 <input type="checkbox" ${isSuperuser ? "checked" : ""}>
                                 <span class="slider slider-admin round"></span>
                             </label>
@@ -355,7 +355,7 @@
                             tooltip = "Use this switch to de-/activate admin rights for this user.";
                         }
                         return `
-                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="${tooltip}">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip="${tooltip}">
                                 <input type="checkbox" ${isAdmin ? "checked" : ""}>
                                 <span class="slider slider-admin round ${isDisabled ? "disabled" : ""}"></span>
                             </label>
@@ -389,7 +389,7 @@
                     "className": "btn btn-admin",
                     "attr":  {
                         "data-bs-tooltip": "",
-                        "data-bs-title": "Export table data in CSV"
+                        "data-bs-tooltip": "Export table data in CSV"
                     },
                     "buttons": [
                         {
@@ -398,8 +398,7 @@
                             "filename": () => { return "jatos_usernames_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
                             "className": "dropdown-item-admin",
                             "attr":  {
-                                "data-bs-tooltip": "",
-                                "data-bs-title": "Export usernames only in CSV format",
+                                "data-bs-tooltip": "Export usernames only in CSV format",
                                 "data-bs-placement": "right"
                             },
                             "exportOptions": {
@@ -426,8 +425,7 @@
                             "extend": 'csv',
                             "text": "All",
                             "attr":  {
-                                "data-bs-tooltip": "",
-                                "data-bs-title": "Export all user data in CSV format",
+                                "data-bs-tooltip": "Export all user data in CSV format",
                                 "data-bs-placement": "right"
                             },
                             "filename": () => { return "jatos_user_all_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
@@ -551,12 +549,12 @@
                         <tr>
                             <th>Study ID</th>
                             <th>Study title</th>
-                            <th data-bs-tooltip data-bs-title="All users who are member of this study">All members</th>
-                            <th data-bs-tooltip data-bs-title="The size of the study assets folder">Study assets size</th>
-                            <th data-bs-tooltip data-bs-title="The number of the study results">Result count</th>
-                            <th data-bs-tooltip data-bs-title="The size of the result data: total for all study runs and the average per result in brackets">Result data size</th>
-                            <th data-bs-tooltip data-bs-title="The size of the uploaded result files: total for all study runs and the average per result in brackets">Result file size</th>
-                            <th data-bs-tooltip data-bs-title="When was this study last started by a participant?">Last started</th>
+                            <th data-bs-tooltip="All users who are member of this study">All members</th>
+                            <th data-bs-tooltip="The size of the study assets folder">Study assets size</th>
+                            <th data-bs-tooltip="The number of the study results">Result count</th>
+                            <th data-bs-tooltip="The size of the result data: total for all study runs and the average per result in brackets">Result data size</th>
+                            <th data-bs-tooltip="The size of the uploaded result files: total for all study runs and the average per result in brackets">Result file size</th>
+                            <th data-bs-tooltip="When was this study last started by a participant?">Last started</th>
                         </tr>
                     </thead>
                 </table>
@@ -653,25 +651,25 @@
         // Setup user settings button
         if (authMethod == "OAUTH_GOOGLE" || authMethod == "OIDC" || authMethod == "ORCID") {
             disableButton(toolbar.find('.user-settings button'));
-            toolbar.find('.user-settings').attr('data-bs-title', "Google/OIDC/ORCID authenticated users cannot be edited (they get their user data from the external identity provider).");
+            toolbar.find('.user-settings').attr('data-bs-tooltip', "Google/OIDC/ORCID authenticated users cannot be edited (they get their user data from the external identity provider).");
         }
 
         // Setup change password button
         if (username == "admin" && window.signedinUser.username != "admin") {
             disableButton(toolbar.find('.user-change-password button'));
-            toolbar.find('.user-change-password').attr('data-bs-title', "Only user admin can change their own password.");
+            toolbar.find('.user-change-password').attr('data-bs-tooltip', "Only user admin can change their own password.");
         } else if (authMethod !== "DB") {
             disableButton(toolbar.find('.user-change-password button'));
-            toolbar.find('.user-change-password').attr('data-bs-title', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) cannot be changed in JATOS");
+            toolbar.find('.user-change-password').attr('data-bs-tooltip', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) cannot be changed in JATOS");
         }
 
         // Setup delete user button
         if (username == "admin") {
             disableButton(toolbar.find('.user-delete button'));
-            toolbar.find('.user-delete').attr('data-bs-title', "It is not possible to delete the user 'admin'.");
+            toolbar.find('.user-delete').attr('data-bs-tooltip', "It is not possible to delete the user 'admin'.");
         } else if (username == window.signedinUser.username) {
             disableButton(toolbar.find('.user-delete button'));
-            toolbar.find('.user-delete').attr('data-bs-title', "You cannot delete your own user here - but you can delete yourself in the user menu (click on your username in the header).");
+            toolbar.find('.user-delete').attr('data-bs-tooltip', "You cannot delete your own user here - but you can delete yourself in the user menu (click on your username in the header).");
         }
     }
 

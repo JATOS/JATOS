@@ -12,7 +12,7 @@ function render(items) {
 }
 
 function renderItem(item) {
-    const tooltip = item.tooltip ? `data-bs-tooltip data-bs-title="${item.tooltip}"` : "";
+    const tooltip = item.tooltip ? `data-bs-tooltip="${item.tooltip}"` : "";
     return `
         <div class="col fs-6 text-truncate">
             <span ${tooltip}>${item.name}</span>:

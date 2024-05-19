@@ -15,13 +15,13 @@
                 <table class="table table-hover align-middle w-100" id="studyLinksManagerTable">
                     <thead>
                         <tr>
-                            <th class="no-info-icon" data-bs-tooltip data-bs-title="Activate / inactivate this study link - only activated links can be used to run this study">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip data-bs-title="ID of the worker that belongs to this study link">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip data-bs-title="This code, handed to workers, can be used in the /publix/run page to start the study.">Stud code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="Activate / inactivate this study link - only activated links can be used to run this study">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="ID of the worker that belongs to this study link">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="This code, handed to workers, can be used in the /publix/run page to start the study.">Stud code<span class="info-icon"></span><span class="ordering-icon"></span></th>
                             <th><span class="align-bottom">Study Links</span><span id="studyLinksManagerStudyLinksToggle"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip data-bs-title="Comment given during creation of study link">Comment<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip data-bs-title="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last."><span class="state">Study result state</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="results no-info-icon" data-bs-tooltip data-bs-title="Get the study results of this type and batch">Study results<span class="info-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="Comment given during creation of study link">Comment<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last."><span class="state">Study result state</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="results no-info-icon" data-bs-tooltip="Get the study results of this type and batch">Study results<span class="info-icon"></span></th>
                         </tr>
                     </thead>
                 </table>
@@ -121,10 +121,10 @@
                     "render": (data, type, full, meta) => {
                         if (type === 'export' || type === 'sort') return full.active.toString();
                         if (workerType === "PersonalSingle" && isLinkUsed(workerType, full)) {
-                            return '<span class="used" data-bs-tooltip data-bs-title="Links of type Personal Single can be used only once by a participant. This link was already used.">used</span>';
+                            return '<span class="used" data-bs-tooltip="Links of type Personal Single can be used only once by a participant. This link was already used.">used</span>';
                         } else {
                             return `
-                                <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Use this switch to de-/activate this study link.">
+                                <label class="switch no-info-icon" data-bs-tooltip="Use this switch to de-/activate this study link.">
                                     <input type="checkbox" ${full.active ? "checked" : ""}>
                                     <span class="slider slider-batch round"></span>
                                 </label>`;
@@ -141,7 +141,7 @@
                         return `
                             <div class="text-nowrap">
                                 <span>${studyCode}</span>
-                                <span class="btn-clipboard no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
+                                <span class="btn-clipboard no-info-icon" data-bs-tooltip="Copy to clipboard"></span>
                             </div>`;
                     }
                 },
@@ -157,7 +157,7 @@
                     "data": "comment",
                     "render": function (data, type, full, meta) {
                         const comment = data ? data : '<span class="text-body text-opacity-50">none</span>';
-                        return `<span class="btn-edit edit-comment no-info-icon" data-bs-tooltip data-bs-title="Edit this comment by clicking on it">
+                        return `<span class="btn-edit edit-comment no-info-icon" data-bs-tooltip="Edit this comment by clicking on it">
                             ${comment}</span>`;
                     }
                 },
@@ -177,8 +177,7 @@
                     "text": '<i class="bi-plus-lg fw-bold pe-1"></i><i class="bi-link-45deg"></i>',
                     "attr":  {
                         "id": "oneNewStudyLinkButton",
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Shortcut to create just one study link without comment",
+                        "data-bs-tooltip": "Shortcut to create just one study link without comment",
                     },
                     "className": "btn btn-batch",
                 },
@@ -186,8 +185,7 @@
                     "text": '<i class="bi-plus-lg fw-bold pe-1"></i>New Study Links<i class="bi-link-45deg ps-1"></i>',
                     "attr":  {
                         "id": "newStudyLinksButton",
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Create new study links",
+                        "data-bs-tooltip": "Create new study links",
                     },
                     "className": "btn btn-batch",
                 },
@@ -195,8 +193,7 @@
                     "text": '<i class="bi-arrow-repeat"></i>',
                     "attr":  {
                         "id": "refreshButton",
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Refresh the table",
+                        "data-bs-tooltip": "Refresh the table",
                     },
                     "className": "btn btn-batch",
                     action: function(e, dt, node, config) {
@@ -242,8 +239,7 @@
                         "className": "btn-batch",
                         "init": (dt, node, config) => node.removeClass("btn-secondary"),
                         "attr":  {
-                            "data-bs-tooltip": "",
-                            "data-bs-title": "Show all study links",
+                            "data-bs-tooltip": "Show all study links",
                         },
                         "action": function(e, dt, node, config) {
                             $(node).tooltip("dispose");
@@ -255,8 +251,7 @@
                         "className": "btn-outline-secondary",
                         "init": (dt, node, config) => node.removeClass("btn-secondary"),
                         "attr":  {
-                            "data-bs-tooltip": "",
-                            "data-bs-title": "Show only active study links",
+                            "data-bs-tooltip": "Show only active study links",
                         },
                         "action": (e, dt, node, config) => {
                             $(node).tooltip("dispose");
@@ -268,8 +263,7 @@
                         "className": "btn-outline-secondary",
                         "init": (dt, node, config) => node.removeClass("btn-secondary"),
                         "attr":  {
-                            "data-bs-tooltip": "",
-                            "data-bs-title": "Show only deactivated study links",
+                            "data-bs-tooltip": "Show only deactivated study links",
                         },
                         "action": (e, dt, node, config) => {
                             $(node).tooltip("dispose");
@@ -284,8 +278,7 @@
                             //if (workerType !== "PersonalSingle") node.disable();
                         },
                         "attr":  {
-                            "data-bs-tooltip": "",
-                            "data-bs-title": "Show only study links that were already used by a participant.",
+                            "data-bs-tooltip": "Show only study links that were already used by a participant.",
                         },
                         "action": function(e, dt, node, config) {
                             $(node).tooltip("dispose");
@@ -327,7 +320,7 @@
             }
             const button = `
                 <a type="button" class="btn btn-batch worker-results-button no-info-icon text-nowrap"
-                    data-bs-tooltip data-bs-title="${tooltip}"
+                    data-bs-tooltip="${tooltip}"
                     href="${window.routes.StudyResults.workersStudyResults(full.workerId)}">
                     ${buttonText}
                     <span class="badge text-batch bg-white rounded-pill ms-1 ${hideBadge ? "d-none" : ""}">${count}</span>

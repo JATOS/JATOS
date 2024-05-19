@@ -6,22 +6,22 @@
 
     @* Study toolbar *@
     <div class="sticky-top text-nowrap d-flex flex-wrap gap-1 pb-4" id="studyToolbar" role="toolbar">
-            <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip data-bs-title="Do a test run of your study">
+            <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip="Do a test run of your study">
                 <i class="bi-play-circle"></i><span class="d-none d-xl-inline ps-1">Run</span>
             </a>
-            <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip data-bs-title="Show this study results">
+            <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip="Show this study results">
                 Results<span class="badge text-study bg-white rounded-pill ms-1">@studyResultsCount</span>
             </button>
-            <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip data-bs-title="Change this study's properties">
+            <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip data-bs-title="Export this study to your local file system (including its components and study assets but without its results)">
+            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip="Export this study to your local file system (including its components and study assets but without its results)">
                 <i class="bi-box-arrow-up-right"></i><span class="d-none d-xl-inline ps-1">Export</span>
             </button>
-            <button class="btn btn-study" id="lockStudy" type="button" data-bs-tooltip data-bs-title="Lock/unlock this study. A locked study cannot be changed (e.g. its properties), but its study links will still work. This is useful during data collection to prevent accidental changes in a study setup.">
+            <button class="btn btn-study" id="lockStudy" type="button" data-bs-tooltip="Lock/unlock this study. A locked study cannot be changed (e.g. its properties), but its study links will still work. This is useful during data collection to prevent accidental changes in a study setup.">
                 <i class="bi-unlock-fill"></i>
             </button>
-            <button class="btn btn-study" type="button" data-bs-toggle="offcanvas" data-bs-target="#studyDescriptionSidebar" data-bs-tooltip data-bs-title="The description of this study like defined in the study properties">
+            <button class="btn btn-study" type="button" data-bs-toggle="offcanvas" data-bs-target="#studyDescriptionSidebar" data-bs-tooltip="The description of this study like defined in the study properties">
                 <i class="bi-file-text-fill"></i><span class="d-none d-xl-inline ps-1">Description</span>
             </button>
             <div class="btn-group me-3" role="group">
@@ -29,25 +29,25 @@
                     <i class="bi-three-dots-vertical d-xl-none"></i><span class="d-none d-xl-inline ps-1">More</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-study">
-                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Clone this study without its results">
+                    <li class="no-info-icon" data-bs-tooltip="Clone this study without its results">
                         <a class="dropdown-item" id="cloneStudy" href="#"><i class="bi-copy pe-1"></i>Clone</a>
                     </li>
-                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Change which users can access this study">
+                    <li class="no-info-icon" data-bs-tooltip="Change which users can access this study">
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Change users</a>
                     </li>
-                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Show this study's study log">
+                    <li class="no-info-icon" data-bs-tooltip="Show this study's study log">
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study log</a>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li class="no-info-icon" data-bs-tooltip data-bs-title="Delete this study including its components, assets and results">
+                    <li class="no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
                         <a class="dropdown-item" id="removeStudy" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                     </li>
                 </ul>
             </div>
-            <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#componentCreatorModal" type="button" data-bs-tooltip data-bs-title="Add a new component">
+            <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#componentCreatorModal" type="button" data-bs-tooltip="Add a new component">
                 <i class="bi-plus-lg fw-bold"></i><span class="d-none d-xl-inline ps-1">New Component</span>
             </button>
-            <button class="btn btn-batch" id="studyLinksButton" type="button" data-bs-tooltip data-bs-title="Get study links that you can distribute to your participants and let them run your study">
+            <button class="btn btn-batch" id="studyLinksButton" type="button" data-bs-tooltip="Get study links that you can distribute to your participants and let them run your study">
                 <i class="bi-link-45deg"></i><span class="d-none d-xl-inline ps-1">Study Links</span>
             </button>
     </div>
@@ -83,7 +83,7 @@
     const studyResultButtonTooltip = @studyResultsCount > 0
             ? "This study has @studyResultsCount study result(s) so far. Click here to go to the study result page."
             : "This study has no study results yet. Maybe do a test run to generate one.";
-    $("#studyResults").attr("data-bs-title", studyResultButtonTooltip);
+    $("#studyResults").attr("data-bs-tooltip", studyResultButtonTooltip);
 
     drawLockButton();
 

@@ -10,11 +10,11 @@
                         <span class="fw-light ms-1 user-select-all" id="componentPropertiesStudyTitle"></span>
                     </div>
                     <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip data-bs-title="This component ID is unique within this JATOS instance">Component ID</span>:
+                        <span data-bs-tooltip="This component ID is unique within this JATOS instance">Component ID</span>:
                         <span class="fw-light ms-1 user-select-all" id="componentPropertiesId"></span>
                     </div>
                     <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip data-bs-title="Universally unique identifier - used to keep track of components between different JATOS instances">Component UUID</span>:
+                        <span data-bs-tooltip="Universally unique identifier - used to keep track of components between different JATOS instances">Component UUID</span>:
                         <span class="fw-light ms-1 user-select-all" id="componentPropertiesUuid"></span>
                     </div>
                 </h5>
@@ -24,14 +24,14 @@
                 <form class="form-component" id="componentPropertiesForm">
                     <div class="row mb-3">
                         <label class="col-sm-3 col-form-label" for="componentPropertiesFormTitle">
-                            Title<span class="input-required" data-bs-tooltip data-bs-title="required"></span>
+                            Title<span class="input-required" data-bs-tooltip="required"></span>
                         </label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="componentPropertiesFormTitle" name="title" placeholder="Your component title" required>
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormReloadable" data-bs-tooltip data-bs-title="Allow reloading of this component. If this box is not checked, reloading this component's page will lead to the ending of the study with an error.">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormReloadable" data-bs-tooltip="Allow reloading of this component. If this box is not checked, reloading this component's page will lead to the ending of the study with an error.">
                             Allow reload
                         </label>
                         <div class="form-check col-sm-9 ps-3 pt-2">
@@ -44,7 +44,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormHtmlFilePath" data-bs-tooltip data-bs-title="Enter the name of your HTML file that displays your component. You can also enter a file path with subdirectories. This path must be within the directory of this study's assets. Use '/' as the directory separator - even on MS Windows.">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormHtmlFilePath" data-bs-tooltip="Enter the name of your HTML file that displays your component. You can also enter a file path with subdirectories. This path must be within the directory of this study's assets. Use '/' as the directory separator - even on MS Windows.">
                             HTML file path
                         </label>
                         <label class="d-none" for="componentPropertiesFormHtmlFileRename"></label>
@@ -58,7 +58,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormComments" data-bs-tooltip data-bs-title="Something you want to share or just don't want to forget?">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormComments" data-bs-tooltip="Something you want to share or just don't want to forget?">
                             Comments
                         </label>
                         <div class="col-sm-9">
@@ -66,9 +66,9 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormJsonData" data-bs-tooltip data-bs-title="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormJsonData" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
                             Component input<br>
-                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#componentPropertiesJsonEditor" data-bs-tooltip data-bs-title="Format your JSON nicely">Pretty</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#componentPropertiesJsonEditor" data-bs-tooltip="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="componentPropertiesJsonEditor"></div>

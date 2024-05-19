@@ -9,46 +9,46 @@
         <thead>
             <tr>
                 @* If you change something in the head, copy-paste it into the footer too! *@
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to show the result data."><span class="info-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the component result">Comp. result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the component this result belongs to">Comp. ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the study result this component result belongs to">Study result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="The UUID (Universally Unique Identifier) of the study result this component result belongs to">Study result UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The start time of the component run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The end time of the component run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The duration from start to end. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The name of the batch this component belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The current state of this component run, like @common.ComponentResult.ComponentState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The size of the result data.">Data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="All files that were uploaded during the run of this component and their size in brackets">Files (size)<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the component run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to show the result data."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the component result">Comp. result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the component this result belongs to">Comp. ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the study result this component result belongs to">Study result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip="The UUID (Universally Unique Identifier) of the study result this component result belongs to">Study result UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The start time of the component run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The end time of the component run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The duration from start to end. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The name of the batch this component belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The current state of this component run, like @common.ComponentResult.ComponentState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The size of the result data.">Data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="All files that were uploaded during the run of this component and their size in brackets">Files (size)<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The message that was send (optionally) in the end of the component run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
         </thead>
         <tfoot>
             <tr>
                 @* If you change something in the head, copy-paste it into the footer too! *@
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to show the result data."><span class="info-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the component result">Comp. result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the component this result belongs to">Comp. ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The ID of the study result this component result belongs to">Study result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="The UUID (Universally Unique Identifier) of the study result this component result belongs to">Study result UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The start time of the component run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The end time of the component run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The duration from start to end. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The name of the batch this component belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The current state of this component run, like @common.ComponentResult.ComponentState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The size of the result data.">Data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="All files that were uploaded during the run of this component and their size in brackets">Files (size)<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="The message that was send (optionally) in the end of the component run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to show the result data."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the component result">Comp. result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the component this result belongs to">Comp. ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The ID of the study result this component result belongs to">Study result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip="The UUID (Universally Unique Identifier) of the study result this component result belongs to">Study result UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The start time of the component run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The end time of the component run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The duration from start to end. The format is [days:]hours:minutes:seconds.">Duration<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The name of the batch this component belongs to">Batch<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the worker's results page">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The type of the worker / study link">Type<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Click on the button in a row to open the group's results page">Group ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The current state of this component run, like @common.ComponentResult.ComponentState.allStatesAsString()">State<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The size of the result data.">Data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="All files that were uploaded during the run of this component and their size in brackets">Files (size)<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="The message that was send (optionally) in the end of the component run">Message<span class="info-icon"></span><span class="ordering-icon"></span></th>
             </tr>
         </tfoot>
     </table>
@@ -98,9 +98,11 @@
                     "data": null,
                     "render": function (data, type, full, meta) {
                         if (full.dataShort) {
-                            return `<button type="button" class="btn btn-component text-nowrap collapse-result-data dropdown-toggle px-3" data-bs-tooltip data-bs-title="Show/hide result data"></button>`;
+                            return `<button type="button" class="btn btn-component text-nowrap collapse-result-data dropdown-toggle px-3"
+                                    data-bs-tooltip="Show/hide result data"></button>`;
                         } else {
-                            return `<button type="button" class="btn btn-component text-nowrap collapse-result-data dropdown-toggle px-3" data-bs-tooltip data-bs-title="No result data stored" disabled></button>`;
+                            return `<button type="button" class="btn btn-component text-nowrap collapse-result-data dropdown-toggle px-3"
+                                    data-bs-tooltip="No result data stored" disabled></button>`;
                         }
                     }
                 },
@@ -109,8 +111,8 @@
                     "data": null,
                     "orderable": false,
                     "render": function (data, type, full, meta) {
-                        return `<button type="button" class="btn btn-secondary select-checkbox" data-bs-tooltip
-                            data-bs-title="Check this box to select this result for export or deleting."><i class="bi-square"></i></button>`;
+                        return `<button type="button" class="btn btn-secondary select-checkbox"
+                                data-bs-tooltip="Check this box to select this result for export or deleting."><i class="bi-square"></i></button>`;
                     }
                 },
                 {
@@ -157,7 +159,7 @@
                     "width": "1%",
                     "render": function (data, type, full, meta) {
                         if (type === 'display') {
-                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to go to this worker's results page"
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip="Click to go to this worker's results page"
                                 href="${window.routes.StudyResults.workersStudyResults(data)}">${data}</a>`;
                         }
                         return data;
@@ -174,7 +176,7 @@
                     "render": function (data, type, full, meta) {
                         if (type === 'display') {
                             if (!data) return '<span class="text-body text-opacity-50">none</span>';
-                            return `<a role="button" class="btn btn-batch" data-bs-tooltip data-bs-title="Click to get this group's results page"
+                            return `<a role="button" class="btn btn-batch" data-bs-tooltip="Click to get this group's results page"
                                 href="${window.routes.StudyResults.groupsStudyResults(window.study.id, data)}">${data}</a>`;
                         }
                         return data;
@@ -268,10 +270,6 @@
     });
 
     function generateComponentResultChildRow(componentResult, componentResultId) {
-        const dataShort = componentResult.dataShort.length != 0 ? componentResult.dataShort : "no data";
-        const isTooLong = componentResult.dataShort.substr(componentResult.dataShort.length - 3) === "...";
-        const showAllButton = isTooLong ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip data-bs-title="Show all result data of this component result.">Show All</button>' : "";
-        const copyToClipboardButton = !isTooLong ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>' : "";
         const childRow = $(`
             <div class="collapse" id="componentResultInfo-${componentResultId}">
                 <div class="card m-2">

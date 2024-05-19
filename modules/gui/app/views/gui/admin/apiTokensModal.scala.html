@@ -4,7 +4,7 @@
         <div class="modal-content">
             <div class="modal-header align-items-start">
                 <h5 class="modal-title text-truncate flex-grow-1">
-                    <span data-bs-tooltip data-bs-title="API tokens are necessary for the use of JATOS' API">Your personal access tokens (API tokens)</span>
+                    <span data-bs-tooltip="API tokens are necessary for the use of JATOS' API">Your personal access tokens (API tokens)</span>
                 </h5>
                 <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
@@ -37,7 +37,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row mb-3">
-                        <label for="apiTokenCreatorFormName" class="col-sm-3 col-form-label input-required" data-bs-tooltip data-bs-title="Use the name to distinguish the tokens from one another">
+                        <label for="apiTokenCreatorFormName" class="col-sm-3 col-form-label input-required" data-bs-tooltip="Use the name to distinguish the tokens from one another">
                             Name<span class="info-icon"></span>
                         </label>
                         <div class="col-sm-9">
@@ -45,7 +45,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label for="apiTokenCreatorFormExpiration" class="col-sm-3 col-form-label" data-bs-tooltip data-bs-title="Select token expiration time">
+                        <label for="apiTokenCreatorFormExpiration" class="col-sm-3 col-form-label" data-bs-tooltip="Select token expiration time">
                             Expiration
                         </label>
                         <div class="col-sm-9">
@@ -133,7 +133,7 @@
                     "render": function (data, type, full, meta) {
                         if (type === 'sort') return data.active.toString();
                         return `
-                            <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Use this switch to de-/activate this token.">
+                            <label class="switch no-info-icon" data-bs-tooltip="Use this switch to de-/activate this token.">
                                 <input type="checkbox" ${data.active ? "checked" : ""}>
                                 <span class="slider slider-admin round"></span>
                             </label>`;
@@ -224,13 +224,13 @@
                     <b>For your security it won\'t be shown again.</b>
                     <div class="card card-body">
                         <span class="user-select-all">${apiToken}</span>
-                        <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
+                        <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip="Copy to clipboard"></span>
                     </div>
                 </p>
                 <p>Test with <code>curl</code>:</p>
                 <div class="card card-body">
                     <pre class="mb-0 me-2"><code class="user-select-all">curl -i -H "Authorization: Bearer ${apiToken}" ${window.common.realHostUrl}${window.routes.Api.testToken}</code></pre>
-                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip data-bs-title="Copy to clipboard"></span>
+                    <span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip="Copy to clipboard"></span>
                 </div>`;
         $('#apiTokenDisplayModal .modal-body').html(html);
         Helpers.activateTooltips('#apiTokenDisplayModal');

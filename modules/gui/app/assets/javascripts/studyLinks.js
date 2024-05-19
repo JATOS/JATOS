@@ -28,8 +28,8 @@ class LinksWithToggle {
     renderToggle = (toggleSelector, studyLinksContainerSelector, className) => {
         const $toggleButtons = $(`
             <div class="btn-group ${className}" data-study-link-toggle="${this.toggleId}">
-                <button class="btn btn-xs btn-batch direct-link" data-bs-tooltip data-bs-title="Show links that start the study directly after clicking on them">Open Directly</button>
-                <button class="btn btn-xs btn-outline-secondary confirm-link" data-bs-tooltip data-bs-title="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properties) and the worker has to click a button to start the study.">Confirm First</button>
+                <button class="btn btn-xs btn-batch direct-link" data-bs-tooltip="Show links that start the study directly after clicking on them">Open Directly</button>
+                <button class="btn btn-xs btn-outline-secondary confirm-link" data-bs-tooltip="Show links that do not start the study directly but display a Study Entry page before. Here a message can be displayed (specified in Study Properties) and the worker has to click a button to start the study.">Confirm First</button>
             </div>
         `);
         const toggleId = this.toggleId;
@@ -72,14 +72,14 @@ class LinksWithToggle {
             <div>
                 <div class="direct-link text-truncate" data-study-link-toggle="${this.toggleId}">
                     <span>${directLink}</span>
-                    <span class="btn-clipboard no-info-icon" data-bs-tooltip data-bs-title="Copy this link to the clipboard."></span>
-                    <span class="btn-qr-code no-info-icon" data-bs-tooltip data-bs-title="Show QR code for this link."
+                    <span class="btn-clipboard no-info-icon" data-bs-tooltip="Copy this link to the clipboard."></span>
+                    <span class="btn-qr-code no-info-icon" data-bs-tooltip="Show QR code for this link."
                         data-qr-code-text="${directLink}"></span>
                 </div>
                 <div class="confirm-link text-truncate hide" data-study-link-toggle="${this.toggleId}">
                     <span>${confirmLink}</span>
-                    <span class="btn-clipboard no-info-icon" data-bs-tooltip data-bs-title="Copy this link to the clipboard."></span>
-                    <span class="btn-qr-code no-info-icon" data-bs-tooltip data-bs-title="Show QR code for this link.
+                    <span class="btn-clipboard no-info-icon" data-bs-tooltip="Copy this link to the clipboard."></span>
+                    <span class="btn-qr-code no-info-icon" data-bs-tooltip="Show QR code for this link.
                         data-qr-code-text="${confirmLink}"></span>
                 </div>
             </div>`);

@@ -6,12 +6,12 @@
         <div class="modal-content">
             <div class="modal-header align-items-start">
                 <h5 class="text-truncate modal-title flex-grow-1">
-                    <span data-bs-tooltip data-bs-title="Check and change who has access to this study">Member users</span>
+                    <span data-bs-tooltip="Check and change who has access to this study">Member users</span>
                 </h5>
                 <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <label for="changeMemberUsersUsername" class="form-label info-icon" data-bs-tooltip data-bs-title="Only usernames of existing JATOS user.">
+                <label for="changeMemberUsersUsername" class="form-label info-icon" data-bs-tooltip="Only usernames of existing JATOS user.">
                     Add user by username
                 </label>
                 <div class="row g-3">
@@ -25,7 +25,7 @@
                     </div>
                     @if(Common.isStudyMembersAllowedToAddAllUsers()) {
                     <div class="col">
-                        <button class="btn btn-study" id="changeMemberUsersAddAll" type="button" data-bs-tooltip data-bs-title="Give all users access to this study">
+                        <button class="btn btn-study" id="changeMemberUsersAddAll" type="button" data-bs-tooltip="Give all users access to this study">
                             Add All
                         </button>
                     </div>
@@ -36,7 +36,7 @@
                         <tr>
                             <th>Name<span class="ordering-icon"></span></th>
                             <th>
-                                <button class="btn btn-study text-nowrap" id="changeMemberUsersRemoveAll" type="button" data-bs-tooltip data-bs-title="Remove access rights to this study from all users except yourself">
+                                <button class="btn btn-study text-nowrap" id="changeMemberUsersRemoveAll" type="button" data-bs-tooltip="Remove access rights to this study from all users except yourself">
                                     Remove All
                                 </button>
                             </th>
@@ -101,13 +101,13 @@
                     "render": function (data, type, full, meta) {
                         if (data.isMember) {
                             return `<div class="flex-direction text-nowrap">
-                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip data-bs-title="Click to remove this user from this study">
+                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip="Click to remove this user from this study">
                                     Remove
                                 </button>
                             </div>`;
                         } else {
                             return `<div class="flex-direction text-nowrap">
-                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip data-bs-title="Click to add this user to the study again">
+                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip="Click to add this user to the study again">
                                     Add
                                 </button>
                             </div>`;
@@ -184,7 +184,7 @@
                     const button = $(this.node()).find('.change-member-users-toggle');
                     button.html($(button.html())
                         .html('Remove')
-                        .attr('data-bs-title', "Click to remove this user from this study"));
+                        .attr('data-bs-tooltip', "Click to remove this user from this study"));
                 }
                 this.data(user);
                 return;

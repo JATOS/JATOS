@@ -4,11 +4,11 @@
 <table class="table table-hover align-middle w-100" id="componentsTable">
     <thead>
     <tr>
-        <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position"><i class="bi-arrow-down-up ps-2"></i><span class="info-icon"></span></th>
-        <th class="no-info-icon" data-bs-tooltip data-bs-title="Activate or deactivate components. Inactive components will not show up in study runs.">Active<span class="info-icon"></span></th>
-        <th class="no-info-icon" data-bs-tooltip data-bs-title="ID of this component">ID<span class="info-icon"></span></th>
-        <th class="no-info-icon" data-bs-tooltip data-bs-title="Title of this component">Title<span class="info-icon"></span></th>
-        <th class="no-info-icon text-nowrap" data-bs-tooltip data-bs-title="Path to the component's HTML file. It is located within the study assets directory.">HTML file<span class="info-icon"></span></th>
+        <th class="no-info-icon text-nowrap" data-bs-tooltip="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position"><i class="bi-arrow-down-up ps-2"></i><span class="info-icon"></span></th>
+        <th class="no-info-icon" data-bs-tooltip="Activate or deactivate components. Inactive components will not show up in study runs.">Active<span class="info-icon"></span></th>
+        <th class="no-info-icon" data-bs-tooltip="ID of this component">ID<span class="info-icon"></span></th>
+        <th class="no-info-icon" data-bs-tooltip="Title of this component">Title<span class="info-icon"></span></th>
+        <th class="no-info-icon text-nowrap" data-bs-tooltip="Path to the component's HTML file. It is located within the study assets directory.">HTML file<span class="info-icon"></span></th>
         <th></th>
     </tr>
     </thead>
@@ -18,13 +18,13 @@
 @* Template for button toolbar in Component's row *@
 <div id="componentToolbarTemplate" class="d-none">
     <div class="float-end text-nowrap">
-        <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-bs-tooltip data-bs-title="Do a test run only of this component">
+        <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-bs-tooltip="Do a test run only of this component">
             <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
         </a>
-        <button class="component-results btn btn-component" type="button" data-bs-tooltip data-bs-title="Show the results only of this component">
+        <button class="component-results btn btn-component" type="button" data-bs-tooltip="Show the results only of this component">
             <span class="d-none d-lg-inline">Component </span>Results<span class="badge text-component bg-white rounded-pill ms-1"></span>
         </button>
-        <button class="component-properties btn btn-component" type="button" data-bs-tooltip data-bs-title="Change this component's properties">
+        <button class="component-properties btn btn-component" type="button" data-bs-tooltip="Change this component's properties">
             <i class="bi-gear-fill"></i><span class="d-none d-lg-inline ps-1">Properties</span>
         </button>
         <div class="btn-group" role="group">
@@ -32,11 +32,11 @@
                 <i class="bi-three-dots-vertical d-lg-none"></i><span class="d-none d-lg-inline ps-1">More</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-component">
-                <li class="no-info-icon" data-bs-tooltip data-bs-title="Clone this component without its results and assets">
+                <li class="no-info-icon" data-bs-tooltip="Clone this component without its results and assets">
                     <a class="dropdown-item clone-component" href="#"><i class="bi-copy pe-1"></i>Clone</a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                <li class="no-info-icon" data-bs-tooltip data-bs-title="Deletes this component without its results and assets">
+                <li class="no-info-icon" data-bs-tooltip="Deletes this component without its results and assets">
                     <a class="dropdown-item remove-component" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                 </li>
             </ul>
@@ -72,7 +72,7 @@
                 {
                     "data": "position",
                     "render": function (data, type, full, meta) {
-                        return `<button type="button" class="btn btn-component drag-button" data-bs-tooltip data-bs-title="Use this button to drag and drop this component to a new position">${data}</button>`;
+                        return `<button type="button" class="btn btn-component drag-button" data-bs-tooltip="Use this button to drag and drop this component to a new position">${data}</button>`;
                     }
                 },
                 {
@@ -80,7 +80,7 @@
                     "data": "active",
                     "render": function (data, type, full, meta) {
                         return `
-                            <label class="switch no-info-icon" data-bs-tooltip data-bs-title="Use this switch to de-/activate this component. Inactive components will not show up in study runs.">
+                            <label class="switch no-info-icon" data-bs-tooltip="Use this switch to de-/activate this component. Inactive components will not show up in study runs.">
                                 <input type="checkbox" ${data ? "checked" : ""}>
                                 <span class="slider slider-component round"></span>
                             </label>`;
@@ -93,7 +93,7 @@
                     "className": "text-wrap",
                     "data": "title",
                     "render": function (data, type, full, meta) {
-                        return `<span class="no-info-icon" data-bs-tooltip data-bs-title="${data}">${data}</span>`;
+                        return `<span class="no-info-icon" data-bs-tooltip="${data}">${data}</span>`;
                     }
                 },
                 {
@@ -109,7 +109,7 @@
                         const tooltip = data.resultCount > 0
                                 ? `This component has ${data.resultCount} component result(s) so far. Click here to go to this component's result page.`
                                 : "This component has no component results yet.";
-                        $(toolbar).find('.component-results').attr("data-bs-title", tooltip);
+                        $(toolbar).find('.component-results').attr("data-bs-tooltip", tooltip);
                         return toolbar.html();
                     }
                 }

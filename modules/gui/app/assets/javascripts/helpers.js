@@ -26,9 +26,14 @@ export {
     getDataFromDataTableRow,
 };
 
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+
 const browsersLocale = (navigator.languages && navigator.languages.length) ? navigator.languages[0] : navigator.language;
+
 const locale = window.common.locale ? window.common.locale : browsersLocale;
+
 const timezone = new Date().toString().match(/\(([^\)]+)\)$/)[1];
+
 const timezoneAbbr = /.*\s(.+)/.exec((new Date()).toLocaleDateString(navigator.language, { timeZoneName:'short' }))[1];
 
 /**
@@ -50,7 +55,7 @@ function getLocalTimeSimple(timestamp) {
 function getLocalTimeDataTables(timestamp, type) {
     if (type === 'sort') return timestamp;
     return timestamp
-        ? `<span class="no-info-icon" data-bs-tooltip data-bs-title="in local time ${timezoneAbbr} (${timezone}), with locale '${locale}'">${getLocalTimeSimple(timestamp)}</span>`
+        ? `<span class="no-info-icon" data-bs-tooltip="in local time ${timezoneAbbr} (${timezone}), with locale '${locale}'">${getLocalTimeSimple(timestamp)}</span>`
         : '<span class="text-body text-opacity-50">never</span>';
 }
 
@@ -268,16 +273,21 @@ function getTheme() {
 }
 
 /**
- * Activates Bootstrap 5 tooltips. Elements with tooltips need to have the attributes 'data-bs-tooltip' and
- * 'data-bs-title'. We don't use the default Bootstrap attribute ('data-bs-toggle="tooltip"') because we want to avoid
- * clashes with other features, e.g. popovers using the same attribute. The function adds several tooltips config
- * attributes: 'data-bs-delay', 'data-bs-trigger' ('hover' only - no 'focus'), and 'data-bs-container'.
+ * Activates Bootstrap 5 tooltips. Elements with tooltips need to have at least the attribute 'data-bs-tooltip' defining
+ * the tooltip content. We don't use the default Bootstrap attributes, data-bs-toggle="tooltip" and data-bs-title,
+ * because 1) we want to avoid clashes with other features, e.g. popovers using the same attribute, 2) we want to have
+ * the possibility to not activate them at all on devices with touch screens, and 3) DataTables sometimes (e.g. with
+ * Dropdowns) activates them automatically - something we don't want all the time. Most importantly this function adds
+ * the 'data-bs-title' with the content of 'data-bs-tooltip'. Then it adds several tooltips config attributes (if not
+ * set already): 'data-bs-delay', 'data-bs-trigger' ('hover' only - no 'focus'), and 'data-bs-container'.
  *
  * @param {optional string|jQuery element} parent - Either a selector string or an jQuery element specifying a parent
  *          element containing the elements with tooltips to be activated. If not set all tooltips in document will be
  *          activated.
  */
 function activateTooltips(parent) {
+    if (isTouchDevice) return;
+
     let $elements;
     if (!parent) {
         $elements = $('[data-bs-tooltip]');
@@ -287,10 +297,17 @@ function activateTooltips(parent) {
         $elements = $(`${parent} [data-bs-tooltip]`);
     }
     $elements.each(function() {
+        const title = $(this).attr('data-bs-tooltip');
+        if (!title) {
+            console.log("");
+        }
+        $(this).attr('data-bs-title', title);
+
         // Add our default attributes if they aren't already set
         if (!$(this).is('[data-bs-delay]')) $(this).attr('data-bs-delay', '{"show":1000, "hide":150}');
         if (!$(this).is('[data-bs-trigger]')) $(this).attr('data-bs-trigger', 'hover');
         if (!$(this).is('[data-bs-container]')) $(this).attr('data-bs-container', 'body');
+
         new bootstrap.Tooltip(this);
     });
 }
@@ -301,6 +318,8 @@ function activateTooltips(parent) {
  * @param {object} dataTable - DataTables object
  */
 function activateTooltipsOnDataTablesDropdowns(dataTable) {
+    if (isTouchDevice) return;
+
     dataTable.on('buttons-action', function (e, buttonApi, dataTable, node, config) {
         if ($(node).hasClass("dropdown-toggle")) {
             activateTooltips($(node).siblings('.dt-button-collection'));

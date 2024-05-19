@@ -7,15 +7,15 @@
     <table class="table table-hover align-middle w-100" id="studyManagerTable">
         <thead>
             <tr>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th>ID<span class="ordering-icon"></span></th>
                 <th>Title<span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="All users who are member of this study">Members<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Size of study assets folder">Study assets size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Number of study results">Result count<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Size of result data: total for all study runs (average per result in brackets)">Result data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="Size of uploaded result files: total for all study runs (average per result in brackets)">Result file size<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip data-bs-title="When was this study last started by a participant?">Last started<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="All users who are member of this study">Members<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Size of study assets folder">Study assets size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Number of study results">Result count<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Size of result data: total for all study runs (average per result in brackets)">Result data size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Size of uploaded result files: total for all study runs (average per result in brackets)">Result file size<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="When was this study last started by a participant?">Last started<span class="info-icon"></span><span class="ordering-icon"></span></th>
             </tr>
         </thead>
     </table>
@@ -58,7 +58,7 @@
                     "render": function (data, type, full, meta) {
                         if (type === 'export' || type === 'sort') return data.active.toString();
                         return `
-                            <label class="switch no-info-icon mt-1" data-bs-tooltip data-bs-title="Click to de-/activate this study. A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip="Click to de-/activate this study. A deactivated study cannot be started by participants (workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">
                                 <input type="checkbox" ${data.active ? "checked" : ""}>
                                 <span class="slider slider-admin round"></span>
                             </label>

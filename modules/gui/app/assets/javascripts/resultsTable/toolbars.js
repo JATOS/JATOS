@@ -45,8 +45,7 @@ class Toolbars {
                     "text": '<i class="bi-arrow-repeat"></i>',
                     "className": `btn ${this.btnClass} me-2`,
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Reload results and refresh the table"
+                        "data-bs-tooltip": "Reload results and refresh the table"
                     },
                     "action": function ( e, dt, node, config ) {
                         this.disable();
@@ -63,51 +62,50 @@ class Toolbars {
                     "extend": "collection",
                     "text": '<i class="bi-box-arrow-up-right pe-1"></i>Export Results',
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Export results to your local file system"
+                        "data-bs-tooltip": "Export results to your local file system"
                     },
                     "className": `btn ${this.btnClass} me-2`,
                     "buttons": [
                         {
-                            "text": '<span data-bs-tooltip data-bs-title="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
+                            "text": '<span data-bs-tooltip="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
                             "className": this.dropdownClass,
                             "action": () => this.exportResultsCallback(window.routes.Api.exportResults(false))
                         },
                         {
-                            "text": '<span data-bs-tooltip data-bs-title="Exports data only from results, as zip package or plain text file">Data only</span>',
+                            "text": '<span data-bs-tooltip="Exports data only from results, as zip package or plain text file">Data only</span>',
                             "className": this.dropdownClass,
                             "extend": "collection",
                             "buttons": [
                                 {
-                                    "text": '<span data-bs-tooltip data-bs-title="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP</span>',
+                                    "text": '<span data-bs-tooltip="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP</span>',
                                     "className": this.dropdownClass,
                                     "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(false,false))
                                 },
                                 {
-                                    "text": '<span data-bs-tooltip data-bs-title="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text</span>',
+                                    "text": '<span data-bs-tooltip="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text</span>',
                                     "className": this.dropdownClass,
                                     "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(true,false))
                                 }
                             ]
                         },
                         {
-                            "text": '<span data-bs-tooltip data-bs-title="Exports files only from results, packed in a zip file">Files only</span>',
+                            "text": '<span data-bs-tooltip="Exports files only from results, packed in a zip file">Files only</span>',
                             "className": "text-nowrap dropdown-item-study",
                             "action": () => this.exportResultsCallback(window.routes.Api.exportResultFiles)
                         },
                         {
-                            "text": '<span data-bs-tooltip data-bs-title="Exports only the metadata of the results. Choose between JSON and CSV format.">Metadata only</span>',
+                            "text": '<span data-bs-tooltip="Exports only the metadata of the results. Choose between JSON and CSV format.">Metadata only</span>',
                             "extend": "collection",
                             "collectionLayout": "dropdown",
                             "className": "w-100 dropdown-item-study",
                             "buttons": [
                                 {
-                                    "text": '<span data-bs-tooltip data-bs-title="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON</span>',
+                                    "text": '<span data-bs-tooltip="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON</span>',
                                     "className": this.dropdownClass,
                                     "action": () => this.exportResultsCallback(window.routes.Api.exportResultMetadata(false))
                                 },
                                 {
-                                    "text": '<span data-bs-tooltip data-bs-title="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV</span>',
+                                    "text": '<span data-bs-tooltip="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV</span>',
                                     "extend": "csv",
                                     "filename": () => "jatos_results_metadata_" + Helpers.getDateTimeYYYYMMDDHHmmss(),
                                     "footer": false,
@@ -152,8 +150,7 @@ class Toolbars {
                 {
                     "text": '<i class="bi-x-circle-fill pe-1"></i>Delete',
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Delete results in JATOS"
+                        "data-bs-tooltip": "Delete results in JATOS"
                     },
                     "className": `btn ${this.btnClass} text-nowrap`,
                     "action": this.deleteSelectedResultsCallback
@@ -183,16 +180,14 @@ class Toolbars {
                     "extend": "selectAll",
                     "text": "All",
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Select all results (including the ones on different table pages)"
+                        "data-bs-tooltip": "Select all results (including the ones on different table pages)"
                     }
                 },
                 {
                     "extends": "selectAll",
                     "text": "Visible",
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Select only the currently visible results on this page"
+                        "data-bs-tooltip": "Select only the currently visible results on this page"
                     },
                     "action": (e, dt, node, config) => {
                         dt.rows().deselect();
@@ -203,8 +198,7 @@ class Toolbars {
                     "extends": "selectAll",
                     "text": "Filtered",
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Select only the filtered results (including the ones on different table pages)"
+                        "data-bs-tooltip": "Select only the filtered results (including the ones on different table pages)"
                     },
                     "action": (e, dt, node, config) => {
                         dt.rows().deselect();
@@ -215,8 +209,7 @@ class Toolbars {
                     "extend": "selectNone",
                     "text": "Deselect",
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Deselect all results"
+                        "data-bs-tooltip": "Deselect all results"
                     },
                     "action": (e, dt, node, config) => {
                         dt.rows().deselect();
@@ -231,8 +224,7 @@ class Toolbars {
                     "extend": "colvis",
                     "text": "Customize",
                     "attr": {
-                        "data-bs-tooltip": "",
-                        "data-bs-title": "Show/hide columns of this table"
+                        "data-bs-tooltip": "Show/hide columns of this table"
                     },
                     "columns": ":not(.no-colvis)"
                 }
