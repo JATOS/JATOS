@@ -189,7 +189,6 @@
         FormValidation.clear("#apiTokenCreatorForm");
         Helpers.generateModalSubtitles("#apiTokenCreatorModal", {"Username": window.signedinUser.username});
         $('#apiTokenCreatorFormName').val("");
-        $('#apiTokenCreatorModal').off('hidden.bs.modal'); // Necessary for the cancel button to work
         $('#apiTokenCreatorModal').modal('show');
     });
 
@@ -234,9 +233,10 @@
                 </div>`;
         $('#apiTokenDisplayModal .modal-body').html(html);
         Helpers.activateTooltips('#apiTokenDisplayModal');
-        $('#apiTokenDisplayModal').on('click', '.btn-clipboard', CopyToClipboard.onClick);
         $('#apiTokenDisplayModal').modal('show');
     }
+
+    $('#apiTokenDisplayModal').on('click', '.btn-clipboard', CopyToClipboard.onClick);
 
     $('#apiTokensModal').on('click', '.token-active input', function(e) {
         e.preventDefault();

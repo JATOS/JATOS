@@ -72,7 +72,6 @@
     $("#studyLinksCreatorModal").on('show.bs.modal', function() {
         $("#studyLinksCreatorForm")[0].reset();
         FormValidation.clear("#studyLinksCreatorForm");
-        $('#studyLinksCreatorModal').off('hidden.bs.modal'); // Necessary for the cancel button to work
 
         const batch = $('#studyLinksCreatorModal').data('batch');
         const type = $('#studyLinksCreatorModal').data('type');

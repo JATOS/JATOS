@@ -44,7 +44,6 @@
         $("#studyLinksCreatorAllTypesForm")[0].reset();
         $("#studyLinksCreatorAllTypesBatchSelect").empty();
         $("#studyLinksCreatorAllTypesTypeSelect").empty();
-        $('#studyLinksCreatorAllTypesModal').off('hidden.bs.modal');
 
         const batchList = $("#batchTable").DataTable().data();
         $.each(batchList, function(index, batch) {
