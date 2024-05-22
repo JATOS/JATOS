@@ -89,7 +89,7 @@
             $("#studyLinksCreatorModal").data("batch", batch);
             $('#studyLinksCreatorAllTypesModal')
                     .modal('hide')
-                    .on('hidden.bs.modal', () => $("#studyLinksCreatorModal").modal('show'));
+                    .one('hidden.bs.modal', () => $("#studyLinksCreatorModal").modal('show'));
             break;
         case 'GeneralSingle':
         case 'GeneralMultiple':
@@ -97,13 +97,13 @@
             $('#singleStudyLinkDisplayModal').data('type', type);
             $('#studyLinksCreatorAllTypesModal')
                     .modal('hide')
-                    .on('hidden.bs.modal', () => $("#singleStudyLinkDisplayModal").modal('show'));
+                    .one('hidden.bs.modal', () => $("#singleStudyLinkDisplayModal").modal('show'));
             break;
         case 'MT':
             $('#mtSourceCodeModal').data('batch', batch);
             $('#studyLinksCreatorAllTypesModal')
                     .modal('hide')
-                    .on('hidden.bs.modal', () => $("#mtSourceCodeModal").modal('show'));
+                    .one('hidden.bs.modal', () => $("#mtSourceCodeModal").modal('show'));
             break;
         }
     });

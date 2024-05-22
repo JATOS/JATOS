@@ -92,7 +92,7 @@
                 if ($("#studyLinksManagerModal").hasClass('show')) $('#studyLinksManagerTable').DataTable().ajax.reload();
                 $('#studyLinksCreatorModal')
                     .modal('hide')
-                    .on('hidden.bs.modal', () => showStudyLinksDisplayModal(res.data, batch, type, comment));
+                    .one('hidden.bs.modal', () => showStudyLinksDisplayModal(res.data, batch, type, comment));
             },
             error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study codes")
         });

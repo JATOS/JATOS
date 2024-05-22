@@ -206,7 +206,7 @@
             success: function(apiToken) {
                 $('#apiTokenCreatorModal')
                     .modal('hide')
-                    .on('hidden.bs.modal', () => showApiTokenDisplayModal(name, apiToken));
+                    .one('hidden.bs.modal', () => showApiTokenDisplayModal(name, apiToken));
                 $('#apiTokensTable').DataTable().ajax.reload();
             },
             error : function(err) {
