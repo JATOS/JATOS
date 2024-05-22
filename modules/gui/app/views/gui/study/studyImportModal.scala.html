@@ -104,7 +104,7 @@
         $('#confirmStudyImportModalConfirmed').attr("disabled", false);
         $('#confirmStudyImportModal').modal('show');
 
-        $('#confirmStudyImportConfirmed').off('click.confirm').on('click.confirm', function() {
+        $('#confirmStudyImportConfirmed').one('click.confirm', function() {
             $('#confirmStudyImportModal').modal('hide');
             const propertiesConfirm = $('#confirmStudyImportProperties').is(':checked');
             const dirConfirm = $('#confirmStudyImportDir').is(':checked');
@@ -140,7 +140,7 @@
         $('#confirmStudyImportModalConfirmed').attr("disabled", false);
         $('#confirmStudyImportModal').modal('show');
 
-        $('#confirmStudyImportConfirmed').off('click.confirm').on('click.confirm', function() {
+        $('#confirmStudyImportConfirmed').one('click.confirm', function() {
             $('#confirmStudyImportModal').modal('hide');
             const propertiesConfirm = $('#confirmStudyImportProperties').is(':checked');
             const dirConfirm = $('#confirmStudyImportDir').is(':checked');

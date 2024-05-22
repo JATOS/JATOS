@@ -127,7 +127,7 @@
         if (row.child.isShown()) {
             const collapseElement = row.child().find(".collapse");
             // First we collapse with Bootstrap and then we hide the DataTable row
-            collapseElement.off('hidden.bs.collapse').on('hidden.bs.collapse', row.child.hide);
+            collapseElement.one('hidden.bs.collapse', row.child.hide);
             new bootstrap.Collapse(collapseElement).hide();
         } else {
             const batch = row.data();
