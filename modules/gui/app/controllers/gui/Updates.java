@@ -46,8 +46,8 @@ public class Updates extends Controller {
     public CompletionStage<Result> getReleaseInfo(String version, Boolean allowPreReleases) {
         return jatosUpdater.getReleaseInfo(version, allowPreReleases).handle((releaseInfo, error) -> {
             if (error != null) {
-                LOGGER.error("Couldn't request latest JATOS update info.");
-                return status(503, "Couldn't request latest JATOS update info. Is internet connection okay?");
+                LOGGER.error("Couldn't request JATOS update info.");
+                return status(503, "Couldn't request JATOS update info.");
             } else {
                 return ok(releaseInfo);
             }
