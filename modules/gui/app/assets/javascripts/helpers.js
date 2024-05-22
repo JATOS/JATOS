@@ -345,10 +345,11 @@ function activatePopovers(parent) {
  * @param {string} modalSelector - A selector specifying the Modal element
  * @param {object[]} subtitleList - Array of objects. Each object is of {subtitleName: subtitleValue}.
  */
-function generateModalSubtitles(modalSelector, subtitleList) {
+function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
+    const joinStr = newLine ? "<br>" : ", ";
     const subtitlesHtml = Object.entries(subtitleList).map(st =>
         `<span class="fw-normal">${st[0]}</span>: ${st[1]}`
-    ).join(", ");
+    ).join(joinStr);
     const subtitleSpan = `<div class="modal-subtitle fw-light fs-6 text-wrap">${subtitlesHtml}</div>`;
     $(`${modalSelector} .modal-subtitle`).remove();
     $(`${modalSelector} .modal-title`).append(subtitleSpan);
