@@ -1,13 +1,16 @@
+@* Update JATOS - status card on administration page *@
 <div class="card card-body bg-body-tertiary text-center mb-4" id="updateJatos">
     <h5 class="card-title">JATOS version</h5>
     <p class="card-text placeholder-glow mb-0" id="updateJatosMsg"><span class="placeholder col-5"></span></p>
-    <button class="btn btn-default d-none" id="updateJatosButton" role="button">Update</button>
-    <button class="btn btn-default d-none" id="releaseNotesButton" role="button">Release Notes</button>
+    <div class="mx-auto mt-3 d-none" id="updateButtons">
+        <button type="button" class="btn btn-admin" id="releaseNotesButton">Release Notes</button>
+        <button type="button" class="btn btn-admin" id="updateJatosButton">Update</button>
+    </div>
 </div>
 
 @* Update JATOS - release notes modal *@
-<div class="modal fade" id="releaseNotesModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="releaseNotesModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":true}'>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header align-items-start">
                 <h5 class="modal-title text-truncate flex-grow-1">Release notes</h5>
@@ -15,8 +18,7 @@
             </div>
             <div class="modal-body"></div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-admin" id="releaseNotesConfirmed">Update now</button>
+                <button type="button" class="btn btn-admin" id="releaseNotesUpdateJatosButton">Update now</button>
             </div>
         </div>
     </div>
@@ -30,12 +32,7 @@
                 <h5 class="modal-title text-truncate flex-grow-1">Update JATOS</h5>
             </div>
             <div class="modal-body">
-                <div class="waiting"><img src="@routes.Assets.versioned("lib/jatos-gui/images/waiting.gif")"> please wait</div>
-                <p class="confirmationText"></p>
-                <div class="checkbox" style="display: none">
-                    <label><input type="checkbox" class="backupAll"> Back up current version</label>
-                    <span class="help-block">Backs up all files (including study assets, uploaded result files, logs, study logs, local database - but not a MySQL database) of the current JATOS into a folder named 'backup_x.x.x' (x.x.x = old version). <b>This will use up disk space.</b></span>
-                </div>
+                <p class="confirmation-text d-none"></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="updateJatosCanceled" data-bs-dismiss="modal">No, this is too risky</button>
@@ -48,6 +45,7 @@
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
 
     (() => {
         const urlQueryParams = new URLSearchParams(window.location.search).toString();
@@ -90,21 +88,21 @@
     }
 
     function showUpdateAvailable(releaseInfo) {
-        let text;
         const version = getVersionName(releaseInfo);
+        let text;
         if (releaseInfo.isNewerVersion || !releaseInfo.isLatest) {
             if (window.common.isMultiNode) {
                 text = `<i class="bi-info-circle text-info pe-1"></i>Auto-update is not possible in a multi-node JATOS installation.`;
             } else if (releaseInfo.isUpdateAllowed && !releaseInfo.isDifferentJava && releaseInfo.zipUrl) {
                 text = `<i class="bi-info-circle text-info pe-1"></i>Do you want to update to version&nbsp;${version}?`;
                 if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
-                $("#updateJatos .updateJatosButton").removeClass("d-none");
+                $("#updateButtons").removeClass("d-none");
             } else if (releaseInfo.isUpdateAllowed && releaseInfo.isDifferentJava && releaseInfo.zipJavaUrl) {
                 text = `<i class="bi-info-circle text-info pe-1"></i>Do you want to update to version&nbsp;${version}?
                         The new JATOS needs a different version of Java than yours. So you'll need JATOS
                         bundled with Java&nbsp;${releaseInfo.newJavaVersion}.`;
                 if (releaseInfo.isLatest) text = "A new JATOS version is available. " + text;
-                $("#updateJatos .updateJatosButton").removeClass("d-none");
+                $("#updateButtons").removeClass("d-none");
             }
         } else {
             text = `<i class="bi-check2 text-success pe-1"></i>Your JATOS (version&nbsp;${releaseInfo.currentVersion}) is up-to-date.`;
@@ -112,111 +110,119 @@
         $("#updateJatosMsg").html(text);
     }
 
-$("#updateJatos .releaseNotesButton").click(function() {
-    const releaseInfo = $("#updateJatos").data("releaseInfo");
-    const version = getVersionName(releaseInfo);
-    $("#releaseNotesModal .modal-title").text("Release notes for JATOS " + version);
-    const releaseNodesClean = releaseInfo.releaseNotes.replace(/(\s|\n|\r|#)*Which variant(.|\n|\r)*/, "");
-    const releaseNotesHtml = new showdown.Converter().makeHtml(releaseNodesClean);
-    $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
-    $("#releaseNotesModal").modal('show');
-});
+    $("#releaseNotesButton").click(function() {
+        const releaseInfo = $("#updateJatos").data("releaseInfo");
+        const version = getVersionName(releaseInfo);
 
-function getVersionName(releaseInfo) {
-    return releaseInfo.isPrerelease ? releaseInfo.versionFull + " (pre-release)" : releaseInfo.versionFull;
-}
+        Helpers.generateModalSubtitles("#releaseNotesModal",
+                {"Current version": window.common.jatosVersion, "Update version": version}, true);
 
-function getFileSizeInMb(releaseInfo) {
-    const sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
-    return  Math.round(sizeInByte / 1024 / 1024);
-}
+        const releaseNodesClean = releaseInfo.releaseNotes.replace(/(\s|\n|\r|#)*Which variant(.|\n|\r)*/, "");
+        const releaseNotesHtml = new showdown.Converter().makeHtml(releaseNodesClean);
+        $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
+        $("#releaseNotesModal .modal-body a").attr("target", "_blank");
 
-$("#updateJatos .updateJatosButton, #releaseNotesModal .updateJatosButton").click(function() {
-    const releaseInfo = $("#updateJatos").data("releaseInfo");
-    const version = getVersionName(releaseInfo);
-    const fileSizeInMb = getFileSizeInMb(releaseInfo);
-    $("#releaseNotesModal").modal('hide');
-    removeAlerts("#updateJatosModal");
-    $("#updateJatosModal .modal-title").text("Update JATOS to " + version);
-    $("#updateJatosModal .confirmationText").html("First we are going to download the new release (it's " + fileSizeInMb
-            + "&nbsp;MB). Make sure you back up your data for the (unlikely) event that something goes wrong."
-            + " After the download is done you'll be asked again for confirmation.");
-    $("#updateJatosModal .confirmationText").show();
-    $("#updateJatosModal .waiting").hide();
-    $("#updateJatosModal .checkbox").hide();
-    $("#updateJatosModal .modal-footer").show();
-    $("#updateJatosModal button.canceled").unbind();
-    $("#updateJatosModal button.canceled").click(cancelUpdate);
-    $("#updateJatosModal button.confirmed").unbind();
-    $("#updateJatosModal button.confirmed").click(downloadJatos);
-    $("#updateJatosModal").modal('show');
-});
-
-function cancelUpdate() {
-    $.ajax({
-        url: '@controllers.gui.routes.Updates.cancelUpdate()',
-        error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't cancel the update")
+        $("#releaseNotesModal").modal('show');
     });
-}
 
-function downloadJatos() {
-    const releaseInfo = $("#updateJatos").data("releaseInfo");
-    const fileSizeInMb = getFileSizeInMb(releaseInfo);
-    const version = getVersionName(releaseInfo);
-    $("#updateJatosModal .waiting").show();
-    $("#updateJatosModal .modal-title").text("Downloading " + version + " (" + fileSizeInMb + " MB)");
-    $("#updateJatosModal .confirmationText").hide();
-    $("#updateJatosModal .modal-footer").hide();
-    $.ajax({
-        url: '@controllers.gui.routes.Updates.downloadJatos()',
-        timeout: 0, // Do not timeout
-        success: function() {
-            showUpdateJatosModalDownloaded();
-        },
-        error: function(err) {
-            $('#updateJatosModal').modal('hide');
-            err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during the JATOS downloading: check the application logs");
-        }
+    function getVersionName(releaseInfo) {
+        return releaseInfo.isPrerelease ? releaseInfo.versionFull + " (pre-release)" : releaseInfo.versionFull;
+    }
+
+    function getFileSizeInMb(releaseInfo) {
+        const sizeInByte = releaseInfo.isDifferentJava ? releaseInfo.zipJavaSize : releaseInfo.zipSize;
+        return Math.round(sizeInByte / 1024 / 1024);
+    }
+
+    $("#updateJatosButton").click(showUpdateJatosModalPreDownload);
+
+    $("#releaseNotesUpdateJatosButton").click(function() {
+        $('#releaseNotesModal')
+            .modal('hide')
+            .one('hidden.bs.modal', showUpdateJatosModalPreDownload);
     });
-}
 
-function showUpdateJatosModalDownloaded() {
-    const releaseInfo = $("#updateJatos").data("releaseInfo");
-    const version = getVersionName(releaseInfo);
-    $("#updateJatosModal .waiting").hide();
-    $("#updateJatosModal .checkbox").show();
-    $("#updateJatosModal .modal-title").text("Update & Restart");
-    $("#updateJatosModal .confirmationText").text("Downloaded. Now, do you really want to update to version "
-            + version + " and restart?");
-    $("#updateJatosModal .confirmationText").show();
-    $("#updateJatosModal .modal-footer").show();
-    $("#updateJatosModal button.canceled").unbind();
-    $("#updateJatosModal button.canceled").click(cancelUpdate);
-    $("#updateJatosModal button.confirmed").unbind();
-    $("#updateJatosModal button.confirmed").click(updateAndRestart);
-    $("#updateJatosModal").modal('show');
-}
+    function showUpdateJatosModalPreDownload() {
+        const releaseInfo = $("#updateJatos").data("releaseInfo");
+        const version = getVersionName(releaseInfo);
+        const fileSizeInMb = getFileSizeInMb(releaseInfo);
 
-function updateAndRestart() {
-    const releaseInfo = $("#updateJatos").data("releaseInfo");
-    const version = getVersionName(releaseInfo);
-    $("#updateJatosModal .waiting").show();
-    $("#updateJatosModal .confirmationText").hide();
-    $("#updateJatosModal .checkbox").hide();
-    $("#updateJatosModal .modal-footer").hide();
-    const backupAll = $('#updateJatosModal .backupAll').is(':checked');
-    $.ajax({
-        url: '@{general.common.Common.getJatosUrlBasePath()}jatos/updateAndRestart?backupAll=' + backupAll,
-        timeout: 0, // Do not timeout
-        success: function() {
-            $('#updateJatosModal').modal('hide');
-            showInfo("Restarting now to finish update to version " + version
-                    + ". It should take under a minute. Refresh this page every now and then.");
-        },
-        error: function(err) {
-            $('#updateJatosModal').modal('hide');
-            err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during update and restart: check the application logs")
-        }
-    });
-}
+        $("#updateJatosModal .modal-title").text("Update JATOS");
+        Helpers.generateModalSubtitles("#updateJatosModal",
+                {"Current version": window.common.jatosVersion, "Update version": version}, true);
+        $("#updateJatosModal .confirmation-text").html(`First the new release will be downloaded (it is
+                ${fileSizeInMb}&nbsp;MB). <b>Make sure you back up your data for the event that something goes
+                wrong</b>. After the download is done you will be asked again for confirmation.`);
+        $("#updateJatosModal .confirmation-text").removeClass("d-none");
+        $("#updateJatosModal .modal-footer").removeClass("d-none");
+
+        $("#updateJatosCanceled").off("click").on("click", cancelUpdate);
+        $("#updateJatosConfirmed").off("click").on("click", downloadJatos);
+
+        $("#updateJatosModal").modal('show');
+    };
+
+    function cancelUpdate() {
+        $.ajax({
+            url: window.routes.Updates.cancelUpdate,
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't cancel the update")
+        });
+    }
+
+    function downloadJatos() {
+        const releaseInfo = $("#updateJatos").data("releaseInfo");
+        const fileSizeInMb = getFileSizeInMb(releaseInfo);
+        const version = getVersionName(releaseInfo);
+
+        $('#updateJatosModal')
+            .modal('hide')
+            .one('hidden.bs.modal', WaitingModal.show);
+
+        $.ajax({
+            url: window.routes.Updates.downloadJatos,
+            timeout: 0, // Do not timeout
+            success: showUpdateJatosModalDownloaded,
+            error: function(err) {
+                err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during the JATOS downloading: check the application logs");
+            },
+            complete: WaitingModal.hide
+        });
+    }
+
+    function showUpdateJatosModalDownloaded() {
+        const releaseInfo = $("#updateJatos").data("releaseInfo");
+        const version = getVersionName(releaseInfo);
+
+        $("#updateJatosModal .modal-title").text("Update & Restart");
+        Helpers.generateModalSubtitles("#updateJatosModal",
+                {"Current version": window.common.jatosVersion, "Update version": version}, true);
+        $("#updateJatosModal .confirmation-text").text(`Downloaded. Now, do you really want to update to version ${version} and restart?`);
+        $("#updateJatosModal .confirmation-text").removeClass("d-none");
+        $("#updateJatosModal .modal-footer").removeClass("d-none");
+
+        $("#updateJatosCanceled").off("click").on("click", cancelUpdate);
+        $("#updateJatosConfirmed").off("click").on("click", updateAndRestart);
+
+        $("#updateJatosModal").modal('show');
+    }
+
+    function updateAndRestart() {
+        const releaseInfo = $("#updateJatos").data("releaseInfo");
+        const version = getVersionName(releaseInfo);
+
+        $("#updateJatosModal").modal('hide');
+        $("#updateJatosModal .confirmation-text").addClass("d-none");
+        $("#updateJatosModal .modal-footer").addClass("d-none");
+
+        $.ajax({
+            url: window.routes.Updates.updateAndRestart(false),
+            timeout: 0, // Do not timeout
+            success: function() {
+                Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0);
+            },
+            error: function(err) {
+                err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during update and restart: check the application logs")
+            }
+        });
+    }
 </script>
