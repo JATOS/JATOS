@@ -43,6 +43,7 @@
         const markdown = $("#studyDescription").data().markdown;
         const html = markdown ? new showdown.Converter().makeHtml(markdown) : "Here could be a description of this study.";
         $('#studyDescription').html(html);
+        $("#studyDescription a").attr("target", "_blank");
     }
 
     $("#studyDescriptionResize").click(function() {
