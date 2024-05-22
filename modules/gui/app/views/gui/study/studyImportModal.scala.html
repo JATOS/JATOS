@@ -48,7 +48,6 @@
         $.each(files , function(index, value){
             data.append('study', value);
         });
-        WaitingModal.show();
         $.ajax({
             url: window.routes.ImportExport.importStudy,
             data: data,
@@ -56,16 +55,16 @@
             contentType: false,
             processData: false,
             type: 'POST',
+            beforeSend: WaitingModal.show,
             success: function(response) {
-                WaitingModal.hide();
                 importStudyConfirm(response);
             },
             error : function(err) {
-                WaitingModal.hide();
                 const errMsg = err.responseText ? err.responseText : "Something went wrong during study import";
                 alerts.error(errMsg);
             },
             complete: function() {
+                WaitingModal.hide();
                 $("#importStudyBrowser")[0].value = '';
             }
         });
