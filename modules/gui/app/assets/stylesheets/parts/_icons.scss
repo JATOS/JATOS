@@ -19,30 +19,33 @@
     vertical-align: top;
 }
 
-.btn-clipboard-top-right {
-    position: absolute;
-    top: 0.4em;
-    right: 0.8em;
-    z-index: 10;
-}
+// Show clipboard button only on devices with a mouse (= can hover)
+@media (hover: hover) {
+    .btn-clipboard-top-right {
+        position: absolute;
+        top: 0.4em;
+        right: 0.8em;
+        z-index: 10;
+    }
 
-.btn-clipboard::after {
-    font-family: 'bootstrap-icons';
-    font-synthesis: none;
-    content: "\f290"; // bi-clipboard
-    opacity: 0.7;
-}
+    .btn-clipboard::after {
+        font-family: 'bootstrap-icons';
+        font-synthesis: none;
+        content: "\f290"; // bi-clipboard
+        opacity: 0.7;
+    }
 
-.btn-clipboard:hover::after {
-    opacity: 1.0;
-}
+    .btn-clipboard:hover::after {
+        opacity: 1.0;
+    }
 
-.btn-clipboard-copied::after {
-    font-family: 'bootstrap-icons';
-    font-synthesis: none;
-    content: "\f633"; // bi-check-lg
-    color: green;
-    opacity: 1.0;
+    .btn-clipboard-copied::after {
+        font-family: 'bootstrap-icons';
+        font-synthesis: none;
+        content: "\f633"; // bi-check-lg
+        color: green;
+        opacity: 1.0;
+    }
 }
 
 .btn-qr-code::after {
