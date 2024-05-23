@@ -47,7 +47,7 @@
             <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#componentCreatorModal" type="button" data-bs-tooltip="Add a new component">
                 <i class="bi-plus-lg fw-bold"></i><span class="d-none d-xl-inline ps-1">New Component</span>
             </button>
-            <button class="btn btn-batch" id="studyLinksButton" type="button" data-bs-tooltip="Get study links that you can distribute to your participants and let them run your study">
+            <button class="btn btn-batch" id="studyLinksButton" type="button" data-bs-tooltip="Get study links that you can distribute to your workers (participants) and let them run your study">
                 <i class="bi-link-45deg"></i><span class="d-none d-xl-inline ps-1">Study Links</span>
             </button>
     </div>
@@ -72,7 +72,7 @@
     import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
     import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
 
-    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a participant. Please contact your admin.");
+    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.");
 
     $("#studyToolbar").before(InfoCard.render([
         {"name": "Study ID", "value": window.study.id, "tooltip": "This ID is unique within this JATOS instance"},

@@ -9,7 +9,7 @@
         <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#batchCreatorModal" data-bs-tooltip="Add a new batch of workers">
             <i class="bi-plus-lg fw-bold"></i><span class="d-none d-sm-inline ps-1">New Batch</span>
         </button>
-        <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#studyLinksCreatorAllTypesModal" data-bs-tooltip="Shortcut to get study links. You can choose the batch and link type. Study links are meant to be distributed to your participants so they can run the study.">
+        <button class="btn btn-batch" type="button" data-bs-toggle="modal" data-bs-target="#studyLinksCreatorAllTypesModal" data-bs-tooltip="Shortcut to get study links. You can choose the batch and link type. Study links are meant to be distributed to your workers so they can run the study.">
             <i class="bi-link-45deg"></i><span class="d-none d-sm-inline ps-1">Get Study Links</span>
         </button>
     </div>
@@ -75,7 +75,7 @@
     import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
 
-    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a participant. Please contact your admin.");
+    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.");
 
     let batchTable;
     $(document).ready(function() {

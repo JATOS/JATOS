@@ -17,7 +17,7 @@
                         <tr>
                             <th class="no-info-icon" data-bs-tooltip="Activate / inactivate this study link - only activated links can be used to run this study">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="ID of the worker that belongs to this study link">Worker ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip="This code, handed to workers, can be used in the /publix/run page to start the study.">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="This code, handed to a worker, can be used in the /publix/run page to start the study.">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
                             <th><span class="align-bottom">Study Links</span><span id="studyLinksManagerStudyLinksToggle"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="Comment given during creation of study link">Comment<span class="info-icon"></span><span class="ordering-icon"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="State of the study result that belongs to this link. In case of a Personal Multiple link it's the state of the study result which study link was started last."><span class="state">Study result state</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
@@ -121,7 +121,7 @@
                     "render": (data, type, full, meta) => {
                         if (type === 'export' || type === 'sort') return full.active.toString();
                         if (workerType === "PersonalSingle" && isLinkUsed(workerType, full)) {
-                            return '<span class="used" data-bs-tooltip="Links of type Personal Single can be used only once by a participant. This link was already used.">used</span>';
+                            return '<span class="used" data-bs-tooltip="Links of type Personal Single can only be used once by a worker. This link was already used.">used</span>';
                         } else {
                             return `
                                 <label class="switch no-info-icon" data-bs-tooltip="Use this switch to de-/activate this study link.">
@@ -278,7 +278,7 @@
                             //if (workerType !== "PersonalSingle") node.disable();
                         },
                         "attr":  {
-                            "data-bs-tooltip": "Show only study links that were already used by a participant.",
+                            "data-bs-tooltip": "Show only study links that were already used by a worker.",
                         },
                         "action": function(e, dt, node, config) {
                             $(node).tooltip("dispose");

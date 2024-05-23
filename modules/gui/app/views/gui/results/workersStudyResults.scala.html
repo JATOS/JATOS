@@ -75,7 +75,7 @@
 
     const info = [
         {"name": "Worker ID", "value": window.worker.id, "tooltip": "This ID is unique for this worker, in this JATOS instance, regardless of its type"},
-        {"name": "Worker type", "value": Helpers.getWorkerTypeUIName(window.worker.workerType), "tooltip": "Type of this worker. It corresponds to the type of the study link that was used for the study run."},
+        {"name": "Type", "value": Helpers.getWorkerTypeUIName(window.worker.workerType), "tooltip": "Type of the study link / worker."},
     ];
     switch(window.worker.workerType) {
         case "Jatos":
