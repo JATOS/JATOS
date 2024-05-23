@@ -15,7 +15,7 @@
                 <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC or ORCID">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. create/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
             </tr>
         </thead>
@@ -503,7 +503,7 @@
                 } else if (err.responseText) {
                     alerts.error(err.responseText);
                 } else {
-                    alerts.error("Couldn't create a new user");
+                    alerts.error("Couldn't add a new user");
                 }
             }
         });

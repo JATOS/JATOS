@@ -13,7 +13,7 @@
             (<span class="fw-medium" id="userSidebarName">@signedinUser.getName()</span>)
             <span class="badge bg-secondary no-info-icon" id="userSidebarAuthMethod" data-bs-tooltip="The account type you used to sign in.">xxx</span>
             @if(signedinUser.isAdmin()) {
-            <span class="badge bg-secondary no-info-icon" data-bs-tooltip="Users with admin rights can create/change/delete other users.">Admin</span>
+            <span class="badge bg-secondary no-info-icon" data-bs-tooltip="Users with admin rights can add/change/delete other users.">Admin</span>
             }
             @if(signedinUser.isSuperuser()) {
             <span class="badge bg-secondary no-info-icon" data-bs-tooltip="Superusers have access to every study.">Superuser</span>

@@ -151,7 +151,7 @@
         $.ajax({
             url : window.routes.Studies.cloneStudy(window.study.id),
             success : function(response) {
-                Alerts.success(`Created clone "${response.title}". <a href="${window.routes.Studies.study(response.id)}">Go to this study.</a>`);
+                Alerts.success(`Added clone "${response.title}". <a href="${window.routes.Studies.study(response.id)}">Go to this study.</a>`);
                 StudySidebar.draw();
             },
             error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't clone study")
