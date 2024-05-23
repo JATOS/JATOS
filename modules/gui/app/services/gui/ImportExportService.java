@@ -137,7 +137,7 @@ public class ImportExportService {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
             LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
-            throw new IOException("Import of study failed");
+            throw new IOException("Missing unzipped study directory in tmp directory");
         }
         Study uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
@@ -318,7 +318,7 @@ public class ImportExportService {
             ZipUtil.unzip(file, destDir);
         } catch (IOException e) {
             LOGGER.warn(".unzipUploadedFile: unzipping failed");
-            throw new IOException("Import of study failed");
+            throw new IOException("Unpacking ZIP archive failed");
         }
         return destDir;
     }
