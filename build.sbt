@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
 
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
-  Cmd("FROM", "eclipse-temurin:11-jre-ubi9-minimal"),
+  Cmd("FROM", "eclipse-temurin:11-jre-jammy"),
   Cmd("LABEL", "maintainer=lange.kristian@gmail.com"),
   Cmd("ENV", "JATOS_HOME=/opt/jatos"),
   Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
