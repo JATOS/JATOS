@@ -1,3 +1,7 @@
+/*
+ * Shows a confirmation Modal. Uses Bootstrap and jQuery.
+ */
+
 export { show }
 
 import * as Helpers from "./helpers.js";

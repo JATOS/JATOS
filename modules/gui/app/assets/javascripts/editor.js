@@ -10,8 +10,17 @@ import * as Helpers from "./helpers.js";
 // Store multiple editors and use the DOM selector as the key
 const editors = {};
 
+// Listen to the "colorThemeChange" emitted from colorThemeToggler.js
 document.addEventListener("colorThemeChange", () => setTheme());
 
+/**
+ * Sets up and shows an editor
+ *
+ * @param {string} mode - ACE's editor mode, e.g. 'json'
+ * @param {string} value - The initial content of the editor
+ * @param {string} selector - The DOM selector to identify the editor (needed to allow multiple editors on the same page)
+ * @param {number} maxLines - ACE's 'maxLine' property
+ */
 function setup(mode, value, selector, maxLines = 30) {
     if (!editors[selector]) {
         const theme = Helpers.getTheme() === 'light' ? 'ace/theme/tomorrow' : 'ace/theme/tomorrow_night';
@@ -39,8 +48,14 @@ function setup(mode, value, selector, maxLines = 30) {
     }
 }
 
+/*
+ * Function used to get the current content of the editor
+ */
 const getValue = (selector) => editors[selector].getSession().getValue();
 
+/*
+ * Focus on the editor that is specified by a selector
+ */
 const focus = (selector) => editors[selector].focus();
 
 function setTheme() {

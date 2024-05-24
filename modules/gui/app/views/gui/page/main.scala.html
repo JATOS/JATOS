@@ -88,7 +88,7 @@
         }, 0);
     });
 
-    // Fix for Bootstrap 5 tooltips: sometimes they don't get disposed, e.g. with a button click or a Modal opening
+    // Fix for Bootstrap 5 tooltips: sometimes they don't hide automatically, e.g. with a button click or a Modal opening
     $(document).on("click", function() {
         $("[data-bs-tooltip]").tooltip("hide");
     });

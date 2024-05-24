@@ -1,7 +1,15 @@
+/*
+ * Handles alerts (little popups with info, warnings etc messages). Uses Bootstrap toasts, timeago.js library.
+ */
+
 export { Named, success, info, warning, error, showList, hideAll }
 
 import * as Timeago from './timeago.min.js';
 
+/*
+ * This class allows alerts with a namespace. E.g., if alerts are associated with a Modal one can get Alerts with a
+ * namespace and then hide them if the Modal hides.
+ */
 class Named {
 
     constructor(name) {
@@ -55,6 +63,9 @@ function error(msg, delay = 0) {
     showToast(msg, "error", delay)
 }
 
+/*
+ * Shows multiple alerts defined in a list
+ */
 function showList(msgs, delay) {
     if (msgs) {
         if (msgs.successList) msgs.successList.forEach(function(msg) { success(msg, delay) });

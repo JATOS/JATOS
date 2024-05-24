@@ -4,10 +4,11 @@
  * Licensed under the Creative Commons Attribution 3.0 Unported License.
  *
  * Adopted for JATOS (www.jatos.org)
+ *
+ * !!! Don't turn this into a module!!! It has to be executed as earliest as possible to prevent a white flicker of
+ * the screen, but modules are always 'defer'.
  */
 
-// Don't turn this into a module. It has to be executed as earliest as possible to prevent a white flicker of
-// the screen, but modules are always 'defer'.
 (() => {
     'use strict'
 

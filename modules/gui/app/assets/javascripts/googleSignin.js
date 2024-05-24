@@ -1,3 +1,7 @@
+/*
+ * JATOS customizations of Google sign-in. Google's library is included in main.scala.html.
+ */
+
 export { drawButton, drawUserImg }
 
 import * as Helpers from "./helpers.js";
@@ -8,7 +12,9 @@ let buttonWidth = 300;
 document.addEventListener('DOMContentLoaded', () => drawButton());
 document.addEventListener("colorThemeChange", () => drawButton());
 
-// Properly draw the Google sign-in button (using theme color and width)
+/*
+ * Properly draw the Google sign-in button (using theme color and width)
+ */
 function drawButton(width) {
     if (typeof google !== "object") return;
     if (!initialized) {
@@ -29,7 +35,9 @@ function drawButton(width) {
     });
 }
 
-// Load Google user picture (if signed in by Google). Get the picture URL from the Google cookie.
+/*
+ * Load Google user picture (if signed in by Google). Get the picture URL from the Google cookie.
+ */
 function drawUserImg() {
     if (!window.signedinUser || window.signedinUser.isOauthGoogle) return
     const googlePictureUrl = window.common.googlePictureUrl;
