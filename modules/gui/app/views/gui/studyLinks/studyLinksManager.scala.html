@@ -310,13 +310,13 @@
                 count = full.studyResultCount,
                 hideBadge = false;
                 tooltip = count > 0
-                    ? `This study link has ${count} result(s) so far. Click here to go to a result page that only shows the study results of this study link.`
+                    ? `This study link has ${count} result(s) so far. Click here to go to a result page that only shows the study results of the worker that is associated to this study link.`
                     : "This study link has no results yet.";
             } else {
                 buttonText = "Result";
                 count = "";
                 hideBadge = true;
-                tooltip = "Click here to go to a result page that only shows the study result of this study link.";
+                tooltip = "Click here to go to a result page that only shows the study result of the worker that is associated to this study link.";
             }
             const button = `
                 <a type="button" class="btn btn-batch worker-results-button no-info-icon text-nowrap"
