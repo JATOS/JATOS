@@ -299,7 +299,8 @@ function activateTooltips(parent) {
     $elements.each(function() {
         const title = $(this).attr('data-bs-tooltip');
         if (!title) {
-            console.log("");
+            console.warn("Element has attribute 'data-bs-tooltip' without content");
+            return;
         }
         $(this).attr('data-bs-title', title);
 
