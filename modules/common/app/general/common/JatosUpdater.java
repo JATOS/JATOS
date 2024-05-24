@@ -522,7 +522,7 @@ public class JatosUpdater {
                 () -> new FileNotFoundException("JATOS update directory seems to be corrupted."));
         Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + currentReleaseInfo.versionFull);
         if (Files.exists(dstUpdateDir)) {
-            Files.delete(dstUpdateDir);
+            FileUtils.deleteDirectory(dstUpdateDir.toFile());
             LOGGER.info("Deleted old update directory " + dstUpdateDir);
         }
         FileUtils.copyDirectory(srcUpdateDir.toFile(), dstUpdateDir.toFile());
