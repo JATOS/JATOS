@@ -1,10 +1,18 @@
+/*
+ * Handles the copy-to-clipboard button (class .btn-clipboard and defined in CSS)
+ */
+
 export { onClick }
 
 import * as Helpers from "./helpers.js";
 
-$(".btn-clipboard").on("click", onClick);
+// Add the copy-to-clipboard event listener to every ".btn-clipboard". But we need the ".off" in case this library is
+// imported multiple times on the same page
+$(".btn-clipboard").off("click").on("click", onClick);
 
-// Use this function to add an event handler manually
+/*
+ * Use this function to add an copy-to-clipboard event handler manually, e.g. for dynamically generated elements
+ */
 function onClick(event) {
     const button = this;
 
@@ -41,6 +49,9 @@ function onClick(event) {
 
 }
 
+/*
+ * The actual copying to the clipboard
+ */
 function copyToClipboard(element) {
     const textToCopy = getText(element);
 
@@ -53,8 +64,10 @@ function copyToClipboard(element) {
     }
 }
 
-// Recursive function that extracts the text content of a hierarchy of DOM elements. It thereby ignores elements that
-// have a class "hide". It assumes that all text content is in its own element without other child elements.
+/*
+ * Recursive function that extracts the text content of a hierarchy of DOM elements. It thereby ignores elements that
+ * have a class "hide". It assumes that all text content is in its own element without other child elements.
+ */
 function getText(element) {
     if (element.children.length > 0 ) {
         return Array.from(element.children)
