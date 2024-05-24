@@ -34,7 +34,4 @@
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get result data")
         });
     });
-
-    $('#componentResultDataModal').on('click', '.btn-clipboard', CopyToClipboard.onClick);
-
 </script>
