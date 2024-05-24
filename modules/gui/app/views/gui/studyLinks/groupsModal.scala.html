@@ -34,7 +34,7 @@
         </button>
         <button class="group-results btn btn-batch" type="button" data-bs-tooltip="Show only the study results that belong to this group">
             <span class="d-none d-xl-inline">Group </span>Results
-            <span class="badge text-batch bg-white rounded-pill no-info-icon ms-1" data-bs-tooltip="Number of study results that belong to this group"></span>
+            <span class="badge text-batch bg-white rounded-pill no-info-icon ms-1"></span>
         </button>
     </div>
 </div>
@@ -134,6 +134,10 @@
                     "render": function (data, type, full, meta) {
                         const toolbar = $('#groupToolbarTemplate').clone().show();
                         $(toolbar).find('.group-results .badge').text(data.resultCount);
+                        const tooltipResults = data.resultCount > 0
+                                ? `This group has ${data.resultCount} result(s) so far. Click here to go to a result page that only shows the study results of this group.`
+                                : "This group has no results yet.";
+                        $(toolbar).find('.group-results').attr("data-bs-tooltip", tooltipResults);
                         return toolbar.html();
                     }
                 }
