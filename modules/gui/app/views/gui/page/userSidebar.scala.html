@@ -295,9 +295,9 @@
     });
 
     $("#deleteMyUserModal").on('show.bs.modal', function() {
-        $("#deleteUserForm")[0].reset();
+        $("#deleteMyUserForm")[0].reset();
         FormValidation.clear("#deleteMyUserModal");
-        $('#deleteMyUserModal .modal-title').text(`Delete ${user.username} (${user.name})`);
+        Helpers.generateModalSubtitles("#deleteMyUserModal", {"Username": user.username, "Name": user.name}, true);
         $('#deleteMyUserConfirmationText').html(generateDeleteMyUserConfirmationHtml(user));
         if (user.studyList.filter(s => s.userSize === 1).length > 0) {
             $("label[for='deleteMyUserSafetyCheck']").text("Check this box, if you really want to delete your user and the above-listed studies with all their results");
