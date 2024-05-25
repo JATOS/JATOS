@@ -351,7 +351,7 @@ function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
     const subtitlesHtml = Object.entries(subtitleList).map(st =>
         `<span class="fw-normal">${st[0]}</span>: ${st[1]}`
     ).join(joinStr);
-    const subtitleSpan = `<div class="modal-subtitle fw-light fs-6 text-wrap">${subtitlesHtml}</div>`;
+    const subtitleSpan = `<div class="modal-subtitle fw-light fs-6 text-wrap text-break">${subtitlesHtml}</div>`;
     $(`${modalSelector} .modal-subtitle`).remove();
     $(`${modalSelector} .modal-title`).append(subtitleSpan);
 }
