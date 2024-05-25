@@ -3,22 +3,22 @@
     height: 2.5rem;
 }
 
-// JATOS logo: change circle according to theme
+// JATOS logo: change circle for all themes that are not 'dark'
 .navbar-brand svg ellipse {
     fill: #444;
 }
 
-// JATOS logo: change circle according to theme
+// JATOS logo: change circle for all themes that are not 'dark'
 .navbar-brand svg:hover ellipse {
     fill: #333;
 }
 
-// JATOS logo: change circle according to theme
+// JATOS logo: change circle for 'dark' theme
 [data-bs-theme="dark"] .navbar-brand svg ellipse {
     fill: #ddd;
 }
 
-// JATOS logo: change circle according to theme
+// JATOS logo: change circle for 'dark' theme
 [data-bs-theme="dark"] .navbar-brand svg:hover ellipse {
     fill: #eee;
 }

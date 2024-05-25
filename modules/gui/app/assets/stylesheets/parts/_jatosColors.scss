@@ -9,12 +9,14 @@ $admin-color: #ff6600;
     --bs-gradient: var(--bs-navbar-toggler-transition);
 }
 
-[data-bs-theme="light"] .btn-nav {
+// Navigation button for all themes that are not 'dark', e.g. 'light'
+.btn-nav {
     --bs-btn-border-color: rgba(#000, 0.35);
     --bs-btn-hover-bg: rgba(#000, 0.1);
     --bs-btn-hover-border-color: rgba(#000, 0.65);
 }
 
+// Navigation button 'dark' theme
 [data-bs-theme="dark"] .btn-nav {
     --bs-btn-border-color: rgba(#fff, 0.35);
     --bs-btn-hover-bg: rgba(#fff, 0.1);
