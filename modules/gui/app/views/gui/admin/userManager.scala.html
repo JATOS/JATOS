@@ -354,10 +354,12 @@
                         } else {
                             tooltip = "Use this switch to de-/activate admin rights for this user.";
                         }
+                        const checked = isAdmin ? "checked" : "";
+                        const disabled = isDisabled ? "disabled" : "";
                         return `
                             <label class="switch no-info-icon mt-1" data-bs-tooltip="${tooltip}">
-                                <input type="checkbox" ${isAdmin ? "checked" : ""}>
-                                <span class="slider slider-admin round ${isDisabled ? "disabled" : ""}"></span>
+                                <input type="checkbox" ${checked} ${disabled}>
+                                <span class="slider slider-admin round" ${disabled}></span>
                             </label>
                         `;
                     }
