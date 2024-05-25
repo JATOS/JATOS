@@ -56,6 +56,7 @@
 
 <script @{helper.CSPNonce.attr} type="module">
 	import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+	import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
 	import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")"
 	import * as GoogleSignin from "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")";
 
@@ -78,6 +79,7 @@
 	}
 
 	function showSigninModal(explanationText) {
+		Alerts.hideAll();
 		FormValidation.clear('#signinModal');
 		$('#signinModal .explanation').text(explanationText);
 		$('#signinModal').modal('show');
