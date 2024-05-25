@@ -109,8 +109,8 @@ function showToast(msg, type, delay, name) {
             break;
     }
     const html = `
-            <div class="toast text-${textColor}" role="alert" data-bs-autohide="${delay?"true":"false"}" data-bs-delay="${delay?delay:0}">
-                <div class="toast-header py-1">
+            <div class="toast text-${textColor} bg-body-tertiary" role="alert" data-bs-autohide="${delay?"true":"false"}" data-bs-delay="${delay?delay:0}">
+                <div class="toast-header bg-body-tertiary py-1">
                     <i class="${icon} text-${iconColor} fs-4 pe-2"></i>
                     <strong class="me-auto">${headerText}</strong>
                     <small class="timeago" datetime="${new Date().toISOString()}"></small>
