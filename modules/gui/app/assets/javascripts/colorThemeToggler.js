@@ -16,7 +16,7 @@
     const setStoredTheme = theme => localStorage.setItem('theme', theme)
 
     // Other script can listen to this event and toggle their color theme
-    const themeChangeEvent = new Event("colorThemeChange");
+    const themeChangeEvent = new Event("colorThemeChange")
 
     // Gets the preferred theme from browser storage or from system's color theme
     const getPreferredTheme = () => {
@@ -32,9 +32,9 @@
         if (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.setAttribute('data-bs-theme', 'dark')
         } else {
-            document.documentElement.setAttribute('data-bs-theme', theme);
+            document.documentElement.setAttribute('data-bs-theme', theme)
         }
-        document.dispatchEvent(themeChangeEvent);
+        document.dispatchEvent(themeChangeEvent)
     }
 
     // Set theme as early as possible, right after script loaded to avoid a white flashing of the screen with dark mode
