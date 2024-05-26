@@ -128,7 +128,7 @@ public class SigninGoogle extends Controller {
                 throw new AuthException("Google sign in: user validation failed - " + newUserForm.errors().get(0).message());
             }
 
-            userService.bindToUserAndPersist(newUserModel);
+            user = userService.bindToUserAndPersist(newUserModel);
         } else if (!user.isOauthGoogle()) {
             throw new AuthException("User exists already - but does not use Google sign in");
         }
