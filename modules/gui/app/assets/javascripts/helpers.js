@@ -349,7 +349,7 @@ function activatePopovers(parent) {
 function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
     const joinStr = newLine ? "<br>" : ", ";
     const subtitlesHtml = Object.entries(subtitleList).map(st =>
-        `<span class="fw-normal">${st[0]}</span>: ${st[1]}`
+        `<span class="fw-normal">${st[0]}</span>: <span class="user-select-all">${st[1]}</span>`
     ).join(joinStr);
     const subtitleSpan = `<div class="modal-subtitle fw-light fs-6 text-wrap text-break">${subtitlesHtml}</div>`;
     $(`${modalSelector} .modal-subtitle`).remove();
