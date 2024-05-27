@@ -43,11 +43,8 @@
 
     // Show which theme is active in the theme picker dropdown
     const showActiveTheme = (theme, focus = false) => {
-        const themeSwitcher = document.querySelector('#colorTheme button')
-
-        if (!themeSwitcher) {
-            return
-        }
+        const themeSwitcher = document.querySelector('#colorThemeDropdown')
+        if (!themeSwitcher) return
 
         const themeSwitcherText = document.querySelector('#colorThemeText')
         const activeThemeIcon = document.querySelector('.theme-icon-active i')
@@ -61,10 +58,6 @@
         btnToActive.classList.add('active')
         activeThemeIcon.className = iconOfActiveBtn
         const themeSwitcherLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
-
-        if (focus) {
-            themeSwitcher.focus()
-        }
     }
 
     // Listen to changes in system's color theme

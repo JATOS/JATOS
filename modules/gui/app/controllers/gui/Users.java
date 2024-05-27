@@ -142,14 +142,12 @@ public class Users extends Controller {
     }
 
     /**
-     * GET request that returns data of the user that belongs to the given username
+     * GET request that returns user data of the signed-in user
      */
     @Transactional
     @Auth
-    public Result singleUserData(String username) throws JatosGuiException {
+    public Result signedinUserData() {
         User signedinUser = authService.getSignedinUser();
-        String normalizedUsername = User.normalizeUsername(username);
-        checkUsernameIsOfSignedinUser(normalizedUsername, signedinUser);
         return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(signedinUser)));
     }
 

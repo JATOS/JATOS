@@ -85,10 +85,10 @@ POST     /jatos/user/apiToken/:id/active                                    @aut
 
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager(request: Request)
-GET      /jatos/userData                                                    @controllers.gui.Users.allUserData()
 POST     /jatos/user                                                        @controllers.gui.Users.create(request: Request)
 POST     /jatos/user/:username/profile                                      @controllers.gui.Users.edit(username)
-GET      /jatos/user/:username/userData                                     @controllers.gui.Users.singleUserData(username)
+GET      /jatos/user/signedinUser                                           @controllers.gui.Users.signedinUserData()
+GET      /jatos/user/allUserData                                            @controllers.gui.Users.allUserData()
 POST     /jatos/user/passwordByUser                                         @controllers.gui.Users.changePasswordByUser(request: Request)
 POST     /jatos/user/passwordByAdmin                                        @controllers.gui.Users.changePasswordByAdmin(request: Request)
 POST     /jatos/user/:username/properties/role                              @controllers.gui.Users.toggleRole(username, role, value: Boolean)

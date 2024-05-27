@@ -29,6 +29,7 @@
 
     window.routes.Signin = {};
     window.routes.Signin.signin = `${basePath}jatos/signin`;
+    window.routes.Signin.signout = `${basePath}jatos/signout`;
     window.routes.Signin.authenticate = `${basePath}jatos/signin/local`;
     window.routes.SigninGoogle = {};
     window.routes.SigninGoogle.signin = `${basePath}jatos/signin/google`;
@@ -110,13 +111,13 @@
     window.routes.ImportExport.importStudyConfirmed = `${basePath}jatos/import/studyConfirmed`;
 
     window.routes.Users = {};
-    window.routes.Users.singleUserData = (username) => `${basePath}jatos/user/${username}/userData`;
+    window.routes.Users.signedinUserData = `${basePath}jatos/user/signedinUser`;
     window.routes.Users.edit = (username) => `${basePath}jatos/user/${username}/profile`;
     window.routes.Users.remove = (username) => `${basePath}jatos/user/${username}/delete`;
     window.routes.Users.changePasswordByUser = `${basePath}jatos/user/passwordByUser`;
     window.routes.Users.changePasswordByAdmin = `${basePath}jatos/user/passwordByAdmin`;
     window.routes.Users.userManager = `${basePath}jatos/userManager`;
-    window.routes.Users.allUserData = `${basePath}jatos/userData`;
+    window.routes.Users.allUserData = `${basePath}jatos/user/allUserData`;
     window.routes.Users.create = `${basePath}jatos/user`;
     window.routes.Users.toggleActive = (username, active) => `${basePath}jatos/user/${username}/properties/active?active=${active}`;
     window.routes.Users.toggleRole = (username, role, value) => `${basePath}jatos/user/${username}/properties/role?role=${role}&value=${value}`;

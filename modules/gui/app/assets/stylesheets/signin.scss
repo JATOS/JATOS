@@ -3,11 +3,11 @@
 @import 'parts/_googleSignin.scss';
 @import 'parts/_switch.scss';
 
-#colorTheme .dropdown-menu .active .bi-check2 {
+#colorThemeDropdown .dropdown-menu .active .bi-check2 {
     display: block !important;
 }
 
-#colorTheme .dropdown-menu-end {
+#colorThemeDropdown .dropdown-menu-end {
     --bs-dropdown-min-width: 8rem;
 }
 

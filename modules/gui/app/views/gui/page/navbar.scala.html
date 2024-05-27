@@ -67,16 +67,12 @@
     </div>
 </header>
 
-@views.html.gui.study.studyCreatorModal()
-@views.html.gui.study.studyImportModal()
-@views.html.gui.admin.apiTokensModal()
-
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as GoogleSignin from "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")";
 
-    $("#navUser .dropdown-toggle, #colorTheme .dropdown-toggle").on('show.bs.dropdown', Alerts.hideAll);
+    $("#navUser .dropdown-toggle").on('show.bs.dropdown', Alerts.hideAll);
 
     // Notify user of localhost installation
     if (Helpers.isLocalhost()) {

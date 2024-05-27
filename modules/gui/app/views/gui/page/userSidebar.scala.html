@@ -9,15 +9,11 @@
             <minidenticon-svg username="@signedinUser.getUsername()" saturation="70" lightness="50"></minidenticon-svg>
         </div>
         <div class="offcanvas-title flex-grow-1 text-wrap">
-            <span class="fw-bold" id="userSidebarUsername">@signedinUser.getUsername()</span>
-            (<span class="fw-medium" id="userSidebarName">@signedinUser.getName()</span>)
+            <span class="fw-bold" id="userSidebarUsername">xxx</span>
+            (<span class="fw-medium" id="userSidebarName">xxx</span>)
             <span class="badge bg-secondary no-info-icon" id="userSidebarAuthMethod" data-bs-tooltip="The account type you used to sign in.">xxx</span>
-            @if(signedinUser.isAdmin()) {
-            <span class="badge bg-secondary no-info-icon" data-bs-tooltip="Users with admin rights can add/change/delete other users.">Admin</span>
-            }
-            @if(signedinUser.isSuperuser()) {
-            <span class="badge bg-secondary no-info-icon" data-bs-tooltip="Superusers have access to every study.">Superuser</span>
-            }
+            <span class="badge bg-secondary no-info-icon d-none" id="userSidebarAdminBadge" data-bs-tooltip="Users with admin rights can add/change/delete other users.">Admin</span>
+            <span class="badge bg-secondary no-info-icon d-none" id="userSidebarSuperuserBadge" data-bs-tooltip="Superusers have access to every study.">Superuser</span>
         </div>
         <button type="button" class="btn btn-close2 btn-xs btn-nav" data-bs-dismiss="offcanvas"></button>
     </div>
@@ -25,19 +21,17 @@
     <div class="offcanvas-body">
 
         <ul class="navbar-nav">
-            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+            <li class="nav-item d-none" id="userSidebarSettingsButton" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
                 <button class="nav-link w-100 text-start p-2" type="button" data-bs-toggle="modal" data-bs-target="#myUserSettingsModal">
                     <i class="bi-gear-fill pe-1"></i>My settings
                 </button>
             </li>
 
-            @if(signedinUser.isDb()) {
-            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+            <li class="nav-item d-none" id="userSidebarPasswordButton" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
                 <button class="nav-link w-100 text-start p-2" type="button" data-bs-toggle="modal" data-bs-target="#changeMyPasswordModal">
                     <i class="bi-lock-fill pe-1"></i>My password
                 </button>
             </li>
-            }
 
             <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
                 <button class="nav-link w-100 text-start p-2" type="button" data-bs-toggle="modal" data-bs-target="#apiTokensModal">
@@ -46,17 +40,17 @@
             </li>
             <li class="nav-item"><hr></li>
 
-            @if(!signedinUser.getUsername().equals("admin")) {
-            <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
-                <button class="nav-link w-100 text-start p-2" id="deleteMyUserSidebarItem" type="button" data-bs-toggle="modal" data-bs-target="#deleteMyUserModal">
-                    <i class="bi-person-x-fill pe-1"></i>Delete my user
-                </button>
-            </li>
-            <li class="nav-item"><hr></li>
-            }
+            <div class="d-none" id="userSidebarDeleteButton">
+                <li class="nav-item" data-bs-dismiss="offcanvas" data-bs-target="#userSidebar">
+                    <button class="nav-link w-100 text-start p-2" id="deleteMyUserSidebarItem" type="button" data-bs-toggle="modal" data-bs-target="#deleteMyUserModal">
+                        <i class="bi-person-x-fill pe-1"></i>Delete my user
+                    </button>
+                </li>
+                <li class="nav-item"><hr></li>
+            </div>
 
             @* Color theme *@
-            <li class="nav-item" id="colorTheme">
+            <li class="nav-item" id="colorThemeDropdown">
                 <button class="nav-link w-100 text-start p-2 dropdown-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colorThemeDetails">
                         <span class="pe-1 theme-icon-active"><i class="bi-sun-fill"></i></span><span id="colorThemeText">Color theme</span>
                 </button>
@@ -81,9 +75,9 @@
             <li class="nav-item"><hr></li>
 
             <li class="nav-item">
-                <a class="nav-link w-100 text-start p-2" href="@{Common.getJatosUrlBasePath()}jatos/signout">
+                <button class="nav-link w-100 text-start p-2" id="userSidebarSignoutButton" type="button">
                     <i class="bi-door-open-fill pe-1"></i>Sign out
-                </a>
+                </button>
             </li>
         </ul>
     </div>
@@ -180,21 +174,18 @@
                             </label>
                         </div>
                     </div>
-                    @if(!signedinUser.isOauthGoogle() && !signedinUser.isOidc() && !signedinUser.isOrcid()){
-                    <div class="d-flex mb-3">
-                        <label for="deleteMyUserPassword" class="col-form-label input-required" id="deleteMyUserPasswordLabel">Your password</label>
+                    <div class="d-flex mb-3 d-none" id="deleteMyUserPasswordInput">
+                        <label for="deleteMyUserPassword" class="col-form-label input-required">Your password</label>
                         <div class="flex-grow-1 ms-2 p-0">
                             <input type="password" class="form-control" id="deleteMyUserPassword" name="password" placeholder="Your password" autocomplete="off" required>
                         </div>
                     </div>
-                    } else {
-                    <div class="d-flex mb-3">
-                        <label for="deleteMyUserUsername" class="col-form-label input-required" id="deleteMyUserUsernameLabel">Your username</label>
+                    <div class="d-flex mb-3 d-none" id="deleteMyUserUsernameInput">
+                        <label for="deleteMyUserUsername" class="col-form-label input-required">Your username</label>
                         <div class="flex-grow-1 ms-2 p-0">
                             <input type="text" class="form-control" id="deleteMyUserUsername"  name="username" autocomplete="off" required>
                         </div>
                     </div>
-                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -205,6 +196,8 @@
     </div>
 </div>
 
+@views.html.gui.admin.apiTokensModal()
+
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
@@ -212,42 +205,39 @@
     import * as PasswordVisibilityToggle from "@routes.Assets.versioned("lib/jatos-gui/javascripts/passwordVisibilityToggle.js")";
 
     const alerts = new Alerts.Named("user-sidebar");
-    $("#myUserSettingsModal, #changeMyPasswordModal, #deleteMyUserModal").on('hide.bs.modal', alerts.hideAll);
     $("#userSidebar").on('show.bs.offcanvas', Alerts.hideAll);
+    $("#myUserSettingsModal, #changeMyPasswordModal, #deleteMyUserModal").on('hide.bs.modal', alerts.hideAll);
 
-    // Load the latest user data
-    let user;
-    loadUser();
-    function loadUser() {
-        $.ajax({
-            url: window.routes.Users.singleUserData(window.signedinUser.username),
-            success: function(response) {
-                user = response;
-                $("#userSidebarName").text(user.name);
-                $("#userSidebarUsername").text(user.username);
-                $("#userSidebarAuthMethod").html(Helpers.getAuthMethodText(user.authMethod));
-            },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't load user data")
-        });
-    }
+    $("#userSidebarName").text(window.signedinUser.name);
+    $("#userSidebarUsername").text(window.signedinUser.username);
+    $("#userSidebarAuthMethod").html(Helpers.getAuthMethodText(window.signedinUser.authMethod));
+
+    $("#userSidebarAdminBadge").toggleClass("d-none", !window.signedinUser.isAdmin);
+    $("#userSidebarSuperuserBadge").toggleClass("d-none", !window.signedinUser.isSuperuser);
+    $("#userSidebarSettingsButton").toggleClass("d-none", !window.signedinUser.isDb && !window.signedinUser.isLdap);
+    $("#userSidebarPasswordButton").toggleClass("d-none", !window.signedinUser.isDb);
+    $("#userSidebarDeleteButton").toggleClass("d-none", window.signedinUser.username === "admin");
 
     $("#myUserSettingsModal").on('show.bs.modal', function() {
         $("#myUserSettingsForm")[0].reset();
         FormValidation.clear("#myUserSettingsForm");
-        Helpers.generateModalSubtitles("#myUserSettingsModal", {"Username": user.username});
-        $('#myUserSettingsName').val(user.name);
-        $('#myUserSettingsEmail').val(user.email);
+        Helpers.generateModalSubtitles("#myUserSettingsModal", {"Username": window.signedinUser.username});
+        $('#myUserSettingsName').val(window.signedinUser.name);
+        $('#myUserSettingsEmail').val(window.signedinUser.email);
     });
 
     $("#myUserSettingsConfirm").click(function(event) {
         $.ajax({
             type: 'POST',
-            url : window.routes.Users.edit(user.username),
+            url : window.routes.Users.edit(window.signedinUser.username),
             data: $('#myUserSettingsForm').serialize(),
             success: function(response) {
+                window.signedinUser.name = $('#myUserSettingsModal [name="name"]').val();
+                window.signedinUser.email = $('#myUserSettingsModal [name="email"]').val();
+                $("#userSidebarName").text(window.signedinUser.name);
+                $("#navbarUserName").text(window.signedinUser.name);
                 $('#myUserSettingsModal').modal('hide');
                 Alerts.success("Your user settings were changed successfully.");
-                loadUser();
             },
             error: function(err) {
                 alerts.warning("Your user settings were not changed.", 5000);
@@ -265,8 +255,8 @@
     $("#changeMyPasswordModal").on('show.bs.modal', function() {
         $("#changeMyPasswordForm")[0].reset();
         FormValidation.clear("#changeMyPasswordForm");
-        Helpers.generateModalSubtitles("#changeMyPasswordModal", {"Name": user.name, "Username": user.username});
-        $("#changeMyPasswordUsername").val(user.username);
+        Helpers.generateModalSubtitles("#changeMyPasswordModal", {"Name": window.signedinUser.name, "Username": window.signedinUser.username});
+        $("#changeMyPasswordUsername").val(window.signedinUser.username);
         PasswordVisibilityToggle.setPasswordVisibility(false);
         $('#changeMyPasswordStrengthDescription').html(window.common.userPasswordStrengthDescription
                 + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
@@ -295,30 +285,48 @@
     });
 
     $("#deleteMyUserModal").on('show.bs.modal', function() {
+        $.ajax({
+            url: window.routes.Users.signedinUserData,
+            success: renderDeleteMyUserModal,
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't load user data")
+        });
+    });
+
+    function renderDeleteMyUserModal(user) {
         $("#deleteMyUserForm")[0].reset();
         FormValidation.clear("#deleteMyUserModal");
-        Helpers.generateModalSubtitles("#deleteMyUserModal", {"Username": user.username, "Name": user.name}, true);
+
+        Helpers.generateModalSubtitles("#deleteMyUserModal", {
+                "Username": window.signedinUser.username,
+                "Name": window.signedinUser.name,
+                "Account type": Helpers.getAuthMethodText(window.signedinUser.authMethod)
+                }, true);
+        if (window.signedinUser.isOauthGoogle || window.signedinUser.isOidc || window.signedinUser.isOrcid) {
+            $("#deleteMyUserUsernameInput").removeClass("d-none");
+        } else {
+            $("#deleteMyUserPasswordInput").removeClass("d-none");
+        }
         $('#deleteMyUserConfirmationText').html(generateDeleteMyUserConfirmationHtml(user));
         if (user.studyList.filter(s => s.userSize === 1).length > 0) {
             $("label[for='deleteMyUserSafetyCheck']").text("Check this box, if you really want to delete your user and the above-listed studies with all their results");
         }
-        switch (user.authMethod) {
+        switch (window.signedinUser.authMethod) {
             case "OAUTH_GOOGLE":
-                $('#deleteMyUserUsernameLabel').text(`Confirm by typing your email address (${user.username})`);
+                $('#deleteMyUserUsernameInput label').text(`Confirm by typing your email address (${window.signedinUser.username})`);
                 break;
             case "OIDC":
-                $('#deleteMyUserUsernameLabel').text(`Confirm by typing your user ID (${user.username})`);
+                $('#deleteMyUserUsernameInput label').text(`Confirm by typing your user ID (${window.signedinUser.username})`);
                 break;
             case "ORCID":
-                $('#deleteMyUserUsernameLabel').text(`Confirm by typing your ORCID ID (${user.username})`);
+                $('#deleteMyUserUsernameInput label').text(`Confirm by typing your ORCID ID (${window.signedinUser.username})`);
                 break;
             default:
-                $('#deleteMyUserPasswordLabel').text(`Confirm with your (${user.username}) password`);
+                $('#deleteMyUserPasswordInput label').text(`Confirm with your (${window.signedinUser.username}) password`);
         }
-    });
+    }
 
     function generateDeleteMyUserConfirmationHtml(user) {
-        let confirmationText = `<p>You are about to delete the user <b>"${user.name}" (${user.username})</b>.</p>`;
+        let confirmationText = `<p>You are about to delete the user <b>"${window.signedinUser.name}" (${window.signedinUser.username})</b>.</p>`;
         confirmationText += generateStudyList(user);
         confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
         return confirmationText;
@@ -349,17 +357,17 @@
         }
 
         $.ajax({
-            url : window.routes.Users.remove(user.username),
+            url : window.routes.Users.remove(window.signedinUser.username),
             type : 'POST',
             data: $('#deleteMyUserForm').serialize(),
             success : function(result) {
                 window.location.href = window.routes.Signin.signin;
             },
-            error : function(response) {
+            error : function(err) {
                 FormValidation.clear("#deleteMyUserModal");
                 alerts.warning("Your user was not deleted.", 5000);
-                if (Helpers.isJson(response.responseText)) {
-                    FormValidation.show("#deleteMyUserModal", response.responseJSON);
+                if (Helpers.isJson(err.responseText)) {
+                    FormValidation.show("#deleteMyUserModal", err.responseJSON);
                 } else if (err.responseText) {
                     alerts.error(err.responseText);
                 } else {
@@ -367,6 +375,10 @@
                 }
             }
         });
+    });
+
+    $("#userSidebarSignoutButton").click(function(event) {
+        window.location.href = window.routes.Signin.signout;
     });
 
 </script>

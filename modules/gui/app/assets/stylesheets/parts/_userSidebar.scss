@@ -10,19 +10,19 @@ minidenticon-svg svg {
     box-shadow: inset 0 0 0 9999px rgba(gray, 0.15);
 }
 
-#colorTheme .dropdown-item .bi-check2 {
+#colorThemeDropdown .dropdown-item .bi-check2 {
     visibility: hidden;
 }
 
-#colorTheme .dropdown-item.active .bi-check2 {
+#colorThemeDropdown .dropdown-item.active .bi-check2 {
     visibility: visible;
 }
 
-#colorTheme .dropdown-menu-end {
+#colorThemeDropdown .dropdown-menu-end {
     --bs-dropdown-min-width: 8rem;
 }
 
-#colorTheme .dropdown-item.active {
+#colorThemeDropdown .dropdown-item.active {
     background: unset;
     color: unset;
 }
