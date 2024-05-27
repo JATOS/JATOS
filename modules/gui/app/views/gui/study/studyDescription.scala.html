@@ -16,9 +16,11 @@
     <div class="offcanvas-body">
         <div class="mb-3" id="studyDescription" data-markdown="@study.getDescription()"></div>
         <div class="d-none" id="studyDescriptionEditorWrapper">
-            <div id="studyDescriptionEditorInfo">You can use <a href="https://www.markdownguide.org/getting-started/" target="_blank">Markdown</a> to format the description.</div>
             <div class="form-control" id="studyDescriptionEditor"></div>
-            <div class="float-end pt-2" id="studyDescriptionEditorFooter">
+            <div class="d-flex gap-1 pt-2" id="studyDescriptionEditorFooter">
+                <span class="flex-grow-1">You can use
+                    <a href="https://www.markdownguide.org/getting-started/" target="_blank">Markdown<i class="bi bi-markdown-fill ms-1"></i></a>
+                </span>
                 <button type="button" class="btn btn-secondary" id="studyDescriptionEditorCancel">Cancel</button>
                 <button type="button" class="btn btn-study" id="studyDescriptionEditorSave">Save</button>
             </div>
@@ -67,7 +69,7 @@
             // Setup editor
             const markdown = $("#studyDescription").data().markdown;
             const bodySelector = "#studyDescriptionSidebar .offcanvas-body";
-            const editorHeight = $(bodySelector).height() - $("#studyDescriptionEditorFooter").outerHeight() - $("#studyDescriptionEditorInfo").outerHeight();
+            const editorHeight = $(bodySelector).height() - $("#studyDescriptionEditorFooter").outerHeight();
             const editorLineHeight = Number($(bodySelector).css('line-height').replace(/\D/g, ''));
             const maxLines = Math.round(editorHeight / editorLineHeight);
             Editor.setup("markdown", markdown, "#studyDescriptionEditor", maxLines);
