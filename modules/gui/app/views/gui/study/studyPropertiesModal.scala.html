@@ -3,17 +3,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header align-items-start">
-                <h5 class="modal-title text-truncate flex-grow-1">
-                    Study properties
-                    <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip="This ID is unique within this JATOS instance">ID</span>:
-                        <span class="fw-light ms-1 user-select-all" id="studyPropertiesId"></span>
-                    </div>
-                    <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip="Universally unique identifier - used to keep track of studies between different JATOS instances">UUID</span>:
-                        <span class="fw-light ms-1 user-select-all" id="studyPropertiesUuid"></span>
-                    </div>
-                </h5>
+                <h5 class="modal-title text-truncate flex-grow-1">Study properties</h5>
                 <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -158,11 +148,7 @@
     $("#studyPropertiesModal").on('show.bs.modal', function() {
         $.ajax({
             url: window.routes.Studies.properties(window.study.id),
-            success: function(response) {
-                $("#studyPropertiesForm")[0].reset();
-                FormValidation.clear("#studyPropertiesForm");
-                fillStudyPropertiesForm(response);
-            },
+            success: fillStudyPropertiesForm,
             error: (err) => alerts.error("Couldn't load study properties.")
         });
     });
@@ -171,9 +157,9 @@
         $("#studyPropertiesForm")[0].reset();
         FormValidation.clear("#studyPropertiesForm");
         $('#studyPropertiesModal').data(properties);
+        Helpers.generateModalSubtitles("#studyPropertiesModal",
+                {"ID": properties.studyId, "UUID": properties.uuid}, true);
 
-        $('#studyPropertiesId').text(properties.studyId);
-        $('#studyPropertiesUuid').text(properties.uuid ? properties.uuid : "-");
         $('#studyPropertiesFormTitle').val(properties.title);
         $('#studyPropertiesFormDescription').val(properties.description ? properties.description: "");
         $('#studyPropertiesFormDirName').val(properties.dirName);

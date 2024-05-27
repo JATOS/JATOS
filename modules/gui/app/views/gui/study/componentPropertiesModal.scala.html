@@ -3,21 +3,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header align-items-start">
-                <h5 class="modal-title text-truncate flex-grow-1">
-                    Component properties
-                    <div class="fs-6 text-truncate">
-                        <span>Study</span>:
-                        <span class="fw-light ms-1 user-select-all" id="componentPropertiesStudyTitle"></span>
-                    </div>
-                    <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip="This component ID is unique within this JATOS instance">Component ID</span>:
-                        <span class="fw-light ms-1 user-select-all" id="componentPropertiesId"></span>
-                    </div>
-                    <div class="fs-6 text-truncate">
-                        <span data-bs-tooltip="Universally unique identifier - used to keep track of components between different JATOS instances">Component UUID</span>:
-                        <span class="fw-light ms-1 user-select-all" id="componentPropertiesUuid"></span>
-                    </div>
-                </h5>
+                <h5 class="modal-title text-truncate flex-grow-1">Component properties</h5>
                 <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -123,8 +109,6 @@
         $.ajax({
             url: window.routes.Components.properties(window.study.id, getComponentId(this)),
             success: function(response) {
-                $("#componentPropertiesForm")[0].reset();
-                FormValidation.clear("#componentPropertiesForm");
                 fillComponentPropertiesForm(response);
                 $("#componentPropertiesModal").modal('show');
             },
@@ -138,10 +122,9 @@
         $("#componentPropertiesForm")[0].reset();
         FormValidation.clear("#componentPropertiesForm");
         $('#componentPropertiesModal').data(properties);
+        Helpers.generateModalSubtitles("#componentPropertiesModal",
+                {"Study title": window.study.title, "ID": properties.id, "UUID": properties.uuid}, true);
 
-        $('#componentPropertiesStudyTitle').text(window.study.title);
-        $('#componentPropertiesId').text(properties.id);
-        $('#componentPropertiesUuid').text(properties.uuid);
         $('#componentPropertiesFormTitle').val(properties.title);
         $('#componentPropertiesFormReloadable').prop('checked', properties.reloadable);
         $('#componentPropertiesFormDirName').text("/" + window.study.dirName + "/");
