@@ -48,6 +48,7 @@ class Toolbars {
                         "data-bs-tooltip": "Reload results and refresh the table"
                     },
                     "action": function ( e, dt, node, config ) {
+                        $(node).tooltip("dispose");
                         this.disable();
                         dataTable.ajax.reload();
                         setTimeout(this.enable, 3000);
@@ -190,6 +191,7 @@ class Toolbars {
                         "data-bs-tooltip": "Select only the currently visible results on this page"
                     },
                     "action": (e, dt, node, config) => {
+                        $(node).tooltip("dispose");
                         dt.rows().deselect();
                         dt.rows({ page: 'current' }).select();
                     },
@@ -201,6 +203,7 @@ class Toolbars {
                         "data-bs-tooltip": "Select only the filtered results (including the ones on different table pages)"
                     },
                     "action": (e, dt, node, config) => {
+                        $(node).tooltip("dispose");
                         dt.rows().deselect();
                         dt.rows({ search: 'applied' }).select();
                     },
@@ -212,6 +215,7 @@ class Toolbars {
                         "data-bs-tooltip": "Deselect all results"
                     },
                     "action": (e, dt, node, config) => {
+                        $(node).tooltip("dispose");
                         dt.rows().deselect();
                     },
                 }

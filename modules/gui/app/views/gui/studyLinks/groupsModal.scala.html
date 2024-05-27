@@ -89,6 +89,7 @@
                         "data-bs-tooltip": "Refresh groups",
                     },
                     action: function ( e, dt, node, config ) {
+                        $(node).tooltip("dispose");
                         this.disable();
                         groupsTable.ajax.reload();
                         setTimeout(this.enable, 3000);

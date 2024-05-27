@@ -180,6 +180,9 @@
                         "data-bs-tooltip": "Shortcut to add just one study link without comment",
                     },
                     "className": "btn btn-batch",
+                    "action": function(e, dt, node, config, cb) {
+                        $(node).tooltip("dispose");
+                    }
                 },
                 {
                     "text": '<i class="bi-plus-lg fw-bold pe-1"></i>New Study Links<i class="bi-link-45deg ps-1"></i>',
@@ -188,6 +191,9 @@
                         "data-bs-tooltip": "Add new study links",
                     },
                     "className": "btn btn-batch",
+                    "action": function(e, dt, node, config, cb) {
+                        $(node).tooltip("dispose");
+                    }
                 },
                 {
                     "text": '<i class="bi-arrow-repeat"></i>',
@@ -196,7 +202,8 @@
                         "data-bs-tooltip": "Refresh the table",
                     },
                     "className": "btn btn-batch",
-                    action: function(e, dt, node, config) {
+                    "action": function(e, dt, node, config) {
+                        $(node).tooltip("dispose");
                         this.disable();
                         studyLinksTable.ajax.reload();
                         setTimeout(this.enable, 3000);
@@ -361,6 +368,7 @@
     });
 
     $('#studyLinksManagerModal').on('click', '.refreshButton', function(e) {
+        this.tooltip("dispose");
         this.disable();
         studyLinksTable.ajax.reload();
         setTimeout(this.enable, 3000);
@@ -390,7 +398,7 @@
 
         const tr = $(this).closest('tr');
         const linkData = studyLinksTable.row(tr).data();
-        Helpers.generateModalSubtitles("#editCommentModal", {"Study code": linkData.studyCode});
+        Helpers.generateModalSubtitles("#editCommentModal", {"Worker ID": linkData.workerId, "Study code": linkData.studyCode});
         $('#editCommentModal #editCommentInput').val(linkData.comment);
 
         $('#editCommentModal').data('workerId', linkData.workerId);
