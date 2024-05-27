@@ -152,9 +152,8 @@
             url : window.routes.Studies.cloneStudy(window.study.id),
             success : function(response) {
                 Alerts.success(`Added clone "${response.title}". <a href="${window.routes.Studies.study(response.id)}">Go to this study.</a>`);
-                StudySidebar.draw();
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't clone study")
+            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't clone study")
         });
     });
 </script>
