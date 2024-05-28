@@ -145,7 +145,7 @@ public class AuthAction extends Action<Auth> {
     }
 
     static CompletionStage<Result> denied(Http.Request request) {
-        if (Helpers.isHtmlRequest(request)) {
+        if (Helpers.isHtmlRequest(request) && !Helpers.isAjax()) {
             RequestScopeMessaging.error("Failed authentication");
             return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin()));
         } else {
