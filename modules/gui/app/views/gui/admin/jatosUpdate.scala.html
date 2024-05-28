@@ -221,7 +221,12 @@
                 Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0);
             },
             error: function(err) {
-                err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during update and restart: check the application logs")
+                if (err.status === 0) {
+                    // JATOS is restarting - nothing to do here
+                    Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0);
+                } else {
+                    err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during update and restart: check the application logs")
+                }
             }
         });
     }
