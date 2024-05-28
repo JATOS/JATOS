@@ -70,13 +70,13 @@ class LinksWithToggle {
         const confirmLink = window.routes.Publix.studyEntry(studyCode);
         const $link = $(`
             <div>
-                <div class="direct-link text-truncate" data-study-link-toggle="${this.toggleId}">
+                <div class="direct-link" data-study-link-toggle="${this.toggleId}">
                     <span>${directLink}</span>
                     <span class="btn-clipboard no-info-icon" data-bs-tooltip="Copy this link to the clipboard."></span>
                     <span class="btn-qr-code no-info-icon" data-bs-tooltip="Show QR code for this link."
                         data-qr-code-text="${directLink}"></span>
                 </div>
-                <div class="confirm-link text-truncate hide" data-study-link-toggle="${this.toggleId}">
+                <div class="confirm-link hide" data-study-link-toggle="${this.toggleId}">
                     <span>${confirmLink}</span>
                     <span class="btn-clipboard no-info-icon" data-bs-tooltip="Copy this link to the clipboard."></span>
                     <span class="btn-qr-code no-info-icon" data-bs-tooltip="Show QR code for this link.
