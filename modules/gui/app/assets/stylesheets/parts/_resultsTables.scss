@@ -87,7 +87,7 @@
 }
 
 // Change color of pagination button in component results
-#resultsTable_wrapper .components-results .pagination .page-item.active .page-link {
+#resultsTable_wrapper .component-results .pagination .page-item.active .page-link {
     --bs-pagination-active-bg: $component-color;
     --bs-pagination-active-border-color: $component-color;
 }

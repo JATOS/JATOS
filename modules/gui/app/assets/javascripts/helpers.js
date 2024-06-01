@@ -54,6 +54,7 @@ function getLocalTimeSimple(timestamp) {
  */
 function getLocalTimeDataTables(timestamp, type) {
     if (type === 'sort') return timestamp;
+    if (type === 'filter') return new Date(timestamp).toISOString();
     return timestamp
         ? `<span class="no-info-icon" data-bs-tooltip="in local time ${timezoneAbbr} (${timezone}), with locale '${locale}'">${getLocalTimeSimple(timestamp)}</span>`
         : '<span class="text-body text-opacity-50">never</span>';

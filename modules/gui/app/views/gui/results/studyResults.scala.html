@@ -82,8 +82,7 @@
                 "error": () => Alerts.error("Error reading result data"),
                 "complete": WaitingModal.hide
             },
-            "dom": `lfrt
-                    <'d-flex flex-row flex-wrap justify-content-between align-items-center mt-3'<'mb-2'i><'mb-2'p>>`,
+            "dom": `lfrt<'d-flex flex-row flex-wrap justify-content-between align-items-center mt-3'<'mb-2'i><'mb-2 study-results'p>>`,
             "order": [[ 2, "desc" ]],
             "lengthMenu": [[10, 25, 50, 100, 250, 500, 1000, 2500, -1], [10, 25, 50, 100, 250, 500, 1000, 2500, "All"]],
             "pageLength": 10,
@@ -139,15 +138,18 @@
                 },
                 {
                     "data": "startDate",
+                    "type": "date",
                     "render": Helpers.getLocalTimeDataTables
                 },
                 {
                     "data": "endDate",
                     "visible": false,
+                    "type": "date",
                     "render": Helpers.getLocalTimeDataTables
                 },
                 {
                     "data": "lastSeenDate",
+                    "type": "date",
                     "render": Helpers.getLocalTimeDataTables
                 },
                 {
