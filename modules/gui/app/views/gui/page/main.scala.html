@@ -92,5 +92,13 @@
     $(document).on("click", function() {
         $("[data-bs-tooltip]").tooltip("hide");
     });
+
+    // Prevent form submission by pressing 'Enter'. That happens sometimes with forms with only one input field.
+    // You can still allow it manually with Helpers.triggerButtonByEnter)
+    $("form").on("keydown", "input", function(e) {
+        if (e.key == "Enter") {
+            e.preventDefault();
+        }
+    });
 </script>
 
