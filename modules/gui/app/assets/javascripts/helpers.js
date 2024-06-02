@@ -365,8 +365,8 @@ function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
  * @param {string} buttonSelector - The selector specifying the button to be clicked
  */
 function triggerButtonByEnter(selector, buttonSelector) {
-    $(selector).keypress(function(e) {
-        if (e.keyCode == 13) {
+    $(selector).on("keydown", function(e) {
+        if (e.key == "Enter") {
             e.preventDefault();
             $(buttonSelector).trigger("click");
         }
