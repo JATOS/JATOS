@@ -85,7 +85,7 @@ function clearForm(selector) {
  * @param {string} selector - Selector of the form element
  */
 function disableForm(selector, value = true) {
-    $(`${selector} input, textarea, .slider, .ace_editor`).not(":input[type=reset]").attr("disabled", value);
+    $(selector).find("input, textarea, .slider, .ace_editor").not(":input[type=reset]").attr("disabled", value);
 }
 
 /**
