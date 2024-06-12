@@ -128,6 +128,7 @@ public class Admin extends Controller {
             Source<ByteString, ?> source = FileIO.fromPath(logPath);
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
             String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
+            // We need the "Content-Disposition" header for API calls (not for the GUI)
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
                     new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
                     .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
