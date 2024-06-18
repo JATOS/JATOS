@@ -1,0 +1,64 @@
+<!--
+  Copyright 2020 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Browser-FS-Access.js Demo</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" type="module"></script>
+  </head>
+  <body>
+    <h1>Browser-FS-Access.js Demo</h1>
+    <p class="supported"></p>
+    <img src="floppy.png" alt="Floppy disk" />
+    <button id="open" disabled type="button">Open Image File</button>
+    <button id="open-multiple" disabled type="button">Open Image Files</button>
+    <button id="open-image-or-text" disabled type="button">
+      Open Image or Text Files
+    </button>
+    <button id="open-directory" disabled type="button">Open Directory</button>
+    <button id="save" disabled type="button">Save Image File</button>
+    <button id="save-blob" disabled type="button">Save Promise Blob</button>
+    <button id="save-response" disabled type="button">
+      Save Response Stream
+    </button>
+    <p>
+      Powered by
+      <a href="https://github.com/GoogleChromeLabs/browser-fs-access"
+        ><code>browser-fs-access</code></a
+      >.
+    </p>
+    <pre></pre>
+    <div class="iframes">
+      <h2>In same-origin iframe</h2>
+      <p>
+        If above it says "Using the File System Access API", then it should say
+        so in the iframe.
+      </p>
+      <iframe src=""></iframe>
+      <h2>In cross-origin iframe</h2>
+      <p>
+        Cross-origin iframes cannot use the File System Access API, so it uses
+        the fallback.
+      </p>
+      <iframe
+        src="https://tomayac.github.io/cross-origin-browser-fs-access/"
+      ></iframe>
+    </div>
+  </body>
+</html>
