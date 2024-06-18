@@ -39,7 +39,8 @@ public class ComponentResultIdsExtractor {
     public List<Long> extract(Map<String, String[]> map) throws BadRequestException {
         if (map == null || map.isEmpty()) return new ArrayList<>();
 
-        Set<Long> componentResultIds = new HashSet<>();
+        // We use TreeSet to 1) get ordered by increasing IDs, and 2) avoid double IDs
+        SortedSet<Long> componentResultIds = new TreeSet<>();
         for (String field : map.keySet()) {
             switch (field) {
                 case "studyId": {
@@ -113,7 +114,8 @@ public class ComponentResultIdsExtractor {
     public List<Long> extract(JsonNode json) throws BadRequestException {
         if (json == null || json.isNull()) return new ArrayList<>();
 
-        Set<Long> componentResultIds = new HashSet<>();
+        // We use TreeSet to 1) get ordered by increasing IDs, and 2) avoid double IDs
+        SortedSet<Long> componentResultIds = new TreeSet<>();
         Iterator<String> iterator = json.fieldNames();
         while (iterator.hasNext()) {
             String field = iterator.next();

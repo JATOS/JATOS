@@ -294,6 +294,7 @@ public class ResultStreamer {
         User signedinUser = authService.getSignedinUser();
         List<Long> componentResultIdList = componentResultIdsExtractor.extract(request.body().asJson());
         componentResultIdList.addAll(componentResultIdsExtractor.extract(request.queryString()));
+        Collections.sort(componentResultIdList);
         List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
         List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
         for (Study study : studyList) {
@@ -390,6 +391,7 @@ public class ResultStreamer {
         User signedinUser = authService.getSignedinUser();
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
+        Collections.sort(crids);
         return streamResults(crids, signedinUser, resultType, wrapObject);
     }
 
@@ -421,6 +423,7 @@ public class ResultStreamer {
         User signedinUser = authService.getSignedinUser();
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
+        Collections.sort(crids);
         return writeResults(crids, signedinUser, null, ResultType.METADATA_ONLY, wrapObject);
     }
 
