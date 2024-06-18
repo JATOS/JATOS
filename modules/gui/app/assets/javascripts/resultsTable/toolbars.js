@@ -120,6 +120,7 @@ class Toolbars {
                                             }
                                         },
                                         "modifier": {
+                                            "order": 2,  // Order by result IDs - we cannot rely on the original order that we got from JATOS
                                             "selected": true
                                         }
                                     },
