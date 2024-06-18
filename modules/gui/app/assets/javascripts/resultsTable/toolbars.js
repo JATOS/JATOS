@@ -70,7 +70,7 @@ class Toolbars {
                         {
                             "text": '<span data-bs-tooltip="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
                             "className": this.dropdownClass,
-                            "action": () => this.exportResultsCallback(window.routes.Api.exportResults(false))
+                            "action": () => this.exportResultsCallback(window.routes.Api.exportResults(false), "jatos_results_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".jrzip")
                         },
                         {
                             "text": '<span data-bs-tooltip="Exports data only from results, as zip package or plain text file">Data only</span>',
@@ -80,19 +80,19 @@ class Toolbars {
                                 {
                                     "text": '<span data-bs-tooltip="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP</span>',
                                     "className": this.dropdownClass,
-                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(false,false))
+                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(false,false), "jatos_results_data_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".zip")
                                 },
                                 {
                                     "text": '<span data-bs-tooltip="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text</span>',
                                     "className": this.dropdownClass,
-                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(true,false))
+                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(true,false), "jatos_results_data_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".txt")
                                 }
                             ]
                         },
                         {
                             "text": '<span data-bs-tooltip="Exports files only from results, packed in a zip file">Files only</span>',
                             "className": "text-nowrap dropdown-item-study",
-                            "action": () => this.exportResultsCallback(window.routes.Api.exportResultFiles)
+                            "action": () => this.exportResultsCallback(window.routes.Api.exportResultFiles, "jatos_results_files_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".zip")
                         },
                         {
                             "text": '<span data-bs-tooltip="Exports only the metadata of the results. Choose between JSON and CSV format.">Metadata only</span>',
@@ -103,7 +103,7 @@ class Toolbars {
                                 {
                                     "text": '<span data-bs-tooltip="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON</span>',
                                     "className": this.dropdownClass,
-                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultMetadata(false))
+                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultMetadata(false), "jatos_results_metadata_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".json")
                                 },
                                 {
                                     "text": '<span data-bs-tooltip="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV</span>',

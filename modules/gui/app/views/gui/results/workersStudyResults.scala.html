@@ -292,7 +292,7 @@
         new ComponentResultInfo(dataTable).generate(tr);
     });
 
-    function exportResults(url) {
+    function exportResults(url, filename) {
         $(".dt-button-collection").hide();
         WaitingModal.show(true);
         const selectedTrs = dataTable.rows('.selected').nodes();
@@ -307,7 +307,7 @@
             return;
         }
         const data = JSON.stringify({"studyResultIds": ids});
-        FileSystemAccess.downloadFileStream(url, data);
+        FileSystemAccess.downloadFileStream(url, data, filename);
     }
 
     function deleteSelectedResults(e, dt, node, config) {

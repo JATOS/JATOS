@@ -184,6 +184,7 @@ public class ImportExport extends Controller {
         }
 
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_study_" + study.getUuid() + ".jzip");
+        // We need the "Content-Disposition" header for API calls (not for the GUI)
         //noinspection ResultOfMethodCallIgnored
         return ok().streamed(
                         Helpers.okFileStreamed(zipFile, zipFile::delete),
