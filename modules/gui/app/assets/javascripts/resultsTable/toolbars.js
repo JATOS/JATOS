@@ -56,6 +56,7 @@ class Toolbars {
                 }
             ]
         });
+        // 1) press dropdown in 2nd stage dropdown, 2) Press any dropdown: not working
         new $.fn.dataTable.Buttons(dataTable, {
             "name": "exportButtonGroup",
             "buttons": [
@@ -80,12 +81,22 @@ class Toolbars {
                                 {
                                     "text": '<span data-bs-tooltip="Exports data in a zip package. Each result\'s data has its own file within the zip.">ZIP</span>',
                                     "className": this.dropdownClass,
-                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(false,false), "jatos_results_data_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".zip")
+                                    "action": () => {
+                                        this.exportResultsCallback(window.routes.Api.exportResultData(false,false), "jatos_results_data_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".zip");
+                                        // Hide ".dt-button-background" because it prevents a subsequent click showing the dropdown.
+                                        // This hack is only necessary for multi-level dropdowns, the second layer.
+                                        $(".dt-button-background").addClass("d-none");
+                                    }
                                 },
                                 {
                                     "text": '<span data-bs-tooltip="Exports data as one plain text file. The result\'s data are stored one after another with a line-break between them.">Plain Text</span>',
                                     "className": this.dropdownClass,
-                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultData(true,false), "jatos_results_data_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".txt")
+                                    "action": () => {
+                                        this.exportResultsCallback(window.routes.Api.exportResultData(true,false), "jatos_results_data_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".txt");
+                                        // Hide ".dt-button-background" because it prevents a subsequent click showing the dropdown.
+                                        // This hack is only necessary for multi-level dropdowns, the second layer.
+                                        $(".dt-button-background").addClass("d-none");
+                                    }
                                 }
                             ]
                         },
@@ -103,7 +114,12 @@ class Toolbars {
                                 {
                                     "text": '<span data-bs-tooltip="Exports metadata in JSON format. It exports metadata of study results and their component results.">JSON</span>',
                                     "className": this.dropdownClass,
-                                    "action": () => this.exportResultsCallback(window.routes.Api.exportResultMetadata(false), "jatos_results_metadata_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".json")
+                                    "action": () => {
+                                        this.exportResultsCallback(window.routes.Api.exportResultMetadata(false), "jatos_results_metadata_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".json");
+                                        // Hide ".dt-button-background" because it prevents a subsequent click showing the dropdown.
+                                        // This hack is only necessary for multi-level dropdowns, the second layer.
+                                        $(".dt-button-background").addClass("d-none");
+                                    }
                                 },
                                 {
                                     "text": '<span data-bs-tooltip="Exports metadata in CSV format. It exports only what is currently visible in this table. Metadata of component results are not included.">CSV</span>',
@@ -130,12 +146,18 @@ class Toolbars {
                                         $(".dt-button-collection").hide();
                                         if (dataTable.rows('.selected').nodes().length == 0) {
                                             Alerts.error("No results selected", 5000);
+                                            // Hide ".dt-button-background" because it prevents a subsequent click showing the dropdown.
+                                            // This hack is only necessary for multi-level dropdowns, the second layer.
+                                            $(".dt-button-background").remove();
                                             return;
                                         }
                                         WaitingModal.show();
                                         setTimeout(() => {
                                             $.fn.dataTable.ext.buttons.csvHtml5.action(e, dt, button, config, cb);
                                             WaitingModal.hide();
+                                            // Hide ".dt-button-background" because it prevents a subsequent click showing the dropdown.
+                                            // This hack is only necessary for multi-level dropdowns, the second layer.
+                                            $(".dt-button-background").addClass("d-none"); // Hack to all
                                         }, 1000);
                                     }
                                 }
