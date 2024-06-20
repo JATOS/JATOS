@@ -13,11 +13,9 @@ let timeouts = [];
  *                               fileSystemAccess.js
  */
 function show(cancelable = false) {
-    if (typeof cancelable === 'boolean' && cancelable === true) {
-        $('#waitingModalCancel').show();
-    } else {
-        $('#waitingModalCancel').hide();
-    }
+    const isCancelable = typeof cancelable === 'boolean' && cancelable === true;
+    $('#waitingModalCancel').toggleClass("d-none", !isCancelable);
+
     hide(); // First hide an 'old' waiting modal
 
     // We have to remove any event handler originating in the hide function
