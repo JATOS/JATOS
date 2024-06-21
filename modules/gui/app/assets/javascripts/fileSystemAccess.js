@@ -36,14 +36,14 @@ async function downloadFileStream(url, postData, rawFileName) {
     const fileName = sanitizeFilename(rawFileName);
     const fileExtension = fileName.split('.').pop();
 
-    WaitingModal.show(true);
-
     try {
         // Uses window.showSaveFilePicker to pick a file handle. This is necessary for large file downloads, since
         // the browser might "lose context" between start of downloading and browser-fs-access' calling of
         // window.showSaveFilePicker because it might take too long. Therefore we call it before start fetching the file
         // when the "context" is still there.
         const fileHandle = await pickFileHandle(fileName);
+
+        WaitingModal.show(true);
 
         const response = await fetchFile(url, postData);
 
