@@ -32,8 +32,10 @@ const browsersLocale = (navigator.languages && navigator.languages.length) ? nav
 
 const locale = window.common.locale ? window.common.locale : browsersLocale;
 
-const timezone = new Date().toString().match(/\(([^\)]+)\)$/)[1];
+// Returns IANA timezone identifier that the browser uses
+const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+// Returns the timezone abbreviation
 const timezoneAbbr = /.*\s(.+)/.exec((new Date()).toLocaleDateString(navigator.language, { timeZoneName:'short' }))[1];
 
 /**
