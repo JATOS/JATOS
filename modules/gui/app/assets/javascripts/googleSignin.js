@@ -39,7 +39,7 @@ function drawButton(width) {
  * Load Google user picture (if signed in by Google). Get the picture URL from the Google cookie.
  */
 function drawUserImg() {
-    if (!window.signedinUser || window.signedinUser.isOauthGoogle) return
+    if (!window.signedinUser || !window.signedinUser.isOauthGoogle) return
     const googlePictureUrl = window.common.googlePictureUrl;
     if (googlePictureUrl) {
         $('.google-user-img').one(); // Ignore imgage loading errors
