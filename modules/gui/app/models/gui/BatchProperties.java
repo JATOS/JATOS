@@ -22,13 +22,12 @@ import java.util.Set;
  * An active member is a member who joined a group and is still member of this
  * group. maxActiveMemberLimited, maxActiveMembers, maxTotalMemberLimited and
  * maxTotalMembers are properties for groups.
- * 
- * @author Kristian Lange (2015)
  */
 @Constraints.Validate
 public class BatchProperties implements Constraints.Validatable<List<ValidationError>> {
 
 	public static final String ID = "id";
+	public static final String UUID = "uuid";
 	public static final String TITLE = "title";
 	public static final String DEFAULT_TITLE = "Default";
 	public static final String ACTIVE = "active";
@@ -44,6 +43,13 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
 	public static final String JSON_DATA = "jsonData";
 
 	private Long id;
+
+	/**
+	 * Universally (world-wide) unique ID. Used for import/export between
+	 * different JATOS instances. On one JATOS instance it is only allowed to
+	 * have one batch with the same UUID.
+	 */
+	private String uuid;
 
 	/**
 	 * Title of the batch
@@ -116,6 +122,14 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
 
 	public Long getId() {
 		return this.id;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getUuid() {
+		return this.uuid;
 	}
 
 	public String getTitle() {
@@ -226,6 +240,10 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
 	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
+
+		if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
+			errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+		}
 		if (title == null || title.trim().isEmpty()) {
 			errorList.add(
 					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));

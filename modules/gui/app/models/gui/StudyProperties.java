@@ -18,8 +18,6 @@ import java.util.List;
  * Model of study properties for UI (not persisted in DB). Only used together
  * with an HTML form that creates a new Study or updates one. The corresponding
  * database entity is {@link models.common.Study}.
- *
- * @author Kristian Lange
  */
 @Constraints.Validate
 public class StudyProperties implements Constraints.Validatable<List<ValidationError>> {
@@ -237,6 +235,10 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
+
+        if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
+            errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+        }
         if (title == null || title.trim().isEmpty()) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
         }
@@ -265,6 +267,9 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         }
         if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
             errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        }
+        if (description != null && !Jsoup.isValid(description, Safelist.none())) {
+            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (endRedirectUrl != null && !Jsoup.isValid(endRedirectUrl, Safelist.none())) {
             errorList.add(new ValidationError(END_REDIRECT_URL, MessagesStrings.NO_HTML_ALLOWED));

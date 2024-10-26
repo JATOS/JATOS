@@ -47,6 +47,7 @@ public class ImportExportService {
     private final Application app;
     private final Checker checker;
     private final StudyService studyService;
+    private final BatchService batchService;
     private final ComponentService componentService;
     private final JsonUtils jsonUtils;
     private final IOUtils ioUtils;
@@ -55,13 +56,14 @@ public class ImportExportService {
 
     @Inject
     ImportExportService(Application app, Checker checker,
-            StudyService studyService, ComponentService componentService,
+            StudyService studyService, BatchService batchService, ComponentService componentService,
             JsonUtils jsonUtils, IOUtils ioUtils,
             StudyDao studyDao,
             ComponentDao componentDao) {
         this.app = app;
         this.checker = checker;
         this.studyService = studyService;
+        this.batchService = batchService;
         this.componentService = componentService;
         this.jsonUtils = jsonUtils;
         this.ioUtils = ioUtils;
@@ -335,6 +337,8 @@ public class ImportExportService {
 
         try {
             studyService.validate(study);
+            study.getComponentList().forEach(componentService::validate);
+            study.getBatchList().forEach(batchService::validate);
         } catch (ValidationException e) {
             throw new IOException(e);
         }

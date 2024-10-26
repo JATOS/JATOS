@@ -17,10 +17,14 @@ import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
+import play.Logger;
+import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.ValidationException;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -29,6 +33,8 @@ import java.util.UUID;
  */
 @Singleton
 public class BatchService {
+
+    private static final Logger.ALogger LOGGER = Logger.of(BatchService.class);
 
     private final ResultRemover resultRemover;
     private final BatchDao batchDao;
@@ -140,6 +146,7 @@ public class BatchService {
     public BatchProperties bindToProperties(Batch batch) {
         BatchProperties props = new BatchProperties();
         props.setId(batch.getId());
+        props.setUuid(batch.getUuid());
         props.setTitle(batch.getTitle());
         props.setActive(batch.isActive());
         props.setMaxActiveMembers(batch.getMaxActiveMembers());
@@ -302,6 +309,19 @@ public class BatchService {
             // worker's batch list
             worker.removeBatch(batch);
             workerDao.update(worker);
+        }
+    }
+
+    /**
+     * Validates the batch by converting it to BatchProperties and uses its validate method. Throws ValidationException
+     * in case of an error.
+     */
+    public void validate(Batch batch) throws ValidationException {
+        BatchProperties batchProperties = bindToProperties(batch);
+        if (batchProperties.validate() != null) {
+            LOGGER.warn(".validate: " + batchProperties.validate().stream().map(ValidationError::message)
+                    .collect(Collectors.joining(", ")));
+            throw new ValidationException("Batch is invalid");
         }
     }
 

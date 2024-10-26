@@ -121,6 +121,8 @@ public class ComponentService {
 
     public ComponentProperties bindToProperties(Component component) {
         ComponentProperties props = new ComponentProperties();
+        props.setUuid(component.getUuid());
+        props.setTitle(component.getTitle());
         props.setActive(component.isActive());
         props.setComments(component.getComments());
         props.setDate(component.getDate());
@@ -135,8 +137,6 @@ public class ComponentService {
         if (component.getStudy() != null) {
             props.setStudyId(component.getStudy().getId());
         }
-        props.setTitle(component.getTitle());
-        props.setUuid(component.getUuid());
         return props;
     }
 

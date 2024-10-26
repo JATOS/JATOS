@@ -16,8 +16,6 @@ import java.util.List;
 /**
  * Model of component properties for UI (not persisted in DB). Only used together with an HTML form that creates a new
  * Component or updates one. The corresponding database entity is {@link models.common.Component}.
- *
- * @author Kristian Lange
  */
 @Constraints.Validate
 public class ComponentProperties implements Constraints.Validatable<List<ValidationError>> {
@@ -195,6 +193,10 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
+
+        if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
+            errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+        }
         if (title == null || title.trim().isEmpty()) {
             errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
         }
@@ -210,7 +212,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
             }
             // This regular expression defines how a file path should look like
             String pathRegEx = "^[\\w\\d_-][\\w\\d/_-]*\\.[\\w\\d_-]+$";
-            if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim().isEmpty())) {
+            if (!(htmlFilePath.matches(pathRegEx))) {
                 errorList.add(
                         new ValidationError(HTML_FILE_PATH, MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
             }
