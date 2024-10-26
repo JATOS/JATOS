@@ -20,10 +20,10 @@ import java.util.Hashtable;
 public class SigninLdap {
 
     /**
-     * Authenticates the given user via an external LDAP server. It throws an {@link NamingException} if the LDAP server can't
-     * be reached or the LDAP URL or Base DN is wrong. It allows multiple base DNs and tries to authenticate against
-     * each of them one after another. If an admin user is specified it tries to search for the user and then
-     * authenticates- if not it tries to authenticate right away. The username is used as the uid in LDAP.
+     * Authenticates the given user via an external LDAP server. It throws an {@link NamingException} if the LDAP server
+     * can't be reached or the LDAP URL or Base DN is wrong. It allows multiple base DNs and tries to authenticate
+     * against each of them one after another. If an admin user is specified, it tries to search for the user and then
+     * authenticates- if not, it tries to authenticate right away. The username is used as the uid in LDAP.
      * https://stackoverflow.com/a/24752175/1278769
      */
     public boolean authenticate(String username, String password) throws NamingException {
@@ -32,7 +32,7 @@ public class SigninLdap {
         // Try authentication against each base DN
         for (String baseDn : Common.getLdapBaseDn()) {
             if (Strings.isNullOrEmpty(Common.getLdapAdminDn())) {
-                String userDn = "uid=" + username + "," + baseDn;
+                String userDn = Common.getLdapUserAttribute() + "=" + username + "," + baseDn;
                 if (authenticateUser(userDn, password)) return true;
             } else {
                 String userDn = searchUser(username, baseDn);
