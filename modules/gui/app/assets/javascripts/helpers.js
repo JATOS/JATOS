@@ -24,6 +24,8 @@ export {
     generateModalSubtitles,
     triggerButtonByEnter,
     getDataFromDataTableRow,
+    sanitizeHtml,
+    unsanitizeHtml
 };
 
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
@@ -384,4 +386,30 @@ function triggerButtonByEnter(selector, buttonSelector) {
 function getDataFromDataTableRow(dataTable, element) {
     const row = $(element).closest('tr');
     return dataTable.row(row).data();
+}
+
+/**
+ * Replace some chars with their unicode representation. Useful to sanitize HTML of JavaScript.
+ *
+ * @param {string} str - a HTML string
+ */
+function sanitizeHtml(str) {
+    return str.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+}
+
+/**
+ * Replace some unicode chars with their normal char. Useful to sanitize HTML of JavaScript.
+ *
+ * @param {string} str - a HTML string
+ */
+function unsanitizeHtml(str) {
+    return str.replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'");
 }

@@ -16,6 +16,7 @@ import models.common.*;
 import models.gui.StudyProperties;
 import play.data.Form;
 import play.data.FormFactory;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -185,9 +186,13 @@ public class Studies extends Controller {
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
 
-        // Todo check description
-
         String description = request.body().asText();
+
+        StudyProperties sp = new StudyProperties();
+        sp.setDescription(description);
+        List<ValidationError> errors =  sp.validateDescription();
+        if (!errors.isEmpty()) return badRequest(errors.get(0).message());
+
         studyService.updateDescription(study, description, signedinUser);
         return ok();
     }

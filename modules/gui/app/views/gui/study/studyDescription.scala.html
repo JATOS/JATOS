@@ -64,16 +64,18 @@
         if ($("#studyDescriptionEditorWrapper").hasClass("d-none")) {
             // Generate HTML from Markdown
             const markdown = Editor.getValue("#studyDescriptionEditor");
-            $("#studyDescription").data("markdown", markdown);
+            const sanitizedMarkdown = Helpers.sanitizeHtml(markdown)
+            $("#studyDescription").data("markdown", sanitizedMarkdown);
             draw();
         } else {
             // Setup editor
             const markdown = $("#studyDescription").data().markdown;
+            const unsanitizedMarkdown = Helpers.unsanitizeHtml(markdown);
             const bodySelector = "#studyDescriptionSidebar .offcanvas-body";
             const editorHeight = $(bodySelector).height() - $("#studyDescriptionEditorFooter").outerHeight();
             const editorLineHeight = Number($(bodySelector).css('line-height').replace(/\D/g, ''));
             const maxLines = Math.round(editorHeight / editorLineHeight);
-            Editor.setup("markdown", markdown, "#studyDescriptionEditor", maxLines);
+            Editor.setup("markdown", unsanitizedMarkdown, "#studyDescriptionEditor", maxLines);
             Editor.focus("#studyDescriptionEditor");
         }
     });

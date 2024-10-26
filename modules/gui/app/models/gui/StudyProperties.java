@@ -275,6 +275,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         return errorList.isEmpty() ? null : errorList;
     }
 
+    public List<ValidationError> validateDescription() {
+        List<ValidationError> errorList = new ArrayList<>();
+        if (description != null && !Jsoup.isValid(description, Safelist.none())) {
+            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
+        }
+        return errorList;
+    }
+
     @Override
     public String toString() {
         return studyId + " " + title;
