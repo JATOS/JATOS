@@ -103,7 +103,7 @@
             const html = `
                     <a href="${window.routes.Studies.study(study.id)}" class="list-group-item no-info-icon ${isSelectedStudy}">
                         <div class="d-flex w-100 align-items-center">
-                            <div class="fw-bold no-info-icon d-inline-block flex-grow-1 text-truncate" data-bs-tooltip="${studyTooltip}" data-bs-delay="0" data-bs-html="true" data-bs-custom-class="study-sidebar-tooltip">${study.title}</div>
+                            <div class="fw-bold no-info-icon d-inline-block flex-grow-1" data-bs-tooltip="${studyTooltip}" data-bs-delay="0" data-bs-html="true" data-bs-custom-class="study-sidebar-tooltip">${study.title}</div>
                             <div class="d-inline-flex gap-1 text-nowrap">${componentsBadge}${deactivatedBadge}${lockedBadge}${groupStudyBadge}${allowPreviewBadge}${linearStudyBadge}</div>
                         </div>
                     </a>`;
