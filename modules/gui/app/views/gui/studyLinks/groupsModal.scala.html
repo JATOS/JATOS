@@ -211,6 +211,7 @@
         $.ajax({
             url: window.routes.StudyLinks.toggleGroupFixed(window.study.id, groupId, !fixed),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(groupState) {
                 $(button).parent().html(drawFixedGroupButton(groupState));
                 groupsTable.cell(tr, 6).data(groupState);

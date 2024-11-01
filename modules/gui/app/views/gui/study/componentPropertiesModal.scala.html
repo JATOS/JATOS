@@ -179,6 +179,7 @@
         $.ajax({
             type : 'POST',
             url : window.routes.Components.submitEdited(window.study.id, componentId),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data : $('#componentPropertiesForm').serialize(),
             success : function(response) {
                 $('#componentPropertiesModal').modal('hide');

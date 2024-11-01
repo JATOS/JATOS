@@ -141,6 +141,7 @@
         $.ajax({
             url : window.routes.Studies.addAllMemberUsers(window.study.id),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(user) {
                 memberUserTable.ajax.reload();
             },
@@ -152,6 +153,7 @@
         $.ajax({
             url : window.routes.Studies.removeAllMemberUsers(window.study.id),
             type : "DELETE",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => memberUserTable.ajax.reload(),
             error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't remove all users")
         });
@@ -164,6 +166,7 @@
         $.ajax({
             url: window.routes.Studies.toggleMemberUser(window.study.id, username, true),
             type: "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(user) {
                 $("#changeMemberUsersForm")[0].reset();
                 alterTableAfterUserAdding(user);
@@ -208,6 +211,7 @@
         $.ajax({
             url: window.routes.Studies.toggleMemberUser(window.study.id, tableMember.username, !tableMember.isMember),
             type: "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(user) {
                 memberUserTable.row(tr).data(user);
             },

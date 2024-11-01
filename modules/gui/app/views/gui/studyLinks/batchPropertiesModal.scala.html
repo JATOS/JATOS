@@ -235,6 +235,7 @@
         $.ajax({
             type: 'POST',
             url: window.routes.StudyLinks.submitEditedBatchProperties(window.study.id, properties.id),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#batchPropertiesForm').serialize(),
             success: function(response) {
                 $('#batchPropertiesModal').modal('hide');

@@ -202,6 +202,7 @@
         $.ajax({
             url: window.routes.StudyLinks.toggleAllowedWorkerType(window.study.id, batch.id, workerType, allow),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(allowedWorkerTypes) {
                 batch.allowedWorkerTypes = allowedWorkerTypes;
                 setAllowedTypes(studyLinksSetupDiv, allowedWorkerTypes);

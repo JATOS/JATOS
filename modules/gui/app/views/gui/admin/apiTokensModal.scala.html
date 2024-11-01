@@ -202,6 +202,7 @@
         $.ajax({
             url : window.routes.ApiTokens.generate(name, expires),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(apiToken) {
                 $('#apiTokenCreatorModal')
                     .modal('hide')
@@ -247,6 +248,7 @@
         $.ajax({
             url : window.routes.ApiTokens.toggleActive(data.id, active),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function() {
                 data.active = active;
                 $(checkbox).prop('checked', data.active);
@@ -271,6 +273,7 @@
                 $.ajax({
                     url : window.routes.ApiTokens.remove(data.id),
                     type : "DELETE",
+                    headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                     success: () => apiTokensTable.ajax.reload(null, false),
                     error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Token couldn't be deleted")
                 });

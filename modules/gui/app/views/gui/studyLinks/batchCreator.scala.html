@@ -44,6 +44,7 @@
         $.ajax({
             type: 'POST',
             url: window.routes.StudyLinks.submitCreatedBatch(window.study.id),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#batchCreatorForm').serialize(),
             success: function(response) {
                 $('#batchCreatorModal').modal('hide');

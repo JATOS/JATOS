@@ -91,6 +91,7 @@
         $.ajax({
             url : window.routes.Studies.toggleLock(window.study.id),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success : function(response) {
                 window.study.isLocked = response === 'true';
                 drawLockButton();
@@ -136,6 +137,7 @@
             $.ajax({
                 url : window.routes.Api.deleteStudy(window.study.id),
                 type : 'DELETE',
+                headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 beforeSend: WaitingModal.show,
                 success : function(result) {
                     window.location.replace(window.routes.Home.home);

@@ -63,6 +63,7 @@
         $.ajax({
             type : 'POST',
             url : window.routes.Components.submitCreated(window.study.id),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data : $('#componentCreatorForm').serialize(),
             success : function(response) {
                 $('#componentCreatorModal').modal('hide');

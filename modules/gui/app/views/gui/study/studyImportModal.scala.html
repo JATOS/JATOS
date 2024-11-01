@@ -55,6 +55,7 @@
             contentType: false,
             processData: false,
             type: 'POST',
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             beforeSend: WaitingModal.show,
             success: function(response) {
                 importStudyConfirm(response);
@@ -207,6 +208,7 @@
         $.ajax({
             type: 'POST',
             url: window.routes.ImportExport.importStudyConfirmed,
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             contentType: "application/json; charset=utf-8",
             dataType: 'text',
             data: JSON.stringify({

@@ -31,8 +31,9 @@ function abortFileDownload() {
  *                                     not set it will be a GET.
  * @param {string} rawFileName - The filename that is used to save the data stream in the local file system.
  *                               The filename will be sanitized before using it.
+ * @param {string} csrfToken - A CSRF token (necessary if a POST request)
  */
-async function downloadFileStream(url, postData, rawFileName) {
+async function downloadFileStream(url, postData, rawFileName, csrfToken) {
     const fileName = sanitizeFilename(rawFileName);
     const fileExtension = fileName.split('.').pop();
 
@@ -45,7 +46,9 @@ async function downloadFileStream(url, postData, rawFileName) {
 
         WaitingModal.show(true);
 
-        const response = await fetchFile(url, postData);
+        const response = await fetchFile(url, postData, csrfToken);
+
+        if (response.status !== 200) throw new Error(response.statusText)
 
         await fileSave(
             response,
@@ -121,14 +124,15 @@ function pickFileHandle(fileName) {
 /*
  * Using Fetch API to get file from / post a file to the JATOS server.
  */
-function fetchFile(url, postData) {
+function fetchFile(url, postData, csrfToken) {
     downloadFileAbortController = new AbortController();
     let init;
     if (postData) {
         init = {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Csrf-Token': csrfToken
             },
             cache: 'no-cache',
             body: postData,

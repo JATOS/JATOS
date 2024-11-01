@@ -85,6 +85,7 @@
         $.ajax({
             type: 'POST',
             url: window.routes.Studies.submitDescription(window.study.id),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             contentType: 'text/plain; charset=utf-8',
             processData: false,
             data: markdown,

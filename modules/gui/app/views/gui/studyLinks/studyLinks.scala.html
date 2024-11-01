@@ -75,6 +75,8 @@
     import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
 
+    const alerts = new Alerts.Named("study-links");
+
     if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.");
 
     let batchTable;
@@ -170,6 +172,7 @@
         $.ajax({
             url: window.routes.StudyLinks.toggleBatchActive(window.study.id, batch.id, isActive),
             type: "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(active) {
                 $(checkbox).prop('checked', isActive);
                 batch.active = isActive;
@@ -192,6 +195,7 @@
             $.ajax({
                 url : window.routes.StudyLinks.removeBatch(window.study.id, batch.id),
                 type : 'DELETE',
+                headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 beforeSend: WaitingModal.show,
                 success : function(result) {
                     Alerts.showList(JSON.parse(result));

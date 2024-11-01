@@ -148,6 +148,7 @@
         $.ajax({
             url : window.routes.Studies.toggleActive(studyInfo.id, isActive),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {
                 $(checkbox).prop('checked', isActive);
                 studyInfo.active = isActive;

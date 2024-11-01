@@ -384,6 +384,7 @@
         $.ajax({
             url: window.routes.StudyLinks.toggleStudyLinkActive(window.study.id, batch.id, linkData.studyCode, active),
             type: "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(active) {
                 linkData.active = active;
                 $(checkbox).prop('checked', linkData.active);
@@ -412,6 +413,7 @@
         $.ajax({
             url: window.routes.StudyLinks.editWorkerComment(workerId),
             type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data : $('#editCommentForm').serialize(),
             success: function() {
                 $('#editCommentModal').modal('hide');

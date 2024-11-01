@@ -17,11 +17,17 @@ GET     /publix/:studyResultUuid/abort                              @controllers
 + nocsp
 GET     /publix/:studyResultUuid/:componentUuid/start               @controllers.publix.PublixInterceptor.startComponent(request: Request, studyResultUuid: String, componentUuid: String, message: String ?= null)
 GET     /publix/:studyResultUuid/:componentUuid/initData            @controllers.publix.PublixInterceptor.getInitData(request: Request, studyResultUuid: String, componentUuid: String)
++ nocsrf
 POST    /publix/:studyResultUuid/studySessionData                   @controllers.publix.PublixInterceptor.setStudySessionData(request: Request, studyResultUuid: String)
++ nocsrf
 POST    /publix/:studyResultUuid/heartbeat                          @controllers.publix.PublixInterceptor.heartbeat(request: Request, studyResultUuid: String)
++ nocsrf
 PUT     /publix/:studyResultUuid/:componentUuid/resultData          @controllers.publix.PublixInterceptor.submitResultData(request: Request, studyResultUuid: String, componentUuid: String)
++ nocsrf
 POST    /publix/:studyResultUuid/:componentUuid/resultData          @controllers.publix.PublixInterceptor.appendResultData(request: Request, studyResultUuid: String, componentUuid: String)
++ nocsrf
 POST    /publix/:studyResultUuid/:componentUuid/log                 @controllers.publix.PublixInterceptor.log(request: Request, studyResultUuid: String, componentUuid: String)
++ nocsrf
 POST    /publix/:studyResultUuid/:componentUuid/files/:filename     @controllers.publix.PublixInterceptor.uploadResultFile(request: Request, studyResultUuid: String, componentUuid: String, filename: String)
 GET     /publix/:studyResultUuid/files/:filename                    @controllers.publix.PublixInterceptor.downloadResultFile(request: Request, studyResultUuid: String, filename: String, componentId: String ?= null)
 

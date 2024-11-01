@@ -142,6 +142,7 @@
 		$.ajax({
 			type: 'POST',
 			url: window.routes.Signin.authenticate,
+			headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
 			data: $('#passwordSigninForm').serialize(),
 			success: function(response) {
 				window.common.userSigninTime = response.userSigninTime;

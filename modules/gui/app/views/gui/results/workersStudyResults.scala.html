@@ -308,7 +308,7 @@
             return;
         }
         const data = JSON.stringify({"studyResultIds": ids});
-        FileSystemAccess.downloadFileStream(url, data, filename);
+        FileSystemAccess.downloadFileStream(url, data, filename, '@helper.CSRF.getToken.value');
     }
 
     function deleteSelectedResults(e, dt, node, config) {
@@ -343,6 +343,7 @@
             $.ajax({
                 url : window.routes.StudyResults.remove,
                 type : 'PUT',
+                headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 contentType: "application/json; charset=utf-8",
                 data: JSON.stringify({"studyResultIds": ids}),
                 success : function(result) {

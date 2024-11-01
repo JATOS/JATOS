@@ -230,6 +230,7 @@
         $.ajax({
             type: 'POST',
             url : window.routes.Users.edit(window.signedinUser.username),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#myUserSettingsForm').serialize(),
             success: function(response) {
                 window.signedinUser.name = $('#myUserSettingsModal [name="name"]').val();
@@ -266,6 +267,7 @@
         $.ajax({
             type: 'POST',
             url: window.routes.Users.changePasswordByUser,
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#changeMyPasswordForm').serialize(),
             success: function(response) {
                 $('#changeMyPasswordModal').modal('hide');
@@ -359,6 +361,7 @@
         $.ajax({
             url : window.routes.Users.remove(window.signedinUser.username),
             type : 'POST',
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#deleteMyUserForm').serialize(),
             success : function(result) {
                 window.location.href = window.routes.Signin.signin;

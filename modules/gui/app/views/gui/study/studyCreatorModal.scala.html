@@ -42,6 +42,7 @@
         $.ajax({
             type : 'POST',
             url : window.routes.Studies.submitCreated,
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data : $('#studyCreatorForm').serialize(),
             success : function(response) {
                 // New study's ID is in the response

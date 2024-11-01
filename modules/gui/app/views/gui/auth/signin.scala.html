@@ -192,6 +192,7 @@
         $.ajax({
 			type: 'POST',
 			url: window.routes.Signin.authenticate,
+			headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
 			data: $('#signinForm').serialize(),
 			success: function(response) {
 			    window.location.replace(response.redirectUrl);

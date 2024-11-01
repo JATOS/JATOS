@@ -110,6 +110,7 @@
         $.ajax({
             type: 'POST',
             url: postUrl,
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#sessionForm').serialize(),
             success: function(response) {
                 $('#sessionModal').modal('hide');

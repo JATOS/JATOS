@@ -217,6 +217,7 @@
         $.ajax({
             type : 'POST',
             url : window.routes.Studies.submitEdited(studyId),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data : $('#studyPropertiesForm').serialize(),
             success : function(response) {
                 $('#studyPropertiesModal').modal('hide');
