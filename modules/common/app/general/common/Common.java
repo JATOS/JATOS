@@ -57,7 +57,6 @@ public class Common {
     private static String jatosHttpAddress;
     private static int jatosHttpPort;
     private static String ldapUrl;
-    private static String ldapUserAttribute;
     private static List<String> ldapBaseDn;
     private static String ldapAdminDn;
     private static String ldapAdminPassword;
@@ -141,7 +140,6 @@ public class Common {
         if (jatosHttpAddress.equals("0.0.0.0")) jatosHttpAddress = "127.0.0.1"; // Fix localhost IP
         jatosHttpPort = config.getInt("play.server.http.port"); // Also jatos.http.port
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
-        ldapUserAttribute = config.getString("jatos.user.authentication.ldap.userAttribute");
         if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.STRING) {
             ldapBaseDn = Collections.singletonList(config.getString("jatos.user.authentication.ldap.basedn"));
         } else if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.LIST) {
@@ -427,13 +425,6 @@ public class Common {
      */
     public static String getLdapUrl() {
         return ldapUrl;
-    }
-
-    /**
-     * LDAP User attribute, e.g. 'uid' or 'cn'
-     */
-    public static String getLdapUserAttribute() {
-        return ldapUserAttribute;
     }
 
     /**
