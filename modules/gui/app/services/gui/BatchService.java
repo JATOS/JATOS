@@ -155,7 +155,11 @@ public class BatchService {
         props.setMaxTotalMemberLimited(batch.getMaxTotalMembers() != null);
         props.setMaxTotalWorkerLimited(batch.getMaxTotalWorkers() != null);
         props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
-        batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
+        if (batch.getAllowedWorkerTypes() != null) {
+            batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
+        } else {
+            props.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+        }
         props.setComments(batch.getComments());
         props.setJsonData(batch.getJsonData());
         return props;
