@@ -63,6 +63,7 @@ GET      /jatos/testWebSocket                                               @con
 GET      /jatos/signin                                                      @auth.gui.Signin.signin(request: Request)
 GET      /jatos/login                                                       @auth.gui.Signin.signin(request: Request)
 POST     /jatos/signin/local                                                @auth.gui.Signin.authenticate(request: Request)
++ nocsrf
 POST     /jatos/signin/google                                               @auth.gui.SigninGoogle.signin(request: Request)
 GET      /jatos/signin/oidc/basic                                           @auth.gui.SigninBasicOidc.signin(request: Request, realHostUrl: String, keepSignedin: Boolean)
 GET      /jatos/signin/oidc/basic/callback                                  @auth.gui.SigninBasicOidc.callback(request: Request)
