@@ -55,17 +55,19 @@ public class LoginAttemptDao extends AbstractDao {
     }
 
     /**
-     * Returns the count of LoginAttempts that happened within the last minute for the given username
+     * Returns the count of LoginAttempts that happened within the last minute for the given username and remoteAddress
      */
-    public int countLoginAttemptsOfLastMin(String username) {
+    public int countLoginAttemptsOfLastMin(String username, String remoteAddress) {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, -1);
         Number result = (Number) jpa.em().createQuery("SELECT COUNT(la) FROM LoginAttempt la " +
                         "WHERE username = :username " +
+                        "AND remoteAddress = :remoteAddress " +
                         "AND date > :date")
                 .setParameter("username", username)
+                .setParameter("remoteAddress", remoteAddress)
                 .setParameter("date", cal.getTime())
-                .getSingleResult();;
+                .getSingleResult();
         return result != null ? result.intValue() : 0;
     }
 

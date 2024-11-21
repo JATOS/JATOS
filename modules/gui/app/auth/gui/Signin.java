@@ -68,9 +68,10 @@ public class Signin extends Controller {
         SigninData signinData = formFactory.form(SigninData.class).bindFromRequest(request).withDirectFieldAccess(true).get();
         String normalizedUsername = User.normalizeUsername(signinData.getUsername());
         String password = signinData.getPassword();
+        String remoteAddress = request().remoteAddress();
 
-        if (authService.isRepeatedSigninAttempt(normalizedUsername)) {
-            return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, request.remoteAddress());
+        if (authService.isRepeatedSigninAttempt(normalizedUsername, remoteAddress)) {
+            return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, remoteAddress);
         }
 
         User user = userDao.findByUsername(normalizedUsername);
@@ -82,11 +83,11 @@ public class Signin extends Controller {
         }
 
         if (!authenticated) {
-            loginAttemptDao.create(new LoginAttempt(normalizedUsername));
-            if (authService.isRepeatedSigninAttempt(normalizedUsername)) {
-                return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, request.remoteAddress());
+            loginAttemptDao.create(new LoginAttempt(normalizedUsername, remoteAddress));
+            if (authService.isRepeatedSigninAttempt(normalizedUsername, remoteAddress)) {
+                return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, remoteAddress);
             } else {
-                return returnUnauthorizedDueToFailedAuth(normalizedUsername, request.remoteAddress());
+                return returnUnauthorizedDueToFailedAuth(normalizedUsername, remoteAddress);
             }
         } else {
             authService.writeSessionCookie(session(), normalizedUsername, signinData.getKeepSignedin());
