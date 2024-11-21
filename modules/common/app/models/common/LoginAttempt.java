@@ -27,12 +27,18 @@ public class LoginAttempt {
     private String username;
 
     /**
+     * Remote address - origin of the failed login attempt
+     */
+    private String remoteAddress;
+
+    /**
      * Timestamp of the failed login attempt
      */
     private Timestamp date;
 
-    public LoginAttempt(String username) {
+    public LoginAttempt(String username, String remoteAddress) {
         this.username = username;
+        this.remoteAddress = remoteAddress;
         this.date = new Timestamp(new Date().getTime());
     }
 
@@ -55,6 +61,14 @@ public class LoginAttempt {
         this.username = username;
     }
 
+    public String getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    public void setRemoteAddress(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
+    }
+
     public Timestamp getDate() {
         return date;
     }
@@ -70,7 +84,7 @@ public class LoginAttempt {
 
     @Override
     public int hashCode() {
-        return Objects.hash(username, date);
+        return Objects.hash(username, remoteAddress, date);
     }
 
     @Override
@@ -78,6 +92,8 @@ public class LoginAttempt {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LoginAttempt that = (LoginAttempt) o;
-        return getUsername().equals(that.getUsername()) && getDate().equals(that.getDate());
+        return getUsername().equals(that.getUsername())
+                && getRemoteAddress().equals(that.getRemoteAddress())
+                && getDate().equals(that.getDate());
     }
 }

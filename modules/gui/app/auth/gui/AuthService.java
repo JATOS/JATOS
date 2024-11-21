@@ -89,10 +89,11 @@ public class AuthService {
     }
 
     /**
-     * Returns true if there were already 3 sign-in attempts within the last minute with this username
+     * Returns true if there were already 3 sign-in attempts within the last minute with this username from this
+     * remoteAddress
      */
-    public boolean isRepeatedSigninAttempt(String normalizedUsername) {
-        return loginAttemptDao.countLoginAttemptsOfLastMin(normalizedUsername) >= 3;
+    public boolean isRepeatedSigninAttempt(String normalizedUsername, String remoteAddress) {
+        return loginAttemptDao.countLoginAttemptsOfLastMin(normalizedUsername, remoteAddress) >= 3;
     }
 
     /**
