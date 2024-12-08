@@ -597,6 +597,10 @@ public class Common {
         return brandingUrl;
     }
 
+    public static boolean hasBranding() {
+        return !Strings.isNullOrEmpty(brandingUrl);
+    }
+
     /**
      * Locale used in the GUI. If not set, the browser's 'navigator.language' is used.
      */
