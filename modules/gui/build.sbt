@@ -1,5 +1,5 @@
 name := "jatos-gui"
-version := "3.9.4"
+version := "3.9.5"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
