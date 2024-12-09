@@ -5,7 +5,7 @@
 
 <main class="container-xxl overflow-auto mt-4">
 
-    <div id="branding" class="rounded-3 text-center p-5 mb-3 d-none">
+    <div id="branding" class="rounded-3 text-center p-5 mb-3 invisible">
         <!-- The HTML for branding can be loaded dynamically from an external source. -->
         <img class="mb-3 heartbeat-hover" src="@routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">
         <div class=""><span class="no-info-icon fw-bold fs-1" data-bs-tooltip="Just Another Tool for Online Studies">J A T O S</span></div>
@@ -50,14 +50,14 @@
             }
             success: function(res) {
                 $('#branding').html(res);
-                $('#branding').removeClass("d-none");
+                $('#branding').removeClass("invisible");
             },
             error: function () {
-                $('#branding').removeClass("d-none");
+                $('#branding').removeClass("invisible");
             }
         });
     } else {
-        $('#branding').removeClass("d-none");
+        $('#branding').removeClass("invisible");
     }
 
     if (Helpers.isLocalhost()) $("#localFileLocation").removeClass("d-none");
