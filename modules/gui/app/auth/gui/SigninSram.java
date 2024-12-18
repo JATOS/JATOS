@@ -17,13 +17,13 @@ public class SigninSram extends SigninOidc {
     @Inject
     SigninSram() {
         super(new OidcConfig(
-                User.AuthMethod.ORCID,
-                Common.getOrcidDiscoveryUrl(),
-                auth.gui.routes.SigninOrcid.callback().url(),
-                Common.getOrcidClientId(),
-                Common.getOrcidClientSecret(),
-                Common.getOrcidIdTokenSigningAlgorithm(),
-                Common.getOrcidSuccessFeedback()
+                User.AuthMethod.SRAM,
+                Common.getSramDiscoveryUrl(),
+                auth.gui.routes.SigninSram.callback().url(),
+                Common.getSramClientId(),
+                Common.getSramClientSecret(),
+                Common.getSramIdTokenSigningAlgorithm(),
+                Common.getSramSuccessFeedback()
         ));
     }
 
