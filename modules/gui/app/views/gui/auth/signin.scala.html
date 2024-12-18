@@ -88,6 +88,11 @@
                 <span id="orcidSigninButtonText"></span>
             </button>
 
+            <button class="btn btn-outline-secondary w-100 mb-2 d-none" id="sramSigninButton"  type="button">
+                <img class="float-start" id="sramSigninButtonLogoImg" height="25" src="">
+                <span id="sramSigninButtonText"></span>
+            </button>
+
             <div id="signinGoogle" class="mb-2 d-none"></div>
 
             <p id="signinText"></p>
@@ -133,9 +138,15 @@
         $("#orcidSigninButton").removeClass("d-none");
     }
 
+    if (window.common.isSramAllowed) {
+        $("#sramSigninButtonText").text(window.common.sramSigninButtonText);
+        $("#sramSigninButtonLogoImg").attr("src", Helpers.getSramLogoUrl());
+        $("#sramSigninButton").removeClass("d-none");
+    }
+
     $("#signinGoogle").toggleClass("d-none", !window.common.isOauthGoogleAllowed);
 
-    if (window.common.isOidcAllowed || window.common.isOrcidAllowed || window.common.isOauthGoogleAllowed) {
+    if (window.common.isOidcAllowed || window.common.isOrcidAllowed || window.common.isSramAllowed || window.common.isOauthGoogleAllowed) {
         $("#signinText").addClass("mt-5").text("... or sign in with your local account");
     } else {
         $("#signinText").addClass("fw-bolder").text("Please sign in");
@@ -172,6 +183,21 @@
         const keepSignedin = $("#signinForm input[name=keepSignedin]").prop("checked");
         $.ajax({
             url: window.routes.SigninOrcid.signin(keepSignedin),
+            success: function(uri) {
+                window.location.href = uri;
+            },
+            error: function(err) {
+                $("p.text-danger").remove();
+                const errMsg = err.responseText ? err.responseText : "An error occurred during sign-in";
+                $('#password').after(`<p class="text-danger">${errMsg}</p>`);
+            }
+        });
+    });
+
+    $('#sramSigninButton').click(function() {
+        const keepSignedin = $("#signinForm input[name=keepSignedin]").prop("checked");
+        $.ajax({
+            url: window.routes.SigninSram.signin(keepSignedin),
             success: function(uri) {
                 window.location.href = uri;
             },

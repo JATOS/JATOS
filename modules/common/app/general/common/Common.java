@@ -76,6 +76,13 @@ public class Common {
     private static String orcidSigninButtonText;
     private static String orcidSigninButtonLogoUrl;
     private static String orcidSuccessFeedback;
+    private static String sramDiscoveryUrl;
+    private static String sramClientId;
+    private static String sramClientSecret;
+    private static String sramIdTokenSigningAlgorithm;
+    private static String sramSigninButtonText;
+    private static String sramSigninButtonLogoUrl;
+    private static String sramSuccessFeedback;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
@@ -163,6 +170,13 @@ public class Common {
         orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
         orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
         orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
+        sramDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
+        sramClientId = config.getString("jatos.user.authentication.orcid.clientId");
+        sramClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
+        sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
+        sramSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
+        sramSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
+        sramSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
@@ -574,6 +588,62 @@ public class Common {
      */
     public static String getOrcidSuccessFeedback() {
         return orcidSuccessFeedback;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) allowed
+     */
+    public static boolean isSramAllowed() {
+        return !Strings.isNullOrEmpty(sramClientId);
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) provider discovery URL (ends with ".well-known/openid-configuration")
+     */
+    public static String getSramDiscoveryUrl() {
+        return sramDiscoveryUrl;
+    }
+
+    /**
+     * SRAM'S OpenId Connect (OIDC) client ID
+     */
+    public static String getSramClientId() {
+        return sramClientId;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) client secret.
+     */
+    public static String getSramClientSecret() {
+        return sramClientSecret;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
+     */
+    public static String getSramIdTokenSigningAlgorithm() {
+        return sramIdTokenSigningAlgorithm;
+    }
+
+    /**
+     * Text of SRAM button on the sign-in page
+     */
+    public static String getSramSigninButtonText() {
+        return sramSigninButtonText;
+    }
+
+    /**
+     * Logo URL of SRAM button on the sign-in page
+     */
+    public static String getSramSigninButtonLogoUrl() {
+        return sramSigninButtonLogoUrl;
+    }
+
+    /**
+     * Success feedback text shown to the user if SRAM sign-in was successful.
+     */
+    public static String getSramSuccessFeedback() {
+        return sramSuccessFeedback;
     }
 
     /**

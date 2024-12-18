@@ -13,7 +13,7 @@
                 <th>Name<span class="ordering-icon"></span></th>
                 <th>Email<span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC or ORCID">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID or SRAM">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
@@ -656,9 +656,9 @@
 
     function fillUserToolbar(toolbar, username, authMethod) {
         // Setup user settings button
-        if (authMethod == "OAUTH_GOOGLE" || authMethod == "OIDC" || authMethod == "ORCID") {
+        if (authMethod == "OAUTH_GOOGLE" || authMethod == "OIDC" || authMethod == "ORCID" || authMethod == "SRAM") {
             disableButton(toolbar.find('.user-settings button'));
-            toolbar.find('.user-settings').attr('data-bs-tooltip', "Google/OIDC/ORCID authenticated users cannot be edited (they get their user data from the external identity provider).");
+            toolbar.find('.user-settings').attr('data-bs-tooltip', "Google/OIDC/ORCID/SRAM authenticated users cannot be edited (they get their user data from the external identity provider).");
         }
 
         // Setup change password button
@@ -667,7 +667,7 @@
             toolbar.find('.user-change-password').attr('data-bs-tooltip', "Only user admin can change their own password.");
         } else if (authMethod !== "DB") {
             disableButton(toolbar.find('.user-change-password button'));
-            toolbar.find('.user-change-password').attr('data-bs-tooltip', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID or Google) cannot be changed in JATOS");
+            toolbar.find('.user-change-password').attr('data-bs-tooltip', "The password of not locally stored Users (e.g. authenticated by LDAP, OIDC, ORCID, SRAM or Google) cannot be changed in JATOS");
         }
 
         // Setup delete user button

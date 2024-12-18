@@ -166,6 +166,7 @@ function getAuthMethodText(authMethod) {
         case "OAUTH_GOOGLE": return "Google";
         case "OIDC": return "OIDC";
         case "ORCID": return "ORCID";
+        case "SRAM": return "SRAM";
         default: return authMethod;
     }
 }
@@ -178,6 +179,8 @@ function getAuthMethodText(authMethod) {
 function generateOrcidLink(orcid) {
     return `<a href="https://orcid.org/${orcid}" target="_blank" class="text-nowrap"><img class="me-1" src="${window.routes.assets("lib/jatos-gui/images/ORCIDiD_iconvector.svg")}" alt="ORCID logo" width="16" height="16"/>${orcid}</a>`;
 }
+
+
 
 /**
  * Generates HTML containing the name and username and if it is an ORCID user, the ORCID link.

@@ -69,7 +69,10 @@ GET      /jatos/signin/oidc/basic                                           @aut
 GET      /jatos/signin/oidc/basic/callback                                  @auth.gui.SigninBasicOidc.callback(request: Request)
 GET      /jatos/signin/oidc/orcid                                           @auth.gui.SigninOrcid.signin(request: Request, realHostUrl: String, keepSignedin: Boolean)
 GET      /jatos/signin/oidc/orcid/callback                                  @auth.gui.SigninOrcid.callback(request: Request)
+GET      /jatos/signin/oidc/sram                                            @auth.gui.SigninSram.signin(request: Request, realHostUrl: String, keepSignedin: Boolean)
+GET      /jatos/signin/oidc/sram/callback                                   @auth.gui.SigninSram.callback(request: Request)
 GET      /jatos/signout                                                     @auth.gui.Signin.signout(request: Request)
+
 
 # Home controller
 GET      /jatos/sidebarData                                                 @controllers.gui.Home.sidebarData()

@@ -34,7 +34,7 @@ public class User {
      * Possible authentication methods
      */
     public enum AuthMethod {
-        DB, LDAP, OAUTH_GOOGLE, OIDC, ORCID
+        DB, LDAP, OAUTH_GOOGLE, OIDC, ORCID, SRAM
     }
 
     /**
@@ -221,6 +221,10 @@ public class User {
 
     public boolean isOrcid() {
         return this.authMethod == AuthMethod.ORCID;
+    }
+
+    public boolean isSram() {
+        return this.authMethod == AuthMethod.SRAM;
     }
 
     public void setWorker(JatosWorker worker) {

@@ -204,6 +204,10 @@ public class Helpers {
         if (Common.isOrcidAllowed()) {
             config.put("ORCID client ID", Common.getOrcidClientId());
         }
+        config.put("SRAM allowed", String.valueOf(Common.isSramAllowed()));
+        if (Common.isSramAllowed()) {
+            config.put("SRAM client ID", Common.getSramClientId());
+        }
         config.put("LDAP allowed", String.valueOf(Common.isLdapAllowed()));
         if (Common.isLdapAllowed()) {
             config.put("LDAP URL", Common.getLdapUrl());
