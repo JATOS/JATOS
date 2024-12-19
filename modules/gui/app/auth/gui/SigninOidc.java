@@ -101,8 +101,8 @@ public abstract class SigninOidc extends Controller {
         this.oidcConfig = oidcConfig;
     }
 
-    public String getScope() {
-        return "openid";
+    public Scope getScope() {
+        return new Scope("openid");
     }
 
     @GuiAccessLogging
@@ -116,7 +116,7 @@ public abstract class SigninOidc extends Controller {
         Nonce nonce = new Nonce();
         AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                 new ResponseType("code"),
-                new Scope(this.getScope()),
+                this.getScope(),
                 clientID,
                 callback
         ).endpointURI(getProviderInfo().getAuthorizationEndpointURI())

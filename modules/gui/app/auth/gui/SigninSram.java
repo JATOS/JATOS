@@ -1,5 +1,6 @@
 package auth.gui;
 
+import com.nimbusds.oauth2.sdk.Scope;
 import general.common.Common;
 import models.common.User;
 
@@ -27,10 +28,9 @@ public class SigninSram extends SigninOidc {
         ));
     }
 
-    @Inject
     @Override
-    public String getScope(){
-        return "openid profile email";
+    public Scope getScope(){
+        return new Scope("openid", "profile", "email");
     }
 
 }
