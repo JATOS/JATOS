@@ -15,6 +15,7 @@ export {
     generateMembersHtml,
     getOidcLogoUrl,
     getOrcidLogoUrl,
+    getSramLogoUrl,
     escapeHtml,
     trimTextWithThreeDots,
     getTheme,
@@ -243,6 +244,20 @@ function getOrcidLogoUrl() {
         return window.common.jatosUrlBasePath + window.common.orcidSigninButtonLogoUrl;
     }
 }
+
+/**
+ * Little helper function. The URL to the Surf SRAM logo (e.g. displayed on the signin page) can be determined in the
+ * jatos.conf. If the set URL is an external one and contains an 'http', just return the URL. If the set URL is an
+ * internal one, we add the JATOS URL base path.
+ */
+function getSramLogoUrl() {
+    if (window.common.sramSigninButtonLogoUrl.includes("http")) {
+        return window.common.sramSigninButtonLogoUrl;
+    } else {
+        return window.common.jatosUrlBasePath + window.common.sramSigninButtonLogoUrl;
+    }
+}
+
 
 /**
  * Escape some HTML characters from the given string for use in tooltips
