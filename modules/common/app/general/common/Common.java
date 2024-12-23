@@ -170,7 +170,7 @@ public class Common {
         orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
         orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
         orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
-        sramDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
+        sramDiscoveryUrl = config.getString("jatos.user.authentication.sram.discoveryUrl");
         sramClientId = config.getString("jatos.user.authentication.sram.clientId");
         sramClientSecret = config.getString("jatos.user.authentication.sram.clientSecret");
         sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
