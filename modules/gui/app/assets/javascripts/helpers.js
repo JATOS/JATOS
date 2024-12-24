@@ -16,6 +16,7 @@ export {
     getOidcLogoUrl,
     getOrcidLogoUrl,
     getSramLogoUrl,
+    getConextLogoUrl,
     escapeHtml,
     trimTextWithThreeDots,
     getTheme,
@@ -181,8 +182,6 @@ function generateOrcidLink(orcid) {
     return `<a href="https://orcid.org/${orcid}" target="_blank" class="text-nowrap"><img class="me-1" src="${window.routes.assets("lib/jatos-gui/images/ORCIDiD_iconvector.svg")}" alt="ORCID logo" width="16" height="16"/>${orcid}</a>`;
 }
 
-
-
 /**
  * Generates HTML containing the name and username and if it is an ORCID user, the ORCID link.
  *
@@ -258,6 +257,18 @@ function getSramLogoUrl() {
     }
 }
 
+/**
+ * Little helper function. The URL to the Surf CONEXT logo (e.g. displayed on the signin page) can be determined in the
+ * jatos.conf. If the set URL is an external one and contains an 'http', just return the URL. If the set URL is an
+ * internal one, we add the JATOS URL base path.
+ */
+function getConextLogoUrl() {
+    if (window.common.conextSigninButtonLogoUrl.includes("http")) {
+        return window.common.conextSigninButtonLogoUrl;
+    } else {
+        return window.common.jatosUrlBasePath + window.common.conextSigninButtonLogoUrl;
+    }
+}
 
 /**
  * Escape some HTML characters from the given string for use in tooltips

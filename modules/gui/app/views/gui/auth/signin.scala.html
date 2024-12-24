@@ -93,6 +93,11 @@
                 <span id="sramSigninButtonText"></span>
             </button>
 
+            <button class="btn btn-outline-secondary w-100 mb-2 d-none" id="conextSigninButton"  type="button">
+                <img class="float-start" id="conextSigninButtonLogoImg" height="25" src="">
+                <span id="conextSigninButtonText"></span>
+            </button>
+
             <div id="signinGoogle" class="mb-2 d-none"></div>
 
             <p id="signinText"></p>
@@ -144,9 +149,15 @@
         $("#sramSigninButton").removeClass("d-none");
     }
 
+    if (window.common.isConextAllowed) {
+        $("#conextSigninButtonText").text(window.common.conextSigninButtonText);
+        $("#conextSigninButtonLogoImg").attr("src", Helpers.getConextLogoUrl());
+        $("#conextSigninButton").removeClass("d-none");
+    }
+
     $("#signinGoogle").toggleClass("d-none", !window.common.isOauthGoogleAllowed);
 
-    if (window.common.isOidcAllowed || window.common.isOrcidAllowed || window.common.isSramAllowed || window.common.isOauthGoogleAllowed) {
+    if (window.common.isOidcAllowed || window.common.isOrcidAllowed || window.common.isSramAllowed || window.common.isConextAllowed || window.common.isOauthGoogleAllowed) {
         $("#signinText").addClass("mt-5").text("... or sign in with your local account");
     } else {
         $("#signinText").addClass("fw-bolder").text("Please sign in");
@@ -198,6 +209,21 @@
         const keepSignedin = $("#signinForm input[name=keepSignedin]").prop("checked");
         $.ajax({
             url: window.routes.SigninSram.signin(keepSignedin),
+            success: function(uri) {
+                window.location.href = uri;
+            },
+            error: function(err) {
+                $("p.text-danger").remove();
+                const errMsg = err.responseText ? err.responseText : "An error occurred during sign-in";
+                $('#password').after(`<p class="text-danger">${errMsg}</p>`);
+            }
+        });
+    });
+
+    $('#conextSigninButton').click(function() {
+        const keepSignedin = $("#signinForm input[name=keepSignedin]").prop("checked");
+        $.ajax({
+            url: window.routes.SigninConext.signin(keepSignedin),
             success: function(uri) {
                 window.location.href = uri;
             },

@@ -83,6 +83,13 @@ public class Common {
     private static String sramSigninButtonText;
     private static String sramSigninButtonLogoUrl;
     private static String sramSuccessFeedback;
+    private static String conextDiscoveryUrl;
+    private static String conextClientId;
+    private static String conextClientSecret;
+    private static String conextIdTokenSigningAlgorithm;
+    private static String conextSigninButtonText;
+    private static String conextSigninButtonLogoUrl;
+    private static String conextSuccessFeedback;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
@@ -177,6 +184,13 @@ public class Common {
         sramSigninButtonText = config.getString("jatos.user.authentication.sram.signInButtonText");
         sramSigninButtonLogoUrl = config.getString("jatos.user.authentication.sram.signInButtonLogoUrl");
         sramSuccessFeedback = config.getString("jatos.user.authentication.sram.successFeedback");
+        conextDiscoveryUrl = config.getString("jatos.user.authentication.conext.discoveryUrl");
+        conextClientId = config.getString("jatos.user.authentication.conext.clientId");
+        conextClientSecret = config.getString("jatos.user.authentication.conext.clientSecret");
+        conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
+        conextSigninButtonText = config.getString("jatos.user.authentication.conext.signInButtonText");
+        conextSigninButtonLogoUrl = config.getString("jatos.user.authentication.conext.signInButtonLogoUrl");
+        conextSuccessFeedback = config.getString("jatos.user.authentication.conext.successFeedback");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
@@ -645,6 +659,64 @@ public class Common {
     public static String getSramSuccessFeedback() {
         return sramSuccessFeedback;
     }
+
+
+    /**
+     * SURFconext OpenId Connect (OIDC) allowed
+     */
+    public static boolean isConextAllowed() {
+        return !Strings.isNullOrEmpty(conextClientId);
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) provider discovery URL (ends with ".well-known/openid-configuration")
+     */
+    public static String getConextDiscoveryUrl() {
+        return conextDiscoveryUrl;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) client ID
+     */
+    public static String getConextClientId() {
+        return conextClientId;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) client secret.
+     */
+    public static String getConextClientSecret() {
+        return conextClientSecret;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
+     */
+    public static String getConextIdTokenSigningAlgorithm() {
+        return conextIdTokenSigningAlgorithm;
+    }
+
+    /**
+     * Text of SURFconext button on the sign-in page
+     */
+    public static String getConextSigninButtonText() {
+        return conextSigninButtonText;
+    }
+
+    /**
+     * Logo URL of SURFconext button on the sign-in page
+     */
+    public static String getConextSigninButtonLogoUrl() {
+        return conextSigninButtonLogoUrl;
+    }
+
+    /**
+     * Success feedback text shown to the user if SRAM sign-in was successful.
+     */
+    public static String getConextSuccessFeedback() {
+        return conextSuccessFeedback;
+    }
+
 
     /**
      * Should the GUI show a donations button

@@ -35,6 +35,15 @@
 					</button>
 					<div>Or <a href="#" class="signin-link">sign in as a different user</a>.</div>
 				</div>
+				<div class="d-none" id="conextSigninDiv">
+					<h3>Please sign in again</h3>
+					<p class="explanation"></p>
+					<button class="btn btn-outline-secondary w-100 mb-2" id="conextSigninButton"  type="button">
+						<img class="float-start" id="conextSigninButtonLogoImg" height="25" src="">
+						<span id="conextSigninButtonText"></span>
+					</button>
+					<div>Or <a href="#" class="signin-link">sign in as a different user</a>.</div>
+				</div>
 				<div class="d-none" id="googleSigninDiv">
 					<h3>Please sign in again</h3>
 					<p class="explanation"></p>
@@ -108,6 +117,11 @@
         		$("#sramSigninButtonLogoImg").attr("src", Helpers.getSramLogoUrl());
 				$("#sramSigninDiv").removeClass("d-none");
 				break;
+			case "CONEXT":
+				$("#conextSigninButtonText").text(window.common.conextSigninButtonText);
+        		$("#conextSigninButtonLogoImg").attr("src", Helpers.getConextLogoUrl());
+				$("#conextSigninDiv").removeClass("d-none");
+				break;
 			case "OAUTH_GOOGLE":
 				// 266 is the hard-coded width of the Google signin button in a Bootstrap Modal. I found no better way.
 				GoogleSignin.drawButton(266);
@@ -159,6 +173,20 @@
 			error: function(err) {
 				$("p.text-danger").remove();
 				const errMsg = err.responseText ? err.responseText : "An error occurred during SRAM sign-in";
+				$('.explanation').after(`<p class="text-danger">${errMsg}</p>`);
+			}
+		});
+	});
+
+	$('#conextSigninButton').click(function() {
+		$.ajax({
+			url: window.routes.SigninConext.signin(false),
+			success: function(uri) {
+				window.location.replace(uri);
+			},
+			error: function(err) {
+				$("p.text-danger").remove();
+				const errMsg = err.responseText ? err.responseText : "An error occurred during CONEXT sign-in";
 				$('.explanation').after(`<p class="text-danger">${errMsg}</p>`);
 			}
 		});

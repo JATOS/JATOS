@@ -193,6 +193,10 @@ public class Users extends Controller {
             return forbidden("SRAM authenticated users can't have their profile changed.");
         }
 
+        if (user.isConext()) {
+            return forbidden("CONEXT authenticated users can't have their profile changed.");
+        }
+
         if (!signedinUser.isAdmin()) {
             checkUsernameIsOfSignedinUser(normalizedUsernameOfUserToChange, signedinUser);
         }
@@ -320,8 +324,9 @@ public class Users extends Controller {
             case OIDC:
             case ORCID:
             case SRAM:
+            case CONEXT:
             case OAUTH_GOOGLE:
-                // Google OAuth, OIDC and ORCID users confirm with their username
+                // Google OAuth, OIDC, ORCID, SRAM and CONEXT users confirm with their username
                 String username = requestData.get("username");
                 if (!username.equals(signedinUser.getUsername())) {
                     return forbidden("Wrong username");

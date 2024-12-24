@@ -208,6 +208,10 @@ public class Helpers {
         if (Common.isSramAllowed()) {
             config.put("SRAM client ID", Common.getSramClientId());
         }
+        config.put("CONEXT allowed", String.valueOf(Common.isConextAllowed()));
+        if (Common.isConextAllowed()) {
+            config.put("CONEXT client ID", Common.getConextClientId());
+        }
         config.put("LDAP allowed", String.valueOf(Common.isLdapAllowed()));
         if (Common.isLdapAllowed()) {
             config.put("LDAP URL", Common.getLdapUrl());
