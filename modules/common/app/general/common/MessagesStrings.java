@@ -36,6 +36,7 @@ public class MessagesStrings {
     public static final String NO_HTML_ALLOWED = "No HTML allowed";
     public static final String PATH_TOO_LONG = "Path too long";
     public static final String COMMENT_TOO_LONG = "Comment too long";
+    public static final String STUDY_ENTRY_MSG_TOO_LONG = "Study entry message too long";
     public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path or filename. Remember to "
             + "use '/' as folder separator, and to include the file extension. You can leave it empty for now.";
     public static final String STUDY_AT_LEAST_ONE_USER = "A study needs at least one user.";

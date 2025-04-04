@@ -277,6 +277,9 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         if (studyEntryMsg != null && !Jsoup.isValid(studyEntryMsg, Safelist.none())) {
             errorList.add(new ValidationError(STUDY_ENTRY_MSG, MessagesStrings.NO_HTML_ALLOWED));
         }
+        if (studyEntryMsg != null && studyEntryMsg.getBytes().length > 1000) {
+            errorList.add(new ValidationError(STUDY_ENTRY_MSG, MessagesStrings.STUDY_ENTRY_MSG_TOO_LONG));
+        }
         return errorList.isEmpty() ? null : errorList;
     }
 
