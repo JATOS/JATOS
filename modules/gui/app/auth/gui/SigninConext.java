@@ -28,7 +28,7 @@ public class SigninConext extends SigninOidc {
         ));
     }
 
-    // SURF Conext ignores scopes other than openid. See: https://wiki.surfnet.nl/display/surfconextdev/OpenID+Connect+features#OpenIDConnectfeatures-Scopes
+    // SURF Conext ignores scopes other than openid. See: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes
     @Override
     public Scope getScope(){
         return new Scope("openid");
