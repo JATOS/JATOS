@@ -22,6 +22,7 @@ import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
+import exceptions.gui.BadRequestException;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
 import models.gui.NewUserModel;
@@ -101,10 +102,6 @@ public abstract class SigninOidc extends Controller {
         this.oidcConfig = oidcConfig;
     }
 
-    public Scope getScope() {
-        return new Scope("openid");
-    }
-
     @GuiAccessLogging
     @Transactional
     public final Result signin(Http.Request request, String realHostUrl, boolean keepSignedin)
@@ -148,7 +145,7 @@ public abstract class SigninOidc extends Controller {
 
             User user = persistUserIfNotExisting(userInfo);
 
-            String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
+            String normalizedUsername = getNormalizedUsername(userInfo);
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
             authService.writeSessionCookie(session(), normalizedUsername, keepSignedin);
             userService.setLastSignin(normalizedUsername);
@@ -166,6 +163,18 @@ public abstract class SigninOidc extends Controller {
             FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
             return redirect(auth.gui.routes.Signin.signin());
         }
+    }
+
+    protected Scope getScope() {
+        return new Scope("openid");
+    }
+
+    protected String getUsername(UserInfo userInfo) throws BadRequestException {
+        return userInfo.getSubject().getValue();
+    }
+
+    private String getNormalizedUsername(UserInfo userInfo) throws BadRequestException {
+        return User.normalizeUsername(getUsername(userInfo));
     }
 
     private OIDCProviderMetadata getProviderInfo() throws ParseException, URISyntaxException, AuthException {
@@ -263,8 +272,8 @@ public abstract class SigninOidc extends Controller {
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
-    private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
-        String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
+    private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException, BadRequestException {
+        String normalizedUsername = getNormalizedUsername(userInfo);
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
             NewUserModel newUserModel = new NewUserModel();
@@ -286,7 +295,7 @@ public abstract class SigninOidc extends Controller {
         return user;
     }
 
-    private String getName(UserInfo userInfo) {
+    private String getName(UserInfo userInfo) throws BadRequestException {
         if (!Strings.isNullOrEmpty(userInfo.getName())) {
             return userInfo.getName();
         }
@@ -295,7 +304,7 @@ public abstract class SigninOidc extends Controller {
             String familyName = userInfo.getFamilyName() != null ? userInfo.getFamilyName() : "";
             return (givenName + " " + familyName).trim();
         }
-        return userInfo.getSubject().getValue();
+        return getNormalizedUsername(userInfo);
     }
 
 }

@@ -29,7 +29,7 @@ public class SigninSram extends SigninOidc {
     }
 
     @Override
-    public Scope getScope(){
+    protected Scope getScope(){
         return new Scope("openid", "profile", "email");
     }
 
