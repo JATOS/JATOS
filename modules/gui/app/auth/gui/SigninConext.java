@@ -24,7 +24,8 @@ public class SigninConext extends SigninOidc {
                 Common.getConextClientId(),
                 Common.getConextClientSecret(),
                 Common.getConextIdTokenSigningAlgorithm(),
-                Common.getConextSuccessFeedback()
+                Common.getConextSuccessFeedback(),
+                Common.conextUseEmailAsUsername()
         ));
     }
 

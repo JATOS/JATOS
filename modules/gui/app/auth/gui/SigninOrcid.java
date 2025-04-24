@@ -24,7 +24,8 @@ public class SigninOrcid extends SigninOidc {
                 Common.getOrcidClientId(),
                 Common.getOrcidClientSecret(),
                 Common.getOrcidIdTokenSigningAlgorithm(),
-                Common.getOrcidSuccessFeedback()
+                Common.getOrcidSuccessFeedback(),
+                Common.orcidUseEmailAsUsername()
         ));
     }
 

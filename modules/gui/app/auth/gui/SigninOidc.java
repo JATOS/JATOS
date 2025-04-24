@@ -91,9 +91,11 @@ public abstract class SigninOidc extends Controller {
         private final String clientSecret;
         private final String idTokenSigningAlgorithm;
         private final String successMsg;
+        private final boolean useEmailAsUsername;
 
         OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath,
-                String scope, String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
+                String scope, String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg,
+                boolean useEmailAsUsername) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
@@ -102,6 +104,7 @@ public abstract class SigninOidc extends Controller {
             this.clientSecret = clientSecret;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
             this.successMsg = successMsg;
+            this.useEmailAsUsername = useEmailAsUsername;
         }
     }
 
@@ -152,10 +155,10 @@ public abstract class SigninOidc extends Controller {
 
             User user = persistUserIfNotExisting(userInfo);
 
-            String normalizedEmailAddress = User.normalizeUsername(userInfo.getEmailAddress());
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
-            authService.writeSessionCookie(session(), normalizedEmailAddress, keepSignedin);
-            userService.setLastSignin(normalizedEmailAddress);
+            String username = user.getUsername();
+            authService.writeSessionCookie(session(), username, keepSignedin);
+            userService.setLastSignin(username);
 
             if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
                 FlashScopeMessaging.success(oidcConfig.successMsg);
@@ -268,14 +271,13 @@ public abstract class SigninOidc extends Controller {
     }
 
     private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
-        String emailAddress = userInfo.getEmailAddress();
-        String normalizedEmailAddress = User.normalizeUsername(emailAddress);
-        User user = userDao.findByUsername(normalizedEmailAddress);
+        String normalizedUsername = User.normalizeUsername(getUsername(userInfo));
+        User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
             NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedEmailAddress);
+            newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(getName(userInfo));
-            newUserModel.setEmail(emailAddress);
+            newUserModel.setEmail(userInfo.getEmailAddress());
             newUserModel.setAuthMethod(oidcConfig.authMethod);
 
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
@@ -300,7 +302,11 @@ public abstract class SigninOidc extends Controller {
             String familyName = userInfo.getFamilyName() != null ? userInfo.getFamilyName() : "";
             return (givenName + " " + familyName).trim();
         }
-        return userInfo.getEmailAddress();
+        return getUsername(userInfo);
+    }
+
+    private String getUsername(UserInfo userInfo) {
+        return oidcConfig.useEmailAsUsername ? userInfo.getEmailAddress() : userInfo.getSubject().getValue();
     }
 
 }

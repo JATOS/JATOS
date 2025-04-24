@@ -24,7 +24,8 @@ public class SigninSram extends SigninOidc {
                 Common.getSramClientId(),
                 Common.getSramClientSecret(),
                 Common.getSramIdTokenSigningAlgorithm(),
-                Common.getSramSuccessFeedback()
+                Common.getSramSuccessFeedback(),
+                Common.sramUseEmailAsUsername()
         ));
     }
 

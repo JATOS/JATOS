@@ -22,7 +22,8 @@ public class SigninBasicOidc extends SigninOidc {
                 Common.getOidcClientId(),
                 Common.getOidcClientSecret(),
                 Common.getOidcIdTokenSigningAlgorithm(),
-                Common.getOidcSuccessFeedback()
+                Common.getOidcSuccessFeedback(),
+                Common.oidcUseEmailAsUsername()
         ));
     }
 
