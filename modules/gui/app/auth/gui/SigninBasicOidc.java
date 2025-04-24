@@ -18,6 +18,7 @@ public class SigninBasicOidc extends SigninOidc {
                 User.AuthMethod.OIDC,
                 Common.getOidcDiscoveryUrl(),
                 auth.gui.routes.SigninBasicOidc.callback().url(),
+                Common.getOidcScope(),
                 Common.getOidcClientId(),
                 Common.getOidcClientSecret(),
                 Common.getOidcIdTokenSigningAlgorithm(),

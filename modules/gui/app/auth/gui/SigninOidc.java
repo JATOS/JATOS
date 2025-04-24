@@ -86,16 +86,18 @@ public abstract class SigninOidc extends Controller {
         private final String discoveryUrl;
         private final String callbackUrlPath;
         private String callbackUrl; // Filled during signin request
+        private final String scope;
         private final String clientId;
         private final String clientSecret;
         private final String idTokenSigningAlgorithm;
         private final String successMsg;
 
         OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath,
-                String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
+                String scope, String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
+            this.scope = scope;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
@@ -118,7 +120,7 @@ public abstract class SigninOidc extends Controller {
         Nonce nonce = new Nonce();
         AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                 new ResponseType("code"),
-                this.getScope(),
+                new Scope(oidcConfig.scope.split(",")),
                 clientID,
                 callback
         ).endpointURI(getProviderInfo().getAuthorizationEndpointURI())
@@ -168,10 +170,6 @@ public abstract class SigninOidc extends Controller {
             FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
             return redirect(auth.gui.routes.Signin.signin());
         }
-    }
-
-    protected Scope getScope() {
-        return new Scope("openid");
     }
 
     private OIDCProviderMetadata getProviderInfo() throws ParseException, URISyntaxException, AuthException {

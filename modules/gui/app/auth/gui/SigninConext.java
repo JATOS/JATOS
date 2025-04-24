@@ -8,9 +8,6 @@ import javax.inject.Singleton;
 
 /**
  * Sign-in using SURFconext (surfconext.nl) based on OpenID Connect (OIDC).
- * <p>
- * Note that here it is not necessary to override {@link #getScope()}, because SURFconext ignores scopes other than openid.
- * Also see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes.
  *
  * @author Jori van Dam
  */
@@ -23,6 +20,7 @@ public class SigninConext extends SigninOidc {
                 User.AuthMethod.CONEXT,
                 Common.getConextDiscoveryUrl(),
                 routes.SigninConext.callback().url(),
+                Common.getConextScope(),
                 Common.getConextClientId(),
                 Common.getConextClientSecret(),
                 Common.getConextIdTokenSigningAlgorithm(),

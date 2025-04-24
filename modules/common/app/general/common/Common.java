@@ -63,6 +63,7 @@ public class Common {
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
     private static String oidcDiscoveryUrl;
+    private static String oidcScope;
     private static String oidcClientId;
     private static String oidcClientSecret;
     private static String oidcIdTokenSigningAlgorithm;
@@ -70,6 +71,7 @@ public class Common {
     private static String oidcSigninButtonLogoUrl;
     private static String oidcSuccessFeedback;
     private static String orcidDiscoveryUrl;
+    private static String orcidScope;
     private static String orcidClientId;
     private static String orcidClientSecret;
     private static String orcidIdTokenSigningAlgorithm;
@@ -77,6 +79,7 @@ public class Common {
     private static String orcidSigninButtonLogoUrl;
     private static String orcidSuccessFeedback;
     private static String sramDiscoveryUrl;
+    private static String sramScope;
     private static String sramClientId;
     private static String sramClientSecret;
     private static String sramIdTokenSigningAlgorithm;
@@ -84,6 +87,7 @@ public class Common {
     private static String sramSigninButtonLogoUrl;
     private static String sramSuccessFeedback;
     private static String conextDiscoveryUrl;
+    private static String conextScope;
     private static String conextClientId;
     private static String conextClientSecret;
     private static String conextIdTokenSigningAlgorithm;
@@ -164,6 +168,7 @@ public class Common {
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         oidcDiscoveryUrl = config.getString("jatos.user.authentication.oidc.discoveryUrl");
+        oidcScope = config.getString("jatos.user.authentication.oidc.scope");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
@@ -171,6 +176,7 @@ public class Common {
         oidcSigninButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
         oidcSuccessFeedback = config.getString("jatos.user.authentication.oidc.successFeedback");
         orcidDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
+        orcidScope = config.getString("jatos.user.authentication.orcid.scope");
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
@@ -178,6 +184,7 @@ public class Common {
         orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
         orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
         sramDiscoveryUrl = config.getString("jatos.user.authentication.sram.discoveryUrl");
+        sramScope = config.getString("jatos.user.authentication.sram.scope");
         sramClientId = config.getString("jatos.user.authentication.sram.clientId");
         sramClientSecret = config.getString("jatos.user.authentication.sram.clientSecret");
         sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
@@ -185,6 +192,7 @@ public class Common {
         sramSigninButtonLogoUrl = config.getString("jatos.user.authentication.sram.signInButtonLogoUrl");
         sramSuccessFeedback = config.getString("jatos.user.authentication.sram.successFeedback");
         conextDiscoveryUrl = config.getString("jatos.user.authentication.conext.discoveryUrl");
+        conextScope = config.getString("jatos.user.authentication.conext.scope");
         conextClientId = config.getString("jatos.user.authentication.conext.clientId");
         conextClientSecret = config.getString("jatos.user.authentication.conext.clientSecret");
         conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
@@ -510,6 +518,13 @@ public class Common {
     }
 
     /**
+     * OpenId Connect (OIDC) scope
+     */
+    public static String getOidcScope() {
+        return oidcScope;
+    }
+
+    /**
      * OpenId Connect (OIDC) client ID
      */
     public static String getOidcClientId() {
@@ -560,6 +575,13 @@ public class Common {
      */
     public static String getOrcidDiscoveryUrl() {
         return orcidDiscoveryUrl;
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) scope
+     */
+    public static String getOrcidScope() {
+        return orcidScope;
     }
 
     /**
@@ -619,6 +641,13 @@ public class Common {
     }
 
     /**
+     * SRAM's OpenId Connect (OIDC) scope
+     */
+    public static String getSramScope() {
+        return sramScope;
+    }
+
+    /**
      * SRAM'S OpenId Connect (OIDC) client ID
      */
     public static String getSramClientId() {
@@ -673,6 +702,13 @@ public class Common {
      */
     public static String getConextDiscoveryUrl() {
         return conextDiscoveryUrl;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) scope (SURFconext ignores scopes other than openid, see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
+     */
+    public static String getConextScope() {
+        return conextScope;
     }
 
     /**

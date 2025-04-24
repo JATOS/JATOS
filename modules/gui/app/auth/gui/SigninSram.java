@@ -1,6 +1,5 @@
 package auth.gui;
 
-import com.nimbusds.oauth2.sdk.Scope;
 import general.common.Common;
 import models.common.User;
 
@@ -21,16 +20,12 @@ public class SigninSram extends SigninOidc {
                 User.AuthMethod.SRAM,
                 Common.getSramDiscoveryUrl(),
                 auth.gui.routes.SigninSram.callback().url(),
+                Common.getSramScope(),
                 Common.getSramClientId(),
                 Common.getSramClientSecret(),
                 Common.getSramIdTokenSigningAlgorithm(),
                 Common.getSramSuccessFeedback()
         ));
-    }
-
-    @Override
-    protected Scope getScope(){
-        return new Scope("openid", "profile", "email");
     }
 
 }
