@@ -28,9 +28,9 @@ public class SigninSram extends SigninOidc {
                 auth.gui.routes.SigninSram.callback().url(),
                 Common.getSramClientId(),
                 Common.getSramClientSecret(),
-                new String[]{"openid", "profile", "email"},
+                Common.getSramScope(),
+                Common.getSramUsernameFrom(),
                 Common.getSramIdTokenSigningAlgorithm(),
-                true,
                 Common.getSramSuccessFeedback()
         ));
     }

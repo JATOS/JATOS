@@ -20,9 +20,9 @@ public class SigninBasicOidc extends SigninOidc {
                 auth.gui.routes.SigninBasicOidc.callback().url(),
                 Common.getOidcClientId(),
                 Common.getOidcClientSecret(),
-                new String[]{"openid"},
+                Common.getOidcScope(),
+                Common.getOidcUsernameFrom(),
                 Common.getOidcIdTokenSigningAlgorithm(),
-                false,
                 Common.getOidcSuccessFeedback()
         ));
     }

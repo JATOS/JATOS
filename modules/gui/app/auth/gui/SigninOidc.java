@@ -43,6 +43,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -80,24 +81,24 @@ public abstract class SigninOidc extends Controller {
         private final String discoveryUrl;
         private final String callbackUrlPath;
         private String callbackUrl; // Filled during signin request
-        private final String[] scope;
         private final String clientId;
         private final String clientSecret;
+        private final String[] scope;
+        private final String usernameFrom;
         private final String idTokenSigningAlgorithm;
-        private final boolean useEmailAsUsername;
         private final String successMsg;
 
         OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath, String clientId,
-                   String clientSecret, String[] scope, String idTokenSigningAlgorithm, boolean useEmailAsUsername,
+                   String clientSecret, List<String> scope, String usernameFrom, String idTokenSigningAlgorithm,
                    String successMsg) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
-            this.scope = scope;
+            this.scope = scope.toArray(new String[0]);
+            this.usernameFrom = usernameFrom;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
-            this.useEmailAsUsername = useEmailAsUsername;
             this.successMsg = successMsg;
         }
     }
@@ -289,7 +290,17 @@ public abstract class SigninOidc extends Controller {
     }
 
     private String getNormalizedUsername(UserInfo userInfo) {
-        String username = oidcConfig.useEmailAsUsername ? userInfo.getEmailAddress() : userInfo.getSubject().getValue();
+        String username;
+        switch (oidcConfig.usernameFrom) {
+            case "email":
+                username = userInfo.getEmailAddress();
+                break;
+            case "subject":
+                username = userInfo.getSubject().getValue();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
+        }
         return User.normalizeUsername(username);
     }
 

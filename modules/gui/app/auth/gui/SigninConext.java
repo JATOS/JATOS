@@ -31,9 +31,9 @@ public class SigninConext extends SigninOidc {
                 routes.SigninConext.callback().url(),
                 Common.getConextClientId(),
                 Common.getConextClientSecret(),
-                new String[]{"openid"},
+                Common.getConextScope(),
+                Common.getConextUsernameFrom(),
                 Common.getConextIdTokenSigningAlgorithm(),
-                true,
                 Common.getConextSuccessFeedback()
         ));
     }
