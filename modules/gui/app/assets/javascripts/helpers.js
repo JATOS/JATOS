@@ -169,6 +169,7 @@ function getAuthMethodText(authMethod) {
         case "OIDC": return "OIDC";
         case "ORCID": return "ORCID";
         case "SRAM": return "SRAM";
+        case "CONEXT": return "CONEXT";
         default: return authMethod;
     }
 }
