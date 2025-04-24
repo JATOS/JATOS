@@ -22,7 +22,6 @@ import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
-import exceptions.gui.BadRequestException;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
 import models.gui.NewUserModel;
@@ -52,6 +51,12 @@ import java.util.Optional;
  * Play Framework.
  * <p>
  * This class is meant to be extended by the actual OIDC implementations.
+ * <p>
+ * Note that the email OIDC claim is used as the username. This allows for users to be uniquely identified, even across
+ * institutions. Email addresses are also human-readable, making them quite suitable for certain functionalities of the
+ * JATOS application, such as adding users to studies. For applications using OIDC it is generally recommended to use
+ * a unique persistent identifier (typically supplied through the sub claim), because a user's email address may change,
+ * but with such a value readability is lost.
  * <p>
  * Using library: Nimbus OAuth 2.0 SDK with OpenID Connect extensions
  * https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/guides/java-cookbook-for-openid-connect-public-clients
@@ -145,10 +150,10 @@ public abstract class SigninOidc extends Controller {
 
             User user = persistUserIfNotExisting(userInfo);
 
-            String normalizedUsername = getNormalizedUsername(userInfo);
+            String normalizedEmailAddress = User.normalizeUsername(userInfo.getEmailAddress());
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
-            authService.writeSessionCookie(session(), normalizedUsername, keepSignedin);
-            userService.setLastSignin(normalizedUsername);
+            authService.writeSessionCookie(session(), normalizedEmailAddress, keepSignedin);
+            userService.setLastSignin(normalizedEmailAddress);
 
             if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
                 FlashScopeMessaging.success(oidcConfig.successMsg);
@@ -167,14 +172,6 @@ public abstract class SigninOidc extends Controller {
 
     protected Scope getScope() {
         return new Scope("openid");
-    }
-
-    protected String getUsername(UserInfo userInfo) throws BadRequestException {
-        return userInfo.getSubject().getValue();
-    }
-
-    private String getNormalizedUsername(UserInfo userInfo) throws BadRequestException {
-        return User.normalizeUsername(getUsername(userInfo));
     }
 
     private OIDCProviderMetadata getProviderInfo() throws ParseException, URISyntaxException, AuthException {
@@ -272,14 +269,15 @@ public abstract class SigninOidc extends Controller {
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
-    private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException, BadRequestException {
-        String normalizedUsername = getNormalizedUsername(userInfo);
-        User user = userDao.findByUsername(normalizedUsername);
+    private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
+        String emailAddress = userInfo.getEmailAddress();
+        String normalizedEmailAddress = User.normalizeUsername(emailAddress);
+        User user = userDao.findByUsername(normalizedEmailAddress);
         if (user == null) {
             NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedUsername);
+            newUserModel.setUsername(normalizedEmailAddress);
             newUserModel.setName(getName(userInfo));
-            newUserModel.setEmail(userInfo.getEmailAddress());
+            newUserModel.setEmail(emailAddress);
             newUserModel.setAuthMethod(oidcConfig.authMethod);
 
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
@@ -295,7 +293,7 @@ public abstract class SigninOidc extends Controller {
         return user;
     }
 
-    private String getName(UserInfo userInfo) throws BadRequestException {
+    private String getName(UserInfo userInfo) {
         if (!Strings.isNullOrEmpty(userInfo.getName())) {
             return userInfo.getName();
         }
@@ -304,7 +302,7 @@ public abstract class SigninOidc extends Controller {
             String familyName = userInfo.getFamilyName() != null ? userInfo.getFamilyName() : "";
             return (givenName + " " + familyName).trim();
         }
-        return getNormalizedUsername(userInfo);
+        return userInfo.getEmailAddress();
     }
 
 }
