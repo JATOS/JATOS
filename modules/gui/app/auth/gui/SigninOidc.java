@@ -52,12 +52,6 @@ import java.util.Optional;
  * <p>
  * This class is meant to be extended by the actual OIDC implementations.
  * <p>
- * Note that the email OIDC claim is used as the username. This allows for users to be uniquely identified, even across
- * institutions. Email addresses are also human-readable, making them quite suitable for certain functionalities of the
- * JATOS application, such as adding users to studies. For applications using OIDC it is generally recommended to use
- * a unique persistent identifier (typically supplied through the sub claim), because a user's email address may change,
- * but with such a value readability is lost.
- * <p>
  * Using library: Nimbus OAuth 2.0 SDK with OpenID Connect extensions
  * https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/guides/java-cookbook-for-openid-connect-public-clients
  *
@@ -86,19 +80,24 @@ public abstract class SigninOidc extends Controller {
         private final String discoveryUrl;
         private final String callbackUrlPath;
         private String callbackUrl; // Filled during signin request
+        private final String[] scope;
         private final String clientId;
         private final String clientSecret;
         private final String idTokenSigningAlgorithm;
+        private final boolean useEmailAsUsername;
         private final String successMsg;
 
-        OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath,
-                String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
+        OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath, String clientId,
+                   String clientSecret, String[] scope, String idTokenSigningAlgorithm, boolean useEmailAsUsername,
+                   String successMsg) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
+            this.scope = scope;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
+            this.useEmailAsUsername = useEmailAsUsername;
             this.successMsg = successMsg;
         }
     }
@@ -118,7 +117,7 @@ public abstract class SigninOidc extends Controller {
         Nonce nonce = new Nonce();
         AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                 new ResponseType("code"),
-                this.getScope(),
+                new Scope(oidcConfig.scope),
                 clientID,
                 callback
         ).endpointURI(getProviderInfo().getAuthorizationEndpointURI())
@@ -150,10 +149,10 @@ public abstract class SigninOidc extends Controller {
 
             User user = persistUserIfNotExisting(userInfo);
 
-            String normalizedEmailAddress = User.normalizeUsername(userInfo.getEmailAddress());
+            String normalizedUsername = getNormalizedUsername(userInfo);
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
-            authService.writeSessionCookie(session(), normalizedEmailAddress, keepSignedin);
-            userService.setLastSignin(normalizedEmailAddress);
+            authService.writeSessionCookie(session(), normalizedUsername, keepSignedin);
+            userService.setLastSignin(normalizedUsername);
 
             if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
                 FlashScopeMessaging.success(oidcConfig.successMsg);
@@ -168,10 +167,6 @@ public abstract class SigninOidc extends Controller {
             FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
             return redirect(auth.gui.routes.Signin.signin());
         }
-    }
-
-    protected Scope getScope() {
-        return new Scope("openid");
     }
 
     private OIDCProviderMetadata getProviderInfo() throws ParseException, URISyntaxException, AuthException {
@@ -270,12 +265,12 @@ public abstract class SigninOidc extends Controller {
     }
 
     private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
+        String normalizedUsername = getNormalizedUsername(userInfo);
         String emailAddress = userInfo.getEmailAddress();
-        String normalizedEmailAddress = User.normalizeUsername(emailAddress);
-        User user = userDao.findByUsername(normalizedEmailAddress);
+        User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
             NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedEmailAddress);
+            newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(getName(userInfo));
             newUserModel.setEmail(emailAddress);
             newUserModel.setAuthMethod(oidcConfig.authMethod);
@@ -291,6 +286,11 @@ public abstract class SigninOidc extends Controller {
             throw new AuthException("User exists already - but does not use OIDC sign in");
         }
         return user;
+    }
+
+    private String getNormalizedUsername(UserInfo userInfo) {
+        String username = oidcConfig.useEmailAsUsername ? userInfo.getEmailAddress() : userInfo.getSubject().getValue();
+        return User.normalizeUsername(username);
     }
 
     private String getName(UserInfo userInfo) {

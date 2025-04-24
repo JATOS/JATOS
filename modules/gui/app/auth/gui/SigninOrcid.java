@@ -22,7 +22,9 @@ public class SigninOrcid extends SigninOidc {
                 auth.gui.routes.SigninOrcid.callback().url(),
                 Common.getOrcidClientId(),
                 Common.getOrcidClientSecret(),
+                new String[]{"openid"},
                 Common.getOrcidIdTokenSigningAlgorithm(),
+                false,
                 Common.getOrcidSuccessFeedback()
         ));
     }
