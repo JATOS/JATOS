@@ -7,13 +7,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * Sign-in using SRAM (sram.surf.nl) based on OpenID Connect (OIDC)
- * <p>
- * Note that the email OIDC claim is used as the username. This allows for users to be uniquely identified, even across
- * institutions. Email addresses are also human-readable, making them quite suitable for certain functionalities of the
- * JATOS application, such as adding users to studies. For applications using OIDC it is generally recommended to use
- * a unique persistent identifier (typically supplied through the sub claim), because a user's email address may change,
- * but with such a value readability is lost.
+ * Sign-in using SRAM (sram.surf.nl) based on OpenID Connect (OIDC).
  *
  * @author Jori van Dam
  */
