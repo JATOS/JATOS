@@ -63,41 +63,41 @@ public class Common {
     private static int ldapTimeout;
     private static String oauthGoogleClientId;
     private static String oidcDiscoveryUrl;
-    private static String oidcScope;
     private static String oidcClientId;
     private static String oidcClientSecret;
+    private static List<String> oidcScope;
+    private static String oidcUsernameFrom;
     private static String oidcIdTokenSigningAlgorithm;
     private static String oidcSigninButtonText;
     private static String oidcSigninButtonLogoUrl;
     private static String oidcSuccessFeedback;
-    private static boolean oidcUseEmailAsUsername;
     private static String orcidDiscoveryUrl;
-    private static String orcidScope;
     private static String orcidClientId;
     private static String orcidClientSecret;
+    private static List<String> orcidScope;
+    private static String orcidUsernameFrom;
     private static String orcidIdTokenSigningAlgorithm;
     private static String orcidSigninButtonText;
     private static String orcidSigninButtonLogoUrl;
     private static String orcidSuccessFeedback;
-    private static boolean orcidUseEmailAsUsername;
     private static String sramDiscoveryUrl;
-    private static String sramScope;
     private static String sramClientId;
     private static String sramClientSecret;
+    private static List<String> sramScope;
+    private static String sramUsernameFrom;
     private static String sramIdTokenSigningAlgorithm;
     private static String sramSigninButtonText;
     private static String sramSigninButtonLogoUrl;
     private static String sramSuccessFeedback;
-    private static boolean sramUseEmailAsUsername;
     private static String conextDiscoveryUrl;
-    private static String conextScope;
     private static String conextClientId;
     private static String conextClientSecret;
+    private static List<String> conextScope;
+    private static String conextUsernameFrom;
     private static String conextIdTokenSigningAlgorithm;
     private static String conextSigninButtonText;
     private static String conextSigninButtonLogoUrl;
     private static String conextSuccessFeedback;
-    private static boolean conextUseEmailAsUsername;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
@@ -172,41 +172,41 @@ public class Common {
         ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         oidcDiscoveryUrl = config.getString("jatos.user.authentication.oidc.discoveryUrl");
-        oidcScope = config.getString("jatos.user.authentication.oidc.scope");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
+        oidcScope = config.getStringList("jatos.user.authentication.oidc.scope");
+        oidcUsernameFrom = config.getString("jatos.user.authentication.oidc.usernameFrom");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
         oidcSigninButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
         oidcSigninButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
         oidcSuccessFeedback = config.getString("jatos.user.authentication.oidc.successFeedback");
-        oidcUseEmailAsUsername = config.getBoolean("jatos.user.authentication.oidc.useEmailAsUsername");
         orcidDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
-        orcidScope = config.getString("jatos.user.authentication.orcid.scope");
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
+        orcidScope = config.getStringList("jatos.user.authentication.orcid.scope");
+        orcidUsernameFrom = config.getString("jatos.user.authentication.orcid.usernameFrom");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
         orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
         orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
         orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
-        orcidUseEmailAsUsername = config.getBoolean("jatos.user.authentication.orcid.useEmailAsUsername");
         sramDiscoveryUrl = config.getString("jatos.user.authentication.sram.discoveryUrl");
-        sramScope = config.getString("jatos.user.authentication.sram.scope");
         sramClientId = config.getString("jatos.user.authentication.sram.clientId");
         sramClientSecret = config.getString("jatos.user.authentication.sram.clientSecret");
+        sramScope = config.getStringList("jatos.user.authentication.sram.scope");
+        sramUsernameFrom = config.getString("jatos.user.authentication.sram.usernameFrom");
         sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
         sramSigninButtonText = config.getString("jatos.user.authentication.sram.signInButtonText");
         sramSigninButtonLogoUrl = config.getString("jatos.user.authentication.sram.signInButtonLogoUrl");
         sramSuccessFeedback = config.getString("jatos.user.authentication.sram.successFeedback");
-        sramUseEmailAsUsername = config.getBoolean("jatos.user.authentication.sram.useEmailAsUsername");
         conextDiscoveryUrl = config.getString("jatos.user.authentication.conext.discoveryUrl");
-        conextScope = config.getString("jatos.user.authentication.conext.scope");
         conextClientId = config.getString("jatos.user.authentication.conext.clientId");
         conextClientSecret = config.getString("jatos.user.authentication.conext.clientSecret");
+        conextScope = config.getStringList("jatos.user.authentication.conext.scope");
+        conextUsernameFrom = config.getString("jatos.user.authentication.conext.usernameFrom");
         conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
         conextSigninButtonText = config.getString("jatos.user.authentication.conext.signInButtonText");
         conextSigninButtonLogoUrl = config.getString("jatos.user.authentication.conext.signInButtonLogoUrl");
         conextSuccessFeedback = config.getString("jatos.user.authentication.conext.successFeedback");
-        conextUseEmailAsUsername = config.getBoolean("jatos.user.authentication.conext.useEmailAsUsername");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
@@ -529,13 +529,6 @@ public class Common {
     }
 
     /**
-     * OpenId Connect (OIDC) scope
-     */
-    public static String getOidcScope() {
-        return oidcScope;
-    }
-
-    /**
      * OpenId Connect (OIDC) client ID
      */
     public static String getOidcClientId() {
@@ -547,6 +540,20 @@ public class Common {
      */
     public static String getOidcClientSecret() {
         return oidcClientSecret;
+    }
+
+    /**
+     * OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
+     */
+    public static List<String> getOidcScope() {
+        return oidcScope;
+    }
+
+    /**
+     * OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getOidcUsernameFrom() {
+        return oidcUsernameFrom;
     }
 
     /**
@@ -577,16 +584,6 @@ public class Common {
         return oidcSuccessFeedback;
     }
 
-    /**
-     * If true, the email OIDC claim will be used to set the username when signing in with OIDC. Otherwise, the sub claim is used
-     */
-    public static boolean oidcUseEmailAsUsername() {
-        return oidcUseEmailAsUsername;
-    }
-
-    /**
-     * ORCID's OpenId Connect (OIDC) allowed
-     */
     public static boolean isOrcidAllowed() {
         return !Strings.isNullOrEmpty(orcidClientId);
     }
@@ -596,13 +593,6 @@ public class Common {
      */
     public static String getOrcidDiscoveryUrl() {
         return orcidDiscoveryUrl;
-    }
-
-    /**
-     * ORCID's OpenId Connect (OIDC) scope
-     */
-    public static String getOrcidScope() {
-        return orcidScope;
     }
 
     /**
@@ -617,6 +607,20 @@ public class Common {
      */
     public static String getOrcidClientSecret() {
         return orcidClientSecret;
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
+     */
+    public static List<String> getOrcidScope() {
+        return orcidScope;
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getOrcidUsernameFrom() {
+        return orcidUsernameFrom;
     }
 
     /**
@@ -648,13 +652,6 @@ public class Common {
     }
 
     /**
-     * If true, the email OIDC claim will be used to set the username when signing in with ORCID. Otherwise, the sub claim is used
-     */
-    public static boolean orcidUseEmailAsUsername() {
-        return orcidUseEmailAsUsername;
-    }
-
-    /**
      * SRAM's OpenId Connect (OIDC) allowed
      */
     public static boolean isSramAllowed() {
@@ -669,13 +666,6 @@ public class Common {
     }
 
     /**
-     * SRAM's OpenId Connect (OIDC) scope
-     */
-    public static String getSramScope() {
-        return sramScope;
-    }
-
-    /**
      * SRAM'S OpenId Connect (OIDC) client ID
      */
     public static String getSramClientId() {
@@ -687,6 +677,20 @@ public class Common {
      */
     public static String getSramClientSecret() {
         return sramClientSecret;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
+     */
+    public static List<String> getSramScope() {
+        return sramScope;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getSramUsernameFrom() {
+        return sramUsernameFrom;
     }
 
     /**
@@ -718,13 +722,6 @@ public class Common {
     }
 
     /**
-     * If true, the email OIDC claim will be used to set the username when signing in with SRAM. Otherwise, the sub claim is used
-     */
-    public static boolean sramUseEmailAsUsername() {
-        return sramUseEmailAsUsername;
-    }
-
-    /**
      * SURFconext OpenId Connect (OIDC) allowed
      */
     public static boolean isConextAllowed() {
@@ -739,13 +736,6 @@ public class Common {
     }
 
     /**
-     * SURFconext OpenId Connect (OIDC) scope (SURFconext ignores scopes other than openid, see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
-     */
-    public static String getConextScope() {
-        return conextScope;
-    }
-
-    /**
      * SURFconext OpenId Connect (OIDC) client ID
      */
     public static String getConextClientId() {
@@ -757,6 +747,21 @@ public class Common {
      */
     public static String getConextClientSecret() {
         return conextClientSecret;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email").
+     * SURFconext ignores scopes other than "openid" (see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
+     */
+    public static List<String> getConextScope() {
+        return conextScope;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getConextUsernameFrom() {
+        return conextUsernameFrom;
     }
 
     /**
@@ -787,12 +792,6 @@ public class Common {
         return conextSuccessFeedback;
     }
 
-    /**
-     * If true, the email OIDC claim will be used to set the username when signing in with SURFconext. Otherwise, the sub claim is used
-     */
-    public static boolean conextUseEmailAsUsername() {
-        return conextUseEmailAsUsername;
-    }
 
     /**
      * Should the GUI show a donations button

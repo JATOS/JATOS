@@ -20,12 +20,12 @@ public class SigninOrcid extends SigninOidc {
                 User.AuthMethod.ORCID,
                 Common.getOrcidDiscoveryUrl(),
                 auth.gui.routes.SigninOrcid.callback().url(),
-                Common.getOrcidScope(),
                 Common.getOrcidClientId(),
                 Common.getOrcidClientSecret(),
+                Common.getOrcidScope(),
+                Common.getOrcidUsernameFrom(),
                 Common.getOrcidIdTokenSigningAlgorithm(),
-                Common.getOrcidSuccessFeedback(),
-                Common.orcidUseEmailAsUsername()
+                Common.getOrcidSuccessFeedback()
         ));
     }
 

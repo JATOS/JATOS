@@ -8,6 +8,15 @@ import javax.inject.Singleton;
 
 /**
  * Sign-in using SURFconext (surfconext.nl) based on OpenID Connect (OIDC).
+ * <p>
+ * SURFconext ignores scopes other than openid.
+ * Also see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes.
+ * <p>
+ * Note that the email OIDC claim is used as the username. This allows for users to be uniquely identified, even across
+ * institutions. Email addresses are also human-readable, making them quite suitable for certain functionalities of the
+ * JATOS application, such as adding users to studies. For applications using OIDC it is generally recommended to use
+ * a unique persistent identifier (typically supplied through the sub claim), because a user's email address may change,
+ * but with such a value readability is lost.
  *
  * @author Jori van Dam
  */
@@ -20,12 +29,12 @@ public class SigninConext extends SigninOidc {
                 User.AuthMethod.CONEXT,
                 Common.getConextDiscoveryUrl(),
                 routes.SigninConext.callback().url(),
-                Common.getConextScope(),
                 Common.getConextClientId(),
                 Common.getConextClientSecret(),
+                Common.getConextScope(),
+                Common.getConextUsernameFrom(),
                 Common.getConextIdTokenSigningAlgorithm(),
-                Common.getConextSuccessFeedback(),
-                Common.conextUseEmailAsUsername()
+                Common.getConextSuccessFeedback()
         ));
     }
 
