@@ -267,13 +267,12 @@ public abstract class SigninOidc extends Controller {
 
     private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
         String normalizedUsername = getNormalizedUsername(userInfo);
-        String emailAddress = userInfo.getEmailAddress();
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
             NewUserModel newUserModel = new NewUserModel();
             newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(getName(userInfo));
-            newUserModel.setEmail(emailAddress);
+            newUserModel.setEmail(userInfo.getEmailAddress());
             newUserModel.setAuthMethod(oidcConfig.authMethod);
 
             Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
@@ -313,7 +312,7 @@ public abstract class SigninOidc extends Controller {
             String familyName = userInfo.getFamilyName() != null ? userInfo.getFamilyName() : "";
             return (givenName + " " + familyName).trim();
         }
-        return userInfo.getEmailAddress();
+        return getNormalizedUsername(userInfo);
     }
 
 }

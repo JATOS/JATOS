@@ -514,6 +514,9 @@ public class Common {
         return oauthGoogleClientId;
     }
 
+    /**
+     * OpenId Connect (OIDC) allowed
+     */
     public static boolean isOidcAllowed() {
         return !Strings.isNullOrEmpty(oidcClientId);
     }
@@ -540,7 +543,7 @@ public class Common {
     }
 
     /**
-     * OpenId Connect (OIDC) scope (e.g. "oidc", "profile", "email")
+     * OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
      */
     public static List<String> getOidcScope() {
         return oidcScope;
@@ -607,7 +610,7 @@ public class Common {
     }
 
     /**
-     * ORCID's OpenId Connect (OIDC) scope (e.g. "oidc", "profile", "email")
+     * ORCID's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
      */
     public static List<String> getOrcidScope() {
         return orcidScope;
@@ -677,7 +680,7 @@ public class Common {
     }
 
     /**
-     * SRAM's OpenId Connect (OIDC) scope (e.g. "oidc", "profile", "email")
+     * SRAM's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
      */
     public static List<String> getSramScope() {
         return sramScope;
@@ -747,7 +750,8 @@ public class Common {
     }
 
     /**
-     * SURFconext OpenId Connect (OIDC) scope (e.g. "oidc", "profile", "email")
+     * SURFconext OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email").
+     * SURFconext ignores scopes other than "openid" (see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
      */
     public static List<String> getConextScope() {
         return conextScope;
