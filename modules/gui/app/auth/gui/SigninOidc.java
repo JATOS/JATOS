@@ -73,19 +73,58 @@ public abstract class SigninOidc extends Controller {
     private OIDCProviderMetadata oidcProviderMetadata;
 
     /**
-     * All configuration needed for an OIDC auth method
+     * Configuration needed for an OIDC auth implementation
      */
     public static class OidcConfig {
 
+        /**
+         * Constant used to distinguish between the OIDC methods
+         */
         private final User.AuthMethod authMethod;
+
+        /**
+         * OIDC discovery URL. Usually similar to https://server.com/.well-known/openid-configuration
+         */
         private final String discoveryUrl;
+
+        /**
+         * Callback URL that is invoked after authentication. Usually it routes to the 'callback' method in this class.
+         */
         private final String callbackUrlPath;
-        private String callbackUrl; // Filled during signin request
+
+        /**
+         * Dynamically filled during signin request
+         */
+        private String callbackUrl;
+
+        /**
+         * OIDC client ID
+         */
         private final String clientId;
+
+        /**
+         * OIDC client secret
+         */
         private final String clientSecret;
+
+        /**
+         * List of scopes. For OIDC, scopes can be used to request that specific sets of information be made available as Claim Values.
+         */
         private final String[] scope;
+
+        /**
+         * Defines from which OIDC claim the username of the user stored in JATOS' database should be taken from.
+         */
         private final String usernameFrom;
+
+        /**
+         * OIDC token signing algorithm
+         */
         private final String idTokenSigningAlgorithm;
+
+        /**
+         * A message that is shown to the signing in user in the browser.
+         */
         private final String successMsg;
 
         OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath, String clientId,
