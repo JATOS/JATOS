@@ -83,6 +83,7 @@ public class Common {
     private static boolean studyMembersAllowedToAddAllUsers;
     private static boolean idCookiesSecure;
     private static Http.Cookie.SameSite idCookiesSameSite;
+    private static int idCookiesLimit;
     private static boolean showStudyAssetsSizeInStudyManager;
     private static boolean showResultDataSizeInStudyManager;
     private static boolean showResultFileSizeInStudyManager;
@@ -170,6 +171,7 @@ public class Common {
         studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
         idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
         idCookiesSameSite = fillIdCookiesSameSite(config);
+        idCookiesLimit = config.getInt("jatos.idCookies.limit");
         showStudyAssetsSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showStudyAssetsSize");
         showResultDataSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultDataSize");
         showResultFileSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultFileSize");
@@ -627,6 +629,13 @@ public class Common {
      */
     public static Http.Cookie.SameSite getIdCookiesSameSite() {
         return idCookiesSameSite;
+    }
+
+    /**
+     * Max number of ID cookies
+     */
+    public static int getIdCookiesLimit() {
+        return idCookiesLimit;
     }
 
     /**

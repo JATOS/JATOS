@@ -8,8 +8,8 @@ import java.util.Objects;
  * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
  * study run, e.g. study result ID, worker ID, worker type.
  *
- * ID cookies are used to provide those IDs to jatos.js and subsequent to the
- * components JavaScript.
+ * ID cookies are used to provide these IDs to jatos.js and then to the
+ * component's JavaScript.
  *
  * @author Kristian Lange
  */
@@ -39,19 +39,18 @@ public class IdCookieModel {
     public static final String URL_BASE_PATH = "urlBasePath";
 
     /**
-     * Name of this IdCookie. Every name starts with {@value #ID_COOKIE_NAME}
+     * Name of this ID cookie. Every name starts with {@value #ID_COOKIE_NAME}
      * and ends with '_' + the ID cookie's index.
      */
     private String name;
 
     /**
-     * Every IdCookie has an index. It is the last char of its name and from
-     * intervall [0-9].
+     * Every ID cookie has an index. It is the suffix of its name.
      */
     private int index;
 
     /**
-     * Timestamp of when this IdCookie was created.
+     * Timestamp of when this  ID cookie was created.
      */
     private Long creationTime;
 

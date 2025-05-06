@@ -216,16 +216,13 @@ public class PublixUtils {
     }
 
     /**
-     * Checks if the max number of ID cookies is reached and if yes finishes the oldest one with a
-     * state FAIL. This method should only be called during start of a study.
+     * Checks if the max number of JATOS ID cookies is reached and if yes finishes the oldest one(s) with a
+     * state FAIL. Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config
+     * value got recently decreased there will be more than one. This method should only be called during start of a study.
      */
     public void finishOldestStudyResult() throws PublixException {
-        if (!idCookieService.maxIdCookiesReached()) {
-            return;
-        }
-
-        Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
-        if (abandonedStudyResultId != null) {
+        while (idCookieService.maxIdCookiesReached()) {
+            Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
             StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
             // If the abandoned study result isn't done, finish it.
             if (abandonedStudyResult != null && !PublixHelpers.studyDone(abandonedStudyResult)) {

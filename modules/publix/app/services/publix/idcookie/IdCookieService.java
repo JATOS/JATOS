@@ -19,9 +19,10 @@ import javax.inject.Singleton;
  * discards ID cookies. An ID cookie is used by the JATOS server to tell
  * jatos.js about several IDs the current study run has (e.g. worker ID, study
  * ID, study result ID). This cookie is created when the study run is started
- * and discarded when it's done.
+ * and discarded when it's done. If all possible cookies are used, the start of
+ * a new study will cause the oldest ID cookie to be overwritten.
  *
- * @author Kristian Lange (2016)
+ * @author Kristian Lange
  */
 @Singleton
 public class IdCookieService {
@@ -38,7 +39,7 @@ public class IdCookieService {
     }
 
     /**
-     * Returns the IdCookie that corresponds to the given study result ID. If
+     * Returns the IdCookieModel that corresponds to the given study result ID. If
      * the cookie doesn't exist it throws a BadRequestPublixException.
      */
     public IdCookieModel getIdCookie(Long studyResultId)
@@ -68,7 +69,7 @@ public class IdCookieService {
 
     /**
      * Returns true if the study assets of at least one ID cookie is equal to
-     * the given study assets. Otherwise returns false.
+     * the given study assets. Otherwise, returns false.
      */
     public boolean oneIdCookieHasThisStudyAssets(String studyAssets)
             throws InternalServerErrorPublixException {
@@ -137,8 +138,8 @@ public class IdCookieService {
     }
 
     /**
-     * Generates the name for a new IdCookie: If the max number of IdCookies is
-     * reached it reuses the name of the oldest IdCookie. If not it creates a
+     * Generates the name for a new ID cookie: If the max number of ID cookies is
+     * reached it reuses the name of the oldest ID cookie. If not it creates a
      * new name.
      */
     private String getNewIdCookieName(IdCookieCollection idCookieCollection)
@@ -152,7 +153,7 @@ public class IdCookieService {
     }
 
     /**
-     * Builds an IdCookie from the given parameters. It accepts null values for
+     * Builds an IdCookieModel from the given parameters. It accepts null values for
      * ComponentResult and GroupResult (stored in StudyResult). All others must
      * not be null.
      */
@@ -205,7 +206,7 @@ public class IdCookieService {
     }
 
     /**
-     * Returns true if the max number of IdCookies have been reached and false
+     * Returns true if the max number of ID cookies has been reached and false
      * otherwise.
      */
     public boolean maxIdCookiesReached()
@@ -218,7 +219,7 @@ public class IdCookieService {
     }
 
     /**
-     * Checks the creation time of each IdCookie in the given IdCookieCollection
+     * Checks the creation time of each ID cookie in the given IdCookieCollection
      * and returns the oldest one. Returns null if the IdCookieCollection is
      * empty.
      */
@@ -238,7 +239,7 @@ public class IdCookieService {
     }
 
     /**
-     * Checks the creation time of each IdCookie in the given IdCookieCollection
+     * Checks the creation time of each ID cookie in the given IdCookieCollection
      * and returns the study result ID of the oldest one. Returns null if the
      * IdCookieCollection is empty.
      */

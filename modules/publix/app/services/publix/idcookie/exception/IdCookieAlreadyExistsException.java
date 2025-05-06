@@ -1,12 +1,11 @@
 package services.publix.idcookie.exception;
 
 /**
- * Is thrown if a second IdCookie with the same study result ID is tried to be
+ * Is thrown if a second JATOS ID cookie with the same study result ID is tried to be
  * created.
  *
- * @author Kristian Lange (2016)
+ * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class IdCookieAlreadyExistsException extends Exception {
 
     public IdCookieAlreadyExistsException(String message) {

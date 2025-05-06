@@ -95,7 +95,7 @@ public class PublixErrorMessages {
 	}
 
 	public static String idCookieExistsAlready(Long studyResultId) {
-		return "An IdCookie with study result ID " + studyResultId + " already exists. Try deleting JATOS cookies for " +
+		return "An JATOS ID cookie with study result ID " + studyResultId + " already exists. Try deleting JATOS cookies for " +
 				"this domain in your browser.";
 	}
 

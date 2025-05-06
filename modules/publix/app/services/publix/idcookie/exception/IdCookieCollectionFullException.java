@@ -1,11 +1,10 @@
 package services.publix.idcookie.exception;
 
 /**
- * Is thrown if the max number of IdCookies is reached.
+ * Is thrown if the limit of JATOS ID cookies is reached.
  *
- * @author Kristian Lange (2016)
+ * @author Kristian Lange
  */
-@SuppressWarnings("serial")
 public class IdCookieCollectionFullException extends Exception {
 
     public IdCookieCollectionFullException(String message) {

@@ -25,13 +25,13 @@ import java.util.Map;
 import static play.mvc.Http.Cookie.builder;
 
 /**
- * This class offers a simple interface to extract, log and discard IdCookies.
+ * This class offers a simple interface to extract, log and discard JATOS ID cookies.
  * <p>
- * Internally this class accesses JATOS' ID cookies in the HTTP Request or Response. It stores the extracted
+ * Internally this class accesses ID cookies in the HTTP Request or Response. It stores the extracted
  * {@link IdCookieModel} in a {@link IdCookieCollection}. Additionally, it puts the {@link IdCookieCollection} in the
  * {@link RequestScope} for easier retrieval in subsequent calls within the same Request.
  * <p>
- * Each browser can run up to IdCookieCollection.MAX_ID_COOKIES ID studies at the same time. This means that there is
+ * Each browser can run up to certain limit (defined in jatos.conf) studies at the same time. This means that there is
  * the same number of ID cookies stored in the browser as studies are currently running (although part of them might
  * be abandoned).
  *
@@ -54,8 +54,8 @@ public class IdCookieAccessor {
     }
 
     /**
-     * Returns the IdCookieCollection containing all IdCookies of this Request. Additionally, it stores this
-     * idCookieCollection in the RequestScope. All subsequent calls of this method will get the IdCookieCollection from
+     * Returns the IdCookieCollection containing all ID cookies of this Request. Additionally, it stores this
+     * IdCookieCollection in the RequestScope. All subsequent calls of this method will get the IdCookieCollection from
      * the RequestScope.
      */
     protected IdCookieCollection extract() throws IdCookieAlreadyExistsException {
@@ -114,7 +114,7 @@ public class IdCookieAccessor {
     }
 
     /**
-     * Maps the IdCookie value for a JATOS run to the enum {@link JatosRun}. If the value can't be matched to an
+     * Maps the ID cookie value for a JATOS run to the enum {@link JatosRun}. If the value can't be matched to an
      * instance of JatosRun, then null is returned.
      */
     private JatosRun valueOfJatosRun(Map<String, String> cookieMap, Cookie cookie) throws IdCookieMalformedException {
@@ -126,13 +126,13 @@ public class IdCookieAccessor {
     }
 
     /**
-     * Returns the index of the ID cookie which is in the last char of its name. If the last char is not a number than
+     * Returns the index of the ID cookie which is the suffix of its name. If the suffix is not a number than
      * an IdCookieMalformedException is thrown.
      */
     private int getCookieIndex(String name) throws IdCookieMalformedException {
-        String lastChar = name.substring(name.length() - 1);
+        String indexStr = name.replaceFirst("^" + IdCookieModel.ID_COOKIE_NAME + "_", "");
         try {
-            return Integer.parseInt(lastChar);
+            return Integer.parseInt(indexStr);
         } catch (NumberFormatException e) {
             throw new IdCookieMalformedException(PublixErrorMessages.couldntExtractIndexFromIdCookieName(name));
 
@@ -259,13 +259,13 @@ public class IdCookieAccessor {
     }
 
     /**
-     * Puts the given IdCookie in the Response. Additionally, it stores the IdCookie in the RequestScope. It uses
-     * Integer.MAX_VALUE as Max-Age for the cookie, so it never expires.
+     * Puts the given IdCookieModel in the Response. Additionally, it stores the ID cookie in the RequestScope. It uses
+     * a large number as Max-Age for the cookie, so it is unlikely to ever expire.
      */
     void write(IdCookieModel newIdCookie) throws IdCookieAlreadyExistsException, IdCookieCollectionFullException {
         IdCookieCollection idCookieCollection = extract();
 
-        // Put new IdCookie into Response
+        // Put new ID cookie into the Response
         String cookieValue = idCookieSerialiser.asCookieValueString(newIdCookie);
         Http.CookieBuilder cookieBuilder = builder(newIdCookie.getName(), cookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
