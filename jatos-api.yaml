@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.0.4
 info:
   title: JATOS API
   description: This is the JATOS API specification using OpenAPI.
@@ -157,6 +157,19 @@ paths:
               schema:
                 type: string
                 format: binary
+        '401':
+          description: Invalid token
+    delete:
+      summary: Delete a study
+      description: >-
+        Delete a study including the study's results and assets by specifying its ID or UUID.
+      tags:
+        - danger zone
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
         '401':
           description: Invalid token
   /jatos/api/v1/studies/{id}/properties:
