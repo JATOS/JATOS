@@ -1,5 +1,7 @@
 package auth.gui;
 
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import exceptions.gui.AuthException;
 import general.common.Common;
 import models.common.User;
 
@@ -27,6 +29,15 @@ public class SigninSram extends SigninOidc {
                 Common.getSramIdTokenSigningAlgorithm(),
                 Common.getSramSuccessFeedback()
         ));
+    }
+
+    @Override
+    protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {
+        if (usernameFrom.equals("eduperson_principal_name")) {
+            return userInfo.getStringListClaim("voperson_external_id").stream().findFirst()
+                    .orElseThrow(() -> new AuthException("OIDC error - could not get username value from OIDC claims"));
+        }
+        return super.getUsername(userInfo, usernameFrom);
     }
 
 }

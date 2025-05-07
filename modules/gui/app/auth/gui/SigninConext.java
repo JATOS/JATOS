@@ -1,5 +1,7 @@
 package auth.gui;
 
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import exceptions.gui.AuthException;
 import general.common.Common;
 import models.common.User;
 
@@ -27,6 +29,14 @@ public class SigninConext extends SigninOidc {
                 Common.getConextIdTokenSigningAlgorithm(),
                 Common.getConextSuccessFeedback()
         ));
+    }
+
+    @Override
+    protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {
+        if (usernameFrom.equals("eduperson_principal_name")) {
+            return userInfo.getStringClaim("eduperson_principal_name");
+        }
+        return super.getUsername(userInfo, usernameFrom);
     }
 
 }

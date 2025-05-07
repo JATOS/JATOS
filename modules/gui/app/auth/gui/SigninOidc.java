@@ -209,6 +209,17 @@ public abstract class SigninOidc extends Controller {
         }
     }
 
+    protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {
+        switch (usernameFrom) {
+            case "email":
+                return userInfo.getEmailAddress();
+            case "subject":
+                return userInfo.getSubject().getValue();
+            default:
+                throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
+        }
+    }
+
     private OIDCProviderMetadata getProviderInfo() throws ParseException, URISyntaxException, AuthException {
         if (oidcProviderMetadata != null) return oidcProviderMetadata;
 
@@ -327,22 +338,11 @@ public abstract class SigninOidc extends Controller {
         return user;
     }
 
-    private String getNormalizedUsername(UserInfo userInfo) {
-        String username;
-        switch (oidcConfig.usernameFrom) {
-            case "email":
-                username = userInfo.getEmailAddress();
-                break;
-            case "subject":
-                username = userInfo.getSubject().getValue();
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
-        }
-        return User.normalizeUsername(username);
+    private String getNormalizedUsername(UserInfo userInfo) throws AuthException {
+        return User.normalizeUsername(getUsername(userInfo, oidcConfig.usernameFrom));
     }
 
-    private String getName(UserInfo userInfo) {
+    private String getName(UserInfo userInfo) throws AuthException {
         if (!Strings.isNullOrEmpty(userInfo.getName())) {
             return userInfo.getName();
         }
