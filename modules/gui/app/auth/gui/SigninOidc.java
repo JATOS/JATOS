@@ -43,6 +43,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -72,26 +73,70 @@ public abstract class SigninOidc extends Controller {
     private OIDCProviderMetadata oidcProviderMetadata;
 
     /**
-     * All configuration needed for an OIDC auth method
+     * Configuration needed for an OIDC auth implementation
      */
     public static class OidcConfig {
 
+        /**
+         * Constant used to distinguish between the OIDC methods
+         */
         private final User.AuthMethod authMethod;
+
+        /**
+         * OIDC discovery URL. Usually similar to https://server.com/.well-known/openid-configuration
+         */
         private final String discoveryUrl;
+
+        /**
+         * Callback URL that is invoked after authentication. Usually it routes to the 'callback' method in this class.
+         */
         private final String callbackUrlPath;
-        private String callbackUrl; // Filled during signin request
+
+        /**
+         * Dynamically filled during signin request
+         */
+        private String callbackUrl;
+
+        /**
+         * OIDC client ID
+         */
         private final String clientId;
+
+        /**
+         * OIDC client secret
+         */
         private final String clientSecret;
+
+        /**
+         * List of scopes. For OIDC, scopes can be used to request that specific sets of information be made available as Claim Values.
+         */
+        private final String[] scope;
+
+        /**
+         * Defines from which OIDC claim the username of the user stored in JATOS' database should be taken from.
+         */
+        private final String usernameFrom;
+
+        /**
+         * OIDC token signing algorithm
+         */
         private final String idTokenSigningAlgorithm;
+
+        /**
+         * A message that is shown to the signing in user in the browser.
+         */
         private final String successMsg;
 
-        OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath,
-                String clientId, String clientSecret, String idTokenSigningAlgorithm, String successMsg) {
+        OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath, String clientId,
+                   String clientSecret, List<String> scope, String usernameFrom, String idTokenSigningAlgorithm,
+                   String successMsg) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
+            this.scope = scope.toArray(new String[0]);
+            this.usernameFrom = usernameFrom;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
             this.successMsg = successMsg;
         }
@@ -112,7 +157,7 @@ public abstract class SigninOidc extends Controller {
         Nonce nonce = new Nonce();
         AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                 new ResponseType("code"),
-                new Scope("openid"),
+                new Scope(oidcConfig.scope),
                 clientID,
                 callback
         ).endpointURI(getProviderInfo().getAuthorizationEndpointURI())
@@ -144,7 +189,7 @@ public abstract class SigninOidc extends Controller {
 
             User user = persistUserIfNotExisting(userInfo);
 
-            String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
+            String normalizedUsername = getNormalizedUsername(userInfo);
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
             authService.writeSessionCookie(session(), normalizedUsername, keepSignedin);
             userService.setLastSignin(normalizedUsername);
@@ -260,7 +305,7 @@ public abstract class SigninOidc extends Controller {
     }
 
     private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
-        String normalizedUsername = User.normalizeUsername(userInfo.getSubject().getValue());
+        String normalizedUsername = getNormalizedUsername(userInfo);
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
             NewUserModel newUserModel = new NewUserModel();
@@ -282,7 +327,22 @@ public abstract class SigninOidc extends Controller {
         return user;
     }
 
-    private String getName(UserInfo userInfo) {
+    protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {
+        switch (usernameFrom) {
+            case "email":
+                return userInfo.getEmailAddress();
+            case "subject":
+                return userInfo.getSubject().getValue();
+            default:
+                throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
+        }
+    }
+
+    private String getNormalizedUsername(UserInfo userInfo) throws AuthException {
+        return User.normalizeUsername(getUsername(userInfo, oidcConfig.usernameFrom));
+    }
+
+    private String getName(UserInfo userInfo) throws AuthException {
         if (!Strings.isNullOrEmpty(userInfo.getName())) {
             return userInfo.getName();
         }
@@ -291,7 +351,7 @@ public abstract class SigninOidc extends Controller {
             String familyName = userInfo.getFamilyName() != null ? userInfo.getFamilyName() : "";
             return (givenName + " " + familyName).trim();
         }
-        return userInfo.getSubject().getValue();
+        return getNormalizedUsername(userInfo);
     }
 
 }

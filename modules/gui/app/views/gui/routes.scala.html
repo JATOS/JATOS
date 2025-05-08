@@ -35,6 +35,10 @@
     window.routes.SigninGoogle.signin = `${basePath}jatos/signin/google`;
     window.routes.SigninOrcid = {};
     window.routes.SigninOrcid.signin = (keepSignedin) => `${basePath}jatos/signin/oidc/orcid?realHostUrl=${encodeURIComponent(window.common.realHostUrl)}&keepSignedin=${keepSignedin}`;
+    window.routes.SigninSram = {};
+    window.routes.SigninSram.signin = (keepSignedin) => `${basePath}jatos/signin/oidc/sram?realHostUrl=${encodeURIComponent(window.common.realHostUrl)}&keepSignedin=${keepSignedin}`;
+    window.routes.SigninConext = {};
+    window.routes.SigninConext.signin = (keepSignedin) => `${basePath}jatos/signin/oidc/conext?realHostUrl=${encodeURIComponent(window.common.realHostUrl)}&keepSignedin=${keepSignedin}`;
     window.routes.SigninBasicOidc = {};
     window.routes.SigninBasicOidc.signin = (keepSignedin) => `${basePath}jatos/signin/oidc/basic?realHostUrl=${encodeURIComponent(window.common.realHostUrl)}&keepSignedin=${keepSignedin}`;
 

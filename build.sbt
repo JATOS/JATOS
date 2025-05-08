@@ -18,8 +18,8 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "ch.qos.logback" % "logback-core" % "1.2.11",
-  "com.nimbusds" % "oauth2-oidc-sdk" % "10.4",
-  "com.nimbusds" % "nimbus-jose-jwt" % "9.27",
+  "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
   guice,
   filters
 )

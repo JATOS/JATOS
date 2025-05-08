@@ -15,6 +15,8 @@ export {
     generateMembersHtml,
     getOidcLogoUrl,
     getOrcidLogoUrl,
+    getSramLogoUrl,
+    getConextLogoUrl,
     escapeHtml,
     trimTextWithThreeDots,
     getTheme,
@@ -166,6 +168,8 @@ function getAuthMethodText(authMethod) {
         case "OAUTH_GOOGLE": return "Google";
         case "OIDC": return "OIDC";
         case "ORCID": return "ORCID";
+        case "SRAM": return "SRAM";
+        case "CONEXT": return "CONEXT";
         default: return authMethod;
     }
 }
@@ -238,6 +242,32 @@ function getOrcidLogoUrl() {
         return window.common.orcidSigninButtonLogoUrl;
     } else {
         return window.common.jatosUrlBasePath + window.common.orcidSigninButtonLogoUrl;
+    }
+}
+
+/**
+ * Little helper function. The URL to the Surf SRAM logo (e.g. displayed on the signin page) can be determined in the
+ * jatos.conf. If the set URL is an external one and contains an 'http', just return the URL. If the set URL is an
+ * internal one, we add the JATOS URL base path.
+ */
+function getSramLogoUrl() {
+    if (window.common.sramSigninButtonLogoUrl.includes("http")) {
+        return window.common.sramSigninButtonLogoUrl;
+    } else {
+        return window.common.jatosUrlBasePath + window.common.sramSigninButtonLogoUrl;
+    }
+}
+
+/**
+ * Little helper function. The URL to the Surf CONEXT logo (e.g. displayed on the signin page) can be determined in the
+ * jatos.conf. If the set URL is an external one and contains an 'http', just return the URL. If the set URL is an
+ * internal one, we add the JATOS URL base path.
+ */
+function getConextLogoUrl() {
+    if (window.common.conextSigninButtonLogoUrl.includes("http")) {
+        return window.common.conextSigninButtonLogoUrl;
+    } else {
+        return window.common.jatosUrlBasePath + window.common.conextSigninButtonLogoUrl;
     }
 }
 

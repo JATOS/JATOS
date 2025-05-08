@@ -65,6 +65,8 @@ public class Common {
     private static String oidcDiscoveryUrl;
     private static String oidcClientId;
     private static String oidcClientSecret;
+    private static List<String> oidcScope;
+    private static String oidcUsernameFrom;
     private static String oidcIdTokenSigningAlgorithm;
     private static String oidcSigninButtonText;
     private static String oidcSigninButtonLogoUrl;
@@ -72,10 +74,30 @@ public class Common {
     private static String orcidDiscoveryUrl;
     private static String orcidClientId;
     private static String orcidClientSecret;
+    private static List<String> orcidScope;
+    private static String orcidUsernameFrom;
     private static String orcidIdTokenSigningAlgorithm;
     private static String orcidSigninButtonText;
     private static String orcidSigninButtonLogoUrl;
     private static String orcidSuccessFeedback;
+    private static String sramDiscoveryUrl;
+    private static String sramClientId;
+    private static String sramClientSecret;
+    private static List<String> sramScope;
+    private static String sramUsernameFrom;
+    private static String sramIdTokenSigningAlgorithm;
+    private static String sramSigninButtonText;
+    private static String sramSigninButtonLogoUrl;
+    private static String sramSuccessFeedback;
+    private static String conextDiscoveryUrl;
+    private static String conextClientId;
+    private static String conextClientSecret;
+    private static List<String> conextScope;
+    private static String conextUsernameFrom;
+    private static String conextIdTokenSigningAlgorithm;
+    private static String conextSigninButtonText;
+    private static String conextSigninButtonLogoUrl;
+    private static String conextSuccessFeedback;
     private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
@@ -153,6 +175,8 @@ public class Common {
         oidcDiscoveryUrl = config.getString("jatos.user.authentication.oidc.discoveryUrl");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
+        oidcScope = config.getStringList("jatos.user.authentication.oidc.scope");
+        oidcUsernameFrom = config.getString("jatos.user.authentication.oidc.usernameFrom");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
         oidcSigninButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
         oidcSigninButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
@@ -160,10 +184,30 @@ public class Common {
         orcidDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
+        orcidScope = config.getStringList("jatos.user.authentication.orcid.scope");
+        orcidUsernameFrom = config.getString("jatos.user.authentication.orcid.usernameFrom");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
         orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
         orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
         orcidSuccessFeedback = config.getString("jatos.user.authentication.orcid.successFeedback");
+        sramDiscoveryUrl = config.getString("jatos.user.authentication.sram.discoveryUrl");
+        sramClientId = config.getString("jatos.user.authentication.sram.clientId");
+        sramClientSecret = config.getString("jatos.user.authentication.sram.clientSecret");
+        sramScope = config.getStringList("jatos.user.authentication.sram.scope");
+        sramUsernameFrom = config.getString("jatos.user.authentication.sram.usernameFrom");
+        sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
+        sramSigninButtonText = config.getString("jatos.user.authentication.sram.signInButtonText");
+        sramSigninButtonLogoUrl = config.getString("jatos.user.authentication.sram.signInButtonLogoUrl");
+        sramSuccessFeedback = config.getString("jatos.user.authentication.sram.successFeedback");
+        conextDiscoveryUrl = config.getString("jatos.user.authentication.conext.discoveryUrl");
+        conextClientId = config.getString("jatos.user.authentication.conext.clientId");
+        conextClientSecret = config.getString("jatos.user.authentication.conext.clientSecret");
+        conextScope = config.getStringList("jatos.user.authentication.conext.scope");
+        conextUsernameFrom = config.getString("jatos.user.authentication.conext.usernameFrom");
+        conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
+        conextSigninButtonText = config.getString("jatos.user.authentication.conext.signInButtonText");
+        conextSigninButtonLogoUrl = config.getString("jatos.user.authentication.conext.signInButtonLogoUrl");
+        conextSuccessFeedback = config.getString("jatos.user.authentication.conext.successFeedback");
         donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
@@ -472,6 +516,9 @@ public class Common {
         return oauthGoogleClientId;
     }
 
+    /**
+     * OpenId Connect (OIDC) allowed
+     */
     public static boolean isOidcAllowed() {
         return !Strings.isNullOrEmpty(oidcClientId);
     }
@@ -495,6 +542,20 @@ public class Common {
      */
     public static String getOidcClientSecret() {
         return oidcClientSecret;
+    }
+
+    /**
+     * OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
+     */
+    public static List<String> getOidcScope() {
+        return oidcScope;
+    }
+
+    /**
+     * OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getOidcUsernameFrom() {
+        return oidcUsernameFrom;
     }
 
     /**
@@ -551,6 +612,20 @@ public class Common {
     }
 
     /**
+     * ORCID's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
+     */
+    public static List<String> getOrcidScope() {
+        return orcidScope;
+    }
+
+    /**
+     * ORCID's OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getOrcidUsernameFrom() {
+        return orcidUsernameFrom;
+    }
+
+    /**
      * ORCID's OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
      */
     public static String getOrcidIdTokenSigningAlgorithm() {
@@ -577,6 +652,148 @@ public class Common {
     public static String getOrcidSuccessFeedback() {
         return orcidSuccessFeedback;
     }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) allowed
+     */
+    public static boolean isSramAllowed() {
+        return !Strings.isNullOrEmpty(sramClientId);
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) provider discovery URL (ends with ".well-known/openid-configuration")
+     */
+    public static String getSramDiscoveryUrl() {
+        return sramDiscoveryUrl;
+    }
+
+    /**
+     * SRAM'S OpenId Connect (OIDC) client ID
+     */
+    public static String getSramClientId() {
+        return sramClientId;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) client secret.
+     */
+    public static String getSramClientSecret() {
+        return sramClientSecret;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
+     */
+    public static List<String> getSramScope() {
+        return sramScope;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getSramUsernameFrom() {
+        return sramUsernameFrom;
+    }
+
+    /**
+     * SRAM's OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
+     */
+    public static String getSramIdTokenSigningAlgorithm() {
+        return sramIdTokenSigningAlgorithm;
+    }
+
+    /**
+     * Text of SRAM button on the sign-in page
+     */
+    public static String getSramSigninButtonText() {
+        return sramSigninButtonText;
+    }
+
+    /**
+     * Logo URL of SRAM button on the sign-in page
+     */
+    public static String getSramSigninButtonLogoUrl() {
+        return sramSigninButtonLogoUrl;
+    }
+
+    /**
+     * Success feedback text shown to the user if SRAM sign-in was successful.
+     */
+    public static String getSramSuccessFeedback() {
+        return sramSuccessFeedback;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) allowed
+     */
+    public static boolean isConextAllowed() {
+        return !Strings.isNullOrEmpty(conextClientId);
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) provider discovery URL (ends with ".well-known/openid-configuration")
+     */
+    public static String getConextDiscoveryUrl() {
+        return conextDiscoveryUrl;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) client ID
+     */
+    public static String getConextClientId() {
+        return conextClientId;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) client secret.
+     */
+    public static String getConextClientSecret() {
+        return conextClientSecret;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email").
+     * SURFconext ignores scopes other than "openid" (see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
+     */
+    public static List<String> getConextScope() {
+        return conextScope;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) - Where should JATOS' username be taken from?
+     */
+    public static String getConextUsernameFrom() {
+        return conextUsernameFrom;
+    }
+
+    /**
+     * SURFconext OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
+     */
+    public static String getConextIdTokenSigningAlgorithm() {
+        return conextIdTokenSigningAlgorithm;
+    }
+
+    /**
+     * Text of SURFconext button on the sign-in page
+     */
+    public static String getConextSigninButtonText() {
+        return conextSigninButtonText;
+    }
+
+    /**
+     * Logo URL of SURFconext button on the sign-in page
+     */
+    public static String getConextSigninButtonLogoUrl() {
+        return conextSigninButtonLogoUrl;
+    }
+
+    /**
+     * Success feedback text shown to the user if SRAM sign-in was successful.
+     */
+    public static String getConextSuccessFeedback() {
+        return conextSuccessFeedback;
+    }
+
 
     /**
      * Should the GUI show a donations button
