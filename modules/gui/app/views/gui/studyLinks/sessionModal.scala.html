@@ -82,7 +82,7 @@
         }
 
         const sessionData = session.data ? session.data : "{}";
-        Editor.setup("json", sessionData, "#sessionJsonEditor");
+        Editor.setup("json", sessionData, "#sessionJsonEditor", 10000);
         Editor.focus("#sessionJsonEditor");
 
         $('#sessionFormVersion').val(session.version);
