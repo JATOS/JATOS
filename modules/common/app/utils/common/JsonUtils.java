@@ -322,7 +322,7 @@ public class JsonUtils {
         node.put("batchTitle", cr.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
-        String dataShort = cr != null && cr.getDataShort() != null ? cr.getDataShort() : "";
+        String dataShort = cr.getDataShort() != null ? cr.getDataShort() : "";
         node.put("dataShort", dataShort);
         boolean isDataShortShortened = cr.getDataSize() > ComponentResult.DATA_SHORT_MAX_CHARS;
         node.put("isDataShortShortened", isDataShortShortened);
