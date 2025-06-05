@@ -10,8 +10,6 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -123,15 +121,15 @@ public class ComponentResultDao extends AbstractDao {
         Object result = jpa.em().createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                 .setParameter("id", id)
                 .getSingleResult();
+        // Performance-wise it would be better to pass on the stream but MySQL only returns String
         if (result instanceof String) {
-            // Performance-wise it would be better to pass on the stream but MySQL only returns String
             return (String) result;
         } else if (result instanceof Clob) {
             // H2 returns Clob
             Clob clob = (Clob) result;
             try {
-                return new BufferedReader(new InputStreamReader(clob.getAsciiStream()))
-                        .lines().collect(Collectors.joining(System.lineSeparator()));
+                // From https://stackoverflow.com/a/63777729/1278769
+                return clob.getSubString(1, (int) clob.length());
             } catch (SQLException e) {
                 LOGGER.error(".getData: Couldn't get data from ComponentResult " + id, e);
             }
