@@ -1,4 +1,4 @@
-export { ComponentResultInfo, getResultDataShortHtml }
+export { ComponentResultInfo, getResultDataShort }
 
 import * as Alerts from '../alerts.js';
 import * as Helpers from '../helpers.js';
@@ -74,6 +74,9 @@ class ComponentResultInfo {
                 return `<a class="text-nowrap" href="${url}" download>${fileObj.filename} (${fileObj.sizeHumanReadable})</a>`;
             });
             if (resultFiles.length === 0) resultFiles.push('<span class="text-body text-opacity-50">none</span>');
+            const dataShort = getResultDataShort(componentResult.dataShort, componentResult.isDataShortShortened);
+            const showAllButton = componentResult.isDataShortShortened ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip="Show all result data of this component result.">Show All</button>' : "";
+            const copyToClipboardButton = !componentResult.isDataShortShortened ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip="Copy to clipboard"></span>' : "";
 
             const resultDataDiv = `
                 <div class="card mx-4 mb-2">
@@ -81,7 +84,7 @@ class ComponentResultInfo {
                         Data
                     </div>
                     <div class="card-body">
-                        ${getResultDataShortHtml(componentResult)}
+                        <pre class="d-inline m-0"><code class="text-break"></code></pre>${showAllButton}${copyToClipboardButton}
                     </div>
                 </div>
             `;
@@ -105,6 +108,7 @@ class ComponentResultInfo {
                     </tr>
                 </tbody>
             `);
+            row.find("code").text(dataShort); // dataShort has to be added as text to avoid HTML injection
             row.on('click', '.btn-clipboard', CopyToClipboard.onClick);
             row.data(componentResult);
             childRow.find("table").append(row);
@@ -114,13 +118,16 @@ class ComponentResultInfo {
     }
 }
 
-function getResultDataShortHtml(componentResult) {
-    const dataShort = componentResult.dataShort.length != 0 ? componentResult.dataShort : "no data";
-
-    // If the last three chars of the dataShort field are "..." add the show-all button and hide the copy-to-clipboard button
-    const isTooLong = componentResult.dataShort.substr(componentResult.dataShort.length - 3) === "...";
-    const showAllButton = isTooLong ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip="Show all result data of this component result.">Show All</button>' : "";
-    const copyToClipboardButton = !isTooLong ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip="Copy to clipboard"></span>' : "";
-
-    return `<pre class="d-inline m-0"><code class="text-wrap text-break">${dataShort}</code></pre>${showAllButton}${copyToClipboardButton}`;
+/**
+ * Returns only the first 7 lines of the string. Since the string comes already shortened to n characters, it is either
+ * 7 lines or n characters, whatever is shorter.
+ */
+function getResultDataShort(dataShort, addEllipsis) {
+    if (!dataShort) {
+        return "no data";
+    }
+    const lines = dataShort.split(/\r?\n|\r/); // Split by common line breaks
+    const rejoined = lines.slice(0, 7).join('\n'); // Take the first 7 lines and join them back
+    const withEllipsis = addEllipsis ? rejoined + " … " : rejoined;
+    return withEllipsis;
 }

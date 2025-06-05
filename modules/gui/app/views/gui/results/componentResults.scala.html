@@ -63,7 +63,7 @@
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import { Toolbars } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/toolbars.js")";
     import { isAllSelected } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/utils.js")";
-    import { getResultDataShortHtml } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/componentResultInfo.js")";
+    import { getResultDataShort } from "@routes.Assets.versioned("lib/jatos-gui/javascripts/resultsTable/componentResultInfo.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
     import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
     import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
@@ -273,6 +273,9 @@
     });
 
     function generateComponentResultChildRow(componentResult, componentResultId) {
+        const dataShort = getResultDataShort(componentResult.dataShort, componentResult.isDataShortShortened);
+        const showAllButton = componentResult.isDataShortShortened ? '<button type="button" class="btn btn-nav btn-xs show-all ms-2" data-bs-tooltip="Show all result data of this component result.">Show All</button>' : "";
+        const copyToClipboardButton = !componentResult.isDataShortShortened ? '<span class="btn-clipboard btn-clipboard-top-right no-info-icon" data-bs-tooltip="Copy to clipboard"></span>' : "";
         const childRow = $(`
             <div class="collapse" id="componentResultInfo-${componentResultId}">
                 <div class="card m-2">
@@ -280,11 +283,12 @@
                         Data
                     </div>
                     <div class="card-body">
-                        ${getResultDataShortHtml(componentResult)}
+                        <pre class="d-inline m-0"><code class="text-break"></code></pre>${showAllButton}${copyToClipboardButton}
                     </div>
                 </div>
             </div>
         `);
+        childRow.find("code").text(dataShort); // dataShort has to be added as text to avoid HTML injection
         childRow.on('click', '.btn-clipboard', CopyToClipboard.onClick);
         childRow.data(componentResult);
         return childRow;

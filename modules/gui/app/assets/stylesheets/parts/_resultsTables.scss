@@ -80,6 +80,12 @@
     border-right: 0.35rem solid $component-color;
 }
 
+// Honor line-breaks (\n) and tabs (\t) in result data code blocks
+#resultsTable tr.info code,
+#componentResultData {
+    white-space: pre-wrap;
+}
+
 // Change color of pagination button in study results
 #resultsTable_wrapper .study-results .pagination .page-item.active .page-link {
     --bs-pagination-active-bg: $study-color;

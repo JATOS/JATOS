@@ -11,7 +11,6 @@ import com.google.common.collect.ImmutableMap;
 import general.common.Common;
 import models.common.*;
 import models.common.workers.Worker;
-import org.apache.commons.lang3.StringEscapeUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Json;
@@ -204,20 +203,6 @@ public class JsonUtils {
         return allGroupResultsNode;
     }
 
-    /**
-     * Returns ComponentResult.dataShort limited to MAX_CHAR_PER_RESULT characters.
-     */
-    public String componentResultDataShortForUI(ComponentResult result) {
-        if (result == null || result.getDataShort() == null) return "";
-        // Escape HTML tags and &
-        String dataShort = StringEscapeUtils.escapeHtml4(result.getDataShort());
-        if (result.getDataSize() < ComponentResult.DATA_SHORT_MAX_CHARS) {
-            return dataShort;
-        } else {
-            return dataShort + " ...";
-        }
-    }
-
     public ObjectNode studyResultMetadata(StudyResult sr) throws IOException {
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("id", sr.getId());
@@ -337,7 +322,10 @@ public class JsonUtils {
         node.put("batchTitle", cr.getStudyResult().getBatch().getTitle());
 
         // Add componentResult's data
-        node.put("dataShort", componentResultDataShortForUI(cr));
+        String dataShort = cr != null && cr.getDataShort() != null ? cr.getDataShort() : "";
+        node.put("dataShort", dataShort);
+        boolean isDataShortShortened = cr.getDataSize() > ComponentResult.DATA_SHORT_MAX_CHARS;
+        node.put("isDataShortShortened", isDataShortShortened);
         node.put("dataSizeHumanReadable", Helpers.humanReadableByteCount(cr.getDataSize()));
 
         // Add uploaded result files
