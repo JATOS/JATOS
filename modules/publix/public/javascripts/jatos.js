@@ -207,7 +207,7 @@ var jatos = {};
 	 */
 	var webSocketSupported = 'WebSocket' in window;
 	/**
-	 * Web worker initialized in initJatos() that sends a periodic Ajax request
+	 * Web worker initialized in initJatos() that sends a periodic request
 	 * back to the JATOS server. Don't confuse with channel heartbeats.
 	 */
 	var heartbeatWorker;
@@ -250,9 +250,9 @@ var jatos = {};
 	 * Event fired when jatos.js is initialized (e.g. init data loaded and channels opened)
 	 */
 	var jatosOnLoadEvent = new Event("jatosOnLoad");
-    /**
-     * Events fired when the batch channel heartbeat works or fails
-     */
+	/**
+	 * Events fired when the batch channel heartbeat works or fails
+	 */
 	var batchChannelAliveEvent = new Event("batchChannelAlive");
 	var batchChannelDeadEvent = new Event("batchChannelDead");
 	/**
@@ -316,23 +316,23 @@ var jatos = {};
 			// Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
 			jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.min.js")
 		)
-		.then(function () {
-			// Get studyResultUuid from URL path
-			jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
-			readIdCookie();
-			// Start heartbeat.js (the general one - not the channel one)
-			heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
-			heartbeatWorker.postMessage([jatos.studyResultUuid]);
-			// Start httpLoop.js
-			httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
-			httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
-		})
-		.then(getInitData)
-		.then(openBatchChannelWithRetry)
-		.always(function () {
-			initialized = true;
-			readyForOnLoad();
-		});
+			.then(function () {
+				// Get studyResultUuid from URL path
+				jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
+				readIdCookie();
+				// Start heartbeat.js (the general one - not the channel one)
+				heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
+				heartbeatWorker.postMessage([jatos.studyResultUuid]);
+				// Start httpLoop.js
+				httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
+				httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
+			})
+			.then(getInitData)
+			.then(openBatchChannelWithRetry)
+			.always(function () {
+				initialized = true;
+				readyForOnLoad();
+			});
 	}
 
 	/**
@@ -538,29 +538,29 @@ var jatos = {};
 		}
 	}
 
-    /**
-     * Adds the callback function to the batchChannelAlive event listener. The batchChannelAlive event gets fired
-     * when jatos.js establishes a connection to JATOS which is detected by the heartbeat in the batch channel.
-     */
-    jatos.onConnected = function (callback) {
-        window.addEventListener("batchChannelAlive", callback);
-    }
+	/**
+	 * Adds the callback function to the batchChannelAlive event listener. The batchChannelAlive event gets fired
+	 * when jatos.js establishes a connection to JATOS which is detected by the heartbeat in the batch channel.
+	 */
+	jatos.onConnected = function (callback) {
+		window.addEventListener("batchChannelAlive", callback);
+	}
 
-    /**
-     * Adds the callback function to the batchChannelDead event listener. The batchChannelDead event gets fired
-     * when jatos.js loses its connection to JATOS which is detected by the heartbeat in the batch channel.
-     */
-    jatos.onDisconnected = function (callback) {
-        window.addEventListener("batchChannelDead", callback);
-    }
+	/**
+	 * Adds the callback function to the batchChannelDead event listener. The batchChannelDead event gets fired
+	 * when jatos.js loses its connection to JATOS which is detected by the heartbeat in the batch channel.
+	 */
+	jatos.onDisconnected = function (callback) {
+		window.addEventListener("batchChannelDead", callback);
+	}
 
-    /**
-     * Returns true if jatos.js established a connection to JATOS which is detected by the heartbeat in the batch
-     * channel. False otherwise.
-     */
-    jatos.isConnected = function () {
-        return batchChannelAlive;
-    }
+	/**
+	 * Returns true if jatos.js established a connection to JATOS which is detected by the heartbeat in the batch
+	 * channel. False otherwise.
+	 */
+	jatos.isConnected = function () {
+		return batchChannelAlive;
+	}
 
 	/**
 	 * Open batch channel with retry and exponential backoff
@@ -657,24 +657,24 @@ var jatos = {};
 			if (batchChannel.readyState == batchChannel.OPEN) {
 				batchChannel.send('{"heartbeat":"ping"}');
 				var timeout = setTimeout(handleBatchChannelHeartbeatFail,
-				    jatos.channelHeartbeatTimeoutTime);
+					jatos.channelHeartbeatTimeoutTime);
 				batchChannelHeartbeatTimeoutTimers.push(timeout);
 			}
 		}, jatos.channelHeartbeatInterval);
 	}
 
 	/**
-     * Batch channel is dead: set batchChannelAlive flag,
-     * fire batchChannelDeadEvent and reopen batch channel
-     */
+	 * Batch channel is dead: set batchChannelAlive flag,
+	 * fire batchChannelDeadEvent and reopen batch channel
+	 */
 	function handleBatchChannelHeartbeatFail() {
-        console.warn("Batch channel heartbeat fail");
-        if (batchChannelAlive) {
-            batchChannelAlive = false;
-            window.dispatchEvent(batchChannelDeadEvent);
-        }
-        reopenBatchChannel();
-    }
+		console.warn("Batch channel heartbeat fail");
+		if (batchChannelAlive) {
+			batchChannelAlive = false;
+			window.dispatchEvent(batchChannelDeadEvent);
+		}
+		reopenBatchChannel();
+	}
 
 	/**
 	 * Periodically checks whether the batch channel is closed and if yes
@@ -724,10 +724,10 @@ var jatos = {};
 			// Batch channel is alive:  clear all heartbeat timeouts
 			// and set batchChannelAlive flag and fire batchChannelAliveEvent
 			clearBatchChannelHeartbeatTimeoutTimers();
-            if (!batchChannelAlive) {
-                batchChannelAlive = true;
-                window.dispatchEvent(batchChannelAliveEvent);
-            }
+			if (!batchChannelAlive) {
+				batchChannelAlive = true;
+				window.dispatchEvent(batchChannelAliveEvent);
+			}
 			return;
 		}
 		if (typeof batchMsg.patches != 'undefined') {
@@ -1053,7 +1053,7 @@ var jatos = {};
 	}
 
 	/**
-	 * A web worker used in jatos.js to send periodic Ajax requests back to the
+	 * A web worker used in jatos.js to send periodic requests back to the
 	 * JATOS server. With this function one can set the period with which the
 	 * heartbeat is send.
 	 *
@@ -1075,7 +1075,7 @@ var jatos = {};
 	/**
 	 * DEPRECATED - Instead use the specific function's error callbacks or Promise functions
 	 *
-	 * Defines callback function to be called if jatos.js produces an error, e.g. Ajax errors.
+	 * Defines callback function to be called if jatos.js produces an error.
 	 */
 	jatos.onError = function (onError) {
 		console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
@@ -2332,7 +2332,8 @@ var jatos = {};
 	};
 
 	/**
-	 * Aborts study. All previously submitted data will be deleted.
+	 * Aborts study. All previously submitted data will be deleted. It does not
+	 * redirect to another page.
 	 *
 	 * @param {optional string} message - Message that should be logged
 	 * @param {optional function} onSuccess - Function to be called in case of
@@ -2340,7 +2341,7 @@ var jatos = {};
 	 * @param {optional function} onError - Function to be called in case of error
 	 * @return {Promise}
 	 */
-	jatos.abortStudyAjax = function (message, onSuccess, onError) {
+	jatos.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
 		if (!initialized) {
 			callMany("jatos.js not yet initialized", onError, console.error);
 			return rejectedPromise();
@@ -2386,15 +2387,37 @@ var jatos = {};
 	};
 
 	/**
-	 * Aborts study. All previously submitted data will be deleted.
+	 * DEPRECATED - Kept for backward compatibilty. Use jatos.abortStudyWithoutRedirect instead.
+	 */
+	jatos.abortStudyAjax = function (message, onSuccess, onError) {
+		return jatos.abortStudyWithoutRedirect(message, onSuccess, onError);
+	}
+
+	/**
+	 * Aborts study and redirects to another URL. All previously submitted data
+	 * will be deleted. The first parameter is the URL and the other up to 3 parameters
+	 * are the same as in jatos.abortStudyWithoutRedirect.
+	 */
+	jatos.abortStudyAndRedirect = function (url, message, onSuccess, onError) {
+		jatos.abortStudyWithoutRedirect(message, onSuccess, onError).done(function () {
+			window.location.href = url;
+		});
+	};
+
+	/**
+	 * Aborts study and optionally redirects to an end page. All previously submitted data
+	 * will be deleted.
 	 *
 	 * @param {optional string} message - Message that should be logged
-	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
-	 *				behaves like jatos.abortStudyAjax
+	 * @param {optional boolean} showEndPage - If true it will redirect to an end page
+	 *          (either the JATOS default one or the one that is configured in the
+	 *          study properties) after the study is finished. If false it stays on the
+	 *          current page. Alternatively jatos.abortStudyAndRedirect can be used to
+	 *          redirect to another page. Default is true.
 	 */
 	jatos.abortStudy = function (message, showEndPage) {
 		if (typeof showEndPage !== "undefined" && !showEndPage) {
-			return jatos.abortStudyAjax(message);
+			return jatos.abortStudyWithoutRedirect(message);
 		}
 		if (studyRunInvalid) {
 			console.warn("Can't abort study. This study run is invalid.");
@@ -2427,13 +2450,13 @@ var jatos = {};
 		}
 	};
 
-    /**
-	 * Ends study with an Ajax call.
+	/**
+	 * Ends study without redirecting to another page, e.g. the JATOS end page.
 	 *
 	 * Either without result data:
 	 * @param {optional boolean} successful - 'true' if study should finish
 	 *				successful and the participant should get the confirmation
-	 *				code - 'false' otherwise.
+	 *				code - 'false' otherwise. Default is true.
 	 * @param {optional string} message - Message to be logged (max 255 chars)
 	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
@@ -2444,7 +2467,7 @@ var jatos = {};
 	 * 				to JATOS server
 	 * @param {optional boolean} successful - 'true' if study should finish
 	 *				successful and the participant should get the confirmation
-	 *				code - 'false' otherwise
+	 *				code - 'false' otherwise. Default is true.
 	 * @param {optional string} message - Message to be logged (max 255 chars)
 	 * @param {optional function} onSuccess - Function to be called in case of
 	 *				successful submit
@@ -2452,7 +2475,7 @@ var jatos = {};
 	 *
 	 * @return {Promise}
 	 */
-	jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
+	jatos.endStudyWithoutRedirect = function (param1, param2, param3, param4, param5) {
 		if (!initialized) {
 			console.error("jatos.js not yet initialized");
 			return rejectedPromise();
@@ -2527,36 +2550,44 @@ var jatos = {};
 	};
 
 	/**
-	 * Ends study and redirects to another URL. It's a convenience function / wrapper
-	 * arround jatos.endStudyAjax. The first parameter is the URL and the other up to
-	 * 5 parameters are the same as in jatos.endStudyAjax.
+	 * DEPRECATED - Kept for backward compatibilty. Use jatos.endStudyWithoutRedirect instead.
+	 */
+	jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
+		return jatos.endStudyWithoutRedirect(param1, param2, param3, param4, param5);
+	}
+
+	/**
+	 * Ends study and redirects to another URL. The first parameter is the URL and the
+	 * other up to 5 parameters are the same as in jatos.endStudyWithoutRedirect.
 	 */
 	jatos.endStudyAndRedirect = function (url, param1, param2, param3, param4, param5) {
-		jatos.endStudyAjax(param1, param2, param3, param4, param5).done(function () {
+		jatos.endStudyWithoutRedirect(param1, param2, param3, param4, param5).done(function () {
 			window.location.href = url;
 		});
 	};
 
 	/**
-	 * Ends study.
+	 * Ends study and optionally redirects to an end page.
 	 *
 	 * Either without result data:
 	 * @param {optional boolean} successful - 'true' if study should finish
-	 *			successful and the participant should get the confirmation code
-	 *			- 'false' otherwise
+	 *			successfully - 'false' otherwise. Default is true.
 	 * @param {optional string} message - Message to be logged (max 255 chars)
-	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
-	 *			behaves like jatos.endStudyAjax
+	 * @param {optional boolean} showEndPage - If true it will redirect to an end page
+	 *			(either the JATOS default one or the one that is configured in the study
+	 *			properties) after the study is finished. If false it stays on current page.
+	 *          Alternatively jatos.endStudyAndRedirect can be used. Default is true.
 	 *
 	 * Or with result data:
 	 * @param {optional string or object} resultData- result data to be sent back
 	 * 				to JATOS server
 	 * @param {optional boolean} successful - 'true' if study should finish
-	 *			successful and the participant should get the confirmation code
-	 *			- 'false' otherwise
+	 *			successfully - 'false' otherwise. Default is true.
 	 * @param {optional string} message - Message to be logged (max 255 chars)
-	 * @param {optional boolean} showEndPage - If true an end page is shown - if false it
-	 *			behaves like jatos.endStudyAjax
+	 * @param {optional boolean} showEndPage - If true it will redirect to an end page
+	 *			(either the JATOS default one or the one that is configured in the study
+	 *			properties) after the study is finished. If false it stays on current page.
+	 *			Alternatively jatos.endStudyAndRedirect can be used. Default is true.
 	 */
 	jatos.endStudy = function (param1, param2, param3, param4) {
 		if (!initialized) {
@@ -2582,9 +2613,9 @@ var jatos = {};
 
 		if (typeof showEndPage !== "undefined" && !showEndPage) {
 			if (resultData) {
-				return jatos.endStudyAjax(resultData, successful, message);
+				return jatos.endStudyWithoutRedirect(resultData, successful, message);
 			} else {
-				return jatos.endStudyAjax(successful, message);
+				return jatos.endStudyWithoutRedirect(successful, message);
 			}
 		}
 
