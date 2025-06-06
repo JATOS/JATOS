@@ -2454,12 +2454,11 @@ var jatos = {};
 	 * Ends study without redirecting to another page, e.g. the JATOS end page.
 	 *
 	 * Either without result data:
-	 * @param {optional boolean} successful - 'true' if study should finish
-	 *				successful and the participant should get the confirmation
-	 *				code - 'false' otherwise. Default is true.
+	 * @param {optional boolean} successful - 'true' if study should finish successful
+	 *				- 'false' otherwise. Default is 'true'.
 	 * @param {optional string} message - Message to be logged (max 255 chars)
 	 * @param {optional function} onSuccess - Function to be called in case of
-	 *				successful submit
+	 *				successful
 	 * @param {optional function} onError - Function to be called in case of error
 	 *
 	 * Or with result data:
@@ -2470,7 +2469,7 @@ var jatos = {};
 	 *				code - 'false' otherwise. Default is true.
 	 * @param {optional string} message - Message to be logged (max 255 chars)
 	 * @param {optional function} onSuccess - Function to be called in case of
-	 *				successful submit
+	 *				successful
 	 * @param {optional function} onError - Function to be called in case of error
 	 *
 	 * @return {Promise}
