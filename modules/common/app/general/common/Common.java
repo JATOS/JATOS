@@ -281,8 +281,10 @@ public class Common {
             return Http.Cookie.SameSite.LAX;
         } else if (idCookiesSameSiteRaw.equalsIgnoreCase("strict")) {
             return Http.Cookie.SameSite.STRICT;
+        } else if (idCookiesSameSiteRaw.equalsIgnoreCase("none")) {
+            return Http.Cookie.SameSite.NONE;
         } else {
-            return null; // Play doesn't support SameSite.None yet
+            return null;
         }
     }
 
