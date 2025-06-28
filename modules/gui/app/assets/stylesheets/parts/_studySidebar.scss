@@ -6,6 +6,10 @@
     background: var(--bs-body-bg);
 }
 
+#studySidebar .list-group-item {
+    word-break: break-all;
+}
+
 #studySidebar .list-group-item.active {
     background-color: $study-color;
     border-color: $study-color;

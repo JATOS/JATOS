@@ -7,3 +7,7 @@
 #apiTokensTable tr.disabled td:not(.delete-button-column, .token-active) {
     color: var(--bs-tertiary-color) !important;
 }
+
+#apiTokensTable tbody tr {
+    word-break: break-all;
+}

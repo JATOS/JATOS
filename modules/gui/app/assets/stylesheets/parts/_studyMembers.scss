@@ -3,3 +3,7 @@
     --bs-pagination-active-bg: $study-color;
     --bs-pagination-active-border-color: $study-color;
 }
+
+#studyMemberUsersTable tbody td {
+    word-break: break-all;
+}
