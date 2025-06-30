@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.1
+  version: 1.0.3
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -26,7 +26,8 @@ paths:
               schema:
                 type: object
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/admin/token:
     get:
       summary: Get details of the token used in this request
@@ -40,7 +41,8 @@ paths:
               schema:
                 type: object
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/admin/logs/{filename}:
     get:
       summary: Get a log file (application logs - not study logs)
@@ -65,7 +67,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/study:
     post:
       summary: Import a study
@@ -137,8 +140,102 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  uuid:
+                    type: string
+                    description: The UUID identifier for the study.
+                  id:
+                    type: integer
+                    description: The ID of the study.
+                  studyExists:
+                    type: boolean
+                    description: Indicates if the study already existed before (determined by the same UUID).
+                  currentStudyTitle:
+                    type: string
+                    description: The old title of the study (overwritten), if applicable.
+                  currentDirName:
+                    type: string
+                    description: The old study assets directory name (overwritten), if applicable.
+                  uploadedStudyTitle:
+                    type: string
+                    description: The new title of the study.
+                  uploadedDirName:
+                    type: string
+                    description: The new study assets directory name.
+                  uploadedDirExists:
+                    type: boolean
+                    description: Indicates if the study assets directory already existed before the upload.
+                  newDirName:
+                    type: String
+                    description: The name assigned to the study's assets directory when a new study is created, but a directory with its default name already exists.
+                required:
+                  - uuid
+                  - id
+                  - studyExists
+                  - uploadedStudyTitle
+                  - uploadedDirName
+                  - uploadedDirExists
+
         '401':
-          description: Invalid token
+          description: Unauthorized
+
+  /jatos/api/v1/studies/create:
+    post:
+      summary: Create a new study
+      description: (since v3.9.7) Create a new study within JATOS.
+      tags:
+        - study
+      requestBody:
+        description: A JSON object containing the study properties
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the study
+                description:
+                  type: string
+                  description: Description of the study
+                comments:
+                  type: string
+                  description: Some comments
+                jsonData:
+                  type: string
+                  description: Study input in JSON format
+                endRedirectUrl:
+                  type: string
+                  description: URL the study redirects to after it is finished
+                groupStudy:
+                  type: boolean
+                  description: Is the study a group study
+                linearStudy:
+                  type: boolean
+                  description: Is the study a linear study
+                allowPreview:
+                  type: boolean
+                  description: Are previews allowed
+              required:
+                - title
+      responses:
+        '200':
+          description: Study created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    description: The UUID identifier for the study.
+                  id:
+                    type: integer
+                    description: The ID of the study.
+        '401':
+          description: Unauthorized
+
   /jatos/api/v1/studies/{id}:
     get:
       summary: Export a study
@@ -158,20 +255,93 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
     delete:
       summary: Delete a study
       description: >-
-        Delete a study including the study's results and assets by specifying its ID or UUID.
+        Delete a study (including its components, batches, study links,
+        study assets and all result data and files).
       tags:
-        - danger zone
+        - study
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       responses:
         '200':
           description: Success
         '401':
-          description: Invalid token
+          description: Unauthorized
+
+  /jatos/api/v1/studies/{id}/components/create:
+    post:
+      summary: Create a new component within a study
+      description: (since v3.9.7) Create a new component under the specified study.
+      tags:
+        - study
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      requestBody:
+        description: A JSON object containing component properties
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the component
+                description:
+                  type: string
+                  description: Description of the component
+                htmlFilePath:
+                  type: string
+                  description: Local path to component's HTML file in the study assets folder
+                reloadable:
+                  type: boolean
+                  description: Is the component reloadable
+                comments:
+                  type: string
+                  description: Some comments
+                jsonData:
+                  type: string
+                  description: Component input in JSON format
+              required:
+                - title
+      responses:
+        '200':
+          description: Component created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    description: The UUID identifier of the component.
+                  id:
+                    type: integer
+                    description: The ID of the component.
+        '401':
+          description: Unauthorized
+
+  /jatos/api/v1/studies/{id}/components/{cid}:
+    delete:
+      summary: Delete a component within a study
+      description: >-
+        (since v3.9.7) Delete a specific component including its 
+        component results from a study.
+      tags:
+        - study
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - $ref: '#/components/parameters/ComponentIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+
   /jatos/api/v1/studies/{id}/properties:
     get:
       summary: Get study properties
@@ -212,7 +382,8 @@ paths:
               schema:
                 type: object
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/studies/properties:
     get:
       summary: Get all study properties that are accessible to the user
@@ -249,11 +420,17 @@ paths:
               schema:
                 type: object
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/studies/{id}/assets/structure:
     get:
       summary: Get the directory structure of a study assets directory in JSON
-      description: (since v3.8.2) Every element has `name` (filename), `path` (location in the study assets), `type` (_file_ or _directory_), `creation` (creation timestamp), `lastModified` (last modification timestamp), `size` (file size), `checksum` (checksum of the file calculated with Adler32)
+      description: >-
+        (since v3.8.2) Every element has `name` (filename), `path` (location
+        in the study assets), `type` (_file_ or _directory_), `creation`
+        (creation timestamp), `lastModified` (last modification timestamp),
+        `size` (file size), `checksum` (checksum of the file calculated with
+        Adler32)
       tags:
         - study
       parameters:
@@ -278,7 +455,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/studies/{id}/assets/{filepath}:
     get:
       summary: Download a file from the study assets
@@ -316,7 +494,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
     post:
       summary: Upload a file to the study assets
       tags:
@@ -367,7 +546,8 @@ paths:
         '200':
           description: Success
         '401':
-          description: Invalid token
+          description: Unauthorized
+
     delete:
       summary: Delete a file from the study assets
       tags:
@@ -400,7 +580,8 @@ paths:
         '200':
           description: Success
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/studies/{id}/log:
     get:
       summary: Get the study log of a study
@@ -417,7 +598,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/studies/{id}/studyCodes:
     get:
       summary: Get one or multiple study codes
@@ -464,7 +646,8 @@ paths:
               schema:
                 type: object
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/results:
     post:
       summary: Get results (combined with metadata, data, and files)
@@ -500,7 +683,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/results/metadata:
     post:
       summary: Get result metadata in JSON
@@ -535,7 +719,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/results/data:
     post:
       summary: Get only the data of results
@@ -574,7 +759,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/results/files:
     post:
       summary: Get only the files of results
@@ -610,7 +796,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/results/files/{filename}:
     get:
       summary: Get a single result file
@@ -639,7 +826,8 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Invalid token
+          description: Unauthorized
+
   /jatos/api/v1/results/delete:
     put:
       summary: Delete results
@@ -655,7 +843,7 @@ paths:
         be deleted too. **Only results will be deleted, studies, components,
         batches, and groups remain untouched**. **This cannot be undone**.
       tags:
-        - danger zone
+        - results
       parameters:
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
@@ -671,7 +859,8 @@ paths:
         '200':
           description: Success
         '401':
-          description: Invalid token
+          description: Unauthorized
+
 security:
   - BearerAuth: []
 components:
@@ -703,6 +892,13 @@ components:
       description: >-
         Specify results with a study UUID. This query parameter can be used
         multiple times.
+    ComponentIdOrUuidParameter:
+      in: path
+      name: cid
+      required: true
+      schema:
+        type: string
+      description: Either a component ID or a component UUID
     ComponentIdParameter:
       in: query
       name: componentId
