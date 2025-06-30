@@ -1,7 +1,10 @@
 package services.gui;
 
+import auth.gui.AuthService;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -11,6 +14,7 @@ import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
+import utils.common.Helpers;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -18,6 +22,7 @@ import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,13 +40,18 @@ public class ComponentService {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
+    private final AuthService authService;
+    private final Checker checker;
 
     @Inject
-    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils) {
+    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils,
+                     AuthService authService, Checker checker) {
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.ioUtils = ioUtils;
+        this.authService = authService;
+        this.checker = checker;
     }
 
     /**
@@ -141,21 +151,10 @@ public class ComponentService {
     }
 
     /**
-     * Initialise but NOT persists the given Component. Generates UUID.
-     */
-    Component createComponent(Study study, Component component) {
-        if (component.getUuid() == null) {
-            component.setUuid(UUID.randomUUID().toString());
-        }
-        component.setStudy(study);
-        return component;
-    }
-
-    /**
-     * Initialise and persist the given Component. Generates UUID. Updates its study.
+     * Initialise and persist the given Component. Updates its study.
      */
     public Component createAndPersistComponent(Study study, Component component) {
-        createComponent(study, component);
+        component.setStudy(study);
         if (!study.hasComponent(component)) {
             study.addComponent(component);
         }
@@ -165,7 +164,7 @@ public class ComponentService {
     }
 
     /**
-     * Create and persist a Component with given properties. Generates UUID. Updates its study.
+     * Create and persist a Component with given properties. Updates its study.
      */
     public Component createAndPersistComponent(Study study, ComponentProperties componentProperties) {
         Component component = bindToComponent(componentProperties);
@@ -243,6 +242,22 @@ public class ComponentService {
         // Remove component's ComponentResults
         resultRemover.removeAllComponentResults(component, signedinUser);
         componentDao.remove(component);
+    }
+
+    public Component getComponentFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+        Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
+        User signedinUser = authService.getSignedinUser();
+        Component component;
+        if (componentId.isPresent()) {
+            component = componentDao.findById(componentId.get());
+            if (component == null) throw new NotFoundException("Couldn't find component with ID " + idOrUuid);
+            checker.checkStandardForComponent(componentId.get(), component, signedinUser);
+        } else {
+            component = componentDao.findByUuid(idOrUuid)
+                    .orElseThrow(() -> new NotFoundException("Couldn't find component with UUID " + idOrUuid));
+            checker.checkStandardForComponent(component.getId(), component, signedinUser);
+        }
+        return component;
     }
 
 }

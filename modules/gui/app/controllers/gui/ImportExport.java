@@ -3,6 +3,7 @@ package controllers.gui;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -80,7 +81,7 @@ public class ImportExport extends Controller {
             return badRequest(MessagesStrings.NO_STUDY_UPLOAD);
         }
 
-        JsonNode responseJson;
+        ObjectNode responseJson;
         try {
             File file = (File) filePart.getFile();
             responseJson = importExportService.importStudy(signedinUser, file);
@@ -91,8 +92,9 @@ public class ImportExport extends Controller {
         }
 
         try {
-            importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            Long newStudyId = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
+            responseJson.put("id", newStudyId);
         } finally {
             importExportService.cleanupAfterStudyImport();
         }

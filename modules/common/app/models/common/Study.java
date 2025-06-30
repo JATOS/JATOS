@@ -167,6 +167,8 @@ public class Study {
     private List<Batch> batchList = new ArrayList<>();
 
     public Study() {
+        this.uuid = UUID.randomUUID().toString();
+        this.dirName = this.uuid;
     }
 
     public void setId(Long id) {

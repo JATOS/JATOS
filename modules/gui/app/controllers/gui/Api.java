@@ -5,8 +5,10 @@ import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthApiToken;
 import auth.gui.AuthService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import exceptions.gui.BadRequestException;
@@ -15,11 +17,15 @@ import exceptions.gui.NotFoundException;
 import general.common.Common;
 import general.common.RequestScope;
 import general.common.StudyLogger;
+import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
+import models.gui.ComponentProperties;
+import models.gui.StudyProperties;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.http.HttpEntity;
 import play.libs.Json;
@@ -71,6 +77,7 @@ public class Api extends Controller {
     private final StudyDao studyDao;
     private final ComponentResultDao componentResultDao;
     private final StudyService studyService;
+    private final ComponentService componentService;
     private final StudyLinkService studyLinkService;
     private final ImportExport importExport;
     private final ResultRemover resultRemover;
@@ -84,7 +91,7 @@ public class Api extends Controller {
     Api(Admin admin, AdminService adminService, AuthService authService,
             ComponentResultIdsExtractor componentResultIdsExtractor,
             StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
-            StudyLinkService studyLinkService,
+            ComponentService componentService, StudyLinkService studyLinkService,
             ImportExport importExport, ResultRemover resultRemover,
             ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
             StudyLogger studyLogger, IOUtils ioUtils) {
@@ -95,6 +102,7 @@ public class Api extends Controller {
         this.studyDao = studyDao;
         this.componentResultDao = componentResultDao;
         this.studyService = studyService;
+        this.componentService = componentService;
         this.studyLinkService = studyLinkService;
         this.importExport = importExport;
         this.resultRemover = resultRemover;
@@ -328,7 +336,7 @@ public class Api extends Controller {
     /**
      * Returns a JATOS study archive (.jzip)
      *
-     * @param id Study's ID or UUID
+     * @param id    Study's ID or UUID
      */
     @Transactional
     @Auth
@@ -337,9 +345,34 @@ public class Api extends Controller {
     }
 
     /**
+     * Creates a study
+     *
+     * @return UUID and ID of the study in JSON
+     */
+    @Transactional
+    @Auth
+    public Result createStudy(Http.Request request) throws IOException {
+        User signedinUser = authService.getSignedinUser();
+
+        JsonNode node = request.body().asJson();
+        StudyProperties studyProperties = Json.mapper().treeToValue(node, StudyProperties.class);
+        List<ValidationError> errors = studyProperties.validate();
+        if (errors != null && !errors.isEmpty()) {
+            return badRequest(errors.get(0).message());
+        }
+
+        Study study = studyService.createAndPersistStudy(signedinUser, studyProperties);
+        ioUtils.createStudyAssetsDir(study.getUuid());
+        ObjectNode responseJson = Json.mapper().createObjectNode();
+        responseJson.put("uuid", study.getUuid());
+        responseJson.put("id", study.getId());
+        return ok(responseJson);
+    }
+
+    /**
      * Deletes a study
      *
-     * @param id Study's ID or UUID
+     * @param id    Study's ID or UUID
      */
     @Transactional
     @Auth
@@ -377,6 +410,50 @@ public class Api extends Controller {
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
         return importExport.importStudyApi(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+    }
+
+    /**
+     * Creates a component within the specified study
+     *
+     * @param id    Study's ID or UUID
+     * @return UUID and ID of the new component in JSON
+     */
+    @Transactional
+    @Auth
+    public Result createComponent(Http.Request request, String id) throws ForbiddenException, NotFoundException, JsonProcessingException {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStudyLocked(study);
+
+        JsonNode node = request.body().asJson();
+        ComponentProperties componentProperties = Json.mapper().treeToValue(node, ComponentProperties.class);
+        List<ValidationError> errors = componentProperties.validate();
+        if (errors != null && !errors.isEmpty()) {
+            return badRequest(errors.get(0).message());
+        }
+
+        Component component = componentService.createAndPersistComponent(study, componentProperties);
+        ObjectNode responseJson = Json.mapper().createObjectNode();
+        responseJson.put("uuid", component.getUuid());
+        responseJson.put("id", component.getId());
+        return ok(responseJson);
+    }
+
+    /**
+     * Deletes a component
+     *
+     * @param studyId     Study's ID or UUID
+     * @param componentId Component's ID or UUID
+     */
+    @Transactional
+    @Auth
+    public Result deleteComponent(String studyId, String componentId) throws ForbiddenException, NotFoundException {
+        Component component = componentService.getComponentFromIdOrUuid(componentId);
+        User signedinUser = authService.getSignedinUser();
+        checker.checkStudyLocked(component.getStudy());
+        checker.checkComponentBelongsToStudy(component, studyId);
+
+        componentService.remove(component, signedinUser);
+        return ok();
     }
 
     /**

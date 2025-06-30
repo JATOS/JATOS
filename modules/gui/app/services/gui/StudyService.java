@@ -191,22 +191,12 @@ public class StudyService {
     }
 
     /**
-     * Binds study properties from a edit/create study request onto a Study.
-     */
-    private Study bindToStudy(StudyProperties studyProperties) {
-        Study study = new Study();
-        bindToStudyWithoutDirName(study, studyProperties);
-        study.setDirName(studyProperties.getDirName());
-        return study;
-    }
-
-    /**
      * Create and persist a Study with given properties. Creates and persists the default Batch. If the study has
      * components already, it persists them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(User signedinUser, StudyProperties studyProperties) {
-        Study study = bindToStudy(studyProperties);
-        study.setUuid(studyProperties.getUuid());
+        Study study = new Study();
+        bindToStudyWithoutDirName(study, studyProperties);
         return createAndPersistStudy(signedinUser, study);
     }
 
@@ -215,10 +205,7 @@ public class StudyService {
      * them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(User signedinUser, Study study) {
-        if (study.getUuid() == null) {
-            study.setUuid(UUID.randomUUID().toString());
-        }
-        study.getComponentList().forEach(c -> componentService.createComponent(study, c));
+        study.getComponentList().forEach(c -> c.setStudy(study));
 
         studyDao.create(study);
 
@@ -403,17 +390,17 @@ public class StudyService {
         studyLogger.retire(study);
     }
 
-    public Study getStudyFromIdOrUuid(String id) throws NotFoundException, ForbiddenException {
-        Optional<Long> studyId = Helpers.parseLong(id.trim());
+    public Study getStudyFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+        Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
         User signedinUser = authService.getSignedinUser();
         Study study;
         if (studyId.isPresent()) {
             study = studyDao.findById(studyId.get());
-            if (study == null) throw new NotFoundException("Couldn't find study with ID " + studyId.get());
+            if (study == null) throw new NotFoundException("Couldn't find study with ID " + idOrUuid);
             checker.checkStandardForStudy(study, studyId.get(), signedinUser);
         } else {
-            study = studyDao.findByUuid(id)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + id));
+            study = studyDao.findByUuid(idOrUuid)
+                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + idOrUuid));
             checker.checkStandardForStudy(study, study.getId(), signedinUser);
         }
         return study;

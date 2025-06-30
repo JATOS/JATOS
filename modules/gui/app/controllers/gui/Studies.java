@@ -31,7 +31,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
@@ -124,15 +123,12 @@ public class Studies extends Controller {
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
-        studyProperties.setUuid(UUID.randomUUID().toString());
-        studyProperties.setDirName(studyProperties.getUuid());
+        Study study = studyService.createAndPersistStudy(signedinUser, studyProperties);
         try {
-            ioUtils.createStudyAssetsDir(studyProperties.getDirName());
+            ioUtils.createStudyAssetsDir(study.getDirName());
         } catch (IOException e) {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
-
-        Study study = studyService.createAndPersistStudy(signedinUser, studyProperties);
         return ok(study.getId().toString());
     }
 

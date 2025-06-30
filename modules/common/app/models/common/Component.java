@@ -10,6 +10,7 @@ import utils.common.JsonUtils.JsonForPublix;
 import javax.persistence.*;
 import java.io.File;
 import java.sql.Timestamp;
+import java.util.UUID;
 
 /**
  * DB entity of a component. It's used by JPA and JSON marshaling.
@@ -93,6 +94,7 @@ public class Component {
     private String jsonData;
 
     public Component() {
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public void setId(Long id) {

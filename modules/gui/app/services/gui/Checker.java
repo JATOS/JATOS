@@ -46,11 +46,18 @@ public class Checker {
         if (component.getStudy() == null) {
             throw new ForbiddenException(MessagesStrings.componentHasNoStudy(componentId));
         }
-        // Check that the user is a member of the study
+        // Check that the user is a member of the study or a superuser
         Study study = component.getStudy();
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
             String errorMsg = MessagesStrings.studyNotUser(user.getName(), user.getUsername(), study.getId());
             throw new ForbiddenException(errorMsg);
+        }
+    }
+
+    public void checkComponentBelongsToStudy(Component component, String studyIdOrUuid) throws ForbiddenException {
+        Study study = component.getStudy();
+        if (!study.getId().toString().equals(studyIdOrUuid) && !study.getUuid().equals(studyIdOrUuid)) {
+            throw new ForbiddenException("Component does not belong to study");
         }
     }
 
@@ -141,7 +148,7 @@ public class Checker {
             String errorMsg = MessagesStrings.studyNotExist(studyId);
             throw new NotFoundException(errorMsg);
         }
-        // Check that the user is a member of the study
+        // Check that the user is a member of the study or a superuser
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
             String errorMsg = "No access to study with ID " + studyId;
             throw new ForbiddenException(errorMsg);
