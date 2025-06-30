@@ -327,7 +327,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/components/{cid}:
     delete:
-      summary: Delete a component within a study
+      summary: Delete a component from a study
       description: >-
         (since v3.9.7) Delete a specific component including its 
         component results from a study.
