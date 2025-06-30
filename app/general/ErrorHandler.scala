@@ -1,7 +1,7 @@
 package general
 
 import javax.inject.{Inject, Singleton}
-import exceptions.gui.{BadRequestException, ForbiddenException, JatosGuiException, NotFoundException, AuthException}
+import exceptions.gui.{AuthException, BadRequestException, ForbiddenException, JatosGuiException, NotFoundException}
 import exceptions.publix.{InternalServerErrorPublixException, PublixException}
 
 import javax.naming.NamingException
@@ -12,6 +12,7 @@ import play.api.mvc._
 import play.mvc.Http
 import utils.common.Helpers
 
+import java.io.IOException
 import scala.concurrent._
 
 @Singleton
@@ -73,6 +74,9 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
         case e: AuthException =>
           logger.info(e.getMessage)
           Forbidden(e.getMessage)
+        case e: IOException =>
+          logger.info(e.getMessage)
+          InternalServerError(e.getMessage)
         case _ =>
           logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
