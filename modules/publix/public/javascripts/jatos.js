@@ -45,15 +45,17 @@ var jatos = {};
 	 */
 	jatos.httpRetryWait = 1000;
 	/**
-	 * The JSON data given to the study in the JATOS GUI
+	 * Study input data is configured within the study properties in the GUI.
+	 * Note that 'studyJsonInput' is the deprecated name; use 'studyInput' instead.
 	 */
 	jatos.studyJsonInput = {};
+	jatos.studyInput = {};
 	/**
 	 * Number of component this study has
 	 */
 	jatos.studyLength = null;
 	/**
-	 * All the properties (except studyJsonInput) belonging to the study
+	 * All the properties (except study input) belonging to the study
 	 */
 	jatos.studyProperties = {};
 	/**
@@ -66,25 +68,30 @@ var jatos = {};
 	 */
 	jatos.componentList = [];
 	/**
-	 * The JSON data given to the component in the JATOS GUI
+	 * Component input data is configured within the component properties
+	 * in the GUI. Note that 'componentJsonInput' is the deprecated name; use
+	 * componentInput' instead.
 	 */
 	jatos.componentJsonInput = {};
+	jatos.componentInput = {};
 	/**
 	 * Position of this component in this study (starts with 1)
 	 */
 	jatos.componentPos = null;
 	/**
-	 * All the properties (except componentJsonInput) belonging to the component
+	 * All the properties (except component input) belonging to the component
 	 */
 	jatos.componentProperties = {};
 	/**
-	 * All properties of the batch
+	 * All properties of the batch (except batch input)
 	 */
 	jatos.batchProperties = {};
 	/**
-	 * The JSON data given to the batch in the JATOS GUI
+	 * Batch input data is configured within the batch properties in the GUI.
+	 * Note that 'batchJsonInput' is the deprecated name; use 'batchInput' instead.
 	 */
 	jatos.batchJsonInput = {};
+	jatos.batchInput = {};
 	/**
 	 * Group member ID is unique for this member (it is actually identical with the
 	 * study result ID)
@@ -432,9 +439,8 @@ var jatos = {};
 	 * Gets the study's session data, the study's properties, and the
 	 * component's properties from the JATOS server and stores them in
 	 * jatos.studySessionData, jatos.studyProperties, and
-	 * jatos.componentProperties. Additionally it stores study's JsonInput
-	 * into jatos.studyJsonInput and component's JsonInput into
-	 * jatos.componentJsonInput.
+	 * jatos.componentProperties. Additionally it sets jatos.batchInput,
+	 * jatos.studyInput, and jatos.componentInput.
 	 */
 	function getInitData() {
 		return jatos.jQuery.ajax({
@@ -463,6 +469,7 @@ var jatos = {};
 		} else {
 			jatos.batchJsonInput = {};
 		}
+		jatos.batchInput = jatos.batchJsonInput;
 		delete jatos.batchProperties.jsonData;
 
 		// Study session data
@@ -481,6 +488,7 @@ var jatos = {};
 		} else {
 			jatos.studyJsonInput = {};
 		}
+		jatos.studyInput = jatos.studyJsonInput;
 		delete jatos.studyProperties.jsonData;
 
 		// Study's component list and study length
@@ -496,6 +504,7 @@ var jatos = {};
 		} else {
 			jatos.componentJsonInput = {};
 		}
+		jatos.componentInput = jatos.componentJsonInput;
 		delete jatos.componentProperties.jsonData;
 
 		// Query string parameters of the URL that starts the study

@@ -95,22 +95,22 @@ public class JsonUtils {
      * Formats a JSON string into a minimized form suitable for storing into a
      * DB.
      */
-    public static String asStringForDB(String jsonData) {
-        if (Strings.isNullOrEmpty(jsonData)) {
+    public static String asStringForDB(String json) {
+        if (Strings.isNullOrEmpty(json)) {
             return null;
         }
-        if (!JsonUtils.isValid(jsonData)) {
+        if (!JsonUtils.isValid(json)) {
             // Set the invalid string anyway, but don't standardize it. It will
             // cause an error during next validation.
-            return jsonData;
+            return json;
         }
-        String jsonDataForDB = null;
+        String jsonForDB = null;
         try {
-            jsonDataForDB = Json.mapper().readTree(jsonData).toString();
+            jsonForDB = Json.mapper().readTree(json).toString();
         } catch (Exception e) {
             LOGGER.info(".asStringForDB: error probably due to invalid JSON");
         }
-        return jsonDataForDB;
+        return jsonForDB;
     }
 
     /**

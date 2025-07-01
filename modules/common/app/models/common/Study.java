@@ -114,8 +114,8 @@ public class Study {
     private String comments;
 
     /**
-     * Data in JSON format: every study run of this Study gets access to them. They can be changed in the GUI but not
-     * via jatos.js. Can be used for initial data and configuration.
+     * Study input data in JSON format: every study run of this Study gets access to them. Can be used for initial data
+     * and configuration. It's called study input in the GUI and can be accessed via jatos.studyInput in jatos.js.
      */
     @Lob
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
@@ -354,7 +354,7 @@ public class Study {
 
     @JsonIgnore
     public Optional<Component> getFirstComponent() {
-        if (componentList.size() > 0) {
+        if (!componentList.isEmpty()) {
             return Optional.of(componentList.get(0));
         } else {
             return Optional.empty();
@@ -363,7 +363,7 @@ public class Study {
 
     @JsonIgnore
     public Optional<Component> getLastComponent() {
-        if (componentList.size() > 0) {
+        if (!componentList.isEmpty()) {
             return Optional.of(componentList.get(componentList.size() - 1));
         } else {
             return Optional.empty();

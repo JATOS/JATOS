@@ -15,7 +15,7 @@ import java.util.Set;
 
 /**
  * DB entity of a batch. The corresponding UI model is BatchProperties in model Gui.
- * <p>
+ *
  * Defines the constraints regarding workers for a batch of a study, e.g. which
  * worker types are allowed, how many workers, which Workers etc.
  *
@@ -58,37 +58,32 @@ public class Batch {
     private boolean active = true;
 
     /**
-     * Maximum number of workers/members in one group of this batch that are
-     * active at the same time. If there is no limit in active members the value
-     * is null. This property is only used if this batch belongs to a group
-     * study.
+     * Maximum number of workers/members in one group of this batch that are active at the same time. If there is no
+     * limit in active members the value is null. This property is only used if this batch belongs to a group study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxActiveMembers = null;
 
     /**
-     * Maximum number of workers/members in one group of this batch in total. If
-     * there is no limit in active members the value is null. This property is
-     * only used if this batch belongs to a group study.
+     * Maximum number of workers/members in one group of this batch in total. If there is no limit in active members the
+     * value is null. This property is only used if this batch belongs to a group study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxTotalMembers = null;
 
     /**
-     * Maximum number of workers in this batch in total independent of its
-     * groups. If there is no limit in active members the value is null.
-     * JatosWorker does not count here. The workers who belong to this batch are
-     * stored in the workerList (except JatosWorkers).
+     * Maximum number of workers in this batch in total independent of its groups. If there is no limit in active
+     * members the value is null. JatosWorker does not count here. The workers who belong to this batch are stored in
+     * the workerList (except JatosWorkers).
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxTotalWorkers = null;
 
     /**
-     * Set of workers that is created in this batch. Workers can be created
-     * before the study starts (PersonalMultipleWorker or PersonalSingleWorker)
-     * or created on-the-fly after the study started (MTWorker,
-     * GeneralSingleWorker, GeneralMultipleWorker). JatosWorker are created together with the User
-     * and added to this list too. This relationship is bidirectional.
+     * Set of workers that is created in this batch. Workers can be created before the study starts
+     * (PersonalMultipleWorker or PersonalSingleWorker) or created on-the-fly after the study started (MTWorker,
+     * GeneralSingleWorker, GeneralMultipleWorker). JatosWorker are created together with the User and added to this
+     * list too. This relationship is bidirectional.
      */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
@@ -98,45 +93,40 @@ public class Batch {
     private Set<Worker> workerList = new HashSet<>();
 
     /**
-     * Set of worker types that are allowed to run in this batch. If the worker
-     * type is not in this list, it has no permission to run this study.
+     * Set of worker types that are allowed to run in this batch. If the worker type is not in this list, it has no
+     * permission to run this study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> allowedWorkerTypes = new HashSet<>();
 
     /**
-     * User comments, reminders, something to share with others. They have no
-     * further meaning.
+     * User comments, reminders, something to share with others. They have no further meaning.
      */
     @Lob
     @JsonView({JsonForIO.class, JsonForApi.class})
     private String comments;
 
     /**
-     * Data in JSON format: every study run of this Batch gets access to them.
-     * They can be changed in the GUI but not via jatos.js. Can be used for
-     * initial data and configuration.
+     * Batch input data in JSON format: every study run of this Batch gets access to them. Can be used for initial data
+     * and configuration. It's called study input in the GUI and can be accessed via jatos.studyInput in jatos.js.
      */
     @Lob
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String jsonData;
 
     /**
-     * Temporary, global data storage that can be accessed via jatos.js to
-     * exchange data between all study runs of this batch. All members of this
-     * batch share the same batchSessionData. It's stored as a normal string in
-     * the database but jatos.js converts it into JSON. We use versioning to
-     * prevent concurrent changes of the data.
+     * Temporary, global data storage that can be accessed via jatos.js to exchange data between all study runs of this
+     * batch. All members of this batch share the same batchSessionData. It's stored as a normal string in the database
+     * but jatos.js converts it into JSON. We use versioning to prevent concurrent changes of the data.
      */
     @JsonIgnore
     @Lob
     private String batchSessionData = "{}";
 
     /**
-     * Current version of the batchSessionVersion. With each change of the data
-     * it is increased by 1. We use versioning to prevent concurrent changes of
-     * the data.
+     * Current version of the batchSessionVersion. With each change of the data it is increased by 1. We use versioning
+     * to prevent concurrent changes of the data.
      */
     @JsonIgnore
     @Column(nullable = false)

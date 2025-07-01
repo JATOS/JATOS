@@ -34,10 +34,9 @@ public class Component {
     private Long id;
 
     /**
-     * Universally, (world-wide) unique ID. Used for import/export between
-     * different JATOS instances. A study can have only one component with the
-     * same UUID, although it is allowed to have other studies that have this
-     * component with this UUID.
+     * Universally, (world-wide) unique ID. Used for import/export between different JATOS instances. A study can have
+     * only one component with the same UUID, although it is allowed to have other studies that have this component with
+     * this UUID.
      */
     @Column(nullable = false)
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
@@ -58,8 +57,7 @@ public class Component {
     private Timestamp date;
 
     /**
-     * Local path to component's HTML file in the study assets' dir. File
-     * separators are persisted as '/'.
+     * Local path to component's HTML file in the study assets' dir. File separators are persisted as '/'.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @JoinColumn(name = "viewUrl")
@@ -69,25 +67,23 @@ public class Component {
     private boolean reloadable = false;
 
     /**
-     * An inactive component can't be used within a study - it generates an
-     * error message if one try. Further it's skipped if one uses
-     * startNextComponent from the public API.
+     * An inactive component can't be used within a study - it generates an error message if one try. Further it's
+     * skipped if one uses startNextComponent from the public API.
      */
     @JsonView({JsonForIO.class, JsonForApi.class})
     private boolean active = true;
 
     /**
-     * User comments, reminders, something to share with others. They have no
-     * further meaning.
+     * User comments, reminders, something to share with others. They have no further meaning.
      */
     @Lob
     @JsonView({JsonForIO.class, JsonForApi.class})
     private String comments;
 
     /**
-     * Data in JSON format: every component run of this Component gets access to
-     * them. They can be changed in the GUI but not via jatos.js. Can be used
-     * for initial data and configuration.
+     * Component input data in JSON format: every component run of this Component gets access to them. Can be used for
+     * initial data and configuration. It's called component input in the GUI and can be accessed via
+     * jatos.componentInput in jatos.js.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @Lob
