@@ -10,6 +10,8 @@ import models.common.User;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import play.api.mvc.RequestHeader;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -108,11 +110,17 @@ public class Helpers {
     }
 
     /**
-     * Returns the whole query string of the given Request including '?'.
+     * Returns the whole query string of the given Request including '?'. Checks for HTML tags to prevent XSS attacks.
      */
     public static String getQueryString(Http.Request request) {
         return request.queryString().entrySet().stream()
-                .map(e -> e.getKey() + "=" + e.getValue()[0])
+                .map(e -> {
+                    String queryParam = e.getKey() + "=" + e.getValue()[0];
+                    if (!Jsoup.isValid(queryParam, Safelist.none())) {
+                        throw new IllegalArgumentException("No HTML allowed");
+                    }
+                    return queryParam;
+                })
                 .collect(Collectors.joining("&", "?", ""));
     }
 
@@ -190,6 +198,8 @@ public class Helpers {
         config.put("User session inactivity", String.valueOf(Common.getUserSessionInactivity()));
         config.put("DB URL", Common.getDbUrl());
         config.put("DB driver", Common.getDbDriver());
+        config.put("DB connection pool size", Common.getDbConnectionPoolSize());
+        config.put("Thread pool size", Common.getThreadPoolSize());
         config.put("Max results DB query size", String.valueOf(Common.getMaxResultsDbQuerySize()));
         config.put("Google OAuth allowed", String.valueOf(Common.isOauthGoogleAllowed()));
         if (Common.isOauthGoogleAllowed()) {

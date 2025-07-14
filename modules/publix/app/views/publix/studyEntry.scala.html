@@ -80,6 +80,7 @@ input[type=submit]:hover, button:hover {
     const validStudyLink = @validStudyLink;
     const studyEntryMsg = `@Html(studyEntryMsg)`.replace(/(?:\r\n|\r|\n)/g, '<br>');
     const errMsg = "@errMsg";
+    const queryString = "@Html(queryString)";
 
     if (validStudyLink) {
         document.querySelector('#confirm').style.display = 'block';
@@ -90,7 +91,7 @@ input[type=submit]:hover, button:hover {
         }
         document.querySelector('.runButton').addEventListener('click', function() {
             event.preventDefault();
-            window.location.href = '@{general.common.Common.getJatosUrlBasePath()}publix/' + studyCode + "@Html(queryString)";
+            window.location.href = '@{general.common.Common.getJatosUrlBasePath()}publix/' + studyCode + queryString;
         });
     }
 
@@ -106,7 +107,7 @@ input[type=submit]:hover, button:hover {
     function run(event) {
         event.preventDefault();
         const studyCode = document.querySelector("#studyCode").value;
-        window.location.href = '@{general.common.Common.getJatosUrlBasePath()}publix/' + studyCode + "@Html(queryString)";
+        window.location.href = '@{general.common.Common.getJatosUrlBasePath()}publix/' + studyCode + queryString;
     }
 
 
