@@ -49,6 +49,7 @@ public class Common {
     private static boolean userSessionAllowKeepSignedin;
     private static String dbUrl;
     private static String dbDriver;
+    private static String dbConnectionPoolSize;
     private static String mac;
     private static int userPasswordLength;
     private static int userPasswordStrength;
@@ -117,6 +118,9 @@ public class Common {
     private static String logsAppender;
     private static String tmpPath;
     private static boolean multiNode;
+    private static String threadPoolSize;
+    private static String studyArchiveSuffix;
+    private static String resultsArchiveSuffix;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -152,6 +156,7 @@ public class Common {
         userSessionAllowKeepSignedin = config.getBoolean("jatos.userSession.allowKeepSignedin");
         dbUrl = config.getString("db.default.url"); // Also jatos.db.url
         dbDriver = config.getString("db.default.driver"); // Also jatos.db.driver
+        dbConnectionPoolSize = config.getString("jatos.db.connectionPool.size");
         mac = fillMac();
         userPasswordLength = config.getInt("jatos.user.password.length");
         userPasswordStrength = config.getInt("jatos.user.password.strength");
@@ -232,6 +237,9 @@ public class Common {
                 ? System.getProperty("java.io.tmpdir") + File.separator + "jatos"
                 : obtainPath(config, "jatos.tmpPath");
         LOGGER.info("Path to tmp directory is " + tmpPath);
+        threadPoolSize = config.getString("jatos.threadPool.size");
+        studyArchiveSuffix = config.getString("jatos.studyArchive.suffix");
+        resultsArchiveSuffix = config.getString("jatos.resultsArchive.suffix");
     }
 
     private String obtainPath(Config config, String property) {
@@ -419,6 +427,13 @@ public class Common {
      */
     public static String getDbDriver() {
         return dbDriver;
+    }
+
+    /**
+     * Database connection pool size
+     */
+    public static String getDbConnectionPoolSize() {
+        return dbConnectionPoolSize;
     }
 
     /**
@@ -942,5 +957,26 @@ public class Common {
      */
     public static boolean isMultiNode() {
         return multiNode;
+    }
+
+    /**
+     * JATOS' thread pool size
+     */
+    public static String getThreadPoolSize() {
+        return threadPoolSize;
+    }
+
+    /**
+     * File extension of study archive files
+     */
+    public static String getStudyArchiveSuffix() {
+        return studyArchiveSuffix;
+    }
+
+    /**
+     * File extension of results archive files
+     */
+    public static String getResultsArchiveSuffix() {
+        return resultsArchiveSuffix;
     }
 }
