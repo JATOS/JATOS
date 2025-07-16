@@ -73,7 +73,7 @@ paths:
     post:
       summary: Import a study
       description: >-
-        Import a study in the JATOS study archive file format (*.jzip* suffix).
+        Import a study in the JATOS study archive file format.
         You can set several flags in the query parameters to specify how eventual
         existing studies with the same UUID should be handled (e.g keep or
         overwrite their properties and/or assets).
@@ -241,7 +241,7 @@ paths:
       summary: Export a study
       description: >-
         Export a study by specifying its ID or UUID. The exported study will be in the
-        JATOS study archive file format with a *.jzip* suffix.
+        JATOS study archive file format, packed as ZIP.
       tags:
         - study
       parameters:
@@ -659,8 +659,7 @@ paths:
         to use single IDs, list of IDs, ranges, or a combination of all three.
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
-        raised. The results will be packed in an JATOS results archive with an
-        *.jrzip* suffix.
+        raised. The results will be packed in an ZIP archive.
       tags:
         - results
       parameters:
@@ -732,8 +731,7 @@ paths:
         to use single IDs, list of IDs, ranges, or a combination of all three.
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
-        raised. The results will be packed in an ZIP archive with an *.jrzip*
-        suffix.
+        raised. The result data will be in an text file.
       tags:
         - results
       parameters:
@@ -772,8 +770,7 @@ paths:
         to use single IDs, list of IDs, ranges, or a combination of all three.
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
-        raised. The results will be packed in an ZIP archive with an *.jrzip*
-        suffix.
+        raised. The results will be packed in an ZIP archive.
       tags:
         - results
       parameters:

@@ -8,6 +8,7 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
+import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
@@ -58,7 +59,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that imports a JATOS study archive (.jzip file) to JATOS. It's only used by the API. The difference
+     * POST request that imports a JATOS study archive to JATOS. It's only used by the API. The difference
      * to the methods used by the GUI (importStudy and importStudyConfirmed) is, that here all is done in one request
      * and all confirmation (e.g. keepProperties, keepAssets) has to be specified beforehand.
      */
@@ -102,7 +103,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that checks whether this is a legitimate import of a JATOS study archive (.jzip file), e.g. if the
+     * POST request that checks whether this is a legitimate import of a JATOS study archive, e.g. if the
      * study or its directory already exists. The actual import happens in method importStudyConfirmed().
      */
     @Transactional
@@ -134,7 +135,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that does the actual import of a JATOS study archive (.jzip file). This endpoint gets called always
+     * POST request that does the actual import of a JATOS study archive. This endpoint gets called always
      * after importStudy().
      */
     @Transactional
@@ -169,7 +170,7 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * GET request that exports a JATOS study archive (.jzip file). The archive is a zip compressed file that contains
+     * GET request that exports a JATOS study archive. The archive is a zip compressed file that contains
      * the study asset directory and the study properties as JSON saved in a .jas file.
      */
     @Transactional
@@ -185,7 +186,7 @@ public class ImportExport extends Controller {
             return internalServerError(errorMsg);
         }
 
-        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_study_" + study.getUuid() + ".jzip");
+        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_study_" + study.getUuid() + "." + Common.getStudyArchiveSuffix());
         // We need the "Content-Disposition" header for API calls (not for the GUI)
         //noinspection ResultOfMethodCallIgnored
         return ok().streamed(

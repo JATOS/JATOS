@@ -69,9 +69,9 @@ class Toolbars {
                     "className": `btn ${this.btnClass} me-2`,
                     "buttons": [
                         {
-                            "text": '<span data-bs-tooltip="A JATOS Results Archive (JRZIP) contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
+                            "text": '<span data-bs-tooltip="A JATOS Results Archive contains everything (metadata, result data and result files), all packed in a ZIP archive. Hence every ZIP unpacker can be used to get to the files.">JATOS Results Archive</span>',
                             "className": this.dropdownClass,
-                            "action": () => this.exportResultsCallback(window.routes.Api.exportResults(false), "jatos_results_" + Helpers.getDateTimeYYYYMMDDHHmmss() + ".jrzip")
+                            "action": () => this.exportResultsCallback(window.routes.Api.exportResults(false), "jatos_results_" + Helpers.getDateTimeYYYYMMDDHHmmss() + "." + window.common.resultsArchiveSuffix)
                         },
                         {
                             "text": '<span data-bs-tooltip="Exports data only from results, as zip package or plain text file">Data only</span>',

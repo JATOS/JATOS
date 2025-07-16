@@ -334,7 +334,7 @@ public class Api extends Controller {
     }
 
     /**
-     * Returns a JATOS study archive (.jzip)
+     * Returns a JATOS study archive
      *
      * @param id    Study's ID or UUID
      */
@@ -386,7 +386,7 @@ public class Api extends Controller {
     }
 
     /**
-     * Imports a JATOS study archive (.jzip).
+     * Imports a JATOS study archive
      *
      * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
      *                              Default is `false` (properties are overwritten by default). If the study doesn't
@@ -490,7 +490,7 @@ public class Api extends Controller {
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.COMBINED,
                 wrapperObject);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".jrzip");
+                + Helpers.getDateTimeYyyyMMddHHmmss() + "." + Common.getResultsArchiveSuffix());
         return ok().chunked(dataSource).as("application/zip")
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }

@@ -98,12 +98,12 @@ function pickFileHandle(fileName) {
                 accept: {'application/zip': ['.zip']},
             },
             {
-                description: `JATOS study archive (JZIP) file`,
-                accept: {'application/zip': ['.jzip']},
+                description: `JATOS study archive file`,
+                accept: {'application/zip': ['.' + window.common.studyArchiveSuffix]},
             },
             {
-                description: `JATOS results archive (JRZIP) file`,
-                accept: {'application/zip': ['.jrzip']},
+                description: `JATOS results archive file`,
+                accept: {'application/zip': ['.' + window.common.resultsArchiveSuffix]},
             },
             {
                 description: `JSON file`,
