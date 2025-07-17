@@ -124,7 +124,7 @@
 
     $('#exportStudy').click(function() {
         const url = window.routes.Api.exportStudy(window.study.id);
-        const filename = window.study.title + ".jzip";
+        const filename = window.study.title + "." + window.common.studyArchiveSuffix;
         FileSystemAccess.downloadFileStream(url, null, filename);
     });
 
