@@ -50,7 +50,7 @@ rem ### Functions ###
 
 :start
   rem # Check if JATOS is already running
-  wmic process where "name like '%%java%%'" get commandline | findstr /i /c:"jatos" > NUL && (
+  tasklist /nh /fi "imagename eq java.exe" /v | findstr /i /c:"jatos" > NUL && (
     echo JATOS already running
     if _%DOUBLECLICKED%_==_1_ pause
     goto:eof
