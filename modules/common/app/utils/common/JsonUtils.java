@@ -114,7 +114,8 @@ public class JsonUtils {
     }
 
     /**
-     * Checks whether the given string is a valid JSON string.
+     * Checks whether the given string is a valid JSON string. An empty string or
+     * null is accepted as valid.
      */
     public static boolean isValid(final String json) {
         boolean valid = false;
