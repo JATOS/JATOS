@@ -393,36 +393,30 @@ var jatos = {};
 	}
 
 	/**
-	 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
-	 * and stores all key-value pairs into jatos scope.
+	 * Reads JATOS ID cookies, finds the right one with the correct studyResultUuid
+	 * and stores all key-value pairs into the global jatos object.
 	 */
 	function readIdCookie() {
-		var idCookieName = "JATOS_IDS";
-		var cookieArray = document.cookie.split(';');
-		var fillJatos = function (key, value) {
-			jatos[key] = value;
-		};
-		for (var i = 0; i < cookieArray.length; i++) {
-			var cookie = cookieArray[i];
-			// Remove leading spaces in cookie string
-			while (cookie.charAt(0) === ' ') {
-				cookie = cookie.substring(1, cookie.length);
-			}
-			if (cookie.indexOf(idCookieName) !== 0) {
-				continue;
-			}
-			var cookieStr = cookie.substr(
-				cookie.indexOf(idCookieName) + idCookieName.length + 3,
-				cookie.length);
-			var idArray = cookieStr.split("&");
-			var idMap = getIdsFromCookie(idArray);
-			if (idMap.studyResultUuid == jatos.studyResultUuid) {
-				jatos.jQuery.each(idMap, fillJatos);
-				// Convert component's position to int
-				jatos.componentPos = parseInt(jatos.componentPos);
-				break;
-			}
+		const idCookieName = "JATOS_ID";
+		const cookieRow = document.cookie
+			.split('; ')
+			.filter(row => row.includes(idCookieName))
+			.find(row => row.includes(jatos.studyResultUuid));
+		if (!cookieRow) {
+			console.error('readIdCookie: JATOS ID cookie for current studyResultUuid not found.');
+			return;
 		}
+
+		const equalsIndex = cookieRow.indexOf('=');
+		const idCookieValue = cookieRow.substring(equalsIndex + 1);
+		if (!idCookieValue) {
+			console.error(`readIdCookie: JATOS ID cookie value is empty for cookie "${cookieRow}".`);
+			return;
+		}
+
+		const cookieParams = new URLSearchParams(idCookieValue);
+		cookieParams.forEach((value, key) => jatos[key] = value);
+		jatos.componentPos = parseInt(jatos.componentPos, 10);
 	}
 
 	function getIdsFromCookie(idArray) {
@@ -507,9 +501,9 @@ var jatos = {};
 		jatos.componentInput = jatos.componentJsonInput;
 		delete jatos.componentProperties.jsonData;
 
-		// Query string parameters of the URL that starts the study
+		// Query string parameters of the URL that started the study
 		jatos.urlQueryParameters = initData.urlQueryParameters;
-
+		jatos.frameId = jatos.urlQueryParameters.frameId || undefined;
 		jatos.studyCode = initData.studyCode;
 	}
 
@@ -1369,6 +1363,17 @@ var jatos = {};
 			callMany("Can start only one component at the same time", onError, console.warn);
 			return;
 		}
+		// If this is a single component run initiated by the JATOS GUI, end the run.
+		const isSingleComponentRun = jatos.jatosRun === "RUN_COMPONENT_FINISHED";
+		if (isSingleComponentRun) {
+			if (resultData) {
+				jatos.endStudy(resultData, true, message);
+			} else {
+				jatos.endStudy(true, message);
+			}
+			return;
+		}
+
 		startingComponent = true;
 
 		// Send result data and study session data before starting next component
@@ -1479,15 +1484,12 @@ var jatos = {};
 			onError = param2;
 		}
 
-		// If last component end study
+		// If this is the last component end study
 		var lastActiveComponent = jatos.componentList.slice().reverse()
 			.find(function (component) { return component.active; });
 		if (jatos.componentPos >= lastActiveComponent.position) {
 			if (resultData) {
-				var onComplete = function () {
-					jatos.endStudy(true, message);
-				};
-				jatos.appendResultData(resultData).done(onComplete).fail(onError);
+				jatos.endStudy(resultData, true, message);
 			} else {
 				jatos.endStudy(true, message);
 			}
@@ -2390,7 +2392,7 @@ var jatos = {};
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
 		});
-		deferred.always(jatos.removeOverlay);
+		deferred.always(jatos.removeOverlays);
 
 		return deferred.promise();
 	};
@@ -2425,12 +2427,21 @@ var jatos = {};
 	 *          redirect to another page. Default is true.
 	 */
 	jatos.abortStudy = function (message, showEndPage) {
-		if (typeof showEndPage !== "undefined" && !showEndPage) {
-			return jatos.abortStudyWithoutRedirect(message);
-		}
 		if (studyRunInvalid) {
 			console.warn("Can't abort study. This study run is invalid.");
 			return;
+		}
+
+		if (typeof showEndPage !== "undefined" && !showEndPage) {
+			return jatos.abortStudyWithoutRedirect(message);
+		}
+
+		// In an iframe run initiated by the JATOS GUI (worker type 'Jatos'), end the run without
+		// redirecting and notify the parent frame.
+		const isInIframe = window.self !== window.top;
+		if (isInIframe && jatos.workerType == "Jatos" && parent.onIframeComplete) {
+			return jatos.abortStudyWithoutRedirect(message)
+				.done(() => parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId));
 		}
 
 		if (endingStudy) {
@@ -2552,7 +2563,7 @@ var jatos = {};
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
 		});
-		deferred.always(jatos.removeOverlay);
+		deferred.always(jatos.removeOverlays);
 
 		return deferred.promise();
 	};
@@ -2625,6 +2636,21 @@ var jatos = {};
 			} else {
 				return jatos.endStudyWithoutRedirect(successful, message);
 			}
+		}
+
+		// In an iframe run initiated by the JATOS GUI (worker type 'Jatos'), end the run without
+		// redirecting and notify the parent frame.
+		const isInIframe = window.self !== window.top;
+		if (isInIframe && jatos.workerType == "Jatos" && parent.onIframeComplete) {
+			const endIframe = () => {
+				parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId);
+			};
+			if (resultData) {
+				jatos.endStudyWithoutRedirect(resultData, successful, message).done(endIframe);
+			} else {
+				jatos.endStudyWithoutRedirect(successful, message).done(endIframe);
+			}
+			return;
 		}
 
 		if (endingStudy) {
@@ -2734,9 +2760,9 @@ var jatos = {};
 	 * study result ID, component result ID, group result ID, group member ID)
 	 * to the given object.
 	 *
-	 * @param {object} obj - Object to which the IDs will be added
+	 * @param {object object} obj - Object to which the IDs will be added
 	 */
-	jatos.addJatosIds = function (obj) {
+	jatos.addJatosIds = function (obj = {}) {
 		obj.studyCode = jatos.studyCode;
 		obj.studyId = jatos.studyId;
 		obj.studyTitle = jatos.studyProperties.title;
@@ -2794,17 +2820,20 @@ var jatos = {};
 	 * @param {object optional} config - Config object
 	 * @param {boolean optional} config.show - If true the overlay is shown - otherwise not.
 	 * 										   Default is true.
+	 * @param {boolean optional} config.keep - Keep the overlay when jatos.removeOverlays
+	 *                                         is called. Default is false.
 	 * @param {string optional} config.text - Text to be shown. Default is "Please wait".
 	 * @param {string optional} config.imgUrl - URL of the image. Default is a spinning wheel.
 	 * @param {string optional} config.showImg - If true the image is shown - otherwise not.
 	 * 										     Default is true.
 	 * @param {string optional} config.style - Additional CSS styles
+	 * @return {object} - The created element
 	 */
 	jatos.showOverlay = function (config) {
 		if (config && typeof config.show == "boolean" && !config.show) return;
 
 		// Create div
-		var divStyle = 'color: black;' +
+		let divStyle = 'color: black;' +
 			'font-family: Sans-Serif;' +
 			'font-size: 30px;' +
 			'letter-spacing: 2px;' +
@@ -2820,17 +2849,17 @@ var jatos = {};
 			'justify-content: center;' +
 			'flex-direction: column;';
 		if (config && typeof config.style == "string") divStyle += ";" + config.style;
-		var div = document.createElement('div');
-		div.id = "jatosOverlay";
+		const div = document.createElement('div');
+		div.classList.add("jatosOverlay");
 		div.style.cssText = divStyle;
 
 		// Add Text
-		var text = (config && typeof config.text == "string") ? config.text : "Please wait";
-		var textElement = document.createTextNode(text);
+		const text = config ? config.text : "Please wait";
+		const textElement = document.createTextNode(text);
 		div.appendChild(textElement);
 
 		// Add image
-		var showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
+		const showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
 		if (showImg) {
 			var imgUrl = (config && typeof config.imgUrl == "string") ? config.imgUrl
 				: "jatos-publix/images/waiting.gif";
@@ -2840,16 +2869,24 @@ var jatos = {};
 			div.appendChild(waitingImg);
 		}
 
-		jatos.removeOverlay(); // remove old overlay
+		const keep = (config && typeof config.keep == "boolean") ? config.keep : false;
+		div.setAttribute('data-keep', keep);
 		document.body.appendChild(div);
+		return div;
 	};
 
+	// Keep this for backward compatibility
+	jatos.removeOverlay = () => jatos.removeOverlays();
+
 	/**
-	 * Removes the overlay that was added by jatos.showOverlay before
+	 * Removes all overlays that have the class 'jatosOverlay' and the data attribute
+	 * 'keep' set to "false". If force is true it also removes the ones with the data
+	 * attribute 'keep' set to "true".
 	 */
-	jatos.removeOverlay = function () {
-		var el = document.getElementById("jatosOverlay");
-		if (el) el.remove();
+	jatos.removeOverlays = function (force) {
+		document.querySelectorAll('.jatosOverlay').forEach(el => {
+			if (el.dataset.keep === "false" || force) el.remove();
+		});
 	};
 
 	/**

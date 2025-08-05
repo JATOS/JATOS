@@ -65,7 +65,7 @@ public class PublixInterceptor extends Controller {
     /**
      * Shows the Study Entry page prior to a study run.
      * 1. Lets worker enter the study code
-     * 2. Takes the study code as a query parameter. An text shown can be customized in the study properties.
+     * 2. Takes the study code as a query parameter. A text shown can be customized in the study properties.
      * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
      */
     @Transactional
@@ -95,6 +95,21 @@ public class PublixInterceptor extends Controller {
         }
         return ok(views.html.publix.studyEntry.render(studyCode, validStudyLink, Helpers.getQueryString(request),
                 studyEntryMsg, errMsg));
+    }
+
+    /**
+     * Facilitates multiple study runs in parallel each in its own iframe. If 'frames' is 1 (or lower) it just redirects
+     * to the normal run endpoint.
+     */
+    public Result runx(String code, Long frames) throws PublixException {
+        LOGGER.info(".runx: code " + code + ", frames " + frames);
+        if (Strings.isNullOrEmpty(code)) {
+            throw new BadRequestPublixException("Invalid study code");
+        } else if (frames > 1) {
+            return ok(views.html.publix.runx.render(code, frames));
+        } else {
+            return redirect(controllers.publix.routes.PublixInterceptor.run(code));
+        }
     }
 
     @Transactional

@@ -125,7 +125,7 @@ public class IdCookieService {
             if (existingIdCookie != null) {
                 newIdCookieName = existingIdCookie.getName();
             } else {
-                newIdCookieName = getNewIdCookieName(idCookieCollection);
+                newIdCookieName = getNewIdCookieName(idCookieCollection, studyResult.getId());
             }
 
             IdCookieModel newIdCookie = buildIdCookie(newIdCookieName, studyResult, componentResult, jatosRun);
@@ -142,14 +142,13 @@ public class IdCookieService {
      * reached it reuses the name of the oldest ID cookie. If not it creates a
      * new name.
      */
-    private String getNewIdCookieName(IdCookieCollection idCookieCollection)
+    private String getNewIdCookieName(IdCookieCollection idCookieCollection, Long studyResultId)
             throws IdCookieCollectionFullException {
         if (idCookieCollection.isFull()) {
             throw new IdCookieCollectionFullException(
                     PublixErrorMessages.IDCOOKIE_COLLECTION_FULL);
         }
-        int newIndex = idCookieCollection.getNextAvailableIdCookieIndex();
-        return IdCookieModel.ID_COOKIE_NAME + "_" + newIndex;
+        return IdCookieModel.ID_COOKIE_NAME + "_" + studyResultId;
     }
 
     /**

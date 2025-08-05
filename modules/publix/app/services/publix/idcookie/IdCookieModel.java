@@ -18,7 +18,7 @@ public class IdCookieModel {
     /**
      * Every ID cookie name starts with this String.
      */
-    public static final String ID_COOKIE_NAME = "JATOS_IDS";
+    public static final String ID_COOKIE_NAME = "JATOS_ID";
 
     /**
      * Names of the keys in the real cookie.

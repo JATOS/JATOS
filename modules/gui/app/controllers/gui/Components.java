@@ -71,7 +71,7 @@ public class Components extends Controller {
      */
     @Transactional
     @Auth
-    public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId)
+    public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId, Long frames)
             throws JatosGuiException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
@@ -96,7 +96,8 @@ public class Components extends Controller {
         // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix: start study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
-        String runUrl = Common.getJatosUrlBasePath() + "publix/" + studyLink.getStudyCode();
+        String runUrl = Common.getJatosUrlBasePath() + "publix/runx?code=" + studyLink.getStudyCode()
+                + "&frames=" + frames;
         return redirect(runUrl)
                 .addingToSession(request, "jatos_run", "RUN_COMPONENT_START")
                 .addingToSession(request, "run_component_uuid", component.getUuid());

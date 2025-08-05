@@ -6,9 +6,31 @@
 
     @* Study toolbar *@
     <div class="sticky-top text-nowrap d-flex flex-wrap gap-1 pb-4" id="studyToolbar" role="toolbar">
-            <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip="Do a test run of your study">
-                <i class="bi-play-circle"></i><span class="d-none d-xl-inline ps-1">Run</span>
-            </a>
+            <div class="btn-group me-3" role="group">
+                <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip="Do a test run of your study">
+                    <i class="bi-play-circle"></i><span class="d-none d-xl-inline ps-1">Run</span>
+                </a>
+                <button class="btn btn-study dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-study">
+                    <li class="no-info-icon" data-bs-tooltip="Run 2">
+                        <a class="dropdown-item" id="runStudyx2" href="#"><i class="bi-play-circle pe-1"></i>Run 2x</a>
+                    </li>
+                    <li class="no-info-icon" data-bs-tooltip="Run 3">
+                        <a class="dropdown-item" id="runStudyx3" href="#"><i class="bi-play-circle pe-1"></i>Run 3x</a>
+                    </li>
+                    <li class="no-info-icon" data-bs-tooltip="Run 4">
+                        <a class="dropdown-item" id="runStudyx4" href="#"><i class="bi-play-circle pe-1"></i>Run 4x</a>
+                    </li>
+                    <li class="no-info-icon" data-bs-tooltip="Run 5">
+                        <a class="dropdown-item" id="runStudyx5" href="#"><i class="bi-play-circle pe-1"></i>Run 5x</a>
+                    </li>
+                    <li class="no-info-icon" data-bs-tooltip="Run 6">
+                        <a class="dropdown-item" id="runStudyx6" href="#"><i class="bi-play-circle pe-1"></i>Run 6x</a>
+                    </li>
+                </ul>
+            </div>
             <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip="Show this study results">
                 Results<span class="badge text-study bg-white rounded-pill ms-1">@studyResultsCount</span>
             </button>
@@ -113,6 +135,11 @@
 
     // Set the href property in code so users can use the Ctrl + click to open the study run in a different tab
     $('#runStudy').prop("href", `${window.routes.Studies.runStudy(window.study.id)}`);
+    $('#runStudyx2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 2)}`);
+    $('#runStudyx3').prop("href", `${window.routes.Studies.runStudy(window.study.id, 3)}`);
+    $('#runStudyx4').prop("href", `${window.routes.Studies.runStudy(window.study.id, 4)}`);
+    $('#runStudyx5').prop("href", `${window.routes.Studies.runStudy(window.study.id, 5)}`);
+    $('#runStudyx6').prop("href", `${window.routes.Studies.runStudy(window.study.id, 6)}`);
 
     $('#studyResults').click(function() {
         window.location.href = window.routes.StudyResults.studysStudyResults(window.study.id);

@@ -325,7 +325,7 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result runStudy(Http.Request request, Long studyId, Long batchId)
+    public Result runStudy(Http.Request request, Long studyId, Long batchId, Long frames)
             throws JatosGuiException, NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
@@ -336,7 +336,8 @@ public class Studies extends Controller {
         // Get StudyLink and redirect to jatos-publix: start study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
-        String runUrl = Common.getJatosUrlBasePath() + "publix/"  + studyLink.getStudyCode();
+        String runUrl = Common.getJatosUrlBasePath() + "publix/runx?code=" + studyLink.getStudyCode()
+                + "&frames=" + frames;
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 
