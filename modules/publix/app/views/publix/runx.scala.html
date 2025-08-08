@@ -18,18 +18,6 @@
         overflow: hidden;
         width: 100%;
     }
-    .frameInfo {
-        color: black;
-	    font-family: Sans-Serif;
-		font-size: 12px;
-		letter-spacing: 2px;
-		opacity: 0.6;
-		text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
-		z-index: 9999;
-		position: absolute;
-		left: 4px;
-		bottom: 4px;
-    }
     .studyDoneOverlay {
         color: black;
 	    font-family: Sans-Serif;
@@ -74,9 +62,6 @@
         div.className = 'box';
         div.id = `frame${frameId}`;
         div.style.width = `${widthPercentage}%`;
-
-        addOverlayText(div, frameId, 'frameInfo');
-
         return div;
     }
 
