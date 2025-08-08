@@ -335,6 +335,7 @@ var jatos = {};
 				httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
 			})
 			.then(getInitData)
+			.then(showIdOverlay)
 			.then(openBatchChannelWithRetry)
 			.always(function () {
 				initialized = true;
@@ -1750,6 +1751,7 @@ var jatos = {};
 	function updateGroupVars(groupMsg) {
 		if (typeof groupMsg.groupResultId != 'undefined') {
 			jatos.groupResultId = groupMsg.groupResultId.toString();
+			showIdOverlay();
 			// Group member ID is equal to study result ID
 			jatos.groupMemberId = jatos.studyResultId;
 		}
@@ -2815,7 +2817,8 @@ var jatos = {};
 	/**
 	 * Adds an overlay to the document that shows a text and an image underneath
 	 * in the center of the screen. By default the text is 'Please wait.' and the
-	 * image is an spinning wheel.
+	 * image is a spinning wheel. If an element with the provided ID already exists
+	 * just the text content will be updated.
 	 *
 	 * @param {object optional} config - Config object
 	 * @param {boolean optional} config.show - If true the overlay is shown - otherwise not.
@@ -2827,12 +2830,24 @@ var jatos = {};
 	 * @param {string optional} config.showImg - If true the image is shown - otherwise not.
 	 * 										     Default is true.
 	 * @param {string optional} config.style - Additional CSS styles
+	 * @param {string optional} config.id - Element ID
+	 * @param {string optional} config.className - Additional class name
 	 * @return {object} - The created element
 	 */
 	jatos.showOverlay = function (config) {
 		if (config && typeof config.show == "boolean" && !config.show) return;
 
+        // If an element with the given ID already exists just update the text and return
+        if (config && typeof config.id == "string") {
+            const el = document.getElementById(config.id);
+            if (el && config && config.text) el.textContent = config.text;
+            return;
+		}
+
 		// Create div
+		const div = document.createElement('div');
+
+		// Add style
 		let divStyle = 'color: black;' +
 			'font-family: Sans-Serif;' +
 			'font-size: 30px;' +
@@ -2849,14 +2864,16 @@ var jatos = {};
 			'justify-content: center;' +
 			'flex-direction: column;';
 		if (config && typeof config.style == "string") divStyle += ";" + config.style;
-		const div = document.createElement('div');
-		div.classList.add("jatosOverlay");
 		div.style.cssText = divStyle;
+
+		// Add ID and classes
+		if (config && typeof config.id == "string") div.id = config.id;
+		div.classList.add("jatosOverlay");
+		if (config && typeof config.className == "string") div.classList.add(config.className);
 
 		// Add Text
 		const text = config ? config.text : "Please wait";
-		const textElement = document.createTextNode(text);
-		div.appendChild(textElement);
+		div.textContent = text;
 
 		// Add image
 		const showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
@@ -2869,8 +2886,10 @@ var jatos = {};
 			div.appendChild(waitingImg);
 		}
 
+        // Add data attribute 'keep'
 		const keep = (config && typeof config.keep == "boolean") ? config.keep : false;
 		div.setAttribute('data-keep', keep);
+
 		document.body.appendChild(div);
 		return div;
 	};
@@ -2888,6 +2907,26 @@ var jatos = {};
 			if (el.dataset.keep === "false" || force) el.remove();
 		});
 	};
+
+	/**
+	 * Uses an overlay to show some IDs
+	 */
+	function showIdOverlay() {
+	    const idObj = {};
+	    if (jatos.frameId) idObj["frame"] = jatos.frameId;
+	    if (jatos.workerId) idObj["worker"] = jatos.workerId;
+	    if (jatos.studyResultId) idObj["study result"] = jatos.studyResultId;
+	    if (jatos.groupResultId) idObj["group"] = jatos.groupResultId;
+
+        const text = Object.entries(idObj).map(([key, value]) => `${key}: ${value}`).join("\n");
+        jatos.showOverlay({
+            id: "idOverlay",
+            text: text,
+            style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;",
+            keep: true,
+            showImg: false
+        });
+	}
 
 	/**
 	 * Adds a button to the document that if pressed calls jatos.abortStudy.
