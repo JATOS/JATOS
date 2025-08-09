@@ -2837,11 +2837,11 @@ var jatos = {};
 	jatos.showOverlay = function (config) {
 		if (config && typeof config.show == "boolean" && !config.show) return;
 
-        // If an element with the given ID already exists just update the text and return
-        if (config && typeof config.id == "string") {
-            const el = document.getElementById(config.id);
-            if (el && config && config.text) el.textContent = config.text;
-            return;
+		// If an element with the given ID already exists just update the text and return
+		if (config && typeof config.id == "string") {
+			const el = document.getElementById(config.id);
+			if (el && config && config.text) el.textContent = config.text;
+			return;
 		}
 
 		// Create div
@@ -2886,7 +2886,7 @@ var jatos = {};
 			div.appendChild(waitingImg);
 		}
 
-        // Add data attribute 'keep'
+		// Add data attribute 'keep'
 		const keep = (config && typeof config.keep == "boolean") ? config.keep : false;
 		div.setAttribute('data-keep', keep);
 
@@ -2912,20 +2912,20 @@ var jatos = {};
 	 * Uses an overlay to show some IDs
 	 */
 	function showIdOverlay() {
-	    const idObj = {};
-	    if (jatos.frameId) idObj["frame"] = jatos.frameId;
-	    if (jatos.workerId) idObj["worker"] = jatos.workerId;
-	    if (jatos.studyResultId) idObj["study result"] = jatos.studyResultId;
-	    if (jatos.groupResultId) idObj["group"] = jatos.groupResultId;
+		const idObj = {};
+		if (jatos.frameId) idObj["frame"] = jatos.frameId;
+		if (jatos.workerId) idObj["worker"] = jatos.workerId;
+		if (jatos.studyResultId) idObj["study result"] = jatos.studyResultId;
+		if (jatos.groupResultId) idObj["group"] = jatos.groupResultId;
 
-        const text = Object.entries(idObj).map(([key, value]) => `${key}: ${value}`).join("\n");
-        jatos.showOverlay({
-            id: "idOverlay",
-            text: text,
-            style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;",
-            keep: true,
-            showImg: false
-        });
+		const text = Object.entries(idObj).map(([key, value]) => `${key}: ${value}`).join("\n");
+		jatos.showOverlay({
+			id: "idOverlay",
+			text: text,
+			style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;",
+			keep: true,
+			showImg: false
+		});
 	}
 
 	/**
