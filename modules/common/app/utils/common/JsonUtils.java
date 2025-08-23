@@ -183,15 +183,15 @@ public class JsonUtils {
         for (GroupResult groupResult : groupResultList) {
             ObjectNode groupResultNode = Json.mapper().valueToTree(groupResult);
 
-            // Add active workers
-            ArrayNode activeWorkerIdListNode = groupResultNode.arrayNode();
-            groupResult.getActiveMemberList().forEach(sr -> activeWorkerIdListNode.add(sr.getWorkerId()));
-            groupResultNode.set("activeWorkerList", activeWorkerIdListNode);
+            // Add active members
+            ArrayNode activeMemberIdListNode = groupResultNode.arrayNode();
+            groupResult.getActiveMemberList().forEach(sr -> activeMemberIdListNode.add(sr.getId()));
+            groupResultNode.set("activeMemberList", activeMemberIdListNode);
 
-            // Add history workers
-            ArrayNode historyWorkerIdListNode = groupResultNode.arrayNode();
-            groupResult.getHistoryMemberList().forEach(sr -> historyWorkerIdListNode.add(sr.getWorkerId()));
-            groupResultNode.set("historyWorkerList", historyWorkerIdListNode);
+            // Add history members
+            ArrayNode historyMemberIdListNode = groupResultNode.arrayNode();
+            groupResult.getHistoryMemberList().forEach(sr -> historyMemberIdListNode.add(sr.getId()));
+            groupResultNode.set("historyMemberList", historyMemberIdListNode);
 
             // Add study result count
             int resultCount = groupResult.getActiveMemberCount() + groupResult.getHistoryMemberCount();

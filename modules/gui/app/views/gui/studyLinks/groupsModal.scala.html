@@ -12,8 +12,8 @@
                         <tr>
                             <th>Group ID<span class="ordering-icon"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="A fixed group cannot have new members join">Fixed<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip="All currently active workers (click on the workers to get to their results page)">Active workers<span class="info-icon"></span></th>
-                            <th class="no-info-icon" data-bs-tooltip="All workers who were once member in this group (click on the workers to get to their results page)">Past workers<span class="info-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="All currently active members">Active members<span class="info-icon"></span></th>
+                            <th class="no-info-icon" data-bs-tooltip="All members who were once in this group">Past members<span class="info-icon"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="Time and date when the group was started">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="Time and date when the was finished">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
                             <th class="no-info-icon" data-bs-tooltip="Current state of the group">Group state<span class="info-icon"></span><span class="ordering-icon"></span></th>
@@ -108,14 +108,14 @@
                     "render": drawFixedGroupButton
                 },
                 {
-                    "data": "activeWorkerList",
+                    "data": "activeMemberList",
                     "orderable": false,
-                    "render": drawWorkerColumn
+                    "render": drawMemberColumn
                 },
                 {
-                    "data": "historyWorkerList",
+                    "data": "historyMemberList",
                     "orderable": false,
-                    "render": drawWorkerColumn
+                    "render": drawMemberColumn
                 },
                 {
                     "data": "startDate",
@@ -182,12 +182,12 @@
         }
     }
 
-    function drawWorkerColumn(data) {
-        if (data.length == 0) return '<span class="text-body text-opacity-50">none</span>';
-        return data.map((workerId) =>
-            `<a type="button" class="btn btn-batch no-info-icon py-0 mb-1" data-bs-tooltip="Click to get to this worker's results page"
-                href="${window.routes.StudyResults.workersStudyResults(workerId)}">${workerId}</a>`
-        ).join(' ');
+    function drawMemberColumn(data) {
+        if (data.length == 0) {
+            return '<span class="text-body text-opacity-50">none</span>';
+        } else {
+            return data.join(', ');
+        }
     }
 
     function adjustColumns() {
