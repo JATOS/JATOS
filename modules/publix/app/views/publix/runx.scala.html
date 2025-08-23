@@ -47,8 +47,8 @@
     const defaultDelay = 50;
 
     // Extracted parameters with defaults
-    const horizontalSplit = parseInt(searchParams.get("hSplit")) || defaultHorizontalSplit;
-    const verticalSplit = parseInt(searchParams.get("vSplit")) || defaultVerticalSplit;
+    const horizontalSplit = parseInt(searchParams.get("hsplit")) || parseInt(searchParams.get("hSplit")) || defaultHorizontalSplit;
+    const verticalSplit = parseInt(searchParams.get("vsplit")) || parseInt(searchParams.get("vSplit")) || defaultVerticalSplit;
     const delay = parseInt(searchParams.get("delay")) || defaultDelay;
     const queryString = searchParams.size > 0 ? searchParams.toString() : "";
 
