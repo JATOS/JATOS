@@ -782,14 +782,14 @@ var jatos = {};
 				break;
 			case "SESSION_ACK":
 				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-					batchSessionTimeouts[batchMsg.id].cancel();
+					batchSessionTimeouts[batchMsg.id].cancel("Batch session update successful");
 				} else {
 					console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
 				}
 				break;
 			case "SESSION_FAIL":
 				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-					batchSessionTimeouts[batchMsg.id].trigger();
+					batchSessionTimeouts[batchMsg.id].trigger("Batch session update failed");
 				} else {
 					console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
 				}
@@ -1874,14 +1874,14 @@ var jatos = {};
 				break;
 			case "SESSION_ACK":
 				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-					groupSessionTimeouts[groupMsg.sessionActionId].cancel();
+					groupSessionTimeouts[groupMsg.sessionActionId].cancel("Group session update successful");
 				} else {
 					console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
 				}
 				break;
 			case "SESSION_FAIL":
 				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-					groupSessionTimeouts[groupMsg.sessionActionId].trigger();
+					groupSessionTimeouts[groupMsg.sessionActionId].trigger("Group session update failed");
 				} else {
 					console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
 				}
@@ -2882,8 +2882,10 @@ var jatos = {};
 		// If an element with the given ID already exists just update the text and return
 		if (config && typeof config.id == "string") {
 			const el = document.getElementById(config.id);
-			if (el && config && config.text) el.textContent = config.text;
-			return;
+			if (el) {
+			    if (config && config.text) el.textContent = config.text;
+			    return;
+			}
 		}
 
 		// Create div
@@ -2954,6 +2956,8 @@ var jatos = {};
 	 * Uses an overlay to show some IDs
 	 */
 	function showIdOverlay() {
+		if (jatos.workerType !== "Jatos") return;
+
 		const idObj = {};
 		if (jatos.frameId) idObj["frame"] = jatos.frameId;
 		if (jatos.workerId) idObj["worker"] = jatos.workerId;
@@ -3081,22 +3085,22 @@ var jatos = {};
 	function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts,
 		sessionActionId, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
-			callWithArgs(onFail, "Timeout sending message");
-			deferred.reject("Timeout sending message");
+			callWithArgs(onFail, "Timeout sending session patch");
+			deferred.reject("Timeout sending session patch");
 		}, jatos.channelSendingTimeoutTime);
 
 		// Create a new timeout object with two functions: 1) to cancel
 		// the timeout and 2) to trigger the timeout prematurely
 		sessionTimeouts[sessionActionId] = {
-			cancel: function () {
+			cancel: function (msg) {
 				clearTimeout(timeoutId);
-				callWithArgs(onSuccess, "success");
-				deferred.resolve("success");
+				callWithArgs(onSuccess, msg);
+				deferred.resolve(msg);
 			},
-			trigger: function () {
+			trigger: function (msg) {
 				clearTimeout(timeoutId);
-				callWithArgs(onFail, "Error sending message");
-				deferred.reject("Error sending message");
+				callWithArgs(onFail, msg);
+				deferred.reject(msg);
 			}
 		};
 
