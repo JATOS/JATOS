@@ -29,6 +29,9 @@
                     <li class="no-info-icon" data-bs-tooltip="Run 6">
                         <a class="dropdown-item" id="runStudyx6" href="#"><i class="bi-play-circle pe-1"></i>Run 6x</a>
                     </li>
+                    <li class="no-info-icon" data-bs-tooltip="Run 8">
+                        <a class="dropdown-item" id="runStudyx8" href="#"><i class="bi-play-circle pe-1"></i>Run 8x</a>
+                    </li>
                 </ul>
             </div>
             <button class="btn btn-study" id="studyResults" type="button" data-bs-tooltip="Show this study results">
@@ -140,6 +143,7 @@
     $('#runStudyx4').prop("href", `${window.routes.Studies.runStudy(window.study.id, 4)}`);
     $('#runStudyx5').prop("href", `${window.routes.Studies.runStudy(window.study.id, 5)}`);
     $('#runStudyx6').prop("href", `${window.routes.Studies.runStudy(window.study.id, 6)}`);
+    $('#runStudyx8').prop("href", `${window.routes.Studies.runStudy(window.study.id, 8)}`);
 
     $('#studyResults').click(function() {
         window.location.href = window.routes.StudyResults.studysStudyResults(window.study.id);
