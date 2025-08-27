@@ -41,6 +41,9 @@
                 <li class="no-info-icon" data-bs-tooltip="Run 6">
                     <a class="run-component-x6 dropdown-item" id="runStudyx6" href="#"><i class="bi-play-circle pe-1"></i>Run 6x</a>
                 </li>
+                <li class="no-info-icon" data-bs-tooltip="Run 8">
+                    <a class="run-component-x6 dropdown-item" id="runStudyx8" href="#"><i class="bi-play-circle pe-1"></i>Run 8x</a>
+                </li>
             </ul>
         </div>
         <button class="component-results btn btn-component" type="button" data-bs-tooltip="Show the results only of this component">
@@ -148,13 +151,14 @@
                 $("#componentsTable [class^='run-component']").each(function() {
                     // Set href for each component "Run" button
                     const componentId = getComponentId(this);
-                    const run = (n) => $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId, n)}`);
+                    const run = (frames) => $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId, frames)}`);
                     if ($(this).hasClass("run-component")) run(1);
                     if ($(this).hasClass("run-component-x2")) run(2);
                     if ($(this).hasClass("run-component-x3")) run(3);
                     if ($(this).hasClass("run-component-x4")) run(4);
                     if ($(this).hasClass("run-component-x5")) run(5);
                     if ($(this).hasClass("run-component-x6")) run(6);
+                    if ($(this).hasClass("run-component-x8")) run(8);
                 });
             }
         });
