@@ -66,8 +66,8 @@ public class Components extends Controller {
     }
 
     /**
-     * Runs a single component (in opposite to the whole study). Uses a JatosWorker and the given batch. Redirects
-     * to /publix/studyCode.
+     * Runs a single component (in opposite to the whole study). Can run the component in multiple frames in parallel.
+     * Uses a JatosWorker and the given batch. Redirects to /publix/runx.
      */
     @Transactional
     @Auth
@@ -93,7 +93,7 @@ public class Components extends Controller {
             jatosGuiExceptionThrower.throwStudy(request, errorMsg, Http.Status.BAD_REQUEST, studyId);
         }
 
-        // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix: start study
+        // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix to start the study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
         String runUrl = Common.getJatosUrlBasePath() + "publix/runx?code=" + studyLink.getStudyCode()
