@@ -2804,7 +2804,7 @@ var jatos = {};
 	 * study result ID, component result ID, group result ID, group member ID)
 	 * to the given object.
 	 *
-	 * @param {object object} obj - Object to which the IDs will be added
+	 * @param {optional object} obj - Object to which the IDs will be added
 	 */
 	jatos.addJatosIds = function (obj = {}) {
 		obj.studyCode = jatos.studyCode;
@@ -2883,8 +2883,8 @@ var jatos = {};
 		if (config && typeof config.id == "string") {
 			const el = document.getElementById(config.id);
 			if (el) {
-			    if (config && config.text) el.textContent = config.text;
-			    return;
+				if (config && config.text) el.textContent = config.text;
+				return;
 			}
 		}
 
@@ -2953,7 +2953,7 @@ var jatos = {};
 	};
 
 	/**
-	 * Uses an overlay to show some IDs
+	 * Uses an overlay to show some IDs if worker type is 'Jatos'
 	 */
 	function showIdOverlay() {
 		if (jatos.workerType !== "Jatos") return;
