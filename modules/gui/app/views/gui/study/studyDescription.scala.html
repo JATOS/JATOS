@@ -42,7 +42,7 @@
     $("#studyDescriptionSidebar").on('show.bs.offcanvas', draw);
 
     function draw() {
-        $("#studyDescriptionTitle").text(window.study.title);
+        $("#studyDescriptionTitle").html(window.study.title);
         const markdown = $("#studyDescription").data().markdown;
         const html = markdown ? new showdown.Converter().makeHtml(markdown) : "Here could be a description of this study.";
         $('#studyDescription').html(html);
@@ -64,13 +64,13 @@
         if ($("#studyDescriptionEditorWrapper").hasClass("d-none")) {
             // Generate HTML from Markdown
             const markdown = Editor.getValue("#studyDescriptionEditor");
-            const sanitizedMarkdown = Helpers.sanitizeHtml(markdown)
+            const sanitizedMarkdown = Helpers.encodeHtmlEntities(markdown);
             $("#studyDescription").data("markdown", sanitizedMarkdown);
             draw();
         } else {
             // Setup editor
             const markdown = $("#studyDescription").data().markdown;
-            const unsanitizedMarkdown = Helpers.unsanitizeHtml(markdown);
+            const unsanitizedMarkdown = Helpers.decodeHtmlEntities(markdown);
             const bodySelector = "#studyDescriptionSidebar .offcanvas-body";
             const editorHeight = $(bodySelector).height() - $("#studyDescriptionEditorFooter").outerHeight();
             const editorLineHeight = Number($(bodySelector).css('line-height').replace(/\D/g, ''));
