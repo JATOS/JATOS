@@ -162,7 +162,7 @@ public class Studies extends Controller {
 
         StudyProperties studyProperties = form.get();
         try {
-            studyService.renameStudyAssetsDir(study, studyProperties.getDirName(), studyProperties.isDirRename());
+            studyService.renameStudyAssetsDir(study, studyProperties.getDirName());
         } catch (IOException e) {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
