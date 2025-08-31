@@ -335,6 +335,7 @@ var jatos = {};
 				httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
 			})
 			.then(getInitData)
+			.then(showIdOverlay)
 			.then(openBatchChannelWithRetry)
 			.always(function () {
 				initialized = true;
@@ -393,36 +394,30 @@ var jatos = {};
 	}
 
 	/**
-	 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
-	 * and stores all key-value pairs into jatos scope.
+	 * Reads JATOS ID cookies, finds the right one with the correct studyResultUuid
+	 * and stores all key-value pairs into the global jatos object.
 	 */
 	function readIdCookie() {
-		var idCookieName = "JATOS_IDS";
-		var cookieArray = document.cookie.split(';');
-		var fillJatos = function (key, value) {
-			jatos[key] = value;
-		};
-		for (var i = 0; i < cookieArray.length; i++) {
-			var cookie = cookieArray[i];
-			// Remove leading spaces in cookie string
-			while (cookie.charAt(0) === ' ') {
-				cookie = cookie.substring(1, cookie.length);
-			}
-			if (cookie.indexOf(idCookieName) !== 0) {
-				continue;
-			}
-			var cookieStr = cookie.substr(
-				cookie.indexOf(idCookieName) + idCookieName.length + 3,
-				cookie.length);
-			var idArray = cookieStr.split("&");
-			var idMap = getIdsFromCookie(idArray);
-			if (idMap.studyResultUuid == jatos.studyResultUuid) {
-				jatos.jQuery.each(idMap, fillJatos);
-				// Convert component's position to int
-				jatos.componentPos = parseInt(jatos.componentPos);
-				break;
-			}
+		const idCookieName = "JATOS_ID";
+		const cookieRow = document.cookie
+			.split('; ')
+			.filter(row => row.includes(idCookieName))
+			.find(row => row.includes(jatos.studyResultUuid));
+		if (!cookieRow) {
+			console.error('readIdCookie: JATOS ID cookie for current studyResultUuid not found.');
+			return;
 		}
+
+		const equalsIndex = cookieRow.indexOf('=');
+		const idCookieValue = cookieRow.substring(equalsIndex + 1);
+		if (!idCookieValue) {
+			console.error(`readIdCookie: JATOS ID cookie value is empty for cookie "${cookieRow}".`);
+			return;
+		}
+
+		const cookieParams = new URLSearchParams(idCookieValue);
+		cookieParams.forEach((value, key) => jatos[key] = value);
+		jatos.componentPos = parseInt(jatos.componentPos, 10);
 	}
 
 	function getIdsFromCookie(idArray) {
@@ -507,9 +502,9 @@ var jatos = {};
 		jatos.componentInput = jatos.componentJsonInput;
 		delete jatos.componentProperties.jsonData;
 
-		// Query string parameters of the URL that starts the study
+		// Query string parameters of the URL that started the study
 		jatos.urlQueryParameters = initData.urlQueryParameters;
-
+		jatos.frameId = jatos.urlQueryParameters.frameId || undefined;
 		jatos.studyCode = initData.studyCode;
 	}
 
@@ -590,8 +585,9 @@ var jatos = {};
 	 */
 	function openBatchChannel() {
 		if (!webSocketSupported) {
-			console.warn("This browser does not support WebSockets. Can't open batch channel.");
-			return rejectedPromise();
+			const errorMsg = "This browser does not support WebSockets. Can't open batch channel.";
+			console.warn(errorMsg);
+			return rejectedPromise(errorMsg);
 		}
 		// WebSocket's readyState:
 		//		CONNECTING 0 The connection is not yet open.
@@ -599,19 +595,22 @@ var jatos = {};
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
 		if (batchChannel && batchChannel.readyState != batchChannel.CLOSED) {
-			return rejectedPromise();
+			return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
 		}
 		if (endingStudy || startingComponent) {
-			console.info("Won't open batch channel because study is about to move to the next component or finish.");
-			return rejectedPromise();
+			const errorMsg = "Won't open batch channel because study is about to move to the next component or finish.";
+			console.info(errorMsg);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			console.warn("Can't open batch channel. This study run is invalid.");
-			return rejectedPromise();
+			const errorMsg = "Can't open batch channel. This study run is invalid.";
+			console.warn(errorMsg);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(openingBatchChannelDeferred)) {
-			console.warn("Can open only one batch channel.");
-			return rejectedPromise();
+			const errorMsg = "Can open only one batch channel.";
+			console.warn(errorMsg);
+			return rejectedPromise(errorMsg);
 		}
 		openingBatchChannelDeferred = jatos.jQuery.Deferred();
 
@@ -783,14 +782,14 @@ var jatos = {};
 				break;
 			case "SESSION_ACK":
 				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-					batchSessionTimeouts[batchMsg.id].cancel();
+					batchSessionTimeouts[batchMsg.id].cancel("Batch session update successful");
 				} else {
 					console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
 				}
 				break;
 			case "SESSION_FAIL":
 				if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-					batchSessionTimeouts[batchMsg.id].trigger();
+					batchSessionTimeouts[batchMsg.id].trigger("Batch session update failed");
 				} else {
 					console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
 				}
@@ -1027,16 +1026,19 @@ var jatos = {};
 	 */
 	function sendBatchSessionPatch(patches, onSuccess, onFail) {
 		if (!batchChannel || batchChannel.readyState != batchChannel.OPEN) {
-			callMany("Can't send batch session patch. No open batch channel", onFail, console.error);
-			return rejectedPromise();
+			const errorMsg = `Can't send batch session patch. No open batch channel. Patch: ${patches.op} ${patches.path}.`;
+			callMany(errorMsg, onFail, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (jatos.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
-			callMany("Can send only one batch session patch at a time", onFail, console.error);
-			return rejectedPromise();
+			const errorMsg = `Can send only one batch session patch at a time. Patch: ${patches.op} ${patches.path}.`;
+			callMany(errorMsg, onFail, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't send batch session patch. This study run is invalid.", onFail, console.warn);
-			return rejectedPromise();
+			const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
+			callMany(errorMsg, onFail, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 
 		var deferred = jatos.jQuery.Deferred();
@@ -1126,8 +1128,9 @@ var jatos = {};
 	 */
 	function submitOrAppendResultData(resultData, append, onSuccess, onError) {
 		if (studyRunInvalid) {
-			callMany("Can't send result data. This study run is invalid.", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't send result data. This study run is invalid.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		var httpMethod = append ? "POST" : "PUT";
 		if (resultData === Object(resultData)) {
@@ -1160,12 +1163,14 @@ var jatos = {};
 	 */
 	jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
 		if (studyRunInvalid) {
-			callMany("Can't upload file. This study run is invalid.", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't upload file. This study run is invalid.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		if (typeof filename !== "string" || 0 === filename.length) {
-			callMany("No filename specified", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "No filename specified."
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 
 		var blob;
@@ -1177,8 +1182,9 @@ var jatos = {};
 			// Object can be stringified to JSON
 			blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
 		} else {
-			callMany("Only string, Object or Blob allowed", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "Only string, Object or Blob allowed.";
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 
 		var request = {
@@ -1214,8 +1220,9 @@ var jatos = {};
 	 */
 	jatos.downloadResultFile = function (param1, param2, param3, param4) {
 		if (!initialized) {
-			console.error("jatos.js not yet initialized");
-			return rejectedPromise();
+			const errorMsg = "jatos.js not yet initialized";
+			console.error(errorMsg);
+			return rejectedPromise(errorMsg);
 		}
 
 		var componentPos, filename, onSuccess, onError;
@@ -1229,23 +1236,27 @@ var jatos = {};
 			onSuccess = param2;
 			onError = param3;
 		} else {
-			callMany("Unknown first parameter", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "Unknown first parameter.";
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't download file. This study run is invalid.", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't download file. This study run is invalid.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		if (typeof filename !== "string" || 0 === filename.length) {
-			callMany("No filename specified", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "No filename specified.";
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 
 		var url = getURL("../files/" + encodeURI(filename));
 		if (componentPos) {
 			if (isInvalidComponentPosition(componentPos)) {
-				callMany("Component position does not exist", onError, console.error);
-				return rejectedPromise();
+				const errorMsg = "Component position does not exist.";
+				callMany(errorMsg, onError, console.error);
+				return rejectedPromise(errorMsg);
 			}
 			var componentId = jatos.componentList[componentPos - 1].id;
 			url += "?componentId=" + componentId;
@@ -1369,6 +1380,17 @@ var jatos = {};
 			callMany("Can start only one component at the same time", onError, console.warn);
 			return;
 		}
+		// If this is a single component run initiated by the JATOS GUI, end the run.
+		const isSingleComponentRun = jatos.jatosRun === "RUN_COMPONENT_FINISHED";
+		if (isSingleComponentRun) {
+			if (resultData) {
+				jatos.endStudy(resultData, true, message);
+			} else {
+				jatos.endStudy(true, message);
+			}
+			return;
+		}
+
 		startingComponent = true;
 
 		// Send result data and study session data before starting next component
@@ -1479,15 +1501,12 @@ var jatos = {};
 			onError = param2;
 		}
 
-		// If last component end study
+		// If this is the last component end study
 		var lastActiveComponent = jatos.componentList.slice().reverse()
 			.find(function (component) { return component.active; });
 		if (jatos.componentPos >= lastActiveComponent.position) {
 			if (resultData) {
-				var onComplete = function () {
-					jatos.endStudy(true, message);
-				};
-				jatos.appendResultData(resultData).done(onComplete).fail(onError);
+				jatos.endStudy(resultData, true, message);
 			} else {
 				jatos.endStudy(true, message);
 			}
@@ -1566,8 +1585,9 @@ var jatos = {};
 
 	function openGroupChannel() {
 		if (!webSocketSupported) {
-			callMany("This browser does not support WebSockets.", console.warn, groupChannelCallbacks.onError);
-			return rejectedPromise();
+			const errorMsg = "This browser does not support WebSockets.";
+			callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+			return rejectedPromise(errorMsg);
 		}
 		// WebSocket's readyState:
 		//		CONNECTING 0 The connection is not yet open.
@@ -1575,28 +1595,32 @@ var jatos = {};
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
 		if (groupChannel && groupChannel.readyState != groupChannel.CLOSED) {
-			return rejectedPromise();
+			return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
 		}
 		if (endingStudy || startingComponent) {
-			callMany("Won't open group channel because study is about to move to the next component or finish.",
-				console.warn, groupChannelCallbacks.onError);
-			return rejectedPromise();
+			const errorMsg = "Won't open group channel because study is about to move to the next component or finish.";
+			callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't open group channel. This study run is invalid.", console.warn, groupChannelCallbacks.onError);
-			return rejectedPromise();
+			const errorMsg = "Can't open group channel. This study run is invalid.";
+			callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(openingGroupChannelDeferred)) {
-			callMany("Can open only one group channel", console.warn, groupChannelCallbacks.onError);
-			return rejectedPromise();
+			const errorMsg = "Can open only one group channel";
+			callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(leavingGroupDeferred)) {
-			callMany("Can't open group channel while leaving a group", console.error, groupChannelCallbacks.onError);
-			return rejectedPromise();
+			const errorMsg = "Can't open group channel while leaving a group";
+			callMany(errorMsg, console.error, groupChannelCallbacks.onError);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(reassigningGroupDeferred)) {
-			callMany("Can't open group channel while reassigning a group", console.error, groupChannelCallbacks.onError);
-			return rejectedPromise();
+			const errorMsg = "Can't open group channel while reassigning a group";
+			callMany(errorMsg, console.error, groupChannelCallbacks.onError);
+			return rejectedPromise(errorMsg);
 		}
 
 		openingGroupChannelDeferred = jatos.jQuery.Deferred();
@@ -1748,6 +1772,7 @@ var jatos = {};
 	function updateGroupVars(groupMsg) {
 		if (typeof groupMsg.groupResultId != 'undefined') {
 			jatos.groupResultId = groupMsg.groupResultId.toString();
+			showIdOverlay();
 			// Group member ID is equal to study result ID
 			jatos.groupMemberId = jatos.studyResultId;
 		}
@@ -1849,14 +1874,14 @@ var jatos = {};
 				break;
 			case "SESSION_ACK":
 				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-					groupSessionTimeouts[groupMsg.sessionActionId].cancel();
+					groupSessionTimeouts[groupMsg.sessionActionId].cancel("Group session update successful");
 				} else {
 					console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
 				}
 				break;
 			case "SESSION_FAIL":
 				if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-					groupSessionTimeouts[groupMsg.sessionActionId].trigger();
+					groupSessionTimeouts[groupMsg.sessionActionId].trigger("Group session update failed");
 				} else {
 					console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
 				}
@@ -2052,16 +2077,19 @@ var jatos = {};
 	 */
 	function sendGroupSessionPatch(patches, onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
-			callMany("Can't send group session patch. No open group channel", onFail, console.error);
-			return rejectedPromise();
+			const errorMsg = `Can't send group session patch. No open group channel. Patch: ${patches.op} ${patches.path}.`;
+			callMany(errorMsg, onFail, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (jatos.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
-			callMany("Can send only one group session patch at a time", onFail, console.error);
-			return rejectedPromise();
+			const errorMsg = `Can send only one group session patch at a time. Patch: ${patches.op} ${patches.path}.`;
+			callMany(errorMsg, onFail, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't send group session patch. This study run is invalid.", onFail, console.warn);
-			return rejectedPromise();
+			const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
+			callMany(errorMsg, onFail, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 
 		var deferred = jatos.jQuery.Deferred();
@@ -2096,16 +2124,19 @@ var jatos = {};
 	 */
 	jatos.setGroupFixed = function (onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
-			callMany("Can't fix group. No open group channel", onFail, console.error);
-			return rejectedPromise();
+			const errorMsg = "Can't fix group. No open group channel.";
+			callMany(errorMsg, onFail, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(sendingGroupFixedDeferred)) {
-			callMany("Can fix group only once", onFail, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can fix group only once.";
+			callMany(errorMsg, onFail, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't fix group. This study run is invalid.", onFail, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't fix group. This study run is invalid.";
+			callMany(errorMsg, onFail, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 
 		sendingGroupFixedDeferred = jatos.jQuery.Deferred();
@@ -2242,24 +2273,29 @@ var jatos = {};
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
 		if (isDeferredPending(openingGroupChannelDeferred)) {
-			callMany("Can't reassign a group if not joined yet", console.error, onFail);
-			return rejectedPromise();
+			const errorMsg = "Can't reassign a group if not joined yet.";
+			callMany(errorMsg, console.error, onFail);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(leavingGroupDeferred)) {
-			callMany("Can't reassign a group during leaving", console.error, onFail);
-			return rejectedPromise();
+			const errorMsg = "Can't reassign a group during leaving.";
+			callMany(errorMsg, console.error, onFail);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(reassigningGroupDeferred)) {
-			callMany("Can't reassign a group twice at the same time", console.warn, onFail);
-			return rejectedPromise();
+			const errorMsg = "Can't reassign a group twice at the same time.";
+			callMany(errorMsg, console.warn, onFail);
+			return rejectedPromise(errorMsg);
 		}
 		if (!groupChannel || groupChannel.readyState != groupChannel.OPEN) {
-			callMany("Can't reassign group. Group channel not open", console.error, onFail);
-			return rejectedPromise();
+			const errorMsg = "Can't reassign group. Group channel not open.";
+			callMany(errorMsg, console.error, onFail);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't reassign group. This study run is invalid.", console.warn, onFail);
-			return rejectedPromise();
+			const errorMsg = "Can't reassign group. This study run is invalid.";
+			callMany(errorMsg, console.warn, onFail);
+			return rejectedPromise(errorMsg);
 		}
 
 		reassigningGroupDeferred = jatos.jQuery.Deferred();
@@ -2301,20 +2337,24 @@ var jatos = {};
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
 		if (isDeferredPending(openingGroupChannelDeferred)) {
-			callMany("Can't leave group if not joined yet", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "Can't leave group if not joined yet.";
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(reassigningGroupDeferred)) {
-			callMany("Can't leave group during reassigning", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "Can't leave group during reassigning.";
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (isDeferredPending(leavingGroupDeferred)) {
-			callMany("Can leave only once", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can leave only once.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't leave group. This study run is invalid.", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't leave group. This study run is invalid.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 
 		leavingGroupDeferred = jatos.jQuery.Deferred();
@@ -2352,16 +2392,19 @@ var jatos = {};
 	 */
 	jatos.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
 		if (!initialized) {
-			callMany("jatos.js not yet initialized", onError, console.error);
-			return rejectedPromise();
+			const errorMsg = "jatos.js not yet initialized.";
+			callMany(errorMsg, onError, console.error);
+			return rejectedPromise(errorMsg);
 		}
 		if (studyRunInvalid) {
-			callMany("Can't abort study. This study run is invalid.", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't abort study. This study run is invalid.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		if (endingStudy) {
-			callMany("Can end/abort study only once", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can end/abort study only once.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		endingStudy = true;
 
@@ -2390,7 +2433,7 @@ var jatos = {};
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
 		});
-		deferred.always(jatos.removeOverlay);
+		deferred.always(jatos.removeOverlays);
 
 		return deferred.promise();
 	};
@@ -2425,12 +2468,21 @@ var jatos = {};
 	 *          redirect to another page. Default is true.
 	 */
 	jatos.abortStudy = function (message, showEndPage) {
-		if (typeof showEndPage !== "undefined" && !showEndPage) {
-			return jatos.abortStudyWithoutRedirect(message);
-		}
 		if (studyRunInvalid) {
 			console.warn("Can't abort study. This study run is invalid.");
 			return;
+		}
+
+		if (typeof showEndPage !== "undefined" && !showEndPage) {
+			return jatos.abortStudyWithoutRedirect(message);
+		}
+
+		// In an iframe run initiated by the JATOS GUI (worker type 'Jatos'), end the run without
+		// redirecting and notify the parent frame.
+		const isInIframe = window.self !== window.top;
+		if (isInIframe && jatos.workerType == "Jatos" && parent.onIframeComplete) {
+			return jatos.abortStudyWithoutRedirect(message)
+				.done(() => parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId));
 		}
 
 		if (endingStudy) {
@@ -2485,8 +2537,9 @@ var jatos = {};
 	 */
 	jatos.endStudyWithoutRedirect = function (param1, param2, param3, param4, param5) {
 		if (!initialized) {
-			console.error("jatos.js not yet initialized");
-			return rejectedPromise();
+			const errorMsg = "jatos.js not yet initialized.";
+			console.error(errorMsg);
+			return rejectedPromise(errorMsg);
 		}
 
 		var resultData, successful, message, onSuccess, onError;
@@ -2504,12 +2557,14 @@ var jatos = {};
 		}
 
 		if (studyRunInvalid) {
-			callMany("Can't end study. This study run is invalid.", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can't end study. This study run is invalid.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		if (endingStudy) {
-			callMany("Can end/abort study only once", onError, console.warn);
-			return rejectedPromise();
+			const errorMsg = "Can end/abort study only once.";
+			callMany(errorMsg, onError, console.warn);
+			return rejectedPromise(errorMsg);
 		}
 		endingStudy = true;
 
@@ -2552,7 +2607,7 @@ var jatos = {};
 			clearInterval(batchChannelClosedCheckTimer);
 			clearInterval(groupChannelClosedCheckTimer);
 		});
-		deferred.always(jatos.removeOverlay);
+		deferred.always(jatos.removeOverlays);
 
 		return deferred.promise();
 	};
@@ -2625,6 +2680,21 @@ var jatos = {};
 			} else {
 				return jatos.endStudyWithoutRedirect(successful, message);
 			}
+		}
+
+		// In an iframe run initiated by the JATOS GUI (worker type 'Jatos'), end the run without
+		// redirecting and notify the parent frame.
+		const isInIframe = window.self !== window.top;
+		if (isInIframe && jatos.workerType == "Jatos" && parent.onIframeComplete) {
+			const endIframe = () => {
+				parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId);
+			};
+			if (resultData) {
+				jatos.endStudyWithoutRedirect(resultData, successful, message).done(endIframe);
+			} else {
+				jatos.endStudyWithoutRedirect(successful, message).done(endIframe);
+			}
+			return;
 		}
 
 		if (endingStudy) {
@@ -2734,9 +2804,9 @@ var jatos = {};
 	 * study result ID, component result ID, group result ID, group member ID)
 	 * to the given object.
 	 *
-	 * @param {object} obj - Object to which the IDs will be added
+	 * @param {optional object} obj - Object to which the IDs will be added
 	 */
-	jatos.addJatosIds = function (obj) {
+	jatos.addJatosIds = function (obj = {}) {
 		obj.studyCode = jatos.studyCode;
 		obj.studyId = jatos.studyId;
 		obj.studyTitle = jatos.studyProperties.title;
@@ -2789,22 +2859,40 @@ var jatos = {};
 	/**
 	 * Adds an overlay to the document that shows a text and an image underneath
 	 * in the center of the screen. By default the text is 'Please wait.' and the
-	 * image is an spinning wheel.
+	 * image is a spinning wheel. If an element with the provided ID already exists
+	 * just the text content will be updated.
 	 *
 	 * @param {object optional} config - Config object
 	 * @param {boolean optional} config.show - If true the overlay is shown - otherwise not.
 	 * 										   Default is true.
+	 * @param {boolean optional} config.keep - Keep the overlay when jatos.removeOverlays
+	 *                                         is called. Default is false.
 	 * @param {string optional} config.text - Text to be shown. Default is "Please wait".
 	 * @param {string optional} config.imgUrl - URL of the image. Default is a spinning wheel.
 	 * @param {string optional} config.showImg - If true the image is shown - otherwise not.
 	 * 										     Default is true.
 	 * @param {string optional} config.style - Additional CSS styles
+	 * @param {string optional} config.id - Element ID
+	 * @param {string optional} config.className - Additional class name
+	 * @return {object} - The created element
 	 */
 	jatos.showOverlay = function (config) {
 		if (config && typeof config.show == "boolean" && !config.show) return;
 
+		// If an element with the given ID already exists just update the text and return
+		if (config && typeof config.id == "string") {
+			const el = document.getElementById(config.id);
+			if (el) {
+				if (config && config.text) el.textContent = config.text;
+				return;
+			}
+		}
+
 		// Create div
-		var divStyle = 'color: black;' +
+		const div = document.createElement('div');
+
+		// Add style
+		let divStyle = 'color: black;' +
 			'font-family: Sans-Serif;' +
 			'font-size: 30px;' +
 			'letter-spacing: 2px;' +
@@ -2820,17 +2908,19 @@ var jatos = {};
 			'justify-content: center;' +
 			'flex-direction: column;';
 		if (config && typeof config.style == "string") divStyle += ";" + config.style;
-		var div = document.createElement('div');
-		div.id = "jatosOverlay";
 		div.style.cssText = divStyle;
 
+		// Add ID and classes
+		if (config && typeof config.id == "string") div.id = config.id;
+		div.classList.add("jatosOverlay");
+		if (config && typeof config.className == "string") div.classList.add(config.className);
+
 		// Add Text
-		var text = (config && typeof config.text == "string") ? config.text : "Please wait";
-		var textElement = document.createTextNode(text);
-		div.appendChild(textElement);
+		const text = config ? config.text : "Please wait";
+		div.textContent = text;
 
 		// Add image
-		var showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
+		const showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
 		if (showImg) {
 			var imgUrl = (config && typeof config.imgUrl == "string") ? config.imgUrl
 				: "jatos-publix/images/waiting.gif";
@@ -2840,17 +2930,49 @@ var jatos = {};
 			div.appendChild(waitingImg);
 		}
 
-		jatos.removeOverlay(); // remove old overlay
+		// Add data attribute 'keep'
+		const keep = (config && typeof config.keep == "boolean") ? config.keep : false;
+		div.setAttribute('data-keep', keep);
+
 		document.body.appendChild(div);
+		return div;
+	};
+
+	// Keep this for backward compatibility
+	jatos.removeOverlay = () => jatos.removeOverlays();
+
+	/**
+	 * Removes all overlays that have the class 'jatosOverlay' and the data attribute
+	 * 'keep' set to "false". If force is true it also removes the ones with the data
+	 * attribute 'keep' set to "true".
+	 */
+	jatos.removeOverlays = function (force) {
+		document.querySelectorAll('.jatosOverlay').forEach(el => {
+			if (el.dataset.keep === "false" || force) el.remove();
+		});
 	};
 
 	/**
-	 * Removes the overlay that was added by jatos.showOverlay before
+	 * Uses an overlay to show some IDs if worker type is 'Jatos'
 	 */
-	jatos.removeOverlay = function () {
-		var el = document.getElementById("jatosOverlay");
-		if (el) el.remove();
-	};
+	function showIdOverlay() {
+		if (jatos.workerType !== "Jatos") return;
+
+		const idObj = {};
+		if (jatos.frameId) idObj["frame"] = jatos.frameId;
+		if (jatos.workerId) idObj["worker"] = jatos.workerId;
+		if (jatos.studyResultId) idObj["study result"] = jatos.studyResultId;
+		if (jatos.groupResultId) idObj["group"] = jatos.groupResultId;
+
+		const text = Object.entries(idObj).map(([key, value]) => `${key}: ${value}`).join("\n");
+		jatos.showOverlay({
+			id: "idOverlay",
+			text: text,
+			style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;",
+			keep: true,
+			showImg: false
+		});
+	}
 
 	/**
 	 * Adds a button to the document that if pressed calls jatos.abortStudy.
@@ -2963,22 +3085,22 @@ var jatos = {};
 	function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts,
 		sessionActionId, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
-			callWithArgs(onFail, "Timeout sending message");
-			deferred.reject("Timeout sending message");
+			callWithArgs(onFail, "Timeout sending session patch");
+			deferred.reject("Timeout sending session patch");
 		}, jatos.channelSendingTimeoutTime);
 
 		// Create a new timeout object with two functions: 1) to cancel
 		// the timeout and 2) to trigger the timeout prematurely
 		sessionTimeouts[sessionActionId] = {
-			cancel: function () {
+			cancel: function (msg) {
 				clearTimeout(timeoutId);
-				callWithArgs(onSuccess, "success");
-				deferred.resolve("success");
+				callWithArgs(onSuccess, msg);
+				deferred.resolve(msg);
 			},
-			trigger: function () {
+			trigger: function (msg) {
 				clearTimeout(timeoutId);
-				callWithArgs(onFail, "Error sending message");
-				deferred.reject("Error sending message");
+				callWithArgs(onFail, msg);
+				deferred.reject(msg);
 			}
 		};
 
@@ -2993,9 +3115,9 @@ var jatos = {};
 		return typeof deferred != 'undefined' && deferred.state() == 'pending';
 	}
 
-	function rejectedPromise() {
+	function rejectedPromise(errorMsg) {
 		var deferred = jatos.jQuery.Deferred();
-		deferred.reject();
+		deferred.reject(errorMsg);
 		return deferred.promise();
 	}
 

@@ -11,6 +11,8 @@ GET     /publix/:studyId/start                                      @controllers
 + nocsp
 GET     /publix/run                                                 @controllers.publix.PublixInterceptor.studyEntry(request: Request, code: String ?= null)
 + nocsp
+GET     /publix/runx                                                @controllers.publix.PublixInterceptor.runx(code: String ?= null, frames: Long ?= 2)
++ nocsp
 GET     /publix/:studyCode                                          @controllers.publix.PublixInterceptor.run(request: Request, studyCode: String)
 GET     /publix/:studyResultUuid/end                                @controllers.publix.PublixInterceptor.finishStudy(request: Request, studyResultUuid: String, successful: Boolean ?= true, message: String ?= null)
 GET     /publix/:studyResultUuid/abort                              @controllers.publix.PublixInterceptor.abortStudy(request: Request, studyResultUuid: String, message: String ?= null)

@@ -99,7 +99,6 @@ public class IdCookieAccessor {
         idCookie.setWorkerId(getValueAsLong(cookieMap, IdCookieModel.WORKER_ID, true, cookie.name()));
         idCookie.setWorkerType(getValueAsString(cookieMap, IdCookieModel.WORKER_TYPE, true, cookie.name()));
         idCookie.setBatchId(getValueAsLong(cookieMap, IdCookieModel.BATCH_ID, true, cookie.name()));
-        idCookie.setGroupResultId(getValueAsLong(cookieMap, IdCookieModel.GROUP_RESULT_ID, false, cookie.name()));
         idCookie.setStudyId(getValueAsLong(cookieMap, IdCookieModel.STUDY_ID, true, cookie.name()));
         idCookie.setStudyResultId(getValueAsLong(cookieMap, IdCookieModel.STUDY_RESULT_ID, true, cookie.name()));
         idCookie.setStudyResultUuid(getValueAsString(cookieMap, IdCookieModel.STUDY_RESULT_UUID, true, cookie.name()));

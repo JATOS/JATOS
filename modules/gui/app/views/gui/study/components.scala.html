@@ -18,9 +18,34 @@
 @* Template for button toolbar in Component's row *@
 <div id="componentToolbarTemplate" class="d-none">
     <div class="float-end text-nowrap">
-        <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-bs-tooltip="Do a test run only of this component">
-            <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
-        </a>
+        <div class="btn-group" role="group">
+            <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-bs-tooltip="Do a test run only of this component">
+                <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
+            </a>
+            <button class="btn btn-component dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'>
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-study">
+                <li class="no-info-icon" data-bs-tooltip="Run 2">
+                    <a class="run-component-x2 dropdown-item" id="runStudyx2" href="#"><i class="bi-play-circle pe-1"></i>Run 2x</a>
+                </li>
+                <li class="no-info-icon" data-bs-tooltip="Run 3">
+                    <a class="run-component-x3 dropdown-item" id="runStudyx3" href="#"><i class="bi-play-circle pe-1"></i>Run 3x</a>
+                </li>
+                <li class="no-info-icon" data-bs-tooltip="Run 4">
+                    <a class="run-component-x4 dropdown-item" id="runStudyx4" href="#"><i class="bi-play-circle pe-1"></i>Run 4x</a>
+                </li>
+                <li class="no-info-icon" data-bs-tooltip="Run 5">
+                    <a class="run-component-x5 dropdown-item" id="runStudyx5" href="#"><i class="bi-play-circle pe-1"></i>Run 5x</a>
+                </li>
+                <li class="no-info-icon" data-bs-tooltip="Run 6">
+                    <a class="run-component-x6 dropdown-item" id="runStudyx6" href="#"><i class="bi-play-circle pe-1"></i>Run 6x</a>
+                </li>
+                <li class="no-info-icon" data-bs-tooltip="Run 8">
+                    <a class="run-component-x6 dropdown-item" id="runStudyx8" href="#"><i class="bi-play-circle pe-1"></i>Run 8x</a>
+                </li>
+            </ul>
+        </div>
         <button class="component-results btn btn-component" type="button" data-bs-tooltip="Show the results only of this component">
             <span class="d-none d-lg-inline">Component </span>Results<span class="badge text-component bg-white rounded-pill ms-1"></span>
         </button>
@@ -123,10 +148,17 @@
             "drawCallback": function( settings ) {
                 Helpers.setButtonWidthToMax("#componentsTable_wrapper button.drag-button");
                 Helpers.activateTooltips('#componentsTable_wrapper');
-                $('#componentsTable .run-component').each(function() {
+                $("#componentsTable [class^='run-component']").each(function() {
                     // Set href for each component "Run" button
                     const componentId = getComponentId(this);
-                    $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId)}`);
+                    const run = (frames) => $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId, frames)}`);
+                    if ($(this).hasClass("run-component")) run(1);
+                    if ($(this).hasClass("run-component-x2")) run(2);
+                    if ($(this).hasClass("run-component-x3")) run(3);
+                    if ($(this).hasClass("run-component-x4")) run(4);
+                    if ($(this).hasClass("run-component-x5")) run(5);
+                    if ($(this).hasClass("run-component-x6")) run(6);
+                    if ($(this).hasClass("run-component-x8")) run(8);
                 });
             }
         });

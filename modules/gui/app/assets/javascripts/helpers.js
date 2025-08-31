@@ -26,8 +26,8 @@ export {
     generateModalSubtitles,
     triggerButtonByEnter,
     getDataFromDataTableRow,
-    sanitizeHtml,
-    unsanitizeHtml
+    decodeHtmlEntities,
+    encodeHtmlEntities
 };
 
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
@@ -419,27 +419,25 @@ function getDataFromDataTableRow(dataTable, element) {
 }
 
 /**
- * Replace some chars with their unicode representation. Useful to sanitize HTML of JavaScript.
+ * Replace HTML entities with their characters, e.g., '&lt' with '<';
  *
- * @param {string} str - a HTML string
+ * @param {string} str - A string
+ * @returns The decoded string
  */
-function sanitizeHtml(str) {
-    return str.replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+function decodeHtmlEntities(str) {
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = str;
+    return textArea.value;
 }
 
 /**
- * Replace some unicode chars with their normal char. Useful to sanitize HTML of JavaScript.
+ * Replace in HTML reserved characters with their HTML entities, e.g., '<' with '&lt';
  *
- * @param {string} str - a HTML string
+ * @param {string} str - A string
+ * @returns The encoded string
  */
-function unsanitizeHtml(str) {
-    return str.replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'");
+function encodeHtmlEntities(str) {
+    const textArea = document.createElement('textarea');
+    textArea.textContent = str;
+    return textArea.innerHTML;
 }

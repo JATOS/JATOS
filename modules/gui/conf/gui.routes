@@ -131,7 +131,7 @@ POST     /jatos/:studyId/memberUsers                                        @con
 DELETE   /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.removeAllMemberUsers(studyId: Long)
 GET      /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.memberUsers(studyId: Long)
 POST     /jatos/:studyId/componentOrder                                     @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition)
-GET      /jatos/:studyId/run                                                @controllers.gui.Studies.runStudy(request: Request, studyId: Long, batchId: Long ?= -1)
+GET      /jatos/:studyId/run                                                @controllers.gui.Studies.runStudy(request: Request, studyId: Long, batchId: Long ?= -1, frames: Long ?= 1)
 GET      /jatos/:studyId/clone                                              @controllers.gui.Studies.cloneStudy(studyId: Long)
 POST     /jatos/:studyId/lock/toggle                                        @controllers.gui.Studies.toggleLock(studyId: Long)
 GET      /jatos/:studyId/componentsTableData                                @controllers.gui.Studies.tableDataByStudy(studyId: Long)
@@ -165,7 +165,7 @@ POST     /jatos/:studyId/:componentId/properties/active                     @con
 GET      /jatos/:studyId/:componentId/properties                            @controllers.gui.Components.properties(studyId: Long, componentId: Long)
 POST     /jatos/:studyId/:componentId/properties                            @controllers.gui.Components.submitEdited(request: Request, studyId: Long, componentId: Long)
 DELETE   /jatos/:studyId/:componentId                                       @controllers.gui.Components.remove(request: Request, studyId: Long, componentId: Long)
-GET      /jatos/:studyId/:componentId/run                                   @controllers.gui.Components.runComponent(request: Request, studyId: Long, componentId: Long, batchId: Long ?= -1)
+GET      /jatos/:studyId/:componentId/run                                   @controllers.gui.Components.runComponent(request: Request, studyId: Long, componentId: Long, batchId: Long ?= -1, frames: Long ?= 1)
 GET      /jatos/:studyId/:componentId/clone                                 @controllers.gui.Components.cloneComponent(request: Request, studyId: Long, componentId: Long)
 
 # ImportExport controller

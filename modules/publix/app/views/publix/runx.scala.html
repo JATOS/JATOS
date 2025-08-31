@@ -1,0 +1,124 @@
+@(studyCode: String, frames: Long)
+
+@main("JATOS") {
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    .box {
+        float: left;
+        position: relative;
+    }
+    iframe {
+        border: 1px solid black;
+        display: inline-block;
+        vertical-align: top;
+        overflow: hidden;
+        width: 100%;
+    }
+    .studyDoneOverlay {
+        color: black;
+	    font-family: Sans-Serif;
+		font-size: 30px;
+		letter-spacing: 2px;
+		opacity: 1;
+		text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
+		z-index: 9999;
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+    }
+</style>
+<script>
+    const studyCode = "@studyCode";
+    const frames = @frames;
+    const searchParams = new URLSearchParams(window.location.search);
+
+    // Default settings
+    const defaultHorizontalSplit = 2;
+    const defaultVerticalSplit = 1;
+    const defaultDelay = 50;
+
+    // Extracted parameters with defaults
+    const horizontalSplit = parseInt(searchParams.get("hsplit")) || parseInt(searchParams.get("hSplit")) || defaultHorizontalSplit;
+    const verticalSplit = parseInt(searchParams.get("vsplit")) || parseInt(searchParams.get("vSplit")) || defaultVerticalSplit;
+    const delay = parseInt(searchParams.get("delay")) || defaultDelay;
+    const queryString = searchParams.size > 0 ? searchParams.toString() : "";
+
+    let closedIframeCounter = 0; // Track completed iframes
+
+    // Main function to create iframes on page load
+    createIframes();
+
+    function createIframeBoxDiv(frameId, widthPercentage) {
+        const div = document.createElement('div');
+        div.className = 'box';
+        div.id = `frame${frameId}`;
+        div.style.width = `${widthPercentage}%`;
+        return div;
+    }
+
+    function createIframe(studyCode, baseUrl, frameId, queryString, heightPercentage) {
+        const iframe = document.createElement("iframe");
+        iframe.src = `${baseUrl}publix/${studyCode}?frameId=${frameId}&${queryString}`;
+        iframe.style.height = `${heightPercentage}vh`;
+        return iframe;
+    }
+
+    async function createIframes() {
+        const baseUrl = "@{general.common.Common.getJatosUrlBasePath()}";
+        const widthPercentage = 100 / horizontalSplit;
+        const heightPercentage = 100 / verticalSplit;
+
+        for (let frameId = 1; frameId <= frames; frameId++) {
+            const div = createIframeBoxDiv(frameId, widthPercentage);
+            document.body.appendChild(div);
+            const iframe = createIframe(studyCode, baseUrl, frameId, queryString, heightPercentage);
+            div.appendChild(iframe);
+            await sleep(delay);
+        }
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    window.addEventListener("keydown", function(e) {
+        const scrollBlockingKeys = ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+        if (scrollBlockingKeys.includes(e.code)) {
+            e.preventDefault();
+        }
+    }, false);
+
+    function onIframeComplete(frameId, studyId) {
+        closedIframeCounter++;
+
+        const div = document.getElementById(`frame${frameId}`);
+
+        const iframe = div.querySelector("iframe");
+        iframe.style.opacity = 0.3;
+
+	    addOverlayText(div, "Study Done", "studyDoneOverlay");
+
+        console.info(`Study run in frame ${frameId} ended.`);
+        if (closedIframeCounter >= frames) {
+            // Redirect to JATOS GUI / study page
+            window.location.href = `@{general.common.Common.getJatosUrlBasePath()}jatos/${studyId}`;
+        }
+    }
+
+    function addOverlayText(targetDiv, text, cssClass) {
+        const overlay = document.createElement("span");
+        overlay.className = cssClass;
+        overlay.textContent = text;
+        targetDiv.appendChild(overlay);
+    }
+</script>
+}

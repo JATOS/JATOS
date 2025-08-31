@@ -6,6 +6,7 @@ export {downloadFileStream, abortFileDownload}
 import { fileSave, supported } from '../browser-fs-access-0.35.0/src/index.js';
 import * as WaitingModal from './waitingModal.js';
 import * as Alerts from './alerts.js';
+import * as Helpers from './helpers.js';
 
 if (supported) {
     console.log('browser-fs-access: Using the File System Access API.');
@@ -68,6 +69,7 @@ async function downloadFileStream(url, postData, rawFileName, csrfToken) {
 
 /*
  * Sanitizes the given raw filename:
+ * 1) decodes HTML entries, e.g., replace '&quot;' with '"'
  * 1) trims whitespaces
  * 2) replaces all illegal chars with '_'
  * 3) change all letters to lower case
@@ -76,7 +78,7 @@ async function downloadFileStream(url, postData, rawFileName, csrfToken) {
 function sanitizeFilename(rawFileName) {
     const illegalCharsRegex = /[\s\n\r\t\f*?\"\\\/,`<>|:~!§$%&^°]/g;
     const max = 100;
-    let fileName = rawFileName
+    let fileName = Helpers.decodeHtmlEntities(rawFileName)
         .trim()
         .replaceAll(illegalCharsRegex, "_")
         .toLowerCase()

@@ -162,7 +162,7 @@ public class Studies extends Controller {
 
         StudyProperties studyProperties = form.get();
         try {
-            studyService.renameStudyAssetsDir(study, studyProperties.getDirName(), studyProperties.isDirRename());
+            studyService.renameStudyAssetsDir(study, studyProperties.getDirName());
         } catch (IOException e) {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
@@ -321,11 +321,12 @@ public class Studies extends Controller {
     }
 
     /**
-     * Runs the whole study. Uses a JatosWorker and the given batch. Redirects to /publix/studyCode.
+     * Runs the whole study. Can run the study in mulitple frames in parallel. Uses a JatosWorker and the given batch.
+     * Redirects to /publix/runx.
      */
     @Transactional
     @Auth
-    public Result runStudy(Http.Request request, Long studyId, Long batchId)
+    public Result runStudy(Http.Request request, Long studyId, Long batchId, Long frames)
             throws JatosGuiException, NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
@@ -333,10 +334,11 @@ public class Studies extends Controller {
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
 
-        // Get StudyLink and redirect to jatos-publix: start study
+        // Get StudyLink and redirect to jatos-publix to start the study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
                 .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
-        String runUrl = Common.getJatosUrlBasePath() + "publix/"  + studyLink.getStudyCode();
+        String runUrl = Common.getJatosUrlBasePath() + "publix/runx?code=" + studyLink.getStudyCode()
+                + "&frames=" + frames;
         return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
     }
 

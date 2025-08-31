@@ -20,11 +20,8 @@
                         <label class="col-sm-3 col-form-label" for="studyPropertiesFormDirName" data-bs-tooltip="Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved.">
                             Study assets' directory name<span class="input-required" data-bs-tooltip="required"></span>
                         </label>
-                        <label class="d-none" for="studyPropertiesFormDirRename"></label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="studyPropertiesFormDirName" name="dirName" placeholder="Study assets' directory name" required>
-                            <input type="checkbox" id="studyPropertiesFormDirRename" name="dirRename" value="true" hidden>
-                            <input type="hidden" name="dirRename" value="false" />
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -112,30 +109,6 @@
     </div>
 </div>
 
-@* Rename study dir name confirmation Modal *@
-<div class="modal fade" id="studyDirNameConfirmationModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header align-items-start">
-                <h5 class="modal-title text-truncate flex-grow-1">Change study assets' directory name</h5>
-                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="studyDirNameConfirmationText"></div>
-                <div class="form-check">
-                    <label class="form-check-label" for="studyDirNameConfirmationKeep">Link to a different study assets directory</label>
-                    <input type="checkbox" class="form-check-input checkbox-study" id="studyDirNameConfirmationKeep">
-                    <div class="form-text" id="studyDirNameConfirmationHelp"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-study" id="studyDirNameConfirmed">Continue</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
@@ -179,35 +152,6 @@
     }
 
     $("#studyPropertiesConfirmed").click(function() {
-        const oldDirName = $('#studyPropertiesModal').data().dirName;
-        const newDirName = $('#studyPropertiesFormDirName').val().trim();
-        if (oldDirName == newDirName) {
-            submitStudyPropertiesForm();
-        } else {
-            const descriptionText = `
-                    <p>The name of the study assets' directory linked to this study changed from
-                        <span class="text-break"><b><i>${oldDirName}</i></b></span>
-                        to
-                        <span class="text-break"><b><i>${newDirName}</i></b></span>.
-                    </p>`;
-            $('#studyDirNameConfirmationText').html(descriptionText);
-            $('#studyDirNameConfirmationKeep').prop('checked', false);
-            const explanationText = `If you check this box, only the property will be renamed, but the actual directory in the file system will not. Therefore,
-                    this study will be linked to the different directory <span class="text-break"><i>${newDirName}</i></span> (that might or might not exist in the file system).`;
-            $('#studyDirNameConfirmationHelp').html(explanationText);
-            $('#studyDirNameConfirmationModal').modal('show');
-        }
-    });
-
-    $('#studyDirNameConfirmed').click(function() {
-        $('#studyDirNameConfirmationModal').modal('hide');
-        // Put the checkbox result into the property form
-        const keepAssetsDirName = $('#studyDirNameConfirmationKeep').prop('checked');
-        $('#studyPropertiesFormDirRename').prop('checked', !keepAssetsDirName);
-        submitStudyPropertiesForm();
-    });
-
-    function submitStudyPropertiesForm() {
         const studyId = $('#studyPropertiesModal').data().studyId;
 
         // Put JSON from editor into textarea to let it be picked up by form.serialize
@@ -237,7 +181,7 @@
                 }
             }
         });
-    }
+    });
 
 </script>
 

@@ -3,8 +3,21 @@
     background: var(--bs-body-bg);
 }
 
+#runStudy {
+    margin-right: 2px;
+}
+
 #componentsTable .component-title {
     max-width: 20em;
     text-overflow: ellipsis;
     overflow: hidden;
+}
+
+#componentsTable .run-component {
+    margin-right: 2px;
+}
+
+// Otherwise the header with .sticky-top would overlap with the dropdown menu
+#componentsTable .dropdown-menu-study {
+    z-index: 1021;
 }

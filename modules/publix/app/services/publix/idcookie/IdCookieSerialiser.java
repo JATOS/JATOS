@@ -28,7 +28,6 @@ public class IdCookieSerialiser {
         appendCookieEntry(sb, IdCookieModel.STUDY_ASSETS, idCookie.getStudyAssets(), true);
         appendCookieEntry(sb, IdCookieModel.URL_BASE_PATH, idCookie.getUrlBasePath(), true);
         appendCookieEntry(sb, IdCookieModel.JATOS_RUN, idCookie.getJatosRun(), true);
-        appendCookieEntry(sb, IdCookieModel.GROUP_RESULT_ID, idCookie.getGroupResultId(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_ID, idCookie.getStudyId(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_RESULT_ID, idCookie.getStudyResultId(), true);
         appendCookieEntry(sb, IdCookieModel.STUDY_RESULT_UUID, idCookie.getStudyResultUuid(), true);

@@ -28,7 +28,6 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String JSON_DATA = "jsonData";
     public static final String DESCRIPTION = "description";
     public static final String DIR_NAME = "dirName";
-    public static final String DIR_RENAME = "dirRename";
     public static final String COMMENTS = "comments";
     public static final String GROUP_STUDY = "groupStudy";
     public static final String LOCKED = "locked";
@@ -84,11 +83,6 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
      * Study assets directory name
      */
     private String dirName;
-
-    /**
-     * Rename study assets directory (the actual directory on the disk - not just the value in the DB)
-     */
-    private boolean dirRename;
 
     /**
      * User comments, reminders, something to share with others. They have no
@@ -150,14 +144,6 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
 
     public String getDirName() {
         return this.dirName;
-    }
-
-    public boolean isDirRename() {
-        return dirRename;
-    }
-
-    public void setDirRename(boolean dirRename) {
-        this.dirRename = dirRename;
     }
 
     public void setComments(String comments) {

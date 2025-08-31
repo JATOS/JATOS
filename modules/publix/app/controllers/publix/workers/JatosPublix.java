@@ -118,9 +118,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 + "workerId " + worker.getId());
         studyLogger.log(studyLink, "Started study run with " + JatosWorker.UI_WORKER_TYPE + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor
-                .startComponent(studyResult.getUuid(), componentUuid, null))
-                .removingFromSession(request, "jatos_run")
-                .removingFromSession(request, "run_component_uuid");
+                .startComponent(studyResult.getUuid(), componentUuid, null));
     }
 
     @Override
@@ -161,9 +159,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                     .finishStudy(studyResult.getUuid(), false, e.getMessage()));
         }
         idCookieService.writeIdCookie(studyResult, componentResult, jatosRun);
-        return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava()
-                .removingFromSession(request, "jatos_run")
-                .removingFromSession(request, "run_component_uuid");
+        return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava();
     }
 
     @Override
