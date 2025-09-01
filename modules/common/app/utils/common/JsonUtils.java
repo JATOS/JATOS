@@ -114,15 +114,14 @@ public class JsonUtils {
     }
 
     /**
-     * Checks whether the given string is a valid JSON string. An empty string or
-     * null is accepted as valid.
+     * Checks whether the given string is a valid JSON string. An empty string is accepted as valid.
      */
     public static boolean isValid(final String json) {
         boolean valid = false;
         try {
             Json.mapper().readTree(json);
             valid = true;
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             LOGGER.info(".isValid: error probably due to invalid JSON");
         }
         return valid;
@@ -647,7 +646,7 @@ public class JsonUtils {
         studyNode.putArray("batchList").add(asJsonForIO(study.getDefaultBatch()));
 
         // Add Study version
-        JsonNode nodeForIO = wrapNodeInObject(studyNode, ImmutableMap.of(
+        JsonNode nodeForIO = wrapAsDataEnvelope(studyNode, ImmutableMap.of(
                 "version", String.valueOf(Study.SERIAL_VERSION)));
 
         // Write to file
@@ -692,10 +691,29 @@ public class JsonUtils {
 
     public static JsonNode wrapForApi(JsonNode jsonNode, Map<String, Object> fields) {
         fields.put("apiVersion", Common.getJatosApiVersion());
-        return wrapNodeInObject(jsonNode, fields);
+        return wrapAsDataEnvelope(jsonNode, fields);
     }
 
-    public static JsonNode wrapNodeInObject(JsonNode jsonNode, Map<String, Object> fields) {
+    /**
+     * Wraps the given JSON payload into a new top-level object and adds the provided metadata fields.
+     *
+     * The resulting structure is an ObjectNode that contains all entries from {@code fields} as
+     * top-level properties and a {@code "data"} property holding the original {@code jsonNode}
+     * unchanged.
+     *
+     * Example:
+     *
+     * wrapNodeInObject({ "a": 1 }, Map.of("version", "1"))
+     * // -> { "version": "1", "data": { "a": 1 } }
+     *
+     * Values are inserted using {@code putPOJO}, allowing complex objects (e.g., Maps, Lists) to be
+     * serialized by Jackson as-is.
+     *
+     * @param jsonNode the JSON payload to be placed under the {@code "data"} key; may be any JsonNode (including null)
+     * @param fields   additional top-level properties to include in the wrapper; keys must be non-null
+     * @return a new ObjectNode containing the given {@code fields} and the {@code jsonNode} under {@code "data"}
+     */
+    public static JsonNode wrapAsDataEnvelope(JsonNode jsonNode, Map<String, Object> fields) {
         ObjectNode node = Json.mapper().createObjectNode();
         fields.forEach(node::putPOJO);
         node.set("data", jsonNode);
