@@ -1,11 +1,13 @@
-package utils.common;
+package common.utils;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
+import utils.common.Helpers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for the Helpers class.

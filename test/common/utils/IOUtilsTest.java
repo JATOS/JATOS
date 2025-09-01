@@ -1,11 +1,20 @@
-package utils.common;
+package common.utils;
 
-import org.junit.After;
+import com.google.inject.Guice;
+import general.common.Common;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import play.Application;
+import play.ApplicationLoader;
+import play.Environment;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
+import play.test.WithApplication;
+import utils.common.IOUtils;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,30 +24,31 @@ import static org.junit.Assert.*;
 /**
  * Tests for the IOUtils class.
  */
-public class IOUtilsTest {
+public class IOUtilsTest extends WithApplication {
 
+    @Inject
     private IOUtils ioUtils;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
-    
-    private File testFile;
-    private String testContent = "This is test content for IOUtils test.";
+
+    @Override
+    protected Application provideApplication() {
+        return new GuiceApplicationBuilder().build();
+    }
 
     @Before
-    public void setUp() throws IOException {
-        ioUtils = new IOUtils();
-        testFile = tempFolder.newFile("test.txt");
-        Files.write(testFile.toPath(), testContent.getBytes());
-    }
-    
-    @After
-    public void tearDown() {
-        testFile = null;
+    public void setUp() {
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        Guice.createInjector(builder.applicationModule()).injectMembers(this);
     }
 
     @Test
     public void testReadFile() throws IOException {
+        String testContent = "This is test content for IOUtils test.";
+        File testFile = tempFolder.newFile("test.txt");
+        Files.write(testFile.toPath(), testContent.getBytes());
         String content = ioUtils.readFile(testFile);
         assertEquals(testContent + System.lineSeparator(), content);
     }
@@ -48,15 +58,15 @@ public class IOUtilsTest {
         // Test basic filename generation
         String filename = ioUtils.generateFileName("test file");
         assertEquals("test_file", filename);
-        
+
         // Test with special characters
         filename = ioUtils.generateFileName("test?file*with/special\\chars");
         assertEquals("test_file_with_special_chars", filename);
-        
+
         // Test with suffix
         filename = ioUtils.generateFileName("test file", "txt");
         assertEquals("test_file.txt", filename);
-        
+
         // Test with very long name (should be truncated)
         StringBuilder longName = new StringBuilder();
         for (int i = 0; i < 200; i++) {
@@ -64,7 +74,7 @@ public class IOUtilsTest {
         }
         filename = ioUtils.generateFileName(longName.toString());
         assertEquals(100, filename.length());
-        
+
         // Test with very long name and suffix
         filename = ioUtils.generateFileName(longName.toString(), "txt");
         assertEquals(104, filename.length()); // 100 chars + ".txt"
@@ -78,7 +88,7 @@ public class IOUtilsTest {
         assertTrue(IOUtils.checkFilename("valid-filename"));
         assertTrue(IOUtils.checkFilename("valid.filename"));
         assertTrue(IOUtils.checkFilename("valid123"));
-        
+
         // Test invalid filenames
         assertFalse(IOUtils.checkFilename("invalid filename")); // contains space
         assertFalse(IOUtils.checkFilename("invalid/filename")); // contains slash
@@ -95,9 +105,8 @@ public class IOUtilsTest {
     @Test
     public void testGenerateStudyAssetsPath() {
         String dirName = "testStudyAssets";
-        String expectedPath = System.getProperty("jatos.studyAssetsRootPath", "study_assets_root") + 
-                File.separator + dirName;
-        
+        String expectedPath = Common.getStudyAssetsRootPath() + File.separator + dirName;
+
         String path = ioUtils.generateStudyAssetsPath(dirName);
         assertEquals(expectedPath, path);
     }
@@ -106,10 +115,10 @@ public class IOUtilsTest {
     public void testGetResultsPath() {
         Long studyResultId = 123L;
         Long componentResultId = 456L;
-        
+
         String path = IOUtils.getResultsPath(studyResultId, componentResultId);
         String expected = File.separator + "study_result_123" + File.separator + "comp-result_456";
-        
+
         assertEquals(expected, path);
     }
 
@@ -117,10 +126,10 @@ public class IOUtilsTest {
     public void testGetResultsPathForZip() {
         Long studyResultId = 123L;
         Long componentResultId = 456L;
-        
+
         String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId);
         String expected = "study_result_123/comp-result_456";
-        
+
         assertEquals(expected, path);
     }
 
@@ -128,17 +137,15 @@ public class IOUtilsTest {
     public void testGetResultUploadsDir() {
         Long studyResultId = 123L;
         Long componentResultId = 456L;
-        
+
         // Test with just study result ID
         String path = IOUtils.getResultUploadsDir(studyResultId);
-        String expectedPath = System.getProperty("jatos.resultUploadsPath", "result_uploads") + 
-                File.separator + "study-result_123";
+        String expectedPath = Common.getResultUploadsPath() + File.separator + "study-result_" + studyResultId;
         assertEquals(expectedPath, path);
-        
+
         // Test with both IDs
         path = IOUtils.getResultUploadsDir(studyResultId, componentResultId);
-        expectedPath = System.getProperty("jatos.resultUploadsPath", "result_uploads") + 
-                File.separator + "study-result_123" + File.separator + "comp-result_456";
+        expectedPath = Common.getResultUploadsPath() + File.separator + "study-result_" + studyResultId + File.separator + "comp-result_" + componentResultId;
         assertEquals(expectedPath, path);
     }
 }
