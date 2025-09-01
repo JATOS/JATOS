@@ -242,17 +242,21 @@ public class Common {
         resultsArchiveSuffix = config.getString("jatos.resultsArchive.suffix");
     }
 
+    /**
+     * Resolves a configured filesystem path into an absolute, canonical path usable by the runtime.
+     * The returned path is always absolute and normalized for the host operating system.
+     */
     private String obtainPath(Config config, String property) {
         String path = config.getString(property);
         // Replace ~ with actual home directory
         path = path.replace("~", System.getProperty("user.home"));
-        // Replace Unix-like file separator with actual system's one
+        // Replace Unix-like file separator with the actual system's one
         path = path.replace("/", File.separator);
-        // If it is a relative path, add JATOS' base path as prefix
+        // If it is a relative path, add JATOS' base path as a prefix
         if (!(new File(path).isAbsolute())) {
             path = basepath + File.separator + path;
         }
-        // Turn into a canonical path (e.g. remove '.' and '..')
+        // Turn into a canonical path (e.g., remove '.' and '..')
         try {
             path = new File(path).getCanonicalFile().toString();
         } catch (IOException e) {
