@@ -1,4 +1,4 @@
-package common.utils;
+package modules.common.utils;
 
 import org.junit.Test;
 import utils.common.HashUtils;

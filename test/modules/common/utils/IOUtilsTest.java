@@ -1,17 +1,10 @@
-package common.utils;
+package modules.common.utils;
 
-import com.google.inject.Guice;
 import general.common.Common;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import play.Application;
-import play.ApplicationLoader;
-import play.Environment;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.inject.guice.GuiceApplicationLoader;
-import play.test.WithApplication;
+import testutils.JatosTest;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -24,25 +17,13 @@ import static org.junit.Assert.*;
 /**
  * Tests for the IOUtils class.
  */
-public class IOUtilsTest extends WithApplication {
+public class IOUtilsTest extends JatosTest {
 
     @Inject
-    private IOUtils ioUtils;
+    public IOUtils ioUtils;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
-
-    @Override
-    protected Application provideApplication() {
-        return new GuiceApplicationBuilder().build();
-    }
-
-    @Before
-    public void setUp() {
-        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-                .builder(new ApplicationLoader.Context(Environment.simple()));
-        Guice.createInjector(builder.applicationModule()).injectMembers(this);
-    }
 
     @Test
     public void testReadFile() throws IOException {
