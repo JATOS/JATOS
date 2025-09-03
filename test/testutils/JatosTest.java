@@ -60,7 +60,7 @@ public class JatosTest {
     public String apiToken;
 
     @Before
-    public void startApp() throws Exception {
+    public void startApp() {
         application = Helpers.fakeApplication();
 
         GuiceApplicationBuilder builder = new GuiceApplicationLoader()
