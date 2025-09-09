@@ -81,7 +81,7 @@ public class UserService {
     }
 
     /**
-     * Creates a user, sets password hash and persists him. Creates and persists a JatosWorker for the user.
+     * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
     public User bindToUserAndPersist(NewUserModel newUserModel) {
         //noinspection deprecation
