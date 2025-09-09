@@ -20,6 +20,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-core" % "1.2.11",
   "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
+  "com.pivovarit" % "throwing-function" % "1.6.1",
   guice,
   filters
 )
