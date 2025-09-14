@@ -4,7 +4,6 @@ import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.StudyLogger;
@@ -54,16 +53,16 @@ public class ResultRemover {
     }
 
     /**
-     * Retrieves all ComponentResults that correspond to the IDs in the given
-     * String, checks them and if yes, removes them. Removes result upload files.
+     * Retrieves all ComponentResults that correspond to the IDs in the given String, checks them and if yes,
+     * removes them. Ignores IDs that do not point to a result. Removes result upload files.
      *
      * @param componentResultIdList List of IDs of ComponentResults
      * @param user                  For each ComponentResult it will be checked that the given
      *                              user is a user of the study that the ComponentResult belongs
-     *                              too.
+     *                              to.
      */
     public void removeComponentResults(List<Long> componentResultIdList, User user, boolean removeEmptyStudyResults)
-            throws BadRequestException, NotFoundException, ForbiddenException {
+            throws NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
         checker.checkComponentResults(componentResultList, user, true);
         for (ComponentResult componentResult : componentResultList) {
@@ -88,7 +87,7 @@ public class ResultRemover {
      *                          a user of the study that the StudyResult belongs too.
      */
     public void removeStudyResults(List<Long> studyResultIdList, User user)
-            throws BadRequestException, NotFoundException, ForbiddenException {
+            throws NotFoundException, ForbiddenException {
         List<StudyResult> studyResultList = studyResultDao.findByIds(studyResultIdList);
         Set<Study> studies = new HashSet<>();
         checker.checkStudyResults(studyResultList, user, true);
