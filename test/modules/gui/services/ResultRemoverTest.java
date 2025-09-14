@@ -62,9 +62,7 @@ public class ResultRemoverTest extends JatosTest {
         List<Long> ids = createTwoComponentResults(studyId);
 
         // Remove both component results and expect the (now empty) StudyResult to be removed too
-        jpaApi.withTransaction(unchecked((em) -> {
-            resultRemover.removeComponentResults(ids, admin, true);
-        }));
+        jpaApi.withTransaction(unchecked((em) -> resultRemover.removeComponentResults(ids, admin, true)));
 
         // Verify: component results gone, study result gone
         jpaApi.withTransaction(unchecked((em) -> {
@@ -117,9 +115,7 @@ public class ResultRemoverTest extends JatosTest {
         List<Long> studyResultIds = createTwoStudyResults(studyId);
 
         // Remove the StudyResults
-        jpaApi.withTransaction(unchecked((em) -> {
-            resultRemover.removeStudyResults(studyResultIds, admin);
-        }));
+        jpaApi.withTransaction(unchecked((em) -> resultRemover.removeStudyResults(studyResultIds, admin)));
 
         // Verify they are gone, and no ComponentResults remain for them
         jpaApi.withTransaction(unchecked((em) -> {
@@ -151,7 +147,7 @@ public class ResultRemoverTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Worker adminWorker = workerDao.findById(admin.getWorker().getId());
             List<Long> crids = new ArrayList<>();
-            StudyLink studyLink = fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyLink studyLink = fetchStudyLink(study.getDefaultBatch());
 
             StudyResult studyResult = resultCreator.createStudyResult(studyLink, adminWorker);
             ComponentResult cr1 = publixUtils.startComponent(study.getFirstComponent().get(), studyResult);
@@ -168,7 +164,7 @@ public class ResultRemoverTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Worker adminWorker = workerDao.findById(admin.getWorker().getId());
             List<Long> idList = new ArrayList<>();
-            StudyLink studyLink = fetchStudyLink(study.getDefaultBatch(), JatosWorker.WORKER_TYPE);
+            StudyLink studyLink = fetchStudyLink(study.getDefaultBatch());
 
             StudyResult studyResult1 = resultCreator.createStudyResult(studyLink, adminWorker);
             publixUtils.startComponent(study.getFirstComponent().get(), studyResult1);
@@ -182,8 +178,8 @@ public class ResultRemoverTest extends JatosTest {
         }));
     }
 
-    private StudyLink fetchStudyLink(Batch batch, String workerType) {
-        return studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
+    private StudyLink fetchStudyLink(Batch batch) {
+        return studyLinkDao.findFirstByBatchAndWorkerType(batch, JatosWorker.WORKER_TYPE)
+                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, JatosWorker.WORKER_TYPE)));
     }
 }
