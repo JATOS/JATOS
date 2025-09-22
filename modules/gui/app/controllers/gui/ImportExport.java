@@ -60,8 +60,22 @@ public class ImportExport extends Controller {
 
     /**
      * POST request that imports a JATOS study archive to JATOS. It's only used by the API. The difference
-     * to the methods used by the GUI (importStudy and importStudyConfirmed) is, that here all is done in one request
+     * to the methods used by the GUI (importStudy and importStudyConfirmed) is that here all is done in one request
      * and all confirmation (e.g. keepProperties, keepAssets) has to be specified beforehand.
+     *
+     * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
+     *                              Default is `false` (properties are overwritten by default). If the study doesn't
+     *                              already exist, this parameter has no effect.
+     * @param keepAssets            If true and the study exists already in JATOS the current study assets directory is
+     *                              kept. Default is `false` (assets are overwritten by default). If the study doesn't
+     *                              already exist, this parameter has no effect.
+     * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
+     *                              if the name of the currently installed assets directory should be kept. A `false`
+     *                              indicates that the name should be taken from the uploaded one. Default is `true`.
+     * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
+     *                              study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
+     *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
+     *                              Default is `true`.
      */
     @Transactional
     @Auth
@@ -78,7 +92,7 @@ public class ImportExport extends Controller {
             return badRequest(MessagesStrings.FILE_MISSING);
         }
         if (!Study.STUDY.equals(filePart.getKey())) {
-            // If wrong key the upload comes from wrong form
+            // If wrong key the upload comes from the wrong form
             return badRequest(MessagesStrings.NO_STUDY_UPLOAD);
         }
 
@@ -136,7 +150,22 @@ public class ImportExport extends Controller {
 
     /**
      * POST request that does the actual import of a JATOS study archive. This endpoint gets called always
-     * after importStudy().
+     * after importStudy(). It's only used by the GUI.
+     *
+     * It expects the following parameters in a JSON object in the request body:
+     * 1) keepProperties - If true and the study exists already in JATOS the current properties are kept.
+     *                             Default is `false` (properties are overwritten by default). If the study doesn't
+     *                             already exist, this parameter has no effect.
+     * 2) keepAssets - If true and the study exists already in JATOS the current study assets directory is
+     *                 kept. Default is `false` (assets are overwritten by default). If the study doesn't
+     *                 already exist, this parameter has no effect.
+     * 3) keepCurrentAssetsName - If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
+     *                            if the name of the currently installed assets directory should be kept. A `false`
+     *                            indicates that the name should be taken from the uploaded one. Default is `true`.
+     * 4) renameAssets - If the study assets directory already exists in JATOS but belongs to a different
+     *                   study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
+     *                   JATOS add a suffix to the assets directory name (original name + "_" + a number).
+     *                   Default is `true`.
      */
     @Transactional
     @Auth

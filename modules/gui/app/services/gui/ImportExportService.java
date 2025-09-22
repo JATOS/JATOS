@@ -95,8 +95,7 @@ public class ImportExportService {
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
         if (currentStudy.isPresent() && !currentStudy.get().hasUser(signedinUser)) {
-            String errorMsg = MessagesStrings.studyImportNotUser();
-            throw new ForbiddenException(errorMsg);
+            throw new ForbiddenException(MessagesStrings.studyImportNotUser());
         }
 
         // Create JSON response
@@ -156,7 +155,7 @@ public class ImportExportService {
 
         // 4) !study exists -  udir exists
         // 5) !study exists - !udir exists
-        else if (!keepProperties && !keepAssets) { // if we have no current study do nothing
+        else if (!keepProperties && !keepAssets) {
             boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
             if (uploadedDirExists && !renameAssets) {
                 throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameAssets' is set to false.");
