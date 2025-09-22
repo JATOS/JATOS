@@ -254,7 +254,7 @@ public class IOUtils {
      *                           assets directory.
      * @return Name of the new file.
      */
-    public synchronized String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath)
+    public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath)
             throws IOException {
         File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName, htmlFilePath);
         if (!htmlFile.isFile()) {
@@ -279,7 +279,7 @@ public class IOUtils {
      * Copies study assets' directory. Adds suffix '_clone' to the name of the new assets dir. If a dir with suffix
      * '_clone' already exists it adds '_' + number instead.
      */
-    public synchronized String cloneStudyAssetsDirectory(String srcDirName) throws IOException {
+    public String cloneStudyAssetsDirectory(String srcDirName) throws IOException {
         File srcDir = getFileSecurely(Common.getStudyAssetsRootPath(), srcDirName);
         if (!srcDir.isDirectory()) {
             throw new IOException(MessagesStrings.dirPathIsntDir(srcDir.getName()));
