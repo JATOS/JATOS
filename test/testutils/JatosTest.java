@@ -49,6 +49,8 @@ import static play.test.Helpers.*;
  */
 public class JatosTest {
 
+    public static final String TEST_RESOURCES_POTATO_COMPASS_JZIP = "/test/resources/potato_compass.jzip";
+
     @Inject
     protected Application application;
 
@@ -88,7 +90,7 @@ public class JatosTest {
     public Long importExampleStudy() {
         TemporaryFileCreator temporaryFileCreator = application.injector().instanceOf(TemporaryFileCreator.class);
         Materializer materializer = application.injector().instanceOf(Materializer.class);
-        Path studyPath = Paths.get(Common.getBasepath(), "/test/resources/potato_compass.jzip");
+        Path studyPath = Paths.get(Common.getBasepath(), TEST_RESOURCES_POTATO_COMPASS_JZIP);
         Source<ByteString, CompletionStage<IOResult>> source = FileIO.fromPath(studyPath);
         Http.MultipartFormData.FilePart<Source<ByteString, ?>> part = new Http.MultipartFormData.FilePart<>("study", "filename", "text/plain", source);
         Http.RequestBuilder request = new Http.RequestBuilder()
