@@ -32,6 +32,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * Tests for StudyService modeled after UserServiceTest
  */
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class StudyServiceTest extends JatosTest {
 
     @Inject
