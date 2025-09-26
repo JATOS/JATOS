@@ -134,6 +134,22 @@ public class ImportExportService {
         }
     }
 
+    /**
+     * @param signedinUser          The signed-in user.
+     * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
+     *                              Default is `false` (properties are overwritten by default). If the study doesn't
+     *                              already exist, this parameter has no effect.
+     * @param keepAssets            If true and the study exists already in JATOS the current study assets directory is
+     *                              kept. Default is `false` (assets are overwritten by default). If the study doesn't
+     *                              already exist, this parameter has no effect.
+     * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
+     *                              if the name of the currently installed assets directory should be kept. A `false`
+     *                              indicates that the name should be taken from the uploaded one. Default is `true`.
+     * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
+     *                              study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
+     *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
+     *                              Default is `true`.
+     */
     public Long importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
