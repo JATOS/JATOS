@@ -22,7 +22,8 @@ public class ApiTokenService {
     }
 
     /**
-     * Generates a new api token and persists it in the database. Returns the hash of the token.
+     * Generates a new api token and persists its hash in the database. Returns the token string.
+     * A token consists of the prefix "jap_" + a random string of 31 characters and a checksum of 6 characters.
      */
     public String create(User user, String name, Integer expires) {
         String randomStr = HashUtils.generateSecureRandomString(31);
