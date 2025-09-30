@@ -1,9 +1,7 @@
-package modules.common.general;
+package general.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.StudyDao;
-import general.common.Common;
-import general.common.StudyLogger;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyLink;

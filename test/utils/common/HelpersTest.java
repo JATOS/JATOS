@@ -1,7 +1,6 @@
-package modules.common.utils;
+package utils.common;
 
 import org.junit.Test;
-import utils.common.Helpers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

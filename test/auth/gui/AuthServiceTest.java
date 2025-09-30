@@ -1,7 +1,5 @@
-package modules.gui.auth;
+package auth.gui;
 
-import auth.gui.AuthService;
-import auth.gui.SigninLdap;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.Common;

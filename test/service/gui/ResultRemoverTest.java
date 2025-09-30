@@ -1,4 +1,4 @@
-package modules.gui.services;
+package service.gui;
 
 import com.pivovarit.function.ThrowingFunction;
 import daos.common.ComponentResultDao;

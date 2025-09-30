@@ -1,11 +1,10 @@
-package modules.common.utils;
+package utils.common;
 
 import general.common.Common;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import testutils.JatosTest;
-import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import java.io.File;

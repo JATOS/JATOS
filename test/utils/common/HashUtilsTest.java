@@ -1,7 +1,6 @@
-package modules.common.utils;
+package utils.common;
 
 import org.junit.Test;
-import utils.common.HashUtils;
 
 import java.io.File;
 import java.io.IOException;

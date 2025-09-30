@@ -1,4 +1,4 @@
-package modules.gui.services;
+package service.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

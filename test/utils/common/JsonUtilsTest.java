@@ -1,10 +1,9 @@
-package modules.common.utils;
+package utils.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 import play.libs.Json;
-import utils.common.JsonUtils;
 
 import java.util.HashMap;
 import java.util.Map;

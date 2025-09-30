@@ -1,4 +1,4 @@
-package modules.gui.services;
+package service.gui;
 
 import auth.gui.AuthService;
 import com.pivovarit.function.ThrowingConsumer;

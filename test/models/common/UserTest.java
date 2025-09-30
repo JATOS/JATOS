@@ -1,6 +1,5 @@
-package modules.common.models;
+package models.common;
 
-import models.common.User;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
