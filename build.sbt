@@ -10,7 +10,7 @@ packageName in Universal := "jatos"
 packageName in Docker := "jatos/jatos"
 
 libraryDependencies ++= Seq(
-  "org.mockito" % "mockito-core" % "4.11.0" % "test",
+  "org.mockito" % "mockito-inline" % "4.11.0" % "test",
   "org.easytesting" % "fest-assert" % "1.4" % "test",
   "com.h2database" % "h2" % "1.4.197",
   "com.typesafe.play" %% "play-json" % "2.8.2",
