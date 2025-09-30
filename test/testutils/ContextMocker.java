@@ -7,13 +7,13 @@ import play.test.Helpers;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.Mockito.when;
 
 /**
  * Helper class that provides methods to mock Play's Context
  */
+@SuppressWarnings("deprecation")
 public class ContextMocker {
 
     /**
@@ -45,15 +45,12 @@ public class ContextMocker {
     }
 
     private static void mock(Http.Cookies cookies) {
-        Map<String, String> flashData = Collections.emptyMap();
-        Map<String, Object> argData = Collections.emptyMap();
-        Long id = 2L;
         RequestHeader header = Mockito.mock(RequestHeader.class);
         Http.Request request = Mockito.mock(Http.Request.class);
         when(request.cookies()).thenReturn(cookies);
         when(request.queryString()).thenReturn(null);
-        Http.Context context = new Http.Context(id, header, request, flashData, flashData, argData,
-                Helpers.contextComponents());
+        Http.Context context = new Http.Context(1L, header, request, Collections.emptyMap(), Collections.emptyMap(),
+                Collections.emptyMap(), Helpers.contextComponents());
         Http.Context.current.set(context);
     }
 }
