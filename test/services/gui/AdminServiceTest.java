@@ -35,6 +35,7 @@ public class AdminServiceTest {
 
     private static MockedStatic<Common> commonStatic;
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initCommonStatics() {
         // Mock Common's static getters used by IOUtils and others

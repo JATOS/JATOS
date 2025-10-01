@@ -1,4 +1,4 @@
-package service.gui;
+package services.gui;
 
 import com.pivovarit.function.ThrowingFunction;
 import daos.common.ComponentResultDao;
@@ -12,7 +12,6 @@ import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
-import services.gui.ResultRemover;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import testutils.JatosTest;

@@ -1,4 +1,4 @@
-package service.gui;
+package services.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -16,8 +16,6 @@ import models.common.User;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 import play.mvc.Controller;
-import services.gui.ImportExportService;
-import services.gui.StudyService;
 import testutils.ContextMocker;
 import testutils.JatosTest;
 import utils.common.IOUtils;

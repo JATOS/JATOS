@@ -1,4 +1,4 @@
-package service.gui;
+package services.gui;
 
 import auth.gui.AuthService;
 import com.pivovarit.function.ThrowingConsumer;
@@ -12,7 +12,6 @@ import models.common.Study;
 import models.gui.ComponentProperties;
 import org.fest.assertions.Fail;
 import org.junit.Test;
-import services.gui.ComponentService;
 import testutils.ContextMocker;
 import testutils.JatosTest;
 import utils.common.IOUtils;

@@ -1,4 +1,4 @@
-package service.gui;
+package services.gui;
 
 import auth.gui.AuthService;
 import daos.common.ApiTokenDao;
@@ -12,8 +12,6 @@ import models.common.User;
 import models.gui.NewUserModel;
 import org.fest.assertions.Fail;
 import org.junit.Test;
-import services.gui.StudyService;
-import services.gui.UserService;
 import testutils.ContextMocker;
 import testutils.JatosTest;
 
