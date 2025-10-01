@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Helper class that provides methods to mock Play's Context
+ *
+ * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
 public class ContextMocker {

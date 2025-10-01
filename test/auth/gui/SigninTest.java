@@ -27,7 +27,7 @@ import static play.test.Helpers.contentAsString;
 /**
  * Unit tests for Signin controller.
  * 
- * Kristian Lange
+ * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
 public class SigninTest {

@@ -24,7 +24,7 @@ import static play.mvc.Results.forbidden;
 /**
  * Unit tests for AuthSessionCookie.
  *
- * Kristian Lange
+ * @author Kristian Lange
  */
 public class AuthSessionCookieTest {
 

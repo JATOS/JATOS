@@ -20,6 +20,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for ApiTokens controller.
+ *
+ * @author Kristian Lange
  */
 public class ApiTokensTest {
 

@@ -31,6 +31,8 @@ import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * Tests for StudyService modeled after UserServiceTest
+ *
+ * @author Kristian Lange
  */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class StudyServiceTest extends JatosTest {

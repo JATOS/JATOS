@@ -28,7 +28,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * Tests for ComponentService
  *
- * By Kristian Lange
+ * @author Kristian Lange
  */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ComponentServiceTest extends JatosTest {

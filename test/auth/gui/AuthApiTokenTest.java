@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for AuthApiToken.
  *
- * Kristian Lange
+ * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
 public class AuthApiTokenTest {

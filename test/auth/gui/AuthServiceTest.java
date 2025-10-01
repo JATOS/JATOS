@@ -21,6 +21,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for AuthService.
+ *
+ * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
 public class AuthServiceTest {

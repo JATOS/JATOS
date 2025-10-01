@@ -35,7 +35,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * Tests for ImportExportService
  *
- * Kristian Lange
+ * @author Kristian Lange
  */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ImportExportServiceTest extends JatosTest {
