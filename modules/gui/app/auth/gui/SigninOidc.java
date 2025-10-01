@@ -146,10 +146,24 @@ public abstract class SigninOidc extends Controller {
         this.oidcConfig = oidcConfig;
     }
 
+    /**
+     * Initiates the OpenID Connect (OIDC) authentication process by constructing a URI for an authentication request.
+     * This URI is returned in the response and can then be used by the GUI in the browser to start the authentication.
+     * The method stores the OIDC state, nonce, and a flag indicating whether to keep the user signed in, in the Play
+     * session.
+     *
+     * @param request       the HTTP request received from the client
+     * @param realHostUrl   the real host URL to be used for constructing the callback URL
+     * @param keepSignedin  a flag indicating whether the user should remain signed in
+     * @return the authentication request URI as String
+     * @throws URISyntaxException if an invalid URI is encountered during the process
+     * @throws ParseException if parsing operations fail while working with OIDC configurations
+     * @throws AuthException if an authentication-related error occurs
+     */
     @GuiAccessLogging
     @Transactional
     public final Result signin(Http.Request request, String realHostUrl, boolean keepSignedin)
-            throws URISyntaxException, IOException, ParseException, AuthException {
+            throws URISyntaxException, ParseException, AuthException {
         oidcConfig.callbackUrl = Helpers.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
         ClientID clientID = new ClientID(oidcConfig.clientId);
         URI callback = new URI(oidcConfig.callbackUrl);
