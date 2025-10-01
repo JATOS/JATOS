@@ -103,7 +103,7 @@ public class SigninGoogle extends Controller {
      * Verifies and fetches an ID token from Google OAuth by sending an HTTP POST to Google. The actual authentication
      * happens in the frontend with Google's gapi library.
      */
-    private GoogleIdToken fetchOAuthGoogleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
+    protected GoogleIdToken fetchOAuthGoogleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
         HttpTransport transport = new NetHttpTransport();
         JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
