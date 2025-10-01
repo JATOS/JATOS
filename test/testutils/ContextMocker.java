@@ -49,6 +49,7 @@ public class ContextMocker {
         Http.Request request = Mockito.mock(Http.Request.class);
         when(request.cookies()).thenReturn(cookies);
         when(request.queryString()).thenReturn(null);
+        when(request.remoteAddress()).thenReturn("1.2.3.4");
         Http.Context context = new Http.Context(1L, header, request, Collections.emptyMap(), Collections.emptyMap(),
                 Collections.emptyMap(), Helpers.contextComponents());
         Http.Context.current.set(context);
