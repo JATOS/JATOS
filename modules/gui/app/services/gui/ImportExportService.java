@@ -13,7 +13,6 @@ import models.common.Study;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
-import play.api.Application;
 import play.libs.Json;
 import play.mvc.Controller;
 import utils.common.IOUtils;
@@ -45,7 +44,6 @@ public class ImportExportService {
 
     public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
 
-    private final Application app;
     private final Checker checker;
     private final StudyService studyService;
     private final BatchService batchService;
@@ -54,14 +52,13 @@ public class ImportExportService {
     private final IOUtils ioUtils;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
+    private final StudyDeserializer studyDeserializer;
 
     @Inject
-    ImportExportService(Application app, Checker checker,
+    ImportExportService(Checker checker,
             StudyService studyService, BatchService batchService, ComponentService componentService,
-            JsonUtils jsonUtils, IOUtils ioUtils,
-            StudyDao studyDao,
-            ComponentDao componentDao) {
-        this.app = app;
+            JsonUtils jsonUtils, IOUtils ioUtils, StudyDao studyDao, ComponentDao componentDao,
+            StudyDeserializer studyDeserializer) {
         this.checker = checker;
         this.studyService = studyService;
         this.batchService = batchService;
@@ -70,6 +67,7 @@ public class ImportExportService {
         this.ioUtils = ioUtils;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
+        this.studyDeserializer = studyDeserializer;
     }
 
     /**
@@ -85,7 +83,7 @@ public class ImportExportService {
      */
     public ObjectNode importStudy(User signedinUser, File file) throws IOException, ForbiddenException {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
-        Study uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
+        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, false);
 
         // Remember study assets' dir name
         Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
@@ -157,7 +155,7 @@ public class ImportExportService {
             LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
             throw new IOException("Missing unzipped study directory in tmp directory");
         }
-        Study uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
+        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, true);
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 
         // 1) study exists  -  udir exists - udir == cdir
@@ -340,15 +338,13 @@ public class ImportExportService {
         return destDir;
     }
 
-    private Study unmarshalStudy(File tempDir, boolean deleteAfterwards) throws IOException {
+    private Study deserializeStudy(File tempDir, boolean deleteAfterwards) throws IOException {
         File[] studyFileList = ioUtils.findFiles(tempDir, "", "jas");
         if (studyFileList.length != 1) {
             throw new IOException("Study is invalid");
         }
         File studyFile = studyFileList[0];
-
-        UploadUnmarshaller<Study> uploadUnmarshaller = app.injector().instanceOf(StudyUploadUnmarshaller.class);
-        Study study = uploadUnmarshaller.unmarshalling(studyFile);
+        Study study = studyDeserializer.deserialize(studyFile);
 
         try {
             studyService.validate(study);

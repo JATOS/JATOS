@@ -9,34 +9,33 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 
 /**
- * Unmarshalling of an JSON string to a study. The study's JSON string can be in
+ * Deserialization of an JSON file to a study. The study's JSON string can be in
  * different versions of the study to support older JATOS' versions.
- * <p>
- * For each unmarshalling a new instance of this unmarshaller has to be created.
  *
- * @author Kristian Lange 2015
+ * @author Kristian Lange
  */
-public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
+public class StudyDeserializer {
+
+    private final IOUtils ioUtils;
 
     @Inject
-    StudyUploadUnmarshaller(IOUtils ioUtils, JsonUtils jsonUtils) {
-        super(ioUtils, jsonUtils);
+    StudyDeserializer(IOUtils ioUtils) {
+        this.ioUtils = ioUtils;
     }
 
     /**
-     * Accepts an JSON String and turns the data object within this JSON String
-     * into an object of type Study. It can handle different versions of the
-     * study model. The version is determined by the version field in the JSON
-     * string. Each supported study version has its own model which is used for
-     * unmarshaling.
+     * Accepts a file with the content of a JSON String and turns the data object within this JSON String into an object
+     * of type Study. It can handle different versions of the study model. The version is determined by the version
+     * field in the JSON string.
      */
-    @Override
-    protected Study concreteUnmarshaling(String jsonStr) throws IOException {
-        JsonNode node = Json.mapper().readTree(jsonStr)
-                .findValue(JsonUtils.VERSION);
+    public Study deserialize(File file) throws IOException {
+        String jsonStr = ioUtils.readFile(file);
+
+        JsonNode node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.VERSION);
         int version = node.asInt();
         if (version > Study.SERIAL_VERSION) {
             throw new IOException(MessagesStrings.TOO_NEW_STUDY_VERSION);
@@ -46,21 +45,17 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
             case 0:
             case 2:
                 // Version 2
-                node = Json.mapper().readTree(jsonStr)
-                        .findValue(JsonUtils.DATA);
-                StudyV2 studyV2 =
-                        Json.mapper().treeToValue(node, StudyV2.class);
+                node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.DATA);
+                StudyV2 studyV2 = Json.mapper().treeToValue(node, StudyV2.class);
                 study = bindV2(studyV2);
                 break;
             case 3:
                 // Current version
-                node = Json.mapper().readTree(jsonStr)
-                        .findValue(JsonUtils.DATA);
+                node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.DATA);
                 study = Json.mapper().treeToValue(node, Study.class);
                 break;
             default:
-                throw new IOException(
-                        MessagesStrings.UNSUPPORTED_STUDY_VERSION);
+                throw new IOException(MessagesStrings.UNSUPPORTED_STUDY_VERSION);
         }
         return study;
     }
