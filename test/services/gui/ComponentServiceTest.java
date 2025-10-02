@@ -1,358 +1,362 @@
 package services.gui;
 
 import auth.gui.AuthService;
-import com.pivovarit.function.ThrowingConsumer;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
-import general.common.RequestScope;
 import models.common.Component;
 import models.common.Study;
+import models.common.User;
 import models.gui.ComponentProperties;
-import org.fest.assertions.Fail;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 import testutils.ContextMocker;
-import testutils.JatosTest;
 import utils.common.IOUtils;
 
-import javax.inject.Inject;
-import javax.validation.ValidationException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Optional;
 
-import static com.pivovarit.function.ThrowingConsumer.unchecked;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 /**
- * Tests for ComponentService
+ * Unit tests for ComponentService.
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("OptionalGetWithoutIsPresent")
-public class ComponentServiceTest extends JatosTest {
+public class ComponentServiceTest {
 
-    @Inject
+    private static org.mockito.MockedStatic<general.common.Common> commonStatic;
+
+    @BeforeClass
+    public static void initCommonStatics() {
+        String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";
+        commonStatic = org.mockito.Mockito.mockStatic(general.common.Common.class);
+        commonStatic.when(general.common.Common::getTmpPath).thenReturn(tmp);
+        commonStatic.when(general.common.Common::getStudyAssetsRootPath).thenReturn(tmp);
+        commonStatic.when(general.common.Common::getResultUploadsPath).thenReturn(tmp);
+    }
+
+    @AfterClass
+    public static void tearDownCommonStatics() {
+        if (commonStatic != null) commonStatic.close();
+    }
+
+    private ResultRemover resultRemover;
+    private StudyDao studyDao;
+    private ComponentDao componentDao;
+    private IOUtils ioUtils;
+    private AuthService authService;
+    private Checker checker;
+
     private ComponentService componentService;
 
-    @Inject
-    private IOUtils ioUtils;
+    @Before
+    public void setup() {
+        resultRemover = Mockito.mock(ResultRemover.class);
+        studyDao = Mockito.mock(StudyDao.class);
+        componentDao = Mockito.mock(ComponentDao.class);
+        ioUtils = Mockito.mock(IOUtils.class);
+        authService = Mockito.mock(AuthService.class);
+        checker = Mockito.mock(Checker.class);
 
-    @Inject
-    private StudyDao studyDao;
+        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils, authService, checker);
+    }
 
-    @Inject
-    private ComponentDao componentDao;
-
-    @Test
-    public void clone_shouldCopyFieldsAndGenerateNewUuid_withoutPersist() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-
-            Component original = study.getFirstComponent().get();
-
-            Component clone = componentService.clone(original);
-
-            // Same properties
-            assertThat(clone.getStudy()).isEqualTo(original.getStudy());
-            assertThat(clone.getTitle()).isEqualTo(original.getTitle());
-            assertThat(clone.getHtmlFilePath()).isEqualTo(original.getHtmlFilePath());
-            assertThat(clone.isReloadable()).isEqualTo(original.isReloadable());
-            assertThat(clone.isActive()).isEqualTo(original.isActive());
-            assertThat(clone.getJsonData()).isEqualTo(original.getJsonData());
-            assertThat(clone.getComments()).isEqualTo(original.getComments());
-
-            // Differences
-            assertThat(clone.getId()).isNull(); // not persisted
-            assertThat(clone.getUuid()).isNotEqualTo(original.getUuid());
-            assertThat(clone.getUuid()).isNotEmpty();
-        }));
+    private Component exampleComponent(Study study) {
+        Component c = new Component();
+        c.setStudy(study);
+        c.setTitle("Comp A");
+        c.setHtmlFilePath("a/index.html");
+        c.setReloadable(true);
+        c.setActive(true);
+        c.setJsonData("{\"x\":1}");
+        c.setComments("note");
+        c.setId(10L);
+        return c;
     }
 
     @Test
-    public void bindToProperties_shouldReflectHtmlFileExists() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
+    public void clone_shouldCopyFields_andGenerateNewUuid() {
+        Study s = new Study();
+        Component original = exampleComponent(s);
+        String originalUuid = original.getUuid();
 
-            ComponentProperties props = componentService.bindToProperties(component);
+        Component clone = componentService.clone(original);
 
-            assertThat(props.getUuid()).isEqualTo(component.getUuid());
-            assertThat(props.getTitle()).isEqualTo(component.getTitle());
-            assertThat(props.getId()).isEqualTo(component.getId());
-            assertThat(props.getStudyId()).isEqualTo(study.getId());
-            // html file should exist in imported example
-            assertThat(ioUtils.checkFileInStudyAssetsDirExists(study.getDirName(), props.getHtmlFilePath())).isTrue();
-            assertThat(props.isHtmlFileExists()).isTrue();
-        }));
+        // same fields
+        assertThat(clone.getStudy()).isEqualTo(s);
+        assertThat(clone.getTitle()).isEqualTo("Comp A");
+        assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(clone.isReloadable()).isTrue();
+        assertThat(clone.isActive()).isTrue();
+        assertThat(clone.getJsonData()).isEqualTo("{\"x\":1}");
+        assertThat(clone.getComments()).isEqualTo("note");
+        // differences
+        assertThat(clone.getId()).isNull();
+        assertThat(clone.getUuid()).isNotEqualTo(originalUuid);
+        assertThat(clone.getUuid()).isNotEmpty();
     }
 
     @Test
-    public void updateComponentAfterEdit_shouldUpdateSelectedFields() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-            String originalHtml = component.getHtmlFilePath();
-            boolean originalActive = component.isActive();
+    public void cloneWholeComponent_shouldChangeTitle_andCloneHtmlPath_onSuccess() throws IOException {
+        // Given
+        Study s = new Study();
+        s.setId(1L);
+        Component original = exampleComponent(s);
+        when(componentDao.findByTitle("Comp A (clone)")).thenReturn(Collections.emptyList());
+        when(ioUtils.cloneComponentHtmlFile(s.getDirName(), original.getHtmlFilePath()))
+                .thenReturn("a/index_cloned.html");
 
-            ComponentProperties updated = new ComponentProperties();
-            updated.setTitle(component.getTitle() + " updated");
-            updated.setComments("Some comment");
-            updated.setJsonData("{\"a\":1}");
-            updated.setReloadable(!component.isReloadable());
-            updated.setHtmlFilePath("shouldNotChange.html"); // will be ignored
-            updated.setActive(!component.isActive()); // will be ignored
+        // When
+        Component clone = componentService.cloneWholeComponent(original);
 
-            componentService.updateComponentAfterEdit(component, updated);
-
-            Component reloaded = componentDao.findById(component.getId());
-            assertThat(reloaded.getTitle()).isEqualTo(updated.getTitle());
-            assertThat(reloaded.getComments()).isEqualTo(updated.getComments());
-            assertThat(reloaded.getJsonData()).isEqualTo(updated.getJsonData());
-            assertThat(reloaded.isReloadable()).isEqualTo(updated.isReloadable());
-            // unchanged
-            assertThat(reloaded.getHtmlFilePath()).isEqualTo(originalHtml);
-            assertThat(reloaded.isActive()).isEqualTo(originalActive);
-        }));
+        // Then
+        assertThat(clone.getTitle()).isEqualTo("Comp A (clone)");
+        assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index_cloned.html");
+        assertThat(clone.getStudy()).isEqualTo(s);
+        assertThat(clone.getUuid()).isNotEqualTo(original.getUuid());
     }
 
     @Test
-    public void createAndPersistComponent_fromProps_addsToStudyAndPersists() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            int origSize = study.getComponentList().size();
+    public void cloneWholeComponent_onIOException_shouldKeepOriginalHtmlPath_andStillChangeTitle() throws IOException {
+        // Given
+        Study s = new Study();
+        Component original = exampleComponent(s);
+        when(componentDao.findByTitle("Comp A (clone)")).thenReturn(Collections.emptyList());
+        when(ioUtils.cloneComponentHtmlFile(anyString(), anyString())).thenThrow(new IOException("fail"));
 
-            ComponentProperties props = new ComponentProperties();
-            props.setTitle("New Component");
-            props.setHtmlFilePath("newComp.html");
-            props.setReloadable(true);
-            props.setComments("Hello");
-            props.setJsonData("{\"x\":2}");
-
-            Component created = componentService.createAndPersistComponent(study, props);
-
-            assertThat(created.getId()).isNotNull();
-            assertThat(created.getStudy()).isEqualTo(study);
-
-            Study reloaded = studyDao.findById(studyId);
-            assertThat(reloaded.getComponentList().size()).isEqualTo(origSize + 1);
-            assertThat(reloaded.getLastComponent().get().getTitle()).isEqualTo("New Component");
-        }));
-    }
-
-    @Test
-    public void renameHtmlFilePath_successfulRename() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-
-            componentService.renameHtmlFilePath(component, "foo.html", true);
-
-            Component reloaded = componentDao.findById(component.getId());
-            assertThat(reloaded.getHtmlFilePath()).isEqualTo("foo.html");
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
-            assertThat(htmlFile.exists());
-        }));
-    }
-
-    @Test
-    public void renameHtmlFilePath_newHtmlFilePathExists() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
-
-            String existingHtmlFileName = study.getLastComponent().get().getHtmlFilePath();
-            try {
-                componentService.renameHtmlFilePath(component, existingHtmlFileName, true);
-                Fail.fail();
-            } catch (IOException e) {
-                // expected
-            }
-
-            // Everything is unchanged
-            Component reloaded = componentDao.findById(component.getId());
-            assertThat(reloaded.getHtmlFilePath()).isEqualTo(htmlFile.getName());
-            assertThat(htmlFile.exists());
-        }));
-    }
-
-    @Test
-    public void renameHtmlFilePath_withSubFolder() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
-
-            // Create subfolder
-            File subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder");
-            //noinspection ResultOfMethodCallIgnored
-            subfolder.mkdir();
-            assertThat(subfolder.exists());
-
-            // Changing the file path into a subfolder is possible
-            componentService.renameHtmlFilePath(component, "subfolder/foo.html", true);
-
-            // Check renaming into a subfolder
-            htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder/foo.html");
-            assertThat(component.getHtmlFilePath()).isEqualTo("subfolder/foo.html");
-            assertThat(htmlFile.exists());
-            assertThat(htmlFile.getParentFile().getName()).isEqualTo("subfolder");
-
-            // Changing the file path back into the root of the study assets is also possible
-            componentService.renameHtmlFilePath(component, "foo.html", true);
-
-            // Check renaming back into the root of the study assets
-            htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
-            assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
-            assertThat(htmlFile.exists());
-        }));
-    }
-
-    @Test
-    public void renameHtmlFilePath_currentFileNotExistNewFileNotExist() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
-
-            // Remove current HTML file
-            //noinspection ResultOfMethodCallIgnored
-            htmlFile.delete();
-            assertThat(!htmlFile.exists());
-
-            // Rename to non-existing file AND current file doesn't exist
-            // -> new file name must be set and file still doesn't existing
-            componentService.renameHtmlFilePath(component, "foo.html", true);
-
-            htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
-            assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
-            assertThat(htmlFile.exists()).isFalse();
-        }));
-    }
-
-    @Test
-    public void renameHtmlFilePath_currentFileNotExistNewFileExist() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
-
-            File differentHtmlFile = ioUtils.getFileInStudyAssetsDir(
-                    study.getDirName(), study.getLastComponent().get().getHtmlFilePath());
-            assertThat(differentHtmlFile.exists());
-
-            // Remove current HTML file
-            //noinspection ResultOfMethodCallIgnored
-            htmlFile.delete();
-            assertThat(!htmlFile.exists());
-
-            // Rename to existing file AND current file doesn't exist
-            // -> new file name must be set and file still existing
-            componentService.renameHtmlFilePath(component, study.getLastComponent().get().getHtmlFilePath(), true);
-
-            assertThat(component.getHtmlFilePath()).isEqualTo(study.getLastComponent().get().getHtmlFilePath());
-            assertThat(differentHtmlFile.exists());
-        }));
-    }
-
-
-    @Test
-    public void renameHtmlFilePath_withEmptyString() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-
-            // If the html file name is empty an empty string should be set.
-            componentService.renameHtmlFilePath(component, "", false);
-
-            Component reloaded = componentDao.findById(component.getId());
-            assertThat(reloaded.getHtmlFilePath()).isEqualTo("");
-        }));
-    }
-
-
-    @Test
-    public void validate_invalidTitle_shouldThrowValidationException() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component component = study.getFirstComponent().get();
-            component.setTitle(""); // invalid
-            try {
-                componentService.validate(component);
-                Fail.fail();
-            } catch (ValidationException e) {
-                // expected
-            }
-        }));
-    }
-
-    @Test
-    public void getComponentFromIdOrUuid_shouldReturnValidComponent() {
-        // Needs Play context for AuthService / RequestScope
+        // Prepare a fake HTTP context used by RequestScopeMessaging
         ContextMocker.mock();
-        // put signed-in user into RequestScope for AuthService
-        RequestScope.put(AuthService.SIGNEDIN_USER, admin);
-        Long studyId = importExampleStudy();
+        // When
+        Component clone = componentService.cloneWholeComponent(original);
 
-        jpaApi.withTransaction(ThrowingConsumer.unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            Component comp = study.getFirstComponent().get();
-
-            try {
-                // by ID
-                Component byId = componentService.getComponentFromIdOrUuid(String.valueOf(comp.getId()));
-                assertThat(byId.getId()).isEqualTo(comp.getId());
-                // by UUID
-                Component byUuid = componentService.getComponentFromIdOrUuid(comp.getUuid());
-                assertThat(byUuid.getUuid()).isEqualTo(comp.getUuid());
-            } catch (NotFoundException | ForbiddenException e) {
-                Fail.fail();
-            }
-        }));
+        // Then
+        assertThat(clone.getTitle()).isEqualTo("Comp A (clone)");
+        // unchanged because cloning failed
+        assertThat(clone.getHtmlFilePath()).isEqualTo(original.getHtmlFilePath());
     }
 
     @Test
-    public void remove_shouldRemoveFromStudy() {
-        Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
-            int origSize = study.getComponentList().size();
+    public void bindToProperties_shouldFillFields_andHtmlExistsFlag() {
+        // Given
+        Study s = new Study();
+        s.setId(3L);
+        Component c = exampleComponent(s);
+        c.setId(42L);
+        when(ioUtils.checkFileInStudyAssetsDirExists(s.getDirName(), c.getHtmlFilePath())).thenReturn(true);
 
-            // Create a new component and persist it
-            ComponentProperties props = new ComponentProperties();
-            props.setTitle("TempComp");
-            Component temp = componentService.createAndPersistComponent(study, props);
-            Long cid = temp.getId();
+        // When
+        ComponentProperties props = componentService.bindToProperties(c);
 
-            // Sanity
-            assertThat(studyDao.findById(studyId).getComponentList().size()).isEqualTo(origSize + 1);
+        // Then
+        assertThat(props.getUuid()).isEqualTo(c.getUuid());
+        assertThat(props.getTitle()).isEqualTo("Comp A");
+        assertThat(props.getId()).isEqualTo(42L);
+        assertThat(props.getStudyId()).isEqualTo(3L);
+        assertThat(props.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(props.isHtmlFileExists()).isTrue();
+        assertThat(props.getJsonData()).isEqualTo("{\"x\":1}");
+        assertThat(props.getComments()).isEqualTo("note");
+        assertThat(props.isReloadable()).isTrue();
+        assertThat(props.isActive()).isTrue();
+    }
 
-            // Remove
-            componentService.remove(componentDao.findById(cid), admin);
+    @Test
+    public void updateComponentAfterEdit_shouldUpdateSelectedFields_andCallDaoUpdate() {
+        // Given
+        Study s = new Study();
+        Component c = exampleComponent(s);
+        ComponentProperties updated = new ComponentProperties();
+        updated.setTitle("New");
+        updated.setReloadable(false);
+        updated.setComments("c2");
+        updated.setJsonData("{\"y\":2}");
 
-            Study reloaded = studyDao.findById(studyId);
-            assertThat(reloaded.getComponentList().size()).isEqualTo(origSize);
-            assertThat(componentDao.findById(cid)).isNull();
-        }));
+        // When
+        componentService.updateComponentAfterEdit(c, updated);
+
+        // Then
+        assertThat(c.getTitle()).isEqualTo("New");
+        assertThat(c.isReloadable()).isFalse();
+        assertThat(c.getComments()).isEqualTo("c2");
+        assertThat(c.getJsonData()).isEqualTo("{\"y\":2}");
+        // unchanged
+        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(c.isActive()).isTrue();
+        verify(componentDao).update(c);
+    }
+
+    @Test
+    public void createAndPersistComponent_withProperties_shouldBind_thenPersist_andUpdateStudy() {
+        // Given
+        Study s = new Study();
+        s.setId(5L);
+        ComponentProperties p = new ComponentProperties();
+        p.setTitle("T");
+        p.setHtmlFilePath("f.html");
+        p.setReloadable(true);
+        p.setComments("X");
+        p.setJsonData("{\"z\":1}");
+
+        // When
+        Component created = componentService.createAndPersistComponent(s, p);
+
+        // Then
+        assertThat(created.getStudy()).isEqualTo(s);
+        assertThat(s.getComponentList()).contains(created);
+        verify(componentDao).create(created);
+        verify(studyDao).update(s);
+    }
+
+    @Test
+    public void renameHtmlFilePath_withEmptyNew_shouldPersistEmpty_andNotTouchFS() throws IOException {
+        // Given
+        Study s = new Study();
+        Component c = exampleComponent(s);
+
+        // When
+        componentService.renameHtmlFilePath(c, "  ", true);
+
+        // Then
+        assertThat(c.getHtmlFilePath()).isEqualTo("");
+        verify(componentDao).update(c);
+        verify(ioUtils, never()).renameHtmlFile(anyString(), anyString(), anyString());
+        verify(ioUtils, never()).getFileInStudyAssetsDir(anyString(), anyString());
+    }
+
+    @Test
+    public void renameHtmlFilePath_whenCurrentMissing_shouldOnlyPersistNew_andNotRenameFile() throws IOException {
+        // Given
+        Study s = new Study();
+        Component c = exampleComponent(s);
+        when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(new File("/does/not/exist"));
+
+        // When
+        componentService.renameHtmlFilePath(c, "a/new.html", true);
+
+        // Then
+        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new.html");
+        verify(componentDao).update(c);
+        verify(ioUtils, never()).renameHtmlFile(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    public void renameHtmlFilePath_whenCurrentExists_shouldOptionallyRename_andPersistNew() throws IOException {
+        // Given
+        Study s = new Study();
+        Component c = exampleComponent(s);
+        File fake = Mockito.mock(File.class);
+        when(fake.exists()).thenReturn(true);
+        when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(fake);
+
+        // When
+        componentService.renameHtmlFilePath(c, "a/new2.html", true);
+
+        // Then
+        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new2.html");
+        verify(ioUtils).renameHtmlFile("a" + File.separator + "index.html", "a/new2.html", s.getDirName());
+        verify(componentDao).update(c);
+
+        // And when rename not requested
+        componentService.renameHtmlFilePath(c, "a/new3.html", false);
+        verify(ioUtils, never()).renameHtmlFile("a" + File.separator + "new2.html", "a/new3.html", s.getDirName());
+        verify(componentDao, times(2)).update(c);
+        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new3.html");
+    }
+
+    @Test
+    public void validate_validComponent_shouldNotThrow() {
+        // Given
+        Study s = new Study();
+        Component c = exampleComponent(s);
+
+        // When / Then
+        componentService.validate(c); // should not throw
+    }
+
+    @Test(expected = javax.validation.ValidationException.class)
+    public void validate_invalidComponent_shouldThrow() {
+        // Given
+        Study s = new Study();
+        Component c = exampleComponent(s);
+        c.setTitle("   "); // invalid, missing title
+
+        // When / Then
+        componentService.validate(c);
+    }
+
+    @Test
+    public void remove_shouldUpdateStudy_removeResults_andRemoveComponent() {
+        // Given
+        Study s = new Study();
+        s.setId(9L);
+        Component c = exampleComponent(s);
+        s.addComponent(c);
+        User u = new User("u", "U", "u@example.org");
+
+        // When
+        componentService.remove(c, u);
+
+        // Then
+        assertThat(s.getComponentList().contains(c)).isFalse();
+        verify(studyDao).update(s);
+        verify(resultRemover).removeAllComponentResults(c, u);
+        verify(componentDao).remove(c);
+    }
+
+    @Test
+    public void getComponentFromIdOrUuid_withId_shouldReturn_andCheckPermissions() throws NotFoundException, ForbiddenException {
+        // Given
+        User signed = new User("u", "U", "u@x");
+        when(authService.getSignedinUser()).thenReturn(signed);
+        Component c = new Component();
+        c.setId(123L);
+        when(componentDao.findById(123L)).thenReturn(c);
+
+        // When
+        Component res = componentService.getComponentFromIdOrUuid("123");
+
+        // Then
+        assertThat(res).isEqualTo(c);
+        verify(checker).checkStandardForComponent(123L, c, signed);
+    }
+
+    @Test
+    public void getComponentFromIdOrUuid_withUuid_shouldReturn_andCheckPermissions() throws NotFoundException, ForbiddenException {
+        // Given
+        User signed = new User("u", "U", "u@x");
+        when(authService.getSignedinUser()).thenReturn(signed);
+        Component c = new Component();
+        c.setId(55L);
+        when(componentDao.findByUuid("abc")).thenReturn(Optional.of(c));
+
+        // When
+        Component res = componentService.getComponentFromIdOrUuid("abc");
+
+        // Then
+        assertThat(res).isEqualTo(c);
+        verify(checker).checkStandardForComponent(55L, c, signed);
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void getComponentFromIdOrUuid_withUnknownId_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
+        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
+        when(componentDao.findById(999L)).thenReturn(null);
+        componentService.getComponentFromIdOrUuid("999");
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void getComponentFromIdOrUuid_withUnknownUuid_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
+        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
+        when(componentDao.findByUuid("nope")).thenReturn(Optional.empty());
+        componentService.getComponentFromIdOrUuid("nope");
     }
 }
