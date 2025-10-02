@@ -29,7 +29,7 @@ import static org.fest.assertions.Assertions.assertThat;
  * @author Kristian Lange
  */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public class ResultRemoverTest extends JatosTest {
+public class ResultRemoverIntegrationTest extends JatosTest {
 
     @Inject
     private ResultRemover resultRemover;
