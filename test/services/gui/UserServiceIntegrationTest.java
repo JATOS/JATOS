@@ -24,7 +24,7 @@ import static org.fest.assertions.Assertions.assertThat;
 /**
  * @author Kristian Lange
  */
-public class UserServiceTest extends JatosTest {
+public class UserServiceIntegrationTest extends JatosTest {
 
     @Inject
     private UserService userService;

@@ -33,7 +33,7 @@ import static org.fest.assertions.Assertions.assertThat;
  * @author Kristian Lange
  */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public class StudyServiceTest extends JatosTest {
+public class StudyServiceIntegrationTest extends JatosTest {
 
     @Inject
     private StudyService studyService;
