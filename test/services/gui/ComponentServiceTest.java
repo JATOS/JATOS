@@ -35,6 +35,7 @@ public class ComponentServiceTest {
 
     private static org.mockito.MockedStatic<general.common.Common> commonStatic;
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initCommonStatics() {
         String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";

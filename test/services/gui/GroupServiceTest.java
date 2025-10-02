@@ -6,7 +6,6 @@ import models.common.GroupResult.GroupState;
 import models.gui.GroupSession;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.*;
