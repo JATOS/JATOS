@@ -25,19 +25,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Old model kept for unmarshaling JSON of old versions!
- * <p>
- * Model for a DB entity of a study with all properties of a study but not the results of a study. The results of a
- * study are stored in StudyResults and ComponentResult. A study consists of a list components and their model is
- * Component. Default values, where necessary, are at the fields or in the constructor. For the GUI model
- * StudyProperties is used.
+ * Old model kept for deserialization JSON of old versions!
  *
  * @author Kristian Lange (2014)
  */
 public class StudyV2 {
 
     /**
-     * Version of this model used for serialisation (e.g. JSON marshaling)
+     * Version of this model used for serialization
      */
     public static final String SERIAL_VERSION = "2";
 
