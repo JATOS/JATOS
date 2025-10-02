@@ -64,7 +64,7 @@ public class CheckerTest {
         // minimal fields
         gr.setBatch(batch);
         // set an ID if needed for messages/equals
-        try { GroupResult.class.getDeclaredMethod("setId", Long.class).invoke(gr, id); } catch (Exception ignored) {}
+        gr.setId(id);
         return gr;
     }
 
@@ -110,7 +110,6 @@ public class CheckerTest {
 
     @Test(expected = ForbiddenException.class)
     public void checkStandardForComponent_byIds_componentBelongsToDifferentStudy_throwsForbidden() throws Exception {
-        Study s1 = newStudy(1L);
         Study s2 = newStudy(2L);
         Component c = newComponent(s2, 10L);
         new Checker().checkStandardForComponent(1L, 10L, c);
