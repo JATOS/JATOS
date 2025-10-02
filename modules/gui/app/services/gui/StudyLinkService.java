@@ -48,37 +48,6 @@ public class StudyLinkService {
         this.checker = checker;
     }
 
-    public List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, String workerType)
-            throws BadRequestException {
-        amount = Math.max(amount, 1);
-
-        List<String> studyCodeList = new ArrayList<>();
-        while (amount > 0) {
-            Worker worker;
-            switch (workerType) {
-                case PersonalSingleWorker.WORKER_TYPE:
-                    worker = new PersonalSingleWorker(comment);
-                    break;
-                case PersonalMultipleWorker.WORKER_TYPE:
-                    worker = new PersonalMultipleWorker(comment);
-                    break;
-                default:
-                    throw new BadRequestException("Unknown worker type");
-            }
-            workerService.validateWorker(worker);
-            batch.addWorker(worker);
-            workerDao.create(worker);
-
-            StudyLink studyLink = new StudyLink(batch, worker);
-            studyLinkDao.create(studyLink);
-            studyCodeList.add(studyLink.getStudyCode());
-
-            batchDao.update(batch);
-            amount--;
-        }
-        return studyCodeList;
-    }
-
     public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
             Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyService.getStudyFromIdOrUuid(id);
@@ -116,6 +85,37 @@ public class StudyLinkService {
         studyCodeList = createAndPersistStudyLinks(comment, amount, batch, workerType);
 
         return JsonUtils.asJsonNode(studyCodeList);
+    }
+
+    private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, String workerType)
+            throws BadRequestException {
+        amount = Math.max(amount, 1);
+
+        List<String> studyCodeList = new ArrayList<>();
+        while (amount > 0) {
+            Worker worker;
+            switch (workerType) {
+                case PersonalSingleWorker.WORKER_TYPE:
+                    worker = new PersonalSingleWorker(comment);
+                    break;
+                case PersonalMultipleWorker.WORKER_TYPE:
+                    worker = new PersonalMultipleWorker(comment);
+                    break;
+                default:
+                    throw new BadRequestException("Unknown worker type");
+            }
+            workerService.validateWorker(worker);
+            batch.addWorker(worker);
+            workerDao.create(worker);
+
+            StudyLink studyLink = new StudyLink(batch, worker);
+            studyLinkDao.create(studyLink);
+            studyCodeList.add(studyLink.getStudyCode());
+
+            batchDao.update(batch);
+            amount--;
+        }
+        return studyCodeList;
     }
 
     /**
