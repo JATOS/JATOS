@@ -1,4 +1,4 @@
-package testutils;
+package testutils.common;
 
 import org.mockito.Mockito;
 import play.api.mvc.RequestHeader;

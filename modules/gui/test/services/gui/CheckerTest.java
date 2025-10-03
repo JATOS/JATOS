@@ -12,7 +12,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import utils.common.Helpers;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.UUID;
 
 import static org.fest.assertions.Assertions.assertThat;
 

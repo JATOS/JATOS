@@ -13,7 +13,7 @@ import play.data.FormFactory;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.UserService;
-import testutils.ContextMocker;
+import testutils.common.ContextMocker;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;

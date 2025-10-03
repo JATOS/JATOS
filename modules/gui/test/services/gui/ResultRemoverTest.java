@@ -11,7 +11,7 @@ import models.common.workers.Worker;
 import org.junit.Before;
 import org.junit.Test;
 import play.data.validation.ValidationError;
-import testutils.ContextMocker;
+import testutils.common.ContextMocker;
 import utils.common.IOUtils;
 
 import java.util.Arrays;

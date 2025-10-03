@@ -12,7 +12,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import play.db.jpa.JPAApi;
 import play.mvc.Http;
-import testutils.ContextMocker;
 import utils.common.HashUtils;
 import utils.common.Helpers;
 
@@ -44,7 +43,7 @@ public class AuthApiTokenTest {
     @Before
     public void setUp() {
         // Install a mutable Http.Context for RequestScope
-        ContextMocker.mock();
+        testutils.common.ContextMocker.mock();
 
         apiTokenDao = mock(ApiTokenDao.class);
         JPAApi jpa = mock(JPAApi.class);

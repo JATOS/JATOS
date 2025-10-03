@@ -13,7 +13,7 @@ import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.UserService;
-import testutils.ContextMocker;
+import testutils.common.ContextMocker;
 
 import javax.naming.NamingException;
 

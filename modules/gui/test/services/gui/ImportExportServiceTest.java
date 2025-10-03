@@ -14,7 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import play.mvc.Controller;
-import testutils.ContextMocker;
+import testutils.common.ContextMocker;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import utils.common.ZipUtil;
@@ -149,7 +149,7 @@ public class ImportExportServiceTest {
     }
 
     private TempUnzipped createUnzippedDirWithSingleAssetsDirAndJas() throws IOException {
-        File root = new File(utils.common.IOUtils.TMP_DIR, "JatosImportTest_" + System.nanoTime());
+        File root = new File(IOUtils.TMP_DIR, "JatosImportTest_" + System.nanoTime());
         if (!root.mkdirs()) throw new IOException("could not create temp import dir");
         File assets = new File(root, "assets");
         if (!assets.mkdirs()) throw new IOException("could not create assets dir");
@@ -245,7 +245,7 @@ public class ImportExportServiceTest {
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
         // put temp dir name into session
-        play.mvc.Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
+        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
 
         Study uploaded = makeStudy("uuid-1", null, "Uploaded", "uploadedDir");
         Study current = makeStudy("uuid-1", 10L, "Current", "currentDir");
@@ -286,7 +286,7 @@ public class ImportExportServiceTest {
     public void importStudyConfirmed_createNewStudy_whenNotExisting_andRenameAssetsIfNeeded() throws Exception {
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
-        play.mvc.Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
+        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
 
         Study uploaded = makeStudy("uuid-2", null, "Uploaded2", "uploadedDir");
         when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
@@ -323,7 +323,7 @@ public class ImportExportServiceTest {
     public void importStudyConfirmed_overwrite_existingStudy_forbidden() throws Exception {
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
-        play.mvc.Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
+        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
         Study uploaded = makeStudy("uuid-3", null, "U", "udir");
         Study current = makeStudy("uuid-3", 77L, "C", "cdir");
         when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });

@@ -16,8 +16,8 @@ import models.common.User;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 import play.mvc.Controller;
-import testutils.ContextMocker;
 import testutils.JatosTest;
+import testutils.common.ContextMocker;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;

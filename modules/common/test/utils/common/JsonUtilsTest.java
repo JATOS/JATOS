@@ -88,7 +88,7 @@ public class JsonUtilsTest {
 
         // Test with null
         node = JsonUtils.asJsonNode(null);
-        assertTrue(node.isNull());
+        assertNull(node);
     }
 
     @Test

@@ -26,7 +26,7 @@ import static com.pivovarit.function.ThrowingConsumer.unchecked;
 /**
  * @author Kristian Lange
  */
-public class StudyLoggerTest extends JatosTest {
+public class StudyLoggerIntegrationTest extends JatosTest {
 
     @Inject
     private StudyLogger studyLogger;

@@ -14,7 +14,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
-import testutils.ContextMocker;
+import testutils.common.ContextMocker;
 import utils.common.IOUtils;
 
 import java.io.File;
@@ -38,8 +38,8 @@ public class ComponentServiceTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initCommonStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";
-        commonStatic = org.mockito.Mockito.mockStatic(general.common.Common.class);
+        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        commonStatic = Mockito.mockStatic(general.common.Common.class);
         commonStatic.when(general.common.Common::getTmpPath).thenReturn(tmp);
         commonStatic.when(general.common.Common::getStudyAssetsRootPath).thenReturn(tmp);
         commonStatic.when(general.common.Common::getResultUploadsPath).thenReturn(tmp);

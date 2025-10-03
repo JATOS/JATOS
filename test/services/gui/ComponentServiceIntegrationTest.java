@@ -12,8 +12,8 @@ import models.common.Study;
 import models.gui.ComponentProperties;
 import org.fest.assertions.Fail;
 import org.junit.Test;
-import testutils.ContextMocker;
 import testutils.JatosTest;
+import testutils.common.ContextMocker;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
