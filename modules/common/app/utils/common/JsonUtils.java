@@ -121,7 +121,7 @@ public class JsonUtils {
         try {
             Json.mapper().readTree(json);
             valid = true;
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IOException | IllegalArgumentException | NullPointerException e) {
             LOGGER.info(".isValid: error probably due to invalid JSON");
         }
         return valid;
