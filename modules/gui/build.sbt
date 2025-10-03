@@ -10,10 +10,13 @@ libraryDependencies ++= Seq(
   javaJpa,
   javaWs,
   guice,
-  "org.webjars" % "bootstrap" % "3.4.1",
+  "com.typesafe.play" %% "play-json" % "2.8.2",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.2",
   "com.google.api-client" % "google-api-client" % "1.34.0",
   "com.nimbusds" % "oauth2-oidc-sdk" % "10.4",
-  "com.nimbusds" % "nimbus-jose-jwt" % "9.27"
+  "com.nimbusds" % "nimbus-jose-jwt" % "9.27",
+  "org.mockito" % "mockito-inline" % "4.11.0" % "test",
+  "org.easytesting" % "fest-assert" % "1.4" % "test"
 )
 
 // Routes from submodules
