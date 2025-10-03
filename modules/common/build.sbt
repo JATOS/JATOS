@@ -19,7 +19,9 @@ libraryDependencies ++= Seq(
   "org.jsoup" % "jsoup" % "1.14.2",
   "commons-io" % "commons-io" % "2.7",
   "com.diffplug.durian" % "durian" % "3.4.0",
-  "org.apache.commons" % "commons-lang3" % "3.9"
+  "org.apache.commons" % "commons-lang3" % "3.9",
+  "org.mockito" % "mockito-inline" % "4.11.0" % "test",
+  "org.easytesting" % "fest-assert" % "1.4" % "test"
 )
 
 // No source docs in distribution
