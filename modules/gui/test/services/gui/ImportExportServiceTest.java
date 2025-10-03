@@ -41,7 +41,6 @@ public class ImportExportServiceTest {
     private static MockedStatic<Common> commonStatic;
     private static MockedStatic<ZipUtil> zipStatic;
 
-
     @BeforeClass
     public static void initStatics() {
         // Ensure temp and assets paths are inside a disposable temp dir
@@ -149,7 +148,7 @@ public class ImportExportServiceTest {
     }
 
     private TempUnzipped createUnzippedDirWithSingleAssetsDirAndJas() throws IOException {
-        File root = new File(IOUtils.TMP_DIR, "JatosImportTest_" + System.nanoTime());
+        File root = new File(new File(Common.getTmpPath()), "JatosImportTest_" + System.nanoTime());
         if (!root.mkdirs()) throw new IOException("could not create temp import dir");
         File assets = new File(root, "assets");
         if (!assets.mkdirs()) throw new IOException("could not create assets dir");
