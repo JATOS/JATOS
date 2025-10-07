@@ -7,7 +7,6 @@ import services.publix.idcookie.exception.IdCookieCollectionFullException;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -67,26 +66,6 @@ public class IdCookieCollection {
 
     protected Collection<IdCookieModel> getAll() {
         return idCookieMap.values();
-    }
-
-    /**
-     * Returns the ID cookie's index, a number from 0 to the limit set in jatos.conf.
-     * It iterates through the ID cookies and returns the first index that isn't used.
-     * Index refers here to the index of the ID cookie which is the suffix of its name.
-     * If this IdCookieCollection is full a IndexOutOfBoundsException will be thrown.
-     */
-    protected int getNextAvailableIdCookieIndex() {
-        if (isFull()) {
-            throw new IndexOutOfBoundsException(PublixErrorMessages.IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND);
-        }
-        List<Integer> existingIndices = idCookieMap.values().stream()
-                .map(IdCookieModel::getIndex).collect(Collectors.toList());
-        for (int i = 0; i < Common.getIdCookiesLimit(); i++) {
-            if (!existingIndices.contains(i)) {
-                return i;
-            }
-        }
-        throw new IndexOutOfBoundsException(PublixErrorMessages.IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND);
     }
 
     /**

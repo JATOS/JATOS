@@ -69,7 +69,7 @@ public class PublixUtils {
     /**
      * Retrieves the worker with the given worker ID from the DB.
      */
-    public Worker retrieveWorker(Long workerId) throws ForbiddenPublixException {
+    public Worker retrieveWorker(Long workerId) {
         return workerDao.findById(workerId);
     }
 
@@ -234,13 +234,6 @@ public class PublixUtils {
             }
             idCookieService.discardIdCookie(abandonedStudyResultId);
         }
-    }
-
-    /**
-     * Returns an Optional of the last ComponentResult's component (of the given StudyResult.
-     */
-    public Optional<Component> retrieveLastComponent(StudyResult studyResult) {
-        return studyResult.getLastComponentResult().map(ComponentResult::getComponent);
     }
 
     /**

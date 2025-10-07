@@ -171,12 +171,6 @@ public class IdCookieService {
             idCookie.setComponentPosition(study.getComponentPosition(component));
         }
 
-        // Might not have a GroupResult because it's not a group study
-        GroupResult groupResult = studyResult.getActiveGroupResult();
-        if (groupResult != null) {
-            idCookie.setGroupResultId(groupResult.getId());
-        }
-
         idCookie.setBatchId(batch.getId());
         idCookie.setCreationTime(System.currentTimeMillis());
         idCookie.setStudyAssets(Helpers.urlEncode(study.getDirName()));

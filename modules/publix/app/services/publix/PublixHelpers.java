@@ -27,19 +27,6 @@ public class PublixHelpers {
     }
 
     /**
-     * Checks if the worker ever did this study (independent of the study
-     * result's state).
-     */
-    public static boolean didStudyAlready(Worker worker, Study study) {
-        for (StudyResult studyResult : worker.getStudyResultList()) {
-            if (studyResult.getStudy().equals(study)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * True if StudyResult's state is in FINISHED or ABORTED or FAIL. False
      * otherwise.
      */

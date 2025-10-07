@@ -12,8 +12,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * Service class for JATOS Controllers (not Publix)..
- *
  * @author Kristian Lange
  */
 @Singleton

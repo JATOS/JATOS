@@ -44,7 +44,7 @@ public class IdCookieModel {
     private String name;
 
     /**
-     * Every ID cookie has an index. It is the suffix of its name.
+     * Every ID cookie has an index. It is the suffix of its name. Currently it is the study result ID.
      */
     private int index;
 
@@ -73,7 +73,6 @@ public class IdCookieModel {
     private Long workerId;
     private String workerType;
     private Long batchId;
-    private Long groupResultId;
     private Long studyId;
     private Long studyResultId;
     private String studyResultUuid;
@@ -143,14 +142,6 @@ public class IdCookieModel {
 
     public void setBatchId(Long batchId) {
         this.batchId = batchId;
-    }
-
-    public Long getGroupResultId() {
-        return groupResultId;
-    }
-
-    public void setGroupResultId(Long groupResultId) {
-        this.groupResultId = groupResultId;
     }
 
     public Long getStudyId() {
@@ -229,7 +220,6 @@ public class IdCookieModel {
                 && (Objects.equals(workerId, otherIdCookie.workerId))
                 && (Objects.equals(workerType, otherIdCookie.workerType))
                 && (Objects.equals(batchId, otherIdCookie.batchId))
-                && (Objects.equals(groupResultId, otherIdCookie.groupResultId))
                 && (Objects.equals(studyId, otherIdCookie.studyId))
                 && (Objects.equals(studyResultId, otherIdCookie.studyResultId))
                 && (Objects.equals(componentId, otherIdCookie.componentId))
