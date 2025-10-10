@@ -11,6 +11,7 @@ import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,6 +68,11 @@ public class PublixTest {
         commonStatic = mockStatic(Common.class);
         // Ensure IOUtils static initialization (TMP_DIR) can access a valid tmp path
         commonStatic.when(Common::getTmpPath).thenReturn(tmp);
+    }
+
+    @AfterClass
+    public static void tearDownStatics() {
+        if (commonStatic != null) commonStatic.close();
     }
 
     private PublixUtils publixUtils;
