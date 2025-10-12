@@ -8,19 +8,19 @@ import scala.collection.mutable
 
 /**
   * This class stores the members (channels) of a Dispatcher. It is essentially a wrapper around
-  * a bi-directional map that stores the study result IDs together with their corresponding
+  * a bidirectional map that stores the study result IDs together with their corresponding
   * channels specified by an ActorRef.
   *
-  * A Registry does not define who is member - it just stores the open channels. Therefore it is
+  * A Registry does not define who is a member - it just stores the open channels. Therefore, it is
   * possible that a client is a member but currently doesn't have an open channel.
   *
-  * @author Kristian Lange (2016, 2017)
+  * @author Kristian Lange
   */
 class ChannelRegistry {
 
   /**
-    * Contains the members that are handled by a dispatcher. Maps StudyResult's IDs <-> ActorRefs
-    * . Using a bidirectional map because it's a one-to-one relationship and we need to be able
+    * Contains the members that are handled by a dispatcher. Maps StudyResult's IDs <-> ActorRefs.
+    * Using a bidirectional map because it's a one-to-one relationship, and we need to be able
     * to quickly get entries via the 'key' and the 'value'.
     */
   private val channelMap = new DualHashBidiMap[Long, ActorRef]

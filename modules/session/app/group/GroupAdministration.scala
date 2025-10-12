@@ -27,9 +27,9 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
                                     jpa: JPAApi) {
 
   /**
-    * Joins the a GroupResult or create a new one. Persists changes.
+    * Joins a GroupResult or create a new one. Persists changes.
     *
-    * Looks in the database whether we have an incomplete GroupResult (state STARTED, maxActiveMember not reached,
+    * It looks in the database whether we have an incomplete GroupResult (state STARTED, maxActiveMember not reached,
     * maxTotalMembers not reached). If there is none, create a new GroupResult.
     */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
@@ -48,7 +48,7 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
   }
 
   /**
-    * Leaves the group that this studyResult is member of. Moves the given StudyResult in its group result into history.
+    * Leaves the group that this studyResult is a member of. Moves the given StudyResult in its group result into history.
     */
   def leave(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
@@ -75,8 +75,8 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
   /**
     * Reassigns this StudyResult to a different GroupResult if possible.
     *
-    * Looks in the database whether we have other incomplete GroupResult. If there are more than one, it returns the
-    * one with the most active members. If there is no other GroupResult it returns an error msg.
+    * It looks in the database whether we have other incomplete GroupResult. If there is more than one, it returns the
+    * one with the most active members. If there is no other GroupResult, it returns an error msg.
     *
     * @return Either with String if error or a GroupResult if success
     */
@@ -95,7 +95,7 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
         return Left(s"Couldn't reassign the study result with ID ${studyResult.getId} to any other group.")
       }
 
-      // Found a possible group: put into active members of new group - do not put into history members of old group
+      // Found a possible group: put into active members of a new group - do not put into history members of the old group
       val differentGroupResult = allGroupMaxNotReached.head
       currentGroupResult.removeActiveMember(studyResult)
       differentGroupResult.addActiveMember(studyResult)

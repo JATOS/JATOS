@@ -9,15 +9,15 @@ import play.api.libs.json.{JsObject, Json}
   * GroupChannelActor is an Akka Actor that represents the group channel's WebSocket. A group
   * channel is a WebSocket connecting a client who's running a study with the JATOS server.
   *
-  * A GroupChannelActor is only be opened after a study run (identified by a StudyResult) joined
-  * a group, which is done in the GroupAdministration. Group data (e.g. who's member) are persisted
+  * A GroupChannelActor is only opened after a study run (identified by a StudyResult) joined
+  * a group, which is done in the GroupAdministration. Group data (e.g. who is member) are persisted
   * in a GroupResult entity. A GroupChannelActor is closed after the StudyResult left the
   * GroupResult.
   *
   * A GroupChannelActor belongs to a GroupDispatcher. A GroupChannelActor is created by the
   * GroupChannel service and registers itself by sending a RegisterChannel message to its
   * GroupDispatcher. It closes down after receiving a PoisonChannel message or if the WebSocket
-  * is closed. While closing down it unregisters from the GroupDispatcher by sending a
+  * is closed. While closing down, it unregisters from the GroupDispatcher by sending an
   * UnregisterChannel message. A GroupChannelActor can, if it's told to, reassign itself to a
   * different GroupDispatcher.
   *

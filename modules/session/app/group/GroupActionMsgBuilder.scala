@@ -54,12 +54,12 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
   }
 
   /**
-    * Builds a GroupMsg with or without session data but always with session version
+    * Builds a GroupMsg with or without session data but always with the session version
     */
   def build(groupResultId: Long, studyResultId: Long, registry: ChannelRegistry,
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
-    // The GroupResult determines who is member of the group - and not the group registry.
+    // The GroupResult determines who is a member of the group - and not the group registry.
     jpa.withTransaction(asJavaSupplier(() => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
         s"$action , tellWhom ${tellWhom.toString}")

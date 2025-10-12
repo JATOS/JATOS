@@ -17,7 +17,7 @@ import scala.util.Try
 
 /**
   * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
-  * contains an 'action' field. It was received by an GroupDispatcher and comes from a client via
+  * contains an 'action' field. It was received by a GroupDispatcher and comes from a client via
   * a GroupChannelActor.
   *
   * @author Kristian Lange (2017)
@@ -32,8 +32,8 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
 
   /**
     * Handles group actions originating from a client: Gets a GroupMsg that contains a field
-    * 'action' in their JSON. The only action handled here are 1) the a patch for the group
-    * session, or 2) the msg to fix the group. The function returns GroupMsges that will be send
+    * 'action' in their JSON. The only action handled here is 1) the patch for the group
+    * session, or 2) the msg to fix the group. The function returns GroupMsges that will be sent
     * out to the group members.
     */
   def handleActionMsg(msg: GroupMsg, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
@@ -121,7 +121,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Changes state of GroupResult to FIXED and sends an update to all group
+    * Changes the state of GroupResult to FIXED and sends an update to all group
     * members
     */
   private def handleActionFix(groupResultId: Long) = {

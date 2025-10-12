@@ -19,12 +19,12 @@ import javax.inject.Inject
   * GroupChannelActor is opened only after the group was joined).
   *
   * A BatchChannelActor registers in a BatchDispatcher by sending the RegisterChannel message and
-  * unregisters by sending a UnregisterChannel message.
+  * unregisters by sending an UnregisterChannel message.
   *
   * A new BatchDispatcher is created by the BatchDispatcherRegistry. If a BatchDispatcher has no
-  * more members it closes itself.
+  * more members, it closes itself.
   *
-  * A BatchDispatcher handles and distributes messages between currently active the members of a
+  * A BatchDispatcher handles and distributes messages between currently active members of a
   * batch. These messages are essentially JSON Patches after RFC 6902 and used to describe
   * changes in the batch session data. The session data are stored and persisted with the Batch.
   *
@@ -45,14 +45,14 @@ object BatchDispatcher {
   case class RegisterChannel(studyResultId: Long)
 
   /**
-    * Message an BatchChannelActor can send to its BatchDispatcher to indicate it's
+    * Message a BatchChannelActor can send to its BatchDispatcher to indicate its
     * closure.
     */
   case class UnregisterChannel(studyResultId: Long)
 
   /**
     * Message that forces a BatchChannelActor to close itself. Send from the BatchChannel service
-    * to a BatchDispatcher and there it will be forwarded to the right BatchChannelActor.
+    * to a BatchDispatcher, and there it will be forwarded to the right BatchChannelActor.
     */
   case class PoisonChannel(studyResultId: Long)
 
@@ -69,11 +69,11 @@ object BatchDispatcher {
     type BatchActionKey = Value
     // Action (mandatory for an BatchMsg)
     val Action = Value("action")
-    // Session data (must be accompanied with a session version)
+    // Session data (must be accompanied by a session version)
     val SessionData = Value("data")
-    // Session patches (must be accompanied with a session version)
+    // Session patches (must be accompanied by a session version)
     val SessionPatches = Value("patches")
-    // Identifier of an session action (mandatory)
+    // Identifier of a session action (mandatory)
     val SessionActionId = Value("id")
     // Batch session version (mandatory for session data or patches)
     val SessionVersion = Value("version")
@@ -85,7 +85,7 @@ object BatchDispatcher {
 
   /**
     * All possible batch actions a batch action message can have. They are
-    * used as values in JSON message's action field.
+    * used as values in the JSON message's action field.
     */
   //noinspection TypeAnnotation
   object BatchAction extends Enumeration {
@@ -99,8 +99,8 @@ object BatchDispatcher {
   }
 
   /**
-    * Message used for an action message. It has a JSON string and the JSON
-    * contains an 'action' field. Additionally it can be addressed with TellWhom.
+    * Message used for an action message. It has a JSON string, and the JSON
+    * contains an 'action' field. Additionally, it can be addressed with TellWhom.
     */
   case class BatchMsg(json: JsObject, tellWhom: TellWhom = TellWhom.Unknown)
 
@@ -147,7 +147,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   /**
     * Unregisters the given channel and sends an CLOSED action batch message to everyone in this
-    * batch. Then if the batch is now empty it sends a PoisonPill to this BatchDispatcher itself.
+    * batch. Then, if the batch is now empty, it sends a PoisonPill to this BatchDispatcher itself.
     */
   private def unregisterChannel(studyResultId: Long): Unit = {
     logger.debug(s".unregisterChannel: batchId $batchId, studyResultId $studyResultId")
@@ -160,8 +160,8 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   }
 
   /**
-    * Tells the BatchChannelActor to close itself. The BatchChannelActor then sends a
-    * UnregisterChannel back to this BatchDispatcher during postStop and then we
+    * Tells the BatchChannelActor to close itself. The BatchChannelActor then sends an
+    * UnregisterChannel back to this BatchDispatcher during postStop, and then we
     * can remove the channel from the batch channelRegistry and tell all other batch members
     * about it. Also send false back to the sender (BatchChannel service) if the
     * BatchChannelActor wasn't handled by this BatchDispatcher.

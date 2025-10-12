@@ -16,7 +16,7 @@ import play.api.libs.json.{JsObject, Json}
   * A BatchChannelActor belongs to a BatchDispatcher. A BatchChannelActor is created by the
   * BatchChannel service and registers itself by sending a RegisterChannel message to its
   * BatchDispatcher. It closes down after receiving a PoisonChannel message or if the WebSocket
-  * is closed. While closing down it unregisters from the BatchDispatcher by sending a
+  * is closed. While closing down, it unregisters from the BatchDispatcher by sending an
   * UnregisterChannel message. A BatchChannelActor can, if it's told to, reassign itself to a
   * different BatchDispatcher.
   *

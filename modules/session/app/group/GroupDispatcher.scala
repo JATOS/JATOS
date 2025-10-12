@@ -14,22 +14,22 @@ import play.api.libs.json.{JsObject, Json}
 
 /**
   * A GroupDispatcher is an Akka Actor responsible for distributing messages (GroupMsg) within a
-  * group. Thus it is the central class handling a group.
+  * group. Thus, it is the central class handling a group.
   *
   * A GroupDispatcher only handles the GroupChannels but is not responsible for the actual
   * joining of a GroupResult. This is done prior to creating a GroupDispatcher by the
-  * GroupAdministration which persists all data in a GroupResult. Who's member in a group is
+  * GroupAdministration, which persists all data in a GroupResult. Who is a member in a group is
   * ultimately defined by the GroupResult.
   *
   * A GroupChannelActor is only opened after a StudyResult joined a GroupResult, which is done in
-  * the GroupAdministration. Group data (e.g. who's member) are persisted in a GroupResult entity.
+  * the GroupAdministration. Group data (e.g., who is member) are persisted in a GroupResult entity.
   * A GroupChannelActor is closed after the StudyResult left the group.
   *
   * A GroupChannelActor registers in a GroupDispatcher by sending the RegisterChannel message and
-  * unregisters by sending a UnregisterChannel message.
+  * unregisters by sending an UnregisterChannel message.
   *
   * A new GroupDispatcher is created by the GroupDispatcherRegistry. If a GroupDispatcher has no
-  * more members it closes itself.
+  * more members, it closes itself.
   *
   * A GroupDispatcher handles all messages specified in the GroupDispatcherProtocol. There are
   * fundamentally three different message types: 1) group session patches, 2) broadcast messages,
@@ -69,13 +69,13 @@ object GroupDispatcher {
   case class RegisterChannel(studyResultId: Long)
 
   /**
-    * Message an GroupChannelActor can send to its GroupDispatcher to indicate it's closure.
+    * Message a GroupChannelActor can send to its GroupDispatcher to indicate its closure.
     */
   case class UnregisterChannel(studyResultId: Long)
 
   /**
     * Message to signal that a GroupChannelActor has to change its GroupDispatcher. It originates
-    * in the GroupChannel service and send to the GroupDispatcher who currently handles the
+    * in the GroupChannel service and is sent to the GroupDispatcher who currently handles the
     * GroupChannelActor. There it is forwarded to the actual GroupChannelActor.
     */
   case class ReassignChannel(studyResultId: Long, differentGroupDispatcher: ActorRef)
@@ -145,8 +145,8 @@ object GroupDispatcher {
   /**
     * Message format used for communication in the group channel between the GroupDispatcher and
     * the group members. A GroupMsg contains a JSON node. If the JSON has a key named
-    * 'recipient' the message is intended for one particular group member - otherwise it's a
-    * broadcast message. If the JSON has a 'action' key it is an group action message.
+    * 'recipient,' the message is intended for one particular group member - otherwise it's a
+    * broadcast message. If the JSON has an 'action' key, it is a group action message.
     *
     * The parameter 'tellWhom' can be used to address the recipient.
     */
@@ -193,7 +193,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   /**
     * Handle a GroupMsg received from a client. What to do with it depends on the JSON inside the
-    * GroupMsg. It can be an group action msg, a direct msg (to a particular member) or a
+    * GroupMsg. It can be a group action msg, a direct msg (to a particular member) or a
     * broadcast msg to everyone in the group.
     */
   private def handleGroupMsg(msg: GroupMsg): Unit = {
@@ -208,7 +208,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
     } else if (msg.json.keys.contains(GroupActionJsonKey.Recipient.toString)) {
       // We have a message intended for only one recipient (direct msg)
-      // Recipient's study result ID comes as a string with quotes and we have to convert to Long
+      // Recipient's study result ID comes as a string with quotes, and we have to convert to Long
       val recipient = (msg.json \ GroupActionJsonKey.Recipient.toString).as[String]
           .replace("\"", "").toLong
       tellRecipientOnly(msg, recipient)
@@ -235,7 +235,7 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   /**
     * Unregisters the given channel and sends an CLOSED action group message to everyone in this
-    * group. Then if the group is now empty it sends a PoisonPill to this GroupDispatcher itself.
+    * group. Then, if the group is now empty, it sends a PoisonPill to this GroupDispatcher itself.
     */
   private def unregisterChannel(studyResultId: Long): Unit = {
     logger.debug(s".unregisterChannel: groupResultId $groupResultId, studyResultId $studyResultId")
@@ -270,8 +270,8 @@ class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   /**
     * Tells the GroupChannelActor to close itself. The GroupChannelActor then sends a
-    * ChannelClosed back to this GroupDispatcher during postStop and then we can remove the
-    * channel from the group registry and tell all other members about it. Also send false back
+    * ChannelClosed back to this GroupDispatcher during postStop, and then we can remove the
+    * channel from the group registry and tell all other members about it. Also, send false back
     * to the sender (GroupChannel service) if the GroupChannelActor wasn't handled by this
     * GroupDispatcher.
     */

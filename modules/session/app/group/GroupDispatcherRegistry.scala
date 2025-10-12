@@ -55,8 +55,8 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Override this Actor's supervisor strategy: in case of an Exception resume child actor without
-    * stopping. This means that even if a GroupDispatcher throws an Exceptions it continues
+    * Override this Actor's supervisor strategy: in case of an Exception, resume a child actor without
+    * stopping. This means that even if a GroupDispatcher throws an Exception, it continues
     * running and keeps its internal state (incl registered channels).
     */
   override val supervisorStrategy: OneForOneStrategy =
@@ -65,7 +65,7 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
     }
 
   /**
-    * Contains the dispatchers that are currently registered. Maps the an ID to the ActorRef.
+    * Contains the dispatchers that are currently registered. Maps an ID to the ActorRef.
     */
   private val dispatcherMap = mutable.HashMap[Long, ActorRef]()
 

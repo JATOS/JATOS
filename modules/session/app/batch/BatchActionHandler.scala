@@ -32,8 +32,8 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
 
   /**
     * Handles batch action messages originating from a client: Gets a BatchMsg that contains a field
-    * 'action' in their JSON. The only action handled here is the a patch for the batch session.
-    * The function returns BatchMsges that will be send out to the batch members.
+    * 'action' in their JSON. The only action handled here is the patch for the batch session.
+    * The function returns BatchMsges that will be sent out to the batch members.
     */
   def handleActionMsg(actionMsg: BatchMsg, batchId: Long): List[BatchMsg] = {
     val actionValue = (actionMsg.json \ BatchActionJsonKey.Action.toString).as[String]
