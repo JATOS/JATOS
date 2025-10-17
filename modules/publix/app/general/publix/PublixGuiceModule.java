@@ -4,7 +4,6 @@ import batch.BatchDispatcher;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import group.GroupDispatcher;
-import play.libs.akka.AkkaGuiceSupport;
 
 /**
  * Configuration of Guice dependency injection for Publix module
