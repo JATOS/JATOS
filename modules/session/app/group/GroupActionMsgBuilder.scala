@@ -1,34 +1,32 @@
 package group
 
 import daos.common.GroupResultDao
-import general.ChannelRegistry
 import group.GroupDispatcher.GroupAction.GroupAction
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
-import javax.inject.{Inject, Singleton}
 import models.common.GroupResult
 import play.api.Logger
 import play.api.libs.json._
 import play.db.jpa.JPAApi
 
-import scala.collection.JavaConverters._
+import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.jdk.CollectionConverters._
 
 
 /**
-  * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.
-  *
-  * @author Kristian Lange
-  */
-//noinspection ScalaDeprecation
+ * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.
+ *
+ * @author Kristian Lange
+ */
 @Singleton
 class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Creates a simple GroupMsg with an error message
-    */
+   * Creates a simple GroupMsg with an error message
+   */
   def buildError(groupResultId: Long, errorMsg: String, tellWhom: TellWhom): GroupMsg = {
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> GroupAction.Error.toString,
@@ -38,8 +36,8 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
   }
 
   /**
-    * Builds a simple GroupMsg with the action, group result ID, and the session version
-    */
+   * Builds a simple GroupMsg with the action, group result ID, and the session version
+   */
   def buildSimple(groupResult: GroupResult, action: GroupAction, sessionActionId: Option[Long], tellWhom: TellWhom): GroupMsg = {
     logger.debug(s".buildSimple: groupResult ${groupResult.getId}")
     var json = Json.obj(
@@ -54,9 +52,9 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
   }
 
   /**
-    * Builds a GroupMsg with or without session data but always with the session version
-    */
-  def build(groupResultId: Long, studyResultId: Long, registry: ChannelRegistry,
+   * Builds a GroupMsg with or without session data but always with the session version
+   */
+  def build(groupResultId: Long, studyResultId: Long, registry: GroupChannelRegistry,
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
@@ -73,8 +71,8 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
   }
 
   /**
-    * Builds a GroupMsg with the group session patch and version
-    */
+   * Builds a GroupMsg with the group session patch and version
+   */
   def buildSessionPatch(groupResult: GroupResult, studyResultId: Long, patches: JsValue, tellWhom: TellWhom): GroupMsg = {
     logger.debug(s".buildSessionPatch: groupResultId ${groupResult.getId}, studyResultId $studyResultId")
     val json = Json.obj(
@@ -84,7 +82,7 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
     GroupMsg(json, tellWhom)
   }
 
-  private def buildAction(groupResult: GroupResult, studyResultId: Long, registry: ChannelRegistry,
+  private def buildAction(groupResult: GroupResult, studyResultId: Long, registry: GroupChannelRegistry,
                           includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     val members = JsArray(
       groupResult.getActiveMemberList.asScala.map(sr => JsString(sr.getId.toString)).toSeq

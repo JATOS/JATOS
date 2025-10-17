@@ -1,26 +1,28 @@
 package general.publix;
 
 import batch.BatchDispatcher;
-import batch.BatchDispatcherRegistry;
 import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import group.GroupDispatcher;
-import group.GroupDispatcherRegistry;
 import play.libs.akka.AkkaGuiceSupport;
 
 /**
  * Configuration of Guice dependency injection for Publix module
  * 
- * @author Kristian Lange (2015)
+ * @author Kristian Lange
  */
-public class PublixGuiceModule extends AbstractModule implements AkkaGuiceSupport {
+public class PublixGuiceModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		// Config which Akka actors should be handled by Guice
-		bindActor(GroupDispatcherRegistry.class, "group-dispatcher-registry-actor");
-		bindActor(BatchDispatcherRegistry.class, "batch-dispatcher-registry-actor");
-		bindActorFactory(BatchDispatcher.class, BatchDispatcher.Factory.class);
-		bindActorFactory(GroupDispatcher.class, GroupDispatcher.Factory.class);
+        install(new FactoryModuleBuilder()
+                .implement(BatchDispatcher.class, BatchDispatcher.class)
+                .build(BatchDispatcher.Factory.class)
+        );
+        install(new FactoryModuleBuilder()
+                .implement(GroupDispatcher.class, GroupDispatcher.class)
+                .build(GroupDispatcher.Factory.class)
+        );
 	}
 
 }

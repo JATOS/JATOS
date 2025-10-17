@@ -1,13 +1,10 @@
 package controllers.publix
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.ask
+import akka.actor.{ActorSystem, Props}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
-import batch.BatchChannelActor
-import batch.BatchDispatcher.PoisonChannel
-import batch.BatchDispatcherRegistry.{GetOrCreate, ItsThisOne}
+import batch.{BatchChannelActor, BatchDispatcherRegistry}
 import exceptions.publix.PublixException
 import models.common.StudyResult
 import models.common.workers._
@@ -18,12 +15,11 @@ import services.publix.StudyAuthorisation
 import services.publix.idcookie.IdCookieService
 import services.publix.workers._
 
-import javax.inject.{Inject, Named, Singleton}
-import scala.concurrent.Await
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
 
 /**
-  * Abstract class that handles opening of the batch channel. It has concrete implementations for
+  * Abstract class that handles the opening of the batch channel. It has concrete implementations for
   * each worker type.
   */
 abstract class BatchChannel[A <: Worker](components: ControllerComponents,
@@ -42,8 +38,7 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   var idCookieService: IdCookieService = _
 
   @Inject
-  @Named("batch-dispatcher-registry-actor")
-  var batchDispatcherRegistry: ActorRef = _
+  var batchDispatcherRegistry: BatchDispatcherRegistry = _
 
   /**
     * Time to wait for an answer after asking an Akka actor
@@ -51,8 +46,8 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   implicit val timeout: Timeout = 30.seconds
 
   /**
-    * HTTP endpoint that opens a batch channel and returns a Akka stream Flow that will be turned
-    * into WebSocket. In case of an error/problem an PublixException is thrown.
+    * HTTP endpoint that opens a batch channel and returns an Akka stream Flow that will be turned
+    * into WebSocket. In case of an error/ problem, a PublixException is thrown.
     */
   @throws(classOf[PublixException])
   def open(studyResult: StudyResult)(implicit request: RequestHeader): Flow[Any, Nothing, _] = {
@@ -62,33 +57,22 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
     val batch = studyResult.getBatch
     studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().session.asJava, worker, study, batch)
 
+    // To be sure, check if there is already a batch channel and close the old one before opening a new one.
+    closeBatchChannel(batch.getId, studyResult.getId)
+
     // Get the BatchDispatcher that will handle this batch.
-    val batchDispatcher = getOrCreateBatchDispatcher(batch.getId)
-    // If this BatchDispatcher already has a batch channel for this
-    // StudyResult, close the old one before opening a new one.
-    closeBatchChannel(studyResult.getId, batchDispatcher)
-    ActorFlow.actorRef { out => BatchChannelActor.props(out, studyResult.getId, batchDispatcher) }
+    val batchDispatcher = batchDispatcherRegistry.getOrRegister(batch.getId)
+    ActorFlow.actorRef { out => Props(new BatchChannelActor(out, studyResult.getId, batchDispatcher)) }
   }
 
   /**
-    * Asks the BatchDispatcherRegistry to get or create a batch dispatcher for the given ID. It
-    * waits until it receives an answer. The answer is an ActorRef (to a BatchDispatcher).
+    * Closes the batch channel that belongs to the given study result ID.
     */
-  private def getOrCreateBatchDispatcher(batchId: Long): ActorRef = {
-    val future = batchDispatcherRegistry ? GetOrCreate(batchId)
-    Await.result(future, timeout.duration).asInstanceOf[ItsThisOne].dispatcher
-  }
-
-  /**
-    * Closes the batch channel that belongs to the given study result ID and is managed by the
-    * given BatchDispatcher. Waits until it receives a result from the BatchDispatcher actor. It
-    * returns true if the BatchChannel was managed by the BatchDispatcher and was successfully
-    * removed from the BatchDispatcher, false otherwise (it was probably never managed by the
-    * dispatcher).
-    */
-  private def closeBatchChannel(studyResultId: Long, batchDispatcher: ActorRef) = {
-    val future = batchDispatcher ? PoisonChannel(studyResultId)
-    Await.result(future, timeout.duration).asInstanceOf[Boolean]
+  private def closeBatchChannel(batchId: Long, studyResultId: Long): Unit = {
+    val batchDispatcherOption = batchDispatcherRegistry.get(batchId)
+    if (batchDispatcherOption.isDefined) {
+      batchDispatcherOption.get.poisonChannel(studyResultId)
+    }
   }
 
 }

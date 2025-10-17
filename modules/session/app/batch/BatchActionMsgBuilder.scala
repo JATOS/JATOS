@@ -1,34 +1,32 @@
 package batch
 
-import java.io.IOException
-import javax.inject.{Inject, Singleton}
-
+import batch.BatchDispatcher.BatchAction.BatchAction
+import batch.BatchDispatcher.TellWhom.TellWhom
+import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 import com.google.common.base.Strings
 import daos.common.BatchDao
 import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsValue, Json}
 import play.db.jpa.JPAApi
-import batch.BatchDispatcher.BatchAction.BatchAction
-import batch.BatchDispatcher.TellWhom.TellWhom
-import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 
+import java.io.IOException
+import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
 /**
-  * Utility class that builds BatchMsgs. So it mostly handles the JSON creation.
-  *
-  * @author Kristian Lange (2017)
-  */
-//noinspection ScalaDeprecation
+ * Utility class that builds BatchMsgs. So it mostly handles the JSON creation.
+ *
+ * @author Kristian Lange
+ */
 @Singleton
 class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Creates a simple BatchMsg with an error message
-    */
+   * Creates a simple BatchMsg with an error message
+   */
   def buildError(errorMsg: String, tellWhom: TellWhom): BatchMsg = {
     val json = Json.obj(
       BatchActionJsonKey.Action.toString -> BatchAction.Error.toString,
@@ -37,8 +35,8 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
   }
 
   /**
-    * Builds a simple BatchMsg with the action and the session version
-    */
+   * Builds a simple BatchMsg with the action and the session version
+   */
   def buildSimple(batch: Batch, action: BatchAction, sessionActionId: Long, tellWhom: TellWhom): BatchMsg = {
     logger.debug(s".buildSimple: batchId ${batch.getId}")
     val json = Json.obj(
@@ -49,8 +47,8 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
   }
 
   /**
-    * Builds a BatchActionMessage with the batch session patch and version
-    */
+   * Builds a BatchActionMessage with the batch session patch and version
+   */
   def buildSessionPatch(batch: Batch, patches: JsValue, tellWhom: TellWhom): BatchMsg = {
     logger.debug(s".buildSessionPatch: batchId ${batch.getId}")
     val json = Json.obj(
@@ -61,8 +59,8 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
   }
 
   /**
-    * Builds a BatchMsg with the current batch session data and version
-    */
+   * Builds a BatchMsg with the current batch session data and version
+   */
   def buildSessionData(batchId: Long, action: BatchAction, tellWhom: TellWhom): BatchMsg = {
     jpa.withTransaction(asJavaSupplier(() => {
       logger.debug(s".buildSessionData: batchId $batchId, action $action, tellWhom ${
@@ -78,8 +76,8 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
   private def buildSessionAction(batch: Batch, action: BatchAction, tellWhom: TellWhom) = {
     val sessionData =
       try
-          if (Strings.isNullOrEmpty(batch.getBatchSessionData)) Json.obj()
-          else Json.parse(batch.getBatchSessionData)
+        if (Strings.isNullOrEmpty(batch.getBatchSessionData)) Json.obj()
+        else Json.parse(batch.getBatchSessionData)
       catch {
         case e: IOException =>
           logger.error(s".buildSessionActionMsg: invalid session data in DB - batchId " +

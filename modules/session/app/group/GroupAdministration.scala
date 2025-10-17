@@ -8,30 +8,29 @@ import play.db.jpa.JPAApi
 import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.jdk.CollectionConverters._
 
 /**
-  * Administrates groups, e.g. joining or leaving. A group's state is stored in a GroupResult. Members of a group are
-  * identified by the StudyResult's ID (which represents a particular study run).
-  *
-  * All group members exchange messages via WebSockets that are called group channels in JATOS. The message dispatching
-  * system is implemented with Akka.
-  *
-  * @author Kristian Lange (2015 - 2019)
-  */
-//noinspection ScalaDeprecation
+ * Administrates groups, e.g. joining or leaving. A group's state is stored in a GroupResult. Members of a group are
+ * identified by the StudyResult's ID (which represents a particular study run).
+ *
+ * All group members exchange messages via WebSockets that are called group channels in JATOS. The message dispatching
+ * system is implemented with Akka.
+ *
+ * @author Kristian Lange
+ */
 @Singleton
 class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
                                     groupResultDao: GroupResultDao,
                                     jpa: JPAApi) {
 
   /**
-    * Joins a GroupResult or create a new one. Persists changes.
-    *
-    * It looks in the database whether we have an incomplete GroupResult (state STARTED, maxActiveMember not reached,
-    * maxTotalMembers not reached). If there is none, create a new GroupResult.
-    */
+   * Joins a GroupResult or create a new one. Persists changes.
+   *
+   * It looks in the database whether we have an incomplete GroupResult (state STARTED, maxActiveMember not reached,
+   * maxTotalMembers not reached). If there is none, create a new GroupResult.
+   */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
     jpa.withTransaction(asJavaSupplier(() => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
@@ -48,8 +47,8 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
   }
 
   /**
-    * Leaves the group that this studyResult is a member of. Moves the given StudyResult in its group result into history.
-    */
+   * Leaves the group that this studyResult is a member of. Moves the given StudyResult in its group result into history.
+   */
   def leave(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null || !studyResult.getStudy.isGroupStudy) return
@@ -59,27 +58,27 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
   }
 
   /**
-    * Moves the given StudyResult in its group to the history member list. This should happen when a study run is done
-    * (StudyResult's state is in FINISHED, FAILED, ABORTED).
-    */
+   * Moves the given StudyResult in its group to the history member list. This should happen when a study run is done
+   * (StudyResult's state is in FINISHED, FAILED, ABORTED).
+   */
   private def moveActiveMemberToHistory(studyResult: StudyResult): Unit = {
-      val groupResult = studyResult.getActiveGroupResult
-      groupResult.removeActiveMember(studyResult)
-      groupResult.addHistoryMember(studyResult)
-      studyResult.setActiveGroupResult(null)
-      studyResult.setHistoryGroupResult(groupResult)
-      groupResultDao.update(groupResult)
-      studyResultDao.update(studyResult)
+    val groupResult = studyResult.getActiveGroupResult
+    groupResult.removeActiveMember(studyResult)
+    groupResult.addHistoryMember(studyResult)
+    studyResult.setActiveGroupResult(null)
+    studyResult.setHistoryGroupResult(groupResult)
+    groupResultDao.update(groupResult)
+    studyResultDao.update(studyResult)
   }
 
   /**
-    * Reassigns this StudyResult to a different GroupResult if possible.
-    *
-    * It looks in the database whether we have other incomplete GroupResult. If there is more than one, it returns the
-    * one with the most active members. If there is no other GroupResult, it returns an error msg.
-    *
-    * @return Either with String if error or a GroupResult if success
-    */
+   * Reassigns this StudyResult to a different GroupResult if possible.
+   *
+   * It looks in the database whether we have other incomplete GroupResult. If there is more than one, it returns the
+   * one with the most active members. If there is no other GroupResult, it returns an error msg.
+   *
+   * @return Either with String if error or a GroupResult if success
+   */
   def reassign(studyResult: StudyResult, batch: Batch): Either[String, GroupResult] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val currentGroupResult = studyResult.getActiveGroupResult
@@ -111,9 +110,9 @@ class GroupAdministration @Inject()(studyResultDao: StudyResultDao,
   }
 
   /**
-    * Checks if a GroupResult should be put in state FINISHED and does it. A group is finished if it has no
-    * more active members and the max number of members is reached.
-    */
+   * Checks if a GroupResult should be put in state FINISHED and does it. A group is finished if it has no
+   * more active members and the max number of members is reached.
+   */
   private def checkAndFinishGroup(groupResult: GroupResult): Unit = {
     if (groupResult.getActiveMemberCount > 0) return
 

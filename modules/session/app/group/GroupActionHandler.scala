@@ -16,13 +16,12 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.util.Try
 
 /**
-  * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
-  * contains an 'action' field. It was received by a GroupDispatcher and comes from a client via
-  * a GroupChannelActor.
-  *
-  * @author Kristian Lange (2017)
-  */
-//noinspection ScalaDeprecation
+ * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
+ * contains an 'action' field. It was received by a GroupDispatcher and comes from a client via
+ * a GroupChannelActor.
+ *
+ * @author Kristian Lange
+ */
 @Singleton
 class GroupActionHandler @Inject()(jpa: JPAApi,
                                    groupResultDao: GroupResultDao,
@@ -31,11 +30,11 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Handles group actions originating from a client: Gets a GroupMsg that contains a field
-    * 'action' in their JSON. The only action handled here is 1) the patch for the group
-    * session, or 2) the msg to fix the group. The function returns GroupMsges that will be sent
-    * out to the group members.
-    */
+   * Handles group actions originating from a client: Gets a GroupMsg that contains a field
+   * 'action' in their JSON. The only action handled here is 1) the patch for the group
+   * session, or 2) the msg to fix the group. The function returns GroupMsges that will be sent
+   * out to the group members.
+   */
   def handleActionMsg(msg: GroupMsg, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
     logger.debug(s".handleActionMsg: groupResultId $groupResultId, studyResultId $studyResultId, " +
       s"jsonNode ${Json.stringify(msg.json)}")
@@ -50,14 +49,14 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Applies the patch to the group session
-    */
+   * Applies the patch to the group session
+   */
   private def handlePatch(json: JsObject, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult == null) {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
-        List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
+        return List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
       }
 
       val sessionActionId = (json \ GroupActionJsonKey.SessionActionId.toString).as[Long]
@@ -104,10 +103,10 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Persists the given sessionData in the GroupResult and increases the groupSessionVersion by 1 - but only if the
-    * stored version is equal to the received one or versioning is turned off. Returns true if this was successful -
-    * otherwise false.
-    */
+   * Persists the given sessionData in the GroupResult and increases the groupSessionVersion by 1 - but only if the
+   * stored version is equal to the received one or versioning is turned off. Returns true if this was successful -
+   * otherwise false.
+   */
   private def checkVersionAndPersistSessionData(sessionData: JsValue, groupResult: GroupResult,
                                                 version: Long,
                                                 versioning: Boolean): Boolean = {
@@ -121,9 +120,9 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Changes the state of GroupResult to FIXED and sends an update to all group
-    * members
-    */
+   * Changes the state of GroupResult to FIXED and sends an update to all group
+   * members
+   */
   private def handleActionFix(groupResultId: Long) = {
     jpa.withTransaction(asJavaSupplier(() => {
       val groupResult = groupResultDao.findById(groupResultId)

@@ -1,14 +1,10 @@
 package controllers.publix
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.ask
+import akka.actor.{ActorSystem, Props}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
-import akka.util.Timeout
 import exceptions.publix.{ForbiddenPublixException, PublixException}
-import group.GroupDispatcher.{JoinedGroup, LeftGroup, PoisonChannel, PoisonEmptyDispatcher, ReassignChannel}
-import group.GroupDispatcherRegistry.{Get, GetOrCreate, ItsThisOne}
-import group.{GroupAdministration, GroupChannelActor, GroupDispatcher}
+import group.{GroupAdministration, GroupChannelActor, GroupDispatcherRegistry}
 import models.common.workers._
 import models.common.{GroupResult, StudyResult}
 import play.api.Logger
@@ -18,14 +14,12 @@ import services.publix.idcookie.IdCookieService
 import services.publix.workers._
 import services.publix.{PublixUtils, StudyAuthorisation}
 
-import javax.inject.{Inject, Named, Singleton}
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import javax.inject.{Inject, Singleton}
 
 /**
-  * Abstract class that handles opening of the group channel. It has concrete implementations for
-  * each worker type.
-  */
+ * Abstract class that handles the opening of the group channel. It has concrete implementations for
+ * each worker type.
+ */
 abstract class GroupChannel[A <: Worker](components: ControllerComponents,
                                          publixUtils: PublixUtils,
                                          studyAuthorisation:
@@ -43,21 +37,15 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   var idCookieService: IdCookieService = _
 
   @Inject
-  @Named("group-dispatcher-registry-actor")
-  private var groupDispatcherRegistry: ActorRef = _
+  var groupDispatcherRegistry: GroupDispatcherRegistry = _
 
   @Inject
   var groupAdministration: GroupAdministration = _
 
   /**
-    * Time to wait for an answer after asking an Akka actor
-    */
-  implicit val timeout: Timeout = 30.seconds
-
-  /**
-    * Joins a group but doesn't open the group channel. In case of an error/problem an PublixException is thrown.
-    * Synchronized to prevent race conditions with group members joining, leaving, reassigning.
-    */
+   * Joins a group but doesn't open the group channel. In case of an error/ problem, a PublixException is thrown.
+   * Synchronized to prevent race conditions with group members joining, leaving, reassigning.
+   */
   @throws(classOf[PublixException])
   def join(studyResult: StudyResult)(implicit request: RequestHeader): Unit = synchronized {
     logger.info(s".join: studyResult ${studyResult.getId}")
@@ -85,27 +73,27 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   }
 
   /**
-    * Opens a group channel and returns a Akka stream Flow that will be turned into WebSocket. In
-    * case of an error/problem an PublixException is thrown.
-    */
+   * Opens a group channel and returns an Akka stream Flow that will be turned into WebSocket. In
+   * case of an error/ problem, a PublixException is thrown.
+   */
   @throws(classOf[PublixException])
   def open(studyResult: StudyResult): Flow[Any, Nothing, _] = {
     logger.info(s".open: studyResultId ${studyResult.getId}")
     val groupResult: GroupResult = studyResult.getActiveGroupResult
+
+    // To be sure, check if there is already a group channel and close the old one before opening a new one.
+    closeGroupChannel(studyResult.getId, groupResult.getId)
+
     // Get the GroupDispatcher that will handle this GroupResult.
-    val groupDispatcher = getOrCreateDispatcher(groupResult.getId)
-    // If this GroupDispatcher already has a group channel for this
-    // StudyResult, close the old one before opening a new one.
-    closeGroupChannelBlocking(studyResult.getId, groupDispatcher)
-    ActorFlow.actorRef { out => GroupChannelActor.props(out, studyResult.getId, groupDispatcher) }
+    val groupDispatcher = groupDispatcherRegistry.getOrRegister(groupResult.getId)
+    ActorFlow.actorRef { out => Props(new GroupChannelActor(out, studyResult.getId, groupDispatcher)) }
   }
 
   /**
-    * Tries to reassign this study run (specified by study result ID) to a different group. If the
-    * reassignment was successful an Ok is returned. If it was unsuccessful a Forbidden is returned.
-    * In case of an error/problem an PublixException is thrown. Synchronized to prevent race conditions with group
-    * members joining, leaving, reassigning.
-    */
+   * Tries to reassign this study run (specified by study result ID) to a different group. If the
+   * reassignment was successful, an Ok is returned. If it was unsuccessful, a Forbidden is returned.
+   * In case of an error/ problem, a PublixException is thrown.
+   */
   @throws(classOf[PublixException])
   def reassign(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
     logger.info(s".reassign: studyResultId ${studyResult.getId}")
@@ -135,9 +123,8 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   }
 
   /**
-    * Let this study run (specified by the study result ID) leave the group that it joined before. Synchronized to
-    * prevent race conditions with group members joining, leaving, reassigning.
-    */
+   * Let this study run (specified by the study result ID) leave the group that it joined before.
+   */
   @throws(classOf[PublixException])
   def leave(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
     logger.info(s".leave: studyResultId ${studyResult.getId}")
@@ -159,102 +146,64 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   }
 
   /**
-    * Closes the group channel which includes sending a left message to all group members and leaves the GroupResult.
-    */
+   * Closes the group channel which includes sending a left message to all group members and leaves the GroupResult.
+   */
   def closeGroupChannelAndLeaveGroup(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
     val study = studyResult.getStudy
     if (study.isGroupStudy && groupResult != null) {
       groupAdministration.leave(studyResult)
-      closeGroupChannel(studyResult, groupResult)
-    }
-  }
-
-  /**
-    * Close the group channel that belongs to the given StudyResult and GroupResult and tell every
-    * group member about it. It just sends the closing message to the GroupDispatcher without
-    * waiting for an answer. We don't use the StudyResult's GroupResult but ask for a separate
-    * parameter for the GroupResult because the StudyResult's GroupResult might already be null in
-    * the process of leaving a GroupResult.
-    */
-  private def closeGroupChannel(studyResult: StudyResult, groupResult: GroupResult): Unit = {
-    val groupDispatcherOption = getDispatcher(groupResult.getId)
-    if (groupDispatcherOption.isDefined) {
-      groupDispatcherOption.get ! PoisonChannel(studyResult.getId)
-      groupDispatcherOption.get ! PoisonEmptyDispatcher
+      closeGroupChannel(studyResult.getId, groupResult.getId)
       sendLeftMsg(studyResult, groupResult)
     }
   }
 
   /**
-    * Closes the group channel that belongs to the given StudyResult and is managed by the given
-    * GroupDispatcher. Waits (and blocks) until it receives a result from the GroupDispatcher actor.
-    * It returns true if the GroupChannelActor was managed by the GroupDispatcher and was
-    * successfully removed from the GroupDispatcher - false otherwise (it was probably never managed
-    * by the dispatcher).
-    */
-  private def closeGroupChannelBlocking(studyResultId: Long, groupDispatcher: ActorRef): Boolean = {
-    val future = groupDispatcher ? PoisonChannel(studyResultId)
-    Await.result(future, timeout.duration).asInstanceOf[Boolean]
+   * Closes the group channel that belongs to the given study result ID.
+   */
+  private def closeGroupChannel(studyResultId: Long, groupResultId: Long): Unit = {
+    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
+    if (groupDispatcherOption.isDefined) {
+      groupDispatcherOption.get.poisonChannel(studyResultId)
+    }
   }
 
   /**
-    * Sends a message to each member of the group (the GroupResult this studyResult is in). This
-    * message tells that this member has joined the GroupResult.
-    */
+   * Sends a message to each member of the group (the GroupResult this studyResult is in). This
+   * message tells that this member has joined the GroupResult.
+   */
   private def sendJoinedMsg(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult != null) {
-      val groupDispatcherOption = getDispatcher(groupResult.getId)
+      val groupDispatcherOption = groupDispatcherRegistry.get(groupResult.getId)
       if (groupDispatcherOption.isDefined)
-        groupDispatcherOption.get ! JoinedGroup(studyResult.getId)
+        groupDispatcherOption.get.joined(studyResult.getId)
     }
   }
 
   /**
-    * Sends a message to each member of the GroupResult that this member (specified by StudyResult)
-    * has left the GroupResult.
-    */
+   * Sends a message to each member of the GroupResult that this member (specified by StudyResult)
+   * has left the GroupResult.
+   */
   private def sendLeftMsg(studyResult: StudyResult, groupResult: GroupResult): Unit = {
     if (groupResult != null) {
-      val groupDispatcherOption = getDispatcher(groupResult.getId)
+      val groupDispatcherOption = groupDispatcherRegistry.get(groupResult.getId)
       if (groupDispatcherOption.isDefined)
-        groupDispatcherOption.get ! LeftGroup(studyResult.getId)
+        groupDispatcherOption.get.left(studyResult.getId)
     }
   }
 
   /**
-    * Get the GroupDispatcher to this GroupResult. The answer is an ActorRef (to a GroupDispatcher).
-    */
-  private def getDispatcher(groupResultId: Long): Option[ActorRef] = {
-    val future = groupDispatcherRegistry ? Get(groupResultId)
-    Await.result(future, timeout.duration).asInstanceOf[ItsThisOne]
-      .groupDispatcherOption
-  }
-
-  /**
-    * Asks the GroupDispatcherRegistry to get or create a group dispatcher for the given ID. It
-    * waits until it receives an answer. The answer is an ActorRef (to a GroupDispatcher).
-    */
-  private def getOrCreateDispatcher(groupResultId: Long): ActorRef = {
-    val future = groupDispatcherRegistry ? GetOrCreate(groupResultId)
-    Await.result(future, timeout.duration).asInstanceOf[ItsThisOne]
-      .groupDispatcherOption.get
-  }
-
-  /**
-    * Reassigns the given group channel that is associated with the given StudyResult. It moves the group channel from
-    * the current GroupDispatcher to a different one that is associated with the given GroupResult.
-    */
+   * Reassigns the given group channel associated with the given StudyResult. It moves the group channel from
+   * the current GroupDispatcher to a different one.
+   */
   private def reassignGroupChannel(studyResult: StudyResult,
-                           currentGroupResult: GroupResult,
-                           differentGroupResult: GroupResult): Unit = {
-    val currentDispatcher = getDispatcher(currentGroupResult.getId).get
-    // Get or create, because if the dispatcher was empty it was shutdown and has to be recreated
-    val differentDispatcher = getOrCreateDispatcher(differentGroupResult.getId)
-    currentDispatcher ! ReassignChannel(studyResult.getId, differentDispatcher)
-    currentDispatcher ! GroupDispatcher.LeftGroup(studyResult.getId())
-    differentDispatcher ! JoinedGroup(studyResult.getId)
+                                   currentGroupResult: GroupResult,
+                                   differentGroupResult: GroupResult): Unit = {
+    val currentDispatcher = groupDispatcherRegistry.get(currentGroupResult.getId).get
+    // Get or create, because if the dispatcher was empty, it was shutdown and has to be recreated
+    val differentDispatcher = groupDispatcherRegistry.getOrRegister(differentGroupResult.getId)
+    currentDispatcher.reassignChannel(studyResult.getId, differentDispatcher)
   }
 
 }

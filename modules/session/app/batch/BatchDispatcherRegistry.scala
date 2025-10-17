@@ -1,83 +1,52 @@
 package batch
 
-import akka.actor.SupervisorStrategy.Resume
-import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy}
-import batch.BatchDispatcherRegistry.{GetOrCreate, ItsThisOne, Unregister}
+import play.api.Logger
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
-import play.api.libs.concurrent.InjectedActorSupport
-
 import scala.collection.mutable
-import scala.concurrent.duration._
-import scala.language.postfixOps
 
 /**
-  * A BatchDispatcherRegistry is an Akka Actor that keeps track of all BatchDispatcher Actors.
-  *
-  * @author Kristian Lange (2017)
-  */
-object BatchDispatcherRegistry {
-
-  abstract class RegistryProtocol
-
-  /**
-    * Used by the BatchChannel service to ask which BatchDispatcher actor manages a particular
-    * batch. If it doesn't exist, create a new one.
-    */
-  case class GetOrCreate(batchId: Long) extends RegistryProtocol
-
-  /**
-    * Used to answer the BatchChannel service which BatchDispatcher actor manages a particular
-    * batch.
-    */
-  case class ItsThisOne(dispatcher: ActorRef) extends RegistryProtocol
-
-  /**
-    * Used by a BatchDispatcher to unregister itself from this registry
-    */
-  case class Unregister(batchId: Long) extends RegistryProtocol
-
-}
-
+ * The BatchDispatcherRegistry keeps track of all BatchDispatchers.
+ *
+ * @author Kristian Lange
+ */
 @Singleton
-class BatchDispatcherRegistry @Inject()(actorSystem: ActorSystem,
-                                        dispatcherFactory: BatchDispatcher.Factory,
-                                        actionHandler: BatchActionHandler,
-                                        actionMsgBuilder: BatchActionMsgBuilder)
-    extends Actor with InjectedActorSupport {
+class BatchDispatcherRegistry @Inject()(batchDispatcherFactory: BatchDispatcher.Factory) {
 
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Override this Actor's supervisor strategy: in case of an Exception, resume a child actor without
-    * stopping. This means that even if a BatchDispatcher throws an Exception, it continues
-    * running and keeps its internal state (incl registered channels).
-    */
-  override val supervisorStrategy: OneForOneStrategy =
-    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute, loggingEnabled = true) {
-      case _: Exception => Resume
+   * Contains the dispatchers that are currently registered. Maps a batch ID to the BatchDispatcher.
+   */
+  private val dispatcherMap = mutable.HashMap[Long, BatchDispatcher]()
+
+  /*
+   * Get a BatchDispatcher for a particular batch ID. Returns None if no BatchDispatcher is registered.
+   */
+  def get(batchid: Long): Option[BatchDispatcher] = dispatcherMap.get(batchid)
+
+  /*
+   * Get or register a BatchDispatcher for a particular batch ID.
+   */
+  def getOrRegister(batchId: Long): BatchDispatcher = synchronized {
+    if (!dispatcherMap.contains(batchId)) {
+      val dispatcher = batchDispatcherFactory.create(batchId)
+      dispatcherMap += (batchId -> dispatcher)
+      logger.debug(s".getOrRegister: registered dispatcher for batch ID $batchId")
     }
+    dispatcherMap(batchId)
+  }
 
-  /**
-    * Contains the dispatchers that are currently registered. Maps an ID to the ActorRef.
-    */
-  private val dispatcherMap = mutable.HashMap[Long, ActorRef]()
-
-  def receive: Receive = {
-    case GetOrCreate(batchId: Long) =>
-      // Someone wants to know the Dispatcher to a particular ID
-      // If it doesn't exist, create a new one.
-      if (!dispatcherMap.contains(batchId)) {
-        val dispatcher = injectedChild(
-          dispatcherFactory(self, actionHandler, actionMsgBuilder, batchId), batchId.toString)
-        dispatcherMap += (batchId -> dispatcher)
-        logger.debug(s".receive: registered dispatcher for batch ID $batchId")
-      }
-      sender ! ItsThisOne(dispatcherMap(batchId))
-    case Unregister(batchId: Long) =>
+  /*
+   * Unregister a BatchDispatcher for a particular batch ID.
+   */
+  def unregister(batchId: Long): Unit = synchronized {
+    if (dispatcherMap.contains(batchId)) {
       dispatcherMap -= batchId
-      logger.debug(s".receive: unregistered dispatcher for batch ID $batchId")
+      logger.debug(s".unregister: unregistered dispatcher for batch ID $batchId")
+    } else {
+      logger.debug(s".unregister: dispatcher for batch ID $batchId not found")
+    }
   }
 
 }

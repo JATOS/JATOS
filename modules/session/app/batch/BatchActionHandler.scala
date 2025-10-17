@@ -6,8 +6,6 @@ import com.google.common.base.Strings
 import daos.common.BatchDao
 import diffson.jsonpatch._
 import diffson.playJson.DiffsonProtocol._
-
-import scala.util.Try
 import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.Reads._
@@ -16,13 +14,13 @@ import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.util.Try
 
 /**
-  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
-  *
-  * @author Kristian Lange
-  */
-//noinspection ScalaDeprecation
+ * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
+ *
+ * @author Kristian Lange
+ */
 @Singleton
 class BatchActionHandler @Inject()(jpa: JPAApi,
                                    batchDao: BatchDao,
@@ -31,10 +29,10 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Handles batch action messages originating from a client: Gets a BatchMsg that contains a field
-    * 'action' in their JSON. The only action handled here is the patch for the batch session.
-    * The function returns BatchMsges that will be sent out to the batch members.
-    */
+   * Handles batch action messages originating from a client: Gets a BatchMsg that contains a field
+   * 'action' in their JSON. The only action handled here is the patch for the batch session.
+   * The function returns BatchMsges that will be sent out to the batch members.
+   */
   def handleActionMsg(actionMsg: BatchMsg, batchId: Long): List[BatchMsg] = {
     val actionValue = (actionMsg.json \ BatchActionJsonKey.Action.toString).as[String]
     val action = BatchAction.withName(actionValue)
@@ -46,14 +44,14 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Applies JSON Patch for the batch session and tells everyone in the batch
-    */
+   * Applies JSON Patch for the batch session and tells everyone in the batch
+   */
   private def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val batch = batchDao.findById(batchId)
       if (batch == null) {
         val errorMsg = s"Couldn't find batch with ID $batchId in database."
-        List(msgBuilder.buildError(errorMsg, TellWhom.SenderOnly))
+        return List(msgBuilder.buildError(errorMsg, TellWhom.SenderOnly))
       }
 
       val sessionActionId = (json \ BatchActionJsonKey.SessionActionId.toString).as[Long]
@@ -101,10 +99,10 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Persists the given sessionData in the Batch and increases the batchSessionVersion by 1 - but only if the stored
-    * version is equal to the received one or versioning is turned off. Returns true if this was successful -
-    * otherwise false.
-    */
+   * Persists the given sessionData in the Batch and increases the batchSessionVersion by 1 - but only if the stored
+   * version is equal to the received one or versioning is turned off. Returns true if this was successful -
+   * otherwise false.
+   */
   private def checkVersionAndPersistSessionData(sessionData: JsValue, batch: Batch,
                                                 version: Long,
                                                 versioning: Boolean): Boolean = {
