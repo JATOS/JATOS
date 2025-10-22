@@ -171,8 +171,6 @@
         $.each(properties.allowedWorkerTypes, function(index, workerType) {
             $(`#batchPropertiesForm${workerType}`).prop('checked', true);
         });
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", properties.maxTotalWorkerLimited,
-            "maxTotalWorkers", properties.maxTotalWorkers);
 
         Editor.setup("json", properties.jsonData, "#batchPropertiesJsonEditor");
 
@@ -186,16 +184,22 @@
             $("#batchPropertiesGroupProperties input").attr("disabled", true);
             $('#batchPropertiesNotGroupStudyText').removeClass("d-none");
         }
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", properties.maxTotalMemberLimited,
-            "maxTotalMembers", properties.maxTotalMembers);
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", properties.maxActiveMemberLimited,
-            "maxActiveMembers", properties.maxActiveMembers);
 
         Helpers.disableForm("#batchPropertiesForm", window.study.isLocked);
         if (window.study.isLocked) {
             alerts.warning("Study is locked. It is not possible to edit the batch properties. Unlock this study in its study page.");
         }
     }
+
+    $('#batchPropertiesModal').on('shown.bs.modal', () => {
+        const properties = $('#batchPropertiesModal').data('properties');
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", properties.maxTotalWorkerLimited,
+            "maxTotalWorkers", properties.maxTotalWorkers);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", properties.maxTotalMemberLimited,
+            "maxTotalMembers", properties.maxTotalMembers);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", properties.maxActiveMemberLimited,
+            "maxActiveMembers", properties.maxActiveMembers);
+    });
 
     function drawInputGroupWithCheckbox(formSelector, checkboxName, checkboxValue, inputName, inputValue) {
         const checkboxElem = $(`${formSelector} input[name='${checkboxName}']`);
