@@ -88,12 +88,15 @@
         }, 0);
     });
 
-    // Fix for Bootstrap 5 tooltips: sometimes they don't hide automatically, e.g. with a button click or a Modal opening
+    // Workaround for Bootstrap 5 tooltips: sometimes they don't hide automatically if the original DOM element that this
+    // tooltip belongs to is removed from the DOM before calling tooltipInstance.dispose() before. Here we remove the
+    // tooltips manually each time the user clicks on the page.
     $(document).on("click", function() {
-        $("[data-bs-tooltip]").tooltip("hide");
+        const allTooltipElements = document.querySelectorAll('.tooltip');
+        allTooltipElements.forEach(el => el.remove());
     });
 
-    // Prevent form submission by pressing 'Enter'. That happens sometimes with forms with only one input field.
+    // Prevent form submission by pressing 'Enter'. That sometimes happens with forms with only one input field.
     // You can still allow it manually with Helpers.triggerButtonByEnter)
     $("form").on("keydown", "input", function(e) {
         if (e.key == "Enter") {
