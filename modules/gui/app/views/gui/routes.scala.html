@@ -53,7 +53,7 @@
     window.routes.Studies.submitEdited = (studyId) => `${basePath}jatos/${studyId}/properties`;
     window.routes.Studies.submitDescription = (studyId) => `${basePath}jatos/${studyId}/properties/description`;
     window.routes.Studies.toggleLock = (studyId) => `${basePath}jatos/${studyId}/lock/toggle`;
-    window.routes.Studies.runStudy = (studyId, frames = 1) => `${basePath}jatos/${studyId}/run?frames=${frames}`;
+    window.routes.Studies.runStudy = (studyId, frames = 1, hSplit = 1, vSplit = 1) => `${basePath}jatos/${studyId}/run?frames=${frames}&hSplit=${hSplit}&vSplit=${vSplit}`;
     window.routes.Studies.cloneStudy = (studyId) => `${basePath}jatos/${studyId}/clone`;
     window.routes.Studies.tableDataByStudy = (studyId) => `${basePath}jatos/${studyId}/componentsTableData`;
     window.routes.Studies.changeComponentOrder = (studyId, componentId, newPosition) => `${basePath}jatos/${studyId}/componentOrder?componentId=${componentId}&newPosition=${newPosition}`;
@@ -67,7 +67,7 @@
     window.routes.Components = {};
     window.routes.Components.toggleActive = (studyId, componentId, active) => `${basePath}jatos/${studyId}/${componentId}/properties/active?active=${active}`;
     window.routes.Components.remove = (studyId, componentId) => `${basePath}jatos/${studyId}/${componentId}`;
-    window.routes.Components.runComponent = (studyId, componentId, frames = 1) => `${basePath}jatos/${studyId}/${componentId}/run?frames=${frames}`;
+    window.routes.Components.runComponent = (studyId, componentId, frames = 1, hSplit = 1, vSplit = 1) => `${basePath}jatos/${studyId}/${componentId}/run?frames=${frames}&hSplit=${hSplit}&vSplit=${vSplit}`;
     window.routes.Components.cloneComponent = (studyId, componentId) => `${basePath}jatos/${studyId}/${componentId}/clone`;
     window.routes.Components.submitCreated = (studyId) => `${basePath}jatos/${studyId}/component`;
     window.routes.Components.properties = (studyId, componentId) => `${basePath}jatos/${studyId}/${componentId}/properties`;

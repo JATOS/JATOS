@@ -22,27 +22,27 @@
             <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-bs-tooltip="Do a test run only of this component">
                 <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
             </a>
-            <button class="btn btn-component dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'>
+            <button class="btn btn-component dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' data-bs-tooltip="Run the same component multipletimes in parallel">
                 <span class="visually-hidden">Toggle Dropdown</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-study">
-                <li class="no-info-icon" data-bs-tooltip="Run 2">
-                    <a class="run-component-x2 dropdown-item" id="runStudyx2" href="#"><i class="bi-play-circle pe-1"></i>Run 2x</a>
+                <li class="no-info-icon" data-bs-tooltip="Run 2 components in parallel">
+                    <a class="run-component-2x1 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 2x1</a>
                 </li>
-                <li class="no-info-icon" data-bs-tooltip="Run 3">
-                    <a class="run-component-x3 dropdown-item" id="runStudyx3" href="#"><i class="bi-play-circle pe-1"></i>Run 3x</a>
+                <li class="no-info-icon" data-bs-tooltip="Run 3 components in parallel">
+                    <a class="run-component-3x1 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 3x1</a>
                 </li>
-                <li class="no-info-icon" data-bs-tooltip="Run 4">
-                    <a class="run-component-x4 dropdown-item" id="runStudyx4" href="#"><i class="bi-play-circle pe-1"></i>Run 4x</a>
+                <li class="no-info-icon" data-bs-tooltip="Run 4 components in parallel">
+                    <a class="run-component-2x2 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 2x2</a>
                 </li>
-                <li class="no-info-icon" data-bs-tooltip="Run 5">
-                    <a class="run-component-x5 dropdown-item" id="runStudyx5" href="#"><i class="bi-play-circle pe-1"></i>Run 5x</a>
+                <li class="no-info-icon" data-bs-tooltip="Run 6 components in parallel">
+                    <a class="run-component-3x2 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 3x2</a>
                 </li>
-                <li class="no-info-icon" data-bs-tooltip="Run 6">
-                    <a class="run-component-x6 dropdown-item" id="runStudyx6" href="#"><i class="bi-play-circle pe-1"></i>Run 6x</a>
+                <li class="no-info-icon" data-bs-tooltip="Run 8 components in parallel">
+                    <a class="run-component-4x2 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 4x2</a>
                 </li>
-                <li class="no-info-icon" data-bs-tooltip="Run 8">
-                    <a class="run-component-x6 dropdown-item" id="runStudyx8" href="#"><i class="bi-play-circle pe-1"></i>Run 8x</a>
+                <li class="no-info-icon" data-bs-tooltip="Run 9 components in parallel">
+                    <a class="run-component-3x3 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 3x3</a>
                 </li>
             </ul>
         </div>
@@ -151,14 +151,14 @@
                 $("#componentsTable [class^='run-component']").each(function() {
                     // Set href for each component "Run" button
                     const componentId = getComponentId(this);
-                    const run = (frames) => $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId, frames)}`);
+                    const run = (frames, hSplit, vSplit) => $(this).prop("href", `${window.routes.Components.runComponent(window.study.id, componentId, frames, hSplit, vSplit)}`);
                     if ($(this).hasClass("run-component")) run(1);
-                    if ($(this).hasClass("run-component-x2")) run(2);
-                    if ($(this).hasClass("run-component-x3")) run(3);
-                    if ($(this).hasClass("run-component-x4")) run(4);
-                    if ($(this).hasClass("run-component-x5")) run(5);
-                    if ($(this).hasClass("run-component-x6")) run(6);
-                    if ($(this).hasClass("run-component-x8")) run(8);
+                    if ($(this).hasClass("run-component-2x1")) run(2, 2, 1);
+                    if ($(this).hasClass("run-component-3x1")) run(3, 3, 1);
+                    if ($(this).hasClass("run-component-2x2")) run(4, 2, 2);
+                    if ($(this).hasClass("run-component-3x2")) run(6, 3, 2);
+                    if ($(this).hasClass("run-component-4x2")) run(8, 4, 2);
+                    if ($(this).hasClass("run-component-3x3")) run(9, 3, 3);
                 });
             }
         });

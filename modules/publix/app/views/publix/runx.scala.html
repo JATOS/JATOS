@@ -1,4 +1,4 @@
-@(studyCode: String, frames: Long)
+@(studyCode: String, frames: Long, hSplit: Long, vSplit: Long)
 
 @main("JATOS") {
 
@@ -39,16 +39,14 @@
 <script>
     const studyCode = "@studyCode";
     const frames = @frames;
+    const hSplit = @hSplit;
+    const vSplit = @vSplit;
     const searchParams = new URLSearchParams(window.location.search);
 
     // Default settings
-    const defaultHorizontalSplit = 2;
-    const defaultVerticalSplit = 1;
     const defaultDelay = 50;
 
     // Extracted parameters with defaults
-    const horizontalSplit = parseInt(searchParams.get("hsplit")) || parseInt(searchParams.get("hSplit")) || defaultHorizontalSplit;
-    const verticalSplit = parseInt(searchParams.get("vsplit")) || parseInt(searchParams.get("vSplit")) || defaultVerticalSplit;
     const delay = parseInt(searchParams.get("delay")) || defaultDelay;
     const queryString = searchParams.size > 0 ? searchParams.toString() : "";
 
@@ -74,8 +72,8 @@
 
     async function createIframes() {
         const baseUrl = "@{general.common.Common.getJatosUrlBasePath()}";
-        const widthPercentage = 100 / horizontalSplit;
-        const heightPercentage = 100 / verticalSplit;
+        const widthPercentage = 100 / hSplit;
+        const heightPercentage = 100 / vSplit;
 
         for (let frameId = 1; frameId <= frames; frameId++) {
             const div = createIframeBoxDiv(frameId, widthPercentage);

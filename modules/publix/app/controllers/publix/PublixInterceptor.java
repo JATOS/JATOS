@@ -101,12 +101,12 @@ public class PublixInterceptor extends Controller {
      * Facilitates multiple study runs in parallel each in its own iframe. If 'frames' is 1 (or lower) it just redirects
      * to the normal run endpoint.
      */
-    public Result runx(String code, Long frames) throws PublixException {
-        LOGGER.info(".runx: code " + code + ", frames " + frames);
+    public Result runx(String code, Long frames, Long hSplit, Long vSplit) throws PublixException {
+        LOGGER.info(".runx: code " + code + ", frames " + frames + ", hSplit " + hSplit + ", vSplit " + vSplit);
         if (Strings.isNullOrEmpty(code)) {
             throw new BadRequestPublixException("Invalid study code");
         } else if (frames > 1) {
-            return ok(views.html.publix.runx.render(code, frames));
+            return ok(views.html.publix.runx.render(code, frames, hSplit, vSplit));
         } else {
             return redirect(controllers.publix.routes.PublixInterceptor.run(code));
         }
@@ -229,7 +229,6 @@ public class PublixInterceptor extends Controller {
     @Transactional
     public Result heartbeat(Http.Request request, String studyResultUuid) throws PublixException {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
-        LOGGER.info(".heartbeat: studyResultId " + studyResult.getId());
 
         switch (studyResult.getWorkerType()) {
             case JatosWorker.WORKER_TYPE:
@@ -483,7 +482,7 @@ public class PublixInterceptor extends Controller {
     /**
      * Uses Guice to create a new instance of the given class, a class that must inherit from Publix.
      */
-    private <T extends Publix<?>> T instanceOfPublix(Class<T> publixClass) {
+    private <T extends Publix> T instanceOfPublix(Class<T> publixClass) {
         return application.get().injector().instanceOf(publixClass);
     }
 
