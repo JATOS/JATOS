@@ -340,7 +340,7 @@ function activateTooltips(parent) {
         $(this).attr('data-bs-title', title);
 
         // Add our default attributes if they aren't already set
-        if (!$(this).is('[data-bs-delay]')) $(this).attr('data-bs-delay', '{"show":2000, "hide":150}');
+        if (!$(this).is('[data-bs-delay]')) $(this).attr('data-bs-delay', '{"show":1500, "hide":150}');
         if (!$(this).is('[data-bs-trigger]')) $(this).attr('data-bs-trigger', 'hover');
         if (!$(this).is('[data-bs-container]')) $(this).attr('data-bs-container', 'body');
 
