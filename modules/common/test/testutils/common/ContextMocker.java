@@ -22,27 +22,23 @@ public class ContextMocker {
      * Mocks Play's Http.Context without cookies
      */
     public static void mock() {
-        Http.Cookies cookies = Mockito.mock(Http.Cookies.class);
-        mock(cookies);
+        mock(Collections.emptyList());
     }
 
     /**
-     * Mocks Play's Http.Context with one cookie that can be retrieved by
-     * cookies.get(name)
+     * Mocks Play's Http.Context with one cookie
      */
     public static void mock(Http.Cookie cookie) {
-        Http.Cookies cookies = Mockito.mock(Http.Cookies.class);
-        when(cookies.get(cookie.name())).thenReturn(cookie);
-        mock(cookies);
+        mock(Collections.singletonList(cookie));
     }
 
     /**
-     * Mocks Play's Http.Context with cookies. The cookies can be retrieved by
-     * cookieList.iterator()
+     * Mocks Play's Http.Context with cookies.
      */
     public static void mock(List<Http.Cookie> cookieList) {
         Http.Cookies cookies = Mockito.mock(Http.Cookies.class);
         when(cookies.iterator()).thenReturn(cookieList.iterator());
+        cookieList.forEach(cookie -> when(cookies.get(cookie.name())).thenReturn(cookie));
         mock(cookies);
     }
 
@@ -50,6 +46,7 @@ public class ContextMocker {
         RequestHeader header = Mockito.mock(RequestHeader.class);
         Http.Request request = Mockito.mock(Http.Request.class);
         when(request.cookies()).thenReturn(cookies);
+        cookies.forEach(cookie -> when(request.cookie(cookie.name())).thenReturn(cookie));
         when(request.queryString()).thenReturn(null);
         when(request.remoteAddress()).thenReturn("1.2.3.4");
         Http.Context context = new Http.Context(1L, header, request, Collections.emptyMap(), Collections.emptyMap(),
