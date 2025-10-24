@@ -15,9 +15,9 @@
 "use strict";
 
 /**
- * How many milliseconds it waits between beats (default is 2 min)
+ * How many milliseconds it waits between beats (default is 60 sec)
  */
-var periodDefault = 120000;
+var periodDefault = 60000;
 var period;
 var url;
 var ajax;
