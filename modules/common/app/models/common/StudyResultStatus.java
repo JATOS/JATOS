@@ -28,8 +28,8 @@ public class StudyResultStatus {
     private Timestamp endDate;
 
     /**
-     * Time and date when the study was last seen. jatos.js sends a periodic heart beat and the time of
-     * the last one is saved here.
+     * Time and date when the study was last seen. This value is updated by the heartbeats that are sent by jatos.js
+     * regularly and every update of its StudyResult (via @UpdateTimestamp).
      */
     private Timestamp lastSeenDate;
 
