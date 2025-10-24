@@ -1,11 +1,11 @@
 package controllers.publix.workers;
 
-import controllers.publix.PersonalMultipleGroupChannel;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.PersonalMultipleWorker;
 import org.junit.Before;
@@ -48,10 +48,10 @@ public class PersonalMultiplePublixTest {
         publixUtils = mock(PublixUtils.class);
         studyAuthorisation = mock(PersonalMultipleStudyAuthorisation.class);
         resultCreator = mock(ResultCreator.class);
-        PersonalMultipleGroupChannel groupChannel = mock(PersonalMultipleGroupChannel.class);
         idCookieService = mock(IdCookieService.class);
-        StudyAssets studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
+        GroupAdministration groupAdministration = mock(GroupAdministration.class);
+        StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         JsonUtils jsonUtils = mock(JsonUtils.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
@@ -59,7 +59,7 @@ public class PersonalMultiplePublixTest {
         IOUtils ioUtils = null; // not needed in this unit test
 
         publix = new PersonalMultiplePublix(jpa, publixUtils, studyAuthorisation, resultCreator,
-                groupChannel, idCookieService, errorMessages, studyAssets, jsonUtils,
+                groupAdministration, idCookieService, errorMessages, studyAssets, jsonUtils,
                 componentResultDao, studyResultDao, studyLogger, ioUtils);
     }
 

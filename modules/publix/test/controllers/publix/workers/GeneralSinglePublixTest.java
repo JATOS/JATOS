@@ -6,6 +6,7 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
@@ -56,11 +57,11 @@ public class GeneralSinglePublixTest {
         studyAuthorisation = mock(GeneralSingleStudyAuthorisation.class);
         resultCreator = mock(ResultCreator.class);
         workerCreator = mock(WorkerCreator.class);
-        GeneralSingleGroupChannel groupChannel = mock(GeneralSingleGroupChannel.class);
         idCookieService = mock(IdCookieService.class);
         generalSingleCookieService = mock(GeneralSingleCookieService.class);
-        StudyAssets studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
+        GroupAdministration groupAdministration = mock(GroupAdministration.class);
+        StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         JsonUtils jsonUtils = mock(JsonUtils.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
@@ -68,7 +69,7 @@ public class GeneralSinglePublixTest {
         IOUtils ioUtils = null; // not needed here
 
         publix = new GeneralSinglePublix(jpa, publixUtils, studyAuthorisation, resultCreator, workerCreator,
-                groupChannel, idCookieService, generalSingleCookieService, errorMessages, studyAssets, jsonUtils,
+                groupAdministration, idCookieService, generalSingleCookieService, errorMessages, studyAssets, jsonUtils,
                 componentResultDao, studyResultDao, studyLogger, ioUtils);
     }
 

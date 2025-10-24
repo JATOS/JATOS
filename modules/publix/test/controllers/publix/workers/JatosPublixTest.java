@@ -1,6 +1,5 @@
 package controllers.publix.workers;
 
-import controllers.publix.JatosGroupChannel;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
@@ -8,6 +7,7 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import general.common.Common;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -66,7 +66,7 @@ public class JatosPublixTest {
     private PublixUtils publixUtils;
     private JatosStudyAuthorisation studyAuthorisation;
     private ResultCreator resultCreator;
-    private JatosGroupChannel groupChannel;
+    private GroupAdministration groupAdministration;
     private IdCookieService idCookieService;
     private StudyAssets studyAssets;
     private StudyLogger studyLogger;
@@ -80,7 +80,7 @@ public class JatosPublixTest {
         publixUtils = mock(PublixUtils.class);
         studyAuthorisation = mock(JatosStudyAuthorisation.class);
         resultCreator = mock(ResultCreator.class);
-        groupChannel = mock(JatosGroupChannel.class);
+        groupAdministration = mock(GroupAdministration.class);
         idCookieService = mock(IdCookieService.class);
         studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
@@ -90,7 +90,7 @@ public class JatosPublixTest {
         StudyResultDao studyResultDao = mock(StudyResultDao.class);
         IOUtils ioUtils = null; // not needed here
 
-        publix = new JatosPublix(jpa, publixUtils, studyAuthorisation, resultCreator, groupChannel, idCookieService,
+        publix = new JatosPublix(jpa, publixUtils, studyAuthorisation, resultCreator, groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
     }
 
@@ -335,7 +335,7 @@ public class JatosPublixTest {
         assertTrue(loc.contains("/jatos/1"));
         verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
         verify(publixUtils).abortStudy(any(), eq(sr));
-        verify(groupChannel).closeGroupChannelAndLeaveGroup(sr);
+        verify(groupAdministration).leaveGroup(sr);
         verify(idCookieService).discardIdCookie(sr.getId());
         verify(studyLogger).log(eq(study), any(), eq(jw));
     }
@@ -371,7 +371,7 @@ public class JatosPublixTest {
         assertTrue(loc.contains("/jatos/1"));
         verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
         verify(publixUtils).finishStudyResult(any(), any(), eq(sr));
-        verify(groupChannel).closeGroupChannelAndLeaveGroup(sr);
+        verify(groupAdministration).leaveGroup(sr);
         verify(idCookieService).discardIdCookie(sr.getId());
         verify(studyLogger).log(eq(study), any(), eq(jw));
     }

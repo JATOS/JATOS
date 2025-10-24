@@ -1,11 +1,11 @@
 package controllers.publix.workers;
 
-import controllers.publix.GeneralMultipleGroupChannel;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.GeneralMultipleWorker;
 import models.common.workers.PersonalMultipleWorker;
@@ -39,9 +39,7 @@ public class GeneralMultiplePublixTest {
     private GeneralMultipleStudyAuthorisation studyAuthorisation;
     private ResultCreator resultCreator;
     private WorkerCreator workerCreator;
-    private GeneralMultipleGroupChannel groupChannel;
     private IdCookieService idCookieService;
-    private StudyAssets studyAssets;
     private StudyLogger studyLogger;
 
     private GeneralMultiplePublix publix;
@@ -54,10 +52,10 @@ public class GeneralMultiplePublixTest {
         studyAuthorisation = mock(GeneralMultipleStudyAuthorisation.class);
         resultCreator = mock(ResultCreator.class);
         workerCreator = mock(WorkerCreator.class);
-        groupChannel = mock(GeneralMultipleGroupChannel.class);
         idCookieService = mock(IdCookieService.class);
-        studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
+        GroupAdministration groupAdministration = mock(GroupAdministration.class);
+        StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         JsonUtils jsonUtils = mock(JsonUtils.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
@@ -65,7 +63,7 @@ public class GeneralMultiplePublixTest {
         IOUtils ioUtils = null; // not needed in this unit test
 
         publix = new GeneralMultiplePublix(jpa, publixUtils, studyAuthorisation, resultCreator, workerCreator,
-                groupChannel, idCookieService, errorMessages, studyAssets, jsonUtils,
+                groupAdministration, idCookieService, errorMessages, studyAssets, jsonUtils,
                 componentResultDao, studyResultDao, studyLogger, ioUtils);
     }
 

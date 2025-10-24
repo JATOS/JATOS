@@ -1,11 +1,10 @@
 package controllers.publix.workers;
 
-import controllers.publix.PersonalSingleGroupChannel;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.PublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.PersonalSingleWorker;
 import org.junit.Before;
@@ -27,7 +26,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static play.test.Helpers.*;
+import static play.test.Helpers.SEE_OTHER;
+import static play.test.Helpers.fakeRequest;
 
 /**
  * Unit tests for PersonalSinglePublix methods (class-local logic only).
@@ -37,9 +37,7 @@ public class PersonalSinglePublixTest {
     private PublixUtils publixUtils;
     private PersonalSingleStudyAuthorisation studyAuthorisation;
     private ResultCreator resultCreator;
-    private PersonalSingleGroupChannel groupChannel;
     private IdCookieService idCookieService;
-    private StudyAssets studyAssets;
     private StudyLogger studyLogger;
 
     private PersonalSinglePublix publix;
@@ -51,17 +49,17 @@ public class PersonalSinglePublixTest {
         publixUtils = mock(PublixUtils.class);
         studyAuthorisation = mock(PersonalSingleStudyAuthorisation.class);
         resultCreator = mock(ResultCreator.class);
-        groupChannel = mock(PersonalSingleGroupChannel.class);
         idCookieService = mock(IdCookieService.class);
-        studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
+        GroupAdministration groupAdministration = mock(GroupAdministration.class);
+        StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         JsonUtils jsonUtils = mock(JsonUtils.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
         StudyResultDao studyResultDao = mock(StudyResultDao.class);
         IOUtils ioUtils = null; // not needed here
 
-        publix = new PersonalSinglePublix(jpa, publixUtils, studyAuthorisation, resultCreator, groupChannel,
+        publix = new PersonalSinglePublix(jpa, publixUtils, studyAuthorisation, resultCreator, groupAdministration,
                 idCookieService, errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao,
                 studyLogger, ioUtils);
     }

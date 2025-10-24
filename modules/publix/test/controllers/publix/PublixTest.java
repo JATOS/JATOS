@@ -6,6 +6,7 @@ import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 import general.common.Common;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -43,13 +44,13 @@ import static play.test.Helpers.*;
 public class PublixTest {
 
     // Minimal concrete subclass for testing (Publix itself is abstract only by generic type)
-    private static class TestPublix extends Publix<Worker> {
+    private static class TestPublix extends Publix {
         public TestPublix(JPAApi jpa, PublixUtils publixUtils, StudyAuthorisation studyAuthorisation,
-                          GroupChannel<Worker> groupChannel, IdCookieService idCookieService,
+                          GroupAdministration groupAdministration, IdCookieService idCookieService,
                           PublixErrorMessages errorMessages, StudyAssets studyAssets, JsonUtils jsonUtils,
                           ComponentResultDao componentResultDao, StudyResultDao studyResultDao,
                           StudyLogger studyLogger, IOUtils ioUtils) {
-            super(jpa, publixUtils, studyAuthorisation, groupChannel, idCookieService, errorMessages,
+            super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages,
                     studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
         }
 
@@ -77,7 +78,7 @@ public class PublixTest {
 
     private PublixUtils publixUtils;
     private StudyAuthorisation studyAuthorisation;
-    private GroupChannel<Worker> groupChannel;
+    private GroupAdministration groupAdministration;
     private IdCookieService idCookieService;
     private PublixErrorMessages errorMessages;
     private StudyAssets studyAssets;
@@ -95,7 +96,7 @@ public class PublixTest {
     public void setUp() {
         publixUtils = mock(PublixUtils.class);
         studyAuthorisation = mock(StudyAuthorisation.class);
-        groupChannel = mock(GroupChannel.class);
+        groupAdministration = mock(GroupAdministration.class);
         idCookieService = mock(IdCookieService.class);
         errorMessages = mock(PublixErrorMessages.class);
         studyAssets = mock(StudyAssets.class);
@@ -105,7 +106,7 @@ public class PublixTest {
         studyLogger = mock(StudyLogger.class);
         ioUtils = null; // Not needed for tested paths and heavy to initialize
 
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupChannel, idCookieService,
+        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
     }
 
@@ -313,7 +314,7 @@ public class PublixTest {
 
         // Mock ioUtils and re-create publix with it
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupChannel, idCookieService,
+        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
 
         Study study = new Study();
@@ -344,7 +345,7 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(10L);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupChannel, idCookieService,
+        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
 
         Study study = new Study();
@@ -372,7 +373,7 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(Long.MAX_VALUE);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupChannel, idCookieService,
+        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
 
         Study study = new Study();
@@ -400,7 +401,7 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(Long.MAX_VALUE);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupChannel, idCookieService,
+        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
 
         Study study = new Study();
