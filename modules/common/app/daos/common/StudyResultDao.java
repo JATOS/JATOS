@@ -9,7 +9,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -88,6 +91,21 @@ public class StudyResultDao extends AbstractDao {
                 .setMaxResults(1)
                 .getResultList();
         return !studyResult.isEmpty() ? Optional.of(studyResult.get(0)) : Optional.empty();
+    }
+
+    /**
+     * Returns a list of StudyResults that are active members of a group and have been idle for a while. An idle
+     * StudyResult is one that has an active group result and a lastSeenDate that is older than the given seconds.
+     */
+    public List<StudyResult> findIdleGroupMembers(int idleAfterSeconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.SECOND, -idleAfterSeconds);
+        return jpa.em()
+                .createQuery("SELECT sr FROM StudyResult sr "
+                        + "WHERE sr.activeGroupResult is not null "
+                        + "AND sr.lastSeenDate < :date", StudyResult.class)
+                .setParameter("date", cal.getTime())
+                .getResultList();
     }
 
     /**
@@ -174,12 +192,6 @@ public class StudyResultDao extends AbstractDao {
             Number result = (Number) query.getSingleResult();
             return result != null ? result.intValue() : 0;
         }
-    }
-
-    public List<StudyResult> findAllByStudy(Study study) {
-        return jpa.em().createQuery("SELECT sr FROM StudyResult sr WHERE sr.study=:study", StudyResult.class)
-                .setParameter("study", study)
-                .getResultList();
     }
 
     public List<Long> findIdsByStudyId(Long studyId) {

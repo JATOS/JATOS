@@ -121,6 +121,9 @@ public class Common {
     private static String threadPoolSize;
     private static String studyArchiveSuffix;
     private static String resultsArchiveSuffix;
+    private static boolean groupsCleaningAllowed;
+    private static int groupsCleaningInterval;
+    private static int groupsCleaningMemberIdleAfter;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -240,6 +243,9 @@ public class Common {
         threadPoolSize = config.getString("jatos.threadPool.size");
         studyArchiveSuffix = config.getString("jatos.studyArchive.suffix");
         resultsArchiveSuffix = config.getString("jatos.resultsArchive.suffix");
+        groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
+        groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
+        groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
     }
 
     /**
@@ -982,5 +988,26 @@ public class Common {
      */
     public static String getResultsArchiveSuffix() {
         return resultsArchiveSuffix;
+    }
+
+    /**
+     * True if the group cleaning is allowed
+     */
+    public static boolean isGroupsCleaningAllowed() {
+        return groupsCleaningAllowed;
+    }
+
+    /**
+     * Interval in seconds the group cleaner is started.
+     */
+    public static int getGroupsCleaningInterval() {
+        return groupsCleaningInterval;
+    }
+
+    /**
+     * After how many seconds a group member is regarded as idle.
+     */
+    public static int getGroupsCleaningMemberIdleAfter() {
+        return groupsCleaningMemberIdleAfter;
     }
 }
