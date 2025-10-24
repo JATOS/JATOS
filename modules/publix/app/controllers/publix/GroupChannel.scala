@@ -22,8 +22,7 @@ import javax.inject.{Inject, Singleton}
  */
 abstract class GroupChannel[A <: Worker](components: ControllerComponents,
                                          publixUtils: PublixUtils,
-                                         studyAuthorisation:
-                                         StudyAuthorisation) extends AbstractController(components) {
+                                         studyAuthorisation: StudyAuthorisation) extends AbstractController(components) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -66,7 +65,6 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
         s" already member of group ${studyResult.getActiveGroupResult.getId}")
     else {
       val groupResult = groupAdministration.join(studyResult, batch)
-      sendJoinedMsg(studyResult)
       logger.info(s".join: studyResult ${studyResult.getId}, workerId ${worker.getId} " +
         s"joined group ${groupResult.getId}")
     }
@@ -82,7 +80,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     val groupResult: GroupResult = studyResult.getActiveGroupResult
 
     // To be sure, check if there is already a group channel and close the old one before opening a new one.
-    closeGroupChannel(studyResult.getId, groupResult.getId)
+    groupAdministration.closeGroupChannel(studyResult.getId, groupResult.getId)
 
     // Get the GroupDispatcher that will handle this GroupResult.
     val groupDispatcher = groupDispatcherRegistry.getOrRegister(groupResult.getId)
@@ -109,17 +107,12 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
       return Forbidden
     }
 
-    val currentGroupResult = studyResult.getActiveGroupResult
-    groupAdministration.reassign(studyResult, batch) match {
-      case Left(msg) =>
-        logger.info(s".reassign: $msg")
-        return NoContent
-      case Right(differentGroupResult) =>
-        reassignGroupChannel(studyResult, currentGroupResult, differentGroupResult)
-        logger.info(s".reassign: studyResult ${studyResult.getId}, workerId ${worker.getId} reassigned from group" +
-          s" ${currentGroupResult.getId} to group ${differentGroupResult.getId}")
+    val success = groupAdministration.reassign(studyResult, batch)
+    if (!success) {
+      NoContent
+    } else {
+      Ok("")
     }
-    Ok("")
   }
 
   /**
@@ -140,70 +133,9 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
       return Ok("")
     }
 
-    closeGroupChannelAndLeaveGroup(studyResult)
+    groupAdministration.leave(studyResult)
     logger.info(s".leave: studyResult ${studyResult.getId}, workerId ${worker.getId} left group ${groupResult.getId}")
     Ok("")
-  }
-
-  /**
-   * Closes the group channel which includes sending a left message to all group members and leaves the GroupResult.
-   */
-  def closeGroupChannelAndLeaveGroup(studyResult: StudyResult): Unit = {
-    val groupResult = studyResult.getActiveGroupResult
-    val study = studyResult.getStudy
-    if (study.isGroupStudy && groupResult != null) {
-      groupAdministration.leave(studyResult)
-      closeGroupChannel(studyResult.getId, groupResult.getId)
-      sendLeftMsg(studyResult, groupResult)
-    }
-  }
-
-  /**
-   * Closes the group channel that belongs to the given study result ID.
-   */
-  private def closeGroupChannel(studyResultId: Long, groupResultId: Long): Unit = {
-    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
-    if (groupDispatcherOption.isDefined) {
-      groupDispatcherOption.get.poisonChannel(studyResultId)
-    }
-  }
-
-  /**
-   * Sends a message to each member of the group (the GroupResult this studyResult is in). This
-   * message tells that this member has joined the GroupResult.
-   */
-  private def sendJoinedMsg(studyResult: StudyResult): Unit = {
-    val groupResult = studyResult.getActiveGroupResult
-    if (groupResult != null) {
-      val groupDispatcherOption = groupDispatcherRegistry.get(groupResult.getId)
-      if (groupDispatcherOption.isDefined)
-        groupDispatcherOption.get.joined(studyResult.getId)
-    }
-  }
-
-  /**
-   * Sends a message to each member of the GroupResult that this member (specified by StudyResult)
-   * has left the GroupResult.
-   */
-  private def sendLeftMsg(studyResult: StudyResult, groupResult: GroupResult): Unit = {
-    if (groupResult != null) {
-      val groupDispatcherOption = groupDispatcherRegistry.get(groupResult.getId)
-      if (groupDispatcherOption.isDefined)
-        groupDispatcherOption.get.left(studyResult.getId)
-    }
-  }
-
-  /**
-   * Reassigns the given group channel associated with the given StudyResult. It moves the group channel from
-   * the current GroupDispatcher to a different one.
-   */
-  private def reassignGroupChannel(studyResult: StudyResult,
-                                   currentGroupResult: GroupResult,
-                                   differentGroupResult: GroupResult): Unit = {
-    val currentDispatcher = groupDispatcherRegistry.get(currentGroupResult.getId).get
-    // Get or create, because if the dispatcher was empty, it was shutdown and has to be recreated
-    val differentDispatcher = groupDispatcherRegistry.getOrRegister(differentGroupResult.getId)
-    currentDispatcher.reassignChannel(studyResult.getId, differentDispatcher)
   }
 
 }

@@ -1,7 +1,6 @@
 package controllers.publix.workers;
 
 import controllers.publix.IPublix;
-import controllers.publix.JatosGroupChannel;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
@@ -9,6 +8,7 @@ import daos.common.StudyResultDao;
 import exceptions.publix.*;
 import general.common.Common;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import play.Logger;
@@ -43,7 +43,7 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class JatosPublix extends Publix<JatosWorker> implements IPublix {
+public class JatosPublix extends Publix implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(JatosPublix.class);
 
@@ -71,12 +71,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     @Inject
     JatosPublix(JPAApi jpa, PublixUtils publixUtils,
             JatosStudyAuthorisation studyAuthorisation,
-            ResultCreator resultCreator, JatosGroupChannel groupChannel,
+            ResultCreator resultCreator, GroupAdministration groupAdministration,
             IdCookieService idCookieService, PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
-        super(jpa, publixUtils, studyAuthorisation, groupChannel,
+        super(jpa, publixUtils, studyAuthorisation, groupAdministration,
                 idCookieService, errorMessages, studyAssets, jsonUtils,
                 componentResultDao, studyResultDao, studyLogger, ioUtils);
         this.publixUtils = publixUtils;
@@ -171,7 +171,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
-            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
+            groupAdministration.leaveGroup(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
@@ -197,7 +197,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
-            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
+            groupAdministration.leaveGroup(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);

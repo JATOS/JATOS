@@ -21,13 +21,17 @@ import javax.inject.Inject
  */
 class GroupChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
-                                  var groupDispatcher: GroupDispatcher) extends Actor {
+                                  private var groupDispatcher: GroupDispatcher) extends Actor {
 
   val pong: JsObject = Json.obj("heartbeat" -> "pong")
 
   override def preStart(): Unit = groupDispatcher.registerChannel(studyResultId, this)
 
   override def postStop(): Unit = groupDispatcher.unregisterChannel(studyResultId)
+
+  override def toString: String = studyResultId.toString
+
+  def setGroupDispatcher(groupDispatcher: GroupDispatcher): Unit = this.groupDispatcher = groupDispatcher
 
   def receive: Receive = {
     case msg: JsObject if msg.keys.contains("heartbeat") =>

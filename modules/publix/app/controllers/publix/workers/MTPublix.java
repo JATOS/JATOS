@@ -1,12 +1,16 @@
 package controllers.publix.workers;
 
-import controllers.publix.*;
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.StudyAssets;
+import controllers.publix.routes;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.MTWorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
@@ -34,7 +38,7 @@ import java.util.Optional;
  * @author Kristian Lange
  */
 @Singleton
-public class MTPublix extends Publix<MTWorker> implements IPublix {
+public class MTPublix extends Publix implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(MTPublix.class);
 
@@ -47,14 +51,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
     @Inject
     MTPublix(JPAApi jpa, PublixUtils publixUtils,
-            MTStudyAuthorisation studyAuthorisation,
-            ResultCreator resultCreator, WorkerCreator workerCreator,
-            MTGroupChannel groupChannel, IdCookieService idCookieService,
-            PublixErrorMessages errorMessages, StudyAssets studyAssets,
-            JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao, StudyLogger studyLogger, IOUtils ioUtils) {
+             MTStudyAuthorisation studyAuthorisation,
+             ResultCreator resultCreator, WorkerCreator workerCreator,
+             GroupAdministration groupAdministration, IdCookieService idCookieService,
+             PublixErrorMessages errorMessages, StudyAssets studyAssets,
+             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
+             StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao, StudyLogger studyLogger, IOUtils ioUtils) {
         super(jpa, publixUtils, studyAuthorisation,
-                groupChannel, idCookieService,
+                groupAdministration, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao,
                 studyResultDao, studyLogger, ioUtils);
         this.publixUtils = publixUtils;
@@ -125,7 +129,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         String confirmationCode;
         if (!PublixHelpers.studyDone(studyResult)) {
             confirmationCode = publixUtils.finishStudyResult(successful, message, studyResult);
-            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
+            groupAdministration.leaveGroup(studyResult);
         } else {
             confirmationCode = studyResult.getConfirmationCode();
         }

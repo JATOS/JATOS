@@ -1,6 +1,5 @@
 package controllers.publix.workers;
 
-import controllers.publix.GeneralSingleGroupChannel;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -9,6 +8,7 @@ import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
@@ -24,7 +24,6 @@ import services.publix.WorkerCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
-import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -38,7 +37,7 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements IPublix {
+public class GeneralSinglePublix extends Publix implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(GeneralSinglePublix.class);
 
@@ -53,13 +52,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
     GeneralSinglePublix(JPAApi jpa, PublixUtils publixUtils,
             GeneralSingleStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator, WorkerCreator workerCreator,
-            GeneralSingleGroupChannel groupChannel,
+            GroupAdministration groupAdministration,
             IdCookieService idCookieService,
             GeneralSingleCookieService generalSingleCookieService,
             PublixErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
-        super(jpa, publixUtils, studyAuthorisation, groupChannel,
+        super(jpa, publixUtils, studyAuthorisation, groupAdministration,
                 idCookieService, errorMessages, studyAssets,
                 jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
         this.publixUtils = publixUtils;

@@ -26,6 +26,11 @@ class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.
  */
   def get(groupResultId: Long): Option[GroupDispatcher] = dispatcherMap.get(groupResultId)
 
+  /**
+   * Checks if one of the group dispatchers has a channel with the given study result ID.
+   */
+  def hasChannel(studyResultId: Long): Boolean = dispatcherMap.values.exists(_.hasChannel(studyResultId))
+
   /*
    * Get or register a GroupDispatcher for a particular group result ID.
    */

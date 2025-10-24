@@ -1,13 +1,13 @@
 package controllers.publix.workers;
 
 import controllers.publix.IPublix;
-import controllers.publix.PersonalMultipleGroupChannel;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.workers.PersonalMultipleWorker;
 import play.Logger;
@@ -33,7 +33,7 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> implements IPublix {
+public class PersonalMultiplePublix extends Publix implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(PersonalMultiplePublix.class);
 
@@ -46,14 +46,14 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> imple
     PersonalMultiplePublix(JPAApi jpa, PublixUtils publixUtils,
             PersonalMultipleStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator,
-            PersonalMultipleGroupChannel groupChannel,
+            GroupAdministration groupAdministration,
             IdCookieService idCookieService,
             PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
         super(jpa, publixUtils, studyAuthorisation,
-                groupChannel, idCookieService, errorMessages, studyAssets,
+                groupAdministration, idCookieService, errorMessages, studyAssets,
                 jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;

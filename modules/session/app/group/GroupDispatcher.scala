@@ -9,7 +9,6 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Json}
 
 import javax.inject.Inject
-import scala.collection.mutable
 
 /**
  * A GroupDispatcher is responsible for distributing messages (GroupMsg) within a group. Thus, it is the central class
@@ -114,6 +113,8 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
 
   private val channelRegistry = new GroupChannelRegistry
 
+  def hasChannel(studyResultId: Long): Boolean = channelRegistry.containsStudyResult(studyResultId)
+
   /**
    * Handle a GroupMsg received from a client. What to do with it depends on the JSON inside the GroupMsg. It can be
    * a group action msg, a direct msg (to a particular member) or a broadcast msg to everyone in the group.
@@ -198,7 +199,7 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
     if (channelOption.isDefined) {
       unregisterChannel(studyResultId)
       left(studyResultId)
-      channelOption.get.groupDispatcher = differentDispatcher
+      channelOption.get.setGroupDispatcher(differentDispatcher)
       differentDispatcher.registerChannel(studyResultId, channelOption.get)
       differentDispatcher.joined(studyResultId)
     } else {

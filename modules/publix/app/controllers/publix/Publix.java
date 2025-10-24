@@ -7,6 +7,7 @@ import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 import general.common.Common;
 import general.common.StudyLogger;
+import group.GroupAdministration;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -44,14 +45,14 @@ import static play.mvc.Http.Request;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class Publix<T extends Worker> extends Controller implements IPublix {
+public abstract class Publix extends Controller implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(Publix.class);
 
     protected final JPAApi jpa;
     protected final PublixUtils publixUtils;
     protected final StudyAuthorisation studyAuthorisation;
-    protected final GroupChannel<T> groupChannel;
+    protected final GroupAdministration groupAdministration;
     protected final IdCookieService idCookieService;
     protected final PublixErrorMessages errorMessages;
     protected final StudyAssets studyAssets;
@@ -62,14 +63,14 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
     protected final IOUtils ioUtils;
 
     public Publix(JPAApi jpa, PublixUtils publixUtils,
-            StudyAuthorisation studyAuthorisation, GroupChannel<T> groupChannel,
+            StudyAuthorisation studyAuthorisation, GroupAdministration groupAdministration,
             IdCookieService idCookieService, PublixErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils, ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
         this.jpa = jpa;
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
-        this.groupChannel = groupChannel;
+        this.groupAdministration = groupAdministration;
         this.idCookieService = idCookieService;
         this.errorMessages = errorMessages;
         this.studyAssets = studyAssets;
@@ -265,7 +266,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
-            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
+            groupAdministration.leaveGroup(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
@@ -287,7 +288,7 @@ public abstract class Publix<T extends Worker> extends Controller implements IPu
 
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
-            groupChannel.closeGroupChannelAndLeaveGroup(studyResult);
+            groupAdministration.leaveGroup(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);

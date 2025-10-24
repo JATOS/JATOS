@@ -65,8 +65,7 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
       if (groupResult != null)
         buildAction(groupResult, studyResultId, registry, includeSessionData, action, tellWhom)
       else
-        buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database" +
-          s".", TellWhom.SenderOnly)
+        buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly)
     }))
   }
 
