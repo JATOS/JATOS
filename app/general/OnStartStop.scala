@@ -7,6 +7,7 @@ import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMi
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.db.jpa.JPAApi
+import services.publix.GroupCleaner
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
@@ -31,7 +32,8 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             mySQLCharsetFix: MySQLCharsetFix,
                             studyLinkMigration: StudyLinkMigration,
                             componentResultMigration: ComponentResultMigration,
-                            loginAttemptDao: LoginAttemptDao) {
+                            loginAttemptDao: LoginAttemptDao,
+                            groupCleaner: GroupCleaner) {
 
   private val logger = Logger(this.getClass)
 
@@ -49,6 +51,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   studyLinkMigration.run()
   componentResultMigration.run()
   scheduleLoginAttemptCleaning()
+  groupCleaner.start()
 
   if (isPortInUse && environment.isProd) {
     // If port is already in use log with Logger or STDOUT
