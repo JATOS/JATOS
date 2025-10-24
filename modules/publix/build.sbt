@@ -10,7 +10,8 @@ libraryDependencies ++= Seq(
   javaJpa,
   javaWs,
   guice,
-  "org.apache.commons" % "commons-collections4" % "4.3"
+  "org.apache.commons" % "commons-collections4" % "4.3",
+  "org.mockito" % "mockito-inline" % "4.11.0" % "test"
 )
 
 // Routes from submodules
