@@ -14,7 +14,7 @@ import scala.jdk.CollectionConverters._
 
 /**
  * This class handles the joining, leaving, and reassigning of group members. A group's state is stored in a
- * GroupResult. Group channels (the handlers of the WebSockets) are managed by group dispatchers. Members of a group are
+ * GroupResult. Group dispatchers manage group channels (the handlers of the WebSockets). Members of a group are
  * identified by the study result ID (which represents a particular study run).
  *
  * @author Kristian Lange
@@ -96,13 +96,13 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * @return returns true if the study result was reassigned, false if not.
    */
   def reassign(studyResult: StudyResult, batch: Batch): Boolean = {
+    val originalGroupResult = studyResult.getActiveGroupResult
     val differentGroupResultOption: Option[GroupResult] = reassignGroupResult(studyResult, batch)
-    if (differentGroupResultOption.isDefined) {
-      val currentGroupResult = studyResult.getActiveGroupResult
+    if (differentGroupResultOption.isDefined && originalGroupResult != null) {
       val differentGroupResult = differentGroupResultOption.get
-      reassignGroupChannel(studyResult, currentGroupResult, differentGroupResult)
+      reassignGroupChannel(studyResult, originalGroupResult, differentGroupResult)
       logger.info(s".reassign: studyResult ${studyResult.getId} reassigned from group" +
-        s" ${currentGroupResult.getId} to group ${differentGroupResult.getId}")
+        s" ${originalGroupResult.getId} to group ${differentGroupResult.getId}")
       true
     } else {
       false
