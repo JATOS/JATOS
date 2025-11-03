@@ -30,7 +30,6 @@ public class GroupAdministrationTest {
     private GroupDispatcher dispatcherDifferent;
     private GroupResultDao groupResultDao;
     private StudyResultDao studyResultDao;
-    private JPAApi jpa;
 
     private GroupAdministration admin;
 
@@ -41,7 +40,7 @@ public class GroupAdministrationTest {
         dispatcherDifferent = mock(GroupDispatcher.class);
         groupResultDao = mock(GroupResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
-        jpa = mock(JPAApi.class);
+        JPAApi jpa = mock(JPAApi.class);
 
         // Let withTransaction execute immediately
         when(jpa.withTransaction(any(Supplier.class))).thenAnswer(inv -> {
@@ -108,7 +107,7 @@ public class GroupAdministrationTest {
         GroupResult existing = new GroupResult(batch);
         existing.setId(99L);
 
-        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(Arrays.asList(existing));
+        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(Collections.singletonList(existing));
         when(registry.get(existing.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
 
         GroupResult returned = admin.join(sr, batch);
@@ -222,7 +221,7 @@ public class GroupAdministrationTest {
         sr.setActiveGroupResult(current);
 
         // Only current available -> after removal list empty
-        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(new ArrayList<>(Arrays.asList(current)));
+        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(new ArrayList<>(Collections.singletonList(current)));
 
         boolean reassigned = admin.reassign(sr, batch);
         assertFalse(reassigned);
