@@ -70,7 +70,7 @@ lazy val common = (project in file("modules/common"))
 
 // Submodule jatos-session: does group and batch session
 lazy val session = (project in file("modules/session"))
-    .enablePlugins(PlayScala)
+    .enablePlugins(PlayJava, PlayScala)
     .dependsOn(common)
 
 // Submodule jatos-publix: responsible for running studies
