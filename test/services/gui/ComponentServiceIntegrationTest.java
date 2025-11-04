@@ -13,7 +13,7 @@ import models.gui.ComponentProperties;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 import testutils.JatosTest;
-import testutils.common.ContextMocker;
+import testutils.ContextMocker;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;

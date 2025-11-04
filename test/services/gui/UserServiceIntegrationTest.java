@@ -13,7 +13,7 @@ import models.gui.NewUserModel;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 import testutils.JatosTest;
-import testutils.common.ContextMocker;
+import testutils.ContextMocker;
 
 import javax.inject.Inject;
 import java.io.IOException;
