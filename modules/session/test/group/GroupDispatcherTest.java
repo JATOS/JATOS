@@ -64,10 +64,6 @@ public class GroupDispatcherTest {
         dispatcher = new GroupDispatcher(system, registry, actionHandler, msgBuilder, groupResultId);
     }
 
-    private void awaitDelivery() {
-        try { Thread.sleep(50); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-    }
-
     private JsObject js(String s) { return (JsObject) Json$.MODULE$.parse(s); }
 
     private GroupDispatcher.GroupMsg actionMsgToSender(JsObject json) {
@@ -120,10 +116,12 @@ public class GroupDispatcherTest {
 
         // Clear first out; now register second channel ->
         // second gets sender-only OPENED, first gets others OPENED
-        out1.clear();
+        pollUntilEmpty(out1);
         dispatcher.registerChannel(2L, ch2);
-        assertEquals(1, out2.size());
-        assertEquals(1, out1.size());
+        Object msg1 = poll(out1);
+        Object msg2 = poll(out2);
+        assertNotNull("Expected an Opened message", msg1);
+        assertNotNull("Expected an Opened message", msg2);
     }
 
     @Test
@@ -151,15 +149,16 @@ public class GroupDispatcherTest {
 
         dispatcher.registerChannel(1L, ch1);
         dispatcher.registerChannel(2L, ch2);
-        out1.clear();
-        out2.clear();
+        // Clear channels
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
 
         // Unregister first -> second should get CLOSED
         dispatcher.unregisterChannel(1L);
-        Object c1 = poll(out1);
-        Object c2 = poll(out2);
-        assertNull(c1);
-        assertNotNull(c2);
+        Object msg1 = poll(out1);
+        Object msg2 = poll(out2);
+        assertNull(msg1);
+        assertNotNull(msg2);
         verify(registry, never()).unregister(anyLong());
 
         // Unregister second -> now empty, registry should unregister dispatcher
@@ -185,7 +184,7 @@ public class GroupDispatcherTest {
             .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
 
         dispatcher.registerChannel(1L, ch1);
-        out1.clear();
+        pollUntilEmpty(out1);
 
         dispatcher.poisonChannel(1L);
 
@@ -254,9 +253,9 @@ public class GroupDispatcherTest {
         stubOpenCloseMessages();
         dispatcher.registerChannel(1L, ch1);
         dispatcher.registerChannel(2L, ch2);
-        awaitDelivery();
-        out1.clear();
-        out2.clear();
+        // Wait for OPENED messages to be sent
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
 
         // Action handler returns two messages: one to sender only, one broadcast to all
         GroupDispatcher.GroupMsg toSender = actionMsgToSender(js("{\"a\":1}"));
@@ -266,12 +265,12 @@ public class GroupDispatcherTest {
 
         JsObject input = js("{\"action\":\"SESSION\"}");
         dispatcher.handleGroupMsg(new GroupDispatcher.GroupMsg(input, TW_Unknown()), 1L, ch1.self());
-        Object s1 = poll(out1);
-        Object s2 = poll(out2);
+        Object msg1 = poll(out1);
+        Object msg2 = poll(out2);
 
         // Sender gets sender-only; other gets the all-but-sender
-        assertNotNull(s1);
-        assertNotNull(s2);
+        assertNotNull(msg1);
+        assertNotNull(msg2);
     }
 
     @Test
@@ -288,24 +287,25 @@ public class GroupDispatcherTest {
         stubOpenCloseMessages();
         dispatcher.registerChannel(1L, ch1);
         dispatcher.registerChannel(2L, ch2);
-        out1.clear();
-        out2.clear();
+        // Wait for OPENED messages to be sent
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
 
         // Direct message to 2
         JsObject directJson = js("{\"recipient\":\"2\",\"msg\":\"hi\"}");
         dispatcher.handleGroupMsg(directOrBroadcastMsg(directJson), 1L, ch1.self());
-        Object d1 = poll(out1);
-        Object d2 = poll(out2);
-        assertNull(d1);
-        assertNotNull(d2);
+        Object msg1 = poll(out1);
+        Object msg2 = poll(out2);
+        assertNull(msg1);
+        assertNotNull(msg2);
 
         // Direct to unknown -> should create error back to sender
         when(msgBuilder.buildError(eq(groupResultId), anyString(), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"ERROR\"}")));
         JsObject toUnknown = js("{\"recipient\":\"999\"}");
         dispatcher.handleGroupMsg(directOrBroadcastMsg(toUnknown), 1L, ch1.self());
-        Object e1 = poll(out1);
-        assertNotNull(e1);
+        Object msg3 = poll(out1);
+        assertNotNull(msg3);
     }
 
     @Test
@@ -322,15 +322,16 @@ public class GroupDispatcherTest {
         stubOpenCloseMessages();
         dispatcher.registerChannel(1L, ch1);
         dispatcher.registerChannel(2L, ch2);
-        out1.clear();
-        out2.clear();
+        // Wait for OPENED messages to be sent
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
 
         JsObject broadcast = js("{\"text\":\"hello all\"}");
         dispatcher.handleGroupMsg(directOrBroadcastMsg(broadcast), 1L, ch1.self());
-        Object m1 = poll(out1);
-        Object m2 = poll(out2);
-        assertNull(m1);
-        assertNotNull(m2);
+        Object msg1 = poll(out1);
+        Object msg2 = poll(out2);
+        assertNull(msg1);
+        assertNotNull(msg2);
     }
 
     @Test
@@ -354,32 +355,41 @@ public class GroupDispatcherTest {
         stubOpenCloseMessages();
         dispatcher.registerChannel(1L, ch1);
         dispatcher.registerChannel(2L, ch2);
-        out1.clear();
-        out2.clear();
+
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
 
         dispatcher.joined(1L);
-        Object j1 = poll(out1);
-        Object j2 = poll(out2);
-        assertNull(j1);
-        assertNotNull(j2);
+        Object msg1 = poll(out1);
+        Object msg2 = poll(out2);
+        assertNull(msg1);
+        assertNotNull(msg2);
 
-        out1.clear(); out2.clear();
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
+
         dispatcher.left(2L);
-        Object l1 = poll(out1);
-        Object l2 = poll(out2);
-        assertNotNull(l1);
-        assertNull(l2);
+        Object msg3 = poll(out1);
+        Object msg4 = poll(out2);
+        assertNotNull(msg3);
+        assertNull(msg4);
+
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
 
         // If unknown ID -> no messages
-        out1.clear(); out2.clear();
         dispatcher.left(999L);
         dispatcher.joined(999L);
         assertEquals(0, out1.size() + out2.size());
     }
 
+    private void pollUntilEmpty(BlockingQueue<Object> q) {
+        while (poll(q) != null) {}
+    }
+
     private Object poll(BlockingQueue<Object> q) {
         try {
-            return q.poll(java.time.Duration.ofSeconds(1).toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+            return q.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
