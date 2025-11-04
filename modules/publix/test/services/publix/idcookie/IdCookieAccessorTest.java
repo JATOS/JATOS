@@ -9,7 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import play.mvc.Http;
-import testutils.common.ContextMocker;
+import testutils.publix.ContextMocker;
 
 import java.util.Arrays;
 import java.util.Collections;

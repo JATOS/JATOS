@@ -14,7 +14,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
-import testutils.common.ContextMocker;
+import testutils.gui.ContextMocker;
 import utils.common.IOUtils;
 
 import java.io.File;

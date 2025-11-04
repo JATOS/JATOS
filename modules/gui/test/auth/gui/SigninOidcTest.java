@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import play.mvc.Http;
 import play.mvc.Result;
-import testutils.common.ContextMocker;
+import testutils.gui.ContextMocker;
 
 import java.lang.reflect.Field;
 import java.net.URI;

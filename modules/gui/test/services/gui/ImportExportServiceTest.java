@@ -14,7 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import play.mvc.Controller;
-import testutils.common.ContextMocker;
+import testutils.gui.ContextMocker;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import utils.common.ZipUtil;

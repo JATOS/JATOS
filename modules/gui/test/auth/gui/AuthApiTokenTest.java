@@ -43,7 +43,7 @@ public class AuthApiTokenTest {
     @Before
     public void setUp() {
         // Install a mutable Http.Context for RequestScope
-        testutils.common.ContextMocker.mock();
+        testutils.gui.ContextMocker.mock();
 
         apiTokenDao = mock(ApiTokenDao.class);
         JPAApi jpa = mock(JPAApi.class);

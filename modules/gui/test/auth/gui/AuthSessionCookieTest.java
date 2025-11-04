@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.UserService;
-import testutils.common.ContextMocker;
+import testutils.gui.ContextMocker;
 import utils.common.Helpers;
 
 import javax.inject.Provider;
