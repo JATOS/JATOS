@@ -3,37 +3,19 @@
 @main("JATOS") {
 
 <style>
-    body {
+    html, body {
         margin: 0;
         padding: 0;
+        height: 100%;
     }
-    .box {
-        float: left;
-        position: relative;
+    .grid {
+        display: grid;
+        height: 100vh;
     }
-    iframe {
-        border: 1px solid black;
-        display: inline-block;
-        vertical-align: top;
-        overflow: hidden;
+    .grid iframe {
+        border: none;
         width: 100%;
-    }
-    .studyDoneOverlay {
-        color: black;
-	    font-family: Sans-Serif;
-		font-size: 30px;
-		letter-spacing: 2px;
-		opacity: 1;
-		text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
-		z-index: 9999;
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-direction: column;
+        height: 100%;
     }
 </style>
 <script>
@@ -42,11 +24,9 @@
     const hSplit = @hSplit;
     const vSplit = @vSplit;
     const searchParams = new URLSearchParams(window.location.search);
+    const baseUrl = "@{general.common.Common.getJatosUrlBasePath()}";
 
-    // Default settings
     const defaultDelay = 50;
-
-    // Extracted parameters with defaults
     const delay = parseInt(searchParams.get("delay")) || defaultDelay;
     const queryString = searchParams.size > 0 ? searchParams.toString() : "";
 
@@ -55,31 +35,19 @@
     // Main function to create iframes on page load
     createIframes();
 
-    function createIframeBoxDiv(frameId, widthPercentage) {
-        const div = document.createElement('div');
-        div.className = 'box';
-        div.id = `frame${frameId}`;
-        div.style.width = `${widthPercentage}%`;
-        return div;
-    }
-
-    function createIframe(studyCode, baseUrl, frameId, queryString, heightPercentage) {
-        const iframe = document.createElement("iframe");
-        iframe.src = `${baseUrl}publix/${studyCode}?frameId=${frameId}&${queryString}`;
-        iframe.style.height = `${heightPercentage}vh`;
-        return iframe;
-    }
-
     async function createIframes() {
-        const baseUrl = "@{general.common.Common.getJatosUrlBasePath()}";
-        const widthPercentage = 100 / hSplit;
-        const heightPercentage = 100 / vSplit;
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        grid.style.gridTemplateColumns = `repeat(${hSplit}, 1fr)`;
+        grid.style.gridTemplateRows = `repeat(${vSplit}, 1fr)`;
+        document.body.appendChild(grid);
 
         for (let frameId = 1; frameId <= frames; frameId++) {
-            const div = createIframeBoxDiv(frameId, widthPercentage);
-            document.body.appendChild(div);
-            const iframe = createIframe(studyCode, baseUrl, frameId, queryString, heightPercentage);
-            div.appendChild(iframe);
+            const iframe = document.createElement("iframe");
+            iframe.src = `${baseUrl}publix/${studyCode}?frameId=${frameId}&${queryString}`;
+            iframe.id = `frame${frameId}`;
+            grid.appendChild(iframe);
+
             await sleep(delay);
         }
     }
@@ -88,35 +56,17 @@
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    window.addEventListener("keydown", function(e) {
-        const scrollBlockingKeys = ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-        if (scrollBlockingKeys.includes(e.code)) {
-            e.preventDefault();
-        }
-    }, false);
-
     function onIframeComplete(frameId, studyId) {
         closedIframeCounter++;
 
-        const div = document.getElementById(`frame${frameId}`);
-
-        const iframe = div.querySelector("iframe");
+        const iframe = document.getElementById(`frame${frameId}`);
         iframe.style.opacity = 0.3;
-
-	    addOverlayText(div, "Study Done", "studyDoneOverlay");
 
         console.info(`Study run in frame ${frameId} ended.`);
         if (closedIframeCounter >= frames) {
             // Redirect to JATOS GUI / study page
-            window.location.href = `@{general.common.Common.getJatosUrlBasePath()}jatos/${studyId}`;
+            window.location.href = `${baseUrl}jatos/${studyId}`;
         }
-    }
-
-    function addOverlayText(targetDiv, text, cssClass) {
-        const overlay = document.createElement("span");
-        overlay.className = cssClass;
-        overlay.textContent = text;
-        targetDiv.appendChild(overlay);
     }
 </script>
 }
