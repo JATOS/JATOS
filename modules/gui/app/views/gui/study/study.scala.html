@@ -6,11 +6,11 @@
 
     @* Study toolbar *@
     <div class="sticky-top text-nowrap d-flex flex-wrap gap-1 pb-4" id="studyToolbar" role="toolbar">
-            <div class="btn-group me-3" role="group">
-                <a class="btn btn-study no-info-icon" id="runStudy" href="#" type="button" data-bs-tooltip="Do a test run of your study">
+            <div class="btn-group me-3 no-info-icon" role="group" data-bs-tooltip="Do a single test run of your study or run the same study multiple times in parallel">
+                <a class="btn btn-study" id="runStudy" href="#" type="button">
                     <i class="bi-play-circle"></i><span class="d-none d-xl-inline ps-1">Run</span>
                 </a>
-                <button class="btn btn-study dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-tooltip="Run the same study multiple times in parallel">
+                <button class="btn btn-study dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'>
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-study">

@@ -18,14 +18,14 @@
 @* Template for button toolbar in Component's row *@
 <div id="componentToolbarTemplate" class="d-none">
     <div class="float-end text-nowrap">
-        <div class="btn-group" role="group">
-            <a class="run-component btn btn-component no-info-icon" href="#" type="button" data-bs-tooltip="Do a test run only of this component">
+        <div class="btn-group no-info-icon" role="group" data-bs-tooltip="Do a single test run only of this component or run the same component multiple times in parallel">
+            <a class="run-component btn btn-component" href="#" type="button">
                 <i class="bi-play-circle"></i><span class="d-none d-lg-inline ps-1">Run</span>
             </a>
-            <button class="btn btn-component dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' data-bs-tooltip="Run the same component multipletimes in parallel">
+            <button class="btn btn-component dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'>
                 <span class="visually-hidden">Toggle Dropdown</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-study">
+            <ul class="dropdown-menu dropdown-menu-component">
                 <li class="no-info-icon" data-bs-tooltip="Run 2 components in parallel">
                     <a class="run-component-2x1 dropdown-item" href="#"><i class="bi-play-circle pe-1"></i>Run 2x1</a>
                 </li>
