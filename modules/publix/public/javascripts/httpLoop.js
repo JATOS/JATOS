@@ -9,7 +9,7 @@
  * requests here are done.
  *
  * http://www.jatos.org
- * Author Kristian Lange 2020
+ * Author Kristian Lange
  * Licensed under Apache License 2.0
  *
  * Uses "HTML5 `FormData` polyfill for Browsers."
@@ -81,8 +81,13 @@ function run() {
 
 	// Embedded function (can access objects request and xhr)
 	function handleErrorAndRetry(timeout) {
-		// Do not retry if 1) a BadRequest, or 2) retry is not wanted, or 3) all retry attempts were already used
+		// Do not retry if
+		// 1) a 400 (Bad Request),
+		// 2) a 413 (Content too large),
+		// 3) retry is not wanted, or
+		// 4) all retry attempts were already used
 		if ((xhr.status && xhr.status == 400)
+			|| (xhr.status && xhr.status == 413)
 			|| "retry" in request === false
 			|| request.retry <= 0) {
 			var msg = {

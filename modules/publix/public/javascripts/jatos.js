@@ -149,14 +149,6 @@ var jatos = {};
 		text: "Sending data. Please wait."
 	};
 	/**
-	 * Overlay config if the study run got invalidated by JATOS closing
-	 * the batch channel.
-	 */
-	jatos.studyRunInvalidOverlayConfig = {
-		text: "This study run is invalid.",
-		showImg: false
-	};
-	/**
 	 * All batch/group session actions currently waiting for an response.
 	 * Maps sessionActionId -> timeout object
 	 */
@@ -384,7 +376,7 @@ var jatos = {};
 		} else {
 			var errMsg = [msg.status, msg.statusText, msg.error]
 				.filter(function (s) { return s; }).join(", ");
-			deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg);
+			deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg, msg.status, msg.statusText, msg.error);
 		}
 
 		// Handle httpLoop's deferred (are all requests done?)
@@ -798,7 +790,7 @@ var jatos = {};
 				clearInterval(batchChannelClosedCheckTimer);
 				studyRunInvalid = true;
 				console.info("Batch channel closed by JATOS server");
-				jatos.showOverlay(jatos.studyRunInvalidOverlayConfig);
+				jatos.showOverlay({ text: "This study run is invalid.", showImg: false });
 				break;
 			case "ERROR":
 				console.error(batchMsg.errorMsg);
@@ -1132,11 +1124,11 @@ var jatos = {};
 			callMany(errorMsg, onError, console.warn);
 			return rejectedPromise(errorMsg);
 		}
-		var httpMethod = append ? "POST" : "PUT";
+		let httpMethod = append ? "POST" : "PUT";
 		if (resultData === Object(resultData)) {
 			resultData = JSON.stringify(resultData);
 		}
-		var request = {
+		let request = {
 			url: getURL("resultData"),
 			data: resultData,
 			method: httpMethod,
@@ -1145,7 +1137,13 @@ var jatos = {};
 			retry: jatos.httpRetry,
 			retryWait: jatos.httpRetryWait
 		};
-		return sendToHttpLoop(request, onSuccess, onError).promise();
+		let deferred = sendToHttpLoop(request, onSuccess, onError)
+		deferred.fail(function (err, status) {
+			if (status == 413) {
+				jatos.showOverlay({ text: "Couldn't send result data: too large!", id: "result413", timeout: 8000, showImg: false });
+			}
+		});
+		return deferred.promise();
 	}
 
 	/**
@@ -1173,7 +1171,7 @@ var jatos = {};
 			return rejectedPromise(errorMsg);
 		}
 
-		var blob;
+		let blob;
 		if (obj instanceof Blob) {
 			blob = obj;
 		} else if (typeof obj === "string") {
@@ -1187,7 +1185,7 @@ var jatos = {};
 			return rejectedPromise(errorMsg);
 		}
 
-		var request = {
+		let request = {
 			url: getURL("files/" + encodeURI(filename)),
 			blob: blob,
 			filename: filename,
@@ -1196,7 +1194,13 @@ var jatos = {};
 			retry: jatos.httpRetry,
 			retryWait: jatos.httpRetryWait
 		};
-		return sendToHttpLoop(request, onSuccess, onError).promise();
+		let deferred = sendToHttpLoop(request, onSuccess, onError)
+		deferred.fail(function (err, status) {
+			if (status == 413) {
+				jatos.showOverlay({ text: "Couldn't send result file: too large!", id: "result413", timeout: 8000, showImg: false });
+			}
+		});
+		return deferred.promise();
 	};
 
 	/**
@@ -2874,6 +2878,8 @@ var jatos = {};
 	 * @param {string optional} config.style - Additional CSS styles
 	 * @param {string optional} config.id - Element ID
 	 * @param {string optional} config.className - Additional class name
+	 * @param {string optional} config.timeout - If set the overlay will be removed after
+	 *                                           the given number of milliseconds
 	 * @return {object} - The created element
 	 */
 	jatos.showOverlay = function (config) {
@@ -2933,6 +2939,11 @@ var jatos = {};
 		// Add data attribute 'keep'
 		const keep = (config && typeof config.keep == "boolean") ? config.keep : false;
 		div.setAttribute('data-keep', keep);
+
+		// Set timeout
+		if (config && typeof config.timeout == "number") {
+			setTimeout(() => div.remove(), config.timeout);
+		}
 
 		document.body.appendChild(div);
 		return div;
