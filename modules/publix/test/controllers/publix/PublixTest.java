@@ -248,7 +248,7 @@ public class PublixTest {
         commonStatic.when(Common::getResultDataMaxSize).thenReturn(1L);
 
         Result r = publix.submitOrAppendResultData(mockTextRequest("foo"), sr, component, false);
-        assertEquals(BAD_REQUEST, r.status());
+        assertEquals(REQUEST_ENTITY_TOO_LARGE, r.status());
         verify(componentResultDao, never()).replaceData(anyLong(), anyString());
     }
 
@@ -332,7 +332,7 @@ public class PublixTest {
             when(ioUtils.getResultUploadDirSize(sr.getId())).thenReturn(0L);
 
             Result result = publix.uploadResultFile(req, sr, component, "big.bin");
-            assertEquals(BAD_REQUEST, result.status());
+            assertEquals(REQUEST_ENTITY_TOO_LARGE, result.status());
             verify(tmp, never()).moveFileTo(any(Path.class), anyBoolean());
         }
     }
@@ -361,7 +361,7 @@ public class PublixTest {
             when(ioUtils.getResultUploadDirSize(sr.getId())).thenReturn(100L); // exceed limit
 
             Result result = publix.uploadResultFile(req, sr, component, "ok.txt");
-            assertEquals(BAD_REQUEST, result.status());
+            assertEquals(REQUEST_ENTITY_TOO_LARGE, result.status());
         }
     }
 
