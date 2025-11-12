@@ -51,7 +51,7 @@ public class BatchChannelRegistryTest {
     @Test
     public void initiallyEmpty() {
         assertTrue(registry.isEmpty());
-        assertFalse(registry.containsStudyResult(1L));
+        assertFalse(registry.containsChannel(1L));
     }
 
     @Test
@@ -65,7 +65,7 @@ public class BatchChannelRegistryTest {
         assertEquals(a1, ch.get());
 
         assertFalse(registry.isEmpty());
-        assertTrue(registry.containsStudyResult(1L));
+        assertTrue(registry.containsChannel(1L));
     }
 
     @Test
@@ -77,9 +77,9 @@ public class BatchChannelRegistryTest {
 
         // After removal the registry is empty again and lookups fail
         assertTrue(registry.isEmpty());
-        assertFalse(registry.containsStudyResult(1L));
+        assertFalse(registry.containsChannel(1L));
         assertTrue(registry.getChannel(1L).isEmpty());
-        assertFalse(registry.containsStudyResult(1L));
+        assertFalse(registry.containsChannel(1L));
 
         // Removing non-existing returns empty Option
         assertTrue(registry.unregister(1L).isEmpty());

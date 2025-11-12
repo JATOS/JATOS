@@ -24,8 +24,7 @@ class BatchChannelRegistry {
     */
   private val channelMap = new DualHashBidiMap[Long, ActorRef]
 
-  def register(studyResultId: Long, channel: ActorRef): ActorRef = channelMap.put(studyResultId,
-    channel)
+  def register(studyResultId: Long, channel: ActorRef): ActorRef = channelMap.put(studyResultId, channel)
 
   def unregister(studyResultId: Long): Option[ActorRef] = Option(channelMap.remove(studyResultId))
 
@@ -33,7 +32,7 @@ class BatchChannelRegistry {
 
   def isEmpty: Boolean = channelMap.isEmpty
 
-  def containsStudyResult(studyResultId: Long): Boolean = channelMap.containsKey(studyResultId)
+  def containsChannel(studyResultId: Long): Boolean = channelMap.containsKey(studyResultId)
 
   def getAllStudyResultIds: mutable.Set[Long] = channelMap.keySet.asScala
 

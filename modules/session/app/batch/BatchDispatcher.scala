@@ -115,8 +115,7 @@ class BatchDispatcher @Inject()(actorSystem: ActorSystem,
   def unregisterChannel(studyResultId: Long): Unit = {
     logger.debug(s".unregisterChannel: batchId $batchId, studyResultId $studyResultId")
 
-    val channelOption = channelRegistry.getChannel(studyResultId)
-    if (channelOption.isDefined) {
+    if (channelRegistry.containsChannel(studyResultId)) {
       channelRegistry.unregister(studyResultId)
     }  else {
       logger.debug(s".unregisterChannel: study result $studyResultId is not handled by the BatchDispatcher $batchId.")
