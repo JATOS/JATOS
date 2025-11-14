@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 /**
- * Controller that cares for import/export of components, studies and their result data.
+ * Controller that cares for import/export of components and studies.
  *
  * @author Kristian Lange
  */
