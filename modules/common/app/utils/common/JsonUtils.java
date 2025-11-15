@@ -232,6 +232,7 @@ public class JsonUtils {
         if (sr.getConfirmationCode() != null) {
             metadata.put("confirmationCode", sr.getConfirmationCode());
         }
+        metadata.put("isQuotaReached", sr.isQuotaReached());
         return Json.mapper().valueToTree(metadata);
     }
 
@@ -258,6 +259,7 @@ public class JsonUtils {
         node.put("groupId", getGroupResultId(sr));
         node.put("componentResultCount", componentResultCount != null ? componentResultCount : 0);
         node.put("hasResultFiles", hasResultUploadFiles(sr));
+        node.put("isQuotaReached", sr.isQuotaReached());
 
         return node;
     }
@@ -301,6 +303,7 @@ public class JsonUtils {
         if (cr.getDataSize() == 0) dataMap.put("filename", "data.txt");
         metadata.put("data", dataMap);
         metadata.put("files", getResultUploadFiles(cr));
+        metadata.put("isQuotaReached", cr.isQuotaReached());
         return Json.mapper().valueToTree(metadata);
     }
 
@@ -327,6 +330,7 @@ public class JsonUtils {
         boolean isDataShortShortened = cr.getDataSize() > ComponentResult.DATA_SHORT_MAX_CHARS;
         node.put("isDataShortShortened", isDataShortShortened);
         node.put("dataSizeHumanReadable", Helpers.humanReadableByteCount(cr.getDataSize()));
+        node.put("isQuotaReached", cr.isQuotaReached());
 
         // Add uploaded result files
         node.set("files", asJsonNode(getResultUploadFiles(cr)));

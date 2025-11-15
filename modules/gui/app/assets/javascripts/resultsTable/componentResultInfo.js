@@ -45,6 +45,7 @@ class ComponentResultInfo {
                 <table class="table table-borderless m-0">
                     <thead>
                         <tr>
+                            <th></th>
                             <th data-bs-tooltip="The ID of the component result">Comp. Result ID</th>
                             <th data-bs-tooltip="The ID of the component">Comp. ID</th>
                             <th data-bs-tooltip="The title of the component">Component Title</th>
@@ -61,12 +62,15 @@ class ComponentResultInfo {
         `);
 
         if (componentResults.length == 0) {
-            const row = $('<tbody><tr class="info"><td colspan="9">empty</td></tr></tbody>');
+            const row = $('<tbody><tr class="info"><td colspan="10">empty</td></tr></tbody>');
             childRow.find("thead").after(row);
             return childRow;
         }
 
         componentResults.forEach(function(componentResult) {
+            const isQuotaReached = componentResult.isQuotaReached
+                    ? `<i class="bi-exclamation-triangle-fill text-warning no-info-icon" data-bs-tooltip="The quota (max result data / file size) was reached at least once during the component run. ${Helpers.getCurrentQuotasAsString()}"></i>`
+                    : '';
             const duration = componentResult.duration ? componentResult.duration : '<span class="text-body text-opacity-50">not yet</span>';
             const message = componentResult.message ? componentResult.message : '<span class="text-body text-opacity-50">none</span>';
             const resultFiles = componentResult.files.map(function(fileObj) {
@@ -93,7 +97,8 @@ class ComponentResultInfo {
             const row = $(`
                 <tbody id="componentResultInfo-${componentResult.id}">
                     <tr>
-                        <td class="ps-4">${componentResult.id}</td>
+                        <td class="ps-4">${isQuotaReached}</td>
+                        <td>${componentResult.id}</td>
                         <td>${componentResult.componentId}</td>
                         <td>${componentResult.componentTitle}</td>
                         <td>${Helpers.getLocalTimeDataTables(componentResult.startDate)}</td>
@@ -104,7 +109,7 @@ class ComponentResultInfo {
                         <td>${message}</td>
                     </tr>
                     <tr>
-                        <td class="p-0" colspan="9">${resultDataDiv}</td>
+                        <td class="p-0" colspan="10">${resultDataDiv}</td>
                     </tr>
                 </tbody>
             `);

@@ -27,7 +27,9 @@ export {
     triggerButtonByEnter,
     getDataFromDataTableRow,
     decodeHtmlEntities,
-    encodeHtmlEntities
+    encodeHtmlEntities,
+    humanReadableByteCount,
+    getCurrentQuotasAsString
 };
 
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
@@ -440,4 +442,32 @@ function encodeHtmlEntities(str) {
     const textArea = document.createElement('textarea');
     textArea.textContent = str;
     return textArea.innerHTML;
+}
+
+/**
+ * Format bytes as human-readable text.
+ * From https://stackoverflow.com/a/18650828/1278769
+ *
+ * @param {number} bytes - Number of bytes.
+ * @param {number} decimals - Number of decimal places to display.
+ * @returns Formatted string.
+ */
+function humanReadableByteCount(bytes, decimals = 2) {
+    if (!+bytes) return '0 Bytes'
+    const k = 1000
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
+/**
+ * Returns a string with the current quotas as set in the JATOS configuration.
+ */
+function getCurrentQuotasAsString() {
+    return `Current quotas are:
+            max. result data size: ${humanReadableByteCount(window.common.resultDataMaxSize)},
+            max. result file size: ${humanReadableByteCount(window.common.resultUploadsMaxFileSize)},
+            max. size of all result files per study run: ${humanReadableByteCount(window.common.resultUploadsLimitPerStudyRun)}.
+            `;
 }

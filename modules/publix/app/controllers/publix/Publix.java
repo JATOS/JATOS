@@ -166,6 +166,8 @@ public abstract class Publix extends Controller implements IPublix {
                 : Helpers.getStringSize(postedResultData);
         if (newDataSize > Common.getResultDataMaxSize()) {
             String maxSize = Helpers.humanReadableByteCount(Common.getResultDataMaxSize());
+            componentResultDao.setQuotaReached(componentResult.get().getId());
+            studyResultDao.setQuotaReached(studyResult.getId());
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
                     + "componentId " + component.getId() + " - " + "Result data size exceeds allowed " + maxSize);
             return status(413, "Result data size exceeds allowed " + maxSize + ". Consider using result files instead.");
@@ -211,11 +213,14 @@ public abstract class Publix extends Controller implements IPublix {
         TemporaryFile tmpFile = filePart.getRef();
         try {
             if (filePart.getFileSize() > Common.getResultUploadsMaxFileSize()) {
+                componentResultDao.setQuotaReached(componentResult.get().getId());
+                studyResultDao.setQuotaReached(studyResult.getId());
                 LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File size too large"));
                 return status(413, "File size too large");
             }
             if (ioUtils.getResultUploadDirSize(studyResult.getId()) + filePart.getFileSize()
                     > Common.getResultUploadsLimitPerStudyRun()) {
+                studyResultDao.setQuotaReached(studyResult.getId());
                 LOGGER.info(getLogForUploadResultFile(studyResult, component, filename,
                         "Reached max file size limit per study run"));
                 return status(413, "Reached max file size limit per study run");

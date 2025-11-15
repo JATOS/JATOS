@@ -150,6 +150,12 @@ public class StudyResult {
      */
     private String urlQueryParameters;
 
+    /**
+     * Flag that indicates whether the study run reached its quota for the max result file size per study run at
+     * least once.
+     */
+    private boolean quotaReached = false;
+
     public StudyResult() {
     }
 
@@ -338,6 +344,14 @@ public class StudyResult {
 
     public void setUrlQueryParameters(String urlQueryParameters) {
         this.urlQueryParameters = urlQueryParameters;
+    }
+
+    public void setQuotaReached(boolean quotaReached) {
+        this.quotaReached = quotaReached;
+    }
+
+    public boolean isQuotaReached() {
+        return quotaReached;
     }
 
     @Override

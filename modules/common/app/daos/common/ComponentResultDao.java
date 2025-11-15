@@ -322,4 +322,10 @@ public class ComponentResultDao extends AbstractDao {
         return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
     }
 
+    public void setQuotaReached(Long componentResultId) {
+        jpa.em().createQuery("UPDATE ComponentResult cr SET cr.quotaReached = true WHERE cr.id = :id")
+                .setParameter("id", componentResultId)
+                .executeUpdate();
+    }
+
 }

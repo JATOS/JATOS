@@ -382,4 +382,10 @@ public class StudyResultDao extends AbstractDao {
                 );
     }
 
+    public void setQuotaReached(Long studyResultId) {
+        jpa.em().createQuery("UPDATE StudyResult sr SET sr.quotaReached = true WHERE sr.id = :id")
+                .setParameter("id", studyResultId)
+                .executeUpdate();
+    }
+
 }

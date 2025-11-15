@@ -103,6 +103,11 @@ public class ComponentResult {
     @Column(insertable = false, updatable = false)
     private Integer dataSize;
 
+    /**
+     * Flag that indicates whether the component run reached its quota (max result data/file size) at least once.
+     */
+    private boolean quotaReached = false;
+
     public ComponentResult() {
     }
 
@@ -193,6 +198,14 @@ public class ComponentResult {
 
     public StudyResult getStudyResult() {
         return this.studyResult;
+    }
+
+    public void setQuotaReached(boolean quotaReached) {
+        this.quotaReached = quotaReached;
+    }
+
+    public boolean isQuotaReached() {
+        return quotaReached;
     }
 
     @Override
