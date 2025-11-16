@@ -1,5 +1,5 @@
 name := "jatos-publix"
-version := "3.9.7"
+version := "3.9.8"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
@@ -22,3 +22,5 @@ sources in(Compile, doc) := Seq.empty
 
 // No source docs in distribution 
 publishArtifact in(Compile, packageDoc) := false
+
+dockerBaseImage := "eclipse-temurin:8-jre"

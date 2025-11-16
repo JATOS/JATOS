@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.9.7"
+version := "3.9.8"
 organization := "org.jatos"
 scalaVersion := "2.13.8"
 maintainer := "lange.kristian@gmail.com"
@@ -46,6 +46,8 @@ dockerCommands := Seq(
   Cmd("ENV", "JATOS_TMP_PATH=/opt/jatos_data/tmp"),
   ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
+
+dockerBaseImage := "eclipse-temurin:8-jre"
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
 
