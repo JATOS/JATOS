@@ -113,15 +113,20 @@ function update() {
 
 function checkJava() {
     # Check local Java
-    if [[ -n "$dir/jre/linux_x64_jre" ]] && [[ -e "$dir/jre/linux_x64_jre/bin/java" ]]; then
+    if [[ -d "$dir/jre/linux_x64_jre" ]] && [[ -e "$dir/jre/linux_x64_jre/bin/java" ]]; then
         echo "JATOS uses local Java"
         chmod u+x "$dir/jre/linux_x64_jre/bin/java" # Packing might remove execution permission
         export JAVA_HOME="$dir/jre/linux_x64_jre"
         return
-    elif [[ -n "$dir/jre/mac_x64_jre" ]] && [[ -e "$dir/jre/mac_x64_jre/bin/java" ]]; then
+    elif [[ -d "$dir/jre/mac_x64_jre" ]] && [[ -e "$dir/jre/mac_x64_jre/bin/java" ]]; then
         echo "JATOS uses local Java"
         chmod u+x "$dir/jre/mac_x64_jre/bin/java" # Packing might remove execution permission
         export JAVA_HOME="$dir/jre/mac_x64_jre"
+        return
+    elif [[ -d "$dir/jre/mac_aarch64_jre" ]] && [[ -e "$dir/jre/mac_aarch64_jre/bin/java" ]]; then
+        echo "JATOS uses local Java"
+        chmod u+x "$dir/jre/mac_aarch64_jre/bin/java" # Packing might remove execution permission
+        export JAVA_HOME="$dir/jre/mac_aarch64_jre"
         return
     fi
 }
