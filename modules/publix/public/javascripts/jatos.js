@@ -2979,7 +2979,7 @@ var jatos = {};
 		jatos.showOverlay({
 			id: "idOverlay",
 			text: text,
-			style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;",
+			style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;line-height:normal;letter-spacing:normal;word-spacing:normal;text-align:left;",
 			keep: true,
 			showImg: false
 		});
