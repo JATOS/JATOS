@@ -1384,6 +1384,10 @@ var jatos = {};
 			callMany("Can start only one component at the same time", onError, console.warn);
 			return;
 		}
+		if (endingStudy) {
+			callMany("Can't start component if study already ended.", onError, console.warn);
+			return;
+		}
 		// If this is a single component run initiated by the JATOS GUI, end the run.
 		const isSingleComponentRun = jatos.jatosRun === "RUN_COMPONENT_FINISHED";
 		if (isSingleComponentRun) {
@@ -2443,7 +2447,7 @@ var jatos = {};
 	};
 
 	/**
-	 * DEPRECATED - Kept for backward compatibilty. Use jatos.abortStudyWithoutRedirect instead.
+	 * DEPRECATED - Kept for backward compatibility. Use jatos.abortStudyWithoutRedirect instead.
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
 		return jatos.abortStudyWithoutRedirect(message, onSuccess, onError);
