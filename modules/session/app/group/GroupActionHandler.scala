@@ -79,7 +79,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
         }
       } catch {
         case e: Exception =>
-          logger.warn(s".handlePatch: groupResultId $groupResultId, json ${Json.stringify(json)}," +
+          logger.debug(s".handlePatch: groupResultId $groupResultId, json ${Json.stringify(json)}," +
             s" ${e.getClass.getName}: ${e.getMessage}")
           List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), TellWhom.SenderOnly))
       }

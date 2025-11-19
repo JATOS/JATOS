@@ -75,7 +75,7 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
 
       } catch {
         case e: Exception =>
-          logger.warn(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
+          logger.debug(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
             s"${e.getClass.getName}: ${e.getMessage}")
           List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, TellWhom.SenderOnly))
       }
