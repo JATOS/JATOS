@@ -91,6 +91,7 @@ function clearForm(selector) {
  * Disables elements of a HTML form element, e.g. input, textarea.
  *
  * @param {string} selector - Selector of the form element
+ * @param {boolean} [value=true] - If true, the elements are disabled. If false, they are enabled.
  */
 function disableForm(selector, value = true) {
     $(selector).find("input, textarea, .slider, .ace_editor").not(":input[type=reset]").attr("disabled", value);
@@ -103,13 +104,13 @@ function disableForm(selector, value = true) {
  */
 function setButtonWidthToMax(selector) {
     let maxWidth = 0;
-    $(selector).each(function(index) {
+    $(selector).each(function() {
         const width = $(this).width();
         if (width > maxWidth) {
             maxWidth = width;
         }
     });
-    $(selector).each(function(index) {
+    $(selector).each(function() {
         $(this).width(maxWidth);
     });
 }
@@ -193,7 +194,7 @@ function generateOrcidLink(orcid) {
  * @param {string} authMethod - Authentication method of the user
  */
 function generateFullUserString(name, username, authMethod) {
-    if (authMethod == "ORCID") {
+    if (authMethod === "ORCID") {
         return `${name} (${generateOrcidLink(username)})`;
     } else {
         return `${name} (${username})`;
@@ -206,7 +207,7 @@ function generateFullUserString(name, username, authMethod) {
  * @param {string[]} members - Array of usernames
  */
 function generateMembersHtml(members) {
-    if (members.length == 1) {
+    if (members.length === 1) {
         const m = members[0];
         return `${generateFullUserString(m.name, m.username, m.authMethod)}`;
     } else if (members.length < 4 ) {
@@ -314,12 +315,12 @@ function getTheme() {
  * the tooltip content. We don't use the default Bootstrap attributes, data-bs-toggle="tooltip" and data-bs-title,
  * because 1) we want to avoid clashes with other features, e.g. popovers using the same attribute, 2) we want to have
  * the possibility to not activate them at all on devices with touch screens, and 3) DataTables sometimes (e.g. with
- * Dropdowns) activates them automatically - something we don't want all the time. Most importantly this function adds
+ * Dropdowns) activates them automatically - something we don't want all the time. Most importantly, this function adds
  * the 'data-bs-title' with the content of 'data-bs-tooltip'. Then it adds several tooltips config attributes (if not
  * set already): 'data-bs-delay', 'data-bs-trigger' ('hover' only - no 'focus'), and 'data-bs-container'.
  *
- * @param {optional string|jQuery element} parent - Either a selector string or an jQuery element specifying a parent
- *          element containing the elements with tooltips to be activated. If not set all tooltips in document will be
+ * @param {string|Object} [parent] - Optional. Either a jQuery selector string or an jQuery element specifying a parent
+ *          element containing the elements with tooltips to be activated. If not set, all tooltips in a document will be
  *          activated.
  */
 function activateTooltips(parent) {
@@ -360,7 +361,7 @@ function activateTooltips(parent) {
 function activateTooltipsOnDataTablesDropdowns(dataTable) {
     if (!isDesktopDevice) return;
 
-    dataTable.on('buttons-action', function (e, buttonApi, dataTable, node, config) {
+    dataTable.on('buttons-action', function (e, buttonApi, dataTable, node) {
         if ($(node).hasClass("dropdown-toggle")) {
             activateTooltips($(node).siblings('.dt-button-collection'));
         }
@@ -370,13 +371,13 @@ function activateTooltipsOnDataTablesDropdowns(dataTable) {
 /**
  * Activates Bootstrap 5 popovers.
  *
- * @param {optional string} parent - A selector string specifying a parent element containing the elements with the
+ * @param {string} [parent] - A selector string specifying a parent element containing the elements with the
  *          popovers to be activated. If not set all tooltips in document will be activated.
  */
 function activatePopovers(parent) {
     const selector = parent ? `${parent} [data-bs-toggle="popover"]` : '[data-bs-toggle="popover"]';
     const popoverTriggerList = document.querySelectorAll(selector);
-    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+    [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
 }
 
 /**
@@ -384,6 +385,7 @@ function activatePopovers(parent) {
  *
  * @param {string} modalSelector - A selector specifying the Modal element
  * @param {object[]} subtitleList - Array of objects. Each object is of {subtitleName: subtitleValue}.
+ * @param {boolean} [newLine=false] - If true, the subtitles will be separated by a new line, otherwise by a comma
  */
 function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
     const joinStr = newLine ? "<br>" : ", ";
@@ -404,7 +406,7 @@ function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
  */
 function triggerButtonByEnter(selector, buttonSelector) {
     $(selector).on("keydown", function(e) {
-        if (e.key == "Enter") {
+        if (e.key === "Enter") {
             e.preventDefault();
             $(buttonSelector).trigger("click");
         }
