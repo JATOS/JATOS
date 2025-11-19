@@ -79,7 +79,7 @@ public class AuthService {
             case DB:
                 return authenticateViaDb(user.getUsername(), password);
             default:
-                throw new UnsupportedOperationException("Unsupported auth method " + user.getAuthMethod().name());
+                throw new IllegalArgumentException("Unsupported auth method " + user.getAuthMethod().name());
         }
     }
 

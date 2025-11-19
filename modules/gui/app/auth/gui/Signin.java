@@ -80,6 +80,8 @@ public class Signin extends Controller {
             authenticated = authService.authenticate(user, password);
         } catch (NamingException e) {
             return returnInternalServerErrorDueToLdapProblems(e);
+        } catch (IllegalArgumentException e) {
+            return returnUnauthorizedDueToWrongAuthMethod(normalizedUsername, user.getAuthMethod());
         }
 
         if (!authenticated) {
@@ -114,6 +116,11 @@ public class Signin extends Controller {
     private Result returnInternalServerErrorDueToLdapProblems(NamingException e) {
         LOGGER.warn("LDAP problems - " + e.toString());
         return internalServerError(MessagesStrings.LDAP_PROBLEMS);
+    }
+
+    private Result returnUnauthorizedDueToWrongAuthMethod(String normalizedUsername, User.AuthMethod authMethod) {
+        LOGGER.warn("Wrong auth method - user " + normalizedUsername + " uses auth method " + authMethod);
+        return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
     }
 
     /**
