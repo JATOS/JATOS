@@ -32,7 +32,7 @@ export {
     getCurrentQuotasAsString
 };
 
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+const isDesktopDevice = matchMedia("(pointer: fine)").matches && Math.min(screen.width, screen.height) >= 768;
 
 const browsersLocale = (navigator.languages && navigator.languages.length) ? navigator.languages[0] : navigator.language;
 
@@ -323,7 +323,7 @@ function getTheme() {
  *          activated.
  */
 function activateTooltips(parent) {
-    if (isTouchDevice) return;
+    if (!isDesktopDevice) return;
 
     let $elements;
     if (!parent) {
@@ -345,8 +345,10 @@ function activateTooltips(parent) {
         if (!$(this).is('[data-bs-delay]')) $(this).attr('data-bs-delay', '{"show":1500, "hide":150}');
         if (!$(this).is('[data-bs-trigger]')) $(this).attr('data-bs-trigger', 'hover');
         if (!$(this).is('[data-bs-container]')) $(this).attr('data-bs-container', 'body');
+        if (!$(this).is('[data-bs-sanitize]')) $(this).attr('data-bs-sanitize', 'false');
 
         new bootstrap.Tooltip(this);
+        console.log(bootstrap.Tooltip.getInstance(this));
     });
 }
 
@@ -356,7 +358,7 @@ function activateTooltips(parent) {
  * @param {object} dataTable - DataTables object
  */
 function activateTooltipsOnDataTablesDropdowns(dataTable) {
-    if (isTouchDevice) return;
+    if (!isDesktopDevice) return;
 
     dataTable.on('buttons-action', function (e, buttonApi, dataTable, node, config) {
         if ($(node).hasClass("dropdown-toggle")) {
