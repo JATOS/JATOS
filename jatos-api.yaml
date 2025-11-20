@@ -166,7 +166,7 @@ paths:
                     type: boolean
                     description: Indicates if the study assets directory already existed before the upload.
                   newDirName:
-                    type: String
+                    type: string
                     description: The name assigned to the study's assets directory when a new study is created, but a directory with its default name already exists.
                 required:
                   - uuid
