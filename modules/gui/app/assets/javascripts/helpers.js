@@ -349,7 +349,6 @@ function activateTooltips(parent) {
         if (!$(this).is('[data-bs-sanitize]')) $(this).attr('data-bs-sanitize', 'false');
 
         new bootstrap.Tooltip(this);
-        console.log(bootstrap.Tooltip.getInstance(this));
     });
 }
 
