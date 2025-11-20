@@ -412,16 +412,6 @@ var jatos = {};
 		jatos.componentPos = parseInt(jatos.componentPos, 10);
 	}
 
-	function getIdsFromCookie(idArray) {
-		var idMap = {};
-		idArray.forEach(function (entry) {
-			var keyValuePair = entry.split("=");
-			var value = decodeURIComponent(keyValuePair[1]);
-			idMap[keyValuePair[0]] = value;
-		});
-		return idMap;
-	}
-
 	/**
 	 * Gets the study's session data, the study's properties, and the
 	 * component's properties from the JATOS server and stores them in
