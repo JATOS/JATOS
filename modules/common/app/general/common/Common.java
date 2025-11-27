@@ -124,6 +124,7 @@ public class Common {
     private static boolean groupsCleaningAllowed;
     private static int groupsCleaningInterval;
     private static int groupsCleaningMemberIdleAfter;
+    private static String openAIApiKey;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -246,6 +247,7 @@ public class Common {
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
         groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
         groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
+        openAIApiKey = config.getString("jatos.openAI.apiKey");
     }
 
     /**
@@ -1009,5 +1011,12 @@ public class Common {
      */
     public static int getGroupsCleaningMemberIdleAfter() {
         return groupsCleaningMemberIdleAfter;
+    }
+
+    /**
+     * OpenAI API key
+     */
+    public static String getOpenAIApiKey() {
+        return openAIApiKey;
     }
 }

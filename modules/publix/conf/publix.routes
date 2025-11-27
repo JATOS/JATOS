@@ -5,6 +5,11 @@
 
 ### Publix ###
 
+# API
+POST  /publix/api/v1/openai/*path   controllers.OpenAIProxy.proxy(path)
+
+
+# Running studies
 + nocsp
 GET     /publix/:studyId/start                                      @controllers.publix.LegacyStudyRuns.transformToStudyLink(request: Request, studyId: Long, batchId: Long)
 
