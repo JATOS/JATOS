@@ -6,6 +6,7 @@ import exceptions.publix.InternalServerErrorPublixException;
 import general.common.Common;
 import models.common.*;
 import models.common.workers.Worker;
+import play.mvc.Http;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
@@ -34,18 +35,17 @@ public class IdCookieService {
         this.idCookieAccessor = idCookieAccessor;
     }
 
-    public boolean hasIdCookie(Long studyResultId) throws InternalServerErrorPublixException {
-        return getIdCookieCollection().findWithStudyResultId(studyResultId) != null;
+    public boolean hasIdCookie(Http.RequestHeader requestHeader, Long studyResultId) {
+        return getIdCookieCollection(requestHeader).findWithStudyResultId(studyResultId) != null;
     }
 
     /**
      * Returns the IdCookieModel that corresponds to the given study result ID. If
      * the cookie doesn't exist it throws a BadRequestPublixException.
      */
-    public IdCookieModel getIdCookie(Long studyResultId)
-            throws BadRequestPublixException,
-            InternalServerErrorPublixException {
-        IdCookieModel idCookie = getIdCookieCollection()
+    public IdCookieModel getIdCookie(Http.RequestHeader requestHeader, Long studyResultId)
+            throws BadRequestPublixException {
+        IdCookieModel idCookie = getIdCookieCollection(requestHeader)
                 .findWithStudyResultId(studyResultId);
         if (idCookie == null) {
             throw new BadRequestPublixException(PublixErrorMessages
@@ -57,23 +57,26 @@ public class IdCookieService {
     /**
      * Returns the whole IdCookieCollection
      */
-    IdCookieCollection getIdCookieCollection()
-            throws InternalServerErrorPublixException {
+    public IdCookieCollection getIdCookieCollection(Http.RequestHeader requestHeader) {
         try {
-            return idCookieAccessor.extract();
+            return idCookieAccessor.extract(requestHeader);
         } catch (IdCookieAlreadyExistsException e) {
             // Should never happen or something is seriously wrong
-            throw new InternalServerErrorPublixException(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
+    }
+
+    public Http.Cookie[] getIdCookiesAsPlayCookies(Http.RequestHeader requestHeader) {
+        IdCookieCollection idCookieCollection = getIdCookieCollection(requestHeader);
+        return idCookieCollection.getAll().stream().map(idCookieAccessor::generatePlayCookie).toArray(Http.Cookie[]::new);
     }
 
     /**
      * Returns true if the study assets of at least one ID cookie is equal to
      * the given study assets. Otherwise, returns false.
      */
-    public boolean oneIdCookieHasThisStudyAssets(String studyAssets)
-            throws InternalServerErrorPublixException {
-        for (IdCookieModel idCookie : getIdCookieCollection().getAll()) {
+    public boolean oneIdCookieHasThisStudyAssets(Http.RequestHeader requestHeader, String studyAssets) {
+        for (IdCookieModel idCookie : getIdCookieCollection(requestHeader).getAll()) {
             if (idCookie.getStudyAssets().equals(studyAssets)) {
                 return true;
             }
@@ -85,25 +88,25 @@ public class IdCookieService {
      * Generates an ID cookie from the given parameters and sets it in the
      * response object.
      */
-    public void writeIdCookie(StudyResult studyResult) throws InternalServerErrorPublixException {
-        writeIdCookie(studyResult, null, null);
+    public void writeIdCookie(Http.RequestHeader requestHeader, StudyResult studyResult) throws InternalServerErrorPublixException {
+        writeIdCookie(requestHeader, studyResult, null, null);
     }
 
     /**
      * Generates an ID cookie from the given parameters and sets it in the
      * response object.
      */
-    public void writeIdCookie(StudyResult studyResult, ComponentResult componentResult)
+    public void writeIdCookie(Http.RequestHeader requestHeader, StudyResult studyResult, ComponentResult componentResult)
             throws InternalServerErrorPublixException {
-        writeIdCookie(studyResult, componentResult, null);
+        writeIdCookie(requestHeader, studyResult, componentResult, null);
     }
 
     /**
      * Generates an ID cookie from the given parameters and sets it in the
      * response object.
      */
-    public void writeIdCookie(StudyResult studyResult, JatosRun jatosRun) throws InternalServerErrorPublixException {
-        writeIdCookie(studyResult, null, jatosRun);
+    public void writeIdCookie(Http.RequestHeader requestHeader, StudyResult studyResult, JatosRun jatosRun) throws InternalServerErrorPublixException {
+        writeIdCookie(requestHeader, studyResult, null, jatosRun);
     }
 
     /**
@@ -114,9 +117,9 @@ public class IdCookieService {
      * InternalServerErrorPublixException (should never happen). The deletion of
      * the oldest cookie must have happened beforehand.
      */
-    public void writeIdCookie(StudyResult studyResult, ComponentResult componentResult, JatosRun jatosRun)
+    public void writeIdCookie(Http.RequestHeader requestHeader, StudyResult studyResult, ComponentResult componentResult, JatosRun jatosRun)
             throws InternalServerErrorPublixException {
-        IdCookieCollection idCookieCollection = getIdCookieCollection();
+        IdCookieCollection idCookieCollection = getIdCookieCollection(requestHeader);
         try {
             String newIdCookieName;
 
@@ -130,7 +133,7 @@ public class IdCookieService {
 
             IdCookieModel newIdCookie = buildIdCookie(newIdCookieName, studyResult, componentResult, jatosRun);
 
-            idCookieAccessor.write(newIdCookie);
+            idCookieAccessor.write(requestHeader, newIdCookie);
         } catch (IdCookieCollectionFullException | IdCookieAlreadyExistsException e) {
             // Should never happen since we check in front
             throw new InternalServerErrorPublixException(e.getMessage());
@@ -189,10 +192,10 @@ public class IdCookieService {
      * Discards the ID cookie if the given study result ID is equal to the one
      * in the cookie.
      */
-    public void discardIdCookie(Long studyResultId)
+    public void discardIdCookie(Http.RequestHeader requestHeader, Long studyResultId)
             throws InternalServerErrorPublixException {
         try {
-            idCookieAccessor.discard(studyResultId);
+            idCookieAccessor.discard(requestHeader, studyResultId);
         } catch (IdCookieAlreadyExistsException e) {
             throw new InternalServerErrorPublixException(e.getMessage());
         }
@@ -202,10 +205,10 @@ public class IdCookieService {
      * Returns true if the max number of ID cookies has been reached and false
      * otherwise.
      */
-    public boolean maxIdCookiesReached()
+    public boolean maxIdCookiesReached(Http.RequestHeader requestHeader)
             throws InternalServerErrorPublixException {
         try {
-            return idCookieAccessor.extract().isFull();
+            return idCookieAccessor.extract(requestHeader).isFull();
         } catch (IdCookieAlreadyExistsException e) {
             throw new InternalServerErrorPublixException(e.getMessage());
         }
@@ -216,9 +219,8 @@ public class IdCookieService {
      * and returns the oldest one. Returns null if the IdCookieCollection is
      * empty.
      */
-    public IdCookieModel getOldestIdCookie()
-            throws InternalServerErrorPublixException {
-        IdCookieCollection idCookieCollection = getIdCookieCollection();
+    public IdCookieModel getOldestIdCookie(Http.RequestHeader requestHeader) {
+        IdCookieCollection idCookieCollection = getIdCookieCollection(requestHeader);
         long oldest = Long.MAX_VALUE;
         IdCookieModel oldestIdCookie = null;
         for (IdCookieModel idCookie : idCookieCollection.getAll()) {
@@ -236,9 +238,8 @@ public class IdCookieService {
      * and returns the study result ID of the oldest one. Returns null if the
      * IdCookieCollection is empty.
      */
-    public Long getStudyResultIdFromOldestIdCookie()
-            throws InternalServerErrorPublixException {
-        IdCookieModel oldest = getOldestIdCookie();
+    public Long getStudyResultIdFromOldestIdCookie(Http.RequestHeader requestHeader) {
+        IdCookieModel oldest = getOldestIdCookie(requestHeader);
         return (oldest != null) ? oldest.getStudyResultId() : null;
     }
 

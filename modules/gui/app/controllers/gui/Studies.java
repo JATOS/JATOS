@@ -5,6 +5,7 @@ import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.*;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
@@ -17,7 +18,6 @@ import models.gui.StudyProperties;
 import play.data.Form;
 import play.data.FormFactory;
 import play.data.validation.ValidationError;
-import play.db.jpa.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -39,7 +39,6 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Studies extends Controller {
@@ -96,12 +95,12 @@ public class Studies extends Controller {
     @SaveLastVisitedPageUrl
     public Result study(Http.Request request, Long studyId, int httpStatus) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checkStandardForStudy(request, studyId, study, signedinUser);
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
         int studyResultCount = studyResultDao.countByStudy(study);
         return status(httpStatus, views.html.gui.study.study
-                .render(request, signedinUser, breadcrumbs, study, studyResultCount));
+                .render(signedinUser, breadcrumbs, study, studyResultCount, request.asScala()));
     }
 
     @Transactional
@@ -116,10 +115,10 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result submitCreated() {
-        User signedinUser = authService.getSignedinUser();
+    public Result submitCreated(Http.Request request) {
+        User signedinUser = authService.getSignedinUser(request);
 
-        Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
+        Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
@@ -137,9 +136,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result properties(Long studyId) throws ForbiddenException, NotFoundException {
+    public Result properties(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         StudyProperties studyProperties = studyService.bindToProperties(study);
@@ -151,13 +150,13 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result submitEdited(Long studyId) throws ForbiddenException, NotFoundException {
+    public Result submitEdited(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
 
-        Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
+        Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
@@ -178,7 +177,7 @@ public class Studies extends Controller {
     @Auth
     public Result submitDescription(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
 
@@ -198,9 +197,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result toggleLock(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
+    public Result toggleLock(Http.Request request, Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         study.setLocked(!study.isLocked());
@@ -230,9 +229,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result cloneStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
+    public Result cloneStudy(Http.Request request, Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         Study clone = studyService.clone(study);
@@ -245,9 +244,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result memberUsers(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
+    public Result memberUsers(Http.Request request, Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         List<User> userList = userDao.findAll();
@@ -259,9 +258,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result toggleMemberUser(Long studyId, String username, boolean isMember) throws ForbiddenException, NotFoundException {
+    public Result toggleMemberUser(Http.Request request, Long studyId, String username, boolean isMember) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         String normalizedUsername = User.normalizeUsername(username);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         User userToChange = userService.retrieveUser(normalizedUsername);
@@ -275,9 +274,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result addAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
+    public Result addAllMemberUsers(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         if (!Common.isStudyMembersAllowedToAddAllUsers()) {
@@ -293,12 +292,12 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result removeAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
+    public Result removeAllMemberUsers(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
-        studyService.removeAllUserMembers(study);
+        studyService.removeAllUserMembers(request, study);
         return ok();
     }
 
@@ -307,10 +306,10 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result changeComponentOrder(Long studyId, Long componentId, String newPosition)
+    public Result changeComponentOrder(Http.Request request, Long studyId, Long componentId, String newPosition)
             throws JatosGuiException, ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Component component = componentDao.findById(componentId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
@@ -330,7 +329,7 @@ public class Studies extends Controller {
             throws JatosGuiException, NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
 
@@ -347,9 +346,9 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result tableDataByStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
+    public Result tableDataByStudy(Http.Request request, Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         List<Component> componentList = study.getComponentList();

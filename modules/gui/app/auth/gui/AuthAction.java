@@ -2,6 +2,7 @@ package auth.gui;
 
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthAction.AuthMethod.AuthResult;
+import general.gui.FlashScopeMessaging;
 import general.gui.RequestScopeMessaging;
 import models.common.User;
 import models.common.User.Role;
@@ -77,6 +78,8 @@ public class AuthAction extends Action<Auth> {
              */
             enum State {AUTHENTICATED, DENIED, WRONG_METHOD}
 
+            Http.Request request;
+
             State state;
 
             /**
@@ -89,26 +92,27 @@ public class AuthAction extends Action<Auth> {
              */
             Function<Result, Result> postHook = r -> r; // Default: do nothing
 
-            private AuthResult(State state) {
+            private AuthResult(Http.Request request, State state) {
+                this.request = request;
                 this.state = state;
             }
 
-            static AuthResult authenticated() {
-                return new AuthResult(State.AUTHENTICATED);
+            static AuthResult authenticated(Http.Request request) {
+                return new AuthResult(request, State.AUTHENTICATED);
             }
 
-            static AuthResult authenticated(Function<Result, Result> postHook) {
-                AuthResult ar =  new AuthResult(State.AUTHENTICATED);
+            static AuthResult authenticated(Http.Request request, Function<Result, Result> postHook) {
+                AuthResult ar =  new AuthResult(request, State.AUTHENTICATED);
                 ar.postHook = postHook;
                 return ar;
             }
 
-            static AuthResult wrongMethod() {
-                return new AuthResult(State.WRONG_METHOD);
+            static AuthResult wrongMethod(Http.Request request) {
+                return new AuthResult(request, State.WRONG_METHOD);
             }
 
-            static AuthResult denied(Result result) {
-                AuthResult ar = new AuthResult(State.DENIED);
+            static AuthResult denied(Http.Request request, Result result) {
+                AuthResult ar = new AuthResult(request, State.DENIED);
                 ar.result = result;
                 return ar;
             }
@@ -118,13 +122,14 @@ public class AuthAction extends Action<Auth> {
     private final List<AuthMethod> authMethods = new ArrayList<>();
 
     @Inject
-    AuthAction(AuthSessionCookie authSessionCookie, AuthApiToken apiTokenAuth) {
+    AuthAction(AuthSessionCookie authSessionCookie, AuthApiToken authApiToken) {
         authMethods.add(authSessionCookie);
-        authMethods.add(apiTokenAuth);
+        authMethods.add(authApiToken);
     }
 
     public CompletionStage<Result> call(Http.Request request) {
         User.Role necessaryRole = configuration.value();
+        request = RequestScopeMessaging.init(request);
 
         // Try to authenticate with each registered method
         for (AuthMethod authMethod : authMethods) {
@@ -132,7 +137,7 @@ public class AuthAction extends Action<Auth> {
             AuthResult authResult = authMethod.authenticate(request, necessaryRole);
             switch (authResult.state) {
                 case AUTHENTICATED:
-                    return delegate.call(request).thenApply(authResult.postHook); // Successful authentication
+                    return delegate.call(authResult.request).thenApply(authResult.postHook); // Successful authentication
                 case DENIED:
                     return CompletableFuture.completedFuture(authResult.result);
                 case WRONG_METHOD:
@@ -145,9 +150,9 @@ public class AuthAction extends Action<Auth> {
     }
 
     static CompletionStage<Result> denied(Http.Request request) {
-        if (Helpers.isHtmlRequest(request) && !Helpers.isAjax()) {
-            RequestScopeMessaging.error("Failed authentication");
-            return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin()));
+        if (Helpers.isHtmlRequest(request) && !Helpers.isAjax(request)) {
+            return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin())
+                    .flashing(FlashScopeMessaging.ERROR, "Failed authentication"));
         } else {
             return CompletableFuture.completedFuture(forbidden("Failed authentication"));
         }

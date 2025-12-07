@@ -10,6 +10,7 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import models.common.Study;
 import models.common.StudyResultStatus;
+import play.mvc.Http;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -127,10 +128,10 @@ public class AdminService {
      * Gets the last seen time of users that were active latest, except the signed in one. It is limited to 'limit'
      * latest users.
      */
-    public List<Map<String, String>> getLatestUsers(int limit) {
+    public List<Map<String, String>> getLatestUsers(Http.Request request, int limit) {
         List<Map<String, String>> lastSeenMapOrdered = userDao.findLastSeen(limit).stream()
                 .filter(u -> u.getLastSeen() != null)
-                .filter(u -> !u.getUsername().equals(authService.getSignedinUser().getUsername()))
+                .filter(u -> !u.getUsername().equals(authService.getSignedinUser(request).getUsername()))
                 .map(u -> ImmutableMap.of(
                         "username", u.getUsername(),
                         "name", u.getName(),
@@ -153,7 +154,7 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
-    public JsonNode getAdminStatus() {
+    public JsonNode getAdminStatus(Http.Request request) {
         Map<String, Object> statusMap = new HashMap<>();
         statusMap.put("studyCount", studyDao.count());
         statusMap.put("studyCountTotal", studyDao.countTotal());
@@ -163,7 +164,7 @@ public class AdminService {
         statusMap.put("workerCountTotal", workerDao.countTotal());
         statusMap.put("userCount", userDao.count());
         statusMap.put("serverTime", System.currentTimeMillis());
-        statusMap.put("latestUsers", getLatestUsers(10));
+        statusMap.put("latestUsers", getLatestUsers(request, 10));
         statusMap.put("latestStudyRuns", getLatestStudyRuns(10));
         return JsonUtils.asJsonNode(statusMap);
     }

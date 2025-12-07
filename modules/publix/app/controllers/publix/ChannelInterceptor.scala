@@ -3,16 +3,16 @@ package controllers.publix
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging
 import daos.common.StudyResultDao
 import exceptions.publix.{BadRequestPublixException, ForbiddenPublixException, NotFoundPublixException, PublixException}
+import models.common.StudyResult
 import models.common.workers._
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc._
-import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
 import utils.common.Helpers
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.Future
 
 /**
@@ -56,10 +56,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     WebSocket.acceptOrResult[JsValue, JsValue] { implicit request =>
 
       Future.successful({
-        // Set Http.Context used in Play with Java. Needed by IdCookieService
-        play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
-
-        jpa.withTransaction(asJavaSupplier(() => {
+        jpa.withTransaction(asJavaFunction(_ => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
             studyResult.getWorkerType match {
@@ -107,9 +104,6 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     WebSocket.acceptOrResult[JsValue, JsValue] { implicit request =>
 
       Future.successful({
-        // Set Http.Context used in Play with Java. Needed by IdCookieService
-        play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
-
         try {
           val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
           studyResult.getWorkerType match {
@@ -168,9 +162,6 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     */
   @throws(classOf[PublixException])
   def reassignGroup(studyResultUuid: String): Action[AnyContent] = Action { implicit request =>
-    // Set Http.Context used in Play with Java. Needed by IdCookieService
-    play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
-
     try {
       val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
       studyResult.getWorkerType match {
@@ -208,10 +199,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
     */
   @throws(classOf[PublixException])
   def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action { implicit request =>
-    // Set Http.Context used in Play with Java. Needed by IdCookieService
-    play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
-
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       try {
         val studyResult = fetchStudyResult(studyResultUuid)
         studyResult.getWorkerType match {
@@ -249,8 +237,8 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
 
   @throws[ForbiddenPublixException]
   @throws[BadRequestPublixException]
-  private def fetchStudyResultAndInitLazy(uuid: String) = {
-    jpa.withTransaction(asJavaSupplier(() => {
+  private def fetchStudyResultAndInitLazy(uuid: String): StudyResult = {
+    jpa.withTransaction(asJavaFunction(_ => {
       val studyResult = fetchStudyResult(uuid)
       Helpers.initializeAndUnproxy(studyResult.getBatch, studyResult.getHistoryGroupResult)
       if (studyResult.getStudy != null) {

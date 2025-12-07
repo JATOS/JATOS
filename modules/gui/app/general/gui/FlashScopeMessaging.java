@@ -1,7 +1,8 @@
 package general.gui;
 
 import models.gui.Messages;
-import play.mvc.Controller;
+import play.api.mvc.RequestHeader;
+import scala.Option;
 import utils.common.JsonUtils;
 
 /**
@@ -10,54 +11,30 @@ import utils.common.JsonUtils;
  * RequestScopeMessaging: FlashScopeMessaging has only one of each kind (info/warning/error/
  * success), but it survives a redirect (according to Play's documentation, flash scope isn't
  * reliable).
- * 
+ *
  * @author Kristian Lange
  */
 public class FlashScopeMessaging {
 
-	public static final String INFO = "info";
-	public static final String SUCCESS = "success";
-	public static final String ERROR = "error";
-	public static final String WARNING = "warning";
+    public static final String INFO = "info";
+    public static final String SUCCESS = "success";
+    public static final String ERROR = "error";
+    public static final String WARNING = "warning";
 
-	public static String getAsJson() {
-		Messages messages = null;
-		String info = Controller.flash().get(INFO);
-		String success = Controller.flash().get(SUCCESS);
-		String error = Controller.flash().get(ERROR);
-		String warning = Controller.flash().get(WARNING);
-		if (info != null || success != null || error != null || warning != null) {
-			messages = new Messages();
-			messages.info(info);
-			messages.success(success);
-			messages.error(error);
-			messages.warning(warning);
-		}
-		return JsonUtils.asJson(messages);
-	}
-
-	public static void info(String msg) {
-		if (msg != null) {
-			Controller.flash(INFO, msg);
-		}
-	}
-
-	public static void success(String msg) {
-		if (msg != null) {
-			Controller.flash(SUCCESS, msg);
-		}
-	}
-
-	public static void error(String msg) {
-		if (msg != null) {
-			Controller.flash(ERROR, msg);
-		}
-	}
-
-	public static void warning(String msg) {
-		if (msg != null) {
-			Controller.flash(WARNING, msg);
-		}
-	}
+    public static String getAsJson(RequestHeader request) {
+        Messages messages = null;
+        Option<String> info = request.flash().get(INFO);
+        Option<String> success = request.flash().get(SUCCESS);
+        Option<String> error = request.flash().get(ERROR);
+        Option<String> warning = request.flash().get(WARNING);
+        if (info.isDefined() || success.isDefined() || error.isDefined() || warning.isDefined()) {
+            messages = new Messages();
+            messages.info(info.getOrElse(null));
+            messages.success(success.getOrElse(null));
+            messages.error(error.getOrElse(null));
+            messages.warning(warning.getOrElse(null));
+        }
+        return JsonUtils.asJson(messages);
+    }
 
 }

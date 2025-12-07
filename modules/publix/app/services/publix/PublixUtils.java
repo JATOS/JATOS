@@ -220,9 +220,9 @@ public class PublixUtils {
      * state FAIL. Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config
      * value got recently decreased there will be more than one. This method should only be called during start of a study.
      */
-    public void finishOldestStudyResult() throws PublixException {
-        while (idCookieService.maxIdCookiesReached()) {
-            Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
+    public void finishOldestStudyResult(Http.Request request) throws PublixException {
+        while (idCookieService.maxIdCookiesReached(request)) {
+            Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie(request);
             StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
             // If the abandoned study result isn't done, finish it.
             if (abandonedStudyResult != null && !PublixHelpers.studyDone(abandonedStudyResult)) {
@@ -232,7 +232,7 @@ public class PublixUtils {
                 studyLogger.log(abandonedStudyResult.getStudy(), "Finish abandoned study",
                         abandonedStudyResult.getWorker());
             }
-            idCookieService.discardIdCookie(abandonedStudyResultId);
+            idCookieService.discardIdCookie(request, abandonedStudyResultId);
         }
     }
 
@@ -398,7 +398,7 @@ public class PublixUtils {
      * Retrieves the currently signed-in user or throws an ForbiddenPublixException if none is signed in.
      */
     public User retrieveSignedinUser(Http.Request request) throws ForbiddenPublixException {
-        String normalizedUsername = request.session().getOptional(JatosPublix.SESSION_USERNAME)
+        String normalizedUsername = request.session().get(JatosPublix.SESSION_USERNAME)
                 .orElseThrow(() -> new ForbiddenPublixException("No user signed in"));
 
         User signedinUser = userDao.findByUsername(normalizedUsername);
@@ -413,7 +413,7 @@ public class PublixUtils {
      */
     public JatosPublix.JatosRun fetchJatosRunFromSession(Http.Session session)
             throws ForbiddenPublixException, BadRequestPublixException {
-        String sessionValue = session.getOptional("jatos_run")
+        String sessionValue = session.get("jatos_run")
                 .orElseThrow(() -> new ForbiddenPublixException("This study or component was never started in JATOS."));
 
         try {

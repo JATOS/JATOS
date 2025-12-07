@@ -95,7 +95,7 @@ public abstract class Publix extends Controller implements IPublix {
         }
 
         publixUtils.setPreStudyState(componentResult);
-        idCookieService.writeIdCookie(studyResult, componentResult);
+        idCookieService.writeIdCookie(request, studyResult, componentResult);
         return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava();
     }
 
@@ -232,7 +232,7 @@ public abstract class Publix extends Controller implements IPublix {
 
             Path destFile = ioUtils.getResultUploadFileSecurely(
                     studyResult.getId(), componentResult.get().getId(), filename).toPath();
-            tmpFile.moveFileTo(destFile, true);
+            tmpFile.moveTo(destFile, true);
             studyLogger.logResultUploading(destFile, componentResult.get());
         } catch (IOException e) {
             LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File upload failed"));
@@ -274,10 +274,10 @@ public abstract class Publix extends Controller implements IPublix {
             publixUtils.abortStudy(message, studyResult);
             groupAdministration.leaveGroup(studyResult);
         }
-        idCookieService.discardIdCookie(studyResult.getId());
+        idCookieService.discardIdCookie(request, studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
 
-        if (Helpers.isAjax()) {
+        if (Helpers.isAjax(request)) {
             return ok();
         } else {
             return ok(views.html.publix.abort.render());
@@ -296,10 +296,10 @@ public abstract class Publix extends Controller implements IPublix {
             publixUtils.finishStudyResult(successful, message, studyResult);
             groupAdministration.leaveGroup(studyResult);
         }
-        idCookieService.discardIdCookie(studyResult.getId());
+        idCookieService.discardIdCookie(request, studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (Helpers.isAjax()) {
+        if (Helpers.isAjax(request)) {
             return ok();
         } else {
             if (!successful) {

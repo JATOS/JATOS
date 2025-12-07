@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class StudyDao extends AbstractDao {
 
@@ -37,16 +36,18 @@ public class StudyDao extends AbstractDao {
     }
 
     public Study findById(Long id) {
-        return jpa.em().find(Study.class, id);
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(Study.class, id));
     }
 
     public Optional<Study> findByUuid(String uuid) {
-        String queryStr = "SELECT s FROM Study s WHERE " + "s.uuid=:uuid";
-        List<Study> studyList = jpa.em().createQuery(queryStr, Study.class)
-                .setParameter("uuid", uuid)
-                .setMaxResults(1)
-                .getResultList();
-        return !studyList.isEmpty() ? Optional.of(studyList.get(0)) : Optional.empty();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT s FROM Study s WHERE s.uuid=:uuid";
+            List<Study> studyList = em.createQuery(queryStr, Study.class)
+                    .setParameter("uuid", uuid)
+                    .setMaxResults(1)
+                    .getResultList();
+            return !studyList.isEmpty() ? Optional.of(studyList.get(0)) : Optional.empty();
+        });
     }
 
     /**
@@ -54,51 +55,65 @@ public class StudyDao extends AbstractDao {
      * there is none it returns an empty list.
      */
     public List<Study> findByTitle(String title) {
-        String queryStr = "SELECT s FROM Study s WHERE s.title=:title";
-        TypedQuery<Study> query = jpa.em().createQuery(queryStr, Study.class);
-        return query.setParameter("title", title).getResultList();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT s FROM Study s WHERE s.title=:title";
+            TypedQuery<Study> query = em.createQuery(queryStr, Study.class);
+            return query.setParameter("title", title).getResultList();
+        });
     }
 
     public List<Study> findByStudyResultIds(Collection<Long> srids) {
-        return jpa.em().createQuery("SELECT s FROM Study s WHERE s IN (SELECT sr.study FROM StudyResult sr WHERE sr.id IN :srids)", Study.class)
-                .setParameter("srids", srids)
-                .getResultList();
+        return jpa.withTransaction(em -> {
+            return em.createQuery("SELECT s FROM Study s WHERE s IN (SELECT sr.study FROM StudyResult sr WHERE sr.id IN :srids)", Study.class)
+                    .setParameter("srids", srids)
+                    .getResultList();
+        });
     }
 
     public List<Long> findIdsByStudyResultIds(Collection<Long> srids) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em().createNativeQuery("SELECT sr.study_id FROM StudyResult sr WHERE sr.id IN :srids")
-                .setParameter("srids", srids)
-                .getResultList();
-        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em.createNativeQuery("SELECT sr.study_id FROM StudyResult sr WHERE sr.id IN :srids")
+                    .setParameter("srids", srids)
+                    .getResultList();
+            return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        });
     }
 
     public List<Study> findAll() {
-        TypedQuery<Study> query = jpa.em().createQuery("SELECT s FROM Study s", Study.class);
-        return query.getResultList();
+        return jpa.withTransaction(em -> {
+            TypedQuery<Study> query = em.createQuery("SELECT s FROM Study s", Study.class);
+            return query.getResultList();
+        });
     }
 
     public List<Study> findAllByUser(User user) {
-        TypedQuery<Study> query = jpa.em().createQuery(
-                "SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user", Study.class);
-        query.setParameter("user", user);
-        return query.getResultList();
+        return jpa.withTransaction(em -> {
+            TypedQuery<Study> query = em.createQuery(
+                    "SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user", Study.class);
+            query.setParameter("user", user);
+            return query.getResultList();
+        });
     }
 
     /**
      * Returns the number of Study rows
      */
     public int count() {
-        Number result = (Number) jpa.em().createQuery("SELECT COUNT(s) FROM Study s").getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createQuery("SELECT COUNT(s) FROM Study s").getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
      * Returns the total number of Studys (including the deleted ones)
      */
     public int countTotal() {
-        Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM Study").getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createQuery("SELECT max(id) FROM Study").getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
 }

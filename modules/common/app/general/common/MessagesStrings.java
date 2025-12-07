@@ -13,6 +13,7 @@ import javax.inject.Singleton;
  *
  * @author Kristian Lange
  */
+@SuppressWarnings("unused")
 @Singleton
 public class MessagesStrings {
 

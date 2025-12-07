@@ -1,3 +1,6 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
 @*
  * This module deals with the sign-in Modal that appears after a session timeout or an inactivity timeout. It does
  * not do the actual sign-out, this is done in the backend, here is just the showing of the sign-in Modal.

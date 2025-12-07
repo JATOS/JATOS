@@ -14,7 +14,6 @@ import java.util.Optional;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class ApiTokenDao extends AbstractDao {
 
@@ -36,25 +35,31 @@ public class ApiTokenDao extends AbstractDao {
     }
 
     public ApiToken find(Long id) {
-        return jpa.em().find(ApiToken.class, id);
+        return jpa.withTransaction(em -> {
+            return em.find(ApiToken.class, id);
+        });
     }
 
     public Optional<ApiToken> findByHash(String tokenHash) {
-        String queryStr = "SELECT t FROM ApiToken t " +
-                "LEFT JOIN FETCH t.user u " +
-                "LEFT JOIN FETCH u.studyList " +
-                "WHERE t.tokenHash = :tokenHash";
-        List<ApiToken> apiToken = jpa.em().createQuery(queryStr, ApiToken.class)
-                .setParameter("tokenHash", tokenHash)
-                .getResultList();
-        return !apiToken.isEmpty() ? Optional.of(apiToken.get(0)) : Optional.empty();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT t FROM ApiToken t " +
+                    "LEFT JOIN FETCH t.user u " +
+                    "LEFT JOIN FETCH u.studyList " +
+                    "WHERE t.tokenHash = :tokenHash";
+            List<ApiToken> apiToken = em.createQuery(queryStr, ApiToken.class)
+                    .setParameter("tokenHash", tokenHash)
+                    .getResultList();
+            return !apiToken.isEmpty() ? Optional.of(apiToken.get(0)) : Optional.empty();
+        });
     }
 
     public List<ApiToken> findByUser(User user) {
         String queryStr = "SELECT t FROM ApiToken t WHERE t.user = :user";
-        return jpa.em().createQuery(queryStr, ApiToken.class)
-                .setParameter("user", user)
-                .getResultList();
+        return jpa.withTransaction(em -> {
+            return em.createQuery(queryStr, ApiToken.class)
+                    .setParameter("user", user)
+                    .getResultList();
+        });
     }
 
 }

@@ -1,4 +1,6 @@
-@(request: Http.Request, signedinUser: common.User, studyOption: Option[common.Study], workerOption: Option[common.workers.Worker], breadcrumbs: String)(content: Html)
+@import play.api.mvc.RequestHeader
+@(signedinUser: common.User, studyOption: Option[common.Study], workerOption: Option[common.workers.Worker], breadcrumbs: String)(content: Html)(implicit request: RequestHeader)
+
 @import general.common._
 @import general.gui._
 
@@ -23,8 +25,8 @@
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/minidenticons.min.js")" type="module"></script>
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/showdown-2.1.0/showdown.min.js")"></script>
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/ace-1.5.0/ace.js")"></script>
-        @views.html.gui.settings(request, studyOption, Some(signedinUser), workerOption)
-        @views.html.gui.routes()
+        @views.html.gui.settings(studyOption, Some(signedinUser), workerOption)
+        @views.html.gui.routes(request)
         @if(Common.isOauthGoogleAllowed()) {
         <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client" async></script>
         }
@@ -33,7 +35,7 @@
     <body class="container-fluid d-flex flex-column vh-100 overflow-hidden p-0">
 
         @views.html.gui.page.navbar(signedinUser, breadcrumbs)
-        @views.html.gui.page.studySidebar()
+        @views.html.gui.page.studySidebar(request)
         @views.html.gui.page.userSidebar(signedinUser)
 
         @************ Here goes the actual page content ************@
@@ -41,7 +43,7 @@
 
         @views.html.gui.page.waitingModal()
         @views.html.gui.page.confirmationModal()
-        @views.html.gui.auth.signinModal()
+        @views.html.gui.auth.signinModal(request)
 
         <div class="toast-container top-0 end-0"></div>
 
@@ -53,10 +55,10 @@
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
 
-    // Show messages from RequestScope and FlashScope
-    const messagesRequestScope = @Html(RequestScopeMessaging.getAsJson());
+    // Show messages from RequestScopeMessaging and FlashScopeMessaging
+    const messagesRequestScope = @Html(RequestScopeMessaging.getAsJson(request));
     Alerts.showList(messagesRequestScope);
-    const messagesFlashScope = @Html(FlashScopeMessaging.getAsJson());
+    const messagesFlashScope = @Html(FlashScopeMessaging.getAsJson(request));
     Alerts.showList(messagesFlashScope);
 
     $(document).ready(() => Helpers.activateTooltips());

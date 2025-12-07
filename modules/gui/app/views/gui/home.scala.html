@@ -1,7 +1,8 @@
-@(request: Http.Request, freshlySignedin: Boolean, signedinUser: common.User, breadcrumbs: String)
+@import play.api.mvc.RequestHeader
 @import general.common._
+@(freshlySignedin: Boolean, signedinUser: common.User, breadcrumbs: String)(implicit request: RequestHeader)
 
-@views.html.gui.page.main(request, signedinUser, None, None, breadcrumbs) {
+@views.html.gui.page.main(signedinUser, None, None, breadcrumbs) {
 
 <main class="container-xxl overflow-auto mt-4">
 

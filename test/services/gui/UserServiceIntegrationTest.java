@@ -6,7 +6,6 @@ import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
-import general.common.RequestScope;
 import models.common.Study;
 import models.common.User;
 import models.gui.NewUserModel;
@@ -256,14 +255,12 @@ public class UserServiceIntegrationTest extends JatosTest {
         // Remove user
         jpaApi.withTransaction(unchecked((em) -> userService.removeUser("foo@foo.org")));
 
-        jpaApi.withTransaction(em -> {
-            // User is removed from the database
-            assertThat(userDao.findByUsername("foo@foo.org")).isNull();
-            // User's studies are removed (the user object is still the old before removal)
-            user.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
-            // User's API tokens are removed
-            assertThat(apiTokenDao.findByUser(user)).isEmpty();
-        });
+        // User is removed from the database
+        assertThat(userDao.findByUsername("foo@foo.org")).isNull();
+        // User's studies are removed (the user object is still the old before removal)
+        user.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
+        // User's API tokens are removed
+        assertThat(apiTokenDao.findByUser(user)).isEmpty();
     }
 
     /**

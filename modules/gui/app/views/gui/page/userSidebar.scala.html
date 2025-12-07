@@ -1,5 +1,6 @@
-@(signedinUser: common.User)
+@import play.api.mvc.RequestHeader
 @import general.common._
+@(signedinUser: common.User)(implicit request: RequestHeader)
 
 @* User sidebar *@
 <aside class="offcanvas offcanvas-end rounded-start-4" tabindex="-1" id="userSidebar">
@@ -196,7 +197,7 @@
     </div>
 </div>
 
-@views.html.gui.admin.apiTokensModal()
+@views.html.gui.admin.apiTokensModal(request)
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";

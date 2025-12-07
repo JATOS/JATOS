@@ -3,6 +3,7 @@ package auth.gui;
 import auth.gui.AuthAction.Auth;
 import com.google.common.collect.ImmutableMap;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.MessagesStrings;
@@ -12,7 +13,6 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.FormFactory;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -30,7 +30,6 @@ import javax.naming.NamingException;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Signin extends Controller {
@@ -57,7 +56,7 @@ public class Signin extends Controller {
      * Shows the sign-in page
      */
     public Result signin(Http.Request request) {
-        return ok(views.html.gui.auth.signin.render(request));
+        return ok(views.html.gui.auth.signin.render(request.asScala()));
     }
 
     /**
@@ -68,7 +67,7 @@ public class Signin extends Controller {
         SigninData signinData = formFactory.form(SigninData.class).bindFromRequest(request).withDirectFieldAccess(true).get();
         String normalizedUsername = User.normalizeUsername(signinData.getUsername());
         String password = signinData.getPassword();
-        String remoteAddress = request().remoteAddress();
+        String remoteAddress = request.remoteAddress();
 
         if (authService.isRepeatedSigninAttempt(normalizedUsername, remoteAddress)) {
             return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, remoteAddress);
@@ -92,12 +91,12 @@ public class Signin extends Controller {
                 return returnUnauthorizedDueToFailedAuth(normalizedUsername, remoteAddress);
             }
         } else {
-            authService.writeSessionCookie(session(), normalizedUsername, signinData.getKeepSignedin());
             userService.setLastSignin(normalizedUsername);
             loginAttemptDao.removeByUsername(normalizedUsername);
             return ok(JsonUtils.asJsonNode(ImmutableMap.of(
                     "redirectUrl", authService.getRedirectPageAfterSignin(user),
-                    "userSigninTime", Long.valueOf(session().get(AuthService.SESSION_SIGNIN_TIME)))));
+                    "userSigninTime", authService.getSessionSigninTime(request))))
+                    .addingToSession(request, authService.writeSessionCookie(normalizedUsername, signinData.getKeepSignedin()));
         }
     }
 
@@ -130,8 +129,9 @@ public class Signin extends Controller {
     @Auth
     public Result signout(Http.Request request) {
         LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
-        FlashScopeMessaging.success("You've been signed out.");
-        return redirect(auth.gui.routes.Signin.signin()).withNewSession();
+        return redirect(auth.gui.routes.Signin.signin())
+                .withNewSession()
+                .flashing(FlashScopeMessaging.SUCCESS, "You've been signed out.");
     }
 
     /**

@@ -13,7 +13,8 @@ import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import javax.persistence.EntityManager
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -130,7 +131,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
    * LoginAttempts that are older than 1 minute.
    */
   private def scheduleLoginAttemptCleaning(): Unit = {
-    val task: Runnable = () => jpa.withTransaction(asJavaSupplier(() => {
+    val task: Runnable = () => jpa.withTransaction(asJavaFunction((_: EntityManager) => {
       () => loginAttemptDao.removeOldAttempts()
     }))
 

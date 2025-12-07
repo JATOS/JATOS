@@ -17,7 +17,6 @@ import java.util.List;
  * Migrates the database for all <3.7.1. It creates for each existing PersonalSingleWorker and PersonalMultipleWorker
  * a StudyLink.
  */
-@SuppressWarnings("deprecation")
 public class StudyLinkMigration {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLinkMigration.class);
@@ -44,7 +43,7 @@ public class StudyLinkMigration {
     }
 
     private void createStudyLinksForExistingPersonalWorkers() {
-        jpa.withTransaction(() -> {
+        jpa.withTransaction((em) -> {
             if (studyLinkDao.countAll() != 0) return;
 
             int studyLinkCounter = 0;

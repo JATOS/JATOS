@@ -17,12 +17,12 @@ import models.common.StudyResult;
 import models.common.workers.*;
 import play.Application;
 import play.Logger;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixHelpers;
 import utils.common.Helpers;
+import utils.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -41,7 +41,6 @@ import java.util.Optional;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 @PublixAccessLogging
 public class PublixInterceptor extends Controller {

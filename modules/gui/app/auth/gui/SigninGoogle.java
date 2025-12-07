@@ -6,6 +6,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
 import general.common.Common;
@@ -16,7 +17,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
 import play.data.FormFactory;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -38,7 +38,6 @@ import java.util.Collections;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class SigninGoogle extends Controller {
 
@@ -52,7 +51,7 @@ public class SigninGoogle extends Controller {
 
     @Inject
     SigninGoogle(AuthService authService, SigninFormValidation signinFormValidation,
-            FormFactory formFactory, UserService userService, UserDao userDao) {
+                 FormFactory formFactory, UserService userService, UserDao userDao) {
         this.authService = authService;
         this.signinFormValidation = signinFormValidation;
         this.formFactory = formFactory;
@@ -69,16 +68,16 @@ public class SigninGoogle extends Controller {
         GoogleIdToken idToken = fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google sign in: Invalid ID token.");
-            FlashScopeMessaging.error("Google sign in: Invalid ID token");
-            return redirect(auth.gui.routes.Signin.signin());
+            return redirect(auth.gui.routes.Signin.signin())
+                    .flashing(FlashScopeMessaging.ERROR, "Google sign in: Invalid ID token");
         }
 
         GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
 
         if (!idTokenPayload.getEmailVerified()) {
             LOGGER.info("Google sign in: Couldn't sign in user due to email not verified");
-            FlashScopeMessaging.error("Google sign in: Email not verified");
-            return redirect(auth.gui.routes.Signin.signin());
+            return redirect(auth.gui.routes.Signin.signin())
+                    .flashing(FlashScopeMessaging.ERROR, "Google sign in: Email not verified");
         }
 
         User user;
@@ -86,17 +85,18 @@ public class SigninGoogle extends Controller {
             user = persistUserIfNotExisting(idTokenPayload);
         } catch (AuthException e) {
             LOGGER.warn(e.getMessage());
-            FlashScopeMessaging.error(e.getMessage());
-            return redirect(auth.gui.routes.Signin.signin());
+            return redirect(auth.gui.routes.Signin.signin())
+                    .flashing(FlashScopeMessaging.ERROR, e.getMessage());
         }
 
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
-        authService.writeSessionCookie(session(), normalizedUsername, false);
         userService.setLastSignin(normalizedUsername);
 
         String pictureUrl = idTokenPayload.get("picture") != null ? idTokenPayload.get("picture").toString() : "";
         String redirectPage = authService.getRedirectPageAfterSignin(user);
-        return redirect(redirectPage).addingToSession(request, "googlePictureUrl", pictureUrl);
+        return redirect(redirectPage)
+                .addingToSession(request, "googlePictureUrl", pictureUrl)
+                .addingToSession(request, authService.writeSessionCookie(normalizedUsername, false));
     }
 
     /**

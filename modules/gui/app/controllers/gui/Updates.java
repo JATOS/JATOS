@@ -2,11 +2,11 @@ package controllers.gui;
 
 import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import general.common.JatosUpdater;
 import models.common.User.Role;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -20,7 +20,6 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Updates extends Controller {

@@ -4,25 +4,22 @@ import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 name := "JATOS"
 version := "3.9.8"
 organization := "org.jatos"
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
 packageName in Universal := "jatos"
 packageName in Docker := "jatos/jatos"
 
 libraryDependencies ++= Seq(
-  "org.mockito" % "mockito-inline" % "4.11.0" % "test",
-  "org.easytesting" % "fest-assert" % "1.4" % "test",
+  guice,
+  filters,
   "com.h2database" % "h2" % "1.4.197",
-  "com.typesafe.play" %% "play-json" % "2.8.2",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.2",
-  "org.apache.commons" % "commons-lang3" % "3.12.0",
-  "ch.qos.logback" % "logback-classic" % "1.2.11",
-  "ch.qos.logback" % "logback-core" % "1.2.11",
+  "org.apache.commons" % "commons-lang3" % "3.18.0",
+  "ch.qos.logback" % "logback-classic" % "1.5.13",
   "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
   "com.pivovarit" % "throwing-function" % "1.6.1",
-  guice,
-  filters
+  "org.mockito" % "mockito-inline" % "4.11.0" % Test,
+  "org.assertj" % "assertj-core" % "3.26.0" % Test
 )
 
 // Docker commands to run in Dockerfile
@@ -49,7 +46,7 @@ dockerCommands := Seq(
 
 dockerBaseImage := "eclipse-temurin:8-jre"
 
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
+javacOptions ++= Seq("--release", "11", "-Xlint")
 
 PlayKeys.externalizeResources := false
 

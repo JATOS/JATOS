@@ -17,6 +17,7 @@ import models.common.User.Role;
 import models.common.workers.JatosWorker;
 import models.gui.NewUserModel;
 import play.db.jpa.JPAApi;
+import play.mvc.Http;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
@@ -84,8 +85,7 @@ public class UserService {
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
     public User bindToUserAndPersist(NewUserModel newUserModel) {
-        //noinspection deprecation
-        return jpa.withTransaction(() -> {
+        return jpa.withTransaction((em) -> {
             User user = new User(newUserModel.getUsername(), newUserModel.getName(), newUserModel.getEmail());
             String password = newUserModel.getPassword();
             AuthMethod authMethod = newUserModel.getAuthMethod();
@@ -129,9 +129,9 @@ public class UserService {
         userDao.update(user);
     }
 
-    public void toggleActive(String normalizedUsername, boolean active) throws NotFoundException, ForbiddenException {
+    public void toggleActive(Http.Request request, String normalizedUsername, boolean active) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         if (user.equals(signedinUser)) {
             throw new ForbiddenException("A user is not allowed to deactivate themselves.");
         }
@@ -160,9 +160,9 @@ public class UserService {
      * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
      * the end - or false if he hasn't.
      */
-    public boolean changeAdminRole(String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
+    public boolean changeAdminRole(Http.Request request, String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         if (user.equals(signedinUser)) {
             throw new ForbiddenException(MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
         }
@@ -176,8 +176,7 @@ public class UserService {
     }
 
     public void setLastSignin(String normalizedUsername) {
-        //noinspection deprecation
-        jpa.withTransaction(() -> {
+        jpa.withTransaction(em -> {
             User user = userDao.findByUsername(normalizedUsername);
             user.setLastLogin(new Timestamp(new Date().getTime()));
             userDao.update(user);

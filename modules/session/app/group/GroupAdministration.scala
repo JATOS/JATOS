@@ -9,7 +9,7 @@ import play.db.jpa.JPAApi
 import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
 
 /**
@@ -45,7 +45,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * maxTotalMembers not reached). If there is none, create a new GroupResult.
    */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
       val groupMaxNotReached =
         if (allGroupMaxNotReached.isEmpty) groupResultDao.create(new GroupResult(batch))
@@ -114,7 +114,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * GroupResult. If there is more than one, it assigns to the one with the most active members.
    */
   private def reassignGroupResult(studyResult: StudyResult, batch: Batch): Option[GroupResult] = {
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       val currentGroupResult = studyResult.getActiveGroupResult
       if (currentGroupResult == null) {
         logger.info(s".reassignGroupResult: The study result with ID ${studyResult.getId} isn't member in any group.")

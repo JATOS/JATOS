@@ -1,25 +1,22 @@
 name := "jatos-common"
 version := "3.9.8"
 organization := "org.jatos"
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(
-  javaCore,
-  javaJdbc,
-  javaJpa,
-  javaWs,
-  "com.typesafe.play" %% "play-jdbc-evolutions" % "2.8.19" excludeAll(ExclusionRule(organization = "com.typesafe.play")),
-  jdbc,
   guice,
-  "org.hibernate" % "hibernate-core" % "5.4.24.Final",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.9.8",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.10.8",
-  "mysql" % "mysql-connector-java" % "8.0.28",
-  "org.jsoup" % "jsoup" % "1.14.2",
-  "commons-io" % "commons-io" % "2.7",
+  javaWs,
+  javaJpa,
+  evolutions,
+  jdbc,
+  "org.hibernate" % "hibernate-core" % "5.6.15.Final",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.11.4",
+  "mysql" % "mysql-connector-java" % "8.0.33",
+  "org.jsoup" % "jsoup" % "1.18.1",
+  "commons-io" % "commons-io" % "2.15.1",
   "com.diffplug.durian" % "durian" % "3.4.0",
-  "org.apache.commons" % "commons-lang3" % "3.9",
+  "org.apache.commons" % "commons-lang3" % "3.18.0",
   "org.mockito" % "mockito-inline" % "4.11.0" % "test",
   "org.easytesting" % "fest-assert" % "1.4" % "test"
 )

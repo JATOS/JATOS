@@ -13,7 +13,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.util.Try
 
 /**
@@ -47,7 +47,7 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
    * Applies JSON Patch for the batch session and tells everyone in the batch
    */
   private def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       val batch = batchDao.findById(batchId)
       if (batch == null) {
         val errorMsg = s"Couldn't find batch with ID $batchId in database."

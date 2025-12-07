@@ -1,22 +1,18 @@
 name := "jatos-gui"
 version := "3.9.8"
 organization := "org.jatos"
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(
-  javaCore,
-  javaJdbc,
-  javaJpa,
-  javaWs,
   guice,
-  "com.typesafe.play" %% "play-json" % "2.8.2",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.2",
+  javaWs,
+  javaJpa,
   "com.google.api-client" % "google-api-client" % "1.34.0",
-  "com.nimbusds" % "oauth2-oidc-sdk" % "10.4",
-  "com.nimbusds" % "nimbus-jose-jwt" % "9.27",
-  "org.mockito" % "mockito-inline" % "4.11.0" % "test",
-  "org.easytesting" % "fest-assert" % "1.4" % "test"
+  "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
+  "org.mockito" % "mockito-inline" % "4.11.0" % Test,
+  "org.easytesting" % "fest-assert" % "1.4" % Test
 )
 
 // Routes from submodules

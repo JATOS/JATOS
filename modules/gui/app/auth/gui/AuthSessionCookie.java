@@ -1,8 +1,6 @@
 package auth.gui;
 
 import controllers.gui.Home;
-import general.common.RequestScope;
-import general.gui.FlashScopeMessaging;
 import general.gui.RequestScopeMessaging;
 import models.common.User;
 import play.Logger;
@@ -17,6 +15,7 @@ import javax.inject.Provider;
 import java.time.Instant;
 import java.util.function.Function;
 
+import static general.gui.FlashScopeMessaging.*;
 import static play.mvc.Results.forbidden;
 import static play.mvc.Results.redirect;
 
@@ -40,7 +39,7 @@ import static play.mvc.Results.redirect;
  * The {@link AuthAction.Auth} annotation does not check the user's password. This is
  * done once during signing in (class {@link Signin}).
  * <p>
- * The {@link User} object is put in the {@link RequestScope} for later use during request processing.
+ * The {@link User} object is put in the request attrs for later use during request processing.
  *
  * @author Kristian Lange
  */
@@ -63,31 +62,31 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
     public AuthResult authenticate(Http.Request request, User.Role role) {
 
         if (!Helpers.isSessionCookieRequest(request)) {
-            return AuthResult.wrongMethod();
+            return AuthResult.wrongMethod(request);
         }
 
         // For authentication, it's actually enough to check that the username is in Play's session. Play's session
-        // is safe from tempering. But we retrieve the user from the database and put it into our RequestScope
-        // since we need it later anyway. Storing it in the RequestScope now saves us some database requests later.
+        // is safe from tempering. But we retrieve the user from the database and put it into the request attrs
+        // since we need it later anyway. Storing it in the request attrs now saves us some database requests later.
         User signedinUser = authService.getSignedinUserBySessionCookie(request.session());
         if (signedinUser == null) {
-            return callForbiddenDueToAuthentication(request.remoteAddress(), request.path());
+            return callForbiddenDueToAuthentication(request, request.remoteAddress(), request.path());
         }
-        RequestScope.put(AuthService.SIGNEDIN_USER, signedinUser);
+        request = request.addAttr(AuthService.SIGNEDIN_USER, signedinUser);
 
         // Check session timeout and inactivity timeout (only if keepSignedin flag is not set)
         if (!authService.isSessionKeepSignedin(request.session())) {
             if (authService.isSessionTimeout(request.session())) {
-                return callForbiddenDueToSessionTimeout(signedinUser.getUsername());
+                return callForbiddenDueToSessionTimeout(request, signedinUser.getUsername());
             }
             if (authService.isInactivityTimeout(request.session())) {
-                return callForbiddenDueToInactivityTimeout(signedinUser.getUsername());
+                return callForbiddenDueToInactivityTimeout(request, signedinUser.getUsername());
             }
         }
 
         // Check user deactivated by admin
         if (!signedinUser.isActive()) {
-            return callForbiddenDueToUserDeactivated(signedinUser.getUsername());
+            return callForbiddenDueToUserDeactivated(request, signedinUser.getUsername());
         }
 
         // Check authorization
@@ -96,53 +95,59 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         }
 
         userService.setLastSeen(signedinUser);
-        Function<Result, Result> postHook = result -> result.addingToSession(request,
+        Http.Request finalRequest = request;
+        Function<Result, Result> postHook = result -> result.addingToSession(finalRequest,
                 AuthService.SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
-        return AuthResult.authenticated(postHook);
+        return AuthResult.authenticated(request, postHook);
     }
 
-    private AuthResult callForbiddenDueToAuthentication(String remoteAddress, String urlPath) {
+    private AuthResult callForbiddenDueToAuthentication(Http.Request request, String remoteAddress, String urlPath) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " tried to access page " + urlPath);
         String msg = "You are not allowed to access this page. Please sign in.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+        if (Helpers.isAjax(request)) {
+            return AuthResult.denied(request, forbidden(msg));
         }
+        AuthResult authResult = AuthResult.denied(request, redirect(auth.gui.routes.Signin.signin())
+                .withNewSession());
         if (!urlPath.isEmpty() && !urlPath.matches("(/|/jatos|/jatos/)")) {
-            FlashScopeMessaging.error(msg);
+            authResult.result = authResult.result.flashing(ERROR, msg);
         }
-        return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
+        return authResult;
     }
 
-    private AuthResult callForbiddenDueToSessionTimeout(String normalizedUsername) {
+    private AuthResult callForbiddenDueToSessionTimeout(Http.Request request, String normalizedUsername) {
         LOGGER.info("Session of user " + normalizedUsername + " has expired and the user has been signed out.");
         String msg = "Your session has expired. You have been signed out. Please sign in again.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+        if (Helpers.isAjax(request)) {
+            return AuthResult.denied(request, forbidden(msg));
         } else {
-            FlashScopeMessaging.success(msg);
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
+            return AuthResult.denied(request, redirect(auth.gui.routes.Signin.signin())
+                    .withNewSession()
+                    .flashing(SUCCESS, msg));
         }
     }
 
-    private AuthResult callForbiddenDueToInactivityTimeout(String normalizedUsername) {
+    private AuthResult callForbiddenDueToInactivityTimeout(Http.Request request, String normalizedUsername) {
         LOGGER.info("User " + normalizedUsername + " has been signed out due to inactivity.");
         String msg = "You have been signed out due to inactivity.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+        if (Helpers.isAjax(request)) {
+            return AuthResult.denied(request, forbidden(msg));
         } else {
-            FlashScopeMessaging.success(msg);
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
+            return AuthResult.denied(request, redirect(auth.gui.routes.Signin.signin())
+                    .withNewSession()
+                    .flashing(SUCCESS, msg));
         }
     }
 
-    private AuthResult callForbiddenDueToUserDeactivated(String normalizedUsername) {
+    private AuthResult callForbiddenDueToUserDeactivated(Http.Request request, String normalizedUsername) {
         LOGGER.info("User " + normalizedUsername + " has been signed out because an admin deactivated this user.");
         String msg = "Your user was deactivated by an admin.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+        if (Helpers.isAjax(request)) {
+            return AuthResult.denied(request, forbidden(msg));
         } else {
-            FlashScopeMessaging.warning(msg);
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
+            return AuthResult.denied(request, redirect(auth.gui.routes.Signin.signin())
+                    .withNewSession()
+                    .flashing(WARNING, msg));
         }
     }
 
@@ -150,11 +155,11 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         String msg = "User " + normalizedUsername + " isn't allowed to access page " + urlPath + ".";
         LOGGER.warn(msg);
         // Do not clear the session cookie - do not sign out
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+        if (Helpers.isAjax(request)) {
+            return AuthResult.denied(request, forbidden(msg));
         } else {
-            RequestScopeMessaging.error(msg);
-            return AuthResult.denied(homeProvider.get().home(request, Http.Status.FORBIDDEN));
+            RequestScopeMessaging.error(request, msg);
+            return AuthResult.denied(request, homeProvider.get().home(request, Http.Status.FORBIDDEN));
         }
     }
 

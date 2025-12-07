@@ -5,6 +5,7 @@ import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
@@ -16,7 +17,6 @@ import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -34,7 +34,6 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class ComponentResults extends Controller {
@@ -73,7 +72,7 @@ public class ComponentResults extends Controller {
     @SaveLastVisitedPageUrl
     public Result componentResults(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Component component = componentDao.findById(componentId);
         try {
             checker.checkStandardForStudy(study, studyId, signedinUser);
@@ -83,7 +82,7 @@ public class ComponentResults extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForComponent(study, component, BreadcrumbsService.COMPONENT_RESULTS);
-        return ok(views.html.gui.results.componentResults.render(request, signedinUser, breadcrumbs, study, component));
+        return ok(views.html.gui.results.componentResults.render(signedinUser, breadcrumbs, study, component, request.asScala()));
     }
 
     /**
@@ -93,7 +92,7 @@ public class ComponentResults extends Controller {
     @Transactional
     @Auth
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("componentResultIds")) return badRequest("Malformed JSON");
 
@@ -109,8 +108,8 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
-        User signedinUser = authService.getSignedinUser();
+    public Result tableDataByComponent(Http.Request request, Long componentId) throws ForbiddenException, NotFoundException {
+        User signedinUser = authService.getSignedinUser(request);
         Component component = componentDao.findById(componentId);
         checker.checkStandardForComponent(componentId, component, signedinUser);
 
@@ -123,9 +122,9 @@ public class ComponentResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
+    public Result exportSingleResultData(Http.Request request, Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkComponentResult(componentResult, signedinUser, false);
         return ok(componentResultDao.getData(componentResultId));
     }

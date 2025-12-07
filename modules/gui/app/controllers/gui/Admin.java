@@ -4,7 +4,9 @@ import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
@@ -13,14 +15,12 @@ import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
 import play.core.utils.HttpHeaderParameterEncoding;
-import play.db.jpa.Transactional;
 import play.http.HttpEntity;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.AdminService;
-import auth.gui.AuthService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
 import utils.common.Helpers;
@@ -37,14 +37,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.*;
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
  * Controller class around administration (updates are handled in Updates and user manager in Users)
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Admin extends Controller {
@@ -60,8 +59,8 @@ public class Admin extends Controller {
 
     @Inject
     Admin(AuthService authService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService,
-            IOUtils ioUtils) {
+          StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService,
+          IOUtils ioUtils) {
         this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
@@ -79,9 +78,9 @@ public class Admin extends Controller {
     @Auth(Role.ADMIN)
     @SaveLastVisitedPageUrl
     public Result administration(Http.Request request) {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         String breadcrumbs = breadcrumbsService.generateForAdministration(null);
-        return ok(views.html.gui.admin.admin.render(request, signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.admin.render(signedinUser, breadcrumbs, request.asScala()));
     }
 
     /**
@@ -140,8 +139,8 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result status() {
-        return ok(adminService.getAdminStatus());
+    public Result status(Http.Request request) {
+        return ok(adminService.getAdminStatus(request));
     }
 
     /**
@@ -151,9 +150,9 @@ public class Admin extends Controller {
     @Auth(Role.ADMIN)
     @SaveLastVisitedPageUrl
     public Result studyManager(Http.Request request) {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDY_MANAGER);
-        return ok(views.html.gui.admin.studyManager.render(request, signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.studyManager.render(signedinUser, breadcrumbs, request.asScala()));
     }
 
     /**
@@ -189,8 +188,8 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth
-    public Result studyAssetsSize(Long studyId) {
-        User signedinUser = authService.getSignedinUser();
+    public Result studyAssetsSize(Http.Request request, Long studyId) {
+        User signedinUser = authService.getSignedinUser(request);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
@@ -202,8 +201,8 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth
-    public Result resultDataSize(Long studyId) {
-        User signedinUser = authService.getSignedinUser();
+    public Result resultDataSize(Http.Request request, Long studyId) {
+        User signedinUser = authService.getSignedinUser(request);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
@@ -216,8 +215,8 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result resultFileSize(Long studyId) {
-        User signedinUser = authService.getSignedinUser();
+    public Result resultFileSize(Http.Request request, Long studyId) {
+        User signedinUser = authService.getSignedinUser(request);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");

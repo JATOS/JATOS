@@ -4,11 +4,11 @@ import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.google.common.base.Strings;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.StudyDao;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
-import play.db.jpa.Transactional;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -32,7 +32,6 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Home extends Controller {
@@ -60,13 +59,13 @@ public class Home extends Controller {
     @Auth
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request, int httpStatus) {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         String breadcrumbs = breadcrumbsService.generateForHome();
         boolean freshlySignedin = signedinUser.getLastLogin() != null &&
                 Duration.between(signedinUser.getLastLogin().toInstant(), Instant.now())
                         .minusSeconds(30)
                         .isNegative();
-        return status(httpStatus, views.html.gui.home.render(request, freshlySignedin, signedinUser, breadcrumbs));
+        return status(httpStatus, views.html.gui.home.render(freshlySignedin, signedinUser, breadcrumbs, request.asScala()));
     }
 
     @Transactional
@@ -81,8 +80,8 @@ public class Home extends Controller {
      */
     @Transactional
     @Auth
-    public CompletionStage<Result> branding() {
-        User signedinUser = authService.getSignedinUser();
+    public CompletionStage<Result> branding(Http.Request request) {
+        User signedinUser = authService.getSignedinUser(request);
         if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
         return ws.url(Common.getBrandingUrl()).get().thenApply(r -> {
             String branding = r.getBody()
@@ -100,8 +99,8 @@ public class Home extends Controller {
      */
     @Transactional
     @Auth
-    public Result sidebarData() {
-        User signedinUser = authService.getSignedinUser();
+    public Result sidebarData(Http.Request request) {
+        User signedinUser = authService.getSignedinUser(request);
         List<Study> studyList = Helpers.isAllowedSuperuser(signedinUser)
                 ? studyDao.findAll()
                 : studyDao.findAllByUser(signedinUser);

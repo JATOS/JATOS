@@ -6,7 +6,6 @@ import general.common.{Common, MessagesStrings}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.core.j.JavaHelpers
 import play.db.jpa.JPAApi
 import services.publix.idcookie.IdCookieService
 import services.publix.{PublixErrorMessages, PublixHelpers}
@@ -16,7 +15,8 @@ import java.io.{File, IOException}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.annotation.unused
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
@@ -25,7 +25,6 @@ import scala.util.matching.Regex
   *
   * @author Kristian Lange
   */
-//noinspection ScalaDeprecation
 @Singleton
 class StudyAssets @Inject()(components: ControllerComponents,
                             ioUtils: IOUtils,
@@ -48,12 +47,12 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * Additionally this method can be used to get jatos.js and other JavaScript files from JATOS.
     * The parameter componentUuid is never used but can't be removed.
     */
-  def viaStudyPath(studyResultUuid: String, componentUuid: String, urlPath: String): Action[AnyContent] =
+  def viaStudyPath(studyResultUuid: String, @unused componentUuid: String, urlPath: String): Action[AnyContent] =
     urlPath match {
       case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
       case "jatos.min.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.min.js")
       case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)
-      case _ => jpa.withTransaction(asJavaSupplier(() => {
+      case _ => jpa.withTransaction(asJavaFunction(_ => {
         val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseThrow(() =>
           new BadRequestPublixException("A study result " + studyResultUuid + " doesn't exist."))
         viaAssetsPath(studyResult.getStudy.getDirName + URL_PATH_SEPARATOR + urlPath)
@@ -65,13 +64,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * of the OS's file system and returns the file.
     */
   def viaAssetsPath(urlPath: String): Action[AnyContent] = Action { request =>
-    // Set Http.Context used in Play with Java. Needed by IdCookieService
-    play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
-
     val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
     val filePath = urlDecodedPath.replace(URL_PATH_SEPARATOR, File.separator)
     try {
-      checkProperAssets(urlPath) // Windows needs URL path
+      checkProperAssets(request, urlPath) // Windows needs URL path
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
       logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
       if (request.headers.hasHeader(RANGE)) {
@@ -85,13 +81,13 @@ class StudyAssets @Inject()(components: ControllerComponents,
       case e: PublixException =>
         val errorMsg = e.getMessage
         logger.info(".viaAssetsPath: " + errorMsg)
-        if (Helpers.isAjax) Forbidden(errorMsg)
+        if (Helpers.isAjax(request.asJava)) Forbidden(errorMsg)
         else Forbidden(views.html.publix.error.render(errorMsg))
       case _: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
           s"${File.separator}$filePath")
         val errorMsg = s"Resource '$filePath' couldn't be found."
-        if (Helpers.isAjax) NotFound(errorMsg)
+        if (Helpers.isAjax(request.asJava)) NotFound(errorMsg)
         else NotFound(views.html.publix.error.render(errorMsg))
     }
   }
@@ -108,12 +104,12 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * assets.
     */
   @throws[PublixException]
-  private def checkProperAssets(urlPath: String): Unit = {
+  private def checkProperAssets(request: Request[AnyContent], urlPath: String): Unit = {
     val filePathArray = urlPath.split(URL_PATH_SEPARATOR)
     if (filePathArray.isEmpty)
       throw new ForbiddenPublixException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
     val studyAssets = URLDecoder.decode(filePathArray(0), StandardCharsets.UTF_8.name())
-    if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets))
+    if (!idCookieService.oneIdCookieHasThisStudyAssets(request.asJava, studyAssets))
       throw new ForbiddenPublixException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
   }
 
@@ -138,7 +134,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     * Passes on the confirmationCode in case it's defined (either cookie or URL query parameter).
     */
   def endPage(studyResultUuid: String, confirmationCode: Option[String] = None): Action[AnyContent] = Action { _ =>
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseThrow(
         () => new BadRequestPublixException("A study result " + studyResultUuid + " doesn't exist."))
       if (!PublixHelpers.studyDone(studyResult)) {

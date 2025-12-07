@@ -10,7 +10,7 @@ import play.api.libs.json._
 import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
 
 
@@ -58,7 +58,7 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
         s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)

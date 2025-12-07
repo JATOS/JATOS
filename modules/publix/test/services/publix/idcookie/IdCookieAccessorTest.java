@@ -2,7 +2,6 @@ package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
 import general.common.Common;
-import general.common.RequestScope;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

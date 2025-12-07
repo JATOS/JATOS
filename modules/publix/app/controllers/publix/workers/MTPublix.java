@@ -102,10 +102,10 @@ public class MTPublix extends Publix implements IPublix {
 
         studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
-        publixUtils.finishOldestStudyResult();
+        publixUtils.finishOldestStudyResult(request);
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
-        idCookieService.writeIdCookie(studyResult);
+        idCookieService.writeIdCookie(request, studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
@@ -133,10 +133,10 @@ public class MTPublix extends Publix implements IPublix {
         } else {
             confirmationCode = studyResult.getConfirmationCode();
         }
-        idCookieService.discardIdCookie(studyResult.getId());
+        idCookieService.discardIdCookie(request, studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (Helpers.isAjax()) {
+        if (Helpers.isAjax(request)) {
             return ok(confirmationCode);
         } else {
             if (!successful) {
@@ -153,8 +153,8 @@ public class MTPublix extends Publix implements IPublix {
      * Otherwise returns MTWorker.
      */
     private String retrieveWorkerTypeFromQueryString(Http.Request request) {
-        String turkSubmitTo = request.getQueryString("turkSubmitTo");
-        if (turkSubmitTo != null && turkSubmitTo.toLowerCase().contains("sandbox")) {
+        Optional<String> turkSubmitTo = request.queryString("turkSubmitTo");
+        if (turkSubmitTo.isPresent() && turkSubmitTo.get().toLowerCase().contains("sandbox")) {
             return MTSandboxWorker.WORKER_TYPE;
         } else {
             return MTWorker.WORKER_TYPE;

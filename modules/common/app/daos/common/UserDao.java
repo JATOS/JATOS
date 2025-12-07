@@ -13,7 +13,6 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class UserDao extends AbstractDao {
 
@@ -38,38 +37,48 @@ public class UserDao extends AbstractDao {
     }
 
     public boolean authenticate(String normalizedUsername, String passwordHash) {
-        boolean doesNotExist = jpa.em().createQuery(
-                    "SELECT u FROM User u WHERE u.username=:username and u.passwordHash=:passwordHash", User.class)
+        return jpa.withTransaction(em -> {
+            boolean doesNotExist = em.createQuery(
+                            "SELECT u FROM User u WHERE u.username=:username and u.passwordHash=:passwordHash", User.class)
                     .setParameter("username", normalizedUsername)
                     .setParameter("passwordHash", passwordHash)
                     .setMaxResults(1).getResultList().isEmpty();
-        return !doesNotExist;
+            return !doesNotExist;
+        });
     }
 
     public User findByUsername(String normalizedUsername) {
-        return jpa.em().find(User.class, normalizedUsername);
+        return jpa.withTransaction(em -> {
+            return em.find(User.class, normalizedUsername);
+        });
     }
 
     public List<User> findAll() {
-        TypedQuery<User> query = jpa.em().createQuery("SELECT u FROM User u", User.class);
-        return query.getResultList();
+        return jpa.withTransaction(em -> {
+            TypedQuery<User> query = em.createQuery("SELECT u FROM User u", User.class);
+            return query.getResultList();
+        });
     }
 
     /**
      * Returns the number of User rows
      */
     public int count() {
-        Number result = (Number) jpa.em().createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
      * Returns the users with the most recent lastSeen datetime field. Limit the number by 'limit'.
      */
     public List<User> findLastSeen(int limit) {
-        return jpa.em().createQuery("SELECT u FROM User u ORDER BY lastSeen DESC", User.class)
-                .setMaxResults(limit)
-                .getResultList();
+        return jpa.withTransaction(em -> {
+            return em.createQuery("SELECT u FROM User u ORDER BY lastSeen DESC", User.class)
+                    .setMaxResults(limit)
+                    .getResultList();
+        });
     }
 
 }

@@ -174,9 +174,9 @@ public class JatosPublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/comp-uuid-1/start"));
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResult(request);
         verify(publixUtils).setUrlQueryParameter(request, sr);
-        verify(idCookieService).writeIdCookie(sr, JatosPublix.JatosRun.RUN_STUDY);
+        verify(idCookieService).writeIdCookie(request, sr, JatosPublix.JatosRun.RUN_STUDY);
     }
 
     @Test
@@ -201,7 +201,7 @@ public class JatosPublixTest {
         assertEquals(SEE_OTHER, res.status());
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/abc-123/start"));
-        verify(idCookieService).writeIdCookie(sr, JatosPublix.JatosRun.RUN_COMPONENT_START);
+        verify(idCookieService).writeIdCookie(request, sr, JatosPublix.JatosRun.RUN_COMPONENT_START);
     }
 
     @Test(expected = ForbiddenPublixException.class)

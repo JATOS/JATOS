@@ -1,6 +1,5 @@
 package controllers.publix.workers;
 
-import controllers.publix.GeneralSingleGroupChannel;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
@@ -127,7 +126,7 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         // No worker id cookie for this study
-        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(null);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(null);
 
         when(workerCreator.createAndPersistGeneralSingleWorker(batch)).thenReturn(worker);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-1"));
@@ -142,10 +141,10 @@ public class GeneralSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResult(request);
         verify(resultCreator).createStudyResult(sl, worker);
         verify(generalSingleCookieService).set(study, worker);
-        verify(idCookieService).writeIdCookie(sr);
+        verify(idCookieService).writeIdCookie(request, sr);
         verify(publixUtils).setUrlQueryParameter(request, sr);
         verify(studyLogger).log(eq(sl), contains("Started study run"), eq(worker));
     }
@@ -163,12 +162,12 @@ public class GeneralSinglePublixTest {
 
         // Worker cookie present
         long wid1 = 13L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(wid1);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(wid1);
         when(publixUtils.retrieveWorker(wid1)).thenReturn(worker);
 
         StudyResult existing = newStudyResult(20L, "sr-uuid-2", study, batch, worker);
         when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(true);
+        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(true);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-2"));
 
         Result res = publix.startStudy(request, sl);
@@ -178,9 +177,9 @@ public class GeneralSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyResult();
+        verify(publixUtils, never()).finishOldestStudyResult(request);
         verify(generalSingleCookieService, never()).set(any(), any());
-        verify(idCookieService).writeIdCookie(existing);
+        verify(idCookieService).writeIdCookie(request, existing);
         verify(publixUtils).setUrlQueryParameter(request, existing);
         verifyNoInteractions(resultCreator);
     }
@@ -194,12 +193,12 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         long wid2 = 23L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(wid2);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(wid2);
         when(publixUtils.retrieveWorker(wid2)).thenReturn(worker);
 
         StudyResult existing = newStudyResult(30L, "sr-uuid-3", study, batch, worker);
         when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(false);
+        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(false);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-3"));
 
         Result res = publix.startStudy(request, sl);
@@ -208,9 +207,9 @@ public class GeneralSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResult(request);
         verify(generalSingleCookieService).set(study, worker);
-        verify(idCookieService).writeIdCookie(existing);
+        verify(idCookieService).writeIdCookie(request, existing);
         verifyNoInteractions(resultCreator);
     }
 
@@ -222,7 +221,7 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         Long unknownWorkerId = 999L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(unknownWorkerId);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(unknownWorkerId);
         when(publixUtils.retrieveWorker(unknownWorkerId)).thenReturn(null);
 
         publix.startStudy(request, sl);
@@ -237,7 +236,7 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         long wid3 = 43L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(wid3);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(wid3);
         when(publixUtils.retrieveWorker(wid3)).thenReturn(worker);
         when(worker.getLastStudyResult()).thenReturn(Optional.empty());
 

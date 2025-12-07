@@ -2,10 +2,10 @@ package controllers.gui;
 
 import akka.stream.javadsl.Flow;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
@@ -25,7 +25,6 @@ import static auth.gui.AuthAction.Auth;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Tests extends Controller {

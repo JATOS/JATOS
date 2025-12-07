@@ -14,7 +14,6 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class WorkerDao extends AbstractDao {
 
@@ -36,28 +35,35 @@ public class WorkerDao extends AbstractDao {
     }
 
     public Worker findById(Long id) {
-        return jpa.em().find(Worker.class, id);
+        return jpa.withTransaction(em -> {
+            return em.find(Worker.class, id);
+        });
     }
 
     public List<Worker> findAll() {
-        TypedQuery<Worker> query = jpa.em().createQuery("SELECT w FROM Worker w", Worker.class);
-        return query.getResultList();
+        return jpa.withTransaction(em -> {
+            return em.createQuery("SELECT w FROM Worker w", Worker.class).getResultList();
+        });
     }
 
     /**
      * Returns the number of Worker rows
      */
     public int count() {
-        Number result = (Number) jpa.em().createQuery("SELECT COUNT(w) FROM Worker w").getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createQuery("SELECT COUNT(w) FROM Worker w").getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
      * Returns the total number of Worker (including the deleted ones)
      */
     public int countTotal() {
-        Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM Worker").getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createQuery("SELECT max(id) FROM Worker").getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
 }

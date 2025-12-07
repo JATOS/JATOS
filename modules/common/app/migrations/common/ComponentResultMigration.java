@@ -6,12 +6,12 @@ import play.Logger;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 
 /**
  * Migrates the database for all <3.7.5. It adds dataSize and the dataShort fields to each ComponentResult row.
  */
-@SuppressWarnings("deprecation")
 public class ComponentResultMigration {
 
     private static final Logger.ALogger LOGGER = Logger.of(ComponentResultMigration.class);
@@ -36,12 +36,12 @@ public class ComponentResultMigration {
     }
 
     private void fill() {
-        List<Long> crids = jpaApi.withTransaction(componentResultDao::findAllIdsWhereDataSizeIsNull);
+        List<Long> crids = jpaApi.withTransaction((EntityManager em) -> componentResultDao.findAllIdsWhereDataSizeIsNull());
         if (crids.isEmpty()) return;
 
         LOGGER.info("Start filling dataSize and dataShort fields of ComponentResults. This is part of the update " +
                 "and can take a while depending on the number of ComponentResults in your database.");
-        crids.parallelStream().forEach(crid -> jpaApi.withTransaction(() -> {
+        crids.parallelStream().forEach(crid -> jpaApi.withTransaction((em) -> {
             Errors.rethrow().run(() -> componentResultDao.setDataSizeAndDataShort(crid));
             LOGGER.info("Filled dataSize and dataShort fields of ComponentResult " + crid);
         }));

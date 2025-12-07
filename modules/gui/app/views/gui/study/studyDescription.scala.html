@@ -1,4 +1,5 @@
-@(study: common.Study)
+@import play.api.mvc.RequestHeader
+@(study: common.Study)(implicit request: RequestHeader)
 
 @* Study description offcanvas *@
 <div class="offcanvas offcanvas-end rounded-start-4 shadow" id="studyDescriptionSidebar" tabindex="-1" data-bs-config='{"backdrop": true, "keyboard": true, "scroll": false}'>

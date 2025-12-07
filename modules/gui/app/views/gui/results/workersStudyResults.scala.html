@@ -1,6 +1,7 @@
-@(request: Http.Request, signedinUser: common.User, breadcrumbs: String, worker: common.workers.Worker)
+@import play.api.mvc.RequestHeader
+@(signedinUser: common.User, breadcrumbs: String, worker: common.workers.Worker)(implicit request: RequestHeader)
 
-@views.html.gui.page.main(request, signedinUser, None, Some(worker), breadcrumbs) {
+@views.html.gui.page.main(signedinUser, None, Some(worker), breadcrumbs) {
 
 <main class="container-fluid overflow-auto mt-4">
 
@@ -58,7 +59,7 @@
         </tfoot>
     </table>
 
-    @views.html.gui.results.componentResultDataModal()
+    @views.html.gui.results.componentResultDataModal(request)
     @views.html.gui.results.resultsTableToolbar()
 
 </main>

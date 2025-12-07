@@ -4,10 +4,10 @@ import com.google.common.base.Strings;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.Common;
-import general.common.RequestScope;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
+import play.libs.typedmap.TypedKey;
 import play.mvc.Http;
 import utils.common.HashUtils;
 
@@ -16,6 +16,8 @@ import javax.inject.Singleton;
 import javax.naming.NamingException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -52,9 +54,9 @@ public class AuthService {
     public static final String SESSION_KEEP_SIGNEDIN = "keepSignedin";
 
     /**
-     * Key name used in RequestScope to store the signed-in User
+     * Key name used in request attrs to store the signed-in User
      */
-    public static final String SIGNEDIN_USER = "signedinUser";
+    public static final TypedKey<User> SIGNEDIN_USER = TypedKey.create("signedinUser");
 
     private final UserDao userDao;
     private final LoginAttemptDao loginAttemptDao;
@@ -103,35 +105,35 @@ public class AuthService {
      * <p>
      * In most cases, getSignedinUser() is faster since it doesn't have to query the database.
      */
-    @SuppressWarnings("deprecation")
     public User getSignedinUserBySessionCookie(Http.Session session) {
-        String normalizedUsername = session.get(AuthService.SESSION_USERNAME);
+        Optional<String> normalizedUsername = session.get(AuthService.SESSION_USERNAME);
         User signedinUser = null;
-        if (normalizedUsername != null) {
-            signedinUser = userDao.findByUsername(normalizedUsername);
+        if (normalizedUsername.isPresent()) {
+            signedinUser = userDao.findByUsername(normalizedUsername.orElse(null));
         }
         return signedinUser;
     }
 
     /**
-     * Gets the signed-in user from the RequestScope. It was put into the
-     * RequestScope by the AuthenticationAction. Therefore, this method works
+     * Gets the signed-in user from the request attrs. It was put into the
+     * request attrs by the AuthenticationAction. Therefore, this method works
      * only if you use the @Authenticated annotation at your action.
      */
-    public User getSignedinUser() {
-        return (User) RequestScope.get(SIGNEDIN_USER);
+    public User getSignedinUser(Http.Request request) {
+        return request.attrs().get(SIGNEDIN_USER);
     }
 
     /**
      * Prepares Play's session cookie for the user with the given username to be signed-in. Does not authenticate the
      * user (use authenticate() for this).
      */
-    @SuppressWarnings("deprecation")
-    public void writeSessionCookie(Http.Session session, String normalizedUsername, boolean keepSignedin) {
-        session.put(SESSION_USERNAME, normalizedUsername);
-        session.put(SESSION_SIGNIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
-        session.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
-        session.put(SESSION_KEEP_SIGNEDIN, String.valueOf(Common.getUserSessionAllowKeepSignedin() && keepSignedin));
+    public Map<String, String> writeSessionCookie(String normalizedUsername, boolean keepSignedin) {
+        Map<String, String> map = new HashMap<>();
+        map.put(SESSION_USERNAME, normalizedUsername);
+        map.put(SESSION_SIGNIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
+        map.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
+        map.put(SESSION_KEEP_SIGNEDIN, String.valueOf(Common.getUserSessionAllowKeepSignedin() && keepSignedin));
+        return map;
     }
 
     /**
@@ -139,7 +141,7 @@ public class AuthService {
      * signed in.
      */
     public boolean isSessionKeepSignedin(Http.Session session) {
-        Optional<String> keepSignedin = session.getOptional(SESSION_KEEP_SIGNEDIN);
+        Optional<String> keepSignedin = session.get(SESSION_KEEP_SIGNEDIN);
         boolean allowKeepSignedin = Common.getUserSessionAllowKeepSignedin();
         return allowKeepSignedin && keepSignedin.isPresent() && keepSignedin.get().equals("true");
     }
@@ -148,10 +150,9 @@ public class AuthService {
      * Returns true if the session sign-in time as saved in Play's session cookie
      * is older than allowed.
      */
-    @SuppressWarnings("deprecation")
     public boolean isSessionTimeout(Http.Session session) {
         try {
-            String signinTimeStr = session.get(SESSION_SIGNIN_TIME);
+            String signinTimeStr = session.get(SESSION_SIGNIN_TIME).orElseThrow(IllegalArgumentException::new);
             Instant signinTime = Instant.ofEpochMilli(Long.parseLong(signinTimeStr));
             Instant now = Instant.now();
             Instant allowedUntil = signinTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
@@ -169,7 +170,7 @@ public class AuthService {
      */
     public boolean isInactivityTimeout(Http.Session session) {
         try {
-            String lastActivityTimeStr = session.getOptional(SESSION_LAST_ACTIVITY_TIME).orElseThrow(IllegalArgumentException::new);
+            String lastActivityTimeStr = session.get(SESSION_LAST_ACTIVITY_TIME).orElseThrow(IllegalArgumentException::new);
             Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(lastActivityTimeStr));
             Instant now = Instant.now();
             Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
@@ -188,6 +189,10 @@ public class AuthService {
         return !Strings.isNullOrEmpty(user.getLastVisitedPageUrl())
                 ? Common.getJatosUrlBasePath() + user.getLastVisitedPageUrl()
                 : controllers.gui.routes.Home.home().url();
+    }
+
+    public Long getSessionSigninTime(Http.Request request) {
+        return Long.valueOf(request.session().get(AuthService.SESSION_SIGNIN_TIME).orElse("-1"));
     }
 
 }

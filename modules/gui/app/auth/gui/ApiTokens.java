@@ -1,18 +1,20 @@
 package auth.gui;
 
+import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
-import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.ApiTokenDao;
 import models.common.ApiToken;
 import models.common.User;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
-import play.db.jpa.Transactional;
+import play.db.jpa.JPAApi;
 import play.libs.Json;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.ApiTokenService;
 
@@ -25,39 +27,41 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class ApiTokens extends Controller {
 
+    private final JPAApi jpa;
     private final ApiTokenDao apiTokenDao;
     private final ApiTokenService apiTokenService;
     private final AuthService authService;
 
     @Inject
-    ApiTokens(ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthService authService) {
+    ApiTokens(JPAApi jpa, ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthService authService) {
+        this.jpa = jpa;
         this.apiTokenDao = apiTokenDao;
         this.apiTokenService = apiTokenService;
         this.authService = authService;
     }
 
-    @Transactional
     @Auth
-    public Result allTokenDataByUser() {
-        User signedinUser = authService.getSignedinUser();
-        List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
-        ArrayNode tokenData = Json.newArray();
-        for (ApiToken token : tokenList) {
-            tokenData.add(Json.mapper().valueToTree(token));
-        }
-        JsonNode data = Json.newObject().set("data", tokenData);
-        return ok(data);
+    public Result allTokenDataByUser(Http.Request request) {
+        return jpa.withTransaction(em -> {
+            User signedinUser = authService.getSignedinUser(request);
+            List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
+            ArrayNode tokenData = Json.newArray();
+            for (ApiToken token : tokenList) {
+                tokenData.add(Json.mapper().valueToTree(token));
+            }
+            JsonNode data = Json.newObject().set("data", tokenData);
+            return ok(data);
+        });
     }
 
     @Transactional
     @Auth
-    public Result generate(String name, Integer expires) {
-        User signedinUser = authService.getSignedinUser();
+    public Result generate(Http.Request request, String name, Integer expires) {
+        User signedinUser = authService.getSignedinUser(request);
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
         if (!Jsoup.isValid(name, Safelist.none())) return badRequest("No HTML allowed");
         if (expires == null || expires < 0) return badRequest("Expiration must be >= 0");
@@ -68,8 +72,8 @@ public class ApiTokens extends Controller {
 
     @Transactional
     @Auth
-    public Result remove(Long id) {
-        User signedinUser = authService.getSignedinUser();
+    public Result remove(Http.Request request, Long id) {
+        User signedinUser = authService.getSignedinUser(request);
         ApiToken token = apiTokenDao.find(id);
         if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
         apiTokenDao.remove(token);
@@ -78,8 +82,8 @@ public class ApiTokens extends Controller {
 
     @Transactional
     @Auth
-    public Result toggleActive(Long id, Boolean active) {
-        User signedinUser = authService.getSignedinUser();
+    public Result toggleActive(Http.Request request, Long id, Boolean active) {
+        User signedinUser = authService.getSignedinUser(request);
         ApiToken token = apiTokenDao.find(id);
         if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
         token.setActive(active);

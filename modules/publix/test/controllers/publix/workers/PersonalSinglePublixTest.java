@@ -133,9 +133,9 @@ public class PersonalSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResult(request);
         verify(resultCreator).createStudyResult(sl, worker);
-        verify(idCookieService).writeIdCookie(sr);
+        verify(idCookieService).writeIdCookie(request, sr);
         verify(publixUtils).setUrlQueryParameter(request, sr);
         verify(studyLogger).log(eq(sl), contains("Started study run"), eq(worker));
     }
@@ -150,7 +150,7 @@ public class PersonalSinglePublixTest {
 
         StudyResult existing = newStudyResult(20L, "sr-uuid-2", study, batch, worker);
         when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(true);
+        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(true);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-2"));
 
         Result res = publix.startStudy(request, sl);
@@ -160,8 +160,8 @@ public class PersonalSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyResult();
-        verify(idCookieService).writeIdCookie(existing);
+        verify(publixUtils, never()).finishOldestStudyResult(request);
+        verify(idCookieService).writeIdCookie(request, existing);
         verify(publixUtils).setUrlQueryParameter(request, existing);
         verifyNoInteractions(resultCreator);
     }
@@ -176,7 +176,7 @@ public class PersonalSinglePublixTest {
 
         StudyResult existing = newStudyResult(30L, "sr-uuid-3", study, batch, worker);
         when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(false);
+        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(false);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-3"));
 
         Result res = publix.startStudy(request, sl);
@@ -185,8 +185,8 @@ public class PersonalSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyResult();
-        verify(idCookieService).writeIdCookie(existing);
+        verify(publixUtils).finishOldestStudyResult(request);
+        verify(idCookieService).writeIdCookie(request, existing);
         verifyNoInteractions(resultCreator);
     }
 }

@@ -40,50 +40,18 @@ public class JatosGuiExceptionThrower {
 	}
 
 	/**
-	 * Throws a JatosGuiException for an Ajax request (doesn't return a view)
-	 * with the given error msg and HTTP status.
-	 */
-	public void throwAjax(String errorMsg, int httpStatus)
-			throws JatosGuiException {
-		Result result = Results.status(httpStatus, errorMsg);
-		throw new JatosGuiException(result, errorMsg);
-	}
-
-	/**
-	 * Throws a JatosGuiException for an Ajax request (doesn't return a view but
-	 * a simple text) with the exception's message. The exception's type
-	 * determines the response's HTTP status code.
-	 */
-	public void throwAjax(Exception e) throws JatosGuiException {
-		int httpStatus = getHttpStatusFromException(e);
-		throwAjax(e, httpStatus);
-	}
-
-	/**
-	 * Throws a JatosGuiException for an Ajax request (doesn't return a view but
-	 * a simple text) with the exception's message. The HTTP's status code is
-	 * taken from the parameter.
-	 */
-	public void throwAjax(Exception e, int httpStatus)
-			throws JatosGuiException {
-		Result result = Results.status(httpStatus, e.getMessage());
-		throw new JatosGuiException(result, e.getMessage());
-	}
-
-	/**
 	 * Throws a JatosGuiException that either redirects to the given call if
 	 * it's a non-Ajax request - or returns the exception's message if it's a
 	 * Ajax request. The exception's type determines the response's HTTP status
 	 * code.
 	 */
-	public void throwRedirect(Exception e, Call call) throws JatosGuiException {
+	public void throwRedirect(Http.Request request, Exception e, Call call) throws JatosGuiException {
 		Result result;
-		if (Helpers.isAjax()) {
+		if (Helpers.isAjax(request)) {
 			int statusCode = getHttpStatusFromException(e);
 			result = Results.status(statusCode, e.getMessage());
 		} else {
-			FlashScopeMessaging.error(e.getMessage());
-			result = Results.redirect(call);
+			result = Results.redirect(call).flashing(FlashScopeMessaging.ERROR, e.getMessage());
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}
@@ -97,10 +65,10 @@ public class JatosGuiExceptionThrower {
 	public void throwHome(Http.Request request, Exception e) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
-		if (Helpers.isAjax()) {
+		if (Helpers.isAjax(request)) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
-			RequestScopeMessaging.error(e.getMessage());
+			RequestScopeMessaging.error(request, e.getMessage());
 			result = homeProvider.get().home(request, httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());
@@ -114,10 +82,10 @@ public class JatosGuiExceptionThrower {
 	public void throwStudy(Http.Request request, String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
 		Result result;
-		if (Helpers.isAjax()) {
+		if (Helpers.isAjax(request)) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
-			RequestScopeMessaging.error(errorMsg);
+			RequestScopeMessaging.error(request, errorMsg);
 			result = studiesProvider.get().study(request, studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
@@ -132,10 +100,10 @@ public class JatosGuiExceptionThrower {
 	public void throwStudy(Http.Request request, Exception e, Long studyId) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
-		if (Helpers.isAjax()) {
+		if (Helpers.isAjax(request)) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
-			RequestScopeMessaging.error(e.getMessage());
+			RequestScopeMessaging.error(request, e.getMessage());
 			result = studiesProvider.get().study(request, studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());

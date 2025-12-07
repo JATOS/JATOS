@@ -14,7 +14,8 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Json;
-import play.mvc.Controller;
+import play.libs.typedmap.TypedKey;
+import play.mvc.Http;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import utils.common.ZipUtil;
@@ -36,13 +37,12 @@ import java.util.UUID;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings({"ResultOfMethodCallIgnored", "deprecation"})
 @Singleton
 public class ImportExportService {
 
     private static final ALogger LOGGER = Logger.of(ImportExportService.class);
 
-    public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
+    public static final TypedKey<String> SESSION_UNZIPPED_STUDY_DIR = TypedKey.create("tempStudyAssetsDir");
 
     private final Checker checker;
     private final StudyService studyService;
@@ -81,12 +81,12 @@ public class ImportExportService {
      * 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
      * 5) !study exists - !udir exists : new study - write both
      */
-    public ObjectNode importStudy(User signedinUser, File file) throws IOException, ForbiddenException {
+    public ObjectNode importStudy(Http.Request request, User signedinUser, File file) throws IOException, ForbiddenException {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
         Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, false);
 
         // Remember study assets' dir name
-        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
+        request.addAttr(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
 
         checkForExistingComponents(uploadedStudy);
 
@@ -148,9 +148,9 @@ public class ImportExportService {
      *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
      *                              Default is `true`.
      */
-    public Long importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
-        File tempUnzippedStudyDir = getUnzippedStudyDir();
+    public Long importStudyConfirmed(Http.Request request, User signedinUser, boolean keepProperties, boolean keepAssets,
+                                     boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
+        File tempUnzippedStudyDir = getUnzippedStudyDir(request);
         if (tempUnzippedStudyDir == null) {
             LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
             throw new IOException("Missing unzipped study directory in tmp directory");
@@ -162,7 +162,7 @@ public class ImportExportService {
         // 2) study exists  -  udir exists - udir != cdir
         // 3) study exists  - !udir exists
         if (currentStudy.isPresent()) {
-            overwriteExistingStudy(signedinUser, keepProperties, keepAssets,
+            overwriteExistingStudy(request, signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
             return currentStudy.get().getId();
         }
@@ -178,7 +178,7 @@ public class ImportExportService {
                 String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
                 uploadedStudy.setDirName(newDirName);
             }
-            Study newStudy = importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
+            Study newStudy = importNewStudy(request, signedinUser, tempUnzippedStudyDir, uploadedStudy);
             return newStudy.getId();
         }
 
@@ -187,24 +187,23 @@ public class ImportExportService {
         }
     }
 
-    public void cleanupAfterStudyImport() {
-        File tempUnzippedStudyDir = getUnzippedStudyDir();
+    public void cleanupAfterStudyImport(Http.Request request) {
+        File tempUnzippedStudyDir = getUnzippedStudyDir(request);
         if (tempUnzippedStudyDir != null) {
             tempUnzippedStudyDir.delete();
         }
-        Controller.session().remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
     }
 
-    private void overwriteExistingStudy(User signedinUser, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
+    private void overwriteExistingStudy(Http.Request request, User signedinUser, boolean keepProperties, boolean keepAssets,
+                                        boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
             throws IOException, ForbiddenException, NotFoundException {
         checker.checkStandardForStudy(currentStudy, currentStudy.getId(), signedinUser);
         checker.checkStudyLocked(currentStudy);
 
         if (!keepAssets) {
             String dirName = keepCurrentAssetsName ? currentStudy.getDirName() : uploadedStudy.getDirName();
-            moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, dirName);
-            RequestScopeMessaging.success(MessagesStrings.studyAssetsOverwritten(
+            moveStudyAssetsDir(request, tempUnzippedStudyDir, currentStudy, dirName);
+            RequestScopeMessaging.success(request, MessagesStrings.studyAssetsOverwritten(
                     dirName, currentStudy.getId(), currentStudy.getTitle()));
         }
 
@@ -215,15 +214,15 @@ public class ImportExportService {
                 studyService.updateStudy(currentStudy, uploadedStudy, signedinUser);
             }
             updateStudysComponents(currentStudy, uploadedStudy);
-            RequestScopeMessaging.success(MessagesStrings
+            RequestScopeMessaging.success(request, MessagesStrings
                     .studysPropertiesOverwritten(currentStudy.getId(), currentStudy.getTitle()));
         }
     }
 
-    private Study importNewStudy(User signedinUser, File tempUnzippedStudyDir, Study importedStudy) throws IOException {
-        moveStudyAssetsDir(tempUnzippedStudyDir, null, importedStudy.getDirName());
+    private Study importNewStudy(Http.Request request, User signedinUser, File tempUnzippedStudyDir, Study importedStudy) throws IOException {
+        moveStudyAssetsDir(request, tempUnzippedStudyDir, null, importedStudy.getDirName());
         Study newStudy = studyService.createAndPersistStudy(signedinUser, importedStudy);
-        RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
+        RequestScopeMessaging.success(request, MessagesStrings.importedNewStudy(
                 importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
         return newStudy;
     }
@@ -295,8 +294,8 @@ public class ImportExportService {
      * Deletes current study assets' dir and moves imported study assets' dir
      * from Java's temp dir to study assets root dir
      */
-    private void moveStudyAssetsDir(File unzippedStudyDir, Study currentStudy,
-            String studyAssetsDirName) throws IOException {
+    private void moveStudyAssetsDir(Http.Request request, File unzippedStudyDir, Study currentStudy,
+                                    String studyAssetsDirName) throws IOException {
         if (currentStudy != null) {
             ioUtils.removeStudyAssetsDir(currentStudy.getDirName());
         }
@@ -305,7 +304,7 @@ public class ImportExportService {
         if (dirArray.length == 0) {
             // If a study assets dir is missing, create a new one.
             ioUtils.createStudyAssetsDir(studyAssetsDirName);
-            RequestScopeMessaging.warning("There is no directory in the ZIP file - new study assets created.");
+            RequestScopeMessaging.warning(request, "There is no directory in the ZIP file - new study assets created.");
         } else if (dirArray.length == 1) {
             File studyAssetsDir = dirArray[0];
             ioUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
@@ -318,12 +317,12 @@ public class ImportExportService {
      * Get unzipped study dir File object stored in Java's temp directory. Name
      * is stored in session. Discard session variable afterwards.
      */
-    private File getUnzippedStudyDir() {
-        String unzippedStudyDirName = Controller.session(SESSION_UNZIPPED_STUDY_DIR);
-        if (unzippedStudyDirName == null || unzippedStudyDirName.trim().isEmpty()) {
+    private File getUnzippedStudyDir(Http.Request request) {
+        Optional<String> unzippedStudyDirName = request.session().get(SESSION_UNZIPPED_STUDY_DIR.toString());
+        if (!unzippedStudyDirName.isPresent() || unzippedStudyDirName.get().trim().isEmpty()) {
             return null;
         }
-        return new File(IOUtils.TMP_DIR, unzippedStudyDirName);
+        return new File(IOUtils.TMP_DIR, unzippedStudyDirName.orElse(null));
     }
 
     private File unzipUploadedFile(File file) throws IOException {

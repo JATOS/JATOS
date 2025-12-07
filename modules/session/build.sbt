@@ -1,7 +1,7 @@
 name := "jatos-session"
 version := "3.9.8"
 organization := "org.jatos"
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(

@@ -84,7 +84,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
     public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
-        Long workerId = generalSingleCookieService.fetchWorkerIdByStudy(study);
+        Long workerId = generalSingleCookieService.fetchWorkerIdByStudy(request, study);
 
         // There are 4 possibilities
         // 1. Preview study, first call -> create Worker and StudyResult, call finishOldestStudyResult, write General Single Cookie
@@ -97,9 +97,8 @@ public class GeneralSinglePublix extends Publix implements IPublix {
         if (workerId == null) {
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
             studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
-            publixUtils.finishOldestStudyResult();
+            publixUtils.finishOldestStudyResult(request);
             studyResult = resultCreator.createStudyResult(studyLink, worker);
-            generalSingleCookieService.set(study, worker);
             studyLogger.log(studyLink, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
                     + " worker", worker);
         } else {
@@ -111,12 +110,12 @@ public class GeneralSinglePublix extends Publix implements IPublix {
             studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
             studyResult = worker.getLastStudyResult().orElseThrow(() -> new ForbiddenPublixException(
                     "This study was run in this browser already. Although JATOS couldn't find the study result."));
-            if (!idCookieService.hasIdCookie(studyResult.getId())) {
-                publixUtils.finishOldestStudyResult();
-                generalSingleCookieService.set(study, worker);
+            if (!idCookieService.hasIdCookie(request, studyResult.getId())) {
+                publixUtils.finishOldestStudyResult(request);
             }
         }
-        idCookieService.writeIdCookie(studyResult);
+        idCookieService.writeIdCookie(request, studyResult);
+        Http.Cookie generalSingleCookie = generalSingleCookieService.get(request, study, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
@@ -127,7 +126,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
                 + "workerId " + worker.getId() + ", "
                 + "preview " + study.isAllowPreview());
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyResult.getUuid(), firstComponent.getUuid(), null));
+                studyResult.getUuid(), firstComponent.getUuid(), null)).withCookies(generalSingleCookie);
     }
 
 }

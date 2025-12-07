@@ -94,29 +94,6 @@ public class GeneralSingleCookieServiceTest {
     }
 
     @Test
-    public void addStudy_createsNewWhenNoExistingCookie() {
-        Study study = new Study();
-        study.setUuid("s-5");
-        PersonalSingleWorker w = new PersonalSingleWorker();
-        w.setId(9L);
-
-        String newVal = service.addStudy(study, w, null);
-        assertEquals("s-5=9", newVal);
-    }
-
-    @Test
-    public void addStudy_appendsWhenExistingCookie() {
-        Study study = new Study();
-        study.setUuid("s-6");
-        PersonalSingleWorker w = new PersonalSingleWorker();
-        w.setId(10L);
-        Http.Cookie existing = builder("any", "a=1").build();
-
-        String newVal = service.addStudy(study, w, existing);
-        assertEquals("a=1&s-6=10", newVal);
-    }
-
-    @Test
     public void set_String_buildsCookieWithExpectedAttributes() {
         String value = "abc=123";
         service.set(value);

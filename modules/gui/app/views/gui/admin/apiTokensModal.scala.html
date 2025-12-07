@@ -1,3 +1,6 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
 @* Show all API tokens Modal *@
 <div class="modal fade" id="apiTokensModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
     <div class="modal-dialog modal-xl modal-dialog-scrollable">

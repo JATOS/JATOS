@@ -2,7 +2,6 @@ package auth.gui;
 
 import daos.common.ApiTokenDao;
 import general.common.Common;
-import general.common.RequestScope;
 import models.common.ApiToken;
 import models.common.User;
 import org.junit.After;
@@ -10,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import utils.common.HashUtils;
 import utils.common.Helpers;
@@ -20,7 +18,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,14 +43,7 @@ public class AuthApiTokenTest {
         testutils.gui.ContextMocker.mock();
 
         apiTokenDao = mock(ApiTokenDao.class);
-        JPAApi jpa = mock(JPAApi.class);
-        // Make withTransaction execute the provided Supplier
-        //noinspection unchecked
-        when(jpa.withTransaction(any(Supplier.class))).thenAnswer(inv -> {
-            Supplier<?> s = inv.getArgument(0);
-            return s.get();
-        });
-        authApiToken = new AuthApiToken(apiTokenDao, jpa);
+        authApiToken = new AuthApiToken(apiTokenDao);
 
         helpersMock = Mockito.mockStatic(Helpers.class);
         commonMock = Mockito.mockStatic(Common.class);

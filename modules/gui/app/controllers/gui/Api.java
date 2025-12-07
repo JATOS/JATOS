@@ -15,7 +15,6 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
-import general.common.RequestScope;
 import general.common.StudyLogger;
 import models.common.Component;
 import models.common.ComponentResult;
@@ -26,7 +25,6 @@ import models.gui.StudyProperties;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.data.validation.ValidationError;
-import play.db.jpa.Transactional;
 import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -39,6 +37,7 @@ import utils.common.DirectoryStructureToJson;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+import utils.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -63,7 +62,6 @@ import static models.common.User.Role.ADMIN;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @ApiAccessLogging
 @Singleton
 public class Api extends Controller {
@@ -89,12 +87,12 @@ public class Api extends Controller {
 
     @Inject
     Api(Admin admin, AdminService adminService, AuthService authService,
-            ComponentResultIdsExtractor componentResultIdsExtractor,
-            StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
-            ComponentService componentService, StudyLinkService studyLinkService,
-            ImportExport importExport, ResultRemover resultRemover,
-            ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
-            StudyLogger studyLogger, IOUtils ioUtils) {
+        ComponentResultIdsExtractor componentResultIdsExtractor,
+        StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
+        ComponentService componentService, StudyLinkService studyLinkService,
+        ImportExport importExport, ResultRemover resultRemover,
+        ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
+        StudyLogger studyLogger, IOUtils ioUtils) {
         this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
@@ -117,8 +115,8 @@ public class Api extends Controller {
      * Returns information about the API token used in the request in JSON.
      */
     @Auth
-    public Result testToken() {
-        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(RequestScope.get(AuthApiToken.API_TOKEN))));
+    public Result testToken(Http.Request request) {
+        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(request.attrs().get(AuthApiToken.API_TOKEN))));
     }
 
     /**
@@ -126,8 +124,8 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth(ADMIN)
-    public Result status() {
-        return ok(JsonUtils.wrapForApi(adminService.getAdminStatus()));
+    public Result status(Http.Request request) {
+        return ok(JsonUtils.wrapForApi(adminService.getAdminStatus(request)));
     }
 
     /**
@@ -153,8 +151,9 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result studyLog(String id, int entryLimit, boolean download) throws ForbiddenException, NotFoundException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+    public Result studyLog(Http.Request request, String id, int entryLimit, boolean download)
+            throws ForbiddenException, NotFoundException {
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         if (download) {
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
             if (Files.notExists(studyLogPath)) return notFound();
@@ -179,9 +178,9 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result getAllStudyPropertiesByUser(Boolean withComponentProperties, Boolean withBatchProperties)
-            throws IOException {
-        User signedinUser = authService.getSignedinUser();
+    public Result getAllStudyPropertiesByUser(Http.Request request, Boolean withComponentProperties,
+                                              Boolean withBatchProperties) throws IOException {
+        User signedinUser = authService.getSignedinUser(request);
         List<Study> studies = studyDao.findAllByUser(signedinUser);
         ArrayNode studiesArray = Json.newArray();
         for (Study s : studies) {
@@ -200,9 +199,10 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result getStudyProperties(String id, Boolean withComponentProperties, Boolean withBatchProperties)
+    public Result getStudyProperties(Http.Request request, String id, Boolean withComponentProperties,
+                                     Boolean withBatchProperties)
             throws ForbiddenException, NotFoundException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(JsonUtils.wrapForApi(studiesNode));
     }
@@ -218,9 +218,9 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result getStudyAssetsStructure(String id, boolean flatten)
+    public Result getStudyAssetsStructure(Http.Request request, String id, boolean flatten)
             throws ForbiddenException, NotFoundException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         File base;
         try {
             base = ioUtils.getStudyAssetsDir(study.getDirName());
@@ -240,10 +240,10 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result downloadStudyAssetsFile(String id, String filepath) throws ForbiddenException, NotFoundException {
+    public Result downloadStudyAssetsFile(Http.Request request, String id, String filepath) throws ForbiddenException, NotFoundException {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         File file;
         try {
             file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
@@ -268,16 +268,17 @@ public class Api extends Controller {
     @Auth
     public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath)
             throws ForbiddenException, NotFoundException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         checker.checkStudyLocked(study);
 
         if (request.body().asMultipartFormData() == null) return badRequest("File missing");
-        Http.MultipartFormData.FilePart<Object> filePart = request.body().asMultipartFormData().getFile("studyAssetsFile");
+        Http.MultipartFormData<File> body = request.body().asMultipartFormData();
+        Http.MultipartFormData.FilePart<File> filePart = body.getFile("studyAssetsFile");
         if (filePart == null) return badRequest("File missing");
-        File uploadedFile = (File) filePart.getFile();
+        File uploadedFile = filePart.getRef();
 
         try {
-            Path assetsFilePath= ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
+            Path assetsFilePath = ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
             if (Files.notExists(assetsFilePath)) Files.createDirectories(assetsFilePath);
             Files.move(uploadedFile.toPath(), assetsFilePath, REPLACE_EXISTING);
             return ok();
@@ -296,10 +297,10 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result deleteStudyAssetsFile(String id, String filepath) throws ForbiddenException, NotFoundException {
+    public Result deleteStudyAssetsFile(Http.Request request, String id, String filepath) throws ForbiddenException, NotFoundException {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         checker.checkStudyLocked(study);
 
         try {
@@ -326,22 +327,21 @@ public class Api extends Controller {
      * @param comment Some comment that will be associated with the worker.
      * @param amount  Number of study codes that have to be generated. If empty 1 is assumed.
      */
-    @Transactional
     @Auth
-    public Result getStudyCodes(String id, Option<Long> batchId, String type, String comment, Integer amount)
+    public Result getStudyCodes(Http.Request request, String id, Option<Long> batchId, String type, String comment, Integer amount)
             throws ForbiddenException, NotFoundException, BadRequestException {
-        return ok(JsonUtils.wrapForApi(studyLinkService.getStudyCodes(id, batchId, type, comment, amount)));
+        return ok(JsonUtils.wrapForApi(studyLinkService.getStudyCodes(request, id, batchId, type, comment, amount)));
     }
 
     /**
      * Returns a JATOS study archive
      *
-     * @param id    Study's ID or UUID
+     * @param id Study's ID or UUID
      */
     @Transactional
     @Auth
-    public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
-        return importExport.exportStudy(id);
+    public Result exportStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
+        return importExport.exportStudy(request, id);
     }
 
     /**
@@ -352,7 +352,7 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result createStudy(Http.Request request) throws IOException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
 
         JsonNode node = request.body().asJson();
         StudyProperties studyProperties = Json.mapper().treeToValue(node, StudyProperties.class);
@@ -372,13 +372,13 @@ public class Api extends Controller {
     /**
      * Deletes a study
      *
-     * @param id    Study's ID or UUID
+     * @param id Study's ID or UUID
      */
     @Transactional
     @Auth
-    public Result deleteStudy(String id) throws ForbiddenException, NotFoundException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
-        User signedinUser = authService.getSignedinUser();
+    public Result deleteStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException, IOException {
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStudyLocked(study);
 
         studyService.removeStudyInclAssets(study, signedinUser);
@@ -408,20 +408,20 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
+                              boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
         return importExport.importStudyApi(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
     }
 
     /**
      * Creates a component within the specified study
      *
-     * @param id    Study's ID or UUID
+     * @param id Study's ID or UUID
      * @return UUID and ID of the new component in JSON
      */
     @Transactional
     @Auth
     public Result createComponent(Http.Request request, String id) throws ForbiddenException, NotFoundException, JsonProcessingException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         checker.checkStudyLocked(study);
 
         JsonNode node = request.body().asJson();
@@ -446,9 +446,9 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result deleteComponent(String studyId, String componentId) throws ForbiddenException, NotFoundException {
-        Component component = componentService.getComponentFromIdOrUuid(componentId);
-        User signedinUser = authService.getSignedinUser();
+    public Result deleteComponent(Http.Request request, String studyId, String componentId) throws ForbiddenException, NotFoundException {
+        Component component = componentService.getComponentFromIdOrUuid(request, componentId);
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStudyLocked(component.getStudy());
         checker.checkComponentBelongsToStudy(component, studyId);
 
@@ -466,9 +466,8 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result removeResults(Http.Request request)
-            throws BadRequestException, ForbiddenException, NotFoundException {
-        User signedinUser = authService.getSignedinUser();
+    public Result removeResults(Http.Request request) throws BadRequestException, ForbiddenException, NotFoundException {
+        User signedinUser = authService.getSignedinUser(request);
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         resultRemover.removeComponentResults(crids, signedinUser, true);
@@ -575,10 +574,10 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result exportSingleResultFile(Long componentResultId, String filename)
+    public Result exportSingleResultFile(Http.Request request, Long componentResultId, String filename)
             throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkComponentResult(componentResult, signedinUser, false);
 
         File file;

@@ -87,15 +87,15 @@ public class PersonalSinglePublix extends Publix implements IPublix {
         Optional<StudyResult> studyResultOpt = worker.getLastStudyResult();
         StudyResult studyResult;
         if (!studyResultOpt.isPresent()) {
-            publixUtils.finishOldestStudyResult();
+            publixUtils.finishOldestStudyResult(request);
             studyResult = resultCreator.createStudyResult(studyLink, worker);
         } else {
-            if (!idCookieService.hasIdCookie(studyResultOpt.get().getId())) {
-                publixUtils.finishOldestStudyResult();
+            if (!idCookieService.hasIdCookie(request, studyResultOpt.get().getId())) {
+                publixUtils.finishOldestStudyResult(request);
             }
             studyResult = studyResultOpt.get();
         }
-        idCookieService.writeIdCookie(studyResult);
+        idCookieService.writeIdCookie(request, studyResult);
         publixUtils.setUrlQueryParameter(request, studyResult);
         Component component = publixUtils.retrieveFirstActiveComponent(study);
 

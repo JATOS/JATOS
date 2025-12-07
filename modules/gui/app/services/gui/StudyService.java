@@ -22,6 +22,7 @@ import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
+import play.mvc.Http;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 
@@ -159,12 +160,12 @@ public class StudyService {
      * Removes all member users from the given study except the signed-in user. Additionally, removes all user's Jatos
      * workers from the study's batches (except the signed-in user's workers).
      */
-    public void removeAllUserMembers(Study study) {
+    public void removeAllUserMembers(Http.Request request, Study study) {
         List<User> userList = userDao.findAll();
-        userList.remove(authService.getSignedinUser());
+        userList.remove(authService.getSignedinUser(request));
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
-        study.getUserList().removeAll(userList);
+        userList.forEach(study.getUserList()::remove);
         studyDao.update(study);
         userList.forEach(userDao::update);
     }
@@ -384,9 +385,9 @@ public class StudyService {
         studyLogger.retire(study);
     }
 
-    public Study getStudyFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Study getStudyFromIdOrUuid(Http.Request request, String idOrUuid) throws NotFoundException, ForbiddenException {
         Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Study study;
         if (studyId.isPresent()) {
             study = studyDao.findById(studyId.get());

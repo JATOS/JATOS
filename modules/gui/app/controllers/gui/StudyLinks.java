@@ -4,6 +4,7 @@ import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
@@ -22,7 +23,6 @@ import models.gui.BatchSession;
 import models.gui.GroupSession;
 import play.data.Form;
 import play.data.FormFactory;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -43,7 +43,6 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class StudyLinks extends Controller {
@@ -95,7 +94,7 @@ public class StudyLinks extends Controller {
     @SaveLastVisitedPageUrl
     public Result studyLinks(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         try {
             checker.checkStandardForStudy(study, studyId, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
@@ -103,7 +102,7 @@ public class StudyLinks extends Controller {
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.STUDY_LINKS);
-        return ok(views.html.gui.studyLinks.studyLinks.render(request, signedinUser, breadcrumbs, study));
+        return ok(views.html.gui.studyLinks.studyLinks.render(signedinUser, breadcrumbs, study, request.asScala()));
     }
 
     /**
@@ -112,10 +111,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result batchById(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
+    public Result batchById(Http.Request request, Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
 
@@ -130,9 +129,9 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result batchesByStudy(Long studyId) throws ForbiddenException, NotFoundException {
+    public Result batchesByStudy(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
 
         List<Batch> batchList = study.getBatchList();
@@ -148,9 +147,9 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result groupsByBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
+    public Result groupsByBatch(Http.Request request, Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
@@ -166,7 +165,7 @@ public class StudyLinks extends Controller {
     @Auth
     public Result submitCreatedBatch(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
 
@@ -185,10 +184,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result batchSessionData(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
+    public Result batchSessionData(Http.Request request, Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
 
@@ -201,10 +200,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result groupSessionData(Long studyId, Long groupResultId) throws ForbiddenException, NotFoundException {
+    public Result groupSessionData(Http.Request request, Long studyId, Long groupResultId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForGroup(groupResult, study, groupResultId);
 
@@ -220,7 +219,7 @@ public class StudyLinks extends Controller {
     public Result submitEditedBatchSessionData(Http.Request request, Long studyId, Long batchId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
@@ -246,7 +245,7 @@ public class StudyLinks extends Controller {
     public Result submitEditedGroupSessionData(Http.Request request, Long studyId, Long groupResultId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
@@ -269,10 +268,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) throws ForbiddenException, NotFoundException {
+    public Result toggleGroupFixed(Http.Request request, Long studyId, Long groupResultId, boolean fixed) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForGroup(groupResult, study, groupResultId);
 
@@ -285,10 +284,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result batchProperties(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
+    public Result batchProperties(Http.Request request, Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
 
@@ -304,13 +303,13 @@ public class StudyLinks extends Controller {
     public Result submitEditedBatchProperties(Http.Request request, Long studyId, Long batchId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch currentBatch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
         checker.checkStandardForBatch(currentBatch, study, batchId);
 
-        Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest();
+        Form<BatchProperties> form = formFactory.form(BatchProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         BatchProperties batchProperties = form.get();
@@ -329,10 +328,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result toggleBatchActive(Long studyId, Long batchId, Boolean active)
+    public Result toggleBatchActive(Http.Request request, Long studyId, Long batchId, Boolean active)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
@@ -350,10 +349,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result toggleAllowedWorkerType(Long studyId, Long batchId,
+    public Result toggleAllowedWorkerType(Http.Request request, Long studyId, Long batchId,
             String workerType, Boolean allow) throws BadRequestException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
@@ -376,9 +375,9 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result removeBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
+    public Result removeBatch(Http.Request request, Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStudyLocked(study);
@@ -386,7 +385,7 @@ public class StudyLinks extends Controller {
         checker.checkDefaultBatch(batch);
 
         batchService.remove(batch, signedinUser);
-        return ok(RequestScopeMessaging.getAsJson());
+        return ok(RequestScopeMessaging.getAsJson(request));
     }
 
     /**
@@ -395,9 +394,9 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result studyLinksSetupData(Long studyId, Long batchId) throws JatosGuiException, ForbiddenException, NotFoundException {
+    public Result studyLinksSetupData(Http.Request request, Long studyId, Long batchId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
@@ -417,9 +416,9 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result studyLinksData(Long studyId, Long batchId, String workerType) throws ForbiddenException, NotFoundException {
+    public Result studyLinksData(Http.Request request, Long studyId, Long batchId, String workerType) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForBatch(batch, study, batchId);
@@ -433,10 +432,10 @@ public class StudyLinks extends Controller {
      */
     @Transactional
     @Auth
-    public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active)
+    public Result toggleStudyLinkActive(Http.Request request, Long studyId, Long batchId, String studyCode, Boolean active)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Batch batch = batchDao.findById(batchId);
         StudyLink studyLink = studyLinkDao.findByStudyCode(studyCode);
         checker.checkStandardForStudy(study, studyId, signedinUser);
@@ -458,7 +457,7 @@ public class StudyLinks extends Controller {
     @Transactional
     @Auth
     public Result editWorkerComment(Http.Request request, Long workerId) throws BadRequestException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Worker worker = workerDao.findById(workerId);
         try {
             checker.checkWorker(worker, workerId);

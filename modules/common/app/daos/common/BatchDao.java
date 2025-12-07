@@ -11,7 +11,6 @@ import javax.inject.Singleton;
  * 
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class BatchDao extends AbstractDao {
 
@@ -33,7 +32,9 @@ public class BatchDao extends AbstractDao {
 	}
 
 	public Batch findById(Long id) {
-		return jpa.em().find(Batch.class, id);
+        return jpa.withTransaction(em -> {
+            return em.find(Batch.class, id);
+        });
 	}
 
 }

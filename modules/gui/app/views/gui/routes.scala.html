@@ -1,3 +1,6 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
 @*
 * Global routes to JATOS GUI endpoints that cannot be reached by non-templates (e.g. JS modules in extra files)
 * The content is redundant to gui.routes

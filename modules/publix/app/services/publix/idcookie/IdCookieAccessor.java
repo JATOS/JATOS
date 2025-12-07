@@ -1,11 +1,10 @@
 package services.publix.idcookie;
 
-import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import general.common.Common;
-import general.common.RequestScope;
 import play.Logger;
 import play.Logger.ALogger;
+import play.libs.typedmap.TypedKey;
 import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
@@ -37,7 +36,6 @@ import static play.mvc.Http.Cookie.builder;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class IdCookieAccessor {
 
@@ -45,6 +43,8 @@ public class IdCookieAccessor {
 
     private static final String COOKIE_EQUALS = "=";
     private static final String COOKIE_AND    = "&";
+
+    public static final TypedKey<IdCookieCollection> IDCOOKIES_TYPED_KEY = TypedKey.create(IdCookieCollection.class.getSimpleName());
 
     private final IdCookieSerialiser idCookieSerialiser;
 
@@ -58,13 +58,12 @@ public class IdCookieAccessor {
      * IdCookieCollection in the RequestScope. All subsequent calls of this method will get the IdCookieCollection from
      * the RequestScope.
      */
-    protected IdCookieCollection extract() throws IdCookieAlreadyExistsException {
-        String idCookiesInRequestScopeName = IdCookieCollection.class.getSimpleName();
-        if (RequestScope.has(idCookiesInRequestScopeName)) {
-            return (IdCookieCollection) RequestScope.get(idCookiesInRequestScopeName);
+    protected IdCookieCollection extract(Http.RequestHeader requestHeader) throws IdCookieAlreadyExistsException {
+        if (requestHeader.attrs().containsKey(IDCOOKIES_TYPED_KEY)) {
+            return requestHeader.attrs().get(IDCOOKIES_TYPED_KEY);
         } else {
-            IdCookieCollection idCookieCollection = extractFromCookies(Publix.request().cookies());
-            RequestScope.put(idCookiesInRequestScopeName, idCookieCollection);
+            IdCookieCollection idCookieCollection = extractFromCookies(requestHeader.cookies());
+            requestHeader.addAttr(IDCOOKIES_TYPED_KEY, idCookieCollection);
             return idCookieCollection;
         }
     }
@@ -82,9 +81,7 @@ public class IdCookieAccessor {
                     IdCookieModel idCookie = buildIdCookie(cookie);
                     idCookieCollection.add(idCookie);
                 } catch (IdCookieMalformedException e) {
-                    LOGGER.warn(e.getMessage());
-                    Publix.response().discardCookie(cookie.name());
-                    LOGGER.warn("Deleted malformed JATOS ID cookie.");
+                    LOGGER.warn("Deleted malformed JATOS ID cookie: " + e.getMessage());
                 }
             }
         }
@@ -247,13 +244,12 @@ public class IdCookieAccessor {
      * Discards the ID cookie that corresponds to the given study result ID. If there is no such ID cookie, it does
      * nothing.
      */
-    protected void discard(long studyResultId) throws IdCookieAlreadyExistsException {
-        IdCookieCollection idCookieCollection = extract();
+    protected void discard(Http.RequestHeader requestHeader, long studyResultId) throws IdCookieAlreadyExistsException {
+        IdCookieCollection idCookieCollection = extract(requestHeader);
         IdCookieModel idCookie = idCookieCollection.findWithStudyResultId(studyResultId);
         if (idCookie != null) {
             idCookieCollection.remove(idCookie);
-            RequestScope.put(IdCookieCollection.class.getSimpleName(), idCookieCollection);
-            Publix.response().discardCookie(idCookie.getName(), Common.getJatosUrlBasePath());
+            requestHeader.addAttr(IDCOOKIES_TYPED_KEY, idCookieCollection);
         }
     }
 
@@ -261,12 +257,20 @@ public class IdCookieAccessor {
      * Puts the given IdCookieModel in the Response. Additionally, it stores the ID cookie in the RequestScope. It uses
      * a large number as Max-Age for the cookie, so it is unlikely to ever expire.
      */
-    void write(IdCookieModel newIdCookie) throws IdCookieAlreadyExistsException, IdCookieCollectionFullException {
-        IdCookieCollection idCookieCollection = extract();
+    void write(Http.RequestHeader requestHeader, IdCookieModel newIdCookie) throws IdCookieAlreadyExistsException, IdCookieCollectionFullException {
+        IdCookieCollection idCookieCollection = extract(requestHeader);
+        idCookieCollection.put(newIdCookie);
 
-        // Put new ID cookie into the Response
-        String cookieValue = idCookieSerialiser.asCookieValueString(newIdCookie);
-        Http.CookieBuilder cookieBuilder = builder(newIdCookie.getName(), cookieValue)
+        // Put changed idCookieCollection into RequestScope
+        requestHeader.addAttr(IDCOOKIES_TYPED_KEY, idCookieCollection);
+    }
+
+    /**
+     * Generates a Play cookie from the given IdCookieModel.
+     */
+    public Cookie generatePlayCookie(IdCookieModel idCookie) {
+        String cookieValue = idCookieSerialiser.asCookieValueString(idCookie);
+        Http.CookieBuilder cookieBuilder = builder(idCookie.getName(), cookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
                 .withHttpOnly(false)
                 .withPath(Common.getJatosUrlBasePath())
@@ -274,12 +278,7 @@ public class IdCookieAccessor {
         // https://github.com/JATOS/JATOS/issues/208
         // https://github.com/JATOS/JATOS/issues/231
         if (Common.getIdCookiesSameSite() != null) cookieBuilder.withSameSite(Common.getIdCookiesSameSite());
-        Publix.response().setCookie(cookieBuilder.build());
-
-        idCookieCollection.put(newIdCookie);
-
-        // Put changed idCookieCollection into RequestScope
-        RequestScope.put(IdCookieCollection.class.getSimpleName(), idCookieCollection);
+        return cookieBuilder.build();
     }
 
 }

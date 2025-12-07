@@ -136,10 +136,10 @@ public class GeneralMultiplePublixTest {
         // Verify interactions specific to GeneralMultiplePublix
         verify(workerCreator).createAndPersistGeneralMultipleWorker(batch);
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResult(request);
         verify(resultCreator).createStudyResult(sl, worker);
         verify(publixUtils).setUrlQueryParameter(request, sr);
-        verify(idCookieService).writeIdCookie(sr);
+        verify(idCookieService).writeIdCookie(request, sr);
         verify(studyLogger).log(eq(sl), contains("Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE), eq(worker));
     }
 }

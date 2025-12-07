@@ -13,7 +13,6 @@ import java.util.Optional;
 /**
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class StudyLinkDao extends AbstractDao {
 
@@ -36,57 +35,69 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public StudyLink findByStudyCode(String studyCode) {
-        return jpa.em().find(StudyLink.class, studyCode);
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(StudyLink.class, studyCode));
     }
 
     public int countAll() {
-        Number result = (Number) jpa.em().createQuery("SELECT count(*) FROM StudyLink").getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createQuery("SELECT count(*) FROM StudyLink").getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     public int countByBatchAndWorkerType(Batch batch, String workerType) {
-        String queryStr = "SELECT count(*) FROM StudyLink sr WHERE sr.batch = :batch AND sr.workerType = :workerType";
-        Number result = (Number) jpa.em().createQuery(queryStr)
-                .setParameter("batch", batch)
-                .setParameter("workerType", workerType)
-                .getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT count(*) FROM StudyLink sr WHERE sr.batch = :batch AND sr.workerType = :workerType";
+            Number result = (Number) em.createQuery(queryStr)
+                    .setParameter("batch", batch)
+                    .setParameter("workerType", workerType)
+                    .getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, String workerType) {
-        String queryStr = "SELECT sl FROM StudyLink sl " +
-                "LEFT JOIN FETCH sl.worker w " +
-                "WHERE sl.batch = :batch AND sl.workerType = :workerType";
-        return jpa.em().createQuery(queryStr, StudyLink.class)
-                .setParameter("batch", batch)
-                .setParameter("workerType", workerType)
-                .getResultList();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT sl FROM StudyLink sl " +
+                    "LEFT JOIN FETCH sl.worker w " +
+                    "WHERE sl.batch = :batch AND sl.workerType = :workerType";
+            return em.createQuery(queryStr, StudyLink.class)
+                    .setParameter("batch", batch)
+                    .setParameter("workerType", workerType)
+                    .getResultList();
+        });
     }
 
     public Optional<StudyLink> findFirstByBatchAndWorkerType(Batch batch, String workerType) {
-        String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.workerType = :workerType";
-        List<StudyLink> studyLink = jpa.em().createQuery(queryStr, StudyLink.class)
-                .setParameter("batch", batch)
-                .setParameter("workerType", workerType)
-                .setMaxResults(1)
-                .getResultList();
-        return !studyLink.isEmpty() ? Optional.of(studyLink.get(0)) : Optional.empty();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.workerType = :workerType";
+            List<StudyLink> studyLink = em.createQuery(queryStr, StudyLink.class)
+                    .setParameter("batch", batch)
+                    .setParameter("workerType", workerType)
+                    .setMaxResults(1)
+                    .getResultList();
+            return !studyLink.isEmpty() ? Optional.of(studyLink.get(0)) : Optional.empty();
+        });
     }
 
     public Optional<StudyLink> findByBatchAndWorker(Batch batch, Worker worker) {
-        String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.worker = :worker";
-        List<StudyLink> studyLink = jpa.em().createQuery(queryStr, StudyLink.class)
-                .setParameter("batch", batch)
-                .setParameter("worker", worker)
-                .setMaxResults(1)
-                .getResultList();
-        return !studyLink.isEmpty() ? Optional.of(studyLink.get(0)) : Optional.empty();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.worker = :worker";
+            List<StudyLink> studyLink = em.createQuery(queryStr, StudyLink.class)
+                    .setParameter("batch", batch)
+                    .setParameter("worker", worker)
+                    .setMaxResults(1)
+                    .getResultList();
+            return !studyLink.isEmpty() ? Optional.of(studyLink.get(0)) : Optional.empty();
+        });
     }
 
-    public int removeAllByBatch(Batch batch) {
-        return jpa.em().createQuery("DELETE FROM StudyLink sr WHERE sr.batch = :batch")
-                .setParameter("batch", batch)
-                .executeUpdate();
+    public void removeAllByBatch(Batch batch) {
+        jpa.withTransaction(em -> {
+            return em.createQuery("DELETE FROM StudyLink sr WHERE sr.batch = :batch")
+                    .setParameter("batch", batch)
+                    .executeUpdate();
+        });
     }
 
 }

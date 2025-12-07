@@ -11,14 +11,16 @@ import models.common.Study;
 import models.common.StudyLink;
 import models.common.workers.*;
 import play.Logger;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import utils.common.Helpers;
+import utils.common.TransactionalAction;
+import utils.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Optional;
 
 /**
  * This class deals with legacy style study run links and translates them to study links.
@@ -130,8 +132,8 @@ public class LegacyStudyRuns extends Controller {
      * and MTWorker one otherwise.
      */
     private String retrieveMTWorkerType(Http.Request request) {
-        String turkSubmitTo = request.getQueryString("turkSubmitTo");
-        if (turkSubmitTo != null && turkSubmitTo.toLowerCase().contains("sandbox")) {
+        Optional<String> turkSubmitTo = request.queryString("turkSubmitTo");
+        if (turkSubmitTo.isPresent() && turkSubmitTo.get().toLowerCase().contains("sandbox")) {
             return MTSandboxWorker.WORKER_TYPE;
         } else {
             return MTWorker.WORKER_TYPE;

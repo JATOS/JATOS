@@ -17,6 +17,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import play.mvc.Http;
 import utils.common.IOUtils;
 
 import java.sql.Timestamp;
@@ -27,6 +28,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+import static play.test.Helpers.fakeRequest;
 
 /**
  * Unit tests for AdminService.
@@ -215,6 +217,8 @@ public class AdminServiceTest {
 
     @Test
     public void getAdminStatus_aggregatesCountsAndLists() {
+        Http.Request request = fakeRequest().build();
+
         when(studyDao.count()).thenReturn(3);
         when(studyDao.countTotal()).thenReturn(5);
         when(studyResultDao.count()).thenReturn(7);
@@ -226,9 +230,9 @@ public class AdminServiceTest {
         // latest lists
         when(userDao.findLastSeen(anyInt())).thenReturn(Collections.emptyList());
         when(studyResultDao.findLastSeen(anyInt())).thenReturn(Collections.emptyList());
-        when(authService.getSignedinUser()).thenReturn(new User("ignored", "ignored", "i@e"));
+        when(authService.getSignedinUser(request)).thenReturn(new User("ignored", "ignored", "i@e"));
 
-        JsonNode json = adminService.getAdminStatus();
+        JsonNode json = adminService.getAdminStatus(request);
         assertThat(json.get("studyCount").asInt()).isEqualTo(3);
         assertThat(json.get("studyCountTotal").asInt()).isEqualTo(5);
         assertThat(json.get("studyResultCount").asInt()).isEqualTo(7);

@@ -16,15 +16,14 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.core.utils.HttpHeaderParameterEncoding;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import utils.common.Helpers;
+import utils.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -37,7 +36,6 @@ import java.util.Optional;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class ImportExport extends Controller {
@@ -51,7 +49,7 @@ public class ImportExport extends Controller {
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthService authService,
-            ImportExportService importExportService, StudyService studyService) {
+                 ImportExportService importExportService, StudyService studyService) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.authService = authService;
         this.importExportService = importExportService;
@@ -80,14 +78,15 @@ public class ImportExport extends Controller {
     @Transactional
     @Auth
     public Result importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
-        User signedinUser = authService.getSignedinUser();
+                                 boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
+        User signedinUser = authService.getSignedinUser(request);
 
         // Get file from request
         if (request.body().asMultipartFormData() == null) {
             return badRequest(MessagesStrings.FILE_MISSING);
         }
-        FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
+        Http.MultipartFormData<File> body = request.body().asMultipartFormData();
+        Http.MultipartFormData.FilePart<File> filePart = body.getFile(Study.STUDY);
         if (filePart == null) {
             return badRequest(MessagesStrings.FILE_MISSING);
         }
@@ -98,22 +97,25 @@ public class ImportExport extends Controller {
 
         ObjectNode responseJson;
         try {
-            File file = (File) filePart.getFile();
-            responseJson = importExportService.importStudy(signedinUser, file);
+            File file = filePart.getRef();
+            responseJson = importExportService.importStudy(request, signedinUser, file);
         } catch (Exception e) {
-            importExportService.cleanupAfterStudyImport();
+            importExportService.cleanupAfterStudyImport(request);
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
-            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
+            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage())
+                    .removingFromSession(request, ImportExportService.SESSION_UNZIPPED_STUDY_DIR.toString());
         }
 
         try {
-            Long newStudyId = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            Long newStudyId = importExportService.importStudyConfirmed(request, signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
             responseJson.put("id", newStudyId);
         } finally {
-            importExportService.cleanupAfterStudyImport();
+            importExportService.cleanupAfterStudyImport(request);
         }
-        return ok(responseJson);
+        String tempStudyAssetsDir = request.attrs().get(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
+        return ok(responseJson)
+                .addingToSession(request, ImportExportService.SESSION_UNZIPPED_STUDY_DIR.toString(), tempStudyAssetsDir);
     }
 
     /**
@@ -123,10 +125,11 @@ public class ImportExport extends Controller {
     @Transactional
     @Auth
     public Result importStudy(Http.Request request) {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
 
         // Get file from request
-        FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
+        Http.MultipartFormData<File> body = request.body().asMultipartFormData();
+        Http.MultipartFormData.FilePart<File> filePart = body.getFile(Study.STUDY);
 
         if (filePart == null) {
             return badRequest(MessagesStrings.FILE_MISSING);
@@ -138,14 +141,17 @@ public class ImportExport extends Controller {
 
         JsonNode responseJson;
         try {
-            File file = (File) filePart.getFile();
-            responseJson = importExportService.importStudy(signedinUser, file);
+            File file = filePart.getRef();
+            responseJson = importExportService.importStudy(request, signedinUser, file);
         } catch (Exception e) {
-            importExportService.cleanupAfterStudyImport();
+            importExportService.cleanupAfterStudyImport(request);
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
-            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
+            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage())
+                    .removingFromSession(request, ImportExportService.SESSION_UNZIPPED_STUDY_DIR.toString());
         }
-        return ok(responseJson);
+        String tempStudyAssetsDir = request.attrs().get(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
+        return ok(responseJson)
+                .addingToSession(request, ImportExportService.SESSION_UNZIPPED_STUDY_DIR.toString(), tempStudyAssetsDir);
     }
 
     /**
@@ -154,23 +160,23 @@ public class ImportExport extends Controller {
      *
      * It expects the following parameters in a JSON object in the request body:
      * 1) keepProperties - If true and the study exists already in JATOS the current properties are kept.
-     *                             Default is `false` (properties are overwritten by default). If the study doesn't
-     *                             already exist, this parameter has no effect.
+     * Default is `false` (properties are overwritten by default). If the study doesn't
+     * already exist, this parameter has no effect.
      * 2) keepAssets - If true and the study exists already in JATOS the current study assets directory is
-     *                 kept. Default is `false` (assets are overwritten by default). If the study doesn't
-     *                 already exist, this parameter has no effect.
+     * kept. Default is `false` (assets are overwritten by default). If the study doesn't
+     * already exist, this parameter has no effect.
      * 3) keepCurrentAssetsName - If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
-     *                            if the name of the currently installed assets directory should be kept. A `false`
-     *                            indicates that the name should be taken from the uploaded one. Default is `true`.
+     * if the name of the currently installed assets directory should be kept. A `false`
+     * indicates that the name should be taken from the uploaded one. Default is `true`.
      * 4) renameAssets - If the study assets directory already exists in JATOS but belongs to a different
-     *                   study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
-     *                   JATOS add a suffix to the assets directory name (original name + "_" + a number).
-     *                   Default is `true`.
+     * study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
+     * JATOS add a suffix to the assets directory name (original name + "_" + a number).
+     * Default is `true`.
      */
     @Transactional
     @Auth
     public Result importStudyConfirmed(Http.Request request) throws JatosGuiException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
 
         // Get confirmation: overwrite study's properties and/or study assets
         JsonNode json = request.body().asJson();
@@ -186,16 +192,17 @@ public class ImportExport extends Controller {
 
         long importedStudyId = 0L;
         try {
-            importedStudyId = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            importedStudyId = importExportService.importStudyConfirmed(request, signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
         } catch (ForbiddenException e) {
             return forbidden(e.getMessage());
         } catch (Exception e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         } finally {
-            importExportService.cleanupAfterStudyImport();
+            importExportService.cleanupAfterStudyImport(request);
         }
-        return ok(Long.toString(importedStudyId));
+        return ok(Long.toString(importedStudyId))
+                .removingFromSession(request, ImportExportService.SESSION_UNZIPPED_STUDY_DIR.toString());
     }
 
     /**
@@ -204,8 +211,8 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Auth
-    public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+    public Result exportStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
         File zipFile;
         try {
             zipFile = importExportService.createStudyExportZipFile(study);

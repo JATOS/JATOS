@@ -17,7 +17,6 @@ import java.util.List;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class GroupResultDao extends AbstractDao {
 
@@ -44,20 +43,24 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public GroupResult findById(Long id) {
-        return jpa.em().find(GroupResult.class, id);
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(GroupResult.class, id));
     }
 
     public List<GroupResult> findAllByBatch(Batch batch) {
-        String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
-        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr, GroupResult.class);
-        return query.setParameter("batch", batch).getResultList();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
+            TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
+            return query.setParameter("batch", batch).getResultList();
+        });
     }
 
     public Integer countByBatch(Batch batch) {
-        String queryStr = "SELECT COUNT(*) FROM GroupResult gr WHERE gr.batch=:batch";
-        Query query = jpa.em().createQuery(queryStr).setParameter("batch", batch);
-        Number result = (Number) query.getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT COUNT(*) FROM GroupResult gr WHERE gr.batch=:batch";
+            Query query = em.createQuery(queryStr).setParameter("batch", batch);
+            Number result = (Number) query.getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
@@ -70,18 +73,20 @@ public class GroupResultDao extends AbstractDao {
      * historyMemberCount.
      */
     public List<GroupResult> findAllMaxNotReached(Batch batch) {
-        String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
-                + "WHERE gr.batch=:batch "
-                + "AND b.id=:batch "
-                + "AND gr.groupState=:groupState "
-                + "AND (b.maxActiveMembers is null OR gr.activeMemberCount < b.maxActiveMembers) "
-                + "AND (b.maxTotalMembers is null OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
-                + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
-        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr, GroupResult.class);
-        query.setParameter("batch", batch);
-        query.setParameter("groupState", GroupState.STARTED);
-        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        return query.getResultList();
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
+                    + "WHERE gr.batch=:batch "
+                    + "AND b.id=:batch "
+                    + "AND gr.groupState=:groupState "
+                    + "AND (b.maxActiveMembers is null OR gr.activeMemberCount < b.maxActiveMembers) "
+                    + "AND (b.maxTotalMembers is null OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
+                    + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
+            TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
+            query.setParameter("batch", batch);
+            query.setParameter("groupState", GroupState.STARTED);
+            query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+            return query.getResultList();
+        });
     }
 
 }

@@ -18,7 +18,9 @@ public class JsonObjectMapper {
 
 		// Add the module jackson-datatype-hibernate
 		// https://github.com/FasterXML/jackson-datatype-hibernate
-		// It allows to disable automatic lazy loading of Hibernate entities.
+        // Hibernate uses lazy loading by default for entity associations. Serialization with Jackson would fail with
+        // a LazyInitializationException if the association is not initialized. The FORCE_LAZY_LOADING feature forces
+        // the module to load the data from the database before serializing it.
 		Hibernate5Module h5Module = new Hibernate5Module();
 		h5Module.disable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
 		mapper.registerModule(h5Module);

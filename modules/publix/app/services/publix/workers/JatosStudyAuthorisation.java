@@ -13,6 +13,7 @@ import services.publix.StudyAuthorisation;
 import utils.common.Helpers;
 
 import javax.inject.Singleton;
+import java.util.Optional;
 
 /**
  * StudyAuthorization for JatosWorker
@@ -45,9 +46,8 @@ public class JatosStudyAuthorisation extends StudyAuthorisation {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
         // User has to be signed in
-        //noinspection deprecation
-        String username = session.getOrDefault(JatosPublix.SESSION_USERNAME, "");
-        if (!user.getUsername().equals(username)) {
+        Optional<String> username = session.get(JatosPublix.SESSION_USERNAME);
+        if (!username.isPresent() || !user.getUsername().equals(username.get())) {
             throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
     }

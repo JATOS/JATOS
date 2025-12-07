@@ -1,4 +1,5 @@
-@(study: common.Study)
+@import play.api.mvc.RequestHeader
+@(study: common.Study)(implicit request: RequestHeader)
 
 @* Components Table *@
 <table class="table table-hover align-middle w-100" id="componentsTable">

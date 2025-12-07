@@ -64,7 +64,7 @@ public class IdCookieCollection {
         return idCookieMap.remove(idCookie.getStudyResultId());
     }
 
-    protected Collection<IdCookieModel> getAll() {
+    public Collection<IdCookieModel> getAll() {
         return idCookieMap.values();
     }
 

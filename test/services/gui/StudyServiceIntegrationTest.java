@@ -9,7 +9,6 @@ import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
-import general.common.RequestScope;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;

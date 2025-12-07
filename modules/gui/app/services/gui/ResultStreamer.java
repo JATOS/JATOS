@@ -291,7 +291,7 @@ public class ResultStreamer {
 
     public Source<ByteString, ?> streamComponentResultData(Http.Request request)
             throws BadRequestException, ForbiddenException, NotFoundException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         List<Long> componentResultIdList = componentResultIdsExtractor.extract(request.body().asJson());
         componentResultIdList.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(componentResultIdList);
@@ -388,7 +388,7 @@ public class ResultStreamer {
 
     public Source<ByteString, ?> streamResults(Http.Request request, ResultType resultType,
             Map<String, Object> wrapObject) throws BadRequestException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(crids);
@@ -420,7 +420,7 @@ public class ResultStreamer {
      */
     public File writeResultMetadata(Http.Request request, Map<String, Object> wrapObject)
             throws ForbiddenException, NotFoundException, IOException, BadRequestException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(crids);

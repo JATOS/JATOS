@@ -1,4 +1,5 @@
-@(request: Http.Request)
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
 
 @import controllers.gui.routes._
 @import general.common._
@@ -21,8 +22,8 @@
     <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/signin.css?v=" + Common.getJatosVersion())">
     <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.3/bootstrap.bundle.min.js")"></script>
     <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.7.1.min.js")"></script>
-    @views.html.gui.settings(request, None, None, None)
-    @views.html.gui.routes()
+    @views.html.gui.settings(None, None, None)
+    @views.html.gui.routes(request)
     @if(Common.isOauthGoogleAllowed()) {
     <script @{helper.CSPNonce.attr} src="https://accounts.google.com/gsi/client"></script>
     }
@@ -165,14 +166,14 @@
 
     $("#allowKeepSignedin").toggleClass("d-none", !window.common.allowKeepSignedin);
 
-    @if(flash.containsKey(FlashScopeMessaging.SUCCESS)) {
-        $('#password').after('<p class="text-success m-1">@flash.get(FlashScopeMessaging.SUCCESS)</p>');
+    @if(request.flash.get(FlashScopeMessaging.SUCCESS).isDefined) {
+        $('#password').after('<p class="text-success m-1">@request.flash.get(FlashScopeMessaging.SUCCESS)</p>');
     }
-    @if(flash.containsKey(FlashScopeMessaging.WARNING)) {
-        $('#password').after('<p class="text-warning m-1">@flash.get(FlashScopeMessaging.WARNING)</p>');
+    @if(request.flash.get(FlashScopeMessaging.WARNING).isDefined) {
+        $('#password').after('<p class="text-warning m-1">@request.flash.get(FlashScopeMessaging.WARNING)</p>');
     }
-    @if(flash.containsKey(FlashScopeMessaging.ERROR)) {
-        $('#password').after('<p class="text-danger m-1">@flash.get(FlashScopeMessaging.ERROR)</p>');
+    @if(request.flash.get(FlashScopeMessaging.ERROR).isDefined) {
+        $('#password').after('<p class="text-danger m-1">@request.flash.get(FlashScopeMessaging.ERROR)</p>');
     }
 
     $('#oidcSigninButton').click(function() {

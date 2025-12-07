@@ -13,7 +13,6 @@ import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.api.mvc.RequestHeader;
-import play.mvc.Controller;
 import play.mvc.Http;
 
 import java.io.File;
@@ -36,14 +35,13 @@ import java.util.stream.Collectors;
 /**
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 public class Helpers {
 
     /**
      * Check if the request was made via Ajax or not.
      */
-    public static Boolean isAjax() {
-        return Controller.request().header("X-Requested-With").map(v -> v.equals("XMLHttpRequest")).orElse(false);
+    public static Boolean isAjax(Http.Request request) {
+        return request.header("X-Requested-With").map(v -> v.equals("XMLHttpRequest")).orElse(false);
     }
 
     public static boolean isHtmlRequest(Http.Request request) {
@@ -58,7 +56,7 @@ public class Helpers {
      * Checks if the session has a field 'username'
      */
     public static boolean isSessionCookieRequest(Http.Request request) {
-        return request.cookie("PLAY_SESSION") != null && !Strings.isNullOrEmpty(request.cookie("PLAY_SESSION").value());
+        return request.getCookie("PLAY_SESSION").isPresent() && !Strings.isNullOrEmpty(request.getCookie("PLAY_SESSION").get().value());
     }
 
     /**
@@ -102,11 +100,7 @@ public class Helpers {
      * Gets the value of to the given parameter in request's query string and trims whitespace.
      */
     public static String getQueryParameter(Http.Request request, String parameter) {
-        String value = request.getQueryString(parameter);
-        if (value != null) {
-            value = value.trim();
-        }
-        return value;
+        return request.queryString(parameter).map(String::trim).orElse(null);
     }
 
     /**

@@ -3,11 +3,9 @@ package controllers.gui.actionannotations;
 import auth.gui.AuthService;
 import daos.common.UserDao;
 import general.common.Common;
-import general.common.RequestScope;
 import models.common.User;
 import play.mvc.Action;
 import play.mvc.Http;
-import play.mvc.Http.Request;
 import play.mvc.Result;
 import play.mvc.With;
 
@@ -21,12 +19,10 @@ import java.util.concurrent.CompletionStage;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
- * Annotation definition for Play actions: logging of each action call, e.g.
- * 'gui_access - GET /jatos/19/run (admin)'
+ * Annotation definition for Play actions: save the last visited page URL in the database
  *
- * @author Kristian Lange (2016)
+ * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 public class SaveLastVisitedPageUrlAction extends Action<SaveLastVisitedPageUrl> {
 
     @With(SaveLastVisitedPageUrlAction.class)
@@ -42,14 +38,13 @@ public class SaveLastVisitedPageUrlAction extends Action<SaveLastVisitedPageUrl>
         this.userDao = userDao;
     }
 
-    public CompletionStage<Result> call(Http.Context ctx) {
-        final Request request = ctx.request();
-        User signedinUser = (User) RequestScope.get(AuthService.SIGNEDIN_USER);
+    public CompletionStage<Result> call(Http.Request request) {
+        User signedinUser = request.attrs().get(AuthService.SIGNEDIN_USER);
         String jatosUrlBasePathRegex = "^" + Common.getJatosUrlBasePath();
         String urlPathWithoutBase = request.path().replaceFirst(jatosUrlBasePathRegex, "");
         signedinUser.setLastVisitedPageUrl(urlPathWithoutBase);
         userDao.update(signedinUser);
-        return delegate.call(ctx);
+        return delegate.call(request);
     }
 
 }

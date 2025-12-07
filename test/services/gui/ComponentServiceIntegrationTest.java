@@ -6,7 +6,6 @@ import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
-import general.common.RequestScope;
 import models.common.Component;
 import models.common.Study;
 import models.gui.ComponentProperties;

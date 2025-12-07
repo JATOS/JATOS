@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @Singleton
 public class ComponentResultDao extends AbstractDao {
 
@@ -45,50 +44,69 @@ public class ComponentResultDao extends AbstractDao {
      * Overwrite data in 'data' fields (data, dataShort, dataSize)
      */
     public void replaceData(Long id, String data) {
-        jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                        "SET cr.data = :data, " +
-                        "cr.dataShort = SUBSTR(:data, 1, 1000), " +
-                        "cr.dataSize = LENGTH(:data) " +
-                        "WHERE cr.id = :id")
-                .setParameter("id", id)
-                .setParameter("data", data)
-                .executeUpdate();
+        jpa.withTransaction(em -> {
+            em.createNativeQuery("UPDATE ComponentResult cr " +
+                            "SET cr.data = :data, " +
+                            "cr.dataShort = SUBSTR(:data, 1, 1000), " +
+                            "cr.dataSize = LENGTH(:data) " +
+                            "WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .setParameter("data", data)
+                    .executeUpdate();
+        });
     }
 
     public void purgeData(Long id) {
-        jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                        "SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0 " +
-                        "WHERE cr.id = :id")
-                .setParameter("id", id)
-                .executeUpdate();
+        jpa.withTransaction(em -> {
+            em.createNativeQuery("UPDATE ComponentResult cr " +
+                            "SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0 " +
+                            "WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
+        });
     }
 
     /**
      * Append data to 'data' field and replace data in 'dataShort' and 'dataSize'
      */
     public void appendData(Long id, String data) {
-        if (Common.usesMysql()) {
-            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                            "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), " +
-                            "cr.dataShort = SUBSTR(cr.data, 1, 1000), " +
-                            "cr.dataSize = LENGTH(cr.data) " +
-                            "WHERE cr.id = :id")
-                    .setParameter("id", id)
-                    .setParameter("data", data)
-                    .executeUpdate();
-        } else {
-            // H2 can't handle cr.data (it contains the old value)
-            String oldData = getData(id);
-            String newData = oldData != null ? oldData + data : data;
-            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                            "SET cr.data = :newData, " +
-                            "cr.dataShort = SUBSTR(:newData, 1, 1000), " +
-                            "cr.dataSize = LENGTH(:newData) " +
-                            "WHERE cr.id = :id")
-                    .setParameter("id", id)
-                    .setParameter("newData", newData)
-                    .executeUpdate();
-        }
+        jpa.withTransaction(em -> {
+            if (Common.usesMysql()) {
+                em.createNativeQuery("UPDATE ComponentResult cr " +
+                                "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), " +
+                                "cr.dataShort = SUBSTR(cr.data, 1, 1000), " +
+                                "cr.dataSize = LENGTH(cr.data) " +
+                                "WHERE cr.id = :id")
+                        .setParameter("id", id)
+                        .setParameter("data", data)
+                        .executeUpdate();
+            } else {
+                // H2 can't handle cr.data (it contains the old value) - fetch existing data first
+                Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
+                        .setParameter("id", id)
+                        .getSingleResult();
+                String oldData = null;
+                if (result instanceof String) {
+                    oldData = (String) result;
+                } else if (result instanceof Clob) {
+                    Clob clob = (Clob) result;
+                    try {
+                        oldData = clob.getSubString(1, (int) clob.length());
+                    } catch (SQLException e) {
+                        LOGGER.error(".appendData: Couldn't get data from ComponentResult " + id, e);
+                    }
+                }
+                String newData = oldData != null ? oldData + data : data;
+                em.createNativeQuery("UPDATE ComponentResult cr " +
+                                "SET cr.data = :newData, " +
+                                "cr.dataShort = SUBSTR(:newData, 1, 1000), " +
+                                "cr.dataSize = LENGTH(:newData) " +
+                                "WHERE cr.id = :id")
+                        .setParameter("id", id)
+                        .setParameter("newData", newData)
+                        .executeUpdate();
+            }
+        });
     }
 
     /**
@@ -96,21 +114,36 @@ public class ComponentResultDao extends AbstractDao {
      * of JATOS that didn't have those fields yet).
      */
     public void setDataSizeAndDataShort(Long id) {
-        String data = getData(id);
-        if (data != null) {
-            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                            "SET cr.dataShort = SUBSTR(:data, 1, 1000), cr.dataSize = LENGTH(:data) " +
-                            "WHERE cr.id = :id")
+        jpa.withTransaction(em -> {
+            Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                     .setParameter("id", id)
-                    .setParameter("data", data)
-                    .executeUpdate();
-        } else {
-            jpa.em().createNativeQuery("UPDATE ComponentResult cr " +
-                            "SET cr.dataShort = NULL, cr.dataSize = 0 " +
-                            "WHERE cr.id = :id")
-                    .setParameter("id", id)
-                    .executeUpdate();
-        }
+                    .getSingleResult();
+            String data = null;
+            if (result instanceof String) {
+                data = (String) result;
+            } else if (result instanceof Clob) {
+                Clob clob = (Clob) result;
+                try {
+                    data = clob.getSubString(1, (int) clob.length());
+                } catch (SQLException e) {
+                    LOGGER.error(".setDataSizeAndDataShort: Couldn't get data from ComponentResult " + id, e);
+                }
+            }
+            if (data != null) {
+                em.createNativeQuery("UPDATE ComponentResult cr " +
+                                "SET cr.dataShort = SUBSTR(:data, 1, 1000), cr.dataSize = LENGTH(:data) " +
+                                "WHERE cr.id = :id")
+                        .setParameter("id", id)
+                        .setParameter("data", data)
+                        .executeUpdate();
+            } else {
+                em.createNativeQuery("UPDATE ComponentResult cr " +
+                                "SET cr.dataShort = NULL, cr.dataSize = 0 " +
+                                "WHERE cr.id = :id")
+                        .setParameter("id", id)
+                        .executeUpdate();
+            }
+        });
     }
 
     /**
@@ -118,23 +151,25 @@ public class ComponentResultDao extends AbstractDao {
      * in use, MySQL or H2. So we have to treat them differently to get the String.
      */
     public String getData(Long id) {
-        Object result = jpa.em().createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
-                .setParameter("id", id)
-                .getSingleResult();
-        // Performance-wise it would be better to pass on the stream but MySQL only returns String
-        if (result instanceof String) {
-            return (String) result;
-        } else if (result instanceof Clob) {
-            // H2 returns Clob
-            Clob clob = (Clob) result;
-            try {
-                // From https://stackoverflow.com/a/63777729/1278769
-                return clob.getSubString(1, (int) clob.length());
-            } catch (SQLException e) {
-                LOGGER.error(".getData: Couldn't get data from ComponentResult " + id, e);
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> {
+            Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
+                    .setParameter("id", id)
+                    .getSingleResult();
+            // Performance-wise it would be better to pass on the stream but MySQL only returns String
+            if (result instanceof String) {
+                return (String) result;
+            } else if (result instanceof Clob) {
+                // H2 returns Clob
+                Clob clob = (Clob) result;
+                try {
+                    // From https://stackoverflow.com/a/63777729/1278769
+                    return clob.getSubString(1, (int) clob.length());
+                } catch (SQLException e) {
+                    LOGGER.error(".getData: Couldn't get data from ComponentResult " + id, e);
+                }
             }
-        }
-        return null;
+            return null;
+        });
     }
 
     public void remove(ComponentResult componentResult) {
@@ -146,31 +181,35 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     public ComponentResult findById(Long id) {
-        return jpa.em().find(ComponentResult.class, id);
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(ComponentResult.class, id));
     }
 
     public List<ComponentResult> findByIds(List<Long> ids) {
-        return jpa.em()
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em
                 .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.id IN :ids", ComponentResult.class)
                 .setParameter("ids", ids)
-                .getResultList();
+                .getResultList());
     }
 
     public int count() {
-        String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr";
-        Query query = jpa.em().createQuery(queryStr);
-        Number result = (Number) query.getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr";
+            Query query = em.createQuery(queryStr);
+            Number result = (Number) query.getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
      * Returns the number of ComponentResults belonging to the given Component.
      */
     public int countByComponent(Component component) {
-        String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.component=:component";
-        Query query = jpa.em().createQuery(queryStr);
-        Number result = (Number) query.setParameter("component", component).getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction(em -> {
+            String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.component=:component";
+            Query query = em.createQuery(queryStr);
+            Number result = (Number) query.setParameter("component", component).getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
@@ -178,18 +217,20 @@ public class ComponentResultDao extends AbstractDao {
      * JATOS that didn't have those fields yet.
      */
     public List<Long> findAllIdsWhereDataSizeIsNull() {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.dataSize is NULL")
-                .getResultList();
-        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.dataSize is NULL")
+                    .getResultList();
+            return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
+        });
     }
 
     public List<ComponentResult> findAllByComponent(Component component) {
-        return jpa.em()
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em
                 .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
                 .setParameter("component", component)
-                .getResultList();
+                .getResultList());
     }
 
     /**
@@ -200,7 +241,7 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
         // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked StudyResults and their Workers)
-        return jpa.em()
+        return jpa.withTransaction((javax.persistence.EntityManager em) -> em
                 .createQuery("SELECT cr FROM ComponentResult cr " +
                         "LEFT JOIN FETCH cr.studyResult sr " +
                         "LEFT JOIN FETCH sr.worker " +
@@ -208,7 +249,7 @@ public class ComponentResultDao extends AbstractDao {
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("component", component)
-                .getResultList();
+                .getResultList());
     }
 
     /**
@@ -221,64 +262,76 @@ public class ComponentResultDao extends AbstractDao {
                 .filter(Objects::nonNull)
                 .map(Component::getId)
                 .collect(Collectors.toList());
-        Number result = (Number) jpa.em().createNativeQuery(
-                        "SELECT SUM(dataSize) FROM ComponentResult WHERE component_id IN :componentIds")
-                .setParameter("componentIds", componentIds)
-                .getSingleResult();
-        return result != null ? result.longValue() : 0L;
+        return jpa.withTransaction(em -> {
+            Number result = (Number) em.createNativeQuery(
+                            "SELECT SUM(dataSize) FROM ComponentResult WHERE component_id IN :componentIds")
+                    .setParameter("componentIds", componentIds)
+                    .getSingleResult();
+            return result != null ? result.longValue() : 0L;
+        });
     }
 
     public List<Long> findIdsByComponentIds(List<Long> componentIds) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN :componentIds")
-                .setParameter("componentIds", componentIds)
-                .getResultList();
-        // Filter duplicate crids
-        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN :componentIds")
+                    .setParameter("componentIds", componentIds)
+                    .getResultList();
+            // Filter duplicate crids
+            return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        });
     }
 
     public List<Long> findIdsByComponentUuids(List<String> componentUuids) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
-                        "(SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)")
-                .setParameter("componentUuids", componentUuids)
-                .getResultList();
-        // Filter duplicate crids
-        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
+                            "(SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)")
+                    .setParameter("componentUuids", componentUuids)
+                    .getResultList();
+            // Filter duplicate crids
+            return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        });
     }
 
     public List<Long> findIdsByStudyIds(List<Long> studyIds) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
-                        "(SELECT c.id FROM Component c WHERE c.study_id IN :studyIds)")
-                .setParameter("studyIds", studyIds)
-                .getResultList();
-        // Filter duplicate crids
-        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
+                            "(SELECT c.id FROM Component c WHERE c.study_id IN :studyIds)")
+                    .setParameter("studyIds", studyIds)
+                    .getResultList();
+            // Filter duplicate crids
+            return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        });
     }
 
     public List<Long> findIdsByStudyUuids(List<String> studyUuids) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
-                        "(SELECT c.id FROM Component c WHERE c.study_id IN " +
-                        "(SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))")
-                .setParameter("studyUuids", studyUuids)
-                .getResultList();
-        // Filter duplicate crids
-        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component_id IN " +
+                            "(SELECT c.id FROM Component c WHERE c.study_id IN " +
+                            "(SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))")
+                    .setParameter("studyUuids", studyUuids)
+                    .getResultList();
+            // Filter duplicate crids
+            return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        });
     }
 
     public List<Long> findIdsByStudyResultId(Long srid) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult_id = :srid")
-                .setParameter("srid", srid)
-                .getResultList();
-        return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult_id = :srid")
+                    .setParameter("srid", srid)
+                    .getResultList();
+            return results.stream().map(r -> ((Number) r).longValue()).collect(Collectors.toList());
+        });
     }
 
     /**
@@ -287,12 +340,15 @@ public class ComponentResultDao extends AbstractDao {
      * component result IDs of sr1, then all of sr2, and last all of sr3.
      */
     public List<Long> findOrderedIdsByOrderedStudyResultIds(List<Long> orderedSrids) {
-        @SuppressWarnings("unchecked")
-        List<Object[]> unorderedDbResults = jpa.em()
-                .createNativeQuery("SELECT cr.studyResult_id, cr.id FROM ComponentResult cr "
-                        + "WHERE cr.studyResult_id IN :ids")
-                .setParameter("ids", orderedSrids)
-                .getResultList();
+        List<Object[]> unorderedDbResults = jpa.withTransaction((javax.persistence.EntityManager em) -> {
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = em
+                    .createNativeQuery("SELECT cr.studyResult_id, cr.id FROM ComponentResult cr "
+                            + "WHERE cr.studyResult_id IN :ids")
+                    .setParameter("ids", orderedSrids)
+                    .getResultList();
+            return results;
+        });
         // We have to ensure that the order of the srids of the crids that will be returned is the same as the order of
         // the given srids.
         // This is a inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
@@ -314,18 +370,22 @@ public class ComponentResultDao extends AbstractDao {
      * Takes a list component result IDs and checks if they exist in the database. Returns only the existing ones.
      */
     public List<Long> findIdsByComponentResultIds(List<Long> crids) {
-        @SuppressWarnings("unchecked")
-        List<Object> results = jpa.em()
-                .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.id IN :ids")
-                .setParameter("ids", crids)
-                .getResultList();
-        return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        return jpa.withTransaction(em -> {
+            @SuppressWarnings("unchecked")
+            List<Object> results = em
+                    .createNativeQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.id IN :ids")
+                    .setParameter("ids", crids)
+                    .getResultList();
+            return results.stream().map(r -> ((Number) r).longValue()).distinct().collect(Collectors.toList());
+        });
     }
 
     public void setQuotaReached(Long componentResultId) {
-        jpa.em().createQuery("UPDATE ComponentResult cr SET cr.quotaReached = true WHERE cr.id = :id")
-                .setParameter("id", componentResultId)
-                .executeUpdate();
+        jpa.withTransaction(em -> {
+            em.createQuery("UPDATE ComponentResult cr SET cr.quotaReached = true WHERE cr.id = :id")
+                    .setParameter("id", componentResultId)
+                    .executeUpdate();
+        });
     }
 
 }

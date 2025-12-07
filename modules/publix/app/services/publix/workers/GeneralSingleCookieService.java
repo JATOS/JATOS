@@ -1,20 +1,16 @@
 package services.publix.workers;
 
-import controllers.publix.Publix;
-import controllers.publix.workers.GeneralSinglePublix;
 import general.common.Common;
 import models.common.Study;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.tuple.Pair;
+import play.mvc.Http;
 import play.mvc.Http.Cookie;
 
 import javax.inject.Singleton;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static play.mvc.Http.Cookie.SameSite;
@@ -51,13 +47,13 @@ public class GeneralSingleCookieService {
      * Returns the worker ID of the GeneralSingleWorker that belongs to the given study - or null, if it doesn't exist.
      * If the study was run before the study UUID has been stored together with the worker ID in the cookie.
      */
-    public Long fetchWorkerIdByStudy(Study study) {
-        Cookie generalSingleCookie = Publix.request().cookies().get(COOKIE_NAME);
-        if (generalSingleCookie == null) return null;
+    public Long fetchWorkerIdByStudy(Http.Request request, Study study) {
+        Optional<Cookie> generalSingleCookie = request.cookies().get(COOKIE_NAME);
+        if (!generalSingleCookie.isPresent()) return null;
 
         // Get all cookie items from this study (cookie item = Pair of studyUuid and workerId)
         List<Pair<String, Long>> cookieItemsFromStudy =
-                Arrays.stream(generalSingleCookie.value().split(COOKIE_LIST_DELIMITER))
+                Arrays.stream(generalSingleCookie.get().value().split(COOKIE_LIST_DELIMITER))
                         .map(this::fetchCookieItem)
                         .filter(Objects::nonNull)
                         .filter(p -> study.getUuid().equals(p.getLeft()))
@@ -94,43 +90,30 @@ public class GeneralSingleCookieService {
     }
 
     /**
-     * Sets the cookieValue as the new GeneralSingle cookie. This cookie is HTTP only and has an expire date in the far
-     * future.
+     * Sets the cookie in the response. The cookie will contain all GeneralSingle studies done in this browser and
+     * adds the given study (and worker). This cookie is HTTP only and has an expire date in the far future.
      */
-    public void set(String cookieValue) {
-        Cookie newCookie = builder(COOKIE_NAME, cookieValue)
+    public Cookie get(Http.Request request, Study study, Worker worker) {
+        Optional<Cookie> currentCookie = request.getCookie(COOKIE_NAME);
+        String newCookieValue;
+        if (currentCookie.isPresent()) {
+            if (!currentCookie.get().value().contains(study.getUuid())) {
+                newCookieValue = currentCookie.get().value() + COOKIE_LIST_DELIMITER + study.getUuid() + COOKIE_TUPLE_DELIMITER
+                        + worker.getId();
+            } else {
+                newCookieValue = currentCookie.get().value();
+            }
+        } else {
+            newCookieValue = study.getUuid() + COOKIE_TUPLE_DELIMITER + worker.getId();
+        }
+
+        return builder(COOKIE_NAME, newCookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
                 .withSecure(false)
                 .withHttpOnly(true)
                 .withSameSite(SameSite.LAX)
                 .withPath(Common.getJatosUrlBasePath())
                 .build();
-        Publix.response().setCookie(newCookie);
-    }
-
-    /**
-     * Sets the cookie in the response. The cookie will contain all GeneralSingle studies done in this browser and
-     * adds the given study (and worker). This cookie is HTTP only and has an expire date in the far future.
-     */
-    public void set(Study study, Worker worker) {
-        Cookie oldCookie = Publix.response().cookie(COOKIE_NAME).orElse(
-                GeneralSinglePublix.request().cookie(COOKIE_NAME));
-        String newCookieValue = addStudy(study, worker, oldCookie);
-        set(newCookieValue);
-    }
-
-    /**
-     * If the cookie is not null it adds a new tuple (study's UUID and worker ID) to the cookie's value and returns it.
-     * If the cookie is null (this browser never did a general single run) it returns the new cookie's value which is
-     * just the tuple.
-     */
-    public String addStudy(Study study, Worker worker, Cookie generalSingleCookie) {
-        if (generalSingleCookie != null) {
-            return generalSingleCookie.value() + COOKIE_LIST_DELIMITER + study.getUuid() + COOKIE_TUPLE_DELIMITER
-                    + worker.getId();
-        } else {
-            return study.getUuid() + COOKIE_TUPLE_DELIMITER + worker.getId();
-        }
     }
 
 }

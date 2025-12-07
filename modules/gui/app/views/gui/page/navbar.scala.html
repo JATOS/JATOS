@@ -1,5 +1,6 @@
-@(signedinUser: common.User, breadcrumbs: String)
+@import play.api.mvc.RequestHeader
 @import controllers.gui.routes._
+@(signedinUser: common.User, breadcrumbs: String)(implicit request: RequestHeader)
 
 <header class="navbar sticky-top flex-nowrap p-0 bg-body-tertiary user-select-none shadow">
     <div class="container-fluid">

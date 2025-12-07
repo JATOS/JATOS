@@ -12,7 +12,8 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import javax.persistence.EntityManager
+import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.util.Try
 
 /**
@@ -52,7 +53,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
    * Applies the patch to the group session
    */
   private def handlePatch(json: JsObject, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
-    jpa.withTransaction(asJavaSupplier(() => {
+    jpa.withTransaction(asJavaFunction(_ => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult == null) {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
@@ -123,8 +124,8 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
    * Changes the state of GroupResult to FIXED and sends an update to all group
    * members
    */
-  private def handleActionFix(groupResultId: Long) = {
-    jpa.withTransaction(asJavaSupplier(() => {
+  private def handleActionFix(groupResultId: Long): List[GroupMsg] = {
+    jpa.withTransaction(asJavaFunction((_: EntityManager) => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)

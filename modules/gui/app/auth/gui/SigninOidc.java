@@ -20,6 +20,7 @@ import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
 import general.gui.FlashScopeMessaging;
@@ -29,7 +30,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
 import play.data.FormFactory;
-import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -63,11 +63,16 @@ public abstract class SigninOidc extends Controller {
 
     private static final ALogger LOGGER = Logger.of(SigninOidc.class);
 
-    @Inject private AuthService authService;
-    @Inject private SigninFormValidation signinFormValidation;
-    @Inject private FormFactory formFactory;
-    @Inject private UserDao userDao;
-    @Inject private UserService userService;
+    @Inject
+    private AuthService authService;
+    @Inject
+    private SigninFormValidation signinFormValidation;
+    @Inject
+    private FormFactory formFactory;
+    @Inject
+    private UserDao userDao;
+    @Inject
+    private UserService userService;
 
     private final OidcConfig oidcConfig;
     private OIDCProviderMetadata oidcProviderMetadata;
@@ -152,13 +157,13 @@ public abstract class SigninOidc extends Controller {
      * The method stores the OIDC state, nonce, and a flag indicating whether to keep the user signed in, in the Play
      * session.
      *
-     * @param request       the HTTP request received from the client
-     * @param realHostUrl   the real host URL to be used for constructing the callback URL
-     * @param keepSignedin  a flag indicating whether the user should remain signed in
+     * @param request      the HTTP request received from the client
+     * @param realHostUrl  the real host URL to be used for constructing the callback URL
+     * @param keepSignedin a flag indicating whether the user should remain signed in
      * @return the authentication request URI as String
      * @throws URISyntaxException if an invalid URI is encountered during the process
-     * @throws ParseException if parsing operations fail while working with OIDC configurations
-     * @throws AuthException if an authentication-related error occurs
+     * @throws ParseException     if parsing operations fail while working with OIDC configurations
+     * @throws AuthException      if an authentication-related error occurs
      */
     @GuiAccessLogging
     @Transactional
@@ -205,21 +210,22 @@ public abstract class SigninOidc extends Controller {
 
             String normalizedUsername = getNormalizedUsername(userInfo);
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
-            authService.writeSessionCookie(session(), normalizedUsername, keepSignedin);
             userService.setLastSignin(normalizedUsername);
 
+            Result result = redirect(authService.getRedirectPageAfterSignin(user))
+                    .addingToSession(request, authService.writeSessionCookie(normalizedUsername, keepSignedin));
             if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
-                FlashScopeMessaging.success(oidcConfig.successMsg);
+                result.flashing(FlashScopeMessaging.SUCCESS, oidcConfig.successMsg);
             }
-            return redirect(authService.getRedirectPageAfterSignin(user));
+            return result;
         } catch (AuthException e) {
             LOGGER.warn(".callback: " + e.getMessage());
-            FlashScopeMessaging.error(e.getMessage());
-            return redirect(auth.gui.routes.Signin.signin());
+            return redirect(auth.gui.routes.Signin.signin())
+                    .flashing(FlashScopeMessaging.ERROR, e.getMessage());
         } catch (Exception e) {
             LOGGER.error(".callback: " + e.getMessage());
-            FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
-            return redirect(auth.gui.routes.Signin.signin());
+            return redirect(auth.gui.routes.Signin.signin())
+                    .flashing(FlashScopeMessaging.ERROR, "OIDC error - contact your admin and check the logs for more information.");
         }
     }
 

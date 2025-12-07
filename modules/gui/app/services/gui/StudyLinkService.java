@@ -12,6 +12,8 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.StudyLink;
 import models.common.workers.*;
+import play.db.jpa.JPAApi;
+import play.mvc.Http;
 import scala.Option;
 import utils.common.Helpers;
 import utils.common.JsonUtils;
@@ -30,6 +32,7 @@ import java.util.List;
 @Singleton
 public class StudyLinkService {
 
+    private final JPAApi jpa;
     private final BatchDao batchDao;
     private final WorkerDao workerDao;
     private final StudyLinkDao studyLinkDao;
@@ -38,8 +41,9 @@ public class StudyLinkService {
     private final Checker checker;
 
     @Inject
-    StudyLinkService(BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao,
+    StudyLinkService(JPAApi jpa, BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao,
             WorkerService workerService, StudyService studyService, Checker checker) {
+        this.jpa = jpa;
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
@@ -48,9 +52,9 @@ public class StudyLinkService {
         this.checker = checker;
     }
 
-    public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
-            Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+    public JsonNode getStudyCodes(Http.Request request, String id, Option<Long> batchId, String workerType, String comment,
+                                  Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
+        Study study = studyService.getStudyFromIdOrUuid(request, id);
 
         Batch batch;
         if (batchId.nonEmpty()) {
@@ -89,33 +93,35 @@ public class StudyLinkService {
 
     private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, String workerType)
             throws BadRequestException {
-        amount = Math.max(amount, 1);
+        return jpa.withTransaction(em -> {
+            int i = Math.max(amount, 1);
 
-        List<String> studyCodeList = new ArrayList<>();
-        while (amount > 0) {
-            Worker worker;
-            switch (workerType) {
-                case PersonalSingleWorker.WORKER_TYPE:
-                    worker = new PersonalSingleWorker(comment);
-                    break;
-                case PersonalMultipleWorker.WORKER_TYPE:
-                    worker = new PersonalMultipleWorker(comment);
-                    break;
-                default:
-                    throw new BadRequestException("Unknown worker type");
+            List<String> studyCodeList = new ArrayList<>();
+            while (i > 0) {
+                Worker worker;
+                switch (workerType) {
+                    case PersonalSingleWorker.WORKER_TYPE:
+                        worker = new PersonalSingleWorker(comment);
+                        break;
+                    case PersonalMultipleWorker.WORKER_TYPE:
+                        worker = new PersonalMultipleWorker(comment);
+                        break;
+                    default:
+                        throw new BadRequestException("Unknown worker type");
+                }
+                workerService.validateWorker(worker);
+                batch.addWorker(worker);
+                workerDao.create(worker);
+
+                StudyLink studyLink = new StudyLink(batch, worker);
+                studyLinkDao.create(studyLink);
+                studyCodeList.add(studyLink.getStudyCode());
+
+                batchDao.update(batch);
+                i--;
             }
-            workerService.validateWorker(worker);
-            batch.addWorker(worker);
-            workerDao.create(worker);
-
-            StudyLink studyLink = new StudyLink(batch, worker);
-            studyLinkDao.create(studyLink);
-            studyCodeList.add(studyLink.getStudyCode());
-
-            batchDao.update(batch);
-            amount--;
-        }
-        return studyCodeList;
+            return studyCodeList;
+        });
     }
 
     /**

@@ -1,4 +1,6 @@
+@import play.api.mvc.RequestHeader
 @import general.common._
+@(implicit request: RequestHeader)
 
 @* Change study's user members Modal *@
 <div class="modal fade" id="studyMemberUsersModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>

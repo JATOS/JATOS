@@ -72,10 +72,10 @@ public class GeneralMultiplePublix extends Publix implements IPublix {
         GeneralMultipleWorker worker = workerCreator.createAndPersistGeneralMultipleWorker(batch);
         studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
-        publixUtils.finishOldestStudyResult();
+        publixUtils.finishOldestStudyResult(request);
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
-        idCookieService.writeIdCookie(studyResult);
+        idCookieService.writeIdCookie(request, studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "

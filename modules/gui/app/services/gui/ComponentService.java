@@ -14,6 +14,7 @@ import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
+import play.mvc.Http;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 
@@ -113,7 +114,7 @@ public class ComponentService {
      * Does the same as {@link #clone(Component) cloneComponent} and additionally clones the HTML file and changes the
      * title.
      */
-    public Component cloneWholeComponent(Component component) {
+    public Component cloneWholeComponent(Http.Request request, Component component) {
         Component clone = clone(component);
         clone.setTitle(cloneTitle(component.getTitle()));
         try {
@@ -123,7 +124,7 @@ public class ComponentService {
         } catch (IOException e) {
             // Just log it and give a warning - a component is allowed to have
             // no HTML file
-            RequestScopeMessaging.warning(MessagesStrings.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
+            RequestScopeMessaging.warning(request, MessagesStrings.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
             LOGGER.info(".cloneWholeComponent: " + e.getMessage());
         }
         return clone;
@@ -244,9 +245,9 @@ public class ComponentService {
         componentDao.remove(component);
     }
 
-    public Component getComponentFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Component getComponentFromIdOrUuid(Http.Request request, String idOrUuid) throws NotFoundException, ForbiddenException {
         Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Component component;
         if (componentId.isPresent()) {
             component = componentDao.findById(componentId.get());

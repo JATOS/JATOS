@@ -1,17 +1,15 @@
 name := "jatos-publix"
 version := "3.9.8"
 organization := "org.jatos"
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(
-  javaCore,
-  javaJdbc,
-  javaJpa,
-  javaWs,
   guice,
+  javaWs,
+  javaJpa,
   "org.apache.commons" % "commons-collections4" % "4.3",
-  "org.mockito" % "mockito-inline" % "4.11.0" % "test"
+  "org.mockito" % "mockito-inline" % "4.11.0" % Test
 )
 
 // Routes from submodules

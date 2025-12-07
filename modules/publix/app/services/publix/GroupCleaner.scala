@@ -10,7 +10,8 @@ import play.db.jpa.JPAApi
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaSupplier
+import scala.compat.java8.FunctionConverters.asJavaFunction
+import javax.persistence.EntityManager
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -35,7 +36,7 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
     if (!Common.isGroupsCleaningAllowed) return
 
     logger.info("Starting group cleaning")
-    val task: Runnable = () => jpa.withTransaction(asJavaSupplier(() => findAndRemoveInactiveGroupMembers()))
+    val task: Runnable = () => jpa.withTransaction(asJavaFunction((_: EntityManager) => findAndRemoveInactiveGroupMembers()))
 
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
     val scheduler = actorSystem.scheduler.schedule(

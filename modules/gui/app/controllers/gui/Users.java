@@ -4,6 +4,7 @@ import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import auth.gui.SigninFormValidation;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import utils.common.TransactionalAction.Transactional;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -18,7 +19,6 @@ import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
 import play.data.validation.ValidationError;
-import play.db.jpa.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -43,7 +43,6 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 @GuiAccessLogging
 @Singleton
 public class Users extends Controller {
@@ -80,9 +79,9 @@ public class Users extends Controller {
     @Auth(Role.ADMIN)
     @SaveLastVisitedPageUrl
     public Result userManager(Http.Request request) {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
-        return ok(views.html.gui.admin.userManager.render(request, signedinUser, breadcrumbs));
+        return ok(views.html.gui.admin.userManager.render(signedinUser, breadcrumbs, request.asScala()));
     }
 
     /**
@@ -104,10 +103,10 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result toggleActive(String usernameOfUserToChange, Boolean active) {
+    public Result toggleActive(Http.Request request, String usernameOfUserToChange, Boolean active) {
         try {
             String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-            userService.toggleActive(normalizedUsernameOfUserToChange, active);
+            userService.toggleActive(request, normalizedUsernameOfUserToChange, active);
         } catch (NotFoundException e) {
             return badRequest(e.getMessage());
         } catch (ForbiddenException e) {
@@ -121,7 +120,7 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result toggleRole(String usernameOfUserToChange, String role, boolean value) {
+    public Result toggleRole(Http.Request request, String usernameOfUserToChange, String role, boolean value) {
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
         try {
             switch (Role.valueOf(role)) {
@@ -130,7 +129,7 @@ public class Users extends Controller {
                             userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
                 case ADMIN:
                     return ok(JsonUtils.asJsonNode(
-                            userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
+                            userService.changeAdminRole(request, normalizedUsernameOfUserToChange, value)));
                 default:
                     return badRequest("Unknown role");
             }
@@ -146,8 +145,8 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth
-    public Result signedinUserData() {
-        User signedinUser = authService.getSignedinUser();
+    public Result signedinUserData(Http.Request request) {
+        User signedinUser = authService.getSignedinUser(request);
         return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(signedinUser)));
     }
 
@@ -172,8 +171,8 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth
-    public Result edit(String username) throws JatosGuiException {
-        User signedinUser = authService.getSignedinUser();
+    public Result edit(Http.Request request, String username) throws JatosGuiException {
+        User signedinUser = authService.getSignedinUser(request);
         String normalizedUsernameOfUserToChange = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
 
@@ -198,10 +197,10 @@ public class Users extends Controller {
         }
 
         if (!signedinUser.isAdmin()) {
-            checkUsernameIsOfSignedinUser(normalizedUsernameOfUserToChange, signedinUser);
+            checkUsernameIsOfSignedinUser(request, normalizedUsernameOfUserToChange, signedinUser);
         }
 
-        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
+        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         // Update user in database: so far it's only the user's name
@@ -217,7 +216,7 @@ public class Users extends Controller {
     @Transactional
     @Auth
     public Result changePasswordByAdmin(Http.Request request) throws NamingException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
         String normalizedUsernameOfUserToChange = form.get().getUsername();
 
@@ -260,7 +259,7 @@ public class Users extends Controller {
     @Transactional
     @Auth
     public Result changePasswordByUser(Http.Request request) throws NamingException {
-        User signedinUser = authService.getSignedinUser();
+        User signedinUser = authService.getSignedinUser(request);
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
         String normalizedUsernameOfUserToChange = form.get().getUsername();
 
@@ -299,15 +298,15 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth
-    public Result remove(String usernameOfUserToRemove) throws ForbiddenException, NotFoundException, IOException {
-        User signedinUser = authService.getSignedinUser();
+    public Result remove(Http.Request request, String usernameOfUserToRemove) throws ForbiddenException, NotFoundException, IOException {
+        User signedinUser = authService.getSignedinUser(request);
         String normalizedSignedinUsername = signedinUser.getUsername();
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
         if (!signedinUser.isAdmin() && !normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
             return forbidden("You are not allowed to delete this user.");
         }
 
-        DynamicForm requestData = formFactory.form().bindFromRequest();
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
         switch (signedinUser.getAuthMethod()) {
             case DB:
             case LDAP:
@@ -346,10 +345,10 @@ public class Users extends Controller {
         }
     }
 
-    private void checkUsernameIsOfSignedinUser(String normalizedUsername, User signedinUser) throws JatosGuiException {
+    private void checkUsernameIsOfSignedinUser(Http.Request request, String normalizedUsername, User signedinUser) throws JatosGuiException {
         if (!normalizedUsername.equals(signedinUser.getUsername())) {
             ForbiddenException e = new ForbiddenException("You are not allowed to get data for user \"" + normalizedUsername + "\".");
-            jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
+            jatosGuiExceptionThrower.throwRedirect(request, e, controllers.gui.routes.Home.home());
         }
     }
 

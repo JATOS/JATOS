@@ -1,6 +1,7 @@
-@(request: Http.Request, study: Option[common.Study], signedinUser: Option[common.User], worker: Option[common.workers.Worker])
+@import play.api.mvc.RequestHeader
 @import general.common._
 @import utils.common._
+@(study: Option[common.Study], signedinUser: Option[common.User], worker: Option[common.workers.Worker])(implicit request: RequestHeader)
 
 @*
 * Global parameter that cannot be reached by non-templates (e.g., JS modules in extra files)
@@ -33,7 +34,7 @@
 
     window.common.isOauthGoogleAllowed = @Common.isOauthGoogleAllowed;
     window.common.oauthGoogleClientId = "@Common.getOauthGoogleClientId";
-    window.common.googlePictureUrl = "@{request.session().getOptional("googlePictureUrl").orElse("")}";
+    window.common.googlePictureUrl = "@request.session.get("googlePictureUrl").getOrElse("")";
 
     window.common.isOidcAllowed = @Common.isOidcAllowed;
     window.common.oidcSigninButtonText = "@Common.getOidcSigninButtonText";
@@ -54,8 +55,8 @@
     window.common.userSessionTimeout = @Common.getUserSessionTimeout;
     window.common.userSessionInactivity = @Common.getUserSessionInactivity;
     window.common.allowKeepSignedin = @Common.getUserSessionAllowKeepSignedin;
-    window.common.userSigninTime = @{request.session().getOptional("signinTime").orElse("-1")};
-    window.common.keepSignedin = @{(request.session().getOptional("keepSignedin").orElse("false")).toBoolean};
+    window.common.userSigninTime = "@request.session.get("signinTime").getOrElse("-1")";
+    window.common.keepSignedin = @(request.session.get("keepSignedin").getOrElse("false")).toBoolean;
 
     @if(study.isDefined) {
     window.study = {};

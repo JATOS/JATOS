@@ -352,7 +352,7 @@ public class JatosUpdater {
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
         if (!currentReleaseInfo.isUpdateAllowed) {
-            CompletableFuture future = new CompletableFuture<>();
+            CompletableFuture<Object> future = new CompletableFuture<>();
             future.completeExceptionally(new IllegalStateException("Can't update to version "
                     + currentReleaseInfo.versionFull
                     + " automatically. This JATOS release has to be updated manually."));
@@ -370,7 +370,7 @@ public class JatosUpdater {
                 default:
                     errMsg = "Wrong update state";
             }
-            CompletableFuture future = new CompletableFuture<>();
+            CompletableFuture<Object> future = new CompletableFuture<>();
             future.completeExceptionally(new IllegalStateException(errMsg));
             return future;
         }
@@ -396,7 +396,7 @@ public class JatosUpdater {
             return future;
         } catch (Exception e) {
             state = UpdateState.SLEEPING;
-            CompletableFuture future = new CompletableFuture<>();
+            CompletableFuture<Object> future = new CompletableFuture<>();
             future.completeExceptionally(e);
             return future;
         }
@@ -404,23 +404,18 @@ public class JatosUpdater {
 
     private CompletionStage<File> downloadAsync(String url, String filename) throws IOException {
         File file = new File(IOUtils.TMP_DIR, filename);
-        OutputStream outputStream = Files.newOutputStream(file.toPath());
-        LOGGER.info("Download " + url);
-        CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")
-                .setRequestTimeout(Duration.ofHours(1))
-                .stream();
-        return futureResponse.thenCompose(res -> {
-            Source<ByteString, ?> responseBody = res.getBodyAsSource();
-            Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
-                    bytes -> outputStream.write(bytes.toArray()));
-            return responseBody.runWith(outputWriter, materializer).whenComplete((value, error) -> {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    LOGGER.error("Couldn't close stream after downloading " + url, e);
-                }
-            }).thenApply(v -> file);
-        });
+        try (OutputStream outputStream = Files.newOutputStream(file.toPath())) {
+            LOGGER.info("Download " + url);
+            CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")
+                    .setRequestTimeout(Duration.ofHours(1))
+                    .stream();
+            return futureResponse.thenCompose(res -> {
+                Source<ByteString, ?> responseBody = res.getBodyAsSource();
+                Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
+                        bytes -> outputStream.write(bytes.toArray()));
+                return responseBody.runWith(outputWriter, materializer).thenApply(v -> file);
+            });
+        }
     }
 
     /**
