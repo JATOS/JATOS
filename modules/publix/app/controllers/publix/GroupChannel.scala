@@ -3,7 +3,7 @@ package controllers.publix
 import akka.actor.{ActorSystem, Props}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
-import exceptions.publix.{ForbiddenPublixException, PublixException}
+import exceptions.common.ForbiddenException
 import group.{GroupAdministration, GroupChannelActor, GroupDispatcherRegistry}
 import models.common.workers._
 import models.common.{GroupResult, StudyResult}
@@ -45,7 +45,6 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
    * Joins a group but doesn't open the group channel. In case of an error/ problem, a PublixException is thrown.
    * Synchronized to prevent race conditions with group members joining, leaving, reassigning.
    */
-  @throws(classOf[PublixException])
   def join(studyResult: StudyResult)(implicit request: RequestHeader): Unit = synchronized {
     logger.info(s".join: studyResult ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
@@ -57,7 +56,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     if (studyResult.getHistoryGroupResult != null) {
       logger.info(s".join: It's not allowed to join a group after it was explicitly left " +
         s"(studyResult ${studyResult.getId}).")
-      throw new ForbiddenPublixException("It's not allowed to join a group after it was explicitly left.")
+      throw new ForbiddenException("It's not allowed to join a group after it was explicitly left.")
     }
 
     if (studyResult.getActiveGroupResult != null)
@@ -74,7 +73,6 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
    * Opens a group channel and returns an Akka stream Flow that will be turned into WebSocket. In
    * case of an error/ problem, a PublixException is thrown.
    */
-  @throws(classOf[PublixException])
   def open(studyResult: StudyResult): Flow[Any, Nothing, _] = {
     logger.info(s".open: studyResultId ${studyResult.getId}")
     val groupResult: GroupResult = studyResult.getActiveGroupResult
@@ -92,7 +90,6 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
    * reassignment was successful, an Ok is returned. If it was unsuccessful, a Forbidden is returned.
    * In case of an error/ problem, a PublixException is thrown.
    */
-  @throws(classOf[PublixException])
   def reassign(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
     logger.info(s".reassign: studyResultId ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
@@ -118,7 +115,6 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   /**
    * Let this study run (specified by the study result ID) leave the group that it joined before.
    */
-  @throws(classOf[PublixException])
   def leave(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
     logger.info(s".leave: studyResultId ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]

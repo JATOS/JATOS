@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
+import exceptions.common.BadRequestException;
 import org.junit.Test;
 import org.mockito.Mockito;
 

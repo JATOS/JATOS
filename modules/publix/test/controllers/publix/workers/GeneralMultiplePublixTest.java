@@ -3,7 +3,6 @@ package controllers.publix.workers;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.PublixException;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;

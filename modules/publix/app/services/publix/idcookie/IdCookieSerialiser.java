@@ -3,8 +3,7 @@ package services.publix.idcookie;
 import javax.inject.Singleton;
 
 /**
- * This class offers methods to turn an JATOS ID cookie into a string that can be put
- * into an URL header.
+ * This class offers methods to turn an JATOS ID cookie into a string that can be put into a URL header.
  *
  * @author Kristian Lange
  */
@@ -15,8 +14,8 @@ public class IdCookieSerialiser {
     protected static final String COOKIE_AND = "&";
 
     /**
-     * Takes an IdCookieModel and put its fields into a String for an cookie value:
-     * key=value&key=value&... (similar to a URL query).
+     * Takes an IdCookieModel and put its fields into a String for a cookie value: key=value&key=value&... (similar to
+     * a URL query).
      */
     public String asCookieValueString(IdCookieModel idCookie) {
         StringBuilder sb = new StringBuilder();
@@ -37,10 +36,15 @@ public class IdCookieSerialiser {
     }
 
     private void appendCookieEntry(StringBuilder sb, String key,
-            Object value, boolean cookieAnd) {
+                                   Object value, boolean cookieAnd) {
         sb.append(key);
         sb.append(COOKIE_EQUALS);
-        sb.append(value);
+        // Only encode here, right before turning it into a header string
+        if (value instanceof String) {
+            sb.append(utils.common.Helpers.urlEncode((String) value));
+        } else {
+            sb.append(value);
+        }
         if (cookieAnd) {
             sb.append(COOKIE_AND);
         }

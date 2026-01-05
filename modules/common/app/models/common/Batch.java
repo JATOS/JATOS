@@ -2,7 +2,9 @@ package models.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import daos.common.worker.WorkerType;
 import models.common.workers.Worker;
+import models.common.workers.WorkerTypeConverter;
 import utils.common.JsonUtils;
 import utils.common.JsonUtils.JsonForApi;
 import utils.common.JsonUtils.JsonForIO;
@@ -90,6 +92,7 @@ public class Batch {
     @JoinTable(name = "BatchWorkerMap", joinColumns = {
             @JoinColumn(name = "batch_id", referencedColumnName = "id")}, inverseJoinColumns = {
             @JoinColumn(name = "worker_id", referencedColumnName = "id")})
+    @SuppressWarnings({"FieldMayBeFinal"})
     private Set<Worker> workerList = new HashSet<>();
 
     /**
@@ -98,7 +101,8 @@ public class Batch {
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @ElementCollection(fetch = FetchType.EAGER)
-    private Set<String> allowedWorkerTypes = new HashSet<>();
+    @Convert(converter = WorkerTypeConverter.class)
+    private Set<WorkerType> allowedWorkerTypes = new HashSet<>();
 
     /**
      * User comments, reminders, something to share with others. They have no further meaning.
@@ -199,31 +203,27 @@ public class Batch {
         this.maxTotalWorkers = maxTotalWorkers;
     }
 
-    public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
+    public void setAllowedWorkerTypes(Set<WorkerType> allowedWorkerTypes) {
         this.allowedWorkerTypes = allowedWorkerTypes;
     }
 
-    public Set<String> getAllowedWorkerTypes() {
+    public Set<WorkerType> getAllowedWorkerTypes() {
         return this.allowedWorkerTypes;
     }
 
-    public void addAllowedWorkerType(String workerType) {
+    public void addAllowedWorkerType(WorkerType workerType) {
         if (allowedWorkerTypes == null) {
             allowedWorkerTypes = new HashSet<>();
         }
         allowedWorkerTypes.add(workerType);
     }
 
-    public void removeAllowedWorkerType(String workerType) {
+    public void removeAllowedWorkerType(WorkerType workerType) {
         allowedWorkerTypes.remove(workerType);
     }
 
-    public boolean hasAllowedWorkerType(String workerType) {
+    public boolean hasAllowedWorkerType(WorkerType workerType) {
         return allowedWorkerTypes.contains(workerType);
-    }
-
-    public void setWorkerList(Set<Worker> workerList) {
-        this.workerList = workerList;
     }
 
     public Set<Worker> getWorkerList() {

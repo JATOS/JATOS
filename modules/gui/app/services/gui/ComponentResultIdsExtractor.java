@@ -3,7 +3,7 @@ package services.gui;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
+import exceptions.common.BadRequestException;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
@@ -32,11 +32,11 @@ public class ComponentResultIdsExtractor {
     }
 
     /**
-     * Extracts component result IDs from the given map. It ensures that those component results actually exist in the
+     * Extract component result IDs from the given map. It ensures that those component results actually exist in the
      * database. Basically all IDs used in JATOS are allowed, e.g. study IDs or batch IDs. This method looks in the
      * database for the corresponding component result IDs.
      */
-    public List<Long> extract(Map<String, String[]> map) throws BadRequestException {
+    public List<Long> extract(Map<String, String[]> map) {
         if (map == null || map.isEmpty()) return new ArrayList<>();
 
         // We use TreeSet to 1) get ordered by increasing IDs, and 2) avoid double IDs
@@ -108,10 +108,10 @@ public class ComponentResultIdsExtractor {
 
     /**
      * Extracts component result IDs from a JsonNode. It ensures that those component results actually exist in the
-     * database. Basically all IDs used in JATOS are allowed, e.g. study IDs or batch IDs. This method looks in the
+     * database. Basically all IDs used in JATOS are allowed, e.g., study IDs or batch IDs. This method looks in the
      * database for the corresponding component result IDs.
      */
-    public List<Long> extract(JsonNode json) throws BadRequestException {
+    public List<Long> extract(JsonNode json) {
         if (json == null || json.isNull()) return new ArrayList<>();
 
         // We use TreeSet to 1) get ordered by increasing IDs, and 2) avoid double IDs
@@ -169,7 +169,7 @@ public class ComponentResultIdsExtractor {
         return new ArrayList<>(componentResultIds);
     }
 
-    private static List<String> extractUuids(JsonNode node) throws BadRequestException {
+    private static List<String> extractUuids(JsonNode node) {
         if (node.isTextual()) {
             return Collections.singletonList(node.asText());
         } else if (node.isArray()) {
@@ -183,7 +183,7 @@ public class ComponentResultIdsExtractor {
         }
     }
 
-    private static List<Long> extractIds(JsonNode node) throws BadRequestException {
+    private static List<Long> extractIds(JsonNode node) {
         if (node.isInt()) {
             return Collections.singletonList(node.asLong());
         } else if (node.isArray()) {

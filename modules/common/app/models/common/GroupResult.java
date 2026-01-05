@@ -33,11 +33,16 @@ public class GroupResult {
     @GeneratedValue
     private Long id;
 
+    /**
+     * State of this group
+     * Hint: Don't change the order of the enum values! They are mapped to EnumType.ORDINAL in the database.
+     */
     public enum GroupState {
         STARTED, // Group study run was started
         FINISHED, // Group study run is finished
         FIXED; // No new members can join the group
 
+        @SuppressWarnings("unused")
         public static String allStatesAsString() {
             String str = Arrays.toString(values());
             return str.substring(1, str.length() - 1);
@@ -77,6 +82,7 @@ public class GroupResult {
      */
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "activeGroupResult")
+    @SuppressWarnings("FieldMayBeFinal")
     private Set<StudyResult> activeMemberList = new HashSet<>();
 
     /**
@@ -93,6 +99,7 @@ public class GroupResult {
      */
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "historyGroupResult")
+    @SuppressWarnings("FieldMayBeFinal")
     private Set<StudyResult> historyMemberList = new HashSet<>();
 
     /**
@@ -181,11 +188,6 @@ public class GroupResult {
         return this.endDate;
     }
 
-    public void setActiveMemberList(Set<StudyResult> activeMemberList) {
-        this.activeMemberList = activeMemberList;
-        this.activeMemberCount = activeMemberList.size();
-    }
-
     public Set<StudyResult> getActiveMemberList() {
         return this.activeMemberList;
     }
@@ -204,19 +206,6 @@ public class GroupResult {
         return this.activeMemberCount;
     }
 
-    public void setActiveMemberCount(Integer activeMemberCount) {
-        this.activeMemberCount = activeMemberCount;
-    }
-
-    public void setHistoryMemberList(Set<StudyResult> historyMemberList) {
-        this.historyMemberList = historyMemberList;
-        this.historyMemberCount = historyMemberList.size();
-    }
-
-    public Set<StudyResult> getHistoryMemberList() {
-        return this.historyMemberList;
-    }
-
     public void removeHistoryMember(StudyResult studyResult) {
         this.historyMemberList.remove(studyResult);
         this.historyMemberCount = this.historyMemberList.size();
@@ -229,10 +218,6 @@ public class GroupResult {
 
     public Integer getHistoryMemberCount() {
         return this.historyMemberCount;
-    }
-
-    public void setHistoryMemberCount(Integer historyMemberCount) {
-        this.historyMemberCount = historyMemberCount;
     }
 
     @Override

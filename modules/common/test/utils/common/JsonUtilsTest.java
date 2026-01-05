@@ -2,6 +2,7 @@ package utils.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import messaging.common.Messages;
 import org.junit.Test;
 import play.libs.Json;
 
@@ -146,4 +147,14 @@ public class JsonUtilsTest {
         assertEquals("value1", wrappedNode.get("field1").asText());
         assertTrue(wrappedNode.has("data"));
     }
+
+    @Test
+    public void testEmptyMessagesSerialization() {
+        Messages messages = new Messages();
+        String json = JsonUtils.asJson(messages);
+        System.out.println("[DEBUG_LOG] JSON: " + json);
+        assertNotNull("JSON should not be null", json);
+        assertEquals("{}", json);
+    }
+
 }

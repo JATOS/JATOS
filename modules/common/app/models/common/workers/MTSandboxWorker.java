@@ -15,8 +15,10 @@ import javax.persistence.Entity;
 public class MTSandboxWorker extends MTWorker {
 
 	public static final String WORKER_TYPE = "MTSandbox";
+    public static final String SHORT_WORKER_TYPE = "mts";
 	public static final String UI_WORKER_TYPE = "MTurk Sandbox";
 
+    @SuppressWarnings("unused")
 	public MTSandboxWorker() {
 	}
 
@@ -25,14 +27,4 @@ public class MTSandboxWorker extends MTWorker {
 		super(mtWorkerId);
 	}
 	
-	@Override
-	public String getWorkerType() {
-		return WORKER_TYPE;
-	}
-
-	@Override
-	public String getUIWorkerType() {
-		return UI_WORKER_TYPE;
-	}
-
 }

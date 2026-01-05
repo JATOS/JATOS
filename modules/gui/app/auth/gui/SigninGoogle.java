@@ -1,16 +1,16 @@
 package auth.gui;
 
+import actions.common.AsyncAction.Executor;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import utils.common.TransactionalAction.Transactional;
+import actions.common.AsyncAction.Async;
 import daos.common.UserDao;
-import exceptions.gui.AuthException;
+import exceptions.common.AuthException;
 import general.common.Common;
-import general.gui.FlashScopeMessaging;
 import models.common.User;
 import models.gui.NewUserModel;
 import play.Logger;
@@ -27,6 +27,8 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+
+import static messaging.common.FlashScopeMessaging.*;
 
 /**
  * Class that handles the sign-in of users via Google OIDC sign-in button.
@@ -62,14 +64,14 @@ public class SigninGoogle extends Controller {
     /**
      * HTTP POST Endpoint for the sign-in form
      */
-    @Transactional
+    @Async(Executor.IO)
     public Result signin(Http.Request request) throws GeneralSecurityException, IOException {
         String idTokenString = request.body().asFormUrlEncoded().get("credential")[0];
         GoogleIdToken idToken = fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google sign in: Invalid ID token.");
             return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(FlashScopeMessaging.ERROR, "Google sign in: Invalid ID token");
+                    .flashing(ERROR, "Google sign in: Invalid ID token");
         }
 
         GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
@@ -77,7 +79,7 @@ public class SigninGoogle extends Controller {
         if (!idTokenPayload.getEmailVerified()) {
             LOGGER.info("Google sign in: Couldn't sign in user due to email not verified");
             return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(FlashScopeMessaging.ERROR, "Google sign in: Email not verified");
+                    .flashing(ERROR, "Google sign in: Email not verified");
         }
 
         User user;
@@ -86,7 +88,7 @@ public class SigninGoogle extends Controller {
         } catch (AuthException e) {
             LOGGER.warn(e.getMessage());
             return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(FlashScopeMessaging.ERROR, e.getMessage());
+                    .flashing(ERROR, e.getMessage());
         }
 
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());

@@ -1,7 +1,6 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
-import exceptions.publix.BadRequestPublixException;
 import general.common.Common;
 import models.common.*;
 import models.common.workers.GeneralSingleWorker;

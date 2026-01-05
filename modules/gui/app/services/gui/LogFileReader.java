@@ -4,6 +4,7 @@ import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
+import exceptions.common.IOException;
 import general.common.Common;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 
@@ -14,8 +15,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Class responsible for reading JATOS log files. It's not part of
- * utils.common.IOUtils because it uses Akka Streams.
+ * Class responsible for reading JATOS log files. It's not part of utils.common.IOUtils because it uses Akka Streams.
  *
  * @author Kristian Lange (2017)
  */
@@ -23,8 +23,8 @@ import java.util.concurrent.CompletableFuture;
 public class LogFileReader {
 
     /**
-     * Reads from the logs folder the given log file in reverse order and returns it as Akka
-     * Stream source. It maximal reads until line specified in lineLimit.
+     * Reads from the logs folder the given log file in reverse order and returns it as an Akka Stream source. It
+     * maximally reads until the line specified in lineLimit.
      */
     public Source<ByteString, ?> read(String filename, int lineLimit) {
         return StreamConverters.asOutputStream()
@@ -40,7 +40,7 @@ public class LogFileReader {
     /**
      * This method is very touchy. Change only if you know what you are doing.
      */
-    private void streamLogFile(Writer writer, String filename, int lineLimit) throws IOException {
+    private void streamLogFile(Writer writer, String filename, int lineLimit) {
         File logFile = new File(Common.getLogsPath(), filename);
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, Charset.defaultCharset())) {
             String oneLine = reader.readLine();
@@ -50,8 +50,8 @@ public class LogFileReader {
                 oneLine = reader.readLine();
                 lineNumber++;
             }
-        } catch (IOException e) {
-            writer.write("Could not open log file '" + filename + "'");
+        } catch (java.io.IOException e) {
+            throw new IOException("Could not open log file '" + filename + "'");
         }
     }
 }

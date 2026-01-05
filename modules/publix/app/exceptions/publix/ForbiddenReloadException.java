@@ -1,15 +1,21 @@
 package exceptions.publix;
 
 /**
- * Thrown if a JATOS component is not allowed to reload but it this was
- * attempted.
+ * Thrown if a JATOS component attempted a not allowed reload
  * 
  * @author Kristian Lange
  */
-public class ForbiddenReloadException extends Exception {
+public class ForbiddenReloadException extends RuntimeException {
 
-	public ForbiddenReloadException(String message) {
+    private final String uuid;
+
+	public ForbiddenReloadException(String uuid, String message) {
 		super(message);
+        this.uuid = uuid;
 	}
+
+    public String getUuid() {
+        return uuid;
+    }
 
 }

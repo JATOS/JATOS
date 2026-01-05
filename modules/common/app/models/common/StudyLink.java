@@ -1,6 +1,8 @@
 package models.common;
 
+import daos.common.worker.WorkerType;
 import models.common.workers.Worker;
+import models.common.workers.WorkerTypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.persistence.*;
@@ -36,7 +38,8 @@ public class StudyLink {
      * Always set, but especially important for all 'general' workers (General Single, General Multiple, MTurk) and the
      * Jatos worker since they don't set the worker.
      */
-    private String workerType;
+    @Convert(converter = WorkerTypeConverter.class)
+    private WorkerType workerType;
 
     /**
      * Only an active study link can be used to run a study
@@ -51,8 +54,8 @@ public class StudyLink {
         this.worker = worker;
     }
 
-    public StudyLink(Batch batch, String workerType) {
-        this.studyCode = RandomStringUtils.randomAlphanumeric(11);
+    public StudyLink(Batch batch, WorkerType workerType) {
+        this.studyCode = RandomStringUtils.insecure().nextAlphanumeric(11);
         this.workerType = workerType;
         this.batch = batch;
     }
@@ -81,11 +84,11 @@ public class StudyLink {
         this.worker = worker;
     }
 
-    public String getWorkerType() {
+    public WorkerType getWorkerType() {
         return workerType;
     }
 
-    public void setWorkerType(String workerType) {
+    public void setWorkerType(WorkerType workerType) {
         this.workerType = workerType;
     }
 

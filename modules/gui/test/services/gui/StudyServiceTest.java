@@ -5,8 +5,8 @@ import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.BadRequestException;
+import exceptions.common.NotFoundException;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
@@ -85,7 +85,7 @@ public class StudyServiceTest {
         studyService.changeComponentPosition("1", s, c2);
 
         assertThat(s.getComponentList()).containsExactly(c2, c1, c3);
-        verify(studyDao).update(s);
+        verify(studyDao).merge(s);
     }
 
     @Test(expected = BadRequestException.class)
@@ -158,7 +158,7 @@ public class StudyServiceTest {
         studyService.updateStudy(existing, updated, user);
 
         // Then
-        verify(studyDao).update(existing);
+        verify(studyDao).merge(existing);
         verify(studyLogger).logStudyDescriptionHash(existing, user);
     }
 
@@ -173,7 +173,7 @@ public class StudyServiceTest {
 
         studyService.updateStudy(existing, updated, user);
 
-        verify(studyDao).update(existing);
+        verify(studyDao).merge(existing);
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
     }
 
@@ -188,7 +188,7 @@ public class StudyServiceTest {
 
         studyService.updateStudy(s, props, user);
 
-        verify(studyDao).update(s);
+        verify(studyDao).merge(s);
         verify(studyLogger).logStudyDescriptionHash(s, user);
     }
 

@@ -1,12 +1,9 @@
 package migrations.common;
 
-import com.diffplug.common.base.Errors;
 import daos.common.ComponentResultDao;
 import play.Logger;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import java.util.List;
 
 /**
@@ -17,13 +14,11 @@ public class ComponentResultMigration {
     private static final Logger.ALogger LOGGER = Logger.of(ComponentResultMigration.class);
 
     private final ComponentResultDao componentResultDao;
-    private final JPAApi jpaApi;
     private final JatosMigrations jatosMigrations;
 
     @Inject
-    ComponentResultMigration(ComponentResultDao componentResultDao, JPAApi jpaApi, JatosMigrations jatosMigrations) {
+    ComponentResultMigration(ComponentResultDao componentResultDao, JatosMigrations jatosMigrations) {
         this.componentResultDao = componentResultDao;
-        this.jpaApi = jpaApi;
         this.jatosMigrations = jatosMigrations;
     }
 
@@ -36,15 +31,15 @@ public class ComponentResultMigration {
     }
 
     private void fill() {
-        List<Long> crids = jpaApi.withTransaction((EntityManager em) -> componentResultDao.findAllIdsWhereDataSizeIsNull());
+        List<Long> crids = componentResultDao.findAllIdsWhereDataSizeIsNull();
         if (crids.isEmpty()) return;
 
         LOGGER.info("Start filling dataSize and dataShort fields of ComponentResults. This is part of the update " +
                 "and can take a while depending on the number of ComponentResults in your database.");
-        crids.parallelStream().forEach(crid -> jpaApi.withTransaction((em) -> {
-            Errors.rethrow().run(() -> componentResultDao.setDataSizeAndDataShort(crid));
+        crids.parallelStream().forEach(crid -> {
+            componentResultDao.setDataSizeAndDataShort(crid);
             LOGGER.info("Filled dataSize and dataShort fields of ComponentResult " + crid);
-        }));
+        });
         LOGGER.info("Filled dataSize and dataShort fields in " + crids.size() + " ComponentResult entities");
     }
 

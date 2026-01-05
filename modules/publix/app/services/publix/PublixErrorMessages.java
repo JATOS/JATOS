@@ -12,14 +12,9 @@ public class PublixErrorMessages {
 	public static final String ABANDONED_STUDY_BY_COOKIE = "Closed by JATOS: Too many unfinished studies open in the same browser.";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String IDCOOKIE_COLLECTION_FULL = "Can't generate a new ID cookie due to max number is reached. This can happen if multiple study runs are started at the same time in the same browser.";
-	public static final String IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND = "Max number of ID cookies is reached but a new index was requested.";
 
 	public static String workerNotAllowedStudy(Worker worker, Long studyId) {
 		return "Worker " + worker.getId() + " is not allowed to do study " + studyId + ".";
-	}
-
-	public static String workerNotExist(String workerIdStr) {
-		return "A worker with ID " + workerIdStr + " doesn't exist.";
 	}
 
 	public static String workerTypeNotAllowed(String workerType, Long studyId,

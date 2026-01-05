@@ -1,17 +1,16 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
-import auth.gui.AuthService;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.IOException;
 import general.common.Common;
+import general.common.Http.Context;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
+import messaging.common.RequestScopeMessaging;
 import models.common.*;
 import models.gui.ComponentProperties;
 import play.data.Form;
@@ -22,30 +21,24 @@ import play.mvc.Result;
 import services.gui.BatchService;
 import services.gui.Checker;
 import services.gui.ComponentService;
-import services.gui.JatosGuiExceptionThrower;
 import utils.common.JsonUtils;
-import utils.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
+
+import static actions.common.AsyncAction.Executor;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 
 /**
  * Controller that deals with all requests regarding Components within the JATOS GUI.
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class Components extends Controller {
 
-    public static final String EDIT_SUBMIT_NAME = "action";
-    public static final String EDIT_SAVE = "save";
-
-    private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final Checker checker;
     private final ComponentService componentService;
-    private final AuthService authService;
     private final BatchService batchService;
     private final StudyDao studyDao;
     private final StudyLinkDao studyLinkDao;
@@ -53,13 +46,15 @@ public class Components extends Controller {
     private final FormFactory formFactory;
 
     @Inject
-    Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, ComponentService componentService,
-            AuthService authService, BatchService batchService, StudyDao studyDao,
-            StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
-        this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+    Components(Checker checker,
+               ComponentService componentService,
+               BatchService batchService,
+               StudyDao studyDao,
+               StudyLinkDao studyLinkDao,
+               ComponentDao componentDao,
+               FormFactory formFactory) {
         this.checker = checker;
         this.componentService = componentService;
-        this.authService = authService;
         this.batchService = batchService;
         this.studyDao = studyDao;
         this.studyLinkDao = studyLinkDao;
@@ -71,33 +66,27 @@ public class Components extends Controller {
      * Runs a single component (in opposite to the whole study). Can run the component in multiple frames in parallel.
      * Uses a JatosWorker and the given batch. Redirects to /publix/runx.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId, Long frames,
-                               Long hSplit, Long vSplit) throws JatosGuiException, NotFoundException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId,
+                               Long frames, Long hSplit, Long vSplit) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
         Component component = componentDao.findById(componentId);
-        try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForBatch(batch, study, batchId);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwHome(request, e);
-        }
-        try {
-            checker.checkStandardForComponent(studyId, componentId, component);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
-        }
+
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStandardForBatch(batch, study, batchId);
+        checker.checkStandardForComponent(studyId, componentId, component);
+
         if (component.getHtmlFilePath() == null || component.getHtmlFilePath().trim().isEmpty()) {
             String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
-            jatosGuiExceptionThrower.throwStudy(request, errorMsg, Http.Status.BAD_REQUEST, studyId);
+            return badRequest(errorMsg);
         }
 
-        // Get a StudyLink, generate run URL, specify component in session and redirect to jatos-publix to start the study
+        // Get a StudyLink, generate run URL, specify a component in session and redirect to jatos-publix to start the study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, signedinUser.getWorker())));
+                .orElseGet(() -> studyLinkDao.persist(new StudyLink(batch, signedinUser.getWorker())));
         String runUrl = Common.getJatosUrlBasePath() + "publix/runx?code=" + studyLink.getStudyCode()
                 + "&frames=" + frames + "&hSplit=" + hSplit + "&vSplit=" + vSplit;
         return redirect(runUrl)
@@ -106,20 +95,20 @@ public class Components extends Controller {
     }
 
     /**
-     * POST request: Handles the post request of the form to create a new Component.
+     * POST request: Handles the POST request of the form to create a new Component.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result submitCreated(Http.Request request, Long studyId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser(request);
-        checkStudyAndLocked(request, studyId, study, signedinUser);
+    public Result submitCreated(Http.Request request, Long studyId) {
+        Study study = studyDao.findByIdWithComponents(studyId);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStudyLocked(study);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         ComponentProperties componentProperties = form.get();
-
         Component component = componentService.createAndPersistComponent(study, componentProperties);
         return ok(component.getId().toString());
     }
@@ -127,12 +116,12 @@ public class Components extends Controller {
     /**
      * GET requests for getting the properties of a Component.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result properties(Http.Request request, Long studyId, Long componentId) throws ForbiddenException, NotFoundException {
+    public Result properties(Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser(request);
-        Component component = componentDao.findById(componentId);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        Component component = componentDao.findByIdWithStudy(componentId);
         checker.checkStandardForStudy(study, studyId, signedinUser);
         checker.checkStandardForComponent(studyId, componentId, component);
 
@@ -143,13 +132,16 @@ public class Components extends Controller {
     /**
      * POST request that handles update of component properties
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result submitEdited(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
+    @Transactional
+    public Result submitEdited(Http.Request request, Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForComponent(studyId, componentId, component);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -167,13 +159,15 @@ public class Components extends Controller {
     /**
      * POST Request to change the property 'active' of a component.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result toggleActive(Http.Request request, Long studyId, Long componentId, Boolean active) throws JatosGuiException {
+    public Result toggleActive(Long studyId, Long componentId, Boolean active) {
         Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForComponent(studyId, componentId, component);
 
         if (active != null) {
             componentDao.changeActive(component, active);
@@ -184,53 +178,37 @@ public class Components extends Controller {
     /**
      * GET request to clone a component.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result cloneComponent(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser(request);
-        Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+    public Result cloneComponent(Long studyId, Long componentId) {
+        Study study = studyDao.findByIdWithComponents(studyId);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        Component component = componentDao.findByIdWithStudy(componentId);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForComponent(studyId, componentId, component);
 
-        Component clone = componentService.cloneWholeComponent(request, component);
+        Component clone = componentService.cloneWholeComponent(component);
         componentService.createAndPersistComponent(study, clone);
-        return ok(RequestScopeMessaging.getAsJson(request));
+        return ok(RequestScopeMessaging.asJson());
     }
 
     /**
      * DELETE request to remove a component.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result remove(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser(request);
-        Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+    public Result remove(Long studyId, Long componentId) {
+        Study study = studyDao.findByIdWithComponents(studyId);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        Component component = componentDao.findByIdWithStudy(componentId);
+        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.checkStudyLocked(study);
+        checker.checkStandardForComponent(studyId, componentId, component);
 
-        componentService.remove(component, signedinUser);
-        RequestScopeMessaging.success(request, MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
-        return ok(RequestScopeMessaging.getAsJson(request));
+        componentService.remove(component);
+        RequestScopeMessaging.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
+        return ok(RequestScopeMessaging.asJson());
     }
 
-    private void checkStudyAndLocked(Http.Request request, Long studyId, Study study, User signedinUser)
-            throws JatosGuiException {
-        try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStudyLocked(study);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
-        }
-    }
-
-    private void checkStudyAndLockedAndComponent(Http.Request request, Long studyId, Long componentId, Study study,
-            User signedinUser, Component component) throws JatosGuiException {
-        try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForComponent(studyId, componentId, component);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
-        }
-    }
 }

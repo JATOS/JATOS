@@ -2,11 +2,9 @@ package controllers.publix;
 
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenNonLinearFlowException;
-import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.PublixException;
-import general.common.Common;
-import general.common.StudyLogger;
+import filters.publix.IdCookieFilter;
+import filters.publix.IdCookieFilter.IdCookies;
+import general.common.*;
 import group.GroupAdministration;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -15,7 +13,6 @@ import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
-import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import scala.Option;
@@ -38,6 +35,7 @@ import java.util.Optional;
 
 import static play.libs.Files.TemporaryFile;
 import static play.mvc.Http.Request;
+import static actions.common.TransactionalAction.*;
 
 /**
  * Abstract parent controller class for all worker type Publix classes
@@ -45,7 +43,7 @@ import static play.mvc.Http.Request;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class Publix extends Controller implements IPublix {
+public abstract class Publix implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(Publix.class);
 
@@ -61,12 +59,23 @@ public abstract class Publix extends Controller implements IPublix {
     protected final StudyResultDao studyResultDao;
     protected final StudyLogger studyLogger;
     protected final IOUtils ioUtils;
+    protected final IOExecutor dbContext;
+    protected final StudyAssetsExecutor studyAssetsExecutor;
 
-    public Publix(JPAApi jpa, PublixUtils publixUtils,
-            StudyAuthorisation studyAuthorisation, GroupAdministration groupAdministration,
-            IdCookieService idCookieService, PublixErrorMessages errorMessages,
-            StudyAssets studyAssets, JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
+    public Publix(JPAApi jpa,
+                  PublixUtils publixUtils,
+                  StudyAuthorisation studyAuthorisation,
+                  GroupAdministration groupAdministration,
+                  IdCookieService idCookieService,
+                  PublixErrorMessages errorMessages,
+                  StudyAssets studyAssets,
+                  JsonUtils jsonUtils,
+                  ComponentResultDao componentResultDao,
+                  StudyResultDao studyResultDao,
+                  StudyLogger studyLogger,
+                  IOUtils ioUtils,
+                  IOExecutor dbContext,
+                  StudyAssetsExecutor studyAssetsExecutor) {
         this.jpa = jpa;
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
@@ -79,53 +88,41 @@ public abstract class Publix extends Controller implements IPublix {
         this.studyResultDao = studyResultDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
+        this.dbContext = dbContext;
+        this.studyAssetsExecutor = studyAssetsExecutor;
     }
 
     @Override
-    public Result startComponent(Request request, StudyResult studyResult, Component component, String message)
-            throws PublixException {
-        Study study = studyResult.getStudy();
-
-        ComponentResult componentResult;
-        try {
-            componentResult = publixUtils.startComponent(component, studyResult, message);
-        } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
-            return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyResult.getUuid(), false, e.getMessage()));
-        }
-
+    @IdCookies
+    public Result startComponent(Request request, StudyResult studyResult, Component component, String message) {
+        ComponentResult componentResult = publixUtils.startComponent(component, studyResult, message);
         publixUtils.setPreStudyState(componentResult);
         idCookieService.writeIdCookie(request, studyResult, componentResult);
-        return studyAssets.retrieveComponentHtmlFile(study.getDirName(), component.getHtmlFilePath()).asJava();
+        String dirName = studyResult.getStudy().getDirName();
+        String htmlFilePath = component.getHtmlFilePath();
+        return studyAssets.retrieveComponentHtmlFile(dirName, htmlFilePath).asJava();
     }
 
     @Override
-    public Result getInitData(Request request, StudyResult studyResult, Component component)
-            throws PublixException, IOException {
+    public Result getInitData(Request request, StudyResult studyResult, Component component) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
-        ComponentResult componentResult;
-        try {
-            componentResult = publixUtils.retrieveStartedComponentResult(component, studyResult);
-        } catch (ForbiddenReloadException | ForbiddenNonLinearFlowException e) {
-            return redirect(controllers.publix.routes.PublixInterceptor
-                    .finishStudy(studyResult.getUuid(), false, e.getMessage()));
-        }
+        ComponentResult componentResult = publixUtils.retrieveStartedComponentResult(component, studyResult);
         if (studyResult.getStudyState() != StudyState.PRE) {
             studyResult.setStudyState(StudyState.DATA_RETRIEVED);
         }
-        studyResultDao.update(studyResult);
+        studyResultDao.merge(studyResult);
         componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-        componentResultDao.update(componentResult);
+        componentResultDao.merge(componentResult);
 
         return ok(jsonUtils.initData(batch, studyResult, study, component));
     }
 
     @Override
-    public Result setStudySessionData(Request request, StudyResult studyResult) throws PublixException {
+    public Result setStudySessionData(Request request, StudyResult studyResult) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
@@ -138,13 +135,12 @@ public abstract class Publix extends Controller implements IPublix {
     @Override
     public Result heartbeat(Request request, StudyResult studyResult) {
         studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
-        studyResultDao.update(studyResult);
+        studyResultDao.merge(studyResult);
         return ok();
     }
 
     @Override
-    public Result submitOrAppendResultData(Request request, StudyResult studyResult, Component component,
-            boolean append) throws PublixException {
+    public Result submitOrAppendResultData(Request request, StudyResult studyResult, Component component, boolean append) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
@@ -184,8 +180,7 @@ public abstract class Publix extends Controller implements IPublix {
     }
 
     @Override
-    public Result uploadResultFile(Request request, StudyResult studyResult, Component component, String filename)
-            throws PublixException {
+    public Result uploadResultFile(Request request, StudyResult studyResult, Component component, String filename) {
         if (!Common.isResultUploadsEnabled()) {
             LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File upload not allowed."));
             return forbidden("File upload not allowed. Contact your admin.");
@@ -247,8 +242,7 @@ public abstract class Publix extends Controller implements IPublix {
     }
 
     @Override
-    public Result downloadResultFile(Request request, StudyResult studyResult, String filename, String componentId)
-            throws PublixException {
+    public Result downloadResultFile(Request request, StudyResult studyResult, String filename, String componentId) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
@@ -264,13 +258,14 @@ public abstract class Publix extends Controller implements IPublix {
     }
 
     @Override
-    public Result abortStudy(Request request, StudyResult studyResult, String message) throws PublixException {
+    @IdCookies
+    public Result abortStudy(Request request, StudyResult studyResult, String message) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
-        if (!PublixHelpers.studyDone(studyResult)) {
+        if (!PublixHelpers.studyRunDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
             groupAdministration.leaveGroup(studyResult);
         }
@@ -285,14 +280,14 @@ public abstract class Publix extends Controller implements IPublix {
     }
 
     @Override
-    public Result finishStudy(Request request, StudyResult studyResult, Boolean successful, String message)
-            throws PublixException {
+    @IdCookies
+    public Result finishStudy(Request request, StudyResult studyResult, Boolean successful, String message) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
-        if (!PublixHelpers.studyDone(studyResult)) {
+        if (!PublixHelpers.studyRunDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
             groupAdministration.leaveGroup(studyResult);
         }
@@ -311,7 +306,7 @@ public abstract class Publix extends Controller implements IPublix {
     }
 
     @Override
-    public Result log(Request request, StudyResult studyResult, Component component) throws PublixException {
+    public Result log(Request request, StudyResult studyResult, Component component) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();

@@ -3,17 +3,16 @@ package auth.gui;
 import com.google.common.base.Strings;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
+import exceptions.common.AuthException;
 import general.common.Common;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
-import play.libs.typedmap.TypedKey;
 import play.mvc.Http;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.naming.NamingException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -21,8 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Service class around authentication and the session cookie. It works together with the
- * {@link Signin} controller and the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
+ * Service class around authentication and the session cookie. It works together with the {@link Signin} controller and
+ * the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
  *
  * @author Kristian Lange
  */
@@ -48,15 +47,10 @@ public class AuthService {
     public static final String SESSION_LAST_ACTIVITY_TIME = "lastActivityTime";
 
     /**
-     * Parameter name in Play's session cookie: true if the user wants to be kept signed in.
-     * This means the session does not time out.
+     * Parameter name in Play's session cookie: true if the user wants to be kept signed in. This means the session does
+     * not time out.
      */
     public static final String SESSION_KEEP_SIGNEDIN = "keepSignedin";
-
-    /**
-     * Key name used in request attrs to store the signed-in User
-     */
-    public static final TypedKey<User> SIGNEDIN_USER = TypedKey.create("signedinUser");
 
     private final UserDao userDao;
     private final LoginAttemptDao loginAttemptDao;
@@ -72,7 +66,7 @@ public class AuthService {
     /**
      * Authenticates the user with the given password.
      */
-    public boolean authenticate(User user, String password) throws NamingException {
+    public boolean authenticate(User user, String password) {
         if (user == null || password == null) return false;
 
         switch (user.getAuthMethod()) {
@@ -81,7 +75,7 @@ public class AuthService {
             case DB:
                 return authenticateViaDb(user.getUsername(), password);
             default:
-                throw new IllegalArgumentException("Unsupported auth method " + user.getAuthMethod().name());
+                throw new AuthException("Unsupported auth method " + user.getAuthMethod().name());
         }
     }
 
@@ -99,10 +93,10 @@ public class AuthService {
     }
 
     /**
-     * Retrieves the signed-in user from Play's session. If a user is signed-in their username is stored in Play's
+     * Retrieves the signed-in user from Play's session. If a user is signed in their username is stored in Play's
      * session cookie. With the username, a user can be retrieved from the database. Returns null if the session doesn't
      * contain a username or if the user doesn't exist in the database.
-     * <p>
+     *
      * In most cases, getSignedinUser() is faster since it doesn't have to query the database.
      */
     public User getSignedinUserBySessionCookie(Http.Session session) {
@@ -112,15 +106,6 @@ public class AuthService {
             signedinUser = userDao.findByUsername(normalizedUsername.orElse(null));
         }
         return signedinUser;
-    }
-
-    /**
-     * Gets the signed-in user from the request attrs. It was put into the
-     * request attrs by the AuthenticationAction. Therefore, this method works
-     * only if you use the @Authenticated annotation at your action.
-     */
-    public User getSignedinUser(Http.Request request) {
-        return request.attrs().get(SIGNEDIN_USER);
     }
 
     /**
@@ -147,8 +132,7 @@ public class AuthService {
     }
 
     /**
-     * Returns true if the session sign-in time as saved in Play's session cookie
-     * is older than allowed.
+     * Returns true if the session sign-in time as saved in Play's session cookie is older than allowed.
      */
     public boolean isSessionTimeout(Http.Session session) {
         try {
@@ -165,8 +149,7 @@ public class AuthService {
     }
 
     /**
-     * Returns true if the session inactivity time as saved in Play's session
-     * cookie is older than allowed.
+     * Returns true if the session inactivity time as saved in Play's session cookie is older than allowed.
      */
     public boolean isInactivityTimeout(Http.Session session) {
         try {
@@ -188,7 +171,7 @@ public class AuthService {
     public String getRedirectPageAfterSignin(User user) {
         return !Strings.isNullOrEmpty(user.getLastVisitedPageUrl())
                 ? Common.getJatosUrlBasePath() + user.getLastVisitedPageUrl()
-                : controllers.gui.routes.Home.home().url();
+                : controllers.gui.routes.Home.home(Http.Status.OK).url();
     }
 
     public Long getSessionSigninTime(Http.Request request) {

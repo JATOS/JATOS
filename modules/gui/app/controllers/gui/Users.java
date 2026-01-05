@@ -1,20 +1,19 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import general.common.Http.Context;
+import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import auth.gui.SigninFormValidation;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import daos.common.UserDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.AuthException;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.ChangeUserProfileModel;
 import models.gui.NewUserModel;
-import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
@@ -24,18 +23,16 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
-import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.naming.NamingException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
@@ -43,13 +40,9 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class Users extends Controller {
 
-    private static final Logger.ALogger LOGGER = Logger.of(Users.class);
-
-    private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
     private final UserDao userDao;
     private final UserService userService;
     private final AuthService authService;
@@ -59,13 +52,13 @@ public class Users extends Controller {
     private final JsonUtils jsonUtils;
 
     @Inject
-    Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-            UserDao userDao, UserService userService,
-            AuthService authService,
-            SigninFormValidation signinFormValidation,
-            BreadcrumbsService breadcrumbsService, FormFactory formFactory,
-            JsonUtils jsonUtils) {
-        this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+    Users(UserDao userDao,
+          UserService userService,
+          AuthService authService,
+          SigninFormValidation signinFormValidation,
+          BreadcrumbsService breadcrumbsService,
+          FormFactory formFactory,
+          JsonUtils jsonUtils) {
         this.userDao = userDao;
         this.userService = userService;
         this.authService = authService;
@@ -75,11 +68,11 @@ public class Users extends Controller {
         this.jsonUtils = jsonUtils;
     }
 
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     @SaveLastVisitedPageUrl
     public Result userManager(Http.Request request) {
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.USER_MANAGER);
         return ok(views.html.gui.admin.userManager.render(signedinUser, breadcrumbs, request.asScala()));
     }
@@ -87,11 +80,12 @@ public class Users extends Controller {
     /**
      * GET request: Returns a list of all users as JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result allUserData() {
+        List<User> users = userDao.findAllWithStudies();
         List<Map<String, Object>> allUserData = new ArrayList<>();
-        for (User user : userDao.findAll()) {
+        for (User user : users) {
             Map<String, Object> userData = jsonUtils.getSingleUserData(user);
             allUserData.add(userData);
         }
@@ -101,62 +95,49 @@ public class Users extends Controller {
     /**
      * POST request to activate or deactivate a user.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
-    public Result toggleActive(Http.Request request, String usernameOfUserToChange, Boolean active) {
-        try {
-            String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-            userService.toggleActive(request, normalizedUsernameOfUserToChange, active);
-        } catch (NotFoundException e) {
-            return badRequest(e.getMessage());
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        }
+    public Result toggleActive(String usernameOfUserToChange, Boolean active) {
+        String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
+        userService.toggleActive(normalizedUsernameOfUserToChange, active);
         return ok();
     }
 
     /**
-     * POST request to add or remove a role from a user.
+     * POST a request to add or remove a role from a user.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
-    public Result toggleRole(Http.Request request, String usernameOfUserToChange, String role, boolean value) {
+    public Result toggleRole(String usernameOfUserToChange, String role, boolean value) {
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-        try {
-            switch (Role.valueOf(role)) {
-                case SUPERUSER:
-                    return ok(JsonUtils.asJsonNode(
-                            userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
-                case ADMIN:
-                    return ok(JsonUtils.asJsonNode(
-                            userService.changeAdminRole(request, normalizedUsernameOfUserToChange, value)));
-                default:
-                    return badRequest("Unknown role");
-            }
-        } catch (NotFoundException e) {
-            return badRequest(e.getMessage());
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
+        switch (Role.valueOf(role)) {
+            case SUPERUSER:
+                return ok(JsonUtils.asJsonNode(
+                        userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
+            case ADMIN:
+                return ok(JsonUtils.asJsonNode(
+                        userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
+            default:
+                return badRequest("Unknown role");
         }
     }
 
     /**
      * GET request that returns user data of the signed-in user
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result signedinUserData(Http.Request request) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result signedinUserData() {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(signedinUser)));
     }
 
     /**
-     * Handles POST request of user create form. Only users with Role ADMIN are
-     * allowed to create new users.
+     * Handles POST request of user create form. Only users with Role ADMIN are allowed to create new users.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
-    public Result create(Http.Request request) throws NamingException {
+    public Result create(Http.Request request) {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
         form = signinFormValidation.validateNewUser(form);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -166,57 +147,41 @@ public class Users extends Controller {
     }
 
     /**
-     * Handles POST request of user edit profile form (except password and roles).
-     * This POST can come from the user themselves or from an admin user to edit another user.
+     * Handles POST request of user edit profile form (except password and roles). This POST can come from the user
+     * themselves or from an admin user to edit another user.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result edit(Http.Request request, String username) throws JatosGuiException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result edit(Http.Request request, String username) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedUsernameOfUserToChange = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
 
-        if (user.isOauthGoogle()) {
-            return forbidden("Google authenticated users can't have their profile changed.");
+        if (user.isOauthGoogle() || user.isOidc() || user.isOrcid() || user.isSram() || user.isConext()) {
+            return forbidden(user.getAuthMethod() + " authenticated users can't have their profile changed.");
         }
 
-        if (user.isOidc()) {
-            return forbidden("OIDC authenticated users can't have their profile changed.");
-        }
-
-        if (user.isOrcid()) {
-            return forbidden("ORCID authenticated users can't have their profile changed.");
-        }
-
-        if (user.isSram()) {
-            return forbidden("SRAM authenticated users can't have their profile changed.");
-        }
-
-        if (user.isConext()) {
-            return forbidden("CONEXT authenticated users can't have their profile changed.");
-        }
-
-        if (!signedinUser.isAdmin()) {
-            checkUsernameIsOfSignedinUser(request, normalizedUsernameOfUserToChange, signedinUser);
+        if (!signedinUser.isAdmin() && !normalizedUsernameOfUserToChange.equals(signedinUser.getUsername())) {
+            return forbidden("You are not allowed to get data for this user.");
         }
 
         Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Update user in database: so far it's only the user's name
+        // Update user in the database: so far it's only the user's name
         user.setName(form.get().getName());
         user.setEmail(form.get().getEmail());
-        userDao.update(user);
+        userDao.merge(user);
         return ok();
     }
 
     /**
      * Handles POST request from change password form in user manager initiated by an admin
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result changePasswordByAdmin(Http.Request request) throws NamingException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result changePasswordByAdmin(Http.Request request) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
         String normalizedUsernameOfUserToChange = form.get().getUsername();
 
@@ -256,10 +221,10 @@ public class Users extends Controller {
     /**
      * Handles POST request from change password form by user themselves
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result changePasswordByUser(Http.Request request) throws NamingException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result changePasswordByUser(Http.Request request) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
         String normalizedUsernameOfUserToChange = form.get().getUsername();
 
@@ -290,16 +255,14 @@ public class Users extends Controller {
     }
 
     /**
-     * POST request to delete a user. Is called from user manager and user
-     * profile.
-     * <p>
-     * It can't be a HTTP DELETE because it contains form data and Play doesn't
-     * handle body data in a DELETE request.
+     * POST request to delete a user. Is called from user manager and user profile.
+     *
+     * It can't be a HTTP DELETE because it contains form data and Play doesn't handle body data in a DELETE request.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result remove(Http.Request request, String usernameOfUserToRemove) throws ForbiddenException, NotFoundException, IOException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result remove(Http.Request request, String usernameOfUserToRemove) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedSignedinUsername = signedinUser.getUsername();
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
         if (!signedinUser.isAdmin() && !normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
@@ -310,14 +273,9 @@ public class Users extends Controller {
         switch (signedinUser.getAuthMethod()) {
             case DB:
             case LDAP:
-                try {
-                    String password = requestData.get("password");
-                    if (!authService.authenticate(signedinUser, password)) {
-                        return forbidden(Json.mapper().readTree("{\"password\": [\"wrong password\"]}"));
-                    }
-                } catch (NamingException e) {
-                    LOGGER.warn("LDAP problems - " + e);
-                    return internalServerError("Problems with LDAP. Ask your admin.");
+                String password = requestData.get("password");
+                if (!authService.authenticate(signedinUser, password)) {
+                    return forbidden(Json.newObject().putArray("password").add("wrong password"));
                 }
                 break;
             case OIDC:
@@ -332,7 +290,7 @@ public class Users extends Controller {
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Unknown auth method");
+                throw new AuthException("Unknown auth method");
         }
 
         userService.removeUser(normalizedUsernameOfUserToRemove);
@@ -342,13 +300,6 @@ public class Users extends Controller {
             return ok(" ").withNewSession();
         } else {
             return ok();
-        }
-    }
-
-    private void checkUsernameIsOfSignedinUser(Http.Request request, String normalizedUsername, User signedinUser) throws JatosGuiException {
-        if (!normalizedUsername.equals(signedinUser.getUsername())) {
-            ForbiddenException e = new ForbiddenException("You are not allowed to get data for user \"" + normalizedUsername + "\".");
-            jatosGuiExceptionThrower.throwRedirect(request, e, controllers.gui.routes.Home.home());
         }
     }
 

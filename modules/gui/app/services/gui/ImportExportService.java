@@ -1,18 +1,20 @@
 package services.gui;
 
+import general.common.Http.Context;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.IOException;
 import general.common.Common;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
+import messaging.common.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
+import play.db.jpa.JPAApi;
 import play.libs.Json;
 import play.libs.typedmap.TypedKey;
 import play.mvc.Http;
@@ -24,13 +26,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -44,6 +47,7 @@ public class ImportExportService {
 
     public static final TypedKey<String> SESSION_UNZIPPED_STUDY_DIR = TypedKey.create("tempStudyAssetsDir");
 
+    private final JPAApi jpa;
     private final Checker checker;
     private final StudyService studyService;
     private final BatchService batchService;
@@ -55,10 +59,17 @@ public class ImportExportService {
     private final StudyDeserializer studyDeserializer;
 
     @Inject
-    ImportExportService(Checker checker,
-            StudyService studyService, BatchService batchService, ComponentService componentService,
-            JsonUtils jsonUtils, IOUtils ioUtils, StudyDao studyDao, ComponentDao componentDao,
-            StudyDeserializer studyDeserializer) {
+    ImportExportService(JPAApi jpa,
+                        Checker checker,
+                        StudyService studyService,
+                        BatchService batchService,
+                        ComponentService componentService,
+                        JsonUtils jsonUtils,
+                        IOUtils ioUtils,
+                        StudyDao studyDao,
+                        ComponentDao componentDao,
+                        StudyDeserializer studyDeserializer) {
+        this.jpa = jpa;
         this.checker = checker;
         this.studyService = studyService;
         this.batchService = batchService;
@@ -70,28 +81,29 @@ public class ImportExportService {
         this.studyDeserializer = studyDeserializer;
     }
 
+    // @formatter:off
     /**
-     * Import a uploaded JATOS study archive
-     * There are 5 possible cases:
-     * (udir - name of uploaded study asset dir, cdir - name of current study asset dir)
-     * <p>
-     * 1) study exists  -  udir exists - udir == cdir : ask confirmation to overwrite study and/or dir
-     * 2) study exists  -  udir exists - udir != cdir : ask confirmation to overwrite study and/or (dir && rename to cdir)
-     * 3) study exists  - !udir exists : shouldn't happen, ask confirmation to overwrite study
-     * 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
-     * 5) !study exists - !udir exists : new study - write both
+     * Import an uploaded JATOS study archive There are 5 possible cases: (udir - name of uploaded study asset dir, cdir
+     * - name of current study asset dir)
+     *
+     * 1) study exists & udir exists & udir == cdir -> ask confirmation to overwrite study and/or dir
+     * 2) study exists & udir exists & udir != cdir -> ask confirmation to overwrite study and/or (dir && rename to cdir)
+     * 3) study exists & !udir exists -> shouldn't happen, ask confirmation to overwrite study
+     * 4) !study exists & udir exists -> ask to rename dir (generate new dir name)
+     * 5) !study exists & !udir exists -> new study - write both
      */
-    public ObjectNode importStudy(Http.Request request, User signedinUser, File file) throws IOException, ForbiddenException {
+    public ObjectNode importStudy(File file) {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
         Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, false);
 
-        // Remember study assets' dir name
-        request.addAttr(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
+        // Remember the study assets' dir name
+        Context.current().args().put(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
 
         checkForExistingComponents(uploadedStudy);
 
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (currentStudy.isPresent() && !currentStudy.get().hasUser(signedinUser)) {
             throw new ForbiddenException(MessagesStrings.studyImportNotUser());
         }
@@ -118,10 +130,10 @@ public class ImportExportService {
 
     /**
      * Checks if any of the imported study's components already exists in the database but are from a different study.
-     * Something like this can only happen if the .jas file (the file describing the study in a JATOS study archive)
-     * was not generated by JATOS.
+     * Something like this can only happen if the .jas file (the file describing the study in a JATOS study archive) was
+     * not generated by JATOS.
      */
-    private void checkForExistingComponents(Study uploadedStudy) throws ForbiddenException {
+    private void checkForExistingComponents(Study uploadedStudy) {
         for (Component c : uploadedStudy.getComponentList()) {
             Optional<Component> existingComponent = componentDao.findByUuid(c.getUuid());
             if (existingComponent.isPresent()
@@ -133,11 +145,10 @@ public class ImportExportService {
     }
 
     /**
-     * @param signedinUser          The signed-in user.
-     * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
+     * @param keepProperties        If true and the study exists already in JATOS, the current properties are kept.
      *                              Default is `false` (properties are overwritten by default). If the study doesn't
      *                              already exist, this parameter has no effect.
-     * @param keepAssets            If true and the study exists already in JATOS the current study assets directory is
+     * @param keepAssets            If true and the study exists already in JATOS, the current study assets directory is
      *                              kept. Default is `false` (assets are overwritten by default). If the study doesn't
      *                              already exist, this parameter has no effect.
      * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
@@ -148,81 +159,84 @@ public class ImportExportService {
      *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
      *                              Default is `true`.
      */
-    public Long importStudyConfirmed(Http.Request request, User signedinUser, boolean keepProperties, boolean keepAssets,
-                                     boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
-        File tempUnzippedStudyDir = getUnzippedStudyDir(request);
-        if (tempUnzippedStudyDir == null) {
-            LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
-            throw new IOException("Missing unzipped study directory in tmp directory");
-        }
-        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, true);
-        Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
-
-        // 1) study exists  -  udir exists - udir == cdir
-        // 2) study exists  -  udir exists - udir != cdir
-        // 3) study exists  - !udir exists
-        if (currentStudy.isPresent()) {
-            overwriteExistingStudy(request, signedinUser, keepProperties, keepAssets,
-                    keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
-            return currentStudy.get().getId();
-        }
-
-        // 4) !study exists -  udir exists
-        // 5) !study exists - !udir exists
-        else if (!keepProperties && !keepAssets) {
-            boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
-            if (uploadedDirExists && !renameAssets) {
-                throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameAssets' is set to false.");
+    public Long importStudyConfirmed(Http.Request request, boolean keepProperties, boolean keepAssets,
+                                     boolean keepCurrentAssetsName, boolean renameAssets) {
+        return jpa.withTransaction(em -> {
+            File tempUnzippedStudyDir = getUnzippedStudyDir(request);
+            if (tempUnzippedStudyDir == null) {
+                LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
+                throw new exceptions.common.IOException("Missing unzipped study directory in tmp directory");
             }
-            if (renameAssets) {
-                String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
-                uploadedStudy.setDirName(newDirName);
-            }
-            Study newStudy = importNewStudy(request, signedinUser, tempUnzippedStudyDir, uploadedStudy);
-            return newStudy.getId();
-        }
+            Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, true);
+            Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 
-        else {
-            throw new IOException("Impossible to import study: no new study and the existing study is not allowed to be overwritten");
-        }
+            // 1) study exists & udir exists & udir == cdir
+            // 2) study exists & udir exists & udir != cdir
+            // 3) study exists & !udir exists
+            if (currentStudy.isPresent()) {
+                overwriteExistingStudy(keepProperties, keepAssets,
+                        keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
+                return currentStudy.get().getId();
+            }
+
+            // 4) !study exists & udir exists
+            // 5) !study exists & !udir exists
+            else if (!keepProperties && !keepAssets) {
+                boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
+                if (uploadedDirExists && !renameAssets) {
+                    throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameAssets' is set to false.");
+                }
+                if (renameAssets) {
+                    String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
+                    uploadedStudy.setDirName(newDirName);
+                }
+                Study newStudy = importNewStudy(tempUnzippedStudyDir, uploadedStudy);
+                return newStudy.getId();
+            } else {
+                throw new IOException("Impossible to import study: no new study and the existing study is not allowed to be overwritten");
+            }
+        });
     }
 
     public void cleanupAfterStudyImport(Http.Request request) {
         File tempUnzippedStudyDir = getUnzippedStudyDir(request);
         if (tempUnzippedStudyDir != null) {
+            // noinspection ResultOfMethodCallIgnored
             tempUnzippedStudyDir.delete();
         }
     }
 
-    private void overwriteExistingStudy(Http.Request request, User signedinUser, boolean keepProperties, boolean keepAssets,
-                                        boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
-            throws IOException, ForbiddenException, NotFoundException {
+    private void overwriteExistingStudy(boolean keepProperties,
+                                        boolean keepAssets, boolean keepCurrentAssetsName, File tempUnzippedStudyDir,
+                                        Study uploadedStudy, Study currentStudy) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         checker.checkStandardForStudy(currentStudy, currentStudy.getId(), signedinUser);
         checker.checkStudyLocked(currentStudy);
 
         if (!keepAssets) {
             String dirName = keepCurrentAssetsName ? currentStudy.getDirName() : uploadedStudy.getDirName();
-            moveStudyAssetsDir(request, tempUnzippedStudyDir, currentStudy, dirName);
-            RequestScopeMessaging.success(request, MessagesStrings.studyAssetsOverwritten(
+            moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, dirName);
+            RequestScopeMessaging.success(MessagesStrings.studyAssetsOverwritten(
                     dirName, currentStudy.getId(), currentStudy.getTitle()));
         }
 
         if (!keepProperties) {
             if (keepCurrentAssetsName || keepAssets) {
-                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy, signedinUser);
+                studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy);
             } else {
-                studyService.updateStudy(currentStudy, uploadedStudy, signedinUser);
+                studyService.updateStudy(currentStudy, uploadedStudy);
             }
             updateStudysComponents(currentStudy, uploadedStudy);
-            RequestScopeMessaging.success(request, MessagesStrings
+            RequestScopeMessaging.success(MessagesStrings
                     .studysPropertiesOverwritten(currentStudy.getId(), currentStudy.getTitle()));
         }
     }
 
-    private Study importNewStudy(Http.Request request, User signedinUser, File tempUnzippedStudyDir, Study importedStudy) throws IOException {
-        moveStudyAssetsDir(request, tempUnzippedStudyDir, null, importedStudy.getDirName());
+    private Study importNewStudy(File tempUnzippedStudyDir, Study importedStudy) {
+        moveStudyAssetsDir(tempUnzippedStudyDir, null, importedStudy.getDirName());
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study newStudy = studyService.createAndPersistStudy(signedinUser, importedStudy);
-        RequestScopeMessaging.success(request, MessagesStrings.importedNewStudy(
+        RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
                 importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
         return newStudy;
     }
@@ -231,30 +245,34 @@ public class ImportExportService {
      * Returns a JATOS study archive packed as ZIP. It returns the File object located in the system's temp directory.
      * The JATOS study archive will contain the study assets' directory and the study's JSON data (a .jas file).
      */
-    public File createStudyExportZipFile(Study study) throws IOException {
-        String studyFileName = ioUtils.generateFileName(study.getTitle());
-        File studyAsJsonFile = File.createTempFile(studyFileName, ".jas");
-        studyAsJsonFile.deleteOnExit();
-        jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
-        Path studyAssetsDir = Paths.get(ioUtils.generateStudyAssetsPath(study.getDirName()));
+    public File createStudyExportZipFile(Study study) {
+        try {
+            String studyFileName = ioUtils.generateFileName(study.getTitle());
+            File studyAsJsonFile = File.createTempFile(studyFileName, ".jas");
+            studyAsJsonFile.deleteOnExit();
+            jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
+            Path studyAssetsDir = Paths.get(ioUtils.generateStudyAssetsPath(study.getDirName()));
 
-        List<Path> filesToZip = new ArrayList<>();
-        filesToZip.add(studyAssetsDir);
-        filesToZip.add(studyAsJsonFile.toPath());
-        File zipFile = File.createTempFile("jatos_study_", "." + Common.getStudyArchiveSuffix());
-        zipFile.deleteOnExit();
-        ZipUtil.zipFiles(filesToZip, zipFile);
+            List<Path> filesToZip = new ArrayList<>();
+            filesToZip.add(studyAssetsDir);
+            filesToZip.add(studyAsJsonFile.toPath());
+            File zipFile = File.createTempFile("jatos_study_", "." + Common.getStudyArchiveSuffix());
+            zipFile.deleteOnExit();
+            ZipUtil.zipFiles(filesToZip, zipFile);
 
-        studyAsJsonFile.delete();
-        return zipFile;
+            // noinspection ResultOfMethodCallIgnored
+            studyAsJsonFile.delete();
+            return zipFile;
+        } catch (java.io.IOException e) {
+            throw new IOException(e);
+        }
     }
 
     /**
-     * Update the components of the current study with the one of the imported
-     * study.
+     * Update the components of the current study with the one of the imported study.
      */
     private void updateStudysComponents(Study currentStudy, Study updatedStudy) {
-        // Clear list and rebuild it from updated study
+        // Clear the list and rebuild it from the updated study
         List<Component> currentComponentList = new ArrayList<>(currentStudy.getComponentList());
         currentStudy.getComponentList().clear();
 
@@ -272,30 +290,26 @@ public class ImportExportService {
                 currentStudy.addComponent(currentComponent);
                 currentComponentList.remove(currentComponent);
             } else {
-                // If the updated component doesn't exist in the current study
-                // add it.
+                // If the updated component doesn't exist in the current study, add it.
                 componentService.createAndPersistComponent(currentStudy, updatedComponent);
             }
         }
 
-        // Check whether any component from the current study are left that
-        // aren't in the updated study. Add them to the end of the list and
-        // put them into inactive (we don't remove them, because they could be
-        // associated with results)
+        // Check whether any component from the current study is left that isn't in the updated study. Add them to the
+        // end of the list and put them into inactive (we don't remove them because they could be associated with results)
         for (Component currentComponent : currentComponentList) {
             currentComponent.setActive(false);
             currentStudy.addComponent(currentComponent);
         }
 
-        studyDao.update(currentStudy);
+        studyDao.merge(currentStudy);
     }
 
     /**
-     * Deletes current study assets' dir and moves imported study assets' dir
-     * from Java's temp dir to study assets root dir
+     * Deletes current study assets' dir and moves imported study assets' dir from Java's temp dir to study assets root
+     * dir
      */
-    private void moveStudyAssetsDir(Http.Request request, File unzippedStudyDir, Study currentStudy,
-                                    String studyAssetsDirName) throws IOException {
+    private void moveStudyAssetsDir(File unzippedStudyDir, Study currentStudy, String studyAssetsDirName) {
         if (currentStudy != null) {
             ioUtils.removeStudyAssetsDir(currentStudy.getDirName());
         }
@@ -304,7 +318,7 @@ public class ImportExportService {
         if (dirArray.length == 0) {
             // If a study assets dir is missing, create a new one.
             ioUtils.createStudyAssetsDir(studyAssetsDirName);
-            RequestScopeMessaging.warning(request, "There is no directory in the ZIP file - new study assets created.");
+            RequestScopeMessaging.warning("There is no directory in the ZIP file - new study assets created.");
         } else if (dirArray.length == 1) {
             File studyAssetsDir = dirArray[0];
             ioUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
@@ -314,8 +328,8 @@ public class ImportExportService {
     }
 
     /**
-     * Get unzipped study dir File object stored in Java's temp directory. Name
-     * is stored in session. Discard session variable afterwards.
+     * Get unzipped study dir File object stored in Java's temp directory. Name is stored in session. Discard session
+     * variable afterwards.
      */
     private File getUnzippedStudyDir(Http.Request request) {
         Optional<String> unzippedStudyDirName = request.session().get(SESSION_UNZIPPED_STUDY_DIR.toString());
@@ -325,7 +339,7 @@ public class ImportExportService {
         return new File(IOUtils.TMP_DIR, unzippedStudyDirName.orElse(null));
     }
 
-    private File unzipUploadedFile(File file) throws IOException {
+    private File unzipUploadedFile(File file) {
         File destDir;
         try {
             destDir = new File(IOUtils.TMP_DIR, "JatosImport_" + UUID.randomUUID());
@@ -337,7 +351,7 @@ public class ImportExportService {
         return destDir;
     }
 
-    private Study deserializeStudy(File tempDir, boolean deleteAfterwards) throws IOException {
+    private Study deserializeStudy(File tempDir, boolean deleteAfterwards) {
         File[] studyFileList = ioUtils.findFiles(tempDir, "", "jas");
         if (studyFileList.length != 1) {
             throw new IOException("Study is invalid");
@@ -354,6 +368,7 @@ public class ImportExportService {
         }
 
         if (deleteAfterwards) {
+            // noinspection ResultOfMethodCallIgnored
             studyFile.delete();
         }
         return study;

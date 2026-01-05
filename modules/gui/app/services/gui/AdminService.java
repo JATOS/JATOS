@@ -1,6 +1,6 @@
 package services.gui;
 
-import auth.gui.AuthService;
+import general.common.Http.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import daos.common.ComponentResultDao;
@@ -10,7 +10,7 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import models.common.Study;
 import models.common.StudyResultStatus;
-import play.mvc.Http;
+import models.common.User;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -19,6 +19,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 
 /**
  * Service class mostly for Admin controller.
@@ -33,23 +35,25 @@ public class AdminService {
     private final WorkerDao workerDao;
     private final StudyResultDao studyResultDao;
     private final ComponentResultDao componentResultDao;
-    private final AuthService authService;
     private final IOUtils ioUtils;
 
     @Inject
-    AdminService(UserDao userDao, StudyDao studyDao, WorkerDao workerDao, StudyResultDao studyResultDao,
-            ComponentResultDao componentResultDao, AuthService authService, IOUtils ioUtils) {
+    AdminService(UserDao userDao,
+                 StudyDao studyDao,
+                 WorkerDao workerDao,
+                 StudyResultDao studyResultDao,
+                 ComponentResultDao componentResultDao,
+                 IOUtils ioUtils) {
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
         this.componentResultDao = componentResultDao;
-        this.authService = authService;
         this.ioUtils = ioUtils;
     }
 
-    public List<Map<String, Object>> getStudiesData(Collection<Study> studyList,
-            boolean studyAssetsSizeFlag, boolean resultDataSizeFlag, boolean resultFileSizeFlag) {
+    public List<Map<String, Object>> getStudiesData(Collection<Study> studyList, boolean studyAssetsSizeFlag,
+                                                    boolean resultDataSizeFlag, boolean resultFileSizeFlag) {
         List<Map<String, Object>> studies = new ArrayList<>();
         for (Study study : studyList) {
             int studyResultCount = studyResultDao.countByStudy(study);
@@ -100,10 +104,10 @@ public class AdminService {
     public ImmutableMap<String, Object> getResultDataSize(Study study, int studyResultCount) {
         long size = componentResultDao.sizeByStudy(study);
         long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
-        String resultDataSizePerStudyResultCount = (studyResultCount != 0 ?
-                Helpers.humanReadableByteCount(averagePerResult) : "0 B");
-        String humanReadable = Helpers.humanReadableByteCount(size)
-                + " (" + resultDataSizePerStudyResultCount + ")";
+        String resultDataSizePerStudyResultCount = (studyResultCount != 0
+                ? Helpers.humanReadableByteCount(averagePerResult)
+                : "0 B");
+        String humanReadable = Helpers.humanReadableByteCount(size) + " (" + resultDataSizePerStudyResultCount + ")";
         return ImmutableMap.of(
                 "humanReadable", humanReadable,
                 "size", size,
@@ -111,13 +115,15 @@ public class AdminService {
     }
 
     public ImmutableMap<String, Object> getResultFileSize(Study study, int studyResultCount) {
-        long size = studyResultDao.findIdsByStudyId(study.getId()).stream()
-                .mapToLong(ioUtils::getResultUploadDirSize).sum();
+        long size = studyResultDao.findIdsByStudyId(study.getId())
+                .stream()
+                .mapToLong(ioUtils::getResultUploadDirSize)
+                .sum();
         long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
-        String resultFileSizePerStudyResultCount = studyResultCount != 0 ?
-                Helpers.humanReadableByteCount(averagePerResult) : "0 B";
-        String humanReadable = Helpers.humanReadableByteCount(size)
-                + " (" + resultFileSizePerStudyResultCount + ")";
+        String resultFileSizePerStudyResultCount = studyResultCount != 0
+                ? Helpers.humanReadableByteCount(averagePerResult)
+                : "0 B";
+        String humanReadable = Helpers.humanReadableByteCount(size) + " (" + resultFileSizePerStudyResultCount + ")";
         return ImmutableMap.of(
                 "humanReadable", humanReadable,
                 "size", size,
@@ -128,10 +134,11 @@ public class AdminService {
      * Gets the last seen time of users that were active latest, except the signed in one. It is limited to 'limit'
      * latest users.
      */
-    public List<Map<String, String>> getLatestUsers(Http.Request request, int limit) {
+    public List<Map<String, String>> getLatestUsers(int limit) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         List<Map<String, String>> lastSeenMapOrdered = userDao.findLastSeen(limit).stream()
                 .filter(u -> u.getLastSeen() != null)
-                .filter(u -> !u.getUsername().equals(authService.getSignedinUser(request).getUsername()))
+                .filter(u -> !u.getUsername().equals(signedinUser.getUsername()))
                 .map(u -> ImmutableMap.of(
                         "username", u.getUsername(),
                         "name", u.getName(),
@@ -154,7 +161,7 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
-    public JsonNode getAdminStatus(Http.Request request) {
+    public JsonNode getAdminStatus() {
         Map<String, Object> statusMap = new HashMap<>();
         statusMap.put("studyCount", studyDao.count());
         statusMap.put("studyCountTotal", studyDao.countTotal());
@@ -164,7 +171,7 @@ public class AdminService {
         statusMap.put("workerCountTotal", workerDao.countTotal());
         statusMap.put("userCount", userDao.count());
         statusMap.put("serverTime", System.currentTimeMillis());
-        statusMap.put("latestUsers", getLatestUsers(request, 10));
+        statusMap.put("latestUsers", getLatestUsers(10));
         statusMap.put("latestStudyRuns", getLatestStudyRuns(10));
         return JsonUtils.asJsonNode(statusMap);
     }

@@ -1,7 +1,7 @@
 package services.publix.workers;
 
 import controllers.publix.workers.JatosPublix;
-import exceptions.publix.ForbiddenPublixException;
+import exceptions.common.ForbiddenException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
@@ -24,31 +24,29 @@ import java.util.Optional;
 public class JatosStudyAuthorisation extends StudyAuthorisation {
 
     @Override
-    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch)
-            throws ForbiddenPublixException {
+    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch) {
         if (!study.isActive()) {
-            throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
+            throw new ForbiddenException(PublixErrorMessages.studyDeactivated(study.getId()));
         }
         if (!batch.isActive()) {
-            throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
+            throw new ForbiddenException(PublixErrorMessages.batchInactive(batch.getId()));
         }
         checkMaxTotalWorkers(batch, worker);
         checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch)
-            throws ForbiddenPublixException {
+    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch) {
         // Do not check for worker type - Jatos worker is always allowed
         User user = ((JatosWorker) worker).getUser();
         // User has to be a member user of this study
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
-            throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
+            throw new ForbiddenException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
         // User has to be signed in
         Optional<String> username = session.get(JatosPublix.SESSION_USERNAME);
         if (!username.isPresent() || !user.getUsername().equals(username.get())) {
-            throw new ForbiddenPublixException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
+            throw new ForbiddenException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
     }
 

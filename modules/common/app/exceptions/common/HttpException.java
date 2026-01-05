@@ -1,4 +1,4 @@
-package exceptions.publix;
+package exceptions.common;
 
 import play.mvc.Http;
 
@@ -8,15 +8,15 @@ import play.mvc.Http;
  *
  * @author Kristian Lange
  */
-public abstract class PublixException extends Exception {
+public class HttpException extends RuntimeException {
 
     private int httpStatus = Http.Status.BAD_REQUEST; // default is BadRequest
 
-    public PublixException(String message) {
+    public HttpException(String message) {
         super(message);
     }
 
-    public PublixException(String message, int httpStatus) {
+    public HttpException(String message, int httpStatus) {
         super(message);
         this.httpStatus = httpStatus;
     }
@@ -24,5 +24,4 @@ public abstract class PublixException extends Exception {
     public int getHttpStatus() {
         return httpStatus;
     }
-
 }

@@ -22,6 +22,7 @@ import java.util.List;
 public class PersonalSingleWorker extends Worker {
 
     public static final String WORKER_TYPE = "PersonalSingle";
+    public static final String SHORT_WORKER_TYPE = "ps";
     public static final String UI_WORKER_TYPE = "Personal Single";
 
     public PersonalSingleWorker() {
@@ -30,16 +31,6 @@ public class PersonalSingleWorker extends Worker {
     @JsonCreator
     public PersonalSingleWorker(String comment) {
         this.comment = comment;
-    }
-
-    @Override
-    public String getWorkerType() {
-        return WORKER_TYPE;
-    }
-
-    @Override
-    public String getUIWorkerType() {
-        return UI_WORKER_TYPE;
     }
 
     @Override

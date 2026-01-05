@@ -8,6 +8,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import daos.common.BatchDao;
+import daos.common.GroupResultDao;
+import daos.common.worker.WorkerDao;
+import exceptions.common.IOException;
+import exceptions.common.JsonException;
 import general.common.Common;
 import models.common.*;
 import models.common.workers.Worker;
@@ -16,9 +21,9 @@ import play.Logger.ALogger;
 import play.libs.Json;
 import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
-import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,9 +34,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility class that handles everything around JSON, like marshaling and
- * unmarshaling. Uses a custom JSON object mapper defined in
- * {@link JsonObjectMapper}.
+ * Utility class that handles everything around JSON, like marshaling and unmarshaling. Uses a custom JSON object mapper
+ * defined in {@link JsonObjectMapper}.
  *
  * @author Kristian Lange
  */
@@ -43,18 +47,29 @@ public class JsonUtils {
     public static final String DATA = "data";
     public static final String VERSION = "version";
 
+    private final WorkerDao workerDao;
+    private final BatchDao batchDao;
+    private final GroupResultDao groupResultDao;
+
+    @Inject
+    public JsonUtils(WorkerDao workerDao,
+                     BatchDao batchDao,
+                     GroupResultDao groupResultDao) {
+        this.workerDao = workerDao;
+        this.batchDao = batchDao;
+        this.groupResultDao = groupResultDao;
+    }
+
     /**
-     * Helper class for selectively marshaling an Object to JSON. Only fields of
-     * that Object that are annotated with this class will be serialised. The
-     * intended use is in the publix module (used for running a study).
+     * Helper class for selectively marshaling an Object to JSON. Only fields of that Object that are annotated with
+     * this class will be serialised. The intended use is in the publix module (used for running a study).
      */
     public static class JsonForPublix {
     }
 
     /**
-     * Helper class for selectively marshaling an Object to JSON. Only fields of
-     * that Object that are annotated with this class will be serialised.
-     * Intended use: import/export between different instances of JATOS.
+     * Helper class for selectively marshaling an Object to JSON. Only fields of that Object that are annotated with
+     * this class will be serialised. Intended use: import/export between different instances of JATOS.
      */
     public static class JsonForIO {
     }
@@ -63,45 +78,53 @@ public class JsonUtils {
     }
 
     /**
-     * Marshalling an Object into an JSON string. It only considers fields that
-     * are annotated with 'JsonForPublix'.
+     * Marshalling an Object into an JSON string. It only considers fields that are annotated with 'JsonForPublix'.
      */
-    public String asJsonForPublix(Object obj) throws JsonProcessingException {
-        ObjectWriter objectWriter =
-                Json.mapper().writerWithView(JsonForPublix.class);
-        return objectWriter.writeValueAsString(obj);
+    public String asJsonForPublix(Object obj) {
+        try {
+            ObjectWriter objectWriter = Json.mapper().writerWithView(JsonForPublix.class);
+            return objectWriter.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new JsonException(e);
+        }
     }
 
     /**
      * Reads the given object into a JsonNode while using the JsonForIO view.
      */
-    private JsonNode asJsonForIO(Object obj) throws IOException {
-        // Unnecessary conversion into a temporary string - better solution?
-        String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
-                .writeValueAsString(obj);
-        return Json.mapper().readTree(tmpStr);
+    private JsonNode asJsonForIO(Object obj) {
+        try {
+            // Unnecessary conversion into a temporary string - better solution?
+            String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
+                    .writeValueAsString(obj);
+            return Json.mapper().readTree(tmpStr);
+        } catch (JsonProcessingException e) {
+            throw new JsonException(e);
+        }
     }
 
-    public JsonNode asJsonForApi(Object obj) throws IOException {
+    public JsonNode asJsonForApi(Object obj) {
         // Unnecessary conversion into a temporary string - better solution?
-        String tmpStr = Json.mapper()
-                .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
-                .writerWithView(JsonForApi.class)
-                .writeValueAsString(obj);
-        return Json.mapper().readTree(tmpStr);
+        try {
+            String tmpStr = Json.mapper()
+                    .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                    .writerWithView(JsonForApi.class)
+                    .writeValueAsString(obj);
+            return Json.mapper().readTree(tmpStr);
+        } catch (JsonProcessingException e) {
+            throw new JsonException(e);
+        }
     }
 
     /**
-     * Formats a JSON string into a minimized form suitable for storing into a
-     * DB.
+     * Formats a JSON string into a minimized form suitable for storing into a DB.
      */
     public static String asStringForDB(String json) {
         if (Strings.isNullOrEmpty(json)) {
             return null;
         }
         if (!JsonUtils.isValid(json)) {
-            // Set the invalid string anyway, but don't standardize it. It will
-            // cause an error during next validation.
+            // Set the invalid string anyway, but don't standardize it. It will cause an error during the next validation.
             return json;
         }
         String jsonForDB = null;
@@ -121,43 +144,45 @@ public class JsonUtils {
         try {
             Json.mapper().readTree(json);
             valid = true;
-        } catch (IOException | IllegalArgumentException | NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException | JsonProcessingException e) {
             LOGGER.info(".isValid: error probably due to invalid JSON");
         }
         return valid;
     }
 
     /**
-     * Returns init data that are requested during initialisation of each
-     * component run: Marshals the study properties and the component properties
-     * and puts them together with the session data (stored in StudyResult) into
-     * a new JSON object.
+     * Returns init data that are requested during initialisation of each component run: Marshals the study properties
+     * and the component properties and puts them together with the session data (stored in StudyResult) into a new JSON
+     * object.
      */
-    public JsonNode initData(Batch batch, StudyResult studyResult, Study study, Component component)
-            throws IOException {
-        String studyProperties = asJsonForPublix(study);
-        String batchProperties = asJsonForPublix(Helpers.initializeAndUnproxy(batch));
-        ArrayNode componentList = getComponentListForInitData(study);
-        String componentProperties = asJsonForPublix(component);
-        String studySessionData = studyResult.getStudySessionData();
-        String urlQueryParameters = studyResult.getUrlQueryParameters();
-        String studyCode = studyResult.getStudyCode();
+    public JsonNode initData(Batch batch, StudyResult studyResult, Study study, Component component) {
+        try {
+            String studyProperties;
+            studyProperties = asJsonForPublix(study);
+            String batchProperties = asJsonForPublix(Helpers.initializeAndUnproxy(batch));
+            ArrayNode componentList = getComponentListForInitData(study);
+            String componentProperties = asJsonForPublix(component);
+            String studySessionData = studyResult.getStudySessionData();
+            String urlQueryParameters = studyResult.getUrlQueryParameters();
+            String studyCode = studyResult.getStudyCode();
 
-        ObjectNode initData = Json.mapper().createObjectNode();
-        initData.put("studySessionData", studySessionData);
-        initData.set("studyProperties", Json.mapper().readTree(studyProperties));
-        initData.set("batchProperties", Json.mapper().readTree(batchProperties));
-        initData.set("componentList", componentList);
-        initData.set("componentProperties", Json.mapper().readTree(componentProperties));
-        initData.set("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
-        initData.put("studyCode", studyCode);
-        return initData;
+            ObjectNode initData = Json.mapper().createObjectNode();
+            initData.put("studySessionData", studySessionData);
+            initData.set("studyProperties", Json.mapper().readTree(studyProperties));
+            initData.set("batchProperties", Json.mapper().readTree(batchProperties));
+            initData.set("componentList", componentList);
+            initData.set("componentProperties", Json.mapper().readTree(componentProperties));
+            initData.set("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
+            initData.put("studyCode", studyCode);
+            return initData;
+        } catch (JsonProcessingException e) {
+            throw new JsonException(e);
+        }
     }
 
     /**
-     * Returns an JSON ArrayNode with with a component list intended for use in
-     * jatos.js initData. For each component it adds only the bare minimum of
-     * data.
+     * Returns an JSON ArrayNode with a component list intended for use in jatos.js initData. For each component it
+     * adds only the bare minimum of data.
      */
     private ArrayNode getComponentListForInitData(Study study) {
         ArrayNode componentList = Json.mapper().createArrayNode();
@@ -185,12 +210,12 @@ public class JsonUtils {
 
             // Add active members
             ArrayNode activeMemberIdListNode = groupResultNode.arrayNode();
-            groupResult.getActiveMemberList().forEach(sr -> activeMemberIdListNode.add(sr.getId()));
+            groupResultDao.findAllActiveMemberIds(groupResult).forEach(activeMemberIdListNode::add);
             groupResultNode.set("activeMemberList", activeMemberIdListNode);
 
             // Add history members
             ArrayNode historyMemberIdListNode = groupResultNode.arrayNode();
-            groupResult.getHistoryMemberList().forEach(sr -> historyMemberIdListNode.add(sr.getId()));
+            groupResultDao.findAllHistoryMemberIds(groupResult).forEach(historyMemberIdListNode::add);
             groupResultNode.set("historyMemberList", historyMemberIdListNode);
 
             // Add study result count
@@ -203,37 +228,41 @@ public class JsonUtils {
         return allGroupResultsNode;
     }
 
-    public ObjectNode studyResultMetadata(StudyResult sr) throws IOException {
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("id", sr.getId());
-        metadata.put("uuid", sr.getUuid());
-        metadata.put("studyCode", sr.getStudyCode());
-        if (!Strings.isNullOrEmpty(sr.getWorker().getComment())) {
-            metadata.put("comment", sr.getWorker().getComment());
+    public ObjectNode studyResultMetadata(StudyResult sr) {
+        try {
+            Map<String, Object> metadata = new LinkedHashMap<>();
+            metadata.put("id", sr.getId());
+            metadata.put("uuid", sr.getUuid());
+            metadata.put("studyCode", sr.getStudyCode());
+            if (!Strings.isNullOrEmpty(sr.getWorker().getComment())) {
+                metadata.put("comment", sr.getWorker().getComment());
+            }
+            metadata.put("startDate", sr.getStartDate());
+            metadata.put("endDate", sr.getEndDate());
+            metadata.put("duration", getDurationPretty(sr.getStartDate(), sr.getEndDate()));
+            metadata.put("lastSeenDate", sr.getLastSeenDate());
+            metadata.put("studyState", sr.getStudyState());
+            if (!Strings.isNullOrEmpty(sr.getMessage())) {
+                metadata.put("message", sr.getMessage());
+            }
+            if (!Strings.isNullOrEmpty(sr.getUrlQueryParameters()) && !sr.getUrlQueryParameters().equals("{}")) {
+                Map<String, String> map = Json.mapper().readerFor(Map.class).readValue(sr.getUrlQueryParameters());
+                metadata.put("urlQueryParameters", map);
+            }
+            metadata.put("workerId", sr.getWorkerId());
+            metadata.put("workerType", sr.getWorkerType());
+            metadata.put("batchId", sr.getBatch().getId());
+            metadata.put("batchUuid", sr.getBatch().getUuid());
+            metadata.put("batchTitle", sr.getBatch().getTitle());
+            metadata.put("groupId", getGroupResultId(sr));
+            if (sr.getConfirmationCode() != null) {
+                metadata.put("confirmationCode", sr.getConfirmationCode());
+            }
+            metadata.put("isQuotaReached", sr.isQuotaReached());
+            return Json.mapper().valueToTree(metadata);
+        } catch (JsonProcessingException e) {
+            throw new JsonException(e);
         }
-        metadata.put("startDate", sr.getStartDate());
-        metadata.put("endDate", sr.getEndDate());
-        metadata.put("duration", getDurationPretty(sr.getStartDate(), sr.getEndDate()));
-        metadata.put("lastSeenDate", sr.getLastSeenDate());
-        metadata.put("studyState", sr.getStudyState());
-        if (!Strings.isNullOrEmpty(sr.getMessage())) {
-            metadata.put("message", sr.getMessage());
-        }
-        if (!Strings.isNullOrEmpty(sr.getUrlQueryParameters()) && !sr.getUrlQueryParameters().equals("{}")) {
-            Map<String, String> map = Json.mapper().readerFor(Map.class).readValue(sr.getUrlQueryParameters());
-            metadata.put("urlQueryParameters", map);
-        }
-        metadata.put("workerId", sr.getWorkerId());
-        metadata.put("workerType", sr.getWorkerType());
-        metadata.put("batchId", sr.getBatch().getId());
-        metadata.put("batchUuid", sr.getBatch().getUuid());
-        metadata.put("batchTitle", sr.getBatch().getTitle());
-        metadata.put("groupId", getGroupResultId(sr));
-        if (sr.getConfirmationCode() != null) {
-            metadata.put("confirmationCode", sr.getConfirmationCode());
-        }
-        metadata.put("isQuotaReached", sr.isQuotaReached());
-        return Json.mapper().valueToTree(metadata);
     }
 
     /**
@@ -274,8 +303,8 @@ public class JsonUtils {
     }
 
     /**
-     * Returns group result ID of the given StudyResult or null if it doesn't exist.
-     * Get group result Id either from active or history group result.
+     * Returns group result ID of the given StudyResult or null if it doesn't exist. Get group result ID either from
+     * active or history group result.
      */
     private Long getGroupResultId(StudyResult studyResult) {
         if (studyResult.getActiveGroupResult() != null) {
@@ -344,7 +373,7 @@ public class JsonUtils {
         if (Files.isDirectory(dir)) {
             try (Stream<Path> paths = Files.list(dir)) {
                 return paths.map(this::getResultUploadFileNode).collect(Collectors.toList());
-            } catch (IOException e) {
+            } catch (java.io.IOException e) {
                 LOGGER.warn("Cannot open directory " + dir);
             }
         }
@@ -357,7 +386,7 @@ public class JsonUtils {
         try (FileChannel fileChannel = FileChannel.open(filePath)) {
             fileSize = fileChannel.size();
             fileSizeHumanReadable = Helpers.humanReadableByteCount(fileChannel.size());
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             LOGGER.warn("Cannot open file " + filePath);
         }
         Map<String, Object> data = new HashMap<>();
@@ -372,7 +401,7 @@ public class JsonUtils {
         if (Files.isDirectory(dir)) {
             try (Stream<Path> entries = Files.list(dir)) {
                 return entries.findFirst().isPresent();
-            } catch (IOException e) {
+            } catch (java.io.IOException e) {
                 LOGGER.warn("Cannot open directory " + dir);
             }
         }
@@ -397,8 +426,7 @@ public class JsonUtils {
     }
 
     /**
-     * Returns JsonNode with all users of this study. This JSON is intended for
-     * JATOS' GUI / in the change user modal.
+     * Returns JsonNode with all users of this study. This JSON is intended for JATOS' GUI / in the change user modal.
      */
     public JsonNode memberUserArrayOfStudy(List<User> userList, Study study) {
         ArrayNode userArrayNode = Json.mapper().createArrayNode();
@@ -414,8 +442,7 @@ public class JsonUtils {
     }
 
     /**
-     * Returns JsonNode with the given user. This JSON is intended for JATOS'
-     * GUI / in the change user modal.
+     * Returns JsonNode with the given user. This JSON is intended for JATOS' GUI / in the change user modal.
      */
     public ObjectNode memberUserOfStudy(User user, Study study) {
         ObjectNode userNode = Json.mapper().createObjectNode();
@@ -512,13 +539,12 @@ public class JsonUtils {
     }
 
     /**
-     * Returns a JSON string of all batches that belong to the given study. This includes the
-     * 'resultCount' (the number of StudyResults of this batch so far), 'workerCount' (number of
-     * workers without JatosWorkers), and the 'groupCount' (number of GroupResults of this batch
-     * so far). Intended for use in JATOS' GUI.
+     * Returns a JSON string of all batches that belong to the given study. This includes the 'resultCount' (the number
+     * of StudyResults of this batch so far), 'workerCount' (number of workers without JatosWorkers), and the
+     * 'groupCount' (number of GroupResults of this batch so far). Intended for use in JATOS' GUI.
      */
     public JsonNode allBatchesByStudyForUI(List<Batch> batchList, List<Integer> resultCountList,
-            List<Integer> groupCountList) {
+                                           List<Integer> groupCountList) {
         ArrayNode batchListNode = Json.mapper().createArrayNode();
         for (int i = 0; i < batchList.size(); i++) {
             ObjectNode batchNode = getBatchByStudyForUI(batchList.get(i), resultCountList.get(i),
@@ -533,10 +559,9 @@ public class JsonUtils {
     }
 
     /**
-     * Returns a JSON string of one batch. This includes the 'resultCount' (the number of
-     * StudyResults of this batch so far), 'workerCount' (number of workers without JatosWorkers),
-     * and the 'groupCount' (number of GroupResults of this batch so far).
-     * Intended for use in JATOS' GUI.
+     * Returns a JSON string of one batch. This includes the 'resultCount' (the number of StudyResults of this batch so
+     * far), 'workerCount' (number of workers without JatosWorkers), and the 'groupCount' (number of GroupResults of
+     * this batch so far). Intended for use in JATOS' GUI.
      */
     public ObjectNode getBatchByStudyForUI(Batch batch, Integer resultCount, Integer groupCount) {
         ObjectNode batchNode = Json.mapper().valueToTree(batch);
@@ -545,16 +570,15 @@ public class JsonUtils {
         // Add count of batch's study results
         batchNode.put("resultCount", resultCount);
         // Add count of batch's workers (without JatosWorker)
-        batchNode.put("workerCount", batch.getWorkerList().size());
+        batchNode.put("workerCount", batchDao.countWorkers(batch));
         // Add count of batch's group results
         batchNode.put("groupCount", groupCount);
         return batchNode;
     }
 
     /**
-     * Returns a JSON string of all components in the given list. This includes
-     * the 'resultCount', the number of ComponentResults of this component so
-     * far. Intended for use in JATOS' GUI.
+     * Returns a JSON string of all components in the given list. This includes the 'resultCount', the number of
+     * ComponentResults of this component so far. Intended for use in JATOS' GUI.
      */
     public JsonNode allComponentsForUI(List<Component> componentList, List<Integer> resultCountList) {
         ArrayNode arrayNode = Json.mapper().createArrayNode();
@@ -574,7 +598,7 @@ public class JsonUtils {
     }
 
     public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,
-            Integer personalSingleLinkCount, Integer personalMultipleLinkCount) {
+                                        Integer personalSingleLinkCount, Integer personalMultipleLinkCount) {
         ObjectNode studyLinkSetupData = Json.mapper().createObjectNode();
         studyLinkSetupData.set("studyResultCountsPerWorker", asJsonNode(studyResultCountsPerWorker));
         studyLinkSetupData.put("personalSingleLinkCount", personalSingleLinkCount);
@@ -599,14 +623,14 @@ public class JsonUtils {
                 studyLinkDataNode.put("comment", worker.getComment());
 
                 // (last) StudyResult's state
-                Optional<StudyResult> lastStudyResult = worker.getLastStudyResult();
+                Optional<StudyResult> lastStudyResult = workerDao.findLastStudyResult(worker);
                 if (lastStudyResult.isPresent()) {
                     studyLinkDataNode.put("studyResultState", lastStudyResult.get().getStudyState().name());
                 } else {
                     studyLinkDataNode.put("studyResultState", (String) null);
                 }
 
-                studyLinkDataNode.put("studyResultCount", worker.getStudyResultList().size());
+                studyLinkDataNode.put("studyResultCount", workerDao.countStudyResults(worker));
             }
             arrayNode.add(studyLinkDataNode);
         }
@@ -636,25 +660,29 @@ public class JsonUtils {
     }
 
     /**
-     * Marshals the given study into JSON, adds the current study serial
-     * version, and saves it into the given File. It uses the view JsonForIO.
+     * Marshals the given study into JSON, adds the current study serial version, and saves it into the given File. It
+     * uses the view JsonForIO.
      */
     public void studyAsJsonForIO(Study study, File file) throws IOException {
-        ObjectNode studyNode = (ObjectNode) asJsonForIO(study);
+        try {
+            ObjectNode studyNode = (ObjectNode) asJsonForIO(study);
 
-        // Add components
-        ArrayNode componentArray = (ArrayNode) asJsonForIO(study.getComponentList());
-        studyNode.putArray("componentList").addAll(componentArray);
+            // Add components
+            ArrayNode componentArray = (ArrayNode) asJsonForIO(study.getComponentList());
+            studyNode.putArray("componentList").addAll(componentArray);
 
-        // Add default Batch
-        studyNode.putArray("batchList").add(asJsonForIO(study.getDefaultBatch()));
+            // Add default Batch
+            studyNode.putArray("batchList").add(asJsonForIO(study.getDefaultBatch()));
 
-        // Add Study version
-        JsonNode nodeForIO = wrapAsDataEnvelope(studyNode, ImmutableMap.of(
-                "version", String.valueOf(Study.SERIAL_VERSION)));
+            // Add Study version
+            JsonNode nodeForIO = wrapAsDataEnvelope(studyNode, ImmutableMap.of(
+                    "version", String.valueOf(Study.SERIAL_VERSION)));
 
-        // Write to file
-        Json.mapper().writeValue(file, nodeForIO);
+            // Write to file
+            Json.mapper().writeValue(file, nodeForIO);
+        } catch (java.io.IOException e) {
+            throw new JsonException(e);
+        }
     }
 
     /**
@@ -701,17 +729,15 @@ public class JsonUtils {
     /**
      * Wraps the given JSON payload into a new top-level object and adds the provided metadata fields.
      *
-     * The resulting structure is an ObjectNode that contains all entries from {@code fields} as
-     * top-level properties and a {@code "data"} property holding the original {@code jsonNode}
-     * unchanged.
+     * The resulting structure is an ObjectNode that contains all entries from {@code fields} as top-level properties
+     * and a {@code "data"} property holding the original {@code jsonNode} unchanged.
      *
      * Example:
      *
-     * wrapNodeInObject({ "a": 1 }, Map.of("version", "1"))
-     * // -> { "version": "1", "data": { "a": 1 } }
+     * wrapNodeInObject({ "a": 1 }, Map.of("version", "1")) // -> { "version": "1", "data": { "a": 1 } }
      *
-     * Values are inserted using {@code putPOJO}, allowing complex objects (e.g., Maps, Lists) to be
-     * serialized by Jackson as-is.
+     * Values are inserted using {@code putPOJO}, allowing complex objects (e.g., Maps, Lists) to be serialized by
+     * Jackson as-is.
      *
      * @param jsonNode the JSON payload to be placed under the {@code "data"} key; may be any JsonNode (including null)
      * @param fields   additional top-level properties to include in the wrapper; keys must be non-null
@@ -723,5 +749,22 @@ public class JsonUtils {
         node.set("data", jsonNode);
         return node;
     }
+
+    public static <T> T parse(JsonNode node, Class<T> clazz) {
+        try {
+            return Json.mapper().treeToValue(node, clazz);
+        } catch (JsonProcessingException e) {
+            throw new JsonException("Failed to parse JSON into " + clazz.getName(), e);
+        }
+    }
+
+    public static JsonNode parse(String json) {
+        try {
+            return Json.mapper().readTree(json);
+        } catch (JsonProcessingException e) {
+            throw new JsonException("Failed to parse JSON", e);
+        }
+    }
+
 
 }

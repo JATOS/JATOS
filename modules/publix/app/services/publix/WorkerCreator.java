@@ -7,6 +7,7 @@ import models.common.workers.GeneralMultipleWorker;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
+import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -17,52 +18,61 @@ import javax.inject.Singleton;
 @Singleton
 public class WorkerCreator {
 
+    private final JPAApi jpa;
     private final WorkerDao workerDao;
     private final BatchDao batchDao;
 
     @Inject
-    WorkerCreator(WorkerDao workerDao, BatchDao batchDao) {
+    WorkerCreator(JPAApi jpa,
+                  WorkerDao workerDao,
+                  BatchDao batchDao) {
+        this.jpa = jpa;
         this.workerDao = workerDao;
         this.batchDao = batchDao;
     }
 
     /**
-     * Creates and persists a MTWorker or a MTSandboxWorker.
+     * Creates and persists a MTWorker or an MTSandboxWorker.
      */
-    public MTWorker createAndPersistMTWorker(String mtWorkerId,
-            boolean mTurkSandbox, Batch batch) {
-        MTWorker worker;
-        if (mTurkSandbox) {
-            worker = new MTSandboxWorker(mtWorkerId);
-        } else {
-            worker = new MTWorker(mtWorkerId);
-        }
-        batch.addWorker(worker);
-        workerDao.create(worker);
-        batchDao.update(batch);
-        return worker;
+    public MTWorker createAndPersistMTWorker(String mtWorkerId, boolean mTurkSandbox, Batch batch) {
+        return jpa.withTransaction(em -> {
+            MTWorker worker;
+            if (mTurkSandbox) {
+                worker = new MTSandboxWorker(mtWorkerId);
+            } else {
+                worker = new MTWorker(mtWorkerId);
+            }
+            batch.addWorker(worker);
+            workerDao.persist(worker);
+            batchDao.merge(batch);
+            return worker;
+        });
     }
 
     /**
      * Create and persist a GeneralSingleWorker
      */
     public GeneralSingleWorker createAndPersistGeneralSingleWorker(Batch batch) {
-        GeneralSingleWorker worker = new GeneralSingleWorker();
-        batch.addWorker(worker);
-        workerDao.create(worker);
-        batchDao.update(batch);
-        return worker;
+        return jpa.withTransaction(em -> {
+            GeneralSingleWorker worker = new GeneralSingleWorker();
+            batch.addWorker(worker);
+            workerDao.persist(worker);
+            batchDao.merge(batch);
+            return worker;
+        });
     }
 
     /**
      * Create and persist a GeneralMultipleWorker
      */
     public GeneralMultipleWorker createAndPersistGeneralMultipleWorker(Batch batch) {
-        GeneralMultipleWorker worker = new GeneralMultipleWorker();
-        batch.addWorker(worker);
-        workerDao.create(worker);
-        batchDao.update(batch);
-        return worker;
+        return jpa.withTransaction(em -> {
+            GeneralMultipleWorker worker = new GeneralMultipleWorker();
+            batch.addWorker(worker);
+            workerDao.persist(worker);
+            batchDao.merge(batch);
+            return worker;
+        });
     }
 
 }

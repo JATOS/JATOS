@@ -1,12 +1,14 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
-import auth.gui.AuthService;
 import com.google.common.base.Strings;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import daos.common.StudyDao;
 import general.common.Common;
+import general.common.Http.Context;
 import models.common.Study;
 import models.common.User;
 import play.libs.ws.WSClient;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static actions.common.TransactionalAction.Mode.READ_ONLY;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
@@ -32,21 +36,20 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class Home extends Controller {
 
     private final JsonUtils jsonUtils;
-    private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final WSClient ws;
 
     @Inject
-    Home(JsonUtils jsonUtils, AuthService authService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            WSClient ws) {
+    Home(JsonUtils jsonUtils,
+         BreadcrumbsService breadcrumbsService,
+         StudyDao studyDao,
+         WSClient ws) {
         this.jsonUtils = jsonUtils;
-        this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.ws = ws;
@@ -55,11 +58,11 @@ public class Home extends Controller {
     /**
      * Shows home view
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request, int httpStatus) {
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String breadcrumbs = breadcrumbsService.generateForHome();
         boolean freshlySignedin = signedinUser.getLastLogin() != null &&
                 Duration.between(signedinUser.getLastLogin().toInstant(), Instant.now())
@@ -68,9 +71,6 @@ public class Home extends Controller {
         return status(httpStatus, views.html.gui.home.render(freshlySignedin, signedinUser, breadcrumbs, request.asScala()));
     }
 
-    @Transactional
-    @Auth
-    @SaveLastVisitedPageUrl
     public Result home(Http.Request request) {
         return home(request, Http.Status.OK);
     }
@@ -78,10 +78,10 @@ public class Home extends Controller {
     /**
      * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public CompletionStage<Result> branding(Http.Request request) {
-        User signedinUser = authService.getSignedinUser(request);
+    public CompletionStage<Result> branding() {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
         return ws.url(Common.getBrandingUrl()).get().thenApply(r -> {
             String branding = r.getBody()
@@ -97,10 +97,11 @@ public class Home extends Controller {
      * GET request that returns the data needed to draw the sidebar (e.g. a list of all studies that belong to the
      * signed-in user).
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result sidebarData(Http.Request request) {
-        User signedinUser = authService.getSignedinUser(request);
+    @Transactional(READ_ONLY)
+    public Result sidebarData() {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         List<Study> studyList = Helpers.isAllowedSuperuser(signedinUser)
                 ? studyDao.findAll()
                 : studyDao.findAllByUser(signedinUser);

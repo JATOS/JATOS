@@ -9,6 +9,7 @@ import play.db.jpa.JPAApi
 import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
+import javax.persistence.EntityManager
 import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
 
@@ -48,13 +49,13 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
     jpa.withTransaction(asJavaFunction(_ => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
       val groupMaxNotReached =
-        if (allGroupMaxNotReached.isEmpty) groupResultDao.create(new GroupResult(batch))
+        if (allGroupMaxNotReached.isEmpty) groupResultDao.persist(new GroupResult(batch))
         else allGroupMaxNotReached.get(0)
 
       groupMaxNotReached.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(groupMaxNotReached)
-      groupResultDao.update(groupMaxNotReached)
-      studyResultDao.update(studyResult)
+      groupResultDao.merge(groupMaxNotReached)
+      studyResultDao.merge(studyResult)
 
       sendJoinedMsg(studyResult)
 
@@ -68,14 +69,16 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * calling methods.
    */
   def leave(studyResult: StudyResult): Unit = {
-    val groupResult = studyResult.getActiveGroupResult
-    if (groupResult == null || !studyResult.getStudy.isGroupStudy) return
+    jpa.withTransaction(asJavaFunction((_: EntityManager) => {
+      val groupResult = studyResult.getActiveGroupResult
+      if (groupResult == null || !studyResult.getStudy.isGroupStudy) return
 
-    moveActiveMemberToHistory(studyResult)
-    checkAndFinishGroup(groupResult)
+      moveActiveMemberToHistory(studyResult)
+      checkAndFinishGroup(groupResult)
 
-    closeGroupChannel(studyResult.getId, groupResult.getId)
-    sendLeftMsg(studyResult, groupResult)
+      closeGroupChannel(studyResult.getId, groupResult.getId)
+      sendLeftMsg(studyResult, groupResult)
+    }))
   }
 
   /**
@@ -136,9 +139,9 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
       differentGroupResult.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(differentGroupResult)
 
-      groupResultDao.update(currentGroupResult)
-      groupResultDao.update(differentGroupResult)
-      studyResultDao.update(studyResult)
+      groupResultDao.merge(currentGroupResult)
+      groupResultDao.merge(differentGroupResult)
+      studyResultDao.merge(studyResult)
 
       checkAndFinishGroup(currentGroupResult)
 
@@ -193,8 +196,8 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
     groupResult.addHistoryMember(studyResult)
     studyResult.setActiveGroupResult(null)
     studyResult.setHistoryGroupResult(groupResult)
-    groupResultDao.update(groupResult)
-    studyResultDao.update(studyResult)
+    groupResultDao.merge(groupResult)
+    studyResultDao.merge(studyResult)
   }
 
   /**
@@ -210,7 +213,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
       groupResult.setEndDate(new Timestamp(new Date().getTime))
       // All session data are temporary and have to be deleted when the group is finished
       groupResult.setGroupSessionData(null)
-      groupResultDao.update(groupResult)
+      groupResultDao.merge(groupResult)
     }
   }
 

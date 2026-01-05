@@ -16,7 +16,7 @@ import java.util.Objects;
 
 /**
  * Turns the file system of a directory to JSON
- * <p>
+ *
  * Inspired by https://gist.github.com/shaiful16/863e05c349e34aec6851b6d9f0bc0034
  */
 public class DirectoryStructureToJson {
@@ -28,7 +28,7 @@ public class DirectoryStructureToJson {
      * @param flatten If true, the returned JSON will be a list of files (not nested, no directories). If false, the
      *                returned JSON will have a nested file structure.
      */
-    public static JsonNode get(File base, boolean flatten) throws IOException {
+    public static JsonNode get(File base, boolean flatten) {
         Object nodes = flatten ? flatten(getNode(base, base)) : getNode(base, base);
         return Json.mapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -47,7 +47,7 @@ public class DirectoryStructureToJson {
         }
     }
 
-    private static Node getNode(File node, File base) throws IOException {
+    private static Node getNode(File node, File base) {
         if (node.isDirectory()) {
             return new Node(node, base, getDirList(node, base));
         } else {
@@ -55,7 +55,7 @@ public class DirectoryStructureToJson {
         }
     }
 
-    private static List<Node> getDirList(File node, File base) throws IOException {
+    private static List<Node> getDirList(File node, File base) {
         List<Node> nodeList = new ArrayList<>();
         for (File n : Objects.requireNonNull(node.listFiles())) {
             nodeList.add(getNode(n, base));
@@ -73,18 +73,22 @@ public class DirectoryStructureToJson {
         public Long checksum;
         public List<Node> content;
 
-        public Node(File node, File base, List<Node> content) throws IOException {
-            String path = base.toURI().relativize(node.toURI()).getPath();
-            BasicFileAttributes attributes = Files.getFileAttributeView(node.toPath(), BasicFileAttributeView.class)
-                    .readAttributes();
-            this.name = node.getName();
-            this.path = path;
-            this.type = attributes.isDirectory() ? "directory" : attributes.isRegularFile() ? "file" : "other";
-            this.creation = attributes.creationTime().toMillis();
-            this.lastModified = attributes.lastModifiedTime().toMillis();
-            this.size = attributes.size();
-            this.checksum = attributes.isRegularFile() ? HashUtils.getChecksum(node) : null;
-            this.content = content;
+        public Node(File node, File base, List<Node> content) {
+            try {
+                String path = base.toURI().relativize(node.toURI()).getPath();
+                BasicFileAttributes attributes;
+                attributes = Files.getFileAttributeView(node.toPath(), BasicFileAttributeView.class).readAttributes();
+                this.name = node.getName();
+                this.path = path;
+                this.type = attributes.isDirectory() ? "directory" : attributes.isRegularFile() ? "file" : "other";
+                this.creation = attributes.creationTime().toMillis();
+                this.lastModified = attributes.lastModifiedTime().toMillis();
+                this.size = attributes.size();
+                this.checksum = attributes.isRegularFile() ? HashUtils.getChecksum(node) : null;
+                this.content = content;
+            } catch (IOException e) {
+                throw new exceptions.common.IOException(e);
+            }
         }
     }
 

@@ -15,26 +15,20 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Model of study properties for UI (not persisted in DB). Only used together
- * with an HTML form that creates a new Study or updates one. The corresponding
- * database entity is {@link models.common.Study}.
+ * Model of study properties for UI (not persisted in DB). Only used together with an HTML form that creates a new Study
+ * or updates one. The corresponding database entity is {@link models.common.Study}.
  */
 @Constraints.Validate
 public class StudyProperties implements Constraints.Validatable<List<ValidationError>> {
 
-    public static final String STUDY_ID = "studyId";
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String JSON_DATA = "jsonData";
     public static final String DESCRIPTION = "description";
     public static final String DIR_NAME = "dirName";
     public static final String COMMENTS = "comments";
-    public static final String GROUP_STUDY = "groupStudy";
-    public static final String LOCKED = "locked";
-    public static final String LINEAR_STUDY_FLOW = "linearStudy";
     public static final String END_REDIRECT_URL = "endRedirectUrl";
     public static final String STUDY_ENTRY_MSG = "studyEntryMsg";
-    public static final String ALLOW_PREVIEW = "allowPreview";
 
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
             "public", "assets", "study_assets_root", "study_assets"};
@@ -42,9 +36,8 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     private Long studyId;
 
     /**
-     * Universally (world-wide) unique ID. Used for import/export between
-     * different JATOS instances. On one JATOS instance it is only allowed to
-     * have one study with the same UUID.
+     * Universally (worldwide) unique ID. Used for import/export between different JATOS instances. On one JATOS
+     * instance it is only allowed to have one study with the same UUID.
      */
     private String uuid;
 
@@ -63,8 +56,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     private boolean locked = false;
 
     /**
-     * Is this study a group study, e.g. worker scripts can send messages
-     * between each other.
+     * Is this study a group study, e.g. worker scripts can send messages between each other.
      */
     private boolean groupStudy = false;
 
@@ -85,8 +77,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     private String dirName;
 
     /**
-     * User comments, reminders, something to share with others. They have no
-     * further meaning.
+     * User comments, reminders, something to share with others. They have no further meaning.
      */
     private String comments;
 

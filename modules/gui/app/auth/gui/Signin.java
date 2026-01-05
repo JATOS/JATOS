@@ -1,13 +1,12 @@
 package auth.gui;
 
+import actions.common.AsyncAction.Async;
+import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.google.common.collect.ImmutableMap;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import general.common.MessagesStrings;
-import general.gui.FlashScopeMessaging;
 import models.common.LoginAttempt;
 import models.common.User;
 import play.Logger;
@@ -21,7 +20,8 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.naming.NamingException;
+
+import static messaging.common.FlashScopeMessaging.*;
 
 /**
  * Controller that deals with authentication for users stored in JATOS' DB and users authenticated by LDAP. OIDC auth is
@@ -30,7 +30,7 @@ import javax.naming.NamingException;
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
+//@GuiAccessLogging
 @Singleton
 public class Signin extends Controller {
 
@@ -55,6 +55,7 @@ public class Signin extends Controller {
     /**
      * Shows the sign-in page
      */
+    @Async
     public Result signin(Http.Request request) {
         return ok(views.html.gui.auth.signin.render(request.asScala()));
     }
@@ -62,7 +63,7 @@ public class Signin extends Controller {
     /**
      * HTTP POST Endpoint for the sign-in form. It handles both Ajax and normal requests.
      */
-    @Transactional
+    @Async(Executor.IO)
     public Result authenticate(Http.Request request) {
         SigninData signinData = formFactory.form(SigninData.class).bindFromRequest(request).withDirectFieldAccess(true).get();
         String normalizedUsername = User.normalizeUsername(signinData.getUsername());
@@ -74,17 +75,10 @@ public class Signin extends Controller {
         }
 
         User user = userDao.findByUsername(normalizedUsername);
-        boolean authenticated;
-        try {
-            authenticated = authService.authenticate(user, password);
-        } catch (NamingException e) {
-            return returnInternalServerErrorDueToLdapProblems(e);
-        } catch (IllegalArgumentException e) {
-            return returnUnauthorizedDueToWrongAuthMethod(normalizedUsername, user.getAuthMethod());
-        }
+        boolean authenticated = authService.authenticate(user, password);
 
         if (!authenticated) {
-            loginAttemptDao.create(new LoginAttempt(normalizedUsername, remoteAddress));
+            loginAttemptDao.persist(new LoginAttempt(normalizedUsername, remoteAddress));
             if (authService.isRepeatedSigninAttempt(normalizedUsername, remoteAddress)) {
                 return returnUnauthorizedDueToRepeatedSigninAttempt(normalizedUsername, remoteAddress);
             } else {
@@ -112,26 +106,16 @@ public class Signin extends Controller {
         return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
     }
 
-    private Result returnInternalServerErrorDueToLdapProblems(NamingException e) {
-        LOGGER.warn("LDAP problems - " + e.toString());
-        return internalServerError(MessagesStrings.LDAP_PROBLEMS);
-    }
-
-    private Result returnUnauthorizedDueToWrongAuthMethod(String normalizedUsername, User.AuthMethod authMethod) {
-        LOGGER.warn("Wrong auth method - user " + normalizedUsername + " uses auth method " + authMethod);
-        return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
-    }
-
     /**
      * Removes user from session and shows sign-in view with a sign-out message.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
     public Result signout(Http.Request request) {
         LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
         return redirect(auth.gui.routes.Signin.signin())
                 .withNewSession()
-                .flashing(FlashScopeMessaging.SUCCESS, "You've been signed out.");
+                .flashing(SUCCESS, "You've been signed out.");
     }
 
     /**

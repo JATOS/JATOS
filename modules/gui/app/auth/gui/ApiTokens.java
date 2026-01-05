@@ -1,20 +1,19 @@
 package auth.gui;
 
+import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import daos.common.ApiTokenDao;
+import general.common.Http.Context;
 import models.common.ApiToken;
 import models.common.User;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
-import play.db.jpa.JPAApi;
 import play.libs.Json;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.ApiTokenService;
 
@@ -22,72 +21,70 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
 
+import static actions.common.AsyncAction.Async;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+
 /**
  * All JATOS GUI endpoints concerning API tokens (personal access tokens)
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class ApiTokens extends Controller {
 
-    private final JPAApi jpa;
     private final ApiTokenDao apiTokenDao;
     private final ApiTokenService apiTokenService;
-    private final AuthService authService;
 
     @Inject
-    ApiTokens(JPAApi jpa, ApiTokenDao apiTokenDao, ApiTokenService apiTokenService, AuthService authService) {
-        this.jpa = jpa;
+    ApiTokens(ApiTokenDao apiTokenDao,
+              ApiTokenService apiTokenService) {
         this.apiTokenDao = apiTokenDao;
         this.apiTokenService = apiTokenService;
-        this.authService = authService;
     }
 
+    @Async(Executor.IO)
     @Auth
-    public Result allTokenDataByUser(Http.Request request) {
-        return jpa.withTransaction(em -> {
-            User signedinUser = authService.getSignedinUser(request);
-            List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
-            ArrayNode tokenData = Json.newArray();
-            for (ApiToken token : tokenList) {
-                tokenData.add(Json.mapper().valueToTree(token));
-            }
-            JsonNode data = Json.newObject().set("data", tokenData);
-            return ok(data);
-        });
+    public Result allTokenDataByUser() {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
+        ArrayNode tokenData = Json.newArray();
+        for (ApiToken token : tokenList) {
+            tokenData.add(Json.mapper().valueToTree(token));
+        }
+        JsonNode data = Json.newObject().set("data", tokenData);
+        return ok(data);
     }
 
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result generate(Http.Request request, String name, Integer expires) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result generate(String name, Integer expires) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
         if (!Jsoup.isValid(name, Safelist.none())) return badRequest("No HTML allowed");
         if (expires == null || expires < 0) return badRequest("Expiration must be >= 0");
-        expires = expires == 0 ? null : expires; // 0 => null and means the token never expires
-        String apiTokenStr = apiTokenService.create(signedinUser, name, expires);
+        Integer expiresWithNull = expires == 0 ? null : expires; // 0 => null and means the token never expires
+        String apiTokenStr = apiTokenService.create(signedinUser, name, expiresWithNull);
         return ok(apiTokenStr);
     }
 
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result remove(Http.Request request, Long id) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result remove(Long id) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ApiToken token = apiTokenDao.find(id);
         if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
         apiTokenDao.remove(token);
         return ok();
     }
 
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result toggleActive(Http.Request request, Long id, Boolean active) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result toggleActive(Long id, Boolean active) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ApiToken token = apiTokenDao.find(id);
         if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
         token.setActive(active);
-        apiTokenDao.update(token);
+        apiTokenDao.merge(token);
         return ok(" ");
     }
 

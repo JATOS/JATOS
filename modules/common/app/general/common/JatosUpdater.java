@@ -49,29 +49,19 @@ import java.util.regex.Pattern;
 /**
  * This class handles JATOS updates
  *
- * Some hints:
- * - JATOS releases are currently stored at GitHub
- * - The data requested from GitHub are stored in ReleaseInfo
- * - If there is an 'n' in the release's version an update is forbidden. This is safety feature in case an future
- * update is not compatible with this update process.
- * - The new release might need a new Java version. The release's Java version is determined by the asset's filename
- * (see newJavaVersion).
- * - The current state of the update process (UpdateState) is stored in 'state'.
- * - The update process is finished in the loader script
- * - In the GUI the update is handled in the home view
+ * Some hints: - JATOS releases are currently stored at GitHub - The data requested from GitHub are stored in
+ * ReleaseInfo - If there is an 'n' in the release's version an update is forbidden. This is safety feature in case an
+ * future update is not compatible with this update process. - The new release might need a new Java version. The
+ * release's Java version is determined by the asset's filename (see newJavaVersion). - The current state of the update
+ * process (UpdateState) is stored in 'state'. - The update process is finished in the loader script - In the GUI the
+ * update is handled in the home view
  *
- * Update process:
- * 1. Check GitHub for a new releases and put release data into ReleaseInfo
- * 2. Ask user (GUI home view)
- * 3. Download and unzip new release into system's tmp folder
- * 4. Ask user (GUI home view)
- * 5. Move new release into a separate folder within the current JATOS installation folder
- * 6. Exchange loader scripts and config folder
- * 7. Restart JATOS: finish process with an stop hook that runs the new loader script with an 'update' parameter
- * 8. The loader script moves everything in the new release folder into the JATOS installation folder (eventual
- * overwriting existing files)
- * 9. The loader script starts JATOS again
- * 10. JATOS shows a success msg (or a failure msg)
+ * Update process: 1. Check GitHub for a new releases and put release data into ReleaseInfo 2. Ask user (GUI home view)
+ * 3. Download and unzip new release into system's tmp folder 4. Ask user (GUI home view) 5. Move new release into a
+ * separate folder within the current JATOS installation folder 6. Exchange loader scripts and config folder 7. Restart
+ * JATOS: finish process with an stop hook that runs the new loader script with an 'update' parameter 8. The loader
+ * script moves everything in the new release folder into the JATOS installation folder (eventual overwriting existing
+ * files) 9. The loader script starts JATOS again 10. JATOS shows a success msg (or a failure msg)
  *
  * @author Kristian Lange (2019)
  */
@@ -263,7 +253,7 @@ public class JatosUpdater {
 
     @Inject
     JatosUpdater(WSClient ws, Materializer materializer, ActorSystem actorSystem, ExecutionContext executionContext,
-            ApplicationLifecycle applicationLifecycle, Environment environment) {
+                 ApplicationLifecycle applicationLifecycle, Environment environment) {
         this.ws = ws;
         this.materializer = materializer;
         this.actorSystem = actorSystem;
@@ -297,9 +287,9 @@ public class JatosUpdater {
     }
 
     /**
-     * Gets JATOS release information from GitHub and returns it as a String in format x.x.x. To prevent high
-     * load on GitHub it stores it locally and newly requests it only once per hour (only if allowPreReleases is
-     * false). If no version is given it gets the latest one.
+     * Gets JATOS release information from GitHub and returns it as a String in format x.x.x. To prevent high load on
+     * GitHub it stores it locally and newly requests it only once per hour (only if allowPreReleases is false). If no
+     * version is given it gets the latest one.
      *
      * @param version          Which release info to get. If null the latest is fetched.
      * @param allowPreReleases If true it includes pre-releases.
@@ -352,27 +342,13 @@ public class JatosUpdater {
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
         if (!currentReleaseInfo.isUpdateAllowed) {
-            CompletableFuture<Object> future = new CompletableFuture<>();
-            future.completeExceptionally(new IllegalStateException("Can't update to version "
+            return failedStage(new IllegalStateException("Can't update to version "
                     + currentReleaseInfo.versionFull
                     + " automatically. This JATOS release has to be updated manually."));
-            return future;
         }
+
         if (state != UpdateState.SLEEPING) {
-            String errMsg;
-            switch (state) {
-                case DOWNLOADING:
-                    errMsg = "A JATOS update is already downloading.";
-                    break;
-                case DOWNLOADED:
-                    errMsg = "A JATOS update was already downloaded.";
-                    break;
-                default:
-                    errMsg = "Wrong update state";
-            }
-            CompletableFuture<Object> future = new CompletableFuture<>();
-            future.completeExceptionally(new IllegalStateException(errMsg));
-            return future;
+            return failedStage(new IllegalStateException(busyStateMessage(state)));
         }
 
         if (dry) {
@@ -381,25 +357,47 @@ public class JatosUpdater {
             return CompletableFuture.completedFuture(null);
         }
 
+        state = UpdateState.DOWNLOADING;
+        final String downloadUrl = currentReleaseInfo.isDifferentJava
+                ? currentReleaseInfo.zipJavaUrl
+                : currentReleaseInfo.zipUrl;
+        final String zipFilename = "jatos-" + currentReleaseInfo.versionFull + ".zip";
         try {
-            state = UpdateState.DOWNLOADING;
-            String url = currentReleaseInfo.isDifferentJava ? currentReleaseInfo.zipJavaUrl : currentReleaseInfo.zipUrl;
-            String downloadFilename = "jatos-" + currentReleaseInfo.versionFull + ".zip";
-            CompletionStage<File> future = downloadAsync(url, downloadFilename);
-            future.thenAccept(zipFile -> Errors.rethrow().get(() -> {
-                File file = ZipUtil.unzip(zipFile, tmpJatosDir.get());
-                state = UpdateState.DOWNLOADED;
-                scheduleStateReset();
-                LOGGER.info("Downloaded and unzipped new JATOS " + downloadFilename);
-                return file;
-            }));
-            return future;
+            final CompletionStage<File> downloadStage = downloadAsync(downloadUrl, zipFilename);
+            return downloadStage
+                    .thenApply(zipFile -> {
+                        File unzippedDir = ZipUtil.unzip(zipFile, tmpJatosDir.get());
+                        state = UpdateState.DOWNLOADED;
+                        scheduleStateReset();
+                        LOGGER.info("Downloaded and unzipped new JATOS " + zipFilename);
+                        return unzippedDir;
+                    })
+                    .whenComplete((ok, ex) -> {
+                        if (ex != null) {
+                            state = UpdateState.SLEEPING;
+                        }
+                    });
         } catch (Exception e) {
             state = UpdateState.SLEEPING;
-            CompletableFuture<Object> future = new CompletableFuture<>();
-            future.completeExceptionally(e);
-            return future;
+            return failedStage(e);
         }
+    }
+
+    private static String busyStateMessage(UpdateState state) {
+        switch (state) {
+            case DOWNLOADING:
+                return "A JATOS update is already downloading.";
+            case DOWNLOADED:
+                return "A JATOS update was already downloaded.";
+            default:
+                return "Wrong update state";
+        }
+    }
+
+    private static <T> CompletionStage<T> failedStage(Throwable t) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        future.completeExceptionally(t);
+        return future;
     }
 
     private CompletionStage<File> downloadAsync(String url, String filename) throws IOException {

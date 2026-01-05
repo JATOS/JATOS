@@ -4,8 +4,6 @@ import auth.gui.AuthService;
 import com.pivovarit.function.ThrowingConsumer;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import models.common.Component;
 import models.common.Study;
 import models.gui.ComponentProperties;

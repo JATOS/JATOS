@@ -1,4 +1,4 @@
-package exceptions.publix;
+package exceptions.common;
 
 import play.mvc.Http;
 
@@ -7,9 +7,9 @@ import play.mvc.Http;
  *
  * @author Kristian Lange
  */
-public class ForbiddenPublixException extends PublixException {
+public class ForbiddenException extends HttpException {
 
-	public ForbiddenPublixException(String message) {
+	public ForbiddenException(String message) {
 		super(message, Http.Status.FORBIDDEN);
 	}
 

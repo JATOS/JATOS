@@ -44,7 +44,7 @@ public class GroupService {
         } else {
             currentGroupResult.setGroupSessionData(groupSession.getData());
         }
-        groupResultDao.update(currentGroupResult);
+        groupResultDao.merge(currentGroupResult);
         return true;
     }
 
@@ -54,7 +54,7 @@ public class GroupService {
         } else if (!fixed && groupResult.getGroupState() == GroupState.FIXED) {
             groupResult.setGroupState(GroupState.STARTED);
         }
-        groupResultDao.update(groupResult);
+        groupResultDao.merge(groupResult);
         return groupResult.getGroupState();
     }
 

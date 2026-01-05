@@ -5,8 +5,11 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
+import exceptions.common.ForbiddenException;
+import filters.publix.IdCookieFilter;
+import filters.publix.IdCookieFilter.IdCookies;
+import general.common.IOExecutor;
+import general.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;
@@ -26,13 +29,16 @@ import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+import actions.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import static play.mvc.Results.redirect;
+
 /**
- * Implementation of JATOS' public API for general single study runs (open to
- * everyone). A general single run is done by a GeneralSingleWorker.
+ * Implementation of JATOS' public API for general single study runs (open to everyone). A general single run is done by
+ * a GeneralSingleWorker.
  *
  * @author Kristian Lange
  */
@@ -45,22 +51,29 @@ public class GeneralSinglePublix extends Publix implements IPublix {
     private final GeneralSingleStudyAuthorisation studyAuthorisation;
     private final ResultCreator resultCreator;
     private final WorkerCreator workerCreator;
-    private final GeneralSingleCookieService generalSingleCookieService;
     private final StudyLogger studyLogger;
+    private final GeneralSingleCookieService generalSingleCookieService;
 
     @Inject
-    GeneralSinglePublix(JPAApi jpa, PublixUtils publixUtils,
-            GeneralSingleStudyAuthorisation studyAuthorisation,
-            ResultCreator resultCreator, WorkerCreator workerCreator,
-            GroupAdministration groupAdministration,
-            IdCookieService idCookieService,
-            GeneralSingleCookieService generalSingleCookieService,
-            PublixErrorMessages errorMessages, StudyAssets studyAssets,
-            JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
-        super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-                idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+    GeneralSinglePublix(JPAApi jpa,
+                        PublixUtils publixUtils,
+                        GeneralSingleStudyAuthorisation studyAuthorisation,
+                        ResultCreator resultCreator,
+                        WorkerCreator workerCreator,
+                        GroupAdministration groupAdministration,
+                        IdCookieService idCookieService,
+                        PublixErrorMessages errorMessages,
+                        StudyAssets studyAssets,
+                        JsonUtils jsonUtils,
+                        ComponentResultDao componentResultDao,
+                        StudyResultDao studyResultDao,
+                        StudyLogger studyLogger,
+                        IOUtils ioUtils,
+                        GeneralSingleCookieService generalSingleCookieService,
+                        IOExecutor dbContext,
+                        StudyAssetsExecutor studyAssetsExecutor) {
+        super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils, dbContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -72,16 +85,15 @@ public class GeneralSinglePublix extends Publix implements IPublix {
     /**
      * {@inheritDoc}
      *
-     * Only a general single run or a personal single run has the special
-     * StudyState PRE. Only with the corresponding workers (GeneralSingleWorker
-     * and PersonalSingleWorker) it's possible to have a preview of the study.
-     * To get into the preview mode the Study's 'allowPreview' flag has to be set.
-     * In the preview mode a worker can start the first active component as often
-     * as they want. As soon as the worker goes on and starts another component
-     * the study result switches into 'STARTED' and back to normal behavior.
+     * Only a general single run or a personal single run has the special StudyState PRE. Only with the corresponding
+     * workers (GeneralSingleWorker and PersonalSingleWorker) is it possible to have a preview of the study. To get into
+     * the preview mode, the Study's 'allowPreview' flag has to be set. In the preview mode a worker can start the first
+     * active component as often as they want. As soon as the worker goes on and starts another component, the study
+     * result switches into 'STARTED' and back to normal behavior.
      */
     @Override
-    public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
+    @IdCookies
+    public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         Long workerId = generalSingleCookieService.fetchWorkerIdByStudy(request, study);
@@ -104,11 +116,11 @@ public class GeneralSinglePublix extends Publix implements IPublix {
         } else {
             worker = publixUtils.retrieveWorker(workerId);
             if (worker == null) {
-                throw new ForbiddenPublixException("This study was run in this browser already. Although a worker with "
+                throw new ForbiddenException("This study was run in this browser already. Although a worker with "
                         + "ID " + workerId + " doesn't exist. Probably it was run on a different JATOS.");
             }
             studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
-            studyResult = worker.getLastStudyResult().orElseThrow(() -> new ForbiddenPublixException(
+            studyResult = publixUtils.getLastStudyResult(worker).orElseThrow(() -> new ForbiddenException(
                     "This study was run in this browser already. Although JATOS couldn't find the study result."));
             if (!idCookieService.hasIdCookie(request, studyResult.getId())) {
                 publixUtils.finishOldestStudyResult(request);

@@ -1,15 +1,15 @@
 package services.gui;
 
-import auth.gui.AuthService;
+import general.common.Http.Context;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.BadRequestException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
 import general.common.MessagesStrings;
 import general.common.StudyLogger;
 import models.common.Batch;
@@ -22,19 +22,20 @@ import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
-import play.mvc.Http;
+import play.db.jpa.JPAApi;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+
 /**
- * Service class for everthing Study related. Used by controllers
+ * Service class for everything Study related.
  *
  * @author Kristian Lange
  */
@@ -43,6 +44,7 @@ public class StudyService {
 
     private static final ALogger LOGGER = Logger.of(StudyService.class);
 
+    private final JPAApi jpa;
     private final BatchService batchService;
     private final ComponentService componentService;
     private final StudyDao studyDao;
@@ -51,13 +53,20 @@ public class StudyService {
     private final WorkerDao workerDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
-    private final AuthService authService;
     private final Checker checker;
 
     @Inject
-    StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthService authService, Checker checker) {
+    StudyService(JPAApi jpa,
+                 BatchService batchService,
+                 ComponentService componentService,
+                 StudyDao studyDao,
+                 BatchDao batchDao,
+                 UserDao userDao,
+                 WorkerDao workerDao,
+                 IOUtils ioUtils,
+                 StudyLogger studyLogger,
+                 Checker checker) {
+        this.jpa = jpa;
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -66,7 +75,6 @@ public class StudyService {
         this.workerDao = workerDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
-        this.authService = authService;
         this.checker = checker;
     }
 
@@ -74,7 +82,7 @@ public class StudyService {
      * Clones the given Study. Does not clone id, uuid, or date. Generates a new UUID for the clone. Copies the
      * corresponding study assets. Does NOT persist the clone.
      */
-    public Study clone(Study study) throws IOException {
+    public Study clone(Study study) {
         Study clone = new Study();
         // Generate new UUID for clone
         clone.setUuid(UUID.randomUUID().toString());
@@ -105,7 +113,7 @@ public class StudyService {
     }
 
     /**
-     * Generates an title for the cloned study by adding '(clone)' and numbers that doesn't exist so far.
+     * Generates a title for the cloned study by adding '(clone)' and numbers that doesn't exist so far.
      */
     private String cloneTitle(String origTitle) {
         String cloneTitle = origTitle + " (clone)";
@@ -118,10 +126,10 @@ public class StudyService {
     }
 
     /**
-     * Changes the member user in the study. Additionally changes the user's worker in all of the study's batches.
+     * Changes the member user in the study. Additionally, changes the user's worker in all the study's batches.
      * Persisting.
      */
-    public void changeUserMember(Study study, User userToChange, boolean isMember) throws ForbiddenException {
+    public void changeUserMember(Study study, User userToChange, boolean isMember) {
         Set<User> userList = study.getUserList();
         if (isMember) {
             if (userList.contains(userToChange)) {
@@ -139,12 +147,15 @@ public class StudyService {
             study.removeUser(userToChange);
             study.getBatchList().forEach(b -> b.removeWorker(userToChange.getWorker()));
         }
-        studyDao.update(study);
-        userDao.update(userToChange);
+        jpa.withTransaction(em -> {
+            studyDao.merge(study);
+            userDao.merge(userToChange);
+        });
     }
 
     /**
-     * Adds all users as members to the given study. Additionally adds all user's Jatos workers to the study's batches.
+     * Adds all users as members to the given study. Additionally, adds all user's Jatos workers to the study's
+     * batches.
      */
     public void addAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
@@ -152,42 +163,45 @@ public class StudyService {
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.addAllWorkers(usersWorkerList));
 
-        studyDao.update(study);
-        userList.forEach(userDao::update);
+        jpa.withTransaction(em -> {
+            studyDao.merge(study);
+            userList.forEach(userDao::merge);
+        });
     }
 
     /**
      * Removes all member users from the given study except the signed-in user. Additionally, removes all user's Jatos
      * workers from the study's batches (except the signed-in user's workers).
      */
-    public void removeAllUserMembers(Http.Request request, Study study) {
+    public void removeAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
-        userList.remove(authService.getSignedinUser(request));
+        userList.remove(Context.current().args().get(SIGNEDIN_USER));
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
         userList.forEach(study.getUserList()::remove);
-        studyDao.update(study);
-        userList.forEach(userDao::update);
+
+        jpa.withTransaction(em -> {
+            studyDao.merge(study);
+            userList.forEach(userDao::merge);
+        });
     }
 
     /**
-     * Changes the position of the given component within the given study to the new position given in newPosition.
-     * Remember the first position is 1 (and not 0). Throws BadRequestException if number has wrong format or number
-     * isn't within the studies positions.
+     * Changes the position of the given component within the given study to the new position given in the newPosition.
+     * Remember the first position is 1 (and not 0). Throws BadRequestException if the number has a wrong format or
+     * number isn't within the study's positions.
      */
-    public void changeComponentPosition(String newPosition, Study study, Component component)
-            throws BadRequestException {
+    public void changeComponentPosition(String newPosition, Study study, Component component) {
         try {
             int currentIndex = study.getComponentList().indexOf(component);
             int newIndex = Integer.parseInt(newPosition) - 1;
             study.getComponentList().remove(currentIndex);
             study.getComponentList().add(newIndex, component);
-            studyDao.update(study);
+            studyDao.merge(study);
         } catch (NumberFormatException e) {
             throw new BadRequestException(MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
         } catch (IndexOutOfBoundsException e) {
-            throw new BadRequestException(
-                    MessagesStrings.studyReorderUnknownPosition(newPosition, study.getId()));
+            throw new BadRequestException(MessagesStrings.studyReorderUnknownPosition(newPosition, study.getId()));
         }
     }
 
@@ -195,79 +209,91 @@ public class StudyService {
      * Create and persist a Study with given properties. Creates and persists the default Batch. If the study has
      * components already, it persists them too. Adds the given user to the users of this study.
      */
-    public Study createAndPersistStudy(User signedinUser, StudyProperties studyProperties) {
+    public Study createAndPersistStudy(StudyProperties studyProperties) {
         Study study = new Study();
         bindToStudyWithoutDirName(study, studyProperties);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         return createAndPersistStudy(signedinUser, study);
     }
 
     /**
-     * Persists the given Study. Creates and persists the default Batch. If the study has components already it persists
-     * them too. Adds the given user to the users of this study.
+     * Persists the given Study. Creates and persists the default Batch. If the study has components already, it
+     * persists them too. Adds the given user to the users of this study.
      */
-    public Study createAndPersistStudy(User signedinUser, Study study) {
-        study.getComponentList().forEach(c -> c.setStudy(study));
+    public Study createAndPersistStudy(User user, Study study) {
+        return jpa.withTransaction(em -> {
+            User managedUser = em.merge(user);
+            Study managedStudy = em.merge(study);
 
-        studyDao.create(study);
+            managedStudy.getComponentList().forEach(c -> c.setStudy(managedStudy));
 
-        if (study.getBatchList().isEmpty()) {
-            // Create default batch if we have no batch
-            Batch defaultBatch = batchService.createDefaultBatch(study);
-            study.addBatch(defaultBatch);
-            batchDao.create(defaultBatch);
-        } else {
-            study.getBatchList().forEach(b -> batchService.createBatch(b, study));
-            study.getBatchList().forEach(batchDao::create);
-        }
+            studyDao.persist(managedStudy);
 
-        // Add user
-        addUserToStudy(study, signedinUser);
+            if (managedStudy.getBatchList().isEmpty()) {
+                // Create a default batch if we have no batch
+                Batch defaultBatch = batchService.createDefaultBatch(managedStudy);
+                managedStudy.addBatch(defaultBatch);
+                batchDao.persist(defaultBatch);
+            } else {
+                managedStudy.getBatchList().forEach(b -> batchService.createBatch(b, managedStudy));
+                managedStudy.getBatchList().forEach(batchDao::persist);
+            }
 
-        studyDao.update(study);
-        studyLogger.create(study);
-        studyLogger.log(study, signedinUser, "Created study");
-        if (!Strings.isNullOrEmpty(study.getDescription())) {
-            studyLogger.logStudyDescriptionHash(study, signedinUser);
-        }
-        return study;
+            // Add user
+            addUserToStudy(managedStudy, managedUser);
+
+            studyDao.merge(managedStudy);
+            studyLogger.create(managedStudy);
+            studyLogger.log(managedStudy, managedUser, "Created study");
+            if (!Strings.isNullOrEmpty(managedStudy.getDescription())) {
+                studyLogger.logStudyDescriptionHash(managedStudy, managedUser);
+            }
+            return managedStudy;
+        });
     }
 
     private void addUserToStudy(Study study, User user) {
         study.addUser(user);
         user.addStudy(study);
-        studyDao.update(study);
-        userDao.update(user);
+
+        studyDao.merge(study);
+        userDao.merge(user);
 
         // For each of the study's batches add the user's JatosWorker
         JatosWorker jatosWorker = user.getWorker();
-        for (Batch batch : study.getBatchList()) {
+        List<Batch> batchList = study.getBatchList();
+        for (Batch batch : batchList) {
             batch.addWorker(jatosWorker);
-            batchDao.update(batch);
+            batchDao.merge(batch);
         }
-        workerDao.update(jatosWorker);
+        workerDao.merge(jatosWorker);
     }
 
     /**
-     * Update properties of study with properties of updatedStudy.
+     * Update properties of the study with properties of the updatedStudy.
      */
-    public void updateStudy(Study study, Study updatedStudy, User signedinUser) {
-        boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
-                updatedStudy.getDescriptionHash());
-        updateStudyCommon(study, updatedStudy);
-        study.setDirName(updatedStudy.getDirName());
-        studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+    public void updateStudy(Study study, Study updatedStudy) {
+        jpa.withTransaction(em -> {
+            boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(), updatedStudy.getDescriptionHash());
+            updateStudyCommon(study, updatedStudy);
+            study.setDirName(updatedStudy.getDirName());
+            studyDao.merge(study);
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+        });
     }
 
     /**
-     * Update properties of study with properties of updatedStudy but not Study's field dirName.
+     * Update properties of the study with properties of updatedStudy but not Study's field dirName.
      */
-    public void updateStudyWithoutDirName(Study study, Study updatedStudy, User signedinUser) {
-        boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
-                updatedStudy.getDescriptionHash());
-        updateStudyCommon(study, updatedStudy);
-        studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+    public void updateStudyWithoutDirName(Study study, Study updatedStudy) {
+        boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(), updatedStudy.getDescriptionHash());
+        jpa.withTransaction(em -> {
+            updateStudyCommon(study, updatedStudy);
+            studyDao.merge(study);
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+        });
     }
 
     private void updateStudyCommon(Study study, Study updatedStudy) {
@@ -285,25 +311,28 @@ public class StudyService {
     /**
      * Update Study with given properties and persist. It doesn't update Study's dirName field.
      */
-    public void updateStudy(Study study, StudyProperties studyProperties, User signedinUser) {
+    public void updateStudy(Study study, StudyProperties studyProperties) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), studyProperties.getDescription());
         bindToStudyWithoutDirName(study, studyProperties);
-        studyDao.update(study);
+        studyDao.merge(study);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 
     /**
-     * Update Study's description and store new description hash in the study log
+     * Update Study's description and store a new description hash in the study log
      */
-    public void updateDescription(Study study, String description, User signedinUser) {
+    public void updateDescription(Study study, String description) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), description);
         study.setDescription(description);
-        studyDao.update(study);
+        studyDao.merge(study);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 
     /**
-     * Update properties of study with properties of updatedStudy (excluding study's dir name). Does not persist.
+     * Update properties of the study with properties of the updatedStudy (excluding study's dir name). Does not
+     * persist.
      */
     public void bindToStudyWithoutDirName(Study study, StudyProperties studyProperties) {
         study.setTitle(studyProperties.getTitle());
@@ -320,10 +349,10 @@ public class StudyService {
     /**
      * Renames the directory in the file system and persists the study's property.
      */
-    public void renameStudyAssetsDir(Study study, String newDirName) throws IOException {
+    public void renameStudyAssetsDir(Study study, String newDirName) {
         ioUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
         study.setDirName(newDirName);
-        studyDao.update(study);
+        studyDao.merge(study);
     }
 
     /**
@@ -352,7 +381,7 @@ public class StudyService {
      * Validates the study by converting it to StudyProperties and uses its validate method. Throws ValidationException
      * in case of an error.
      */
-    public void validate(Study study) throws ValidationException {
+    public void validate(Study study) {
         StudyProperties studyProperties = bindToProperties(study);
         if (studyProperties.validate() != null) {
             LOGGER.warn(".validate: " + studyProperties.validate().stream().map(ValidationError::message)
@@ -365,29 +394,33 @@ public class StudyService {
      * Removes the given study, its components, component results, study results, group results and batches and persists
      * the changes to the database. It also deletes the study's assets from the disk.
      */
-    public void removeStudyInclAssets(Study study, User signedinUser) throws IOException {
-        // Remove all study's batches and their StudyResults and GroupResults
-        for (Batch batch : Lists.newArrayList(study.getBatchList())) {
-            batchService.remove(batch, signedinUser);
-        }
+    public void removeStudyInclAssets(Study study) {
+        jpa.withTransaction(em -> {
+            // Remove all study's batches and their StudyResults and GroupResults
+            for (Batch batch : Lists.newArrayList(study.getBatchList())) {
+                batchService.remove(batch);
+            }
 
-        // Remove this study from all member users
-        for (User user : study.getUserList()) {
-            user.removeStudy(study);
-            userDao.update(user);
-        }
+            // Remove this study from all member users
+            for (User user : study.getUserList()) {
+                user.removeStudy(study);
+                userDao.merge(user);
+            }
 
-        // Remove study. This also removes all study's components and their ComponentResults via cascading.
-        studyDao.remove(study);
+            // Remove study. This also removes all study's components and their ComponentResults via cascading.
+            studyDao.remove(study);
 
-        ioUtils.removeStudyAssetsDir(study.getDirName());
-        studyLogger.log(study, signedinUser, "Removed study");
-        studyLogger.retire(study);
+            ioUtils.removeStudyAssetsDir(study.getDirName());
+
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            studyLogger.log(study, signedinUser, "Removed study");
+            studyLogger.retire(study);
+        });
     }
 
-    public Study getStudyFromIdOrUuid(Http.Request request, String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Study getStudyFromIdOrUuid(String idOrUuid) {
         Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study;
         if (studyId.isPresent()) {
             study = studyDao.findById(studyId.get());

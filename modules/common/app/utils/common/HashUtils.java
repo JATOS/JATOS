@@ -4,7 +4,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -48,11 +47,12 @@ public class HashUtils {
     /**
      * Calculates hash for the given file. Converts the byte array into a String of hexadecimal characters.
      */
-    public static String getHash(Path file, String hashFunction) throws IOException {
+    public static String getHash(Path file, String hashFunction) {
         try {
             MessageDigest digest = MessageDigest.getInstance(hashFunction);
             try (InputStream is = Files.newInputStream(file);
                  DigestInputStream dis = new DigestInputStream(is, digest)) {
+                //noinspection StatementWithEmptyBody - intentionally empty
                 while ((dis.read()) != -1) {
                 }
 
@@ -61,6 +61,8 @@ public class HashUtils {
             return bytesToHex(hashByte);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
         }
     }
 
@@ -93,14 +95,19 @@ public class HashUtils {
     /**
      * Uses Adler32 to calculate a checksum of a file
      */
-    public static long getChecksum(File file) throws IOException {
-        byte[] tempBuf = new byte[128];
-        FileInputStream is = new FileInputStream(file);
-        CheckedInputStream cis = new CheckedInputStream(is, new Adler32());
-        //noinspection StatementWithEmptyBody - intentionally empty
-        while (cis.read(tempBuf) >= 0) {
+    public static long getChecksum(File file) {
+        try {
+            byte[] tempBuf = new byte[128];
+            FileInputStream is = new FileInputStream(file);
+            CheckedInputStream cis = new CheckedInputStream(is, new Adler32());
+            //noinspection StatementWithEmptyBody - intentionally empty
+            while (cis.read(tempBuf) >= 0) {
+            }
+            return cis.getChecksum().getValue();
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
+
         }
-        return cis.getChecksum().getValue();
     }
 
 }

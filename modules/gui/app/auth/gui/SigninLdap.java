@@ -1,7 +1,10 @@
 package auth.gui;
 
 import com.google.common.base.Strings;
+import exceptions.common.AuthException;
 import general.common.Common;
+import general.common.MessagesStrings;
+import play.Logger;
 
 import javax.inject.Singleton;
 import javax.naming.AuthenticationException;
@@ -19,6 +22,8 @@ import java.util.Hashtable;
 @Singleton
 public class SigninLdap {
 
+    private static final Logger.ALogger LOGGER = Logger.of(SigninLdap.class);
+
     /**
      * Authenticates the given user via an external LDAP server. It throws an {@link NamingException} if the LDAP server
      * can't be reached or the LDAP URL or Base DN is wrong. It allows multiple base DNs and tries to authenticate
@@ -26,20 +31,25 @@ public class SigninLdap {
      * authenticates- if not, it tries to authenticate right away. The username is used as the uid in LDAP.
      * https://stackoverflow.com/a/24752175/1278769
      */
-    public boolean authenticate(String username, String password) throws NamingException {
+    public boolean authenticate(String username, String password) {
         if (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)) return false;
 
         // Try authentication against each base DN
-        for (String baseDn : Common.getLdapBaseDn()) {
-            if (Strings.isNullOrEmpty(Common.getLdapAdminDn())) {
-                String userDn = Common.getLdapUserAttribute() + "=" + username + "," + baseDn;
-                if (authenticateUser(userDn, password)) return true;
-            } else {
-                String userDn = searchUser(username, baseDn);
-                if (userDn != null && authenticateUser(userDn, password)) return true;
+        try {
+            for (String baseDn : Common.getLdapBaseDn()) {
+                if (Strings.isNullOrEmpty(Common.getLdapAdminDn())) {
+                    String userDn = Common.getLdapUserAttribute() + "=" + username + "," + baseDn;
+                    if (authenticateUser(userDn, password)) return true;
+                } else {
+                    String userDn = searchUser(username, baseDn);
+                    if (userDn != null && authenticateUser(userDn, password)) return true;
+                }
             }
+            return false;
+        } catch (NamingException e) {
+            LOGGER.warn("LDAP problems - " + e);
+            throw new AuthException(MessagesStrings.LDAP_PROBLEMS);
         }
-        return false;
     }
 
     private boolean authenticateUser(String userDn, String password) throws NamingException {

@@ -3,7 +3,6 @@ package controllers.publix;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.PublixException;
 import general.common.Common;
 import general.common.StudyLogger;
 import group.GroupAdministration;
@@ -188,8 +187,8 @@ public class PublixTest {
         assertEquals(ComponentState.DATA_RETRIEVED, cr.getComponentState());
         // StudyResult should be DATA_RETRIEVED if it was not PRE
         assertEquals(StudyState.DATA_RETRIEVED, sr.getStudyState());
-        verify(componentResultDao).update(cr);
-        verify(studyResultDao).update(sr);
+        verify(componentResultDao).merge(cr);
+        verify(studyResultDao).merge(sr);
     }
 
     @Test
@@ -218,7 +217,7 @@ public class PublixTest {
         assertNotNull(sr.getLastSeenDate());
         Timestamp after = sr.getLastSeenDate();
         assertTrue(after.getTime() - before.getTime() > 0);
-        verify(studyResultDao).update(sr);
+        verify(studyResultDao).merge(sr);
     }
 
     @Test

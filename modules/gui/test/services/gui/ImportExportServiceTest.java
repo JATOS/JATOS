@@ -3,7 +3,7 @@ package services.gui;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
+import exceptions.common.ForbiddenException;
 import general.common.Common;
 import models.common.Component;
 import models.common.Study;
@@ -273,7 +273,7 @@ public class ImportExportServiceTest {
         verify(studyService).updateStudyWithoutDirName(eq(current), eq(uploaded), eq(user));
         // components updating called (we verify the interactions of componentService indirectly)
         verify(componentService, atLeastOnce()).updateProperties(any(Component.class), any(Component.class));
-        verify(studyDao).update(eq(current));
+        verify(studyDao).merge(eq(current));
         // cleanup not called here (separate method), ensure jas file delete attempted via actual code
         assertThat(temp.jasFile.exists()).isFalse();
 

@@ -15,30 +15,15 @@ import models.common.workers.Worker;
 public class PublixHelpers {
 
     /**
-     * Checks if the worker finished this study already at least once. 'Finished' includes failed and aborted.
+     * True if StudyResult's state is in FINISHED or ABORTED or FAIL. False otherwise.
      */
-    public static boolean finishedStudyAlready(Worker worker, Study study) {
-        for (StudyResult studyResult : worker.getStudyResultList()) {
-            if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * True if StudyResult's state is in FINISHED or ABORTED or FAIL. False
-     * otherwise.
-     */
-    public static boolean studyDone(StudyResult studyResult) {
+    public static boolean studyRunDone(StudyResult studyResult) {
         StudyState state = studyResult.getStudyState();
-        return state == StudyState.FINISHED || state == StudyState.ABORTED
-                || state == StudyState.FAIL;
+        return state == StudyState.FINISHED || state == StudyState.ABORTED || state == StudyState.FAIL;
     }
 
     /**
-     * True if ComponentResult's state is in FINISHED or ABORTED or FAIL or
-     * RELOADED. False otherwise.
+     * True if ComponentResult's state is in FINISHED or ABORTED or FAIL or RELOADED. False otherwise.
      */
     public static boolean componentDone(ComponentResult componentResult) {
         ComponentState state = componentResult.getComponentState();
@@ -49,8 +34,7 @@ public class PublixHelpers {
     }
 
     public static boolean isPreviewWorker(Worker worker) {
-        return worker instanceof PersonalSingleWorker
-                || worker instanceof GeneralSingleWorker;
+        return worker instanceof PersonalSingleWorker || worker instanceof GeneralSingleWorker;
     }
 
 }

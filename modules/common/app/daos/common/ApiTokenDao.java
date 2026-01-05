@@ -6,6 +6,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,12 +23,12 @@ public class ApiTokenDao extends AbstractDao {
         super(jpa);
     }
 
-    public void create(ApiToken apiToken) {
-        persist(apiToken);
+    public void persist(ApiToken apiToken) {
+        super.persist(apiToken);
     }
 
-    public void update(ApiToken apiToken) {
-        merge(apiToken);
+    public ApiToken merge(ApiToken apiToken) {
+        return super.merge(apiToken);
     }
 
     public void remove(ApiToken apiToken) {
@@ -35,13 +36,11 @@ public class ApiTokenDao extends AbstractDao {
     }
 
     public ApiToken find(Long id) {
-        return jpa.withTransaction(em -> {
-            return em.find(ApiToken.class, id);
-        });
+        return jpa.withTransaction("default", true, (EntityManager em) -> em.find(ApiToken.class, id));
     }
 
     public Optional<ApiToken> findByHash(String tokenHash) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT t FROM ApiToken t " +
                     "LEFT JOIN FETCH t.user u " +
                     "LEFT JOIN FETCH u.studyList " +
@@ -55,11 +54,10 @@ public class ApiTokenDao extends AbstractDao {
 
     public List<ApiToken> findByUser(User user) {
         String queryStr = "SELECT t FROM ApiToken t WHERE t.user = :user";
-        return jpa.withTransaction(em -> {
-            return em.createQuery(queryStr, ApiToken.class)
-                    .setParameter("user", user)
-                    .getResultList();
-        });
+        return jpa.withTransaction("default", true, (EntityManager em) ->
+                em.createQuery(queryStr, ApiToken.class)
+                .setParameter("user", user)
+                .getResultList());
     }
 
 }

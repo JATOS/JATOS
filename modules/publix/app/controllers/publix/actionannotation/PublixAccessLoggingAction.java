@@ -15,8 +15,7 @@ import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Annotation definition for Play actions: logging of each action call, e.g.
- * 'publix_access - GET /publix/19/64/start'
+ * Annotation definition for Play actions: logging of each action call, e.g. 'publix_access - GET /publix/19/64/start'
  *
  * @author Kristian Lange (2016)
  */

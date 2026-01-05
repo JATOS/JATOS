@@ -42,6 +42,7 @@ public class LoginAttempt {
         this.date = new Timestamp(new Date().getTime());
     }
 
+    @SuppressWarnings("unused")
     public LoginAttempt() {
     }
 
@@ -63,10 +64,6 @@ public class LoginAttempt {
 
     public String getRemoteAddress() {
         return remoteAddress;
-    }
-
-    public void setRemoteAddress(String remoteAddress) {
-        this.remoteAddress = remoteAddress;
     }
 
     public Timestamp getDate() {

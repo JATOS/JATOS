@@ -19,10 +19,10 @@ import static play.mvc.Http.Cookie.builder;
 /**
  * Manages the GeneralSingle cookie. This cookie exists only with GeneralSingle workers. In this cookie is stored which
  * studies where done in the browser where the cookie originates. This provides an easy way to check whether a
- * GeneralSingle worker tries to run the same study a second time (which is not allowed). Note, that it is easy to get
+ * GeneralSingle worker tries to run the same study a second time (which is not allowed). Note that it is easy to get
  * around this mechanism by deleting the cookie in the browser.
  *
- * A GeneralSingle cookie consists of a list of tuples storing the study ID and worker ID. With the cookie's data it is
+ * A GeneralSingle cookie consists of a list of tuples storing the study ID and worker ID. With the cookie's data, it is
  * possible to determine whether in this browser this study was done already with a GeneralSingle worker and by which
  * worker it was done.
  *
@@ -44,7 +44,7 @@ public class GeneralSingleCookieService {
     private static final String COOKIE_LIST_DELIMITER = "&";
 
     /**
-     * Returns the worker ID of the GeneralSingleWorker that belongs to the given study - or null, if it doesn't exist.
+     * Returns the worker ID of the GeneralSingleWorker that belongs to the given study - or null if it doesn't exist.
      * If the study was run before the study UUID has been stored together with the worker ID in the cookie.
      */
     public Long fetchWorkerIdByStudy(Http.Request request, Study study) {
@@ -91,7 +91,7 @@ public class GeneralSingleCookieService {
 
     /**
      * Sets the cookie in the response. The cookie will contain all GeneralSingle studies done in this browser and
-     * adds the given study (and worker). This cookie is HTTP only and has an expire date in the far future.
+     * adds the given study (and worker). This cookie is HTTP only and has an expiry date in the far future.
      */
     public Cookie get(Http.Request request, Study study, Worker worker) {
         Optional<Cookie> currentCookie = request.getCookie(COOKIE_NAME);

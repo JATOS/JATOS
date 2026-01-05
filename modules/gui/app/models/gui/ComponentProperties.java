@@ -20,27 +20,18 @@ import java.util.List;
 @Constraints.Validate
 public class ComponentProperties implements Constraints.Validatable<List<ValidationError>> {
 
-    /**
-     * Version of this model used for serialisation (e.g. JSON marshaling)
-     */
-    public static final int SERIAL_VERSION = 1;
-
     public static final String ID = "id";
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String HTML_FILE_PATH = "htmlFilePath";
-    public static final String HTML_FILE_RENAME = "htmlFileRename";
-    public static final String HTML_FILE_EXISTS = "htmlFileExists";
     public static final String JSON_DATA = "jsonData";
-    public static final String RELOADABLE = "reloadable";
     public static final String ACTIVE = "active";
     public static final String COMMENTS = "comments";
-    public static final String COMPONENT = "component";
 
     private Long id;
 
     /**
-     * Universally, (world-wide) unique ID. Used for import/export between different JATOS instances. A study can have
+     * Universally, (worldwide) unique ID. Used for import/export between different JATOS instances. A study can have
      * only one component with the same UUID, although it is allowed to have other studies that have this component with
      * this UUID.
      */
@@ -88,7 +79,8 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
 
     private String jsonData;
 
-    public ComponentProperties() {}
+    public ComponentProperties() {
+    }
 
     public void setId(Long id) {
         this.id = id;
@@ -146,6 +138,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
         return htmlFileRename;
     }
 
+    @SuppressWarnings("unused")
     public void setHtmlFileRename(boolean htmlFileRename) {
         this.htmlFileRename = htmlFileRename;
     }

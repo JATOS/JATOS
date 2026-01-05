@@ -4,8 +4,6 @@ import auth.gui.AuthService;
 import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import models.common.Study;
 import models.common.User;
 import models.gui.NewUserModel;

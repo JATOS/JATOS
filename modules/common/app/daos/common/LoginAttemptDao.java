@@ -5,6 +5,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.persistence.EntityManager;
 import java.util.Calendar;
 
 /**
@@ -20,12 +21,12 @@ public class LoginAttemptDao extends AbstractDao {
         super(jpa);
     }
 
-    public void create(LoginAttempt loginAttempt) {
-        persist(loginAttempt);
+    public void persist(LoginAttempt loginAttempt) {
+        super.persist(loginAttempt);
     }
 
-    public void update(LoginAttempt loginAttempt) {
-        merge(loginAttempt);
+    public LoginAttempt merge(LoginAttempt loginAttempt) {
+        return super.merge(loginAttempt);
     }
 
     public void remove(LoginAttempt loginAttempt) {
@@ -33,9 +34,8 @@ public class LoginAttemptDao extends AbstractDao {
     }
 
     public LoginAttempt find(Long id) {
-        return jpa.withTransaction(em -> {
-            return em.find(LoginAttempt.class, id);
-        });
+        return jpa.withTransaction("default", true, (EntityManager em) ->
+                em.find(LoginAttempt.class, id));
     }
 
     public void removeByUsername(String username) {
@@ -63,7 +63,7 @@ public class LoginAttemptDao extends AbstractDao {
      * Returns the count of LoginAttempts that happened within the last minute for the given username and remoteAddress
      */
     public int countLoginAttemptsOfLastMin(String username, String remoteAddress) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, -1);
             Number result = (Number) em.createQuery("SELECT COUNT(la) FROM LoginAttempt la " +

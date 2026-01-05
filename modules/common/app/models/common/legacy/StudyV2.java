@@ -2,17 +2,11 @@ package models.common.legacy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.base.Strings;
-import general.common.MessagesStrings;
+import daos.common.worker.WorkerType;
 import models.common.Component;
+import models.common.Study;
 import models.common.User;
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
-import play.data.validation.ValidationError;
-import utils.common.IOUtils;
+import models.common.workers.WorkerTypeConverter;
 import utils.common.JsonUtils;
 
 import javax.persistence.*;
@@ -21,8 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Old model kept for deserialization JSON of old versions!
@@ -31,29 +23,13 @@ import java.util.regex.Pattern;
  */
 public class StudyV2 {
 
-    /**
-     * Version of this model used for serialization
-     */
-    public static final String SERIAL_VERSION = "2";
-
-    public static final String ID = "id";
-    public static final String UUID = "uuid";
-    public static final String MEMBERS = "user";
-    public static final String TITLE = "title";
-    public static final String JSON_DATA = "jsonData";
-    public static final String DESCRIPTION = "description";
-    public static final String DIR_NAME = "dirName";
-    public static final String COMMENTS = "comments";
-    public static final String STUDY = "study";
-    public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
-
     @Id
     @GeneratedValue
     @JsonView(JsonUtils.JsonForPublix.class)
     private Long id;
 
     /**
-     * Universally (world-wide) unique ID. Used for import/export between different JATOS instances. On one JATOS
+     * Universally unique ID. Used for import/export between different JATOS instances. On one JATOS
      * instance it is only allowed to have one study with the same UUID.
      */
     @Column(unique = true, nullable = false)
@@ -85,7 +61,8 @@ public class StudyV2 {
      */
     @JsonView(JsonUtils.JsonForIO.class)
     @ElementCollection
-    private Set<String> allowedWorkerList = new HashSet<>();
+    @Convert(converter = WorkerTypeConverter.class)
+    private Set<WorkerType> allowedWorkerList = new HashSet<>();
 
     /**
      * Study assets directory name
@@ -130,9 +107,9 @@ public class StudyV2 {
 
     public StudyV2() {
         // Add default allowed workers
-        addAllowedWorker(JatosWorker.WORKER_TYPE);
-        addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
-        addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+        addAllowedWorker(WorkerType.JATOS);
+        addAllowedWorker(WorkerType.PERSONAL_SINGLE);
+        addAllowedWorker(WorkerType.PERSONAL_MULTIPLE);
     }
 
     public void setId(Long id) {
@@ -207,24 +184,16 @@ public class StudyV2 {
         this.jsonData = jsonData;
     }
 
-    public void setAllowedWorkerList(Set<String> allowedWorkerList) {
+    public void setAllowedWorkerList(Set<WorkerType> allowedWorkerList) {
         this.allowedWorkerList = allowedWorkerList;
     }
 
-    public Set<String> getAllowedWorkerList() {
+    public Set<WorkerType> getAllowedWorkerList() {
         return this.allowedWorkerList;
     }
 
-    public void addAllowedWorker(String workerType) {
+    public void addAllowedWorker(WorkerType workerType) {
         allowedWorkerList.add(workerType);
-    }
-
-    public void removeAllowedWorker(String workerType) {
-        allowedWorkerList.remove(workerType);
-    }
-
-    public boolean hasAllowedWorker(String workerType) {
-        return allowedWorkerList.contains(workerType);
     }
 
     public void setUserList(Set<User> userList) {
@@ -235,18 +204,6 @@ public class StudyV2 {
         return userList;
     }
 
-    public void addMember(User user) {
-        userList.add(user);
-    }
-
-    public void removeMember(User user) {
-        userList.remove(user);
-    }
-
-    public boolean hasMember(User user) {
-        return userList.contains(user);
-    }
-
     public void setComponentList(List<Component> componentList) {
         this.componentList = componentList;
     }
@@ -255,89 +212,18 @@ public class StudyV2 {
         return this.componentList;
     }
 
-    /**
-     * Gets the component of this study at the given position. The smallest position is 1 (and not 0 as in an array).
-     */
-    public Component getComponent(int position) {
-        return componentList.get(position - 1);
-    }
-
-    /**
-     * Returns the position (index+1) of the component in the list of components of this study or null if it doesn't
-     * exist.
-     */
-    public Integer getComponentPosition(Component component) {
-        int index = componentList.indexOf(component);
-        if (index != -1) {
-            return index + 1;
-        } else {
-            return null;
-        }
-    }
-
-    public void addComponent(Component component) {
-        componentList.add(component);
-    }
-
-    public void removeComponent(Component component) {
-        componentList.remove(component);
-    }
-
-    public boolean hasComponent(Component component) {
-        return componentList.contains(component);
-    }
-
-    @JsonIgnore
-    public Component getFirstComponent() {
-        if (componentList.size() > 0) {
-            return componentList.get(0);
-        }
-        return null;
-    }
-
-    @JsonIgnore
-    public Component getLastComponent() {
-        if (componentList.size() > 0) {
-            return componentList.get(componentList.size() - 1);
-        }
-        return null;
-    }
-
-    @JsonIgnore
-    public Component getNextComponent(Component component) {
-        int index = componentList.indexOf(component);
-        if (index < componentList.size() - 1) {
-            return componentList.get(index + 1);
-        }
-        return null;
-    }
-
-    public List<ValidationError> validate() {
-        List<ValidationError> errorList = new ArrayList<>();
-        if (title == null || title.trim().isEmpty()) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
-        }
-        if (title != null && !Jsoup.isValid(title, Safelist.none())) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
-        }
-        if (description != null && !Jsoup.isValid(description, Safelist.none())) {
-            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
-        }
-        if (dirName == null || dirName.trim().isEmpty()) {
-            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.MISSING_DIR_NAME));
-        }
-        Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
-        Matcher matcher = pattern.matcher(dirName);
-        if (dirName != null && matcher.find()) {
-            errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
-        }
-        if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
-        }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
-        }
-        return errorList.isEmpty() ? null : errorList;
+    public Study toStudy() {
+        Study study = new Study();
+        study.setUuid(getUuid());
+        study.setTitle(getTitle());
+        study.setDescription(getDescription());
+        study.setDate(getDate());
+        study.setLocked(isLocked());
+        study.setDirName(getDirName());
+        study.setComments(getComments());
+        study.setJsonData(getJsonData());
+        study.setComponentList(getComponentList());
+        return study;
     }
 
     @Override

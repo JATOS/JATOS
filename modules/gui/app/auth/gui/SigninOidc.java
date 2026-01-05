@@ -1,5 +1,6 @@
 package auth.gui;
 
+import actions.common.AsyncAction.Executor;
 import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -19,11 +20,9 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
+import actions.common.AsyncAction.Async;
 import daos.common.UserDao;
-import exceptions.gui.AuthException;
-import general.gui.FlashScopeMessaging;
+import exceptions.common.AuthException;
 import models.common.User;
 import models.gui.NewUserModel;
 import play.Logger;
@@ -46,19 +45,20 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
+import static messaging.common.FlashScopeMessaging.*;
+
 /**
  * OpenID Connect (OIDC) authentication using Authorization Code Flow with Proof Key for Code Exchange (PKCE). OIDC is
  * just used for authentication - authorization and session management are still done with the session cookies from the
  * Play Framework.
- * <p>
+ *
  * This class is meant to be extended by the actual OIDC implementations.
- * <p>
+ *
  * Using library: Nimbus OAuth 2.0 SDK with OpenID Connect extensions
  * https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/guides/java-cookbook-for-openid-connect-public-clients
  *
  * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 public abstract class SigninOidc extends Controller {
 
     private static final ALogger LOGGER = Logger.of(SigninOidc.class);
@@ -165,8 +165,6 @@ public abstract class SigninOidc extends Controller {
      * @throws ParseException     if parsing operations fail while working with OIDC configurations
      * @throws AuthException      if an authentication-related error occurs
      */
-    @GuiAccessLogging
-    @Transactional
     public final Result signin(Http.Request request, String realHostUrl, boolean keepSignedin)
             throws URISyntaxException, ParseException, AuthException {
         oidcConfig.callbackUrl = Helpers.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
@@ -194,7 +192,7 @@ public abstract class SigninOidc extends Controller {
     /**
      * Callback handed to the OIDC provider to be called after authentication
      */
-    @Transactional
+    @Async(Executor.IO)
     public final Result callback(Http.Request request) {
         try {
             AuthorizationCode authorizationCode = getAuthorisationCode(request);
@@ -209,23 +207,23 @@ public abstract class SigninOidc extends Controller {
             User user = persistUserIfNotExisting(userInfo);
 
             String normalizedUsername = getNormalizedUsername(userInfo);
-            boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
+            boolean keepSignedin = Boolean.parseBoolean(request.session().get("keepSignedin").orElse("false"));
             userService.setLastSignin(normalizedUsername);
 
             Result result = redirect(authService.getRedirectPageAfterSignin(user))
                     .addingToSession(request, authService.writeSessionCookie(normalizedUsername, keepSignedin));
             if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
-                result.flashing(FlashScopeMessaging.SUCCESS, oidcConfig.successMsg);
+                result.flashing(SUCCESS, oidcConfig.successMsg);
             }
             return result;
         } catch (AuthException e) {
             LOGGER.warn(".callback: " + e.getMessage());
             return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(FlashScopeMessaging.ERROR, e.getMessage());
+                    .flashing(ERROR, e.getMessage());
         } catch (Exception e) {
             LOGGER.error(".callback: " + e.getMessage());
             return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(FlashScopeMessaging.ERROR, "OIDC error - contact your admin and check the logs for more information.");
+                    .flashing(ERROR, "OIDC error - contact your admin and check the logs for more information.");
         }
     }
 
@@ -251,7 +249,7 @@ public abstract class SigninOidc extends Controller {
         AuthenticationResponse response = AuthenticationResponseParser.parse(new URI(request.uri()));
 
         // Check state, submitted with sign-in request, is still the same
-        Optional<String> state = request.session().getOptional("oidcState");
+        Optional<String> state = request.session().get("oidcState");
         if (!state.isPresent() || !response.getState().getValue().equals(state.get())) {
             throw new AuthException("OIDC error - Unexpected authentication response");
         }
@@ -303,7 +301,7 @@ public abstract class SigninOidc extends Controller {
         JWSAlgorithm jwsAlg = JWSAlgorithm.parse(oidcConfig.idTokenSigningAlgorithm);
         URL jwkSetURL = providerMetadata.getJWKSetURI().toURL();
         IDTokenValidator validator = new IDTokenValidator(issuer, clientID, jwsAlg, jwkSetURL);
-        Nonce expectedNonce = request.session().getOptional("oidcNonce").map(Nonce::new).orElse(null);
+        Nonce expectedNonce = request.session().get("oidcNonce").map(Nonce::new).orElse(null);
         try {
             validator.validate(idToken, expectedNonce);
         } catch (BadJOSEException | JOSEException e) {

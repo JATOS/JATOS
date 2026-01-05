@@ -20,6 +20,7 @@ import java.util.List;
 public class JatosWorker extends Worker {
 
 	public static final String WORKER_TYPE = "Jatos";
+	public static final String SHORT_WORKER_TYPE = "ja";
 	public static final String UI_WORKER_TYPE = "Jatos";
 
 	/**
@@ -42,16 +43,6 @@ public class JatosWorker extends Worker {
 
 	public User getUser() {
 		return this.user;
-	}
-
-	@Override
-	public String getWorkerType() {
-		return WORKER_TYPE;
-	}
-
-	@Override
-	public String getUIWorkerType() {
-		return UI_WORKER_TYPE;
 	}
 
 	@Override

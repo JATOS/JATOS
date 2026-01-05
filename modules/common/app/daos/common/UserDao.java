@@ -5,7 +5,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.TypedQuery;
+import javax.persistence.EntityManager;
 import java.util.List;
 
 /**
@@ -24,12 +24,12 @@ public class UserDao extends AbstractDao {
     /**
      * Persist user (involves creating a JatosWorker)
      */
-    public void create(User user) {
-        persist(user);
+    public void persist(User user) {
+        super.persist(user);
     }
 
-    public void update(User user) {
-        merge(user);
+    public User merge(User user) {
+        return super.merge(user);
     }
 
     public void remove(User user) {
@@ -37,34 +37,43 @@ public class UserDao extends AbstractDao {
     }
 
     public boolean authenticate(String normalizedUsername, String passwordHash) {
-        return jpa.withTransaction(em -> {
-            boolean doesNotExist = em.createQuery(
-                            "SELECT u FROM User u WHERE u.username=:username and u.passwordHash=:passwordHash", User.class)
+        if (normalizedUsername == null || passwordHash == null) return false;
+
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            Long count = em.createQuery(
+                            "SELECT COUNT(u) FROM User u " +
+                                    "WHERE u.username = :username AND u.passwordHash = :passwordHash",
+                            Long.class)
                     .setParameter("username", normalizedUsername)
                     .setParameter("passwordHash", passwordHash)
-                    .setMaxResults(1).getResultList().isEmpty();
-            return !doesNotExist;
+                    .getSingleResult();
+            return count != null && count > 0;
         });
     }
 
     public User findByUsername(String normalizedUsername) {
-        return jpa.withTransaction(em -> {
-            return em.find(User.class, normalizedUsername);
-        });
+        return jpa.withTransaction((EntityManager em) -> em.find(User.class, normalizedUsername));
     }
 
     public List<User> findAll() {
-        return jpa.withTransaction(em -> {
-            TypedQuery<User> query = em.createQuery("SELECT u FROM User u", User.class);
-            return query.getResultList();
-        });
+        return jpa.withTransaction("default", true, (EntityManager em) ->
+                em.createQuery("SELECT u FROM User u", User.class).getResultList());
+    }
+
+    /**
+     * Returns a list of all users and eagerly fetches their studyList.
+     */
+    public List<User> findAllWithStudies() {
+        return jpa.withTransaction("default", true, (EntityManager em) ->
+                em.createQuery("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.studyList", User.class)
+                        .getResultList());
     }
 
     /**
      * Returns the number of User rows
      */
     public int count() {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, em -> {
             Number result = (Number) em.createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -74,7 +83,7 @@ public class UserDao extends AbstractDao {
      * Returns the users with the most recent lastSeen datetime field. Limit the number by 'limit'.
      */
     public List<User> findLastSeen(int limit) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, em -> {
             return em.createQuery("SELECT u FROM User u ORDER BY lastSeen DESC", User.class)
                     .setMaxResults(limit)
                     .getResultList();

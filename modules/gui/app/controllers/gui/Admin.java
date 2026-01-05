@@ -1,12 +1,13 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import general.common.Http.Context;
+import actions.common.AsyncAction.Executor;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
-import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
@@ -37,6 +38,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
@@ -44,11 +46,9 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class Admin extends Controller {
 
-    private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final StudyResultDao studyResultDao;
@@ -58,10 +58,13 @@ public class Admin extends Controller {
     private final IOUtils ioUtils;
 
     @Inject
-    Admin(AuthService authService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-          StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService,
+    Admin(BreadcrumbsService breadcrumbsService,
+          StudyDao studyDao,
+          StudyResultDao studyResultDao,
+          UserDao userDao,
+          LogFileReader logFileReader,
+          AdminService adminService,
           IOUtils ioUtils) {
-        this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
@@ -74,11 +77,11 @@ public class Admin extends Controller {
     /**
      * Returns admin page
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     @SaveLastVisitedPageUrl
     public Result administration(Http.Request request) {
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String breadcrumbs = breadcrumbsService.generateForAdministration(null);
         return ok(views.html.gui.admin.admin.render(signedinUser, breadcrumbs, request.asScala()));
     }
@@ -86,7 +89,7 @@ public class Admin extends Controller {
     /**
      * Returns the content (all regular file's names) of the logs directory as JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result listLogs() throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(Common.getLogsPath()))) {
@@ -102,19 +105,19 @@ public class Admin extends Controller {
     /**
      * For backward compatibility. Uses logs.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result log(Integer lineLimit) throws IOException {
         return logs("application.log", lineLimit, true);
     }
 
     /**
-     * Returns the log file specified by 'filename'. If 'reverse' is true, it returns the content of the file in
-     * reverse order and as 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If the
-     * log file can't be read it still returns with OK but instead of the file content with an error message.
-     * If 'reverse' is false it returns the file for download.
+     * Returns the log file specified by 'filename'. If 'reverse' is true, it returns the content of the file in reverse
+     * order and as 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If the log file
+     * can't be read it still returns with OK but instead of the file content with an error message. If 'reverse' is
+     * false it returns the file for download.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result logs(String filename, Integer lineLimit, boolean reverse) {
         filename = Helpers.urlDecode(filename);
@@ -137,28 +140,28 @@ public class Admin extends Controller {
     /**
      * Returns some status values
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
-    public Result status(Http.Request request) {
-        return ok(adminService.getAdminStatus(request));
+    public Result status() {
+        return ok(adminService.getAdminStatus());
     }
 
     /**
      * Returns study manager page
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     @SaveLastVisitedPageUrl
     public Result studyManager(Http.Request request) {
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String breadcrumbs = breadcrumbsService.generateForAdministration(BreadcrumbsService.STUDY_MANAGER);
         return ok(views.html.gui.admin.studyManager.render(signedinUser, breadcrumbs, request.asScala()));
     }
 
     /**
-     * Returns table data for study manager page
+     * Returns table data for the study manager page
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result allStudiesData() {
         List<Study> studyList = studyDao.findAll();
@@ -173,7 +176,7 @@ public class Admin extends Controller {
     /**
      * Returns admin data for all studies that belong to the given user
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
@@ -186,10 +189,10 @@ public class Admin extends Controller {
     /**
      * Returns the study assets folder size of one study
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result studyAssetsSize(Http.Request request, Long studyId) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result studyAssetsSize(Long studyId) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
@@ -199,10 +202,10 @@ public class Admin extends Controller {
     /**
      * Returns the result data size of one study
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result resultDataSize(Http.Request request, Long studyId) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result resultDataSize(Long studyId) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
@@ -213,10 +216,10 @@ public class Admin extends Controller {
     /**
      * Returns the size of all result files of one study
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
-    public Result resultFileSize(Http.Request request, Long studyId) {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result resultFileSize(Long studyId) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");

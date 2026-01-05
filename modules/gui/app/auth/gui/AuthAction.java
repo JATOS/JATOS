@@ -2,10 +2,9 @@ package auth.gui;
 
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthAction.AuthMethod.AuthResult;
-import general.gui.FlashScopeMessaging;
-import general.gui.RequestScopeMessaging;
 import models.common.User;
 import models.common.User.Role;
+import play.libs.typedmap.TypedKey;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -22,6 +21,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+
+import static messaging.common.FlashScopeMessaging.*;
 
 /**
  * This class defines the {@link Auth} annotation used in JATOS GUI and JATOS API. Authentication methods are
@@ -51,6 +52,11 @@ public class AuthAction extends Action<Auth> {
     public @interface Auth {
         Role value() default Role.USER;
     }
+
+    /**
+     * Key name used in {@link general.common.Http.Context} to store the signed-in User
+     */
+    public static final TypedKey<User> SIGNEDIN_USER = TypedKey.create("signedinUser");
 
     /**
      * Interface that every authentication method has to implement.
@@ -129,7 +135,6 @@ public class AuthAction extends Action<Auth> {
 
     public CompletionStage<Result> call(Http.Request request) {
         User.Role necessaryRole = configuration.value();
-        request = RequestScopeMessaging.init(request);
 
         // Try to authenticate with each registered method
         for (AuthMethod authMethod : authMethods) {
@@ -152,7 +157,7 @@ public class AuthAction extends Action<Auth> {
     static CompletionStage<Result> denied(Http.Request request) {
         if (Helpers.isHtmlRequest(request) && !Helpers.isAjax(request)) {
             return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin())
-                    .flashing(FlashScopeMessaging.ERROR, "Failed authentication"));
+                    .flashing(ERROR, "Failed authentication"));
         } else {
             return CompletableFuture.completedFuture(forbidden("Failed authentication"));
         }

@@ -1,5 +1,6 @@
 package daos.common;
 
+import daos.common.worker.WorkerType;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.Worker;
@@ -7,6 +8,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,8 +23,8 @@ public class StudyLinkDao extends AbstractDao {
         super(jpa);
     }
 
-    public StudyLink create(StudyLink studyLink) {
-        persist(studyLink);
+    public StudyLink persist(StudyLink studyLink) {
+        super.persist(studyLink);
         return studyLink;
     }
 
@@ -30,8 +32,8 @@ public class StudyLinkDao extends AbstractDao {
         super.remove(studyLink);
     }
 
-    public void update(StudyLink studyLink) {
-        merge(studyLink);
+    public StudyLink merge(StudyLink studyLink) {
+        return super.merge(studyLink);
     }
 
     public StudyLink findByStudyCode(String studyCode) {
@@ -39,15 +41,15 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public int countAll() {
-        return jpa.withTransaction(em -> {
-            Number result = (Number) em.createQuery("SELECT count(*) FROM StudyLink").getSingleResult();
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            Number result = (Number) em.createQuery("SELECT count(sl) FROM StudyLink sl").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
     }
 
-    public int countByBatchAndWorkerType(Batch batch, String workerType) {
-        return jpa.withTransaction(em -> {
-            String queryStr = "SELECT count(*) FROM StudyLink sr WHERE sr.batch = :batch AND sr.workerType = :workerType";
+    public int countByBatchAndWorkerType(Batch batch, WorkerType workerType) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            String queryStr = "SELECT count(sl) FROM StudyLink sl WHERE sl.batch = :batch AND sl.workerType = :workerType";
             Number result = (Number) em.createQuery(queryStr)
                     .setParameter("batch", batch)
                     .setParameter("workerType", workerType)
@@ -56,8 +58,8 @@ public class StudyLinkDao extends AbstractDao {
         });
     }
 
-    public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, String workerType) {
-        return jpa.withTransaction(em -> {
+    public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, WorkerType workerType) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT sl FROM StudyLink sl " +
                     "LEFT JOIN FETCH sl.worker w " +
                     "WHERE sl.batch = :batch AND sl.workerType = :workerType";
@@ -68,8 +70,8 @@ public class StudyLinkDao extends AbstractDao {
         });
     }
 
-    public Optional<StudyLink> findFirstByBatchAndWorkerType(Batch batch, String workerType) {
-        return jpa.withTransaction(em -> {
+    public Optional<StudyLink> findFirstByBatchAndWorkerType(Batch batch, WorkerType workerType) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.workerType = :workerType";
             List<StudyLink> studyLink = em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)
@@ -81,7 +83,7 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public Optional<StudyLink> findByBatchAndWorker(Batch batch, Worker worker) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.worker = :worker";
             List<StudyLink> studyLink = em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)

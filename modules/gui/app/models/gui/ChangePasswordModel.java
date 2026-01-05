@@ -3,9 +3,8 @@ package models.gui;
 import models.common.User;
 
 /**
- * Model used by the GUI to change a user password. Validation is handled in the
- * AuthenticationValidation (unlike other models where it is handled in the model
- * itself).
+ * Model used by the GUI to change a user password. Validation is handled in the {@link auth.gui.SigninFormValidation}
+ * (unlike other models where it is handled in the model itself).
  *
  * @author Kristian Lange
  */
@@ -23,8 +22,7 @@ public class ChangePasswordModel {
     private String newPasswordRepeat;
 
     /**
-     * In case an user wants to change their own password we need their old
-     * password for authentication.
+     * In case an user wants to change their own password we need their old password for authentication.
      */
     private String oldPassword;
 
@@ -40,6 +38,7 @@ public class ChangePasswordModel {
         return newPassword;
     }
 
+    @SuppressWarnings("unused")
     public void setNewPassword(String newPassword) {
         this.newPassword = newPassword;
     }
@@ -56,6 +55,7 @@ public class ChangePasswordModel {
         return oldPassword;
     }
 
+    @SuppressWarnings("unused")
     public void setOldPassword(String oldPassword) {
         this.oldPassword = oldPassword;
     }

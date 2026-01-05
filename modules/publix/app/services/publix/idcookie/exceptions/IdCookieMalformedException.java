@@ -1,6 +1,8 @@
-package services.publix.idcookie.exception;
+package services.publix.idcookie.exceptions;
 
-@SuppressWarnings("serial")
+/**
+ * Thrown if an ID cookie is malformed. It is on purpose not a subclass of RuntimeException.
+ */
 public class IdCookieMalformedException extends Exception {
 
     public IdCookieMalformedException(String message) {

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model for breadcrumbs used in UI but not persisted in DB
+ * Model for breadcrumbs used in UI
  *
  * @author Kristian Lange
  */

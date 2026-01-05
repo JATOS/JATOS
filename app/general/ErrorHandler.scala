@@ -1,10 +1,7 @@
 package general
 
-import javax.inject.{Inject, Singleton}
-import exceptions.gui.{AuthException, BadRequestException, ForbiddenException, JatosGuiException, NotFoundException}
-import exceptions.publix.{InternalServerErrorPublixException, PublixException}
-
-import javax.naming.NamingException
+import exceptions.common._
+import exceptions.publix._
 import play.api.Logger
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Results._
@@ -13,6 +10,8 @@ import play.mvc.Http
 import utils.common.Helpers
 
 import java.io.IOException
+import javax.inject.{Inject, Singleton}
+import javax.naming.NamingException
 import scala.concurrent._
 
 @Singleton
@@ -45,19 +44,10 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
   }
 
   def onServerError(request: RequestHeader, throwable: Throwable): Future[Result] = {
-    // We use Play's onServerError() to catch JATOS' JatosGuiExceptions and
-    // PublixException. Those exceptions come with a their own result. We
-    // log the exception and show this result.
     Future.successful(
-      throwable match {
-        case e: JatosGuiException =>
-          logger.info(s"JatosGuiException during call ${request.uri}: ${e.getMessage}")
-          e.getSimpleResult.asScala()
-        case e: InternalServerErrorPublixException =>
-          logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e.getMessage}")
-          getErrorResult(e.getHttpStatus, e.getMessage, request)
-        case e: PublixException =>
-          logger.info(s"PublixException during call ${request.uri}: ${e.getMessage}")
+      throwable.getCause match {
+        case e: InternalServerErrorException =>
+          logger.error(s"InternalServerErrorException during call ${request.uri}: ${e.getMessage}")
           getErrorResult(e.getHttpStatus, e.getMessage, request)
         case e: NamingException =>
           logger.error("LDAP error", throwable)
@@ -77,6 +67,12 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
         case e: IOException =>
           logger.info(e.getMessage)
           InternalServerError(e.getMessage)
+        case e: ForbiddenReloadException =>
+          Redirect(controllers.publix.routes.PublixInterceptor.finishStudy(e.getUuid, successful = false, e.getMessage));
+        case e: ForbiddenNonLinearFlowException =>
+          Redirect(controllers.publix.routes.PublixInterceptor.finishStudy(e.getUuid, successful = false, e.getMessage));
+        case e: JatosComponentRunFinishedException =>
+          Redirect(controllers.publix.routes.PublixInterceptor.finishStudy(e.getUuid, successful = true, null));
         case _ =>
           logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."

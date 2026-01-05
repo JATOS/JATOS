@@ -114,7 +114,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     if (groupResult != null && sessionData != null && (!versioning || groupResult.getGroupSessionVersion == version)) {
       groupResult.setGroupSessionData(sessionData.toString)
       groupResult.setGroupSessionVersion(groupResult.getGroupSessionVersion + 1L)
-      groupResultDao.update(groupResult)
+      groupResultDao.merge(groupResult)
       return true
     }
     false
@@ -129,7 +129,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)
-        groupResultDao.update(groupResult)
+        groupResultDao.merge(groupResult)
         List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, TellWhom.SenderOnly))
       } else {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."

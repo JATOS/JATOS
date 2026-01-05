@@ -6,6 +6,7 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
@@ -23,12 +24,12 @@ public class ComponentDao extends AbstractDao {
         super(jpa);
     }
 
-    public void create(Component component) {
-        persist(component);
+    public void persist(Component component) {
+        super.persist(component);
     }
 
-    public void update(Component component) {
-        merge(component);
+    public Component merge(Component component) {
+        return super.merge(component);
     }
 
     /**
@@ -48,10 +49,22 @@ public class ComponentDao extends AbstractDao {
     }
 
     /**
+     * Finds the component by its ID and eagerly fetches the Study it belongs to.
+     */
+    public Component findByIdWithStudy(Long id) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            String queryStr = "SELECT c FROM Component c JOIN FETCH c.study WHERE c.id = :id";
+            return em.createQuery(queryStr, Component.class)
+                    .setParameter("id", id)
+                    .getSingleResult();
+        });
+    }
+
+    /**
      * Finds the component with this UUID
      */
     public Optional<Component> findByUuid(String uuid) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.uuid=:uuid";
             List<Component> componentList = em.createQuery(queryStr, Component.class)
                     .setParameter("uuid", uuid)
@@ -66,11 +79,11 @@ public class ComponentDao extends AbstractDao {
      * Component does not have an index on its UUID field.
      */
     public Optional<Component> findByUuid(String uuid, Study study) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.study=:study AND c.uuid=:uuid";
             List<Component> componentList = em.createQuery(queryStr, Component.class)
-                    .setParameter("uuid", uuid)
                     .setParameter("study", study)
+                    .setParameter("uuid", uuid)
                     .setMaxResults(1)
                     .getResultList();
             return !componentList.isEmpty() ? Optional.of(componentList.get(0)) : Optional.empty();
@@ -78,11 +91,10 @@ public class ComponentDao extends AbstractDao {
     }
 
     /**
-     * Finds all components with the given title and returns them in a list. If
-     * there is none it returns an empty list.
+     * Finds all components with the given title and returns them in a list. If there is none it returns an empty list.
      */
     public List<Component> findByTitle(String title) {
-        return jpa.withTransaction(em -> {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.title=:title";
             TypedQuery<Component> query = em.createQuery(queryStr, Component.class);
             return query.setParameter("title", title).getResultList();

@@ -109,7 +109,7 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
     if (batch != null && sessionData != null && (!versioning || batch.getBatchSessionVersion == version)) {
       batch.setBatchSessionData(sessionData.toString)
       batch.setBatchSessionVersion(batch.getBatchSessionVersion + 1L)
-      batchDao.update(batch)
+      batchDao.merge(batch)
       return true
     }
     false

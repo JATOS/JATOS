@@ -95,10 +95,6 @@ public class ApiToken {
         return tokenHash;
     }
 
-    public void setTokenHash(String tokenHash) {
-        this.tokenHash = tokenHash;
-    }
-
     public String getName() {
         return name;
     }

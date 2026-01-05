@@ -1,4 +1,4 @@
-package models.gui;
+package messaging.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -26,8 +26,24 @@ public class Messages {
     @JsonInclude(Include.NON_NULL)
     private List<String> errorList;
 
+    @SuppressWarnings("unused")
     public List<String> getSuccessList() {
         return successList;
+    }
+
+    @SuppressWarnings("unused")
+    public List<String> getInfoList() {
+        return infoList;
+    }
+
+    @SuppressWarnings("unused")
+    public List<String> getWarningList() {
+        return warningList;
+    }
+
+    @SuppressWarnings("unused")
+    public List<String> getErrorList() {
+        return errorList;
     }
 
     public void success(String success) {
@@ -36,28 +52,16 @@ public class Messages {
         successList.add(success);
     }
 
-    public List<String> getInfoList() {
-        return infoList;
-    }
-
     public void info(String info) {
         if (info == null) return;
         if (infoList == null) infoList = new ArrayList<>();
         infoList.add(info);
     }
 
-    public List<String> getWarningList() {
-        return warningList;
-    }
-
     public void warning(String warning) {
         if (warning == null) return;
         if (warningList == null) warningList = new ArrayList<>();
         warningList.add(warning);
-    }
-
-    public List<String> getErrorList() {
-        return errorList;
     }
 
     public void error(String error) {

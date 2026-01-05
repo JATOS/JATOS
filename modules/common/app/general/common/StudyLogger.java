@@ -250,9 +250,11 @@ public class StudyLogger {
     }
 
     private void streamLogFile(Writer writer, String filePath, int lineLimit) throws IOException {
-        File logFile = new File(filePath);
         writer.write("[");
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.ISO_8859_1)) {
+        try (ReversedLinesFileReader reader = ReversedLinesFileReader.builder()
+                .setPath(filePath)
+                .setCharset(StandardCharsets.ISO_8859_1)
+                .get()) {
             String nextLine = reader.readLine();
             int lineNumber = 1;
             while (hasNextLine(nextLine, lineLimit, lineNumber)) {

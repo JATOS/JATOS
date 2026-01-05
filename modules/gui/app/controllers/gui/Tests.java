@@ -1,11 +1,13 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import actions.common.AsyncAction.Executor;
 import akka.stream.javadsl.Flow;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
+import models.common.User.Role;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
@@ -25,7 +27,6 @@ import static auth.gui.AuthAction.Auth;
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class Tests extends Controller {
 
@@ -36,8 +37,8 @@ public class Tests extends Controller {
         this.userDao = userDao;
     }
 
-    @Transactional
-    @Auth(User.Role.ADMIN)
+    @Async(Executor.IO)
+    @Auth(Role.ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -47,8 +48,8 @@ public class Tests extends Controller {
         return ok();
     }
 
-    @Transactional
-    @Auth(User.Role.ADMIN)
+    @Async(Executor.IO)
+    @Auth(Role.ADMIN)
     public Result testFolderAccess() {
         Map<String, Boolean> folderAccessResults = new HashMap<>();
         folderAccessResults.put("studyAssetsRoot", testFolder(Common.getStudyAssetsRootPath()));
@@ -73,8 +74,8 @@ public class Tests extends Controller {
         return true;
     }
 
-    @Transactional
-    @Auth(User.Role.ADMIN)
+    @Async(Executor.IO)
+    @Auth(Role.ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to a client

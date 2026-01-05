@@ -149,7 +149,7 @@ public class ApiTokensTest {
         when(apiTokenDao.find(5L)).thenReturn(t);
         Result res2 = apiTokens.toggleActive(5L, false);
         assertThat(res2.status()).isEqualTo(NOT_FOUND);
-        verify(apiTokenDao, never()).update(any());
+        verify(apiTokenDao, never()).merge(any());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class ApiTokensTest {
         assertThat(res.status()).isEqualTo(OK);
         // token should be updated with new active flag
         ArgumentCaptor<ApiToken> captor = ArgumentCaptor.forClass(ApiToken.class);
-        verify(apiTokenDao).update(captor.capture());
+        verify(apiTokenDao).merge(captor.capture());
         assertThat(captor.getValue().isActive()).isFalse();
         assertThat(contentAsString(res)).isEqualTo(" ");
     }

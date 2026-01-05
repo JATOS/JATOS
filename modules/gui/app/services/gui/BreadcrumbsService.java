@@ -7,6 +7,7 @@ import models.common.*;
 import models.common.workers.Worker;
 import models.gui.Breadcrumbs;
 import play.libs.Json;
+import play.mvc.Http;
 import utils.common.JsonUtils;
 
 import javax.inject.Singleton;
@@ -56,7 +57,7 @@ public class BreadcrumbsService {
     public String generateForStudy(Study study, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
         if (last != null) {
-            breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
+            breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId(), Http.Status.OK).url());
             breadcrumbs.addBreadcrumb(last, "");
         } else {
             breadcrumbs.addBreadcrumb(study.getTitle(), "");
@@ -66,7 +67,7 @@ public class BreadcrumbsService {
 
     public String generateForBatch(Study study, Batch batch, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
+        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId(), Http.Status.OK).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(),
                 routes.StudyLinks.studyLinks(study.getId()).url());
         if (last != null) {
@@ -77,7 +78,7 @@ public class BreadcrumbsService {
 
     public String generateForGroup(Study study, Batch batch, GroupResult groupResult, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
+        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId(), Http.Status.OK).url());
         breadcrumbs.addBreadcrumb(batch.getTitle(),
                 routes.StudyLinks.studyLinks(study.getId()).url());
         breadcrumbs.addBreadcrumb("Group " + groupResult.getId(), "");
@@ -96,7 +97,7 @@ public class BreadcrumbsService {
 
     public String generateForComponent(Study study, Component component, String last) {
         Breadcrumbs breadcrumbs = new Breadcrumbs();
-        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId()).url());
+        breadcrumbs.addBreadcrumb(study.getTitle(), routes.Studies.study(study.getId(), Http.Status.OK).url());
         breadcrumbs.addBreadcrumb(component.getTitle(), "");
         breadcrumbs.addBreadcrumb(last, "");
         return asJson(breadcrumbs);

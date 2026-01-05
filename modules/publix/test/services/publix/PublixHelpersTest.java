@@ -22,16 +22,16 @@ import static org.junit.Assert.assertTrue;
 public class PublixHelpersTest {
 
     @Test
-    public void studyDone_trueForFinishedAbortedFail_falseOtherwise() {
+    public void studyRunDone_trueForFinishedAbortedFail_falseOtherwise() {
         // True cases
-        assertTrue(PublixHelpers.studyDone(studyResultWithState(StudyState.FINISHED)));
-        assertTrue(PublixHelpers.studyDone(studyResultWithState(StudyState.ABORTED)));
-        assertTrue(PublixHelpers.studyDone(studyResultWithState(StudyState.FAIL)));
+        assertTrue(PublixHelpers.studyRunDone(studyResultWithState(StudyState.FINISHED)));
+        assertTrue(PublixHelpers.studyRunDone(studyResultWithState(StudyState.ABORTED)));
+        assertTrue(PublixHelpers.studyRunDone(studyResultWithState(StudyState.FAIL)));
 
         // False cases
-        assertFalse(PublixHelpers.studyDone(studyResultWithState(StudyState.PRE)));
-        assertFalse(PublixHelpers.studyDone(studyResultWithState(StudyState.STARTED)));
-        assertFalse(PublixHelpers.studyDone(studyResultWithState(StudyState.DATA_RETRIEVED)));
+        assertFalse(PublixHelpers.studyRunDone(studyResultWithState(StudyState.PRE)));
+        assertFalse(PublixHelpers.studyRunDone(studyResultWithState(StudyState.STARTED)));
+        assertFalse(PublixHelpers.studyRunDone(studyResultWithState(StudyState.DATA_RETRIEVED)));
     }
 
     @Test

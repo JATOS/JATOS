@@ -7,8 +7,6 @@ import com.pivovarit.function.ThrowingFunction;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -295,17 +293,17 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
             study.setUuid("123");
             Component component1 = study.getComponentList().get(0);
             component1.setUuid("123");
-            componentDao.update(component1);
+            componentDao.merge(component1);
             Component component2 = study.getComponentList().get(1);
             component2.setUuid("456");
-            componentDao.update(component2);
+            componentDao.merge(component2);
             Component component3 = study.getComponentList().get(2);
             component3.setUuid("789");
-            componentDao.update(component3);
+            componentDao.merge(component3);
             Batch batch = study.getBatchList().get(0);
             batch.setUuid("123");
-            batchDao.update(batch);
-            studyDao.update(study);
+            batchDao.merge(batch);
+            studyDao.merge(study);
         });
 
         // Import part 1: call importStudy()
@@ -403,7 +401,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
             study.getComponentList().remove(0);
             study.getLastComponent().get().setTitle("Another Component Title");
 
-            studyDao.update(study);
+            studyDao.merge(study);
             studyService.renameStudyAssetsDir(study, "another_example_dirname");
         }));
     }

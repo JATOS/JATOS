@@ -1,24 +1,25 @@
 package services.gui;
 
+import general.common.Http.Context;
 import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.NotFoundException;
+import daos.common.worker.WorkerType;
+import exceptions.common.NotFoundException;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
 import play.Logger;
 import play.data.validation.ValidationError;
+import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -26,8 +27,10 @@ import javax.validation.ValidationException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+
 /**
- * Service class for JATOS Controllers (not Publix).
+ * Service class for everything Batch related.
  *
  * @author Kristian Lange
  */
@@ -36,6 +39,7 @@ public class BatchService {
 
     private static final Logger.ALogger LOGGER = Logger.of(BatchService.class);
 
+    private final JPAApi jpa;
     private final ResultRemover resultRemover;
     private final BatchDao batchDao;
     private final StudyDao studyDao;
@@ -45,8 +49,15 @@ public class BatchService {
     private final StudyLogger studyLogger;
 
     @Inject
-    BatchService(ResultRemover resultRemover, BatchDao batchDao, StudyDao studyDao, WorkerDao workerDao,
-            GroupResultDao groupResultDao, StudyLinkDao studyLinkDao, StudyLogger studyLogger) {
+    BatchService(JPAApi jpa,
+                 ResultRemover resultRemover,
+                 BatchDao batchDao,
+                 StudyDao studyDao,
+                 WorkerDao workerDao,
+                 GroupResultDao groupResultDao,
+                 StudyLinkDao studyLinkDao,
+                 StudyLogger studyLogger) {
+        this.jpa = jpa;
         this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
@@ -57,8 +68,7 @@ public class BatchService {
     }
 
     /**
-     * Clones a Batch but does not persists. Doesn't copy batch session data and
-     * version.
+     * Clones a Batch but does not persist. Doesn't copy batch session data and version.
      */
     public Batch clone(Batch batch) {
         Batch clone = new Batch();
@@ -76,7 +86,7 @@ public class BatchService {
     }
 
     /**
-     * Initialises Batch. Does NOT persist.
+     * Initializes Batch. Does NOT persist.
      */
     void createBatch(Batch batch, Study study) {
         initBatch(batch, study);
@@ -84,8 +94,7 @@ public class BatchService {
     }
 
     /**
-     * Create and initialises default Batch. Each Study has a default batch.
-     * Does NOT persist.
+     * Create and initializes default Batch. Each Study has a default batch. Does NOT persist.
      */
     public Batch createDefaultBatch(Study study) {
         Batch batch = new Batch();
@@ -97,31 +106,32 @@ public class BatchService {
     }
 
     /**
-     * Creates batch, initialises it and persists it. Updates study with new
-     * batch.
+     * Creates a batch, initializes it and persists it. Updates study with a new batch.
      */
-    public void createAndPersistBatch(Batch batch, Study study, User signedinUser) {
-        initBatch(batch, study);
-        batch.setStudy(study);
-        if (!study.hasBatch(batch)) {
-            study.addBatch(batch);
-        }
-        batchDao.create(batch);
-        studyDao.update(study);
-        studyLogger.log(study, signedinUser, "Created batch", batch);
+    public void createAndPersistBatch(Batch batch, Study study) {
+        jpa.withTransaction(em -> {
+            initBatch(batch, study);
+            batch.setStudy(study);
+            if (!study.hasBatch(batch)) {
+                study.addBatch(batch);
+            }
+            batchDao.persist(batch);
+            studyDao.merge(study);
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            studyLogger.log(study, signedinUser, "Created batch", batch);
+        });
     }
 
     /**
-     * Add default allowed worker types and all study's Jatos worker. Generates
-     * UUID.
+     * Add default allowed worker types and all study's Jatos worker. Generates UUID.
      */
     private void initBatch(Batch batch, Study study) {
         if (batch.getUuid() == null) {
             batch.setUuid(UUID.randomUUID().toString());
         }
-        batch.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
-        batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
-        batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+        batch.addAllowedWorkerType(WorkerType.JATOS);
+        batch.addAllowedWorkerType(WorkerType.PERSONAL_MULTIPLE);
+        batch.addAllowedWorkerType(WorkerType.PERSONAL_SINGLE);
         study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
         batch.setBatchSessionData("{}");
     }
@@ -136,11 +146,10 @@ public class BatchService {
         batch.setMaxTotalMembers(updatedBatchProps.getMaxTotalMembers());
         batch.setMaxTotalWorkers(updatedBatchProps.getMaxTotalWorkers());
         batch.getAllowedWorkerTypes().clear();
-        updatedBatchProps.getAllowedWorkerTypes()
-                .forEach(batch::addAllowedWorkerType);
+        updatedBatchProps.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
         batch.setComments(updatedBatchProps.getComments());
         batch.setJsonData(updatedBatchProps.getJsonData());
-        batchDao.update(batch);
+        batchDao.merge(batch);
     }
 
     public BatchProperties bindToProperties(Batch batch) {
@@ -158,7 +167,7 @@ public class BatchService {
         if (batch.getAllowedWorkerTypes() != null) {
             batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
         } else {
-            props.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+            props.addAllowedWorkerType(WorkerType.JATOS);
         }
         props.setComments(batch.getComments());
         props.setJsonData(batch.getJsonData());
@@ -211,19 +220,17 @@ public class BatchService {
         } else {
             currentBatch.setBatchSessionData(batchSession.getData());
         }
-        batchDao.update(currentBatch);
+        batchDao.merge(currentBatch);
         return true;
     }
 
     /**
-     * Gets the batch with given ID from the database or if the batchId is -1
-     * returns the default batch of this study. If the batch doesn't exist it throws an
-     * NotFoundException.
+     * Gets the batch with a given ID from the database or if the batchId is -1 returns the default batch of this study.
+     * If the batch doesn't exist, it throws a NotFoundException.
      */
-    public Batch fetchBatch(Long batchId, Study study) throws NotFoundException {
+    public Batch fetchBatch(Long batchId, Study study) {
         if (batchId == -1) {
-            // The default batch is always the first one in study's batch list
-            return study.getDefaultBatch();
+            return batchDao.findDefaultBatchByStudy(study);
         } else {
             Batch batch = batchDao.findById(batchId);
             if (batch == null) throw new NotFoundException("Batch with ID " + batchId + " does not exist");
@@ -232,53 +239,53 @@ public class BatchService {
     }
 
     /**
-     * Removes batch, all it's StudyResults, ComponentResults, GroupResults and
-     * Workers (if they don't belong to another batch) and persists the changes
-     * to the database.
+     * Removes batch, all it's StudyResults, ComponentResults, GroupResults and Workers (if they don't belong to another
+     * batch) and persists the changes to the database.
      */
-    public void remove(Batch batch, User signedinUser) {
-        // Remove this Batch from its study
-        Study study = batch.getStudy();
-        study.removeBatch(batch);
-        studyDao.update(study);
+    public void remove(Batch batch) {
+        jpa.withTransaction(entityManager -> {
+            // Remove this Batch from its study
+            Study study = batch.getStudy();
+            study.removeBatch(batch);
+            studyDao.merge(study);
 
-        // Delete all StudyResults and all ComponentResults
-        resultRemover.removeAllStudyResults(batch, signedinUser);
+            // Delete all StudyResults and all ComponentResults
+            resultRemover.removeAllStudyResults(batch);
 
-        // Delete all StudyLinks that belong to this Batch
-        studyLinkDao.removeAllByBatch(batch);
+            // Delete all StudyLinks that belong to this Batch
+            studyLinkDao.removeAllByBatch(batch);
 
-        // Delete all GroupResults
-        groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
+            // Delete all GroupResults
+            groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
 
-        // Remove or update Workers of this batch
-        for (Worker worker : batch.getWorkerList()) {
-            removeOrUpdateJatosWorker(batch, worker);
-            removeOrUpdateNonJatosWorkers(batch, worker);
-        }
+            // Remove or update Workers of this batch
+            for (Worker worker : batch.getWorkerList()) {
+                removeOrUpdateJatosWorker(batch, worker);
+                removeOrUpdateNonJatosWorkers(batch, worker);
+            }
 
-        batchDao.remove(batch);
-        studyLogger.log(study, signedinUser, "Removed batch", batch);
+            batchDao.remove(batch);
+
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            studyLogger.log(study, signedinUser, "Removed batch", batch);
+        });
     }
 
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {
-        // We can't check type with 'instanceof JatosWorker' because sometimes
-        // Hibernate doesn't map the proper type
-        if (!worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
+        // We can't check type with 'instanceof JatosWorker' because sometimes Hibernate doesn't map the proper type
+        if (worker.getWorkerType() != WorkerType.JATOS) {
             return;
         }
 
-        // If worker is part of other batches just remove this batch
+        // If the worker is part of other batches, just remove this batch
         if (worker.getBatchList().size() != 1) {
             worker.removeBatch(batch);
-            workerDao.update(worker);
+            workerDao.merge(worker);
             return;
         }
 
-        // This is a Hibernate issue: If this worker was a JatosWorker
-        // before but its user was already deleted it's not instance of
-        // JatosWorker anymore. But anyway, since the worker is only in this
-        // batch, now it can be removed.
+        // This is a Hibernate issue: If this worker was a JatosWorker before but its user was already deleted, it's not
+        // an instance of JatosWorker anymore. But anyway, since the worker is only in this batch, now it can be removed.
         if (!(worker instanceof JatosWorker)) {
             workerDao.remove(worker);
             return;
@@ -287,32 +294,29 @@ public class BatchService {
         // Worker is only in this batch
         JatosWorker jatosWorker = (JatosWorker) worker;
         if (jatosWorker.getUser() == null) {
-            // Last one in batch list and User gone -> remove worker
+            // Last one in the batch list and User gone -> remove worker
             workerDao.remove(worker);
         } else {
-            // If the JatosWorker's User still exist don't remove
+            // If the JatosWorker's User does still exist, don't remove
             worker.removeBatch(batch);
-            workerDao.update(worker);
+            workerDao.merge(worker);
         }
     }
 
     private void removeOrUpdateNonJatosWorkers(Batch batch, Worker worker) {
-        // We can't check type with 'instanceof JatosWorker' because sometimes
-        // Hibernate doesn't map the proper type
-        if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
+        // We can't check type with 'instanceof JatosWorker' because sometimes Hibernate doesn't map the proper type
+        if (worker.getWorkerType() == WorkerType.JATOS) {
             return;
         }
 
         if (worker.getBatchList().size() == 1) {
-            // If this worker does not belong to any other batches remove it
-            // from the database
+            // If this worker does not belong to any other batches, remove it from the database
             workerDao.remove(worker);
         } else {
-            // If this worker belongs to other batches it can't be removed
-            // from the database but this batch has to be removed from the
-            // worker's batch list
+            // If this worker belongs to other batches, it can't be removed from the database, but this batch has to be
+            // removed from the worker's batch list
             worker.removeBatch(batch);
-            workerDao.update(worker);
+            workerDao.merge(worker);
         }
     }
 
@@ -320,7 +324,7 @@ public class BatchService {
      * Validates the batch by converting it to BatchProperties and uses its validate method. Throws ValidationException
      * in case of an error.
      */
-    public void validate(Batch batch) throws ValidationException {
+    public void validate(Batch batch) {
         BatchProperties batchProperties = bindToProperties(batch);
         if (batchProperties.validate() != null) {
             LOGGER.warn(".validate: " + batchProperties.validate().stream().map(ValidationError::message)

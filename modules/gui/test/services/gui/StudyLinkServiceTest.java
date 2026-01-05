@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.BadRequestException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyLink;
@@ -78,12 +78,12 @@ public class StudyLinkServiceTest {
         assertThat(node.get(0).asText()).isNotEmpty();
 
         // Worker creation happened with decoded comment
-        verify(workerDao).create(workerCaptor.capture());
+        verify(workerDao).persist(workerCaptor.capture());
         Worker created = workerCaptor.getValue();
         assertEquals("Hello World+plus", created.getComment());
 
-        verify(studyLinkDao, times(1)).create(any(StudyLink.class));
-        verify(batchDao, times(1)).update(eq(defaultBatch));
+        verify(studyLinkDao, times(1)).persist(any(StudyLink.class));
+        verify(batchDao, times(1)).merge(eq(defaultBatch));
         verifyNoMoreInteractions(checker); // no batchId -> no checker call
     }
 
@@ -133,7 +133,7 @@ public class StudyLinkServiceTest {
         assertThat(node.size()).isEqualTo(1);
         assertThat(node.get(0).asText()).isEqualTo(existing.getStudyCode());
 
-        verify(studyLinkDao, never()).create(any(StudyLink.class));
+        verify(studyLinkDao, never()).persist(any(StudyLink.class));
     }
 
     @Test
@@ -151,7 +151,7 @@ public class StudyLinkServiceTest {
                 .thenReturn(Optional.empty());
 
         // Ensure create returns the same instance passed in so we can assert its code
-        when(studyLinkDao.create(any(StudyLink.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(studyLinkDao.persist(any(StudyLink.class))).thenAnswer(inv -> inv.getArgument(0));
 
         JsonNode node = studyLinkService.getStudyCodes("study-uuid-a", scala.Option$.MODULE$.empty(),
                 "GeneralSingle", null, null);
@@ -159,6 +159,6 @@ public class StudyLinkServiceTest {
         assertThat(node.size()).isEqualTo(1);
         assertThat(node.get(0).asText()).isNotEmpty();
 
-        verify(studyLinkDao, times(1)).create(any(StudyLink.class));
+        verify(studyLinkDao, times(1)).persist(any(StudyLink.class));
     }
 }

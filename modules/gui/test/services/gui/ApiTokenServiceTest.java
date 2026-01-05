@@ -56,7 +56,7 @@ public class ApiTokenServiceTest {
 
         // Then - persisted ApiToken
         ArgumentCaptor<ApiToken> captor = ArgumentCaptor.forClass(ApiToken.class);
-        verify(apiTokenDao, times(1)).create(captor.capture());
+        verify(apiTokenDao, times(1)).persist(captor.capture());
         ApiToken persisted = captor.getValue();
         assertThat(persisted.getTokenHash()).isEqualTo(expectedHash);
         assertThat(persisted.getName()).isEqualTo(name);
@@ -94,7 +94,7 @@ public class ApiTokenServiceTest {
         // Then
         assertThat(token).isEqualTo(expectedToken);
         ArgumentCaptor<ApiToken> captor = ArgumentCaptor.forClass(ApiToken.class);
-        verify(apiTokenDao).create(captor.capture());
+        verify(apiTokenDao).persist(captor.capture());
         ApiToken persisted = captor.getValue();
         assertThat(persisted.getExpires()).isNull();
         assertThat(persisted.getUser()).isEqualTo(user);

@@ -3,6 +3,7 @@ package controllers.publix;
 import daos.common.StudyResultDao;
 import models.common.Study;
 import models.common.StudyResult;
+import general.common.StudyAssetsExecutor;
 import org.junit.Before;
 import org.junit.Test;
 import play.api.mvc.Action;
@@ -12,6 +13,7 @@ import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
@@ -34,16 +36,17 @@ public class StudyAssetsTest {
         IOUtils ioUtils = null;
         IdCookieService idCookieService = mock(IdCookieService.class);
         JPAApi jpa = mock(JPAApi.class);
-        // make JPAApi.withTransaction just execute the supplier
-        when(jpa.withTransaction(any(Supplier.class))).thenAnswer(inv -> {
-            Supplier<?> supplier = (Supplier<?>) inv.getArgument(0);
-            return supplier.get();
+        // make JPAApi.withTransaction just execute the function
+        when(jpa.withTransaction(any(Function.class))).thenAnswer(inv -> {
+            Function<Object, Object> function = (Function<Object, Object>) inv.getArgument(0);
+            return function.apply(null);
         });
         studyResultDao = mock(StudyResultDao.class);
         Assets assets = mock(Assets.class);
         ControllerComponents controllerComponents = mock(ControllerComponents.class);
+        StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        studyAssets = new StudyAssets(controllerComponents, ioUtils, idCookieService, jpa, studyResultDao, assets);
+        studyAssets = new StudyAssets(controllerComponents, ioUtils, idCookieService, jpa, studyResultDao, assets, studyAssetsExecutor);
     }
 
     @Test

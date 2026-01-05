@@ -1,7 +1,7 @@
 package auth.gui;
 
 import controllers.gui.Home;
-import general.gui.RequestScopeMessaging;
+import messaging.common.RequestScopeMessaging;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
@@ -15,34 +15,33 @@ import javax.inject.Provider;
 import java.time.Instant;
 import java.util.function.Function;
 
-import static general.gui.FlashScopeMessaging.*;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static general.common.Http.*;
+import static messaging.common.FlashScopeMessaging.*;
 import static play.mvc.Results.forbidden;
 import static play.mvc.Results.redirect;
 
+// @formatter:off
 /**
  * This class defines authentication via session cookies (which is the default authentication in the Play Framework).
- * <p>
+ *
  * It checks Play's session cookie and does authorization. It has several layers of security:
- * <p>
  * 1) First, it checks if a username is in Play's session cookie and if this username belongs to a user in the database.
- * <p>
  * 2) Check if the session timed out. The time span is defined in the application.conf.
- * <p>
- * 3) Check if the session timed out due to inactivity of the user. With each request by the user, the time of last
+ * 3) Check if the session timed out due to inactivity of the user. With each request by the user, the time of the last
  * activity gets refreshed in the session.
- * <p>
  * 4) Check if the signed-in user has the proper Role needed to access this page. This Role is an optional parameter in
  * the {@link AuthAction.Auth} annotation.
- * <p>
  * 5) It checks if the user was deactivated by an admin.
- * <p>
- * The {@link AuthAction.Auth} annotation does not check the user's password. This is
- * done once during signing in (class {@link Signin}).
- * <p>
- * The {@link User} object is put in the request attrs for later use during request processing.
+ *
+ * The {@link AuthAction.Auth} annotation does not check the user's password. This is done once during signing in (class
+ * {@link Signin}).
+ *
+ * The {@link User} object is put in the {@link Context} for later use during request processing.
  *
  * @author Kristian Lange
  */
+// @formatter:on
 public class AuthSessionCookie implements AuthAction.AuthMethod {
 
     private static final ALogger LOGGER = Logger.of(AuthSessionCookie.class);
@@ -66,13 +65,13 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         }
 
         // For authentication, it's actually enough to check that the username is in Play's session. Play's session
-        // is safe from tempering. But we retrieve the user from the database and put it into the request attrs
-        // since we need it later anyway. Storing it in the request attrs now saves us some database requests later.
+        // is safe from tempering. But we retrieve the user from the database and put it into the Http.Context
+        // since we need it later anyway. Storing it in the Http.Context now saves us some database requests later.
         User signedinUser = authService.getSignedinUserBySessionCookie(request.session());
         if (signedinUser == null) {
             return callForbiddenDueToAuthentication(request, request.remoteAddress(), request.path());
         }
-        request = request.addAttr(AuthService.SIGNEDIN_USER, signedinUser);
+        Context.current().args().put(SIGNEDIN_USER, signedinUser);
 
         // Check session timeout and inactivity timeout (only if keepSignedin flag is not set)
         if (!authService.isSessionKeepSignedin(request.session())) {
@@ -158,7 +157,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         if (Helpers.isAjax(request)) {
             return AuthResult.denied(request, forbidden(msg));
         } else {
-            RequestScopeMessaging.error(request, msg);
+            RequestScopeMessaging.error(msg);
             return AuthResult.denied(request, homeProvider.get().home(request, Http.Status.FORBIDDEN));
         }
     }

@@ -5,7 +5,7 @@ import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.NotFoundException;
+import exceptions.common.NotFoundException;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Study;
@@ -161,7 +161,7 @@ public class BatchServiceTest {
         assertThat(batch.getComments()).isEqualTo("c");
         assertThat(batch.getJsonData()).isEqualTo("{x:1}");
 
-        verify(batchDao, times(1)).update(batch);
+        verify(batchDao, times(1)).merge(batch);
     }
 
     @Test
@@ -235,7 +235,7 @@ public class BatchServiceTest {
         assertThat(res).isTrue();
         assertThat(existing.getBatchSessionVersion()).isEqualTo(4L);
         assertThat(existing.getBatchSessionData()).isEqualTo("{}");
-        verify(batchDao).update(existing);
+        verify(batchDao).merge(existing);
     }
 
     @Test
@@ -291,7 +291,7 @@ public class BatchServiceTest {
         batchService.remove(batch, new User("u","n","e@e"));
 
         // Then: study updated and batch removed
-        verify(studyDao, times(1)).update(study);
+        verify(studyDao, times(1)).merge(study);
         // results and links removed
         verify(resultRemover, times(1)).removeAllStudyResults(eq(batch), any(User.class));
         verify(studyLinkDao, times(1)).removeAllByBatch(batch);

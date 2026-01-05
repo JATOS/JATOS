@@ -8,11 +8,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
+
 import javax.inject.Singleton;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,7 +37,7 @@ public class IOUtils {
     /**
      * Reads the given file and returns the content as String.
      */
-    public String readFile(File file) throws IOException {
+    public String readFile(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             StringBuilder sb = new StringBuilder();
             String content = reader.readLine();
@@ -50,6 +48,8 @@ public class IOUtils {
                 content = reader.readLine();
             }
             return sb.toString();
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
         }
     }
 
@@ -57,14 +57,14 @@ public class IOUtils {
      * Gets the File object (can be an directory) while preventing a path traversal attack. path and filePath together
      * build the full path (like path/filePath). path must be a directory.
      */
-    private File getFileSecurely(String baseDirPathStr, String filePathStr) throws IOException {
+    private File getFileSecurely(String baseDirPathStr, String filePathStr) {
         Path baseDirPath = Paths.get(baseDirPathStr);
         Path filePath = Paths.get(filePathStr);
         if (!baseDirPath.isAbsolute()) {
-            throw new IOException(MessagesStrings.pathNotAbsolute(baseDirPathStr));
+            throw new exceptions.common.IOException(MessagesStrings.pathNotAbsolute(baseDirPathStr));
         }
         if (filePath.isAbsolute()) {
-            throw new IOException(MessagesStrings.pathNotRelative(filePathStr));
+            throw new exceptions.common.IOException(MessagesStrings.pathNotRelative(filePathStr));
         }
 
         // Join the two paths together, then normalize so that any ".." elements
@@ -74,7 +74,7 @@ public class IOUtils {
         // Make sure the resulting path is still within the required directory.
         // (In the example above, "/foo/bar/attack" is not.)
         if (!resolvedPath.startsWith(baseDirPath)) {
-            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
+            throw new exceptions.common.IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
         }
 
         return resolvedPath.toFile();
@@ -84,21 +84,21 @@ public class IOUtils {
      * Gets the File object of the directory while preventing a path traversal attack and checks if the directory
      * actually exists.
      */
-    private File getExistingDirSecurely(String fullPathStr) throws IOException {
+    private File getExistingDirSecurely(String fullPathStr) {
         Path fullPath = Paths.get(fullPathStr);
         if (!fullPath.isAbsolute()) {
-            throw new IOException(MessagesStrings.pathNotAbsolute(fullPathStr));
+            throw new exceptions.common.IOException(MessagesStrings.pathNotAbsolute(fullPathStr));
         }
 
         // Normalize so that any ".." gets removed
         // (e.g. "/foo/bar/baz/../attack" -> "/foo/bar/attack")
         // and check that the normalized path is equal to the original one
         if (!fullPath.normalize().equals(fullPath)) {
-            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(fullPathStr));
+            throw new exceptions.common.IOException(MessagesStrings.couldntGeneratePathToFileOrDir(fullPathStr));
         }
         File file = fullPath.toFile();
         if (!file.exists() || !file.isDirectory()) {
-            throw new IOException(MessagesStrings.dirPathIsntDir(fullPathStr));
+            throw new exceptions.common.IOException(MessagesStrings.dirPathIsntDir(fullPathStr));
         }
         return file;
     }
@@ -115,7 +115,7 @@ public class IOUtils {
         String studyAssetsPath = generateStudyAssetsPath(dirName);
         try {
             return getFileSecurely(studyAssetsPath, filePath).exists();
-        } catch (IOException e) {
+        } catch (exceptions.common.IOException e) {
             return false;
         }
     }
@@ -124,10 +124,10 @@ public class IOUtils {
      * Gets the File object while preventing a path traversal attack and checks whether the file exists and is no
      * directory.
      */
-    public File getExistingFileSecurely(String path, String filePath) throws IOException {
+    public File getExistingFileSecurely(String path, String filePath) {
         File file = getFileSecurely(path, filePath);
         if (!file.exists() || file.isDirectory()) {
-            throw new IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
+            throw new exceptions.common.IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
         }
         return file;
     }
@@ -139,7 +139,7 @@ public class IOUtils {
         try {
             getExistingFileSecurely(path, filePath);
             return true;
-        } catch (IOException e) {
+        } catch (exceptions.common.IOException e) {
             return false;
         }
     }
@@ -147,9 +147,9 @@ public class IOUtils {
     /**
      * Gets the File object which resides under filePath within the study assets' directory.
      */
-    public File getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
+    public File getFileInStudyAssetsDir(String dirName, String filePath) {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IOException(MessagesStrings.FILE_MISSING);
+            throw new exceptions.common.IOException(MessagesStrings.FILE_MISSING);
         }
         String studyAssetsPath = generateStudyAssetsPath(dirName);
         return getFileSecurely(studyAssetsPath, filePath);
@@ -162,7 +162,7 @@ public class IOUtils {
         String studyAssetsPath = generateStudyAssetsPath(dirName);
         try {
             return getFileSecurely(studyAssetsPath, filePath);
-        } catch (IOException e) {
+        } catch (exceptions.common.IOException e) {
             return null;
         }
     }
@@ -170,7 +170,7 @@ public class IOUtils {
     /**
      * Gets the study assets with the given directory name.
      */
-    public File getStudyAssetsDir(String dirName) throws IOException {
+    public File getStudyAssetsDir(String dirName) {
         String studyAssetsPath = generateStudyAssetsPath(dirName);
         return getExistingDirSecurely(studyAssetsPath);
     }
@@ -208,15 +208,19 @@ public class IOUtils {
     /**
      * Remove study assets' directory if exists.
      */
-    public void removeStudyAssetsDir(String dirName) throws IOException {
+    public void removeStudyAssetsDir(String dirName) {
         File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
         if (!dir.exists()) {
             return;
         }
         if (!dir.isDirectory()) {
-            throw new IOException(MessagesStrings.dirPathIsntDir(dir.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.dirPathIsntDir(dir.getName()));
         }
-        FileUtils.deleteDirectory(dir);
+        try {
+            FileUtils.deleteDirectory(dir);
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
+        }
     }
 
     /**
@@ -231,7 +235,7 @@ public class IOUtils {
      * @param study    Study where the study assets belong to
      * @return Path to the file in the study assets
      */
-    public Path getAssetsFilePath(String filepath, String filename, Study study) throws IOException {
+    public Path getAssetsFilePath(String filepath, String filename, Study study) {
         String assetsFilePathStr;
         if (!Strings.isNullOrEmpty(filepath)) {
             filepath = Helpers.urlDecode(filepath);
@@ -250,20 +254,23 @@ public class IOUtils {
      * Copies a component's HTML file.
      *
      * @param studyAssetsDirName Name of the study assets
-     * @param htmlFilePath       Local file path to the HTML file. The file can be in a subdirectory of the study
-     *                           assets directory.
+     * @param htmlFilePath       Local file path to the HTML file. The file can be in a subdirectory of the study assets
+     *                           directory.
      * @return Name of the new file.
      */
-    public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath)
-            throws IOException {
+    public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath) {
         File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName, htmlFilePath);
         if (!htmlFile.isFile()) {
-            throw new IOException(MessagesStrings.filePathIsntFile(htmlFile.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.filePathIsntFile(htmlFile.getName()));
         }
 
-        File clonedHtmlFile = generateCloneFile(htmlFile);
-        FileUtils.copyFile(htmlFile, clonedHtmlFile);
-        return generateLocalFilePathInStudyAssets(clonedHtmlFile, studyAssetsDirName);
+        try {
+            File clonedHtmlFile = generateCloneFile(htmlFile);
+            FileUtils.copyFile(htmlFile, clonedHtmlFile);
+            return generateLocalFilePathInStudyAssets(clonedHtmlFile, studyAssetsDirName);
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
+        }
     }
 
     /**
@@ -279,15 +286,19 @@ public class IOUtils {
      * Copies study assets' directory. Adds suffix '_clone' to the name of the new assets dir. If a dir with suffix
      * '_clone' already exists it adds '_' + number instead.
      */
-    public String cloneStudyAssetsDirectory(String srcDirName) throws IOException {
+    public String cloneStudyAssetsDirectory(String srcDirName) {
         File srcDir = getFileSecurely(Common.getStudyAssetsRootPath(), srcDirName);
         if (!srcDir.isDirectory()) {
-            throw new IOException(MessagesStrings.dirPathIsntDir(srcDir.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.dirPathIsntDir(srcDir.getName()));
         }
 
-        File destDir = generateCloneFile(srcDir);
-        FileUtils.copyDirectory(srcDir, destDir);
-        return destDir.getName();
+        try {
+            File destDir = generateCloneFile(srcDir);
+            FileUtils.copyDirectory(srcDir, destDir);
+            return destDir.getName();
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
+        }
     }
 
     /**
@@ -295,7 +306,7 @@ public class IOUtils {
      * exists in the file system it tries to add numbers starting with 1. It works with files or directories. It keeps a
      * file extension.
      */
-    private File generateCloneFile(File file) throws IOException {
+    private File generateCloneFile(File file) {
         String fileExtension = "";
         if (!FilenameUtils.getExtension(file.getName()).isEmpty()) {
             fileExtension = "." + FilenameUtils.getExtension(file.getName());
@@ -329,12 +340,16 @@ public class IOUtils {
      * @param srcDir        The source dir File can be anywhere in the file system.
      * @param targetDirName Name of the target dir within the assets root dir
      */
-    public void moveStudyAssetsDir(File srcDir, String targetDirName) throws IOException {
+    public void moveStudyAssetsDir(File srcDir, String targetDirName) {
         File targetDir = getFileSecurely(Common.getStudyAssetsRootPath(), targetDirName);
         if (targetDir.exists()) {
-            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getName()));
         }
-        FileUtils.moveDirectory(srcDir, targetDir);
+        try {
+            FileUtils.moveDirectory(srcDir, targetDir);
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
+        }
     }
 
     /**
@@ -342,14 +357,14 @@ public class IOUtils {
      *
      * @param dirName Name of the new study assets dir.
      */
-    public void createStudyAssetsDir(String dirName) throws IOException {
+    public void createStudyAssetsDir(String dirName) {
         File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
         if (dir.exists()) {
-            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir.getName()));
         }
         boolean result = dir.mkdirs();
         if (!result) {
-            throw new IOException(MessagesStrings.studyAssetsDirNotCreated(dir.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotCreated(dir.getName()));
         }
     }
 
@@ -370,14 +385,14 @@ public class IOUtils {
     /**
      * Renames a study assets dir.
      */
-    public void renameStudyAssetsDir(String oldDirName, String newDirName) throws IOException {
+    public void renameStudyAssetsDir(String oldDirName, String newDirName) {
         File oldDir = new File(generateStudyAssetsPath(oldDirName));
         File newDir = new File(generateStudyAssetsPath(newDirName));
         if (oldDir.exists() && oldDirName.equals(newDirName)) {
             return;
         }
         if (newDir.exists()) {
-            throw new IOException(
+            throw new exceptions.common.IOException(
                     MessagesStrings.studyAssetsNotRenamedBecauseExists(oldDir.getName(), newDir.getName()));
         }
         if (!oldDir.exists()) {
@@ -386,7 +401,7 @@ public class IOUtils {
         }
         boolean result = oldDir.renameTo(newDir);
         if (!result) {
-            throw new IOException(MessagesStrings.studyAssetsDirNotRenamed(oldDir.getName(), newDir.getName()));
+            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotRenamed(oldDir.getName(), newDir.getName()));
         }
     }
 
@@ -400,7 +415,7 @@ public class IOUtils {
             if (!Files.exists(path)) return 0;
             //noinspection resource
             return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             return 0;
         }
     }
@@ -412,8 +427,7 @@ public class IOUtils {
      * @param newHtmlFilePath The new local file path within the study assets
      * @param studyAssetName  The name (not the path) of the study assets
      */
-    public void renameHtmlFile(String oldHtmlFilePath, String newHtmlFilePath, String studyAssetName)
-            throws IOException {
+    public void renameHtmlFile(String oldHtmlFilePath, String newHtmlFilePath, String studyAssetName) {
         File oldHtmlFile = getFileInStudyAssetsDir(studyAssetName, oldHtmlFilePath);
         File newHtmlFile = getFileInStudyAssetsDir(studyAssetName, newHtmlFilePath);
 
@@ -424,12 +438,12 @@ public class IOUtils {
         }
 
         if (newHtmlFile.exists()) {
-            throw new IOException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
+            throw new exceptions.common.IOException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
         }
 
         boolean result = oldHtmlFile.renameTo(newHtmlFile);
         if (!result) {
-            throw new IOException(MessagesStrings.htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
+            throw new exceptions.common.IOException(MessagesStrings.htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
         }
     }
 
@@ -437,9 +451,9 @@ public class IOUtils {
      * Creates the given File as a directory, including necessary and non-existent parent directories. If the file
      * already exists it will be deleted before.
      */
-    public static void createDir(File file) throws IOException {
+    public static void createDir(File file) {
         if (!file.mkdirs()) {
-            throw new IOException("Couldn't create directory " + file.getPath());
+            throw new exceptions.common.IOException("Couldn't create directory " + file.getPath());
         }
     }
 
@@ -481,29 +495,40 @@ public class IOUtils {
         try {
             //noinspection resource
             return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             return 0;
         }
     }
 
-    public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename)
-            throws IOException {
-        String baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
-        Files.createDirectories(Paths.get(baseDirPath));
-        return getFileSecurely(baseDirPath, filename);
-    }
-
-    public void removeResultUploadsDir(Long studyResultId) throws IOException {
-        Path dir = Paths.get(getResultUploadsDir(studyResultId));
-        if (Files.isDirectory(dir)) {
-            FileUtils.deleteDirectory(dir.toFile());
+    public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename) {
+        try {
+            String baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
+            Files.createDirectories(Paths.get(baseDirPath));
+            return getFileSecurely(baseDirPath, filename);
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
         }
     }
 
-    public void removeResultUploadsDir(Long studyResultId, Long componentResultId) throws IOException {
-        Path dir = Paths.get(getResultUploadsDir(studyResultId, componentResultId));
-        if (Files.isDirectory(dir)) {
-            FileUtils.deleteDirectory(dir.toFile());
+    public void removeResultUploadsDir(Long studyResultId) {
+        try {
+            Path dir = Paths.get(getResultUploadsDir(studyResultId));
+            if (Files.isDirectory(dir)) {
+                FileUtils.deleteDirectory(dir.toFile());
+            }
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
+        }
+    }
+
+    public void removeResultUploadsDir(Long studyResultId, Long componentResultId) {
+        try {
+            Path dir = Paths.get(getResultUploadsDir(studyResultId, componentResultId));
+            if (Files.isDirectory(dir)) {
+                FileUtils.deleteDirectory(dir.toFile());
+            }
+        } catch (java.io.IOException e) {
+            throw new exceptions.common.IOException(e);
         }
     }
 }

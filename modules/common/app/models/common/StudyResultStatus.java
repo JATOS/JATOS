@@ -37,6 +37,7 @@ public class StudyResultStatus {
      * State in the progress of a study. (Yes, it should be named studyResultState - but hey, it's so much nice this
      * way.)
      */
+    @SuppressWarnings("unused")
     private StudyResult.StudyState studyState;
 
     @OneToOne(fetch = FetchType.EAGER)
@@ -76,10 +77,6 @@ public class StudyResultStatus {
 
     public void setLastSeenDate(Timestamp lastSeenDate) {
         this.lastSeenDate = lastSeenDate;
-    }
-
-    public void setStudyState(StudyResult.StudyState state) {
-        this.studyState = state;
     }
 
     public StudyResult.StudyState getStudyState() {

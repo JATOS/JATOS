@@ -1,7 +1,7 @@
 package services.gui;
 
 import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
+import exceptions.common.BadRequestException;
 import models.common.Batch;
 import models.common.workers.*;
 import org.junit.Before;

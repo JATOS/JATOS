@@ -22,6 +22,7 @@ import java.util.List;
 public class PersonalMultipleWorker extends Worker {
 
     public static final String WORKER_TYPE = "PersonalMultiple";
+    public static final String SHORT_WORKER_TYPE = "pm";
     public static final String UI_WORKER_TYPE = "Personal Multiple";
 
     public PersonalMultipleWorker() {
@@ -30,16 +31,6 @@ public class PersonalMultipleWorker extends Worker {
     @JsonCreator
     public PersonalMultipleWorker(String comment) {
         this.comment = comment;
-    }
-
-    @Override
-    public String getWorkerType() {
-        return WORKER_TYPE;
-    }
-
-    @Override
-    public String getUIWorkerType() {
-        return UI_WORKER_TYPE;
     }
 
     @Override

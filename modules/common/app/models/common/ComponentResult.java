@@ -3,6 +3,7 @@ package models.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import daos.common.worker.WorkerType;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.*;
@@ -37,6 +38,7 @@ public class ComponentResult {
 
     /**
      * State of this component run (it actually should be called ComponentResultState)
+     * Hint: Don't change the order of the enum values! They are mapped to EnumType.ORDINAL in the database.
      */
     public enum ComponentState {
         STARTED, // Component was started
@@ -93,6 +95,7 @@ public class ComponentResult {
      */
     @JsonIgnore
     @Column(insertable = false, updatable = false)
+    @SuppressWarnings("unused")
     private String dataShort;
 
     /**
@@ -106,6 +109,7 @@ public class ComponentResult {
     /**
      * Flag that indicates whether the component run reached its quota (max result data/file size) at least once.
      */
+    @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
     private boolean quotaReached = false;
 
     public ComponentResult() {
@@ -124,7 +128,7 @@ public class ComponentResult {
     }
 
     @JsonProperty("workerType")
-    public String getWorkerType() {
+    public WorkerType getWorkerType() {
         return studyResult.getWorker().getWorkerType();
     }
 
@@ -180,10 +184,6 @@ public class ComponentResult {
         return dataShort;
     }
 
-    public void setDataShort(String dataShort) {
-        this.dataShort = dataShort;
-    }
-
     public Integer getDataSize() {
         return dataSize != null ? dataSize : 0;
     }
@@ -198,10 +198,6 @@ public class ComponentResult {
 
     public StudyResult getStudyResult() {
         return this.studyResult;
-    }
-
-    public void setQuotaReached(boolean quotaReached) {
-        this.quotaReached = quotaReached;
     }
 
     public boolean isQuotaReached() {

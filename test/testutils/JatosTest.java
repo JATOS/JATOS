@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import exceptions.gui.NotFoundException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;

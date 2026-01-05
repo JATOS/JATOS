@@ -2,6 +2,7 @@ package auth.gui;
 
 import daos.common.ApiTokenDao;
 import general.common.Common;
+import general.common.Http.Context;
 import models.common.ApiToken;
 import models.common.User;
 import play.libs.typedmap.TypedKey;
@@ -13,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Optional;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static play.mvc.Results.forbidden;
 import static play.mvc.Results.unauthorized;
 
@@ -20,7 +22,7 @@ import static play.mvc.Results.unauthorized;
  * Authentication via personal access tokens (API tokens) that can be used with JATOS API. API tokens are associated
  * with a user and have the same access rights as the user. For a successful authentication, the token must be put in
  * the 'Authorization' header with a 'Bearer' prefix. JATOS' API token has a prefex 'jap_'. The {@link User} and the
- * {@link ApiToken} objects are put in the request attrs for later use during request processing.
+ * {@link ApiToken} objects are put in the {@link Context} for later use during request processing.
  */
 @Singleton
 public class AuthApiToken implements AuthAction.AuthMethod {
@@ -73,7 +75,7 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         // Check the token's user: since these are personal access tokens and the user which belongs to the token can
         // be deactivated too
         User user = apiToken.getUser();
-        request = request.addAttr(AuthService.SIGNEDIN_USER, user);
+        Context.current().args().put(SIGNEDIN_USER, user);
 
         if (!user.isActive()) {
             return AuthResult.denied(request, unauthorized("Invalid api token"));
@@ -89,7 +91,7 @@ public class AuthApiToken implements AuthAction.AuthMethod {
             return AuthResult.denied(request, unauthorized("Invalid api token"));
         }
 
-        request = request.addAttr(API_TOKEN, apiToken);
+        Context.current().args().put(API_TOKEN, apiToken);
         return AuthResult.authenticated(request);
     }
 

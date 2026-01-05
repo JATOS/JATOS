@@ -41,8 +41,8 @@ public class WorkerCreatorTest {
         assertTrue(created instanceof MTSandboxWorker);
         assertEquals(mtId, created.getMTWorkerId());
         assertTrue(batch.getWorkerList().contains(created));
-        verify(workerDao).create(created);
-        verify(batchDao).update(batch);
+        verify(workerDao).persist(created);
+        verify(batchDao).merge(batch);
         verifyNoMoreInteractions(workerDao, batchDao);
     }
 
@@ -57,8 +57,8 @@ public class WorkerCreatorTest {
         assertFalse(created instanceof MTSandboxWorker);
         assertEquals(mtId, created.getMTWorkerId());
         assertTrue(batch.getWorkerList().contains(created));
-        verify(workerDao).create(created);
-        verify(batchDao).update(batch);
+        verify(workerDao).persist(created);
+        verify(batchDao).merge(batch);
         verifyNoMoreInteractions(workerDao, batchDao);
     }
 
@@ -70,8 +70,8 @@ public class WorkerCreatorTest {
 
         assertNotNull(created);
         assertTrue(batch.getWorkerList().contains(created));
-        verify(workerDao).create(created);
-        verify(batchDao).update(batch);
+        verify(workerDao).persist(created);
+        verify(batchDao).merge(batch);
         verifyNoMoreInteractions(workerDao, batchDao);
     }
 
@@ -83,8 +83,8 @@ public class WorkerCreatorTest {
 
         assertNotNull(created);
         assertTrue(batch.getWorkerList().contains(created));
-        verify(workerDao).create(created);
-        verify(batchDao).update(batch);
+        verify(workerDao).persist(created);
+        verify(batchDao).merge(batch);
         verifyNoMoreInteractions(workerDao, batchDao);
     }
 }

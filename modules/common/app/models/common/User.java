@@ -60,6 +60,7 @@ public class User {
      */
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
+    @SuppressWarnings("FieldMayBeFinal")
     private Set<Role> roleList = new HashSet<>();
 
     /**
@@ -88,6 +89,7 @@ public class User {
      * bidirectional.
      */
     @ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
+    @SuppressWarnings("FieldMayBeFinal")
     private Set<Study> studyList = new HashSet<>();
 
     /**
@@ -163,10 +165,6 @@ public class User {
         return roleList;
     }
 
-    public void setRoleList(Set<Role> roleList) {
-        this.roleList = roleList;
-    }
-
     public void addRole(Role role) {
         this.roleList.add(role);
     }
@@ -237,10 +235,6 @@ public class User {
 
     public JatosWorker getWorker() {
         return this.worker;
-    }
-
-    public void setStudyList(Set<Study> studyList) {
-        this.studyList = studyList;
     }
 
     public Set<Study> getStudyList() {

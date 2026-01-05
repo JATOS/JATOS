@@ -6,15 +6,12 @@ import general.common.{Common, JatosUpdater}
 import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMigration}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
-import play.db.jpa.JPAApi
 import services.publix.GroupCleaner
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import javax.persistence.EntityManager
-import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -24,11 +21,9 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
  *
  * @author Kristian Lange
  */
-//noinspection ScalaDeprecation
 class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             environment: play.Environment,
                             actorSystem: ActorSystem,
-                            jpa: JPAApi,
                             jatosUpdater: JatosUpdater,
                             mySQLCharsetFix: MySQLCharsetFix,
                             studyLinkMigration: StudyLinkMigration,
@@ -131,9 +126,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
    * LoginAttempts that are older than 1 minute.
    */
   private def scheduleLoginAttemptCleaning(): Unit = {
-    val task: Runnable = () => jpa.withTransaction(asJavaFunction((_: EntityManager) => {
-      () => loginAttemptDao.removeOldAttempts()
-    }))
+    val task: Runnable = () => loginAttemptDao.removeOldAttempts()
 
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
     val scheduler = actorSystem.scheduler.schedule(

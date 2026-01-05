@@ -241,7 +241,7 @@ public class PublixUtilsTest {
         assertSame(created, res);
         // Last should be set to RELOADED and updated
         assertEquals(ComponentState.RELOADED, last.getComponentState());
-        verify(componentResultDao, atLeastOnce()).update(last);
+        verify(componentResultDao, atLeastOnce()).merge(last);
     }
 
     @Test
@@ -263,7 +263,7 @@ public class PublixUtilsTest {
         // Last should be set to FAIL and updated
         ComponentResult last = sr.getLastComponentResult().get();
         assertEquals(ComponentState.FAIL, last.getComponentState());
-        verify(componentResultDao, atLeastOnce()).update(last);
+        verify(componentResultDao, atLeastOnce()).merge(last);
     }
 
     @Test
@@ -284,7 +284,7 @@ public class PublixUtilsTest {
         }
         ComponentResult last = sr.getLastComponentResult().get();
         assertEquals(ComponentState.FAIL, last.getComponentState());
-        verify(componentResultDao, atLeastOnce()).update(last);
+        verify(componentResultDao, atLeastOnce()).merge(last);
     }
 
     @Test
@@ -307,8 +307,8 @@ public class PublixUtilsTest {
         // Component results updated and finished
         assertEquals(ComponentState.FINISHED, current.getComponentState());
         assertEquals(ComponentState.FINISHED, other.getComponentState());
-        verify(componentResultDao, atLeast(2)).update(any(ComponentResult.class));
-        verify(studyResultDao).update(sr);
+        verify(componentResultDao, atLeast(2)).merge(any(ComponentResult.class));
+        verify(studyResultDao).merge(sr);
     }
 
     @Test
@@ -325,7 +325,7 @@ public class PublixUtilsTest {
         assertNull(code);
         assertEquals(StudyState.FAIL, sr.getStudyState());
         assertEquals(ComponentState.FAIL, current.getComponentState());
-        verify(studyResultDao).update(sr);
+        verify(studyResultDao).merge(sr);
     }
 
     @Test
@@ -346,9 +346,9 @@ public class PublixUtilsTest {
         assertEquals(ComponentState.ABORTED, cr1.getComponentState());
         assertEquals(ComponentState.ABORTED, cr2.getComponentState());
         verify(componentResultDao, atLeast(2)).purgeData(anyLong());
-        verify(componentResultDao, atLeast(2)).update(any(ComponentResult.class));
+        verify(componentResultDao, atLeast(2)).merge(any(ComponentResult.class));
         verify(ioUtils).removeResultUploadsDir(sr.getId());
-        verify(studyResultDao).update(sr);
+        verify(studyResultDao).merge(sr);
     }
 
     @Test
@@ -362,7 +362,7 @@ public class PublixUtilsTest {
 
         publixUtils.setPreStudyState(cr);
         assertEquals(StudyState.STARTED, sr.getStudyState());
-        verify(studyResultDao).update(sr);
+        verify(studyResultDao).merge(sr);
     }
 
     @Test
@@ -375,7 +375,7 @@ public class PublixUtilsTest {
 
         publixUtils.setPreStudyState(cr);
         assertEquals(StudyState.PRE, sr.getStudyState());
-        verify(studyResultDao).update(sr);
+        verify(studyResultDao).merge(sr);
     }
 
     @Test

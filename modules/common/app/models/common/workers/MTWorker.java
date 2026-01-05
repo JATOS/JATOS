@@ -19,6 +19,7 @@ import java.util.UUID;
 public class MTWorker extends Worker {
 
 	public static final String WORKER_TYPE = "MT";
+    public static final String SHORT_WORKER_TYPE = "mt";
 	public static final String UI_WORKER_TYPE = "MTurk";
 
 	/**
@@ -35,22 +36,8 @@ public class MTWorker extends Worker {
 		this.mtWorkerId = mtWorkerId;
 	}
 
-	public void setMTWorkerId(String mtWorkerId) {
-		this.mtWorkerId = mtWorkerId;
-	}
-
 	public String getMTWorkerId() {
 		return this.mtWorkerId;
-	}
-
-	@Override
-	public String getWorkerType() {
-		return WORKER_TYPE;
-	}
-
-	@Override
-	public String getUIWorkerType() {
-		return UI_WORKER_TYPE;
 	}
 
 	@Override

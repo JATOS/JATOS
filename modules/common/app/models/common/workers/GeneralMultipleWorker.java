@@ -17,19 +17,10 @@ import java.util.List;
 public class GeneralMultipleWorker extends Worker {
 
     public static final String WORKER_TYPE = "GeneralMultiple";
+    public static final String SHORT_WORKER_TYPE = "gm";
     public static final String UI_WORKER_TYPE = "General Multiple";
 
     public GeneralMultipleWorker() {
-    }
-
-    @Override
-    public String getWorkerType() {
-        return WORKER_TYPE;
-    }
-
-    @Override
-    public String getUIWorkerType() {
-        return UI_WORKER_TYPE;
     }
 
     @Override

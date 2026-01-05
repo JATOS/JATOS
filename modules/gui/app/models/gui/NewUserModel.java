@@ -13,8 +13,6 @@ public class NewUserModel {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
     public static final String PASSWORD = "password";
-    public static final String PASSWORD_REPEAT = "passwordRepeat";
-    public static final String AUTH_BY_LDAP = "authByLdap";
 
     private String username;
 
@@ -60,6 +58,7 @@ public class NewUserModel {
         this.password = password;
     }
 
+    @SuppressWarnings("unused")
     public String getPasswordRepeat() {
         return passwordRepeat;
     }
@@ -76,10 +75,12 @@ public class NewUserModel {
         return authMethod;
     }
 
+    @SuppressWarnings("unused")
     public boolean getAuthByLdap() {
         return authMethod == User.AuthMethod.LDAP;
     }
 
+    @SuppressWarnings("unused")
     public void setAuthByLdap(boolean authByLdap) {
         this.authMethod = authByLdap ? User.AuthMethod.LDAP : User.AuthMethod.DB;
     }

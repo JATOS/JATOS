@@ -31,7 +31,7 @@ public class ApiTokenService {
         String apiTokenStr = "jap_" + randomStr + checksum;
         String tokenHash = HashUtils.getHash(apiTokenStr, HashUtils.SHA_256);
         ApiToken at = new ApiToken(tokenHash, name, expires, user);
-        apiTokenDao.create(at);
+        apiTokenDao.persist(at);
         return apiTokenStr;
     }
 

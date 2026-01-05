@@ -1,8 +1,9 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import utils.common.TransactionalAction.Transactional;
 import general.common.JatosUpdater;
 import models.common.User.Role;
 import play.Logger;
@@ -20,7 +21,6 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Kristian Lange
  */
-@GuiAccessLogging
 @Singleton
 public class Updates extends Controller {
 
@@ -40,7 +40,7 @@ public class Updates extends Controller {
      * @param version          Can be used to enforce a certain version. If not set the latest version is used.
      * @param allowPreReleases If true, allows requesting of pre-releases too
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public CompletionStage<Result> getReleaseInfo(String version, Boolean allowPreReleases) {
         return jatosUpdater.getReleaseInfo(version, allowPreReleases).handle((releaseInfo, error) -> {
@@ -53,7 +53,7 @@ public class Updates extends Controller {
         });
     }
 
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result cancelUpdate() {
         jatosUpdater.cancelUpdate();
@@ -65,7 +65,7 @@ public class Updates extends Controller {
      *
      * @param dry Allows testing the endpoint without actually downloading anything
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public CompletionStage<Result> downloadJatos(Boolean dry) {
         return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
@@ -79,12 +79,12 @@ public class Updates extends Controller {
     }
 
     /**
-     * Initializes the actual JATOS update and subsequent restart.
+     * Initializes the actual JATOS update and later restart. This method is not supposed to actually return.
      *
      * @param backupAll If true, everything in the JATOS directory will be copied into a backup folder.
      *                  If false, only the conf directory and the loader scripts.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(Role.ADMIN)
     public Result updateAndRestart(Boolean backupAll) {
         try {

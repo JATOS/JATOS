@@ -1,6 +1,6 @@
 package controllers.gui.actionannotations;
 
-import auth.gui.AuthService;
+import general.common.Http.Context;
 import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
@@ -16,6 +16,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 
 /**
@@ -39,11 +40,11 @@ public class SaveLastVisitedPageUrlAction extends Action<SaveLastVisitedPageUrl>
     }
 
     public CompletionStage<Result> call(Http.Request request) {
-        User signedinUser = request.attrs().get(AuthService.SIGNEDIN_USER);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String jatosUrlBasePathRegex = "^" + Common.getJatosUrlBasePath();
         String urlPathWithoutBase = request.path().replaceFirst(jatosUrlBasePathRegex, "");
         signedinUser.setLastVisitedPageUrl(urlPathWithoutBase);
-        userDao.update(signedinUser);
+        userDao.merge(signedinUser);
         return delegate.call(request);
     }
 

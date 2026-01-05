@@ -5,7 +5,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
 import batch.{BatchChannelActor, BatchDispatcherRegistry}
-import exceptions.publix.PublixException
 import models.common.StudyResult
 import models.common.workers._
 import play.api.Logger
@@ -19,9 +18,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
 
 /**
-  * Abstract class that handles the opening of the batch channel. It has concrete implementations for
-  * each worker type.
-  */
+ * Abstract class that handles the opening of the batch channel. It has concrete implementations for
+ * each worker type.
+ */
 abstract class BatchChannel[A <: Worker](components: ControllerComponents,
                                          studyAuthorisation: StudyAuthorisation)
   extends AbstractController(components) {
@@ -41,15 +40,14 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   var batchDispatcherRegistry: BatchDispatcherRegistry = _
 
   /**
-    * Time to wait for an answer after asking an Akka actor
-    */
+   * Time to wait for an answer after asking an Akka actor
+   */
   implicit val timeout: Timeout = 30.seconds
 
   /**
-    * HTTP endpoint that opens a batch channel and returns an Akka stream Flow that will be turned
-    * into WebSocket. In case of an error/ problem, a PublixException is thrown.
-    */
-  @throws(classOf[PublixException])
+   * HTTP endpoint that opens a batch channel and returns an Akka stream Flow that will be turned
+   * into WebSocket. In case of an error/ problem, a PublixException is thrown.
+   */
   def open(studyResult: StudyResult)(implicit request: RequestHeader): Flow[Any, Nothing, _] = {
     logger.info(s".open: studyResult ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
@@ -66,8 +64,8 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   }
 
   /**
-    * Closes the batch channel that belongs to the given study result ID.
-    */
+   * Closes the batch channel that belongs to the given study result ID.
+   */
   private def closeBatchChannel(batchId: Long, studyResultId: Long): Unit = {
     val batchDispatcherOption = batchDispatcherRegistry.get(batchId)
     if (batchDispatcherOption.isDefined) {

@@ -1,20 +1,23 @@
 package controllers.gui;
 
+import actions.common.AsyncAction.Async;
+import actions.common.AsyncAction.Executor;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import auth.gui.AuthApiToken;
-import auth.gui.AuthService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import daos.common.worker.WorkerType;
+import exceptions.common.BadRequestException;
+import exceptions.common.IOException;
+import exceptions.common.NotFoundException;
 import general.common.Common;
+import general.common.Http.Context;
+import general.common.IOExecutor;
+import general.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import models.common.Component;
 import models.common.ComponentResult;
@@ -37,24 +40,24 @@ import utils.common.DirectoryStructureToJson;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
-import utils.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 import static auth.gui.AuthAction.Auth;
-import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static auth.gui.AuthApiToken.API_TOKEN;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static models.common.User.Role.ADMIN;
 
 /**
@@ -62,7 +65,6 @@ import static models.common.User.Role.ADMIN;
  *
  * @author Kristian Lange
  */
-@ApiAccessLogging
 @Singleton
 public class Api extends Controller {
 
@@ -70,7 +72,6 @@ public class Api extends Controller {
 
     private final Admin admin;
     private final AdminService adminService;
-    private final AuthService authService;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
     private final ComponentResultDao componentResultDao;
@@ -84,18 +85,28 @@ public class Api extends Controller {
     private final JsonUtils jsonUtils;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
+    private final IOExecutor ioExecutor;
+    private final StudyAssetsExecutor studyAssetsExecutor;
 
     @Inject
-    Api(Admin admin, AdminService adminService, AuthService authService,
+    Api(Admin admin,
+        AdminService adminService,
         ComponentResultIdsExtractor componentResultIdsExtractor,
-        StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
-        ComponentService componentService, StudyLinkService studyLinkService,
-        ImportExport importExport, ResultRemover resultRemover,
-        ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
-        StudyLogger studyLogger, IOUtils ioUtils) {
+        StudyDao studyDao,
+        ComponentResultDao componentResultDao,
+        StudyService studyService,
+        ComponentService componentService,
+        StudyLinkService studyLinkService,
+        ImportExport importExport,
+        ResultRemover resultRemover,
+        ResultStreamer resultStreamer,
+        Checker checker, JsonUtils jsonUtils,
+        StudyLogger studyLogger,
+        IOUtils ioUtils,
+        IOExecutor dbContext,
+        StudyAssetsExecutor studyAssetsExecutor) {
         this.admin = admin;
         this.adminService = adminService;
-        this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
         this.componentResultDao = componentResultDao;
@@ -109,23 +120,26 @@ public class Api extends Controller {
         this.jsonUtils = jsonUtils;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
+        this.ioExecutor = dbContext;
+        this.studyAssetsExecutor = studyAssetsExecutor;
     }
 
     /**
      * Returns information about the API token used in the request in JSON.
      */
+    @Async(Executor.IO)
     @Auth
-    public Result testToken(Http.Request request) {
-        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(request.attrs().get(AuthApiToken.API_TOKEN))));
+    public Result testToken() {
+        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(Context.current().args().get(API_TOKEN))));
     }
 
     /**
      * Returns admin status information in JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(ADMIN)
-    public Result status(Http.Request request) {
-        return ok(JsonUtils.wrapForApi(adminService.getAdminStatus(request)));
+    public Result status() {
+        return ok(JsonUtils.wrapForApi(adminService.getAdminStatus()));
     }
 
     /**
@@ -134,7 +148,7 @@ public class Api extends Controller {
      * @param filename Log's filename
      * @return Returns the log file
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(ADMIN)
     public Result logs(String filename) {
         return admin.logs(filename, -1, false);
@@ -149,11 +163,10 @@ public class Api extends Controller {
      * @return Depending on 'download' flag returns the whole study log file - or only part of it (until entryLimit) in
      * reverse order and 'Transfer-Encoding:chunked'
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result studyLog(Http.Request request, String id, int entryLimit, boolean download)
-            throws ForbiddenException, NotFoundException {
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
+    public Result studyLog(String id, int entryLimit, boolean download) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
         if (download) {
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
             if (Files.notExists(studyLogPath)) return notFound();
@@ -176,11 +189,10 @@ public class Api extends Controller {
      * @param withBatchProperties     Flag if true all batch properties will be included
      * @return All study properties the user has access to (is member of) in JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result getAllStudyPropertiesByUser(Http.Request request, Boolean withComponentProperties,
-                                              Boolean withBatchProperties) throws IOException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result getAllStudyPropertiesByUser(Boolean withComponentProperties, Boolean withBatchProperties) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         List<Study> studies = studyDao.findAllByUser(signedinUser);
         ArrayNode studiesArray = Json.newArray();
         for (Study s : studies) {
@@ -197,12 +209,11 @@ public class Api extends Controller {
      * @param withBatchProperties     Flag if true all batch properties will be included
      * @return The study properties in JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result getStudyProperties(Http.Request request, String id, Boolean withComponentProperties,
-                                     Boolean withBatchProperties)
-            throws ForbiddenException, NotFoundException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
+    public Result getStudyProperties(String id, Boolean withComponentProperties,
+                                     Boolean withBatchProperties) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
         JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(JsonUtils.wrapForApi(studiesNode));
     }
@@ -216,11 +227,10 @@ public class Api extends Controller {
      *                `false`.
      * @return JSON with study assets directory structure
      */
-    @Transactional
+    @Async(Executor.STUDY_ASSETS)
     @Auth
-    public Result getStudyAssetsStructure(Http.Request request, String id, boolean flatten)
-            throws ForbiddenException, NotFoundException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
+    public Result getStudyAssetsStructure(String id, boolean flatten) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
         File base;
         try {
             base = ioUtils.getStudyAssetsDir(study.getDirName());
@@ -238,19 +248,17 @@ public class Api extends Controller {
      * @param filepath Path to the file in the study assets directory that is supposed to be downloaded. The path can be
      *                 URL encoded but doesn't have to be. Directories cannot be downloaded.
      */
-    @Transactional
+    @Async(Executor.STUDY_ASSETS)
     @Auth
-    public Result downloadStudyAssetsFile(Http.Request request, String id, String filepath) throws ForbiddenException, NotFoundException {
-        filepath = Helpers.urlDecode(filepath);
-        if (filepath.startsWith("/")) filepath = filepath.substring(1);
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
-        File file;
-        try {
-            file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
-            if (!file.isFile()) throw new IOException();
-        } catch (IOException e) {
-            return notFound("File '" + filepath + "' couldn't be found.");
-        }
+    public Result downloadStudyAssetsFile(String id, String filepath) {
+        String filepathUrlDecoded = Helpers.urlDecode(filepath);
+        String finalFilepath = filepathUrlDecoded.startsWith("/")
+                ? filepathUrlDecoded.substring(1)
+                : filepathUrlDecoded;
+
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), finalFilepath);
+        if (!file.isFile()) throw new NotFoundException("'" + finalFilepath + "' is not a file.");
         return ok().sendFile(file);
     }
 
@@ -262,16 +270,17 @@ public class Api extends Controller {
      *                 it will be ignored and the uploaded file saved in the top-level of the assets under the uploaded
      *                 file's name. If it is a directory, the filename is taken from the uploaded file. If it ends with
      *                 a filename the uploaded file will be renamed to this name. All non-existing subdirectories will
-     *                 be created. Existing files will be overwritten. The path can be URL encoded but doesn't have to be.
+     *                 be created. Existing files will be overwritten. The path can be URL encoded but doesn't have to
+     *                 be.
      */
-    @Transactional
+    @Async(Executor.STUDY_ASSETS)
     @Auth
-    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath)
-            throws ForbiddenException, NotFoundException {
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
+    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
         checker.checkStudyLocked(study);
-
-        if (request.body().asMultipartFormData() == null) return badRequest("File missing");
+        if (request.body().asMultipartFormData() == null) {
+            return badRequest("File missing");
+        }
         Http.MultipartFormData<File> body = request.body().asMultipartFormData();
         Http.MultipartFormData.FilePart<File> filePart = body.getFile("studyAssetsFile");
         if (filePart == null) return badRequest("File missing");
@@ -282,7 +291,7 @@ public class Api extends Controller {
             if (Files.notExists(assetsFilePath)) Files.createDirectories(assetsFilePath);
             Files.move(uploadedFile.toPath(), assetsFilePath, REPLACE_EXISTING);
             return ok();
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             LOGGER.info(".uploadStudyAssetsFile: " + e.getLocalizedMessage());
             return badRequest("Error writing file");
         }
@@ -295,21 +304,23 @@ public class Api extends Controller {
      * @param filepath Path to the file in the study assets directory that is supposed to be deleted. The path can be
      *                 URL encoded but doesn't have to be. Directories cannot be deleted.
      */
-    @Transactional
+    @Async(Executor.STUDY_ASSETS)
     @Auth
-    public Result deleteStudyAssetsFile(Http.Request request, String id, String filepath) throws ForbiddenException, NotFoundException {
-        filepath = Helpers.urlDecode(filepath);
-        if (filepath.startsWith("/")) filepath = filepath.substring(1);
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
-        checker.checkStudyLocked(study);
+    public Result deleteStudyAssetsFile(String id, String filepath) {
+        String filepathUrlDecoded = Helpers.urlDecode(filepath);
+        String finalFilepath = filepathUrlDecoded.startsWith("/")
+                ? filepathUrlDecoded.substring(1)
+                : filepathUrlDecoded;
 
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStudyLocked(study);
         try {
-            File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
-            if (file.isDirectory()) throw new IOException("Directories can't be deleted.");
+            File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), finalFilepath);
+            if (Files.notExists(file.toPath()))
+                throw new NotFoundException("'" + finalFilepath + "' couldn't be found.");
+            if (file.isDirectory()) throw new BadRequestException("Directories can't be deleted.");
             Files.delete(file.toPath());
-        } catch (NoSuchFileException e) {
-            return notFound("File '" + filepath + "' couldn't be found.");
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             LOGGER.info(".deleteStudyAssetsFile: " + e.getLocalizedMessage());
             return badRequest();
         }
@@ -319,18 +330,20 @@ public class Api extends Controller {
     /**
      * Get study codes for the given batch and worker type
      *
-     * @param id      Study's ID or UUID
-     * @param batchId Optional specify the batch ID to which the study codes should belong to. If it is not specified
-     *                the default batch of this study will be used.
-     * @param type    Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle`
-     *                (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
-     * @param comment Some comment that will be associated with the worker.
-     * @param amount  Number of study codes that have to be generated. If empty 1 is assumed.
+     * @param id         Study's ID or UUID
+     * @param batchId    Optional specify the batch ID to which the study codes should belong to. If it is not specified
+     *                   the default batch of this study will be used.
+     * @param workerType Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle` (or
+     *                   `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
+     * @param comment    Some comment that will be associated with the worker.
+     * @param amount     Number of study codes that have to be generated. If empty 1 is assumed.
      */
+    @Async(Executor.IO)
     @Auth
-    public Result getStudyCodes(Http.Request request, String id, Option<Long> batchId, String type, String comment, Integer amount)
-            throws ForbiddenException, NotFoundException, BadRequestException {
-        return ok(JsonUtils.wrapForApi(studyLinkService.getStudyCodes(request, id, batchId, type, comment, amount)));
+    public Result getStudyCodes(String id, Option<Long> batchId, String workerType, String comment, Integer amount) {
+        JsonNode codes = studyLinkService.getStudyCodes(id, batchId, WorkerType.fromWireValue(workerType),
+                comment, amount);
+        return ok(JsonUtils.wrapForApi(codes));
     }
 
     /**
@@ -338,10 +351,10 @@ public class Api extends Controller {
      *
      * @param id Study's ID or UUID
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result exportStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
-        return importExport.exportStudy(request, id);
+    public Result exportStudy(String id) {
+        return importExport.exportStudy(id);
     }
 
     /**
@@ -349,19 +362,17 @@ public class Api extends Controller {
      *
      * @return UUID and ID of the study in JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result createStudy(Http.Request request) throws IOException {
-        User signedinUser = authService.getSignedinUser(request);
-
+    public Result createStudy(Http.Request request) {
         JsonNode node = request.body().asJson();
-        StudyProperties studyProperties = Json.mapper().treeToValue(node, StudyProperties.class);
+        StudyProperties studyProperties = JsonUtils.parse(node, StudyProperties.class);
         List<ValidationError> errors = studyProperties.validate();
         if (errors != null && !errors.isEmpty()) {
             return badRequest(errors.get(0).message());
         }
 
-        Study study = studyService.createAndPersistStudy(signedinUser, studyProperties);
+        Study study = studyService.createAndPersistStudy(studyProperties);
         ioUtils.createStudyAssetsDir(study.getUuid());
         ObjectNode responseJson = Json.mapper().createObjectNode();
         responseJson.put("uuid", study.getUuid());
@@ -374,14 +385,13 @@ public class Api extends Controller {
      *
      * @param id Study's ID or UUID
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result deleteStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
-        User signedinUser = authService.getSignedinUser(request);
+    public Result deleteStudy(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
         checker.checkStudyLocked(study);
 
-        studyService.removeStudyInclAssets(study, signedinUser);
+        studyService.removeStudyInclAssets(study);
         return ok();
     }
 
@@ -397,18 +407,19 @@ public class Api extends Controller {
      * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
      *                              if the study assets directory name is taken form the current or the uploaded one. In
      *                              the common case that both names are the same this has no effect. But if the current
-     *                              asset directory name is different from the uploaded one a `keepCurrentAssetsName=true`
-     *                              indicates that the name of the currently installed assets directory should be kept.
-     *                              A `false` indicates that the name should be taken from the uploaded one. Default is `true`.
+     *                              asset directory name is different from the uploaded one a
+     *                              `keepCurrentAssetsName=true` indicates that the name of the currently installed
+     *                              assets directory should be kept. A `false` indicates that the name should be taken
+     *                              from the uploaded one. Default is `true`.
      * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
      *                              study it cannot be overwritten. In this case you can set `renameAssets=true` to let
      *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
      *                              Default is `true`.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
-                              boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
+                              boolean keepCurrentAssetsName, boolean renameAssets) {
         return importExport.importStudyApi(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
     }
 
@@ -418,14 +429,14 @@ public class Api extends Controller {
      * @param id Study's ID or UUID
      * @return UUID and ID of the new component in JSON
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result createComponent(Http.Request request, String id) throws ForbiddenException, NotFoundException, JsonProcessingException {
-        Study study = studyService.getStudyFromIdOrUuid(request, id);
+    public Result createComponent(Http.Request request, String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
         checker.checkStudyLocked(study);
 
         JsonNode node = request.body().asJson();
-        ComponentProperties componentProperties = Json.mapper().treeToValue(node, ComponentProperties.class);
+        ComponentProperties componentProperties = JsonUtils.parse(node, ComponentProperties.class);
         List<ValidationError> errors = componentProperties.validate();
         if (errors != null && !errors.isEmpty()) {
             return badRequest(errors.get(0).message());
@@ -444,15 +455,14 @@ public class Api extends Controller {
      * @param studyId     Study's ID or UUID
      * @param componentId Component's ID or UUID
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result deleteComponent(Http.Request request, String studyId, String componentId) throws ForbiddenException, NotFoundException {
-        Component component = componentService.getComponentFromIdOrUuid(request, componentId);
-        User signedinUser = authService.getSignedinUser(request);
+    public Result deleteComponent(String studyId, String componentId) {
+        Component component = componentService.getComponentFromIdOrUuid(componentId);
         checker.checkStudyLocked(component.getStudy());
         checker.checkComponentBelongsToStudy(component, studyId);
 
-        componentService.remove(component, signedinUser);
+        componentService.remove(component);
         return ok();
     }
 
@@ -464,25 +474,25 @@ public class Api extends Controller {
      * primarily removes the ComponentResults since results are associated with them, but if in the process a
      * StudyResults becomes empty (no more ComponentResults) it will be deleted too.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result removeResults(Http.Request request) throws BadRequestException, ForbiddenException, NotFoundException {
-        User signedinUser = authService.getSignedinUser(request);
+    public Result removeResults(Http.Request request) {
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
-        resultRemover.removeComponentResults(crids, signedinUser, true);
+        resultRemover.removeComponentResults(crids, true);
         return ok();
     }
 
     /**
      * Returns results (including metadata, data, and files) in a zip file. The results are specified by IDs (can be
-     * nearly any kind) in the request's body or as query parameters. Streaming is used to reduce memory and disk usage.
+     * nearly any kind) in the request's body or as query parameters. Streaming is used to reduce memory and disk
+     * usage.
      *
      * @param isApiCall If true the response JSON gets an additional 'apiVersion' field
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result exportResults(Http.Request request, Boolean isApiCall) throws BadRequestException {
+    public Result exportResults(Http.Request request, Boolean isApiCall) {
         Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
                 : Collections.emptyMap();
@@ -496,14 +506,14 @@ public class Api extends Controller {
 
     /**
      * Returns all result's metadata (but not result files and not metadata) in a zip file. The results are specified by
-     * IDs (can be any kind) in the request's body or query parameters. Streaming is used to reduce memory and disk usage.
+     * IDs (can be any kind) in the request's body or query parameters. Streaming is used to reduce memory and disk
+     * usage.
      *
      * @param isApiCall If true the response JSON gets an additional 'apiVersion' field
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result exportResultMetadata(Http.Request request, Boolean isApiCall)
-            throws ForbiddenException, BadRequestException, NotFoundException, IOException {
+    public Result exportResultMetadata(Http.Request request, Boolean isApiCall) {
         Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
                 : Collections.emptyMap();
@@ -520,17 +530,16 @@ public class Api extends Controller {
 
     /**
      * Returns result data only (not the result files, not the metadata). Data is stored in ComponentResults. Returns
-     * the result data as plain text (each result data in a new line) or in a zip file (each
-     * result data in its own file). The results are specified by IDs (can be any kind) in the request's body or as
-     * query parameters. Both options use streaming to reduce memory and disk usage.
+     * the result data as plain text (each result data in a new line) or in a zip file (each result data in its own
+     * file). The results are specified by IDs (can be any kind) in the request's body or as query parameters. Both
+     * options use streaming to reduce memory and disk usage.
      *
      * @param asPlainText If true the results will be returned in one single text file, each result in a new line.
      * @param isApiCall   If true the response JSON gets an additional 'apiVersion' field
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result exportResultData(Http.Request request, boolean asPlainText, boolean isApiCall)
-            throws ForbiddenException, BadRequestException, NotFoundException {
+    public Result exportResultData(Http.Request request, boolean asPlainText, boolean isApiCall) {
         if (asPlainText) {
             Source<ByteString, ?> dataSource = resultStreamer.streamComponentResultData(request);
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
@@ -555,10 +564,9 @@ public class Api extends Controller {
      * specified by IDs (can be any kind) in the request's body or as query parameters. Streaming is used to reduce
      * memory and disk usage.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result exportResultFiles(Http.Request request)
-            throws IOException, ForbiddenException, BadRequestException, NotFoundException {
+    public Result exportResultFiles(Http.Request request) {
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
                 + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
@@ -572,23 +580,17 @@ public class Api extends Controller {
      * @param componentResultId ID of the component result that the file belongs to
      * @param filename          Filename of the file to be exported
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth
-    public Result exportSingleResultFile(Http.Request request, Long componentResultId, String filename)
-            throws ForbiddenException, NotFoundException {
+    public Result exportSingleResultFile(Long componentResultId, String filename) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        User signedinUser = authService.getSignedinUser(request);
         checker.checkComponentResult(componentResult, signedinUser, false);
 
-        File file;
-        try {
-            Study study = componentResult.getComponent().getStudy();
-            file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
-            if (!file.exists()) throw new IOException();
-            studyLogger.log(study, signedinUser, "Exported single result file");
-        } catch (IOException e) {
-            return notFound("File does not exist");
-        }
+        Study study = componentResult.getComponent().getStudy();
+        File file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
+        if (!file.exists()) throw new NotFoundException("File does not exist");
+        studyLogger.log(study, signedinUser, "Exported single result file");
         return ok(file);
     }
 

@@ -18,7 +18,7 @@ import javax.inject.Singleton;
 
 /**
  * Service class that validates models that create, change or delete users. Usually this validation is part of the model
- * class, but since it's about (important) user authentication, and it is used by other services I put it in an extra
+ * class, but since it's about (important) user authentication, and it is used by other services, I put it in an extra
  * class.
  *
  * @author Kristian Lange

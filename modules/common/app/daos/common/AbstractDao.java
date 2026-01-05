@@ -30,9 +30,9 @@ public abstract class AbstractDao {
         });
     }
 
-    protected void merge(Object entity) {
-        jpa.withTransaction(em -> {
-            em.merge(entity);
+    protected <T> T merge(T entity) {
+        return jpa.withTransaction(em -> {
+            return em.merge(entity);
         });
     }
 

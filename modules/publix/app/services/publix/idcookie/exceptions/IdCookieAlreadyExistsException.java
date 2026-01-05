@@ -1,4 +1,4 @@
-package services.publix.idcookie.exception;
+package services.publix.idcookie.exceptions;
 
 /**
  * Is thrown if a second JATOS ID cookie with the same study result ID is tried to be
@@ -6,7 +6,7 @@ package services.publix.idcookie.exception;
  *
  * @author Kristian Lange
  */
-public class IdCookieAlreadyExistsException extends Exception {
+public class IdCookieAlreadyExistsException extends RuntimeException {
 
     public IdCookieAlreadyExistsException(String message) {
         super(message);

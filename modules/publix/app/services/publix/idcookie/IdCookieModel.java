@@ -1,15 +1,19 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
+import daos.common.worker.WorkerType;
+import general.common.Common;
+import models.common.*;
+import models.common.workers.Worker;
+import utils.common.Helpers;
 
 import java.util.Objects;
 
 /**
- * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
- * study run, e.g. study result ID, worker ID, worker type.
+ * Model for an ID cookie. Stores several JATOS IDs that are relevant during a study run, e.g. study result ID, worker
+ * ID, worker type.
  *
- * ID cookies are used to provide these IDs to jatos.js and then to the
- * component's JavaScript.
+ * ID cookies are used to provide these IDs to jatos.js and then to the component's JavaScript.
  *
  * @author Kristian Lange
  */
@@ -38,13 +42,13 @@ public class IdCookieModel {
     public static final String URL_BASE_PATH = "urlBasePath";
 
     /**
-     * Name of this ID cookie. Every name starts with {@value #ID_COOKIE_NAME}
-     * and ends with '_' + the ID cookie's index.
+     * Name of this ID cookie. Every name starts with {@value #ID_COOKIE_NAME} and ends with '_' + the ID cookie's
+     * index.
      */
     private String name;
 
     /**
-     * Every ID cookie has an index. It is the suffix of its name. Currently it is the study result ID.
+     * Every ID cookie has an index. It is the suffix of its name. Currently, it is the study result ID.
      */
     private int index;
 
@@ -64,14 +68,13 @@ public class IdCookieModel {
     private String urlBasePath;
 
     /**
-     * State of a study run with a JatosWorker. If this run doesn't belong to a
-     * JatosWorker this field is null. It's mainly used to distinguish between a
-     * full study run and just a component run.
+     * State of a study run with a JatosWorker. If this run doesn't belong to a JatosWorker, this field is null. It's
+     * mainly used to distinguish between a full study run and just a component run.
      */
     private JatosRun jatosRun;
 
     private Long workerId;
-    private String workerType;
+    private WorkerType workerType;
     private Long batchId;
     private Long studyId;
     private Long studyResultId;
@@ -79,6 +82,34 @@ public class IdCookieModel {
     private Long componentId;
     private Long componentResultId;
     private Integer componentPosition;
+
+    public IdCookieModel() {}
+
+    public IdCookieModel(StudyResult studyResult, ComponentResult componentResult, JatosRun jatosRun) {
+        Study study = studyResult.getStudy();
+        Batch batch = studyResult.getBatch();
+        Worker worker = studyResult.getWorker();
+
+        this.name = IdCookieModel.ID_COOKIE_NAME + "_" + studyResult.getId();
+        this.creationTime = System.currentTimeMillis();
+        this.studyAssets = study.getDirName();
+        this.urlBasePath = Common.getJatosUrlBasePath();
+        this.jatosRun = jatosRun;
+        this.workerId = worker.getId();
+        this.workerType = worker.getWorkerType();
+        this.batchId = batch.getId();
+        this.studyId = study.getId();
+        this.studyResultId = studyResult.getId();
+        this.studyResultUuid = studyResult.getUuid();
+
+        // ComponentResult might not yet be created
+        if (componentResult != null) {
+            Component component = componentResult.getComponent();
+            this.componentId = component.getId();
+            this.componentResultId = componentResult.getId();
+            this.componentPosition = study.getComponentPosition(component);
+        }
+    }
 
     public String getStudyAssets() {
         return studyAssets;
@@ -128,11 +159,11 @@ public class IdCookieModel {
         this.workerId = workerId;
     }
 
-    public String getWorkerType() {
+    public WorkerType getWorkerType() {
         return workerType;
     }
 
-    public void setWorkerType(String workerType) {
+    public void setWorkerType(WorkerType workerType) {
         this.workerType = workerType;
     }
 

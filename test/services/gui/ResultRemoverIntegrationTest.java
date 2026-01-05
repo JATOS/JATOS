@@ -6,7 +6,6 @@ import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.ForbiddenException;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
@@ -180,6 +179,6 @@ public class ResultRemoverIntegrationTest extends JatosTest {
 
     private StudyLink fetchStudyLink(Batch batch) {
         return studyLinkDao.findFirstByBatchAndWorkerType(batch, JatosWorker.WORKER_TYPE)
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, JatosWorker.WORKER_TYPE)));
+                .orElseGet(() -> studyLinkDao.persist(new StudyLink(batch, JatosWorker.WORKER_TYPE)));
     }
 }

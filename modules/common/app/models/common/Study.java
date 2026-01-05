@@ -36,7 +36,6 @@ public class Study {
      */
     public static final int SERIAL_VERSION = 3;
 
-    public static final String USERS = "users";
     public static final String STUDY = "study";
 
     @Id

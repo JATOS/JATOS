@@ -1,6 +1,7 @@
 package services.publix.workers;
 
-import exceptions.publix.ForbiddenPublixException;
+import daos.common.worker.WorkerType;
+import exceptions.common.ForbiddenException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.MTWorker;
@@ -20,25 +21,23 @@ import javax.inject.Singleton;
 public class MTStudyAuthorisation extends StudyAuthorisation {
 
     @Override
-    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch)
-            throws ForbiddenPublixException {
+    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch) {
         if (!study.isActive()) {
-            throw new ForbiddenPublixException(PublixErrorMessages.studyDeactivated(study.getId()));
+            throw new ForbiddenException(PublixErrorMessages.studyDeactivated(study.getId()));
         }
         if (!batch.isActive()) {
-            throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
+            throw new ForbiddenException(PublixErrorMessages.batchInactive(batch.getId()));
         }
         checkMaxTotalWorkers(batch, worker);
         checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch)
-            throws ForbiddenPublixException {
-        // Check if worker type is allowed
-        if (!batch.hasAllowedWorkerType(MTWorker.WORKER_TYPE)) {
-            throw new ForbiddenPublixException(PublixErrorMessages
-                    .workerTypeNotAllowed(worker.getUIWorkerType(), study.getId(), batch.getId()));
+    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch) {
+        // Check if the worker type is allowed
+        if (!batch.hasAllowedWorkerType(WorkerType.MT)) {
+            throw new ForbiddenException(PublixErrorMessages
+                    .workerTypeNotAllowed(worker.getWorkerType().uiValue(), study.getId(), batch.getId()));
         }
     }
 

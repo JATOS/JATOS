@@ -3,6 +3,7 @@ package models.common.workers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import daos.common.worker.WorkerType;
 import models.common.Batch;
 import models.common.StudyResult;
 import play.data.validation.ValidationError;
@@ -26,8 +27,7 @@ import java.util.*;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = Worker.DISCRIMINATOR)
 @AttributeOverride(name = Worker.DISCRIMINATOR,
-        column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false,
-                updatable = false))
+        column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false))
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, include = As.WRAPPER_OBJECT, property = "type")
 public abstract class Worker {
 
@@ -38,6 +38,10 @@ public abstract class Worker {
     @Id
     @GeneratedValue
     private Long id;
+
+    @Convert(converter = WorkerTypeConverter.class)
+    @Column(name = "workerType")
+    private WorkerType workerType;
 
     /**
      * Some comment the user can give during study link/worker creation (only for {@link PersonalSingleWorker} and
@@ -55,6 +59,7 @@ public abstract class Worker {
     @JoinColumn(name = "worker_id")
     // Not using mappedBy because of
     // http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
+    @SuppressWarnings({"FieldMayBeFinal", "MismatchedQueryAndUpdateOfCollection"})
     private List<StudyResult> studyResultList = new ArrayList<>();
 
     /**
@@ -62,6 +67,7 @@ public abstract class Worker {
      * bidirectional.
      */
     @ManyToMany(mappedBy = "workerList", fetch = FetchType.LAZY)
+    @SuppressWarnings("FieldMayBeFinal")
     private Set<Batch> batchList = new HashSet<>();
 
     public Worker() {
@@ -71,37 +77,6 @@ public abstract class Worker {
 
     public abstract List<ValidationError> validate();
 
-    public abstract String getWorkerType();
-
-    @JsonIgnore
-    public abstract String getUIWorkerType();
-
-    /**
-     * Little helper method that translates a workerType into the UI worker
-     * type.
-     */
-    @JsonIgnore
-    public static String getUIWorkerType(String workerType) {
-        switch (workerType) {
-            case JatosWorker.WORKER_TYPE:
-                return JatosWorker.UI_WORKER_TYPE;
-            case PersonalSingleWorker.WORKER_TYPE:
-                return PersonalSingleWorker.UI_WORKER_TYPE;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                return PersonalMultipleWorker.UI_WORKER_TYPE;
-            case GeneralSingleWorker.WORKER_TYPE:
-                return GeneralSingleWorker.UI_WORKER_TYPE;
-            case GeneralMultipleWorker.WORKER_TYPE:
-                return GeneralMultipleWorker.UI_WORKER_TYPE;
-            case MTSandboxWorker.WORKER_TYPE:
-                return MTSandboxWorker.UI_WORKER_TYPE;
-            case MTWorker.WORKER_TYPE:
-                return MTWorker.UI_WORKER_TYPE;
-            default:
-                return "Unknown";
-        }
-    }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -110,32 +85,20 @@ public abstract class Worker {
         return this.id;
     }
 
+    public void setWorkerType(WorkerType workerType) {
+        this.workerType = workerType;
+    }
+
+    public WorkerType getWorkerType() {
+        return workerType;
+    }
+
     public void setComment(String comment) {
         this.comment = comment;
     }
 
     public String getComment() {
         return this.comment;
-    }
-
-    public void setStudyResultList(List<StudyResult> studyResultList) {
-        this.studyResultList = studyResultList;
-    }
-
-    public List<StudyResult> getStudyResultList() {
-        return this.studyResultList;
-    }
-
-    @JsonIgnore
-    public Optional<StudyResult> getFirstStudyResult() {
-        return !studyResultList.isEmpty()
-                ? Optional.of(studyResultList.get(0)) : Optional.empty();
-    }
-
-    @JsonIgnore
-    public Optional<StudyResult> getLastStudyResult() {
-        return !studyResultList.isEmpty()
-                ? Optional.of(studyResultList.get(studyResultList.size() - 1)) : Optional.empty();
     }
 
     public void addStudyResult(StudyResult studyResult) {
@@ -150,16 +113,8 @@ public abstract class Worker {
         return batchList;
     }
 
-    public void setBatchList(Set<Batch> batchList) {
-        this.batchList = batchList;
-    }
-
     public boolean hasBatch(Batch batch) {
         return batchList.contains(batch);
-    }
-
-    public void addBatch(Batch batch) {
-        batchList.add(batch);
     }
 
     public void removeBatch(Batch batch) {

@@ -4,25 +4,26 @@ import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.IOException;
+import general.common.Http.Context;
 import general.common.StudyLogger;
 import models.common.*;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
+import play.db.jpa.JPAApi;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+
 /**
- * Service class that removes ComponentResults or StudyResults. It's used by
- * controllers or other services.
+ * Service class that removes ComponentResults or StudyResults. It's used by controllers or other services.
  *
  * @author Kristian Lange
  */
@@ -31,6 +32,7 @@ public class ResultRemover {
 
     private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
+    private final JPAApi jpa;
     private final Checker checker;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
@@ -40,9 +42,15 @@ public class ResultRemover {
     private final IOUtils ioUtils;
 
     @Inject
-    ResultRemover(Checker checker, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-            WorkerDao workerDao, StudyLogger studyLogger, IOUtils ioUtils) {
+    ResultRemover(JPAApi jpa,
+                  Checker checker,
+                  ComponentResultDao componentResultDao,
+                  StudyResultDao studyResultDao,
+                  GroupResultDao groupResultDao,
+                  WorkerDao workerDao,
+                  StudyLogger studyLogger,
+                  IOUtils ioUtils) {
+        this.jpa = jpa;
         this.checker = checker;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
@@ -53,69 +61,68 @@ public class ResultRemover {
     }
 
     /**
-     * Retrieves all ComponentResults that correspond to the IDs in the given String, checks them and if yes,
-     * removes them. Ignores IDs that do not point to a result. Removes result upload files.
+     * Retrieves all ComponentResults that correspond to the IDs in the given String, checks them and if yes, removes
+     * them. Ignores IDs that do not point to a result. Removes result upload files.
      *
      * @param componentResultIdList List of IDs of ComponentResults
-     * @param user                  For each ComponentResult it will be checked that the given
-     *                              user is a user of the study that the ComponentResult belongs
-     *                              to.
      */
-    public void removeComponentResults(List<Long> componentResultIdList, User user, boolean removeEmptyStudyResults)
-            throws NotFoundException, ForbiddenException {
-        List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
-        checker.checkComponentResults(componentResultList, user, true);
-        for (ComponentResult componentResult : componentResultList) {
-            removeComponentResult(componentResult.getId());
-            if (removeEmptyStudyResults && componentResult.getStudyResult().getComponentResultList().isEmpty()) {
-                removeEmptyStudyResult(componentResult.getStudyResult());
+    public void removeComponentResults(List<Long> componentResultIdList, boolean removeEmptyStudyResults) {
+        jpa.withTransaction(em -> {
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
+            checker.checkComponentResults(componentResultList, signedinUser, true);
+            for (ComponentResult componentResult : componentResultList) {
+                removeComponentResult(componentResult.getId());
+                if (removeEmptyStudyResults && componentResult.getStudyResult().getComponentResultList().isEmpty()) {
+                    removeEmptyStudyResult(componentResult.getStudyResult());
+                }
             }
-        }
 
-        Set<Study> studies = new HashSet<>();
-        componentResultList.forEach(cr -> studies.add(cr.getStudyResult().getStudy()));
-        studies.forEach(study -> studyLogger.log(study, user, "Removed result data and files"));
+            Set<Study> studies = new HashSet<>();
+            componentResultList.forEach(cr -> studies.add(cr.getStudyResult().getStudy()));
+            studies.forEach(study -> studyLogger.log(study, signedinUser, "Removed result data and files"));
+        });
     }
 
     /**
-     * Retrieves all StudyResults that correspond to the IDs in the given
-     * String, checks if the given user is allowed to remove them and if yes,
-     * removes them. Removes result upload files.
+     * Retrieves all StudyResults that correspond to the IDs in the given String, checks if the given user is allowed to
+     * remove them and if yes, removes them. Removes result upload files.
      *
      * @param studyResultIdList List of IDs of StudyResults.
-     * @param user              For each StudyResult it will be checked that the given user is
-     *                          a user of the study that the StudyResult belongs too.
      */
-    public void removeStudyResults(List<Long> studyResultIdList, User user)
-            throws NotFoundException, ForbiddenException {
+    public void removeStudyResults(List<Long> studyResultIdList) {
         List<StudyResult> studyResultList = studyResultDao.findByIds(studyResultIdList);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Set<Study> studies = new HashSet<>();
-        checker.checkStudyResults(studyResultList, user, true);
+        checker.checkStudyResults(studyResultList, signedinUser, true);
         for (StudyResult studyResult : studyResultList) {
             removeStudyResult(studyResult.getId());
         }
         studyResultList.forEach(sr -> studies.add(sr.getStudy()));
-        studies.forEach(study -> studyLogger.log(study, user, "Removed result data and files"));
+        studies.forEach(study -> studyLogger.log(study, signedinUser, "Removed result data and files"));
     }
 
     /**
-     * Removes all ComponentResults that belong to the given component. Remove them from their
-     * StudyResults. Removes result upload files.
+     * Removes all ComponentResults that belong to the given component. Remove them from their StudyResults. Removes
+     * result upload files.
      */
-    void removeAllComponentResults(Component component, User user) {
-        List<ComponentResult> componentResultList = componentResultDao.findAllByComponent(component);
-        componentResultList.forEach(this::removeComponentResultFromStudyResult);
-        for (ComponentResult componentResult : componentResultList) {
-            removeComponentResult(componentResult.getId());
-        }
-        studyLogger.log(component.getStudy(), user, "Removed result data and files");
+    void removeAllComponentResults(Component component) {
+        jpa.withTransaction(em -> {
+            List<ComponentResult> componentResultList = componentResultDao.findAllByComponent(component);
+            componentResultList.forEach(this::removeComponentResultFromStudyResult);
+            for (ComponentResult componentResult : componentResultList) {
+                removeComponentResult(componentResult.getId());
+            }
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            studyLogger.log(component.getStudy(), signedinUser, "Removed result data and files");
+        });
     }
 
     private void removeComponentResultFromStudyResult(ComponentResult componentResult) {
         StudyResult studyResult = componentResult.getStudyResult();
         if (studyResult != null) {
             studyResult.removeComponentResult(componentResult);
-            studyResultDao.update(studyResult);
+            studyResultDao.merge(studyResult);
         } else {
             LOGGER.error(".removeComponentResult: StudyResult is null - "
                     + "but a ComponentResult always belongs to a StudyResult "
@@ -126,90 +133,98 @@ public class ResultRemover {
     /**
      * Removes all StudyResults that belong to the given batch. Removes result upload files.
      */
-    void removeAllStudyResults(Batch batch, User user) {
-        List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
-        for (StudyResult studyResult : studyResultList) {
-            removeStudyResult(studyResult.getId());
-        }
-        studyLogger.log(batch.getStudy(), user, "Removed result data and files");
+    void removeAllStudyResults(Batch batch) {
+        jpa.withTransaction(em -> {
+            List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
+            for (StudyResult studyResult : studyResultList) {
+                removeStudyResult(studyResult.getId());
+            }
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            studyLogger.log(batch.getStudy(), signedinUser, "Removed result data and files");
+        });
     }
 
     /**
      * Remove ComponentResult from its StudyResult and then remove itself. Removes result upload files.
      */
     private void removeComponentResult(long componentResultId) {
-        ComponentResult componentResult = componentResultDao.findById(componentResultId);
-        StudyResult studyResult = componentResult.getStudyResult();
-        if (studyResult == null) {
-            LOGGER.error(".removeComponentResult: StudyResult is null - but a ComponentResult always belongs to a "
-                    + "StudyResult (ComponentResult's ID is " + componentResult.getId() + ")");
-            componentResultDao.remove(componentResult);
-            return;
-        }
+        jpa.withTransaction(em -> {
+            ComponentResult componentResult = componentResultDao.findById(componentResultId);
+            StudyResult studyResult = componentResult.getStudyResult();
+            if (studyResult == null) {
+                LOGGER.error(".removeComponentResult: StudyResult is null - but a ComponentResult always belongs to a "
+                        + "StudyResult (ComponentResult's ID is " + componentResult.getId() + ")");
+                componentResultDao.remove(componentResult);
+                return;
+            }
 
-        studyResult.removeComponentResult(componentResult);
-        studyResultDao.update(studyResult);
-        try {
-            // Remove componentResult's upload dir
-            ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
-        } catch (IOException e) {
-            LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
-        }
-        componentResultDao.remove(componentResult);
+            studyResult.removeComponentResult(componentResult);
+            studyResultDao.merge(studyResult);
+            try {
+                // Remove componentResult's upload dir
+                ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
+            } catch (IOException e) {
+                LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
+            }
+            componentResultDao.remove(componentResult);
+        });
     }
 
     /**
-     * Removes all ComponentResults of the given StudyResult, removes this
-     * StudyResult from the given worker, removes this StudyResult from the
-     * GroupResult and then remove StudyResult itself. Removes result upload files.
+     * Removes all ComponentResults of the given StudyResult, removes this StudyResult from the given worker, removes
+     * this StudyResult from the GroupResult and then remove StudyResult itself. Removes result upload files.
      */
     private void removeStudyResult(long studyResultId) {
-        StudyResult studyResult = studyResultDao.findById(studyResultId);
+        jpa.withTransaction(em -> {
+            StudyResult studyResult = studyResultDao.findById(studyResultId);
 
-        // Remove all component results of this study result
-        studyResult.getComponentResultList().forEach(componentResultDao::remove);
+            // Remove all component results of this study result
+            studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
-        removeEmptyStudyResult(studyResult);
+            removeEmptyStudyResult(studyResult);
+        });
     }
 
     private void removeEmptyStudyResult(StudyResult studyResult) {
-        // Remove study result from worker
-        Worker worker = studyResult.getWorker();
-        worker.removeStudyResult(studyResult);
-        workerDao.update(worker);
+        jpa.withTransaction(entityManager -> {
+            // Remove study result from the worker
+            Worker worker = studyResult.getWorker();
+            worker.removeStudyResult(studyResult);
+            workerDao.merge(worker);
 
-        // Remove studyResult as member from group result
-        GroupResult activeGroupResult = studyResult.getActiveGroupResult();
-        if (activeGroupResult != null) {
-            activeGroupResult.removeActiveMember(studyResult);
-            updateOrRemoveGroupResult(activeGroupResult);
-        }
-        GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
-        if (historyGroupResult != null) {
-            historyGroupResult.removeHistoryMember(studyResult);
-            updateOrRemoveGroupResult(historyGroupResult);
-        }
+            // Remove studyResult as a member from a group result
+            GroupResult activeGroupResult = studyResult.getActiveGroupResult();
+            if (activeGroupResult != null) {
+                activeGroupResult.removeActiveMember(studyResult);
+                updateOrRemoveGroupResult(activeGroupResult);
+            }
+            GroupResult historyGroupResult = studyResult.getHistoryGroupResult();
+            if (historyGroupResult != null) {
+                historyGroupResult.removeHistoryMember(studyResult);
+                updateOrRemoveGroupResult(historyGroupResult);
+            }
 
-        try {
-            // Remove studyResult's upload dir
-            ioUtils.removeResultUploadsDir(studyResult.getId());
-        } catch (IOException e) {
-            LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
-        }
+            try {
+                // Remove studyResult's upload dir
+                ioUtils.removeResultUploadsDir(studyResult.getId());
+            } catch (IOException e) {
+                LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
+            }
 
-        // Remove studyResult
-        studyResultDao.remove(studyResult);
+            // Remove studyResult
+            studyResultDao.remove(studyResult);
+        });
     }
 
     /**
-     * If the group has no more members remove it.
+     * If the group has no more members, remove it.
      */
     private void updateOrRemoveGroupResult(GroupResult groupResult) {
         if (groupResult.getGroupState() == GroupResult.GroupState.FINISHED &&
                 groupResult.getActiveMemberCount() == 0 && groupResult.getHistoryMemberCount() == 0) {
             groupResultDao.remove(groupResult);
         } else {
-            groupResultDao.update(groupResult);
+            groupResultDao.merge(groupResult);
         }
     }
 

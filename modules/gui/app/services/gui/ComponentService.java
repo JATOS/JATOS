@@ -1,12 +1,12 @@
 package services.gui;
 
-import auth.gui.AuthService;
+import general.common.Http.Context;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.IOException;
+import exceptions.common.NotFoundException;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
+import messaging.common.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
@@ -14,7 +14,7 @@ import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
-import play.mvc.Http;
+import play.db.jpa.JPAApi;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 
@@ -22,13 +22,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 import java.io.File;
-import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+
 /**
- * Service class for JATOS Controllers (not Publix).
+ * Service class for JATOS Controllers (not Publix) handling Component entities.
  *
  * @author Kristian Lange
  */
@@ -37,21 +38,25 @@ public class ComponentService {
 
     private static final ALogger LOGGER = Logger.of(ComponentService.class);
 
+    private final JPAApi jpa;
     private final ResultRemover resultRemover;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
-    private final AuthService authService;
     private final Checker checker;
 
     @Inject
-    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils,
-                     AuthService authService, Checker checker) {
+    ComponentService(JPAApi jpa,
+                     ResultRemover resultRemover,
+                     StudyDao studyDao,
+                     ComponentDao componentDao,
+                     IOUtils ioUtils,
+                     Checker checker) {
+        this.jpa = jpa;
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.ioUtils = ioUtils;
-        this.authService = authService;
         this.checker = checker;
     }
 
@@ -87,7 +92,7 @@ public class ComponentService {
     }
 
     /**
-     * Update component's properties with the ones from updatedComponent.
+     * Update a component's properties with the ones from updatedComponent.
      */
     void updateProperties(Component component, Component updatedComponent) {
         component.setTitle(updatedComponent.getTitle());
@@ -96,25 +101,25 @@ public class ComponentService {
         component.setComments(updatedComponent.getComments());
         component.setJsonData(updatedComponent.getJsonData());
         component.setActive(updatedComponent.isActive());
-        componentDao.update(component);
+        componentDao.merge(component);
     }
 
     /**
-     * Update component's properties with the ones from updatedComponent, but not htmlFilePath and not active.
+     * Update a component's properties with the ones from updatedComponent, but not htmlFilePath and not active.
      */
     public void updateComponentAfterEdit(Component component, ComponentProperties updatedProps) {
         component.setTitle(updatedProps.getTitle());
         component.setReloadable(updatedProps.isReloadable());
         component.setComments(updatedProps.getComments());
         component.setJsonData(updatedProps.getJsonData());
-        componentDao.update(component);
+        componentDao.merge(component);
     }
 
     /**
      * Does the same as {@link #clone(Component) cloneComponent} and additionally clones the HTML file and changes the
      * title.
      */
-    public Component cloneWholeComponent(Http.Request request, Component component) {
+    public Component cloneWholeComponent(Component component) {
         Component clone = clone(component);
         clone.setTitle(cloneTitle(component.getTitle()));
         try {
@@ -122,9 +127,8 @@ public class ComponentService {
                     component.getHtmlFilePath());
             clone.setHtmlFilePath(clonedHtmlFileName);
         } catch (IOException e) {
-            // Just log it and give a warning - a component is allowed to have
-            // no HTML file
-            RequestScopeMessaging.warning(request, MessagesStrings.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
+            // Just log it and give a warning - a component is allowed to have no HTML file
+            RequestScopeMessaging.warning(MessagesStrings.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
             LOGGER.info(".cloneWholeComponent: " + e.getMessage());
         }
         return clone;
@@ -155,13 +159,15 @@ public class ComponentService {
      * Initialise and persist the given Component. Updates its study.
      */
     public Component createAndPersistComponent(Study study, Component component) {
-        component.setStudy(study);
-        if (!study.hasComponent(component)) {
-            study.addComponent(component);
-        }
-        componentDao.create(component);
-        studyDao.update(study);
-        return component;
+        return jpa.withTransaction(em -> {
+            component.setStudy(study);
+            if (!study.hasComponent(component)) {
+                study.addComponent(component);
+            }
+            componentDao.persist(component);
+            studyDao.merge(study);
+            return component;
+        });
     }
 
     /**
@@ -173,7 +179,7 @@ public class ComponentService {
     }
 
     /**
-     * Binds component data from a edit/create component request onto a Component. Play's default form binder doesn't
+     * Binds component data from an edit/create component request onto a Component. Play's default form binder doesn't
      * work here.
      */
     private Component bindToComponent(ComponentProperties props) {
@@ -189,17 +195,16 @@ public class ComponentService {
     /**
      * Renames the path to the HTML file in the file system and persists the component's property.
      */
-    public void renameHtmlFilePath(Component component, String newHtmlFilePath, boolean htmlFileRename)
-            throws IOException {
+    public void renameHtmlFilePath(Component component, String newHtmlFilePath, boolean htmlFileRename) {
 
-        // If the new HTML file name is empty persist an empty string
+        // If the new HTML file name is empty, persist an empty string
         if (newHtmlFilePath == null || newHtmlFilePath.trim().isEmpty()) {
             component.setHtmlFilePath("");
-            componentDao.update(component);
+            componentDao.merge(component);
             return;
         }
 
-        // What if current HTML file doesn't exist
+        // What if the current HTML file doesn't exist
         File currentFile = null;
         if (!component.getHtmlFilePath().trim().isEmpty()) {
             currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
@@ -207,7 +212,7 @@ public class ComponentService {
         }
         if (currentFile == null || !currentFile.exists()) {
             component.setHtmlFilePath(newHtmlFilePath);
-            componentDao.update(component);
+            componentDao.merge(component);
             return;
         }
 
@@ -215,14 +220,14 @@ public class ComponentService {
         if (htmlFileRename) ioUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
                 component.getStudy().getDirName());
         component.setHtmlFilePath(newHtmlFilePath);
-        componentDao.update(component);
+        componentDao.merge(component);
     }
 
     /**
      * Validates the component by using the Component's model validation method. Throws ValidationException in case of
      * an error.
      */
-    public void validate(Component component) throws ValidationException {
+    public void validate(Component component) {
         ComponentProperties props = bindToProperties(component);
         if (props.validate() != null) {
             LOGGER.warn(".validate: " + props.validate().stream().map(ValidationError::message)
@@ -235,19 +240,22 @@ public class ComponentService {
      * Remove Component: Remove it from the given study, remove all its ComponentResults, and remove the component
      * itself.
      */
-    public void remove(Component component, User signedinUser) {
-        Study study = component.getStudy();
-        // Remove component from study
-        study.removeComponent(component);
-        studyDao.update(study);
-        // Remove component's ComponentResults
-        resultRemover.removeAllComponentResults(component, signedinUser);
-        componentDao.remove(component);
+    public void remove(Component component) {
+        jpa.withTransaction(entityManager -> {
+            Component managedComponent = componentDao.merge(component);
+            Study study = managedComponent.getStudy();
+            // Remove component from the study
+            study.removeComponent(managedComponent);
+            studyDao.merge(study);
+            // Remove component's ComponentResults
+            resultRemover.removeAllComponentResults(managedComponent);
+            componentDao.remove(managedComponent);
+        });
     }
 
-    public Component getComponentFromIdOrUuid(Http.Request request, String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Component getComponentFromIdOrUuid(String idOrUuid) {
         Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser(request);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component;
         if (componentId.isPresent()) {
             component = componentDao.findById(componentId.get());

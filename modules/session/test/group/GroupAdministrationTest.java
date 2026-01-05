@@ -80,7 +80,7 @@ public class GroupAdministrationTest {
 
         when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(Collections.emptyList());
         // Return argument back for create
-        when(groupResultDao.create(any(GroupResult.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(groupResultDao.persist(any(GroupResult.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // No dispatcher initially; sendJoinedMsg checks and is no-op if none
         when(registry.get(anyLong())).thenReturn(scala.Option.empty());
@@ -90,9 +90,9 @@ public class GroupAdministrationTest {
         assertNotNull(returned);
         assertSame(returned, sr.getActiveGroupResult());
         assertTrue(returned.getActiveMemberList().contains(sr));
-        verify(groupResultDao).create(any(GroupResult.class));
-        verify(groupResultDao, atLeastOnce()).update(any(GroupResult.class));
-        verify(studyResultDao).update(sr);
+        verify(groupResultDao).persist(any(GroupResult.class));
+        verify(groupResultDao, atLeastOnce()).merge(any(GroupResult.class));
+        verify(studyResultDao).merge(sr);
         // Since no dispatcher, no joined() call
         verify(registry).get(anyLong());
         verifyNoInteractions(dispatcherCurrent);
@@ -116,7 +116,7 @@ public class GroupAdministrationTest {
         assertSame(existing, sr.getActiveGroupResult());
         assertTrue(existing.getActiveMemberList().contains(sr));
         // Ensure we didn't create a new one
-        verify(groupResultDao, never()).create(any(GroupResult.class));
+        verify(groupResultDao, never()).persist(any(GroupResult.class));
         // Joined message should be sent
         verify(dispatcherCurrent).joined(sr.getId());
     }
@@ -156,8 +156,8 @@ public class GroupAdministrationTest {
         assertSame(gr, sr.getHistoryGroupResult());
         assertEquals(0, gr.getActiveMemberCount().intValue());
         assertEquals(1, gr.getHistoryMemberCount().intValue());
-        verify(groupResultDao, atLeastOnce()).update(gr);
-        verify(studyResultDao).update(sr);
+        verify(groupResultDao, atLeastOnce()).merge(gr);
+        verify(studyResultDao).merge(sr);
         verify(dispatcherCurrent).left(sr.getId());
         verify(dispatcherCurrent).poisonChannel(sr.getId());
     }
@@ -202,9 +202,9 @@ public class GroupAdministrationTest {
         assertTrue(different.getActiveMemberList().contains(sr));
 
         // DAO updates performed
-        verify(groupResultDao).update(current);
-        verify(groupResultDao).update(different);
-        verify(studyResultDao).update(sr);
+        verify(groupResultDao).merge(current);
+        verify(groupResultDao).merge(different);
+        verify(studyResultDao).merge(sr);
         // Channel reassigned
         verify(dispatcherCurrent).reassignChannel(sr.getId(), dispatcherDifferent);
     }
@@ -248,6 +248,6 @@ public class GroupAdministrationTest {
         assertEquals(GroupResult.GroupState.FINISHED, gr.getGroupState());
         assertNull("groupSessionData should be cleared on finish", gr.getGroupSessionData());
         assertNotNull("endDate should be set", gr.getEndDate());
-        verify(groupResultDao, atLeastOnce()).update(gr);
+        verify(groupResultDao, atLeastOnce()).merge(gr);
     }
 }

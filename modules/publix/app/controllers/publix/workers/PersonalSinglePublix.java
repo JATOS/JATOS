@@ -5,7 +5,10 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.PublixException;
+import filters.publix.IdCookieFilter;
+import filters.publix.IdCookieFilter.IdCookies;
+import general.common.IOExecutor;
+import general.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;
@@ -22,10 +25,13 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+import actions.common.TransactionalAction.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Optional;
+
+import static play.mvc.Results.redirect;
 
 /**
  * Implementation of JATOS' public API for personal single study runs. A personal single run is done by a
@@ -44,16 +50,23 @@ public class PersonalSinglePublix extends Publix implements IPublix {
     private final StudyLogger studyLogger;
 
     @Inject
-    PersonalSinglePublix(JPAApi jpa, PublixUtils publixUtils,
-            PersonalSingleStudyAuthorisation studyAuthorisation,
-            ResultCreator resultCreator, GroupAdministration groupAdministration,
-            IdCookieService idCookieService,
-            PublixErrorMessages errorMessages, StudyAssets studyAssets,
-            JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyLogger studyLogger, IOUtils ioUtils) {
-        super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-                idCookieService, errorMessages, studyAssets, jsonUtils,
-                componentResultDao, studyResultDao, studyLogger, ioUtils);
+    PersonalSinglePublix(JPAApi jpa,
+                         PublixUtils publixUtils,
+                         PersonalSingleStudyAuthorisation studyAuthorisation,
+                         ResultCreator resultCreator,
+                         GroupAdministration groupAdministration,
+                         IdCookieService idCookieService,
+                         PublixErrorMessages errorMessages,
+                         StudyAssets studyAssets,
+                         JsonUtils jsonUtils,
+                         ComponentResultDao componentResultDao,
+                         StudyResultDao studyResultDao,
+                         StudyLogger studyLogger,
+                         IOUtils ioUtils,
+                         IOExecutor dbContext,
+                         StudyAssetsExecutor studyAssetsExecutor) {
+        super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils, dbContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -63,16 +76,15 @@ public class PersonalSinglePublix extends Publix implements IPublix {
     /**
      * {@inheritDoc}
      *
-     * Only a general single run or a personal single run has the special
-     * StudyState PRE. Only with the corresponding workers (GeneralSingleWorker
-     * and PersonalSingleWorker) it's possible to have a preview of the study.
-     * To get into the preview mode the Study's 'allowPreview' flag has to be set.
-     * In the preview mode a worker can start the first active component as often
-     * as they want. As soon as the worker goes on and starts another component
-     * the study result switches into 'STARTED' and back to normal behavior.
+     * Only a general single run or a personal single run has the special StudyState PRE. Only with the corresponding
+     * workers (GeneralSingleWorker and PersonalSingleWorker) is it possible to have a preview of the study. To get into
+     * the preview mode, the Study's 'allowPreview' flag has to be set. In the preview mode a worker can start the first
+     * active component as often as they want. As soon as the worker goes on and starts another component, the study
+     * result switches into 'STARTED' and back to normal behavior.
      */
     @Override
-    public Result startStudy(Http.Request request, StudyLink studyLink) throws PublixException {
+    @IdCookies
+    public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         PersonalSingleWorker worker = (PersonalSingleWorker) studyLink.getWorker();
@@ -84,7 +96,7 @@ public class PersonalSinglePublix extends Publix implements IPublix {
         // 3. Preview study, second+ call, different browser -> get StudyResult, call finishOldestStudyResult
         // 4. No preview study, first call -> create StudyResult, call finishOldestStudyResult
         // 5. No preview study, second+ call -> throw exception
-        Optional<StudyResult> studyResultOpt = worker.getLastStudyResult();
+        Optional<StudyResult> studyResultOpt = publixUtils.getLastStudyResult(worker);
         StudyResult studyResult;
         if (!studyResultOpt.isPresent()) {
             publixUtils.finishOldestStudyResult(request);

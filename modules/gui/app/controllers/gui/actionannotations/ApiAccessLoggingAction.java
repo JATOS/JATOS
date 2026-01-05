@@ -1,7 +1,6 @@
 package controllers.gui.actionannotations;
 
-import auth.gui.AuthService;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import general.common.Http.Context;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Action;
@@ -15,12 +14,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
+
 /**
  * Annotation definition for Play actions: logging of each action call
  *
  * @author Kristian
  */
-public class ApiAccessLoggingAction extends Action<GuiAccessLogging> {
+public class ApiAccessLoggingAction extends Action<ApiAccessLogging> {
 
     @With(ApiAccessLoggingAction.class)
     @Target({ElementType.TYPE, ElementType.METHOD})
@@ -32,8 +34,9 @@ public class ApiAccessLoggingAction extends Action<GuiAccessLogging> {
 
     public CompletionStage<Result> call(Http.Request request) {
         String username = "unknown";
-        if (request.attrs().containsKey(AuthService.SIGNEDIN_USER)) {
-            username = request.attrs().get(AuthService.SIGNEDIN_USER).getUsername();
+
+        if (Context.current().args().containsKey(SIGNEDIN_USER)) {
+            username = Context.current().args().get(SIGNEDIN_USER).getUsername();
         }
         apiLogger.info(request.method() + " " + request.uri() + " (" + username + ")");
         return delegate.call(request);

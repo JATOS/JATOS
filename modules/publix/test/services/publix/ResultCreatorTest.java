@@ -51,8 +51,8 @@ public class ResultCreatorTest {
         assertEquals(study, sr.getStudy());
         assertEquals(StudyState.PRE, sr.getStudyState());
         assertTrue(worker.getStudyResultList().contains(sr));
-        verify(studyResultDao).create(sr);
-        verify(workerDao).update(worker);
+        verify(studyResultDao).persist(sr);
+        verify(workerDao).merge(worker);
         verifyNoMoreInteractions(studyResultDao, workerDao, componentResultDao);
     }
 
@@ -83,9 +83,9 @@ public class ResultCreatorTest {
         assertEquals(StudyState.STARTED, sr2.getStudyState());
 
         // DAO interactions happened for both calls
-        verify(studyResultDao, times(2)).create(any(StudyResult.class));
-        verify(workerDao).update(mtWorker);
-        verify(workerDao).update(previewWorker);
+        verify(studyResultDao, times(2)).persist(any(StudyResult.class));
+        verify(workerDao).merge(mtWorker);
+        verify(workerDao).merge(previewWorker);
         verifyNoMoreInteractions(studyResultDao, workerDao, componentResultDao);
     }
 
@@ -110,10 +110,10 @@ public class ResultCreatorTest {
         assertEquals(studyResult, componentResult.getStudyResult());
         assertTrue(studyResult.getComponentResultList().contains(componentResult));
 
-        verify(componentResultDao).create(componentResult);
-        verify(studyResultDao, atLeastOnce()).create(any(StudyResult.class));
-        verify(studyResultDao).update(studyResult);
-        verify(workerDao).update(worker);
+        verify(componentResultDao).persist(componentResult);
+        verify(studyResultDao, atLeastOnce()).persist(any(StudyResult.class));
+        verify(studyResultDao).merge(studyResult);
+        verify(workerDao).merge(worker);
         verifyNoMoreInteractions(componentResultDao, studyResultDao, workerDao);
     }
 }

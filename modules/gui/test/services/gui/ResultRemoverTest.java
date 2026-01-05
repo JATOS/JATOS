@@ -4,7 +4,7 @@ import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.ForbiddenException;
+import exceptions.common.ForbiddenException;
 import general.common.StudyLogger;
 import models.common.*;
 import models.common.workers.Worker;
@@ -168,14 +168,14 @@ public class ResultRemoverTest {
         resultRemover.removeComponentResults(Arrays.asList(200L, 201L), user, true);
 
         // studyResult should have both removed, uploads dir removed twice, and component results removed
-        verify(studyResultDao, atLeastOnce()).update(sr);
+        verify(studyResultDao, atLeastOnce()).merge(sr);
         verify(ioUtils, times(1)).removeResultUploadsDir(eq(sr.getId()), eq(200L));
         verify(ioUtils, times(1)).removeResultUploadsDir(eq(sr.getId()), eq(201L));
         verify(componentResultDao).remove(cr1);
         verify(componentResultDao).remove(cr2);
 
         // since empty after removing both, removeEmptyStudyResult should remove sr
-        verify(workerDao).update(worker);
+        verify(workerDao).merge(worker);
         verify(studyResultDao).remove(sr);
 
         // one log entry per study
@@ -199,7 +199,7 @@ public class ResultRemoverTest {
 
         // Only the specified component removed, and sr not removed
         verify(componentResultDao).remove(cr1);
-        verify(studyResultDao, atLeastOnce()).update(sr);
+        verify(studyResultDao, atLeastOnce()).merge(sr);
         verify(studyResultDao, never()).remove(sr);
         verify(ioUtils).removeResultUploadsDir(eq(sr.getId()), eq(210L));
     }
@@ -257,7 +257,7 @@ public class ResultRemoverTest {
         resultRemover.removeAllComponentResults(component, user);
 
         // studyResult updated (removed both component results from list)
-        verify(studyResultDao, atLeastOnce()).update(sr);
+        verify(studyResultDao, atLeastOnce()).merge(sr);
         // both removed via dao
         verify(componentResultDao).remove(cr1);
         verify(componentResultDao).remove(cr2);

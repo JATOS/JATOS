@@ -5,8 +5,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
-import services.publix.idcookie.exception.IdCookieCollectionFullException;
+import services.publix.idcookie.exceptions.IdCookieAlreadyExistsException;
+import services.publix.idcookie.exceptions.IdCookieCollectionFullException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mockStatic;

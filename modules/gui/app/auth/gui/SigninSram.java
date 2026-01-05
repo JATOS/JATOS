@@ -1,7 +1,7 @@
 package auth.gui;
 
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
-import exceptions.gui.AuthException;
+import exceptions.common.AuthException;
 import general.common.Common;
 import models.common.User;
 

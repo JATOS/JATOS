@@ -3,6 +3,7 @@ package models.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import daos.common.worker.WorkerType;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
@@ -111,6 +112,7 @@ public class StudyResult {
     @JoinColumn(name = "studyResult_id")
     // Not using mappedBy because of
     // http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
+    @SuppressWarnings("FieldMayBeFinal")
     private List<ComponentResult> componentResultList = new ArrayList<>();
 
     @JsonIgnore
@@ -154,6 +156,7 @@ public class StudyResult {
      * Flag that indicates whether the study run reached its quota for the max result file size per study run at
      * least once.
      */
+    @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
     private boolean quotaReached = false;
 
     public StudyResult() {
@@ -175,7 +178,7 @@ public class StudyResult {
     }
 
     @JsonProperty("workerType")
-    public String getWorkerType() {
+    public WorkerType getWorkerType() {
         return worker.getWorkerType();
     }
 
@@ -280,30 +283,8 @@ public class StudyResult {
         return this.confirmationCode;
     }
 
-    public void setComponentResultList(List<ComponentResult> componentResultList) {
-        this.componentResultList = componentResultList;
-    }
-
     public List<ComponentResult> getComponentResultList() {
         return this.componentResultList;
-    }
-
-    @JsonIgnore
-    public Optional<ComponentResult> getFirstComponentResult() {
-        if (componentResultList.size() > 0) {
-            return Optional.of(componentResultList.get(0));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    @JsonIgnore
-    public Optional<ComponentResult> getLastComponentResult() {
-        if (componentResultList.size() > 0) {
-            return Optional.of(componentResultList.get(componentResultList.size() - 1));
-        } else {
-            return Optional.empty();
-        }
     }
 
     public void removeComponentResult(ComponentResult componentResult) {
@@ -344,10 +325,6 @@ public class StudyResult {
 
     public void setUrlQueryParameters(String urlQueryParameters) {
         this.urlQueryParameters = urlQueryParameters;
-    }
-
-    public void setQuotaReached(boolean quotaReached) {
-        this.quotaReached = quotaReached;
     }
 
     public boolean isQuotaReached() {

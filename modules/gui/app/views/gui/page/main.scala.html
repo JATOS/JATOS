@@ -2,7 +2,7 @@
 @(signedinUser: common.User, studyOption: Option[common.Study], workerOption: Option[common.workers.Worker], breadcrumbs: String)(content: Html)(implicit request: RequestHeader)
 
 @import general.common._
-@import general.gui._
+@import messaging.common._
 
 <!DOCTYPE html>
 <html lang="en">
@@ -56,9 +56,9 @@
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
 
     // Show messages from RequestScopeMessaging and FlashScopeMessaging
-    const messagesRequestScope = @Html(RequestScopeMessaging.getAsJson(request));
+    const messagesRequestScope = @Html(RequestScopeMessaging.asJson());
     Alerts.showList(messagesRequestScope);
-    const messagesFlashScope = @Html(FlashScopeMessaging.getAsJson(request));
+    const messagesFlashScope = @Html(FlashScopeMessaging.asJson(request));
     Alerts.showList(messagesFlashScope);
 
     $(document).ready(() => Helpers.activateTooltips());

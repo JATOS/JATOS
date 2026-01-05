@@ -1,8 +1,8 @@
 package services.gui;
 
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.BadRequestException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;

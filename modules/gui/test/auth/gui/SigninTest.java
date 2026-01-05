@@ -87,7 +87,7 @@ public class SigninTest {
         assertThat(res.status()).isEqualTo(UNAUTHORIZED);
         assertThat(contentAsString(res)).isEqualTo(MessagesStrings.FAILED_THREE_TIMES);
         verifyNoInteractions(userDao);
-        verify(loginAttemptDao, never()).create(any());
+        verify(loginAttemptDao, never()).persist(any());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class SigninTest {
 
         assertThat(res.status()).isEqualTo(UNAUTHORIZED);
         assertThat(contentAsString(res)).isEqualTo(MessagesStrings.INVALID_USER_OR_PASSWORD);
-        verify(loginAttemptDao, times(1)).create(any());
+        verify(loginAttemptDao, times(1)).persist(any());
     }
 
     @Test
@@ -135,7 +135,7 @@ public class SigninTest {
 
         assertThat(res.status()).isEqualTo(UNAUTHORIZED);
         assertThat(contentAsString(res)).isEqualTo(MessagesStrings.FAILED_THREE_TIMES);
-        verify(loginAttemptDao, times(1)).create(any());
+        verify(loginAttemptDao, times(1)).persist(any());
     }
 
     @Test

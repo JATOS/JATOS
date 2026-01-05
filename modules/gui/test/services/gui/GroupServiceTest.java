@@ -54,7 +54,7 @@ public class GroupServiceTest {
         boolean result = groupService.updateGroupSession(123L, session);
 
         assertThat(result).isFalse();
-        verify(groupResultDao, never()).update(any());
+        verify(groupResultDao, never()).merge(any());
     }
 
     @Test
@@ -69,7 +69,7 @@ public class GroupServiceTest {
         boolean result = groupService.updateGroupSession(1L, session);
 
         assertThat(result).isFalse();
-        verify(groupResultDao, never()).update(any());
+        verify(groupResultDao, never()).merge(any());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class GroupServiceTest {
         assertThat(result).isTrue();
         assertThat(current.getGroupSessionVersion()).isEqualTo(4L);
         assertThat(current.getGroupSessionData()).isEqualTo("{}");
-        verify(groupResultDao, times(1)).update(current);
+        verify(groupResultDao, times(1)).merge(current);
     }
 
     @Test
@@ -103,7 +103,7 @@ public class GroupServiceTest {
         assertThat(result).isTrue();
         assertThat(current.getGroupSessionVersion()).isEqualTo(8L);
         assertThat(current.getGroupSessionData()).isEqualTo("{\"new\":123}");
-        verify(groupResultDao, times(1)).update(current);
+        verify(groupResultDao, times(1)).merge(current);
     }
 
     @Test
@@ -114,7 +114,7 @@ public class GroupServiceTest {
 
         assertThat(state).isEqualTo(GroupState.FIXED);
         assertThat(gr.getGroupState()).isEqualTo(GroupState.FIXED);
-        verify(groupResultDao, times(1)).update(gr);
+        verify(groupResultDao, times(1)).merge(gr);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class GroupServiceTest {
 
         assertThat(state).isEqualTo(GroupState.STARTED);
         assertThat(gr.getGroupState()).isEqualTo(GroupState.STARTED);
-        verify(groupResultDao, times(1)).update(gr);
+        verify(groupResultDao, times(1)).merge(gr);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class GroupServiceTest {
         GroupState state = groupService.toggleGroupFixed(gr, true);
 
         assertThat(state).isEqualTo(GroupState.FIXED);
-        verify(groupResultDao, times(1)).update(gr);
+        verify(groupResultDao, times(1)).merge(gr);
     }
 
     @Test
@@ -145,6 +145,6 @@ public class GroupServiceTest {
         GroupState state = groupService.toggleGroupFixed(gr, false);
 
         assertThat(state).isEqualTo(GroupState.STARTED);
-        verify(groupResultDao, times(1)).update(gr);
+        verify(groupResultDao, times(1)).merge(gr);
     }
 }

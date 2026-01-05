@@ -3,8 +3,8 @@ package services.gui;
 import auth.gui.AuthService;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
@@ -192,7 +192,7 @@ public class ComponentServiceTest {
         // unchanged
         assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
         assertThat(c.isActive()).isTrue();
-        verify(componentDao).update(c);
+        verify(componentDao).merge(c);
     }
 
     @Test
@@ -213,8 +213,8 @@ public class ComponentServiceTest {
         // Then
         assertThat(created.getStudy()).isEqualTo(s);
         assertThat(s.getComponentList()).contains(created);
-        verify(componentDao).create(created);
-        verify(studyDao).update(s);
+        verify(componentDao).persist(created);
+        verify(studyDao).merge(s);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(c.getHtmlFilePath()).isEqualTo("");
-        verify(componentDao).update(c);
+        verify(componentDao).merge(c);
         verify(ioUtils, never()).renameHtmlFile(anyString(), anyString(), anyString());
         verify(ioUtils, never()).getFileInStudyAssetsDir(anyString(), anyString());
     }
@@ -245,7 +245,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new.html");
-        verify(componentDao).update(c);
+        verify(componentDao).merge(c);
         verify(ioUtils, never()).renameHtmlFile(anyString(), anyString(), anyString());
     }
 
@@ -264,12 +264,12 @@ public class ComponentServiceTest {
         // Then
         assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new2.html");
         verify(ioUtils).renameHtmlFile("a" + File.separator + "index.html", "a/new2.html", s.getDirName());
-        verify(componentDao).update(c);
+        verify(componentDao).merge(c);
 
         // And when rename not requested
         componentService.renameHtmlFilePath(c, "a/new3.html", false);
         verify(ioUtils, never()).renameHtmlFile("a" + File.separator + "new2.html", "a/new3.html", s.getDirName());
-        verify(componentDao, times(2)).update(c);
+        verify(componentDao, times(2)).merge(c);
         assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new3.html");
     }
 
@@ -308,7 +308,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(s.getComponentList().contains(c)).isFalse();
-        verify(studyDao).update(s);
+        verify(studyDao).merge(s);
         verify(resultRemover).removeAllComponentResults(c, u);
         verify(componentDao).remove(c);
     }

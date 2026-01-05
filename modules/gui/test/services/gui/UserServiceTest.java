@@ -5,8 +5,8 @@ import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
@@ -100,8 +100,8 @@ public class UserServiceTest {
         assertThat(w).isNotNull();
         assertThat(w.getUser()).isEqualTo(u);
         // DAO interactions
-        verify(workerDao, times(1)).create(any(JatosWorker.class));
-        verify(userDao, times(1)).create(eq(u));
+        verify(workerDao, times(1)).persist(any(JatosWorker.class));
+        verify(userDao, times(1)).persist(eq(u));
     }
 
     @Test
@@ -117,7 +117,7 @@ public class UserServiceTest {
         User u = new User("foo@foo.org", "Foo", "foo@foo.org");
         userService.updatePassword(u, "newPass");
         assertThat(u.getPasswordHash()).isNotEmpty();
-        verify(userDao, times(1)).update(eq(u));
+        verify(userDao, times(1)).merge(eq(u));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class UserServiceTest {
 
         userService.toggleActive("target@ex.org", false);
         assertThat(target.isActive()).isFalse();
-        verify(userDao).update(target);
+        verify(userDao).merge(target);
     }
 
     @Test(expected = ForbiddenException.class)
@@ -156,12 +156,12 @@ public class UserServiceTest {
         boolean afterAdd = userService.changeSuperuserRole("foo@ex.org", true);
         assertThat(afterAdd).isTrue();
         assertThat(u.isSuperuser()).isTrue();
-        verify(userDao, times(1)).update(u);
+        verify(userDao, times(1)).merge(u);
 
         boolean afterRemove = userService.changeSuperuserRole("foo@ex.org", false);
         assertThat(afterRemove).isFalse();
         assertThat(u.isSuperuser()).isFalse();
-        verify(userDao, times(2)).update(u);
+        verify(userDao, times(2)).merge(u);
     }
 
     @Test(expected = ForbiddenException.class)
@@ -209,7 +209,7 @@ public class UserServiceTest {
         userService.setLastSignin("foo@ex.org");
 
         assertThat(u.getLastLogin()).isNotNull();
-        verify(userDao, times(1)).update(u);
+        verify(userDao, times(1)).merge(u);
     }
 
     @Test
@@ -218,7 +218,7 @@ public class UserServiceTest {
         userService.setLastSeen(u);
         Timestamp ts = u.getLastSeen();
         assertThat(ts).isNotNull();
-        verify(userDao).update(u);
+        verify(userDao).merge(u);
     }
 
     @Test(expected = ForbiddenException.class)
@@ -268,7 +268,7 @@ public class UserServiceTest {
 
         // For multi-member study, service removes user from study and updates it
         assertThat(s.getUserList().contains(u)).isFalse();
-        verify(studyDao, times(1)).update(eq(s));
+        verify(studyDao, times(1)).merge(eq(s));
         verify(userDao, times(1)).remove(u);
     }
 
