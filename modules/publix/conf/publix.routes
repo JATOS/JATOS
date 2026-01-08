@@ -6,8 +6,8 @@
 ### Publix ###
 
 # API
-POST  /publix/api/v1/openai/*path   controllers.OpenAIProxy.proxy(path)
-
++ nocsrf
+POST  /publix/api/v1/openai/*path                                   @controllers.publix.OpenAiProxy.proxy(request: Request, path)
 
 # Running studies
 + nocsp
