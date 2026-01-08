@@ -593,4 +593,27 @@ public class Api extends Controller {
         return ok(file);
     }
 
+    public Result createUser(Http.Request request) {
+        return ok("User creation endpoint");
+    }
+
+    public Result deleteUser(String username) {
+        // TODO normalize username
+        // todo only admin
+        // todo do not use username in URL because privacy concerns
+        return ok("User deletion endpoint");
+    }
+
+    public Result allUsers() {
+        return ok("List of all users endpoint");
+    }
+
+    public Result addMembersToStudy(Long studyId) {
+        return ok("User endpoint");
+    }
+
+    public Result removeMembersFromStudy(Long studyId) {
+        return ok("User endpoint");
+    }
+
 }

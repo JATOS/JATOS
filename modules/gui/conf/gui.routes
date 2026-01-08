@@ -7,6 +7,12 @@
 GET      /jatos/api/v1/admin/token                                          @controllers.gui.Api.testToken()
 GET      /jatos/api/v1/admin/status                                         @controllers.gui.Api.status()
 GET      /jatos/api/v1/admin/logs/:filename                                 @controllers.gui.Api.logs(filename)
+POST     /jatos/api/v1/user                                                 @controllers.gui.Api.createUser(request: Request)
+DELETE   /jatos/api/v1/user/:username                                       @controllers.gui.Api.deleteUser(username)
+GET      /jatos/api/v1/users                                                @controllers.gui.Api.allUsers()
+POST     /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.addMembersToStudy(id)
+DELETE   /jatos/api/v1/studies/:id/members/:username                        @controllers.gui.Api.removeMembersFromStudy(id, username)
+
 
 # API study
 GET      /jatos/api/v1/studies/properties                                   @controllers.gui.Api.getAllStudyPropertiesByUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
