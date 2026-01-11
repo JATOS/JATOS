@@ -156,6 +156,11 @@ public class StudyResult {
      */
     private boolean quotaReached = false;
 
+    /**
+     * Counter for OpenAI API calls made during this study run.
+     */
+    private int openAiApiCount = 0;
+
     public StudyResult() {
     }
 
@@ -352,6 +357,10 @@ public class StudyResult {
 
     public boolean isQuotaReached() {
         return quotaReached;
+    }
+
+    public int getOpenAiApiCount() {
+        return openAiApiCount;
     }
 
     @Override

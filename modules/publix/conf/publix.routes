@@ -5,10 +5,6 @@
 
 ### Publix ###
 
-# API
-+ nocsrf
-POST  /publix/api/v1/openai/*path                                   @controllers.publix.OpenAiProxy.proxy(request: Request, path)
-
 # Running studies
 + nocsp
 GET     /publix/:studyId/start                                      @controllers.publix.LegacyStudyRuns.transformToStudyLink(request: Request, studyId: Long, batchId: Long)
@@ -44,6 +40,19 @@ GET     /publix/:studyResultUuid/group/join                         @controllers
 GET     /publix/:studyResultUuid/group/reassign                     @controllers.publix.ChannelInterceptor.reassignGroup(studyResultUuid: String)
 GET     /publix/:studyResultUuid/group/leave                        @controllers.publix.ChannelInterceptor.leaveGroup(studyResultUuid: String)
 
+# OpenAI proxy
++ nocsrf
+GET     /publix/:studyResultUuid/openai                             @controllers.publix.OpenAiProxy.proxy(request:Request, path = "" , studyResultUuid)
++ nocsrf
+GET     /publix/:studyResultUuid/openai/*path                       @controllers.publix.OpenAiProxy.proxy(request:Request, path, studyResultUuid)
++ nocsrf
+POST    /publix/:studyResultUuid/openai                             @controllers.publix.OpenAiProxy.proxy(request:Request, path = "", studyResultUuid)
++ nocsrf
+POST    /publix/:studyResultUuid/openai/*path                       @controllers.publix.OpenAiProxy.proxy(request:Request, path, studyResultUuid)
++ nocsrf
+DELETE  /publix/:studyResultUuid/openai                             @controllers.publix.OpenAiProxy.proxy(request:Request, path = "", studyResultUuid)
++ nocsrf
+DELETE  /publix/:studyResultUuid/openai/*path                       @controllers.publix.OpenAiProxy.proxy(request:Request, path, studyResultUuid)
 
 ### Static resources ###
 

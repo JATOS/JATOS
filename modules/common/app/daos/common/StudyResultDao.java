@@ -9,10 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -386,6 +383,39 @@ public class StudyResultDao extends AbstractDao {
         jpa.em().createQuery("UPDATE StudyResult sr SET sr.quotaReached = true WHERE sr.id = :id")
                 .setParameter("id", studyResultId)
                 .executeUpdate();
+    }
+
+    /**
+     * Checks if the StudyResult with the given UUID is currently running. A study is considered
+     * running if its state is not FINISHED, ABORTED, or FAIL.
+     */
+    public boolean isStudyRunning(String uuid) {
+        String queryStr = "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.uuid = :uuid "
+                + "AND sr.studyState NOT IN (:states)";
+        List<StudyResult.StudyState> finishedStates = Arrays.asList(
+                StudyResult.StudyState.FINISHED,
+                StudyResult.StudyState.ABORTED,
+                StudyResult.StudyState.FAIL);
+
+        Number count = (Number) jpa.em().createQuery(queryStr)
+                .setParameter("uuid", uuid)
+                .setParameter("states", finishedStates)
+                .getSingleResult();
+        return count.intValue() > 0;
+    }
+
+    /**
+     * Checks if the number of OpenAI calls for the given StudyResult is lower than the threshold (callLimit).
+     * If yes, it increments the counter and returns true. If the threshold is reached, it returns false.
+     */
+    public boolean checkAndIncrementOpenAiApiCount(String uuid, int callLimit) {
+        int updatedRows = jpa.em().createQuery(
+                        "UPDATE StudyResult sr SET sr.openAiApiCount = sr.openAiApiCount + 1 " +
+                                "WHERE sr.uuid = :uuid AND sr.openAiApiCount < :callLimit")
+                .setParameter("uuid", uuid)
+                .setParameter("callLimit", callLimit)
+                .executeUpdate();
+        return updatedRows > 0;
     }
 
 }

@@ -124,7 +124,10 @@ public class Common {
     private static boolean groupsCleaningAllowed;
     private static int groupsCleaningInterval;
     private static int groupsCleaningMemberIdleAfter;
+    private static boolean openAiAllowed;
     private static String openAiApiKey;
+    private static String openAiUrlBasePath;
+    private static int openAiCallLimit;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -247,7 +250,10 @@ public class Common {
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
         groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
         groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
+        openAiAllowed = config.getBoolean("jatos.openai.allowed");
         openAiApiKey = config.getString("jatos.openai.apiKey");
+        openAiUrlBasePath = config.getString("jatos.openai.urlBasePath");
+        openAiCallLimit = config.getInt("jatos.openai.callLimit");
     }
 
     /**
@@ -1013,10 +1019,29 @@ public class Common {
         return groupsCleaningMemberIdleAfter;
     }
 
+    public static boolean isOpenAiAllowed() {
+        return openAiAllowed;
+    }
+
     /**
      * OpenAI API key
      */
     public static String getOpenAiApiKey() {
         return openAiApiKey;
     }
+
+    /**
+     * Returns the URL base path used for accessing the OpenAI API.
+     */
+    public static String getOpenAiUrlBasePath() {
+        return openAiUrlBasePath;
+    }
+
+    /**
+     * Returns the maximum number of calls allowed to the OpenAI API.
+     */
+    public static int getOpenAiCallLimit() {
+        return openAiCallLimit;
+    }
+
 }
