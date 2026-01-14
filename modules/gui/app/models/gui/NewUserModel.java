@@ -13,8 +13,6 @@ public class NewUserModel {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
     public static final String PASSWORD = "password";
-    public static final String PASSWORD_REPEAT = "passwordRepeat";
-    public static final String AUTH_BY_LDAP = "authByLdap";
 
     private String username;
 
@@ -23,8 +21,6 @@ public class NewUserModel {
     private String email;
 
     private String password;
-
-    private String passwordRepeat;
 
     private User.AuthMethod authMethod = User.AuthMethod.DB;
 
@@ -60,14 +56,6 @@ public class NewUserModel {
         this.password = password;
     }
 
-    public String getPasswordRepeat() {
-        return passwordRepeat;
-    }
-
-    public void setPasswordRepeat(String passwordRepeat) {
-        this.passwordRepeat = passwordRepeat;
-    }
-
     public void setAuthMethod(User.AuthMethod authMethod) {
         this.authMethod = authMethod;
     }
@@ -76,15 +64,7 @@ public class NewUserModel {
         return authMethod;
     }
 
-    public boolean getAuthByLdap() {
-        return authMethod == User.AuthMethod.LDAP;
-    }
-
-    public void setAuthByLdap(boolean authByLdap) {
-        this.authMethod = authByLdap ? User.AuthMethod.LDAP : User.AuthMethod.DB;
-    }
-
-    public boolean getAuthByDb() {
+    public boolean isAuthByDb() {
         return authMethod == User.AuthMethod.DB;
     }
 

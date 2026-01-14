@@ -9,11 +9,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import daos.common.UserDao;
+import exceptions.gui.*;
 import general.common.Common;
 import general.common.RequestScope;
 import general.common.StudyLogger;
@@ -22,6 +22,7 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
 import models.gui.ComponentProperties;
+import models.gui.NewUserModel;
 import models.gui.StudyProperties;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -29,10 +30,7 @@ import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.http.HttpEntity;
 import play.libs.Json;
-import play.mvc.Controller;
-import play.mvc.Http;
-import play.mvc.ResponseHeader;
-import play.mvc.Result;
+import play.mvc.*;
 import scala.Option;
 import services.gui.*;
 import utils.common.DirectoryStructureToJson;
@@ -48,10 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static auth.gui.AuthAction.Auth;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
@@ -76,6 +71,7 @@ public class Api extends Controller {
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
     private final ComponentResultDao componentResultDao;
+    private final UserDao userDao;
     private final StudyService studyService;
     private final ComponentService componentService;
     private final StudyLinkService studyLinkService;
@@ -86,21 +82,23 @@ public class Api extends Controller {
     private final JsonUtils jsonUtils;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
+    private final UserService userService;
 
     @Inject
     Api(Admin admin, AdminService adminService, AuthService authService,
-            ComponentResultIdsExtractor componentResultIdsExtractor,
-            StudyDao studyDao, ComponentResultDao componentResultDao, StudyService studyService,
-            ComponentService componentService, StudyLinkService studyLinkService,
-            ImportExport importExport, ResultRemover resultRemover,
-            ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
-            StudyLogger studyLogger, IOUtils ioUtils) {
+        ComponentResultIdsExtractor componentResultIdsExtractor,
+        StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, StudyService studyService,
+        ComponentService componentService, StudyLinkService studyLinkService,
+        ImportExport importExport, ResultRemover resultRemover,
+        ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
+        StudyLogger studyLogger, IOUtils ioUtils, UserService userService) {
         this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
         this.componentResultDao = componentResultDao;
+        this.userDao = userDao;
         this.studyService = studyService;
         this.componentService = componentService;
         this.studyLinkService = studyLinkService;
@@ -111,6 +109,7 @@ public class Api extends Controller {
         this.jsonUtils = jsonUtils;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
+        this.userService = userService;
     }
 
     /**
@@ -277,7 +276,7 @@ public class Api extends Controller {
         File uploadedFile = (File) filePart.getFile();
 
         try {
-            Path assetsFilePath= ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
+            Path assetsFilePath = ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
             if (Files.notExists(assetsFilePath)) Files.createDirectories(assetsFilePath);
             Files.move(uploadedFile.toPath(), assetsFilePath, REPLACE_EXISTING);
             return ok();
@@ -336,7 +335,7 @@ public class Api extends Controller {
     /**
      * Returns a JATOS study archive
      *
-     * @param id    Study's ID or UUID
+     * @param id Study's ID or UUID
      */
     @Transactional
     @Auth
@@ -372,7 +371,7 @@ public class Api extends Controller {
     /**
      * Deletes a study
      *
-     * @param id    Study's ID or UUID
+     * @param id Study's ID or UUID
      */
     @Transactional
     @Auth
@@ -408,14 +407,14 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
+                              boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
         return importExport.importStudyApi(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
     }
 
     /**
      * Creates a component within the specified study
      *
-     * @param id    Study's ID or UUID
+     * @param id Study's ID or UUID
      * @return UUID and ID of the new component in JSON
      */
     @Transactional
@@ -435,7 +434,7 @@ public class Api extends Controller {
         ObjectNode responseJson = Json.mapper().createObjectNode();
         responseJson.put("uuid", component.getUuid());
         responseJson.put("id", component.getId());
-        return ok(responseJson);
+        return ok(JsonUtils.wrapForApi(responseJson));
     }
 
     /**
@@ -558,8 +557,7 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result exportResultFiles(Http.Request request)
-            throws IOException, ForbiddenException, BadRequestException, NotFoundException {
+    public Result exportResultFiles(Http.Request request) throws BadRequestException {
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
                 + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
@@ -593,27 +591,88 @@ public class Api extends Controller {
         return ok(file);
     }
 
-    public Result createUser(Http.Request request) {
-        return ok("User creation endpoint");
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result createUser(Http.Request request) throws ForbiddenException {
+        NewUserModel newUserModel;
+        try {
+            newUserModel = Json.fromJson(request.body().asJson(), NewUserModel.class);
+        } catch (Exception e) {
+            return badRequest("Invalid request body");
+        }
+        String normalizedUsername = User.normalizeUsername(newUserModel.getUsername());
+        newUserModel.setUsername(normalizedUsername);
+
+        if (!Arrays.asList(User.AuthMethod.DB, User.AuthMethod.LDAP).contains(newUserModel.getAuthMethod())) {
+            throw new ForbiddenException("Invalid authentication method for new user");
+        }
+
+        try {
+            userService.registerUser(newUserModel);
+        } catch (AuthException | ValidationException e) {
+            throw new ForbiddenException(e.getMessage());
+        }
+        return ok(JsonUtils.wrapForApi(ImmutableMap.of("username", normalizedUsername)));
     }
 
-    public Result deleteUser(String username) {
-        // TODO normalize username
-        // todo only admin
-        // todo do not use username in URL because privacy concerns
-        return ok("User deletion endpoint");
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result deleteUser(Http.Request request) throws ForbiddenException, NotFoundException, IOException {
+        JsonNode json = request.body().asJson();
+        String username = json.get("username").asText();
+        String normalizedUsername = User.normalizeUsername(username);
+        userService.removeUser(normalizedUsername);
+        return ok();
     }
 
+    @Transactional
+    @Auth(ADMIN)
     public Result allUsers() {
-        return ok("List of all users endpoint");
+        List<Map<String, Object>> allUserData = userService.fetchAllWithStudyIds();
+        return ok(JsonUtils.wrapForApi(allUserData));
     }
 
-    public Result addMembersToStudy(Long studyId) {
-        return ok("User endpoint");
+    @Transactional
+    @Auth(ADMIN)
+    public Result allMembersOfStudy(String id) throws ForbiddenException, NotFoundException {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        List<String> usernames = studyDao.findAllMembersByStudyId(study.getId());
+        return ok(JsonUtils.wrapForApi(usernames));
     }
 
-    public Result removeMembersFromStudy(Long studyId) {
-        return ok("User endpoint");
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result addMemberToStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
+        return changeMemberOfStudy(request, id, true);
+    }
+
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result removeMemberFromStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
+        return changeMemberOfStudy(request, id, false);
+    }
+
+    public Result changeMemberOfStudy(Http.Request request, String id, boolean isMember)
+            throws ForbiddenException, NotFoundException {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) {
+            return notFound("Study not found");
+        }
+
+        JsonNode json = request.body().asJson();
+        String username = json.get("username").asText();
+        String normalizedUsername = User.normalizeUsername(username);
+        User user = userDao.findByUsername(normalizedUsername);
+        if (user == null) {
+            return notFound("User not found");
+        }
+
+        studyService.changeUserMember(study, user, isMember);
+        return ok();
     }
 
 }

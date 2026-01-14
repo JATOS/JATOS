@@ -8,11 +8,11 @@ GET      /jatos/api/v1/admin/token                                          @con
 GET      /jatos/api/v1/admin/status                                         @controllers.gui.Api.status()
 GET      /jatos/api/v1/admin/logs/:filename                                 @controllers.gui.Api.logs(filename)
 POST     /jatos/api/v1/user                                                 @controllers.gui.Api.createUser(request: Request)
-DELETE   /jatos/api/v1/user/:username                                       @controllers.gui.Api.deleteUser(username)
 GET      /jatos/api/v1/users                                                @controllers.gui.Api.allUsers()
-POST     /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.addMembersToStudy(id)
-DELETE   /jatos/api/v1/studies/:id/members/:username                        @controllers.gui.Api.removeMembersFromStudy(id, username)
-
+POST     /jatos/api/v1/users/delete                                         @controllers.gui.Api.deleteUser(request: Request)
+GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.allMembersOfStudy(id)
+PUT      /jatos/api/v1/studies/:id/members/add                              @controllers.gui.Api.addMemberToStudy(request: Request, id)
+POST     /jatos/api/v1/studies/:id/members/remove                           @controllers.gui.Api.removeMemberFromStudy(request: Request, id)
 
 # API study
 GET      /jatos/api/v1/studies/properties                                   @controllers.gui.Api.getAllStudyPropertiesByUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)

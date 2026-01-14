@@ -22,13 +22,12 @@ import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
+import exceptions.gui.ValidationException;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
 import models.gui.NewUserModel;
 import play.Logger;
 import play.Logger.ALogger;
-import play.data.Form;
-import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -64,8 +63,6 @@ public abstract class SigninOidc extends Controller {
     private static final ALogger LOGGER = Logger.of(SigninOidc.class);
 
     @Inject private AuthService authService;
-    @Inject private SigninFormValidation signinFormValidation;
-    @Inject private FormFactory formFactory;
     @Inject private UserDao userDao;
     @Inject private UserService userService;
 
@@ -201,7 +198,7 @@ public abstract class SigninOidc extends Controller {
             BearerAccessToken bearerAccessToken = (BearerAccessToken) oidcTokens.getAccessToken();
             UserInfo userInfo = getUserInfo(bearerAccessToken);
 
-            User user = persistUserIfNotExisting(userInfo);
+            User user = getOrRegisterUser(userInfo);
 
             String normalizedUsername = getNormalizedUsername(userInfo);
             boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
@@ -212,7 +209,7 @@ public abstract class SigninOidc extends Controller {
                 FlashScopeMessaging.success(oidcConfig.successMsg);
             }
             return redirect(authService.getRedirectPageAfterSignin(user));
-        } catch (AuthException e) {
+        } catch (AuthException | ValidationException e) {
             LOGGER.warn(".callback: " + e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
             return redirect(auth.gui.routes.Signin.signin());
@@ -318,27 +315,21 @@ public abstract class SigninOidc extends Controller {
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
-    private User persistUserIfNotExisting(UserInfo userInfo) throws AuthException {
+    private User getOrRegisterUser(UserInfo userInfo) throws AuthException, ValidationException {
         String normalizedUsername = getNormalizedUsername(userInfo);
         User user = userDao.findByUsername(normalizedUsername);
-        if (user == null) {
+        if (user != null && user.getAuthMethod() != oidcConfig.authMethod) {
+            throw new AuthException("User exists - but does not use OIDC sign in");
+        } else if (user != null) {
+            return user;
+        } else {
             NewUserModel newUserModel = new NewUserModel();
             newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(getName(userInfo));
             newUserModel.setEmail(userInfo.getEmailAddress());
             newUserModel.setAuthMethod(oidcConfig.authMethod);
-
-            Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-            newUserForm = signinFormValidation.validateNewUser(newUserForm);
-            if (newUserForm.hasErrors()) {
-                throw new AuthException("OIDC: user validation failed - " + newUserForm.errors().get(0).message());
-            }
-
-            user = userService.bindToUserAndPersist(newUserModel);
-        } else if (user.getAuthMethod() != oidcConfig.authMethod) {
-            throw new AuthException("User exists already - but does not use OIDC sign in");
+            return userService.registerUser(newUserModel);
         }
-        return user;
     }
 
     protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {

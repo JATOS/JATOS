@@ -689,10 +689,23 @@ public class JsonUtils {
         return studyNode;
     }
 
+    /**
+     * Every API JSON response is wrapped in a data envelope
+     */
+    public static JsonNode wrapForApi(Object obj) {
+        return wrapForApi(Json.mapper().valueToTree(obj));
+    }
+
+    /**
+     * Every API JSON response is wrapped in a data envelope
+     */
     public static JsonNode wrapForApi(JsonNode jsonNode) {
         return wrapForApi(jsonNode, new HashMap<>());
     }
 
+    /**
+     * Every API JSON response is wrapped in a data envelope
+     */
     public static JsonNode wrapForApi(JsonNode jsonNode, Map<String, Object> fields) {
         fields.put("apiVersion", Common.getJatosApiVersion());
         return wrapAsDataEnvelope(jsonNode, fields);
@@ -707,14 +720,13 @@ public class JsonUtils {
      *
      * Example:
      *
-     * wrapNodeInObject({ "a": 1 }, Map.of("version", "1"))
-     * // -> { "version": "1", "data": { "a": 1 } }
+     * wrapAsDataEnvelope({ "a": 1 }, Map.of("version", "1")) -> { "version": "1", "data": { "a": 1 } }
      *
      * Values are inserted using {@code putPOJO}, allowing complex objects (e.g., Maps, Lists) to be
      * serialized by Jackson as-is.
      *
      * @param jsonNode the JSON payload to be placed under the {@code "data"} key; may be any JsonNode (including null)
-     * @param fields   additional top-level properties to include in the wrapper; keys must be non-null
+     * @param fields   additional top-level properties (metadata) to include in the wrapper; keys must be non-null
      * @return a new ObjectNode containing the given {@code fields} and the {@code jsonNode} under {@code "data"}
      */
     public static JsonNode wrapAsDataEnvelope(JsonNode jsonNode, Map<String, Object> fields) {

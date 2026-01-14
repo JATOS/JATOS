@@ -1,13 +1,16 @@
 package services.gui;
 
 import auth.gui.AuthService;
+import auth.gui.UserFormValidation;
 import com.google.common.collect.Lists;
 import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import exceptions.gui.AuthException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import exceptions.gui.ValidationException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
@@ -16,6 +19,8 @@ import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
 import models.gui.NewUserModel;
+import play.data.Form;
+import play.data.FormFactory;
 import play.db.jpa.JPAApi;
 import utils.common.HashUtils;
 
@@ -23,7 +28,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Date;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service class mostly for Users controller. Handles everything around User.
@@ -55,17 +61,19 @@ public class UserService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final ApiTokenDao apiTokenDao;
+    private final FormFactory formFactory;
     private final JPAApi jpa;
 
     @Inject
-    UserService(StudyService studyService, AuthService authService, UserDao userDao,
-            StudyDao studyDao, WorkerDao workerDao, ApiTokenDao apiTokenDao, JPAApi jpa) {
+    UserService(StudyService studyService, AuthService authService, UserDao userDao, StudyDao studyDao,
+                WorkerDao workerDao, ApiTokenDao apiTokenDao, FormFactory formFactory, JPAApi jpa) {
         this.studyService = studyService;
         this.authService = authService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.apiTokenDao = apiTokenDao;
+        this.formFactory = formFactory;
         this.jpa = jpa;
     }
 
@@ -78,6 +86,24 @@ public class UserService {
             throw new NotFoundException("An user with username \"" + normalizedUsername + "\" doesn't exist.");
         }
         return user;
+    }
+
+    public User registerUser(NewUserModel newUserModel) throws AuthException, ValidationException {
+        String normalizedUsername = User.normalizeUsername(newUserModel.getUsername());
+        newUserModel.setUsername(normalizedUsername);
+
+        User user = userDao.findByUsername(normalizedUsername);
+        if (user != null) {
+            throw new AuthException("User exists already");
+        }
+
+        Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
+        newUserForm = UserFormValidation.validateNewUser(newUserForm);
+        if (newUserForm.hasErrors()) {
+            throw new ValidationException("User validation failed - " + newUserForm.errors().get(0).message(), newUserForm);
+        }
+
+        return bindToUserAndPersist(newUserModel);
     }
 
     /**
@@ -222,6 +248,28 @@ public class UserService {
         user.setLastSeen(new Timestamp(new Date().getTime()));
         userDao.update(user);
 
+    }
+
+    /**
+     * Returns a list of maps containing data for all users. Study IDs are fetched via a separate query to avoid loading
+     * full Study entities.
+     */
+    public List<Map<String, Object>> fetchAllWithStudyIds() {
+        List<User> userList = userDao.findAll();
+        Map<String, List<Long>> studyIdsByUsername = userDao.findAllUsersAndTheirStudyIds();
+
+        return userList.stream().map(user -> {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("username", user.getUsername());
+            userData.put("name", user.getName());
+            userData.put("email", user.getEmail());
+            userData.put("authMethod", user.getAuthMethod().name());
+            userData.put("lastLogin", user.getLastLogin());
+            userData.put("lastSeen", user.getLastSeen());
+            userData.put("active", user.isActive());
+            userData.put("studyIds", studyIdsByUsername.getOrDefault(user.getUsername(), new ArrayList<>()));
+            return userData;
+        }).collect(Collectors.toList());
     }
 
 }

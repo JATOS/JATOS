@@ -1,7 +1,6 @@
 package auth.gui;
 
 import com.google.common.base.Strings;
-import daos.common.UserDao;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.User;
@@ -13,9 +12,6 @@ import org.jsoup.safety.Safelist;
 import play.data.Form;
 import play.data.validation.ValidationError;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 /**
  * Service class that validates models that create, change or delete users. Usually this validation is part of the model
  * class, but since it's about (important) user authentication, and it is used by other services I put it in an extra
@@ -23,27 +19,19 @@ import javax.inject.Singleton;
  *
  * @author Kristian Lange
  */
-@Singleton
-public class SigninFormValidation {
-
-    private final UserDao userDao;
-
-    @Inject
-    SigninFormValidation(UserDao userDao) {
-        this.userDao = userDao;
-    }
+public class UserFormValidation {
 
     /**
      * Validates a NewUserModel and returns a Form with errors. It also checks if the user already exists in the
      * database. Usually this is done in the model class, but since here the user DAO is needed, I put it in an extra
      * class. In the NewUserModel are still some simple validations.
      */
-    public Form<NewUserModel> validateNewUser(Form<NewUserModel> form) {
+    public static Form<NewUserModel> validateNewUser(Form<NewUserModel> form) {
         String normalizedUsername = User.normalizeUsername(form.get().getUsername());
         String password = form.get().getPassword();
         String name = form.get().getName();
         String email = form.get().getEmail();
-        boolean authByDb = form.get().getAuthByDb();
+        boolean authByDb = form.get().isAuthByDb();
 
         if (normalizedUsername == null || normalizedUsername.isEmpty()) {
             return form.withError(new ValidationError(NewUserModel.USERNAME, MessagesStrings.MISSING_USERNAME));
@@ -99,14 +87,6 @@ public class SigninFormValidation {
                 form = form.withError(new ValidationError(NewUserModel.PASSWORD, regex.getLeft()));
             }
         }
-
-        // Check if the user already exists in database
-        User existingUser = userDao.findByUsername(normalizedUsername);
-        if (existingUser != null) {
-            form = form.withError(
-                    new ValidationError(NewUserModel.USERNAME, MessagesStrings.THIS_USERNAME_IS_ALREADY_REGISTERED));
-        }
-
         return form;
     }
 
@@ -115,7 +95,7 @@ public class SigninFormValidation {
      * manager or in the user profile. Usually this would be done in the ChangePasswordModel class, but since here the
      * user DAO is needed I put it in an extra class.
      */
-    public Form<ChangePasswordModel> validateChangePassword(Form<ChangePasswordModel> form) {
+    public static Form<ChangePasswordModel> validateChangePassword(Form<ChangePasswordModel> form) {
         ChangePasswordModel model = form.get();
         String newPassword = model.getNewPassword();
         String newPasswordRepeat = model.getNewPasswordRepeat();

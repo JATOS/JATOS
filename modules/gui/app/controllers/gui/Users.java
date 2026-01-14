@@ -2,12 +2,10 @@ package controllers.gui;
 
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
-import auth.gui.SigninFormValidation;
+import auth.gui.UserFormValidation;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
+import exceptions.gui.*;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordModel;
@@ -54,7 +52,6 @@ public class Users extends Controller {
     private final UserDao userDao;
     private final UserService userService;
     private final AuthService authService;
-    private final SigninFormValidation signinFormValidation;
     private final BreadcrumbsService breadcrumbsService;
     private final FormFactory formFactory;
     private final JsonUtils jsonUtils;
@@ -63,14 +60,12 @@ public class Users extends Controller {
     Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
             UserDao userDao, UserService userService,
             AuthService authService,
-            SigninFormValidation signinFormValidation,
             BreadcrumbsService breadcrumbsService, FormFactory formFactory,
             JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.userDao = userDao;
         this.userService = userService;
         this.authService = authService;
-        this.signinFormValidation = signinFormValidation;
         this.breadcrumbsService = breadcrumbsService;
         this.formFactory = formFactory;
         this.jsonUtils = jsonUtils;
@@ -157,12 +152,17 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result create(Http.Request request) throws NamingException {
+    public Result create(Http.Request request) throws ForbiddenException {
         Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
-        form = signinFormValidation.validateNewUser(form);
-        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        User newUser = userService.bindToUserAndPersist(form.get());
+        User newUser;
+        try {
+            newUser = userService.registerUser(form.get());
+        } catch (AuthException e) {
+            throw new ForbiddenException(e.getMessage());
+        } catch (ValidationException e) {
+            return badRequest(e.getForm().errorsAsJson());
+        }
         return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(newUser)));
     }
 
@@ -244,7 +244,7 @@ public class Users extends Controller {
         // Admins do not have to repeat the password
         form.get().setNewPasswordRepeat(form.get().getNewPassword());
         // Validate
-        form = signinFormValidation.validateChangePassword(form);
+        form = UserFormValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
         // Change password
@@ -273,7 +273,7 @@ public class Users extends Controller {
         }
 
         // Validate
-        form = signinFormValidation.validateChangePassword(form);
+        form = UserFormValidation.validateChangePassword(form);
         if (form.hasErrors()) return forbidden(form.errorsAsJson());
 
         // Check old password

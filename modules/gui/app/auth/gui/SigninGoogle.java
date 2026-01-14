@@ -8,14 +8,13 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
+import exceptions.gui.ValidationException;
 import general.common.Common;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
 import models.gui.NewUserModel;
 import play.Logger;
 import play.Logger.ALogger;
-import play.data.Form;
-import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -45,17 +44,12 @@ public class SigninGoogle extends Controller {
     private static final ALogger LOGGER = Logger.of(SigninGoogle.class);
 
     private final AuthService authService;
-    private final SigninFormValidation signinFormValidation;
-    private final FormFactory formFactory;
     private final UserDao userDao;
     private final UserService userService;
 
     @Inject
-    SigninGoogle(AuthService authService, SigninFormValidation signinFormValidation,
-            FormFactory formFactory, UserService userService, UserDao userDao) {
+    SigninGoogle(AuthService authService, UserService userService, UserDao userDao) {
         this.authService = authService;
-        this.signinFormValidation = signinFormValidation;
-        this.formFactory = formFactory;
         this.userDao = userDao;
         this.userService = userService;
     }
@@ -83,8 +77,8 @@ public class SigninGoogle extends Controller {
 
         User user;
         try {
-            user = persistUserIfNotExisting(idTokenPayload);
-        } catch (AuthException e) {
+            user = getOrRegisterUser(idTokenPayload);
+        } catch (AuthException | ValidationException e) {
             LOGGER.warn(e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
             return redirect(auth.gui.routes.Signin.signin());
@@ -111,28 +105,22 @@ public class SigninGoogle extends Controller {
         return verifier.verify(idTokenString);
     }
 
-    private User persistUserIfNotExisting(GoogleIdToken.Payload idTokenPayload) throws AuthException {
+    private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload) throws AuthException, ValidationException {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
-
         User user = userDao.findByUsername(normalizedUsername);
-        if (user == null) {
+        if (user != null && !user.isOauthGoogle()) {
+            throw new AuthException("User exists - but does not use Google sign in");
+        } else if (user != null) {
+            return user;
+        } else {
             String name = (String) idTokenPayload.get("name");
             NewUserModel newUserModel = new NewUserModel();
             newUserModel.setUsername(normalizedUsername);
             newUserModel.setName(name);
             newUserModel.setEmail(idTokenPayload.getEmail());
             newUserModel.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
-            Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-            newUserForm = signinFormValidation.validateNewUser(newUserForm);
-            if (newUserForm.hasErrors()) {
-                throw new AuthException("Google sign in: user validation failed - " + newUserForm.errors().get(0).message());
-            }
-
-            user = userService.bindToUserAndPersist(newUserModel);
-        } else if (!user.isOauthGoogle()) {
-            throw new AuthException("User exists already - but does not use Google sign in");
+            return userService.registerUser(newUserModel);
         }
-        return user;
     }
 
 }
