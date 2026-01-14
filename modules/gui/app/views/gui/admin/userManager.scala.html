@@ -505,8 +505,8 @@
                 Alerts.warning("The user was not added.", 5000);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#userCreatorForm", response.responseJSON);
-                } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                } else if (response.responseText) {
+                    alerts.error(response.responseText);
                 } else {
                     alerts.error("Couldn't add a new user");
                 }
