@@ -71,7 +71,6 @@ public class UserServiceIntegrationTest extends JatosTest {
         userModel.setUsername("foo@foo.org");
         userModel.setName("Foo Bar");
         userModel.setPassword("blaPw");
-        userModel.setPasswordRepeat("blaPw");
 
         jpaApi.withTransaction(em -> {
             userService.bindToUserAndPersist(userModel);

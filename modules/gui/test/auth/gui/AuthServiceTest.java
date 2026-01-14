@@ -82,7 +82,7 @@ public class AuthServiceTest {
         assertThat(authService.authenticate(user, null)).isFalse();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void authenticate_unsupportedAuth_throws() throws NamingException {
         User user = new User();
         user.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE); // any non-DB/LDAP

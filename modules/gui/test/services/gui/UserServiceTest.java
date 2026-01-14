@@ -5,23 +5,32 @@ import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import exceptions.gui.AuthException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import exceptions.gui.ValidationException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
 import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
+import models.gui.NewUserModel;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import play.data.Form;
+import play.data.FormFactory;
+import play.data.validation.ValidationError;
 import play.db.jpa.JPAApi;
+import testutils.gui.ContextMocker;
 
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -41,18 +50,21 @@ public class UserServiceTest {
     private StudyDao studyDao;
     private WorkerDao workerDao;
     private ApiTokenDao apiTokenDao;
+    private FormFactory formFactory;
 
     private UserService userService;
 
     @SuppressWarnings("deprecation")
     @Before
     public void setUp() {
+        ContextMocker.mock();
         studyService = mock(StudyService.class);
         authService = mock(AuthService.class);
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
         apiTokenDao = mock(ApiTokenDao.class);
+        formFactory = Mockito.mock(FormFactory.class);
 
         JPAApi jpaApi = mock(JPAApi.class);
         // Mock JPAApi.withTransaction(Supplier<R>) to execute the supplier
@@ -67,7 +79,7 @@ public class UserServiceTest {
             return null;
         }).when(jpaApi).withTransaction(any(Runnable.class));
 
-        userService = new UserService(studyService, authService, userDao, studyDao, workerDao, apiTokenDao, jpaApi);
+        userService = new UserService(studyService, authService, userDao, studyDao, workerDao, apiTokenDao, formFactory, jpaApi);
     }
 
     @Test
@@ -83,6 +95,63 @@ public class UserServiceTest {
     public void retrieveUser_notFound_throws() throws NotFoundException {
         when(userDao.findByUsername("missing")).thenReturn(null);
         userService.retrieveUser("missing");
+    }
+
+    @Test
+    public void registerUser_success() throws AuthException, ValidationException {
+        NewUserModel newUserModel = new NewUserModel();
+        newUserModel.setUsername("newuser");
+        newUserModel.setName("New User");
+        newUserModel.setEmail("newuser@example.com");
+        newUserModel.setPassword("password123");
+        newUserModel.setAuthMethod(AuthMethod.DB);
+
+        when(userDao.findByUsername("newuser")).thenReturn(null);
+        Form<NewUserModel> form = mock(Form.class);
+        when(form.get()).thenReturn(newUserModel);
+        when(form.hasErrors()).thenReturn(false);
+        when(formFactory.form(NewUserModel.class)).thenReturn(form);
+        when(form.fill(any())).thenReturn(form);
+
+        User user = userService.registerUser(newUserModel);
+
+        assertThat(user).isNotNull();
+        assertThat(user.getUsername()).isEqualTo("newuser");
+        assertThat(user.getName()).isEqualTo("New User");
+        assertThat(user.getEmail()).isEqualTo("newuser@example.com");
+        assertThat(user.getAuthMethod()).isEqualTo(AuthMethod.DB);
+        verify(userDao).create(any(User.class));
+        verify(workerDao).create(any(JatosWorker.class));
+    }
+
+    @Test(expected = AuthException.class)
+    public void registerUser_userExists_throwsAuthException() throws AuthException, ValidationException {
+        NewUserModel newUserModel = new NewUserModel();
+        newUserModel.setUsername("existinguser");
+
+        when(userDao.findByUsername("existinguser")).thenReturn(new User());
+
+        userService.registerUser(newUserModel);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void registerUser_validationFailed_throwsValidationException() throws AuthException, ValidationException {
+        NewUserModel newUserModel = new NewUserModel();
+        newUserModel.setUsername("invaliduser");
+        newUserModel.setName(""); // Invalid: name is missing
+
+        when(userDao.findByUsername("invaliduser")).thenReturn(null);
+        Form<NewUserModel> form = mock(Form.class);
+        when(form.get()).thenReturn(newUserModel);
+        // We mock withError to return the same form, but we MUST mock hasErrors to return true
+        // so that UserService throws the ValidationException
+        when(form.withError(any(ValidationError.class))).thenReturn(form);
+        when(form.hasErrors()).thenReturn(true);
+        when(form.errors()).thenReturn(Collections.singletonList(new ValidationError("name", "Missing name")));
+        when(formFactory.form(NewUserModel.class)).thenReturn(form);
+        when(form.fill(any())).thenReturn(form);
+
+        userService.registerUser(newUserModel);
     }
 
     @Test

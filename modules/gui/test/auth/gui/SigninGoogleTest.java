@@ -8,8 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import play.data.Form;
-import play.data.FormFactory;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.UserService;
@@ -27,8 +25,6 @@ import static org.mockito.Mockito.*;
 public class SigninGoogleTest {
 
     private AuthService authService;
-    private SigninFormValidation signinFormValidation;
-    private FormFactory formFactory;
     private UserDao userDao;
     private UserService userService;
     private SigninGoogle signinGoogleSpy;
@@ -37,12 +33,10 @@ public class SigninGoogleTest {
     public void setup() {
         ContextMocker.mock();
         authService = Mockito.mock(AuthService.class);
-        signinFormValidation = Mockito.mock(SigninFormValidation.class);
-        formFactory = Mockito.mock(FormFactory.class);
         userDao = Mockito.mock(UserDao.class);
         userService = Mockito.mock(UserService.class);
         // We need a spy of the real SigninGoogle because we have to mock the fetchOAuthGoogleIdToken method
-        signinGoogleSpy = Mockito.spy(new SigninGoogle(authService, signinFormValidation, formFactory, userService, userDao));
+        signinGoogleSpy = Mockito.spy(new SigninGoogle(authService, userService, userDao));
     }
 
     private static Http.Request requestWithCredential() {
@@ -121,7 +115,6 @@ public class SigninGoogleTest {
         assertThat(res.redirectLocation().get()).isEqualTo(auth.gui.routes.Signin.signin().url());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void signin_newUser_persists_andRedirects() throws Exception {
         GoogleIdToken token = Mockito.mock(GoogleIdToken.class);
@@ -131,16 +124,9 @@ public class SigninGoogleTest {
         // No existing user
         when(userDao.findByUsername("dave@example.org")).thenReturn(null);
 
-        // Mock form and validation flow
-        Form<NewUserModel> form = Mockito.mock(Form.class);
-        when(formFactory.form(NewUserModel.class)).thenReturn(form);
-        when(form.fill(any(NewUserModel.class))).thenReturn(form);
-        when(signinFormValidation.validateNewUser(form)).thenReturn(form);
-        when(form.hasErrors()).thenReturn(false);
-
         User persisted = new User("dave@example.org", "Dave", "dave@example.org");
         persisted.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
-        when(userService.bindToUserAndPersist(any(NewUserModel.class))).thenReturn(persisted);
+        when(userService.registerUser(any(NewUserModel.class))).thenReturn(persisted);
         when(authService.getRedirectPageAfterSignin(persisted)).thenReturn("/welcome");
 
         Result res = signinGoogleSpy.signin(requestWithCredential());
@@ -151,7 +137,7 @@ public class SigninGoogleTest {
 
         // Verify that NewUserModel was populated
         ArgumentCaptor<NewUserModel> cap = ArgumentCaptor.forClass(NewUserModel.class);
-        verify(userService).bindToUserAndPersist(cap.capture());
+        verify(userService).registerUser(cap.capture());
         NewUserModel num = cap.getValue();
         assertThat(num.getUsername()).isEqualTo("dave@example.org");
         assertThat(num.getName()).isEqualTo("Dave");
