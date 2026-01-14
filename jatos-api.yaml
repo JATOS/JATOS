@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.3
+  version: 1.0.4
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -68,6 +68,179 @@ paths:
                 format: binary
         '401':
           description: Unauthorized
+
+  /jatos/api/v1/user:
+    post:
+      summary: Create a new user
+      description: (since v3.9.9) Create a new user (for admin tokens only).
+      tags:
+        - admin
+      requestBody:
+        description: A JSON object containing the new user's properties
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Username of the new user
+                name:
+                  type: string
+                  description: Name of the new user
+                email:
+                  type: string
+                  description: Email address of the new user
+                password:
+                  type: string
+                  description: Password of the new user (only for authMethod DB)
+                authMethod:
+                  type: string
+                  enum: [DB, LDAP]
+                  description: Authentication method
+              required:
+                - username
+                - name
+                - authMethod
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+        '400':
+          description: Invalid request body
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Invalid authentication method or validation failed
+
+  /jatos/api/v1/users:
+    get:
+      summary: Get all users
+      description: (since v3.9.9) Get a list of all users and their study IDs (for admin tokens only).
+      tags:
+        - admin
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+
+  /jatos/api/v1/users/delete:
+    post:
+      summary: Delete a user
+      description: (since v3.9.9) Delete a user by their username (for admin tokens only).
+      tags:
+        - admin
+      requestBody:
+        description: A JSON object containing the username of the user to be deleted
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+              required:
+                - username
+      responses:
+        '200':
+          description: User deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+
+  /jatos/api/v1/studies/{id}/members:
+    get:
+      summary: Get all members of a study
+      description: (since v3.9.9) Get a list of all usernames of members of a specific study (for admin tokens only).
+      tags:
+        - admin
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: Study not found
+
+  /jatos/api/v1/studies/{id}/members/add:
+    put:
+      summary: Add a member to a study
+      description: (since v3.9.9) Add a user as a member to a specific study (for admin tokens only).
+      tags:
+        - admin
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      requestBody:
+        description: A JSON object containing the username of the user to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+              required:
+                - username
+      responses:
+        '200':
+          description: Member added successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Study or user not found
+
+  /jatos/api/v1/studies/{id}/members/remove:
+    post:
+      summary: Remove a member from a study
+      description: (since v3.9.9) Remove a user from the members of a specific study (for admin tokens only).
+      tags:
+        - admin
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      requestBody:
+        description: A JSON object containing the username of the user to be removed
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+              required:
+                - username
+      responses:
+        '200':
+          description: Member removed successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Study or user not found
 
   /jatos/api/v1/study:
     post:
