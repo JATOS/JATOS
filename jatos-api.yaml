@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.3
+  version: 1.1.0
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -858,8 +858,119 @@ paths:
         '401':
           description: Unauthorized
 
+  /publix/api/v1/studyResults/{studyResultUuid}/openai:
+    get:
+      summary: Proxy GET request to OpenAI API
+      description: Proxies a GET request to the OpenAI API for a running study. Does not need an API token.
+      tags:
+        - publix
+      parameters:
+        - $ref: '#/components/parameters/StudyResultUuidParameter'
+      responses:
+        '200':
+          description: Successful proxy response from OpenAI
+        '403':
+          description: OpenAI not allowed or study not running
+        '429':
+          description: OpenAI API call limit reached
+
+    post:
+      summary: Proxy POST request to OpenAI API
+      description: Proxies a POST request with an optional JSON body to the OpenAI API. Does not need an API token.
+      tags:
+        - publix
+      parameters:
+        - $ref: '#/components/parameters/StudyResultUuidParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful proxy response from OpenAI
+        '403':
+          description: OpenAI not allowed or study not running
+        '429':
+          description: OpenAI API call limit reached
+
+    delete:
+      summary: Proxy DELETE request to OpenAI API
+      description: Proxies a DELETE request to the OpenAI API for a running study. Does not need an API token.
+      tags:
+        - publix
+      parameters:
+        - $ref: '#/components/parameters/StudyResultUuidParameter'
+      responses:
+        '200':
+          description: Successful proxy response from OpenAI
+        '403':
+          description: OpenAI not allowed or study not running
+        '429':
+          description: OpenAI API call limit reached
+
+  /publix/api/v1/studyResults/{studyResultUuid}/openai/{path}:
+    get:
+      summary: Proxy GET request to specific OpenAI endpoint
+      description:  >-
+        Proxies a GET request to a specific OpenAI API endpoint specified in the path parameter for a running
+        study. Does not need an API token.
+      tags:
+        - publix
+      parameters:
+        - $ref: '#/components/parameters/StudyResultUuidParameter'
+        - $ref: '#/components/parameters/OpenAiPathParameter'
+      responses:
+        '200':
+          description: Successful proxy response from OpenAI
+        '403':
+          description: OpenAI not allowed or study not running
+        '429':
+          description: OpenAI API call limit reached
+
+    post:
+      summary: Proxy POST request to specific OpenAI endpoint
+      description: >-
+        Proxies a POST request to a specific OpenAI API endpoint specified in the path parameter for a running
+        study. Does not need an API token.
+      tags:
+        - publix
+      parameters:
+        - $ref: '#/components/parameters/StudyResultUuidParameter'
+        - $ref: '#/components/parameters/OpenAiPathParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful proxy response from OpenAI
+        '403':
+          description: OpenAI not allowed or study not running
+        '429':
+          description: OpenAI API call limit reached
+
+    delete:
+      summary: Proxy DELETE request to specific OpenAI endpoint
+      description: >-
+        Proxies a DELETE request to a specific OpenAI API endpoint specified in the path parameter for a running
+        study. Does not need an API token.
+      tags:
+        - publix
+      parameters:
+        - $ref: '#/components/parameters/StudyResultUuidParameter'
+        - $ref: '#/components/parameters/OpenAiPathParameter'
+      responses:
+        '200':
+          description: Successful proxy response from OpenAI
+        '403':
+          description: OpenAI not allowed or study not running
+        '429':
+          description: OpenAI API call limit reached
+
 security:
-  - BearerAuth: []
+  - BearerAuth: [ ]
 components:
   securitySchemes:
     BearerAuth:
@@ -944,10 +1055,24 @@ components:
       description: >-
         Specify results with a group ID. This query parameter can be used
         multiple times.
+    StudyResultUuidParameter:
+      in: path
+      name: studyResultUuid
+      required: true
+      schema:
+        type: string
+      description: The UUID of the study result
+    OpenAiPathParameter:
+      in: path
+      name: path
+      required: true
+      schema:
+        type: string
+      description: The specific OpenAI API endpoint path
   requestBodies:
     ResultIdsJsonBody:
       content:
-        text/plain: {}
+        text/plain: { }
         application/json:
           schema:
             type: object
