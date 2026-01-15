@@ -128,6 +128,7 @@ public class Common {
     private static String openAiApiKey;
     private static String openAiUrlBasePath;
     private static int openAiCallLimit;
+    private static int openAiTimeout;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -254,6 +255,7 @@ public class Common {
         openAiApiKey = config.getString("jatos.openai.apiKey");
         openAiUrlBasePath = config.getString("jatos.openai.urlBasePath");
         openAiCallLimit = config.getInt("jatos.openai.callLimit");
+        openAiTimeout = config.getInt("jatos.openai.timeout");
     }
 
     /**
@@ -1042,6 +1044,13 @@ public class Common {
      */
     public static int getOpenAiCallLimit() {
         return openAiCallLimit;
+    }
+
+    /**
+     * Returns the maximum number of seconds to wait for OpenAI API response.
+     */
+    public static int getOpenAiTimeout() {
+        return openAiTimeout;
     }
 
 }
