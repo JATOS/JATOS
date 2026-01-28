@@ -26,19 +26,19 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
     Future.successful(
       statusCode match {
         case Http.Status.BAD_REQUEST =>
-          logger.info(s"bad request: $message")
+          logger.info(s"bad request - ${request.method} ${request.uri} - $message")
           BadRequest("bad request")
         case Http.Status.NOT_FOUND =>
-          logger.info(s"not found: Requested page  ${request.uri} couldn't be found.")
+          logger.info(s"not found: Requested resource ${request.method} ${request.uri} couldn't be found.")
           NotFound(s"Requested page ${request.uri} couldn't be found.")
         case Http.Status.FORBIDDEN =>
-          logger.info(s"forbidden: $message")
+          logger.info(s"forbidden - ${request.method} ${request.uri} - $message")
           Forbidden("You're not allowed to access this resource.")
         case Http.Status.REQUEST_ENTITY_TOO_LARGE =>
-          logger.info(s"request entity too large: $message")
+          logger.info(s"request entity too large - ${request.method} ${request.uri} - $message")
           Status(statusCode)("Request entity too large: You probably tried to upload a file that is too large")
         case _ =>
-          logger.warn(s"HTTP status code $statusCode: $message")
+          logger.warn(s"HTTP status code $statusCode - ${request.method} ${request.uri} - $message")
           Status(statusCode)(s"JATOS error: $statusCode")
       }
     )
