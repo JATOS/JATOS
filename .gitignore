@@ -36,3 +36,4 @@ jatos.trace.db
 node_modules
 /modules/publix/public/javascripts/
 /.bsp
+/.ai
