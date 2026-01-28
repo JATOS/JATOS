@@ -15,7 +15,7 @@ servers:
 paths:
   /jatos/api/v1/admin/status:
     get:
-      operationId: getJatosStatus
+      operationId: jatos_status_get
       summary: Get the status of your JATOS (for admin tokens only)
       tags:
         - admin
@@ -31,7 +31,7 @@ paths:
 
   /jatos/api/v1/admin/token:
     get:
-      operationId: getTokenInfo
+      operationId: token_info_get
       summary: Get details of the token used in this request
       tags:
         - admin
@@ -47,7 +47,7 @@ paths:
 
   /jatos/api/v1/admin/logs/{filename}:
     get:
-      operationId: getApplicationLogsByFilename
+      operationId: application_log_get
       summary: Get a log file (application logs - not study logs)
       description: Works only with admin tokens
       tags:
@@ -74,7 +74,7 @@ paths:
 
   /jatos/api/v1/user:
     post:
-      operationId: createUser
+      operationId: user_create
       summary: Create a new user
       description: Create a new user (for admin tokens only).
       tags:
@@ -126,7 +126,7 @@ paths:
 
   /jatos/api/v1/users:
     get:
-      operationId: getAllUsers
+      operationId: users_list
       summary: Get all users
       description: Get a list of all users and their study IDs (for admin tokens only).
       tags:
@@ -145,7 +145,7 @@ paths:
 
   /jatos/api/v1/users/delete:
     post:
-      operationId: deleteUser
+      operationId: user_delete
       summary: Delete a user
       description: Delete a user by their username (for admin tokens only).
       tags:
@@ -172,7 +172,7 @@ paths:
 
   /jatos/api/v1/users/active:
     post:
-      operationId: toggleUserActive
+      operationId: user_toggle_active
       summary: Activate or deactivate a user
       description: Activate or deactivate a user by their username (for admin tokens only).
       tags:
@@ -208,7 +208,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/members:
     get:
-      operationId: getMembersOfStudy
+      operationId: study_members_list
       summary: Get all members of a study
       description: Get a list of all usernames of members of a specific study (for admin tokens only).
       tags:
@@ -231,7 +231,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/members/add:
     put:
-      operationId: addMemberToStudy
+      operationId: study_member_add
       summary: Add a member to a study
       description: Add a user as a member to a specific study (for admin tokens only).
       tags:
@@ -260,7 +260,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/members/remove:
     post:
-      operationId: removeMemberFromStudy
+      operationId: study_member_remove
       summary: Remove a member from a study
       description: Remove a user from the members of a specific study (for admin tokens only).
       tags:
@@ -289,7 +289,7 @@ paths:
 
   /jatos/api/v1/study:
     post:
-      operationId: importStudy
+      operationId: study_import
       summary: Import a study
       description: >-
         Import a study in the JATOS study archive file format.
@@ -400,7 +400,7 @@ paths:
 
   /jatos/api/v1/studies/create:
     post:
-      operationId: createStudy
+      operationId: study_create
       summary: Create a new study
       description: Create a new study within JATOS.
       tags:
@@ -458,7 +458,7 @@ paths:
 
   /jatos/api/v1/studies/{id}:
     get:
-      operationId: exportStudy
+      operationId: study_export
       summary: Export a study
       description: >-
         Export a study by specifying its ID or UUID. The exported study will be in the
@@ -479,7 +479,7 @@ paths:
           description: Unauthorized
 
     delete:
-      operationId: deleteStudy
+      operationId: study_delete
       summary: Delete a study
       description: >-
         Delete a study (including its components, batches, study links,
@@ -496,7 +496,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/active:
     post:
-      operationId: toggleStudyActive
+      operationId: study_toggle_active
       summary: Activate or deactivate a study
       description: Activate or deactivate a study (for admin tokens only).
       tags:
@@ -521,7 +521,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/components/create:
     post:
-      operationId: createComponent
+      operationId: component_create
       summary: Create a new component within a study
       description: Create a new component under the specified study.
       tags:
@@ -575,7 +575,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/components/{cid}:
     delete:
-      operationId: deleteComponent
+      operationId: component_delete
       summary: Delete a component from a study
       description: >-
         Delete a specific component including its component results from a study.
@@ -592,7 +592,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/components/{cid}/active:
     post:
-      operationId: toggleComponentActive
+      operationId: component_toggle_active
       summary: Activate or deactivate a component
       description: Activate or deactivate a component within a study.
       tags:
@@ -618,7 +618,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/batches/{batchId}/active:
     post:
-      operationId: toggleBatchActive
+      operationId: batch_toggle_active
       summary: Activate or deactivate a batch
       description: Activate or deactivate a batch within a study.
       tags:
@@ -644,7 +644,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/properties:
     get:
-      operationId: getStudyProperties
+      operationId: study_properties_get
       summary: Get study properties
       description: >-
         Get the study properties by specifying a study ID or UUID. The
@@ -687,7 +687,7 @@ paths:
 
   /jatos/api/v1/studies/properties:
     get:
-      operationId: getAllStudyProperties
+      operationId: studies_properties_list
       summary: Get all study properties that are accessible to the user
       description: >-
         The properties of the study's components can be included by setting the
@@ -726,7 +726,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/assets/structure:
     get:
-      operationId: getStudyAssetsStructure
+      operationId: study_assets_structure_get
       summary: Get the directory structure of a study assets directory in JSON
       description: >-
         Every element has `name` (filename), `path` (location
@@ -762,7 +762,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/assets/{filepath}:
     get:
-      operationId: downloadStudyAssetsFile
+      operationId: study_assets_file_get
       summary: Download a file from the study assets
       tags:
         - study
@@ -801,7 +801,7 @@ paths:
           description: Unauthorized
 
     post:
-      operationId: uploadStudyAssetsFile
+      operationId: study_assets_file_upload
       summary: Upload a file to the study assets
       tags:
         - study
@@ -854,7 +854,7 @@ paths:
           description: Unauthorized
 
     delete:
-      operationId: deleteStudyAssetsFile
+      operationId: study_assets_file_delete
       summary: Delete a file from the study assets
       tags:
         - study
@@ -890,7 +890,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/log:
     get:
-      operationId: getStudyLog
+      operationId: study_log_get
       summary: Get the study log of a study
       tags:
         - study
@@ -909,7 +909,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/studyCodes:
     get:
-      operationId: getStudyCodes
+      operationId: study_codes_get
       summary: Get one or multiple study codes
       tags:
         - study
@@ -958,7 +958,7 @@ paths:
 
   /jatos/api/v1/results:
     post:
-      operationId: getResults
+      operationId: results_get
       summary: Get results (combined with metadata, data, and files)
       description: >-
         Select results by specifying one or multiple of: study IDs/UUIDs,
@@ -995,7 +995,7 @@ paths:
 
   /jatos/api/v1/results/metadata:
     post:
-      operationId: getResultsMetadata
+      operationId: results_metadata_get
       summary: Get result metadata in JSON
       description: >-
         Select results by specifying one or multiple of: study IDs/UUIDs,
@@ -1032,7 +1032,7 @@ paths:
 
   /jatos/api/v1/results/data:
     post:
-      operationId: getResultsData
+      operationId: results_data_get
       summary: Get only the data of results
       description: >-
         Select results by specifying one or multiple of: study IDs/UUIDs,
@@ -1084,7 +1084,7 @@ paths:
 
   /jatos/api/v1/results/files:
     post:
-      operationId: getResultsFiles
+      operationId: results_files_get
       summary: Get only the files of results
       description: >-
         Select results by specifying one or multiple of: study IDs/UUIDs,
@@ -1121,7 +1121,7 @@ paths:
 
   /jatos/api/v1/results/files/{filename}:
     get:
-      operationId: getSingleResultFile
+      operationId: results_file_get
       summary: Get a single result file
       tags:
         - results
@@ -1152,7 +1152,7 @@ paths:
 
   /jatos/api/v1/results/delete:
     put:
-      operationId: deleteResults
+      operationId: results_delete
       summary: Delete results
       description: >-
         **Delete results (including data, metadata and files)** by specifying
