@@ -213,18 +213,6 @@ public class Studies extends Controller {
         return ok(String.valueOf(study.isLocked()));
     }
 
-    /**
-     * POST request to activate or deactivate a study. Can be done only by an admin.
-     */
-    @Transactional
-    @Auth(User.Role.ADMIN)
-    public Result toggleActive(Long studyId, Boolean active) {
-        Study study = studyDao.findById(studyId);
-        study.setActive(active);
-        studyDao.update(study);
-        return ok();
-    }
-
      /**
      * GET request to clones a study.
      */

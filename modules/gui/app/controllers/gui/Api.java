@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
+import daos.common.BatchDao;
+import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
@@ -17,6 +19,7 @@ import exceptions.gui.*;
 import general.common.Common;
 import general.common.RequestScope;
 import general.common.StudyLogger;
+import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
@@ -70,8 +73,10 @@ public class Api extends Controller {
     private final AuthService authService;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
+    private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
     private final UserDao userDao;
+    private final BatchDao batchDao;
     private final StudyService studyService;
     private final ComponentService componentService;
     private final StudyLinkService studyLinkService;
@@ -87,18 +92,20 @@ public class Api extends Controller {
     @Inject
     Api(Admin admin, AdminService adminService, AuthService authService,
         ComponentResultIdsExtractor componentResultIdsExtractor,
-        StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, StudyService studyService,
-        ComponentService componentService, StudyLinkService studyLinkService,
-        ImportExport importExport, ResultRemover resultRemover,
-        ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
-        StudyLogger studyLogger, IOUtils ioUtils, UserService userService) {
+        StudyDao studyDao, ComponentDao componentDao, ComponentResultDao componentResultDao, UserDao userDao,
+        BatchDao batchDao, StudyService studyService, ComponentService componentService,
+        StudyLinkService studyLinkService, ImportExport importExport, ResultRemover resultRemover,
+        ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils, StudyLogger studyLogger,
+        IOUtils ioUtils, UserService userService) {
         this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
+        this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
         this.userDao = userDao;
+        this.batchDao = batchDao;
         this.studyService = studyService;
         this.componentService = componentService;
         this.studyLinkService = studyLinkService;
@@ -385,6 +392,22 @@ public class Api extends Controller {
     }
 
     /**
+     * Activates or deactivates a study.
+     *
+     * @param id     Study's ID or UUID
+     * @param active True to activate, false to deactivate
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result toggleStudyActive(String id, Boolean active) throws ForbiddenException, NotFoundException {
+        if (active == null) return badRequest("Query parameter 'active' is required");
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        study.setActive(active);
+        studyDao.update(study);
+        return ok();
+    }
+
+    /**
      * Imports a JATOS study archive
      *
      * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
@@ -438,6 +461,25 @@ public class Api extends Controller {
     }
 
     /**
+     * Activates or deactivates a component.
+     *
+     * @param studyId     Study's ID or UUID
+     * @param componentId Component's ID or UUID
+     * @param active      True to activate, false to deactivate
+     */
+    @Transactional
+    @Auth
+    public Result toggleComponentActive(String studyId, String componentId, Boolean active)
+            throws ForbiddenException, NotFoundException {
+        if (active == null) return badRequest("Query parameter 'active' is required");
+        Component component = componentService.getComponentFromIdOrUuid(componentId);
+        checker.checkStudyLocked(component.getStudy());
+        checker.checkComponentBelongsToStudy(component, studyId);
+        componentDao.changeActive(component, active);
+        return ok();
+    }
+
+    /**
      * Deletes a component
      *
      * @param studyId     Study's ID or UUID
@@ -452,6 +494,27 @@ public class Api extends Controller {
         checker.checkComponentBelongsToStudy(component, studyId);
 
         componentService.remove(component, signedinUser);
+        return ok();
+    }
+
+    /**
+     * Activates or deactivates a batch.
+     *
+     * @param studyId Study's ID or UUID
+     * @param batchId Batch's ID
+     * @param active  True to activate, false to deactivate
+     */
+    @Transactional
+    @Auth
+    public Result toggleBatchActive(String studyId, Long batchId, Boolean active)
+            throws ForbiddenException, NotFoundException {
+        if (active == null) return badRequest("Query parameter 'active' is required");
+        Study study = studyService.getStudyFromIdOrUuid(studyId);
+        checker.checkStudyLocked(study);
+        Batch batch = batchDao.findById(batchId);
+        checker.checkStandardForBatch(batch, study, batchId);
+        batch.setActive(active);
+        batchDao.update(batch);
         return ok();
     }
 
@@ -624,6 +687,18 @@ public class Api extends Controller {
         String username = json.get("username").asText();
         String normalizedUsername = User.normalizeUsername(username);
         userService.removeUser(normalizedUsername);
+        return ok();
+    }
+
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result toggleUserActive(Http.Request request, Boolean active) throws ForbiddenException, NotFoundException {
+        if (active == null) return badRequest("Query parameter 'active' is required");
+        JsonNode json = request.body().asJson();
+        if (json == null || json.get("username") == null) return badRequest("Missing username");
+        String normalizedUsername = User.normalizeUsername(json.get("username").asText());
+        userService.toggleActive(normalizedUsername, active);
         return ok();
     }
 

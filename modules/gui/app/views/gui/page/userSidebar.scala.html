@@ -88,6 +88,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form class="form-admin" id="myUserSettingsForm">
+                <input type="hidden" id="myUserSettingsUsername" name="username">
                 <div class="modal-header align-items-start">
                     <h5 class="modal-title text-truncate flex-grow-1">My settings</h5>
                     <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
@@ -160,6 +161,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form class="form-danger" id="deleteMyUserForm">
+                <input type="hidden" id="deleteMyUserTargetUsername" name="username">
                 <div class="modal-header align-items-start">
                     <h5 class="modal-title text-truncate flex-grow-1">Confirm user deletion</h5>
                     <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
@@ -183,7 +185,7 @@
                     <div class="d-flex mb-3 d-none" id="deleteMyUserUsernameInput">
                         <label for="deleteMyUserUsername" class="col-form-label input-required">Your username</label>
                         <div class="flex-grow-1 ms-2 p-0">
-                            <input type="text" class="form-control" id="deleteMyUserUsername"  name="username" autocomplete="off" required>
+                            <input type="text" class="form-control" id="deleteMyUserUsername" name="confirmUsername" autocomplete="off" required>
                         </div>
                     </div>
                 </div>
@@ -222,6 +224,7 @@
         $("#myUserSettingsForm")[0].reset();
         FormValidation.clear("#myUserSettingsForm");
         Helpers.generateModalSubtitles("#myUserSettingsModal", {"Username": window.signedinUser.username});
+        $('#myUserSettingsUsername').val(window.signedinUser.username);
         $('#myUserSettingsName').val(window.signedinUser.name);
         $('#myUserSettingsEmail').val(window.signedinUser.email);
     });
@@ -229,7 +232,7 @@
     $("#myUserSettingsConfirm").click(function(event) {
         $.ajax({
             type: 'POST',
-            url : window.routes.Users.edit(window.signedinUser.username),
+            url : window.routes.Users.edit(),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#myUserSettingsForm').serialize(),
             success: function(response) {
@@ -303,6 +306,7 @@
                 "Name": window.signedinUser.name,
                 "Account type": Helpers.getAuthMethodText(window.signedinUser.authMethod)
                 }, true);
+        $('#deleteMyUserTargetUsername').val(window.signedinUser.username);
         if (window.signedinUser.isOauthGoogle || window.signedinUser.isOidc || window.signedinUser.isOrcid) {
             $("#deleteMyUserUsernameInput").removeClass("d-none");
         } else {
@@ -359,7 +363,7 @@
         }
 
         $.ajax({
-            url : window.routes.Users.remove(window.signedinUser.username),
+            url : window.routes.Users.remove(),
             type : 'POST',
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#deleteMyUserForm').serialize(),

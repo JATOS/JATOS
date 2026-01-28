@@ -325,27 +325,6 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * POST request to toggle the property 'active' of the given batch.
-     */
-    @Transactional
-    @Auth
-    public Result toggleBatchActive(Long studyId, Long batchId, Boolean active)
-            throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
-        Batch batch = batchDao.findById(batchId);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
-        checker.checkStandardForBatch(batch, study, batchId);
-
-        if (active != null) {
-            batch.setActive(active);
-            batchDao.update(batch);
-        }
-        return ok(JsonUtils.asJsonNode(batch.isActive()));
-    }
-
-    /**
      * POST request to allow or deny a worker type in a batch.
      */
     @Transactional

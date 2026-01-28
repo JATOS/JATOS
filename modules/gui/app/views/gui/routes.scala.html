@@ -20,6 +20,10 @@
     window.routes.Api.exportResultFiles = `${basePath}jatos/api/v1/results/files`;
     window.routes.Api.exportResultMetadata = (isApiCall) => `${basePath}jatos/api/v1/results/metadata?isApiCall=${isApiCall}`;
     window.routes.Api.getStudyCodes = (studyId, batchId, workerType, comment, amount) => `${basePath}jatos/api/v1/studies/${studyId}/studyCodes?batchId=${batchId}&type=${workerType}&comment=${comment}&amount=${amount}`;
+    window.routes.Api.toggleStudyActive = (studyId, active) => `${basePath}jatos/api/v1/studies/${studyId}/active?active=${active}`;
+    window.routes.Api.toggleComponentActive = (studyId, componentId, active) => `${basePath}jatos/api/v1/studies/${studyId}/components/${componentId}/active?active=${active}`;
+    window.routes.Api.toggleBatchActive = (studyId, batchId, active) => `${basePath}jatos/api/v1/studies/${studyId}/batches/${batchId}/active?active=${active}`;
+    window.routes.Api.toggleUserActive = (active) => `${basePath}jatos/api/v1/users/active?active=${active}`;
 
     window.routes.ApiTokens = {};
     window.routes.ApiTokens.allTokenDataByUser = `${basePath}jatos/user/allApiTokenData`;
@@ -62,10 +66,8 @@
     window.routes.Studies.addAllMemberUsers = (studyId) => `${basePath}jatos/${studyId}/memberUsers`;
     window.routes.Studies.removeAllMemberUsers = (studyId) => `${basePath}jatos/${studyId}/memberUsers`;
     window.routes.Studies.memberUsers = (studyId) => `${basePath}jatos/${studyId}/memberUsers`;
-    window.routes.Studies.toggleActive = (studyId, active) => `${basePath}jatos/${studyId}/properties/active?active=${active}`;
 
     window.routes.Components = {};
-    window.routes.Components.toggleActive = (studyId, componentId, active) => `${basePath}jatos/${studyId}/${componentId}/properties/active?active=${active}`;
     window.routes.Components.remove = (studyId, componentId) => `${basePath}jatos/${studyId}/${componentId}`;
     window.routes.Components.runComponent = (studyId, componentId, frames = 1, hSplit = 1, vSplit = 1) => `${basePath}jatos/${studyId}/${componentId}/run?frames=${frames}&hSplit=${hSplit}&vSplit=${vSplit}`;
     window.routes.Components.cloneComponent = (studyId, componentId) => `${basePath}jatos/${studyId}/${componentId}/clone`;
@@ -94,7 +96,6 @@
     window.routes.StudyLinks.studyLinks = (studyId) => `${basePath}jatos/${studyId}/studyLinks`;
     window.routes.StudyLinks.submitCreatedBatch = (studyId) => `${basePath}jatos/${studyId}/batch`;
     window.routes.StudyLinks.batchesByStudy = (studyId) => `${basePath}jatos/${studyId}/batches`;
-    window.routes.StudyLinks.toggleBatchActive = (studyId, batchId, active) => `${basePath}jatos/${studyId}/batch/${batchId}/properties/active?active=${active}`;
     window.routes.StudyLinks.removeBatch = (studyId, batchId) => `${basePath}jatos/${studyId}/batch/${batchId}`;
     window.routes.StudyLinks.batchProperties = (studyId, batchId) => `${basePath}jatos/${studyId}/batch/${batchId}/properties`;
     window.routes.StudyLinks.submitEditedBatchProperties = (studyId, batchId) => `${basePath}jatos/${studyId}/batch/${batchId}/properties`;
@@ -116,15 +117,14 @@
 
     window.routes.Users = {};
     window.routes.Users.signedinUserData = `${basePath}jatos/user/signedinUser`;
-    window.routes.Users.edit = (username) => `${basePath}jatos/user/${username}/profile`;
-    window.routes.Users.remove = (username) => `${basePath}jatos/user/${username}/delete`;
+    window.routes.Users.edit = () => `${basePath}jatos/user/profile`;
+    window.routes.Users.remove = () => `${basePath}jatos/user/delete`;
     window.routes.Users.changePasswordByUser = `${basePath}jatos/user/passwordByUser`;
     window.routes.Users.changePasswordByAdmin = `${basePath}jatos/user/passwordByAdmin`;
     window.routes.Users.userManager = `${basePath}jatos/userManager`;
     window.routes.Users.allUserData = `${basePath}jatos/user/allUserData`;
     window.routes.Users.create = `${basePath}jatos/user`;
-    window.routes.Users.toggleActive = (username, active) => `${basePath}jatos/user/${username}/properties/active?active=${active}`;
-    window.routes.Users.toggleRole = (username, role, value) => `${basePath}jatos/user/${username}/properties/role?role=${role}&value=${value}`;
+    window.routes.Users.toggleRole = (role, value) => `${basePath}jatos/user/properties/role?role=${role}&value=${value}`;
     window.routes.Users.studiesDataByUser = (username) => `${basePath}jatos/studiesData?username=${username}`;
 
     window.routes.Admin = {};

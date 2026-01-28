@@ -3,6 +3,12 @@
 # Order is important!
 # ~~~~
 
+# MCP (Model Context Protocol) endpoint
+#POST     /mcp                                                               @controllers.gui.Mcp.handle(request: Request)
+GET      /mcp                                                               @controllers.gui.McpController.handleGet(request: Request)
+POST     /mcp                                                               @controllers.gui.McpController.handle(request: Request)
+
+
 # API admin
 GET      /jatos/api/v1/admin/token                                          @controllers.gui.Api.testToken()
 GET      /jatos/api/v1/admin/status                                         @controllers.gui.Api.status()
@@ -10,6 +16,7 @@ GET      /jatos/api/v1/admin/logs/:filename                                 @con
 POST     /jatos/api/v1/user                                                 @controllers.gui.Api.createUser(request: Request)
 GET      /jatos/api/v1/users                                                @controllers.gui.Api.allUsers()
 POST     /jatos/api/v1/users/delete                                         @controllers.gui.Api.deleteUser(request: Request)
+POST     /jatos/api/v1/users/active                                         @controllers.gui.Api.toggleUserActive(request: Request, active: Boolean)
 GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.allMembersOfStudy(id)
 PUT      /jatos/api/v1/studies/:id/members/add                              @controllers.gui.Api.addMemberToStudy(request: Request, id)
 POST     /jatos/api/v1/studies/:id/members/remove                           @controllers.gui.Api.removeMemberFromStudy(request: Request, id)
@@ -23,8 +30,11 @@ POST     /jatos/api/v1/study                                                @con
 POST     /jatos/api/v1/studies/create                                       @controllers.gui.Api.createStudy(request: Request)
 GET      /jatos/api/v1/studies/:id                                          @controllers.gui.Api.exportStudy(id)
 DELETE   /jatos/api/v1/studies/:id                                          @controllers.gui.Api.deleteStudy(id)
+POST     /jatos/api/v1/studies/:id/active                                   @controllers.gui.Api.toggleStudyActive(id, active: Boolean)
 DELETE   /jatos/api/v1/studies/:id/components/:cid                          @controllers.gui.Api.deleteComponent(id, cid)
 POST     /jatos/api/v1/studies/:id/components/create                        @controllers.gui.Api.createComponent(request: Request, id)
+POST     /jatos/api/v1/studies/:id/components/:cid/active                   @controllers.gui.Api.toggleComponentActive(id, cid, active: Boolean)
+POST     /jatos/api/v1/studies/:id/batches/:batchId/active                  @controllers.gui.Api.toggleBatchActive(id, batchId: Long, active: Boolean)
 GET      /jatos/api/v1/studies/:id/assets/structure                         @controllers.gui.Api.getStudyAssetsStructure(id, flatten: Boolean ?= false)
 GET      /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.downloadStudyAssetsFile(id, filepath)
 POST     /jatos/api/v1/studies/:id/assets/                                  @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath = null)
@@ -100,15 +110,14 @@ POST     /jatos/user/apiToken/:id/active                                    @aut
 # Users controller
 GET      /jatos/userManager                                                 @controllers.gui.Users.userManager(request: Request)
 POST     /jatos/user                                                        @controllers.gui.Users.create(request: Request)
-POST     /jatos/user/:username/profile                                      @controllers.gui.Users.edit(username)
+POST     /jatos/user/profile                                                @controllers.gui.Users.edit(request: Request)
 GET      /jatos/user/signedinUser                                           @controllers.gui.Users.signedinUserData()
 GET      /jatos/user/allUserData                                            @controllers.gui.Users.allUserData()
 POST     /jatos/user/passwordByUser                                         @controllers.gui.Users.changePasswordByUser(request: Request)
 POST     /jatos/user/passwordByAdmin                                        @controllers.gui.Users.changePasswordByAdmin(request: Request)
-POST     /jatos/user/:username/properties/role                              @controllers.gui.Users.toggleRole(username, role, value: Boolean)
-POST     /jatos/user/:username/properties/active                            @controllers.gui.Users.toggleActive(username, active: Boolean)
+POST     /jatos/user/properties/role                                        @controllers.gui.Users.toggleRole(request: Request, role, value: Boolean)
 # Play doesn't allow data in body in a DELETE request, so I use POST instead
-POST     /jatos/user/:username/delete                                       @controllers.gui.Users.remove(username)
+POST     /jatos/user/delete                                                 @controllers.gui.Users.remove(request: Request)
 
 # ComponentResults & StudyResults controller
 GET      /jatos/worker/:workerId/results                                    @controllers.gui.StudyResults.workersStudyResults(request: Request, workerId: Long)
@@ -131,7 +140,6 @@ POST     /jatos/study                                                       @con
 GET      /jatos/:studyId/properties                                         @controllers.gui.Studies.properties(studyId: Long)
 POST     /jatos/:studyId/properties                                         @controllers.gui.Studies.submitEdited(studyId: Long)
 POST     /jatos/:studyId/properties/description                             @controllers.gui.Studies.submitDescription(request: Request, studyId: Long)
-POST     /jatos/:studyId/properties/active                                  @controllers.gui.Studies.toggleActive(studyId: Long, active: Boolean)
 POST     /jatos/:studyId/memberUser                                         @controllers.gui.Studies.toggleMemberUser(studyId: Long, username, isMember: Boolean)
 POST     /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.addAllMemberUsers(studyId: Long)
 DELETE   /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.removeAllMemberUsers(studyId: Long)
@@ -148,7 +156,6 @@ GET      /jatos/:studyId/                                                   @con
 GET      /jatos/:studyId/studyLinks                                         @controllers.gui.StudyLinks.studyLinks(request: Request, studyId: Long)
 POST     /jatos/:studyId/batch                                              @controllers.gui.StudyLinks.submitCreatedBatch(request: Request, studyId: Long)
 POST     /jatos/:studyId/batch/:batchId/properties/workerType/:workerType   @controllers.gui.StudyLinks.toggleAllowedWorkerType(studyId: Long, batchId: Long, workerType, allow: Boolean)
-POST     /jatos/:studyId/batch/:batchId/properties/active                   @controllers.gui.StudyLinks.toggleBatchActive(studyId: Long, batchId: Long, active: Boolean)
 GET      /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.StudyLinks.batchProperties(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.StudyLinks.submitEditedBatchProperties(request: Request, studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.batchSessionData(studyId: Long, batchId: Long)
@@ -167,7 +174,6 @@ POST     /jatos/worker/:workerId/comment                                    @con
 
 # Components controller
 POST     /jatos/:studyId/component                                          @controllers.gui.Components.submitCreated(request: Request, studyId: Long)
-POST     /jatos/:studyId/:componentId/properties/active                     @controllers.gui.Components.toggleActive(request: Request, studyId: Long, componentId: Long, active: Boolean)
 GET      /jatos/:studyId/:componentId/properties                            @controllers.gui.Components.properties(studyId: Long, componentId: Long)
 POST     /jatos/:studyId/:componentId/properties                            @controllers.gui.Components.submitEdited(request: Request, studyId: Long, componentId: Long)
 DELETE   /jatos/:studyId/:componentId                                       @controllers.gui.Components.remove(request: Request, studyId: Long, componentId: Long)
