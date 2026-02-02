@@ -56,7 +56,7 @@ public class Study {
     private String title;
 
     @Lob
-    @JsonView({JsonForPublix.class, JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String description;
 
     /**

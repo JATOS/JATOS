@@ -1,0 +1,89 @@
+{
+  "name": "createStudy",
+  "description": "Create a new study within JATOS.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Title of the study"
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of the study"
+      },
+      "comments": {
+        "type": "string",
+        "description": "Some comments"
+      },
+      "jsonData": {
+        "type": "string",
+        "description": "Study input in JSON format"
+      },
+      "endRedirectUrl": {
+        "type": "string",
+        "description": "URL the study redirects to after it is finished"
+      },
+      "groupStudy": {
+        "type": "boolean",
+        "description": "Is the study a group study"
+      },
+      "linearStudy": {
+        "type": "boolean",
+        "description": "Is the study a linear study"
+      },
+      "allowPreview": {
+        "type": "boolean",
+        "description": "Are previews allowed"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "title"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "uuid": {
+            "type": "string",
+            "description": "The UUID identifier for the study."
+          },
+          "id": {
+            "type": "integer",
+            "description": "The numeric ID of the study."
+          }
+        },
+        "required": ["success", "uuid", "id"],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "createStudy"
+    }
+  }
+}

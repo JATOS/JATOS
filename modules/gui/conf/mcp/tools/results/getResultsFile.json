@@ -1,0 +1,76 @@
+{
+  "name": "getResultsFile",
+  "description": "Describe how to get a single result file from JATOS via the HTTP API. This tool does not perform the download itself. It provides instructions and a curl command template for downloading the result file.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "componentResultId": {
+        "type": "integer",
+        "description": "Numeric component result ID"
+      },
+      "filename": {
+        "type": "string",
+        "description": "Name of the file to be fetched"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "componentResultId",
+      "filename"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the download instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "A fully-formed curl command to download the result file. Copy and paste into a terminal."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Suggested file name for the result file."
+          },
+          "downloadUrl": {
+            "type": "string",
+            "description": "The direct URL to the result file on the JATOS server."
+          }
+        },
+        "required": [
+          "success",
+          "curlCommand",
+          "fileName",
+          "downloadUrl"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "getResultsFile"
+    }
+  }
+}

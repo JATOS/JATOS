@@ -1,0 +1,140 @@
+{
+  "name": "getStudyAssetsStructure",
+  "description": "Get the directory structure of a study assets directory in JSON.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      },
+      "flatten": {
+        "type": "boolean",
+        "default": false,
+        "description": "Flag, if set to `true` the returned JSON will be a flat list of files (no tree, no directories). If `false`, the returned JSON will have tree-like structure and include directories. Default is `false`."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "structure": {
+            "$ref": "#/$defs/fsNode"
+          }
+        },
+        "required": [
+          "success",
+          "structure"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+      "fsNode": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/file"
+          },
+          {
+            "$ref": "#/$defs/directory"
+          }
+        ]
+      },
+      "file": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "file"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "The path of the file or directory within the study assets directory."
+          },
+          "creation": {
+            "type": "string",
+            "description": "The creation timestamp of the file. Unix epoch timestamp in milliseconds (UTC)."
+          },
+          "lastModified": {
+            "type": "string",
+            "description": "The last modification timestamp. Unix epoch timestamp in milliseconds (UTC)."
+          },
+          "size": {
+            "type": "integer",
+            "description": "File size in bytes"
+          },
+          "checksum": {
+            "type": "string",
+            "description": "Checksum of the file calculated with Adler32"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "path",
+          "creation",
+          "lastModified",
+          "size",
+          "checksum"
+        ],
+        "additionalProperties": false
+      },
+      "directory": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "directory"
+          },
+          "name": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/fsNode"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "children"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "getStudyAssetsStructure"
+    }
+  }
+}

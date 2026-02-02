@@ -1,0 +1,44 @@
+{
+  "name": "listStudyMembers",
+  "description": "Get a list of all usernames of members of a specific study. Only accessible for admin users.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "listStudyMembers"
+    }
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "name": "getResultsData",
+  "description": "Get either the result data (without metadata or result files) or instructions how to get result data as a ZIP archive from JATOS via the HTTP API. Select results by specifying one or multiple of: study IDs/UUIDs, component IDs/UUIDs, batch IDs, group IDs, study result IDs, and component result IDs. If one of the specified results does not exist or you have no permission to access it this result will simply be left out and no error will be raised.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "asPlainText": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true the result data will be returned inline as plain text with each result data in a new line. If false, instructions will be returned how to download ZIP archive that contains each result data in its own text file."
+      },
+      "studyIds": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "description": "Single ID"
+          },
+          {
+            "type": "string",
+            "description": "Single ID or range, e.g., '1-5'"
+          },
+          {
+            "type": "array",
+            "description": "An array of IDs, e.g., [1, 2, 3]",
+            "items": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Select results by numeric study IDs."
+      },
+      "studyUuids": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Single UUID"
+          },
+          {
+            "type": "array",
+            "description": "An array of UUIDs, e.g., ['uuid1', 'uuid2', 'uuid3']",
+            "items": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Select results by study UUIDs."
+      },
+      "componentIds": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "description": "Single ID"
+          },
+          {
+            "type": "string",
+            "description": "Single ID or range, e.g., '1-5'"
+          },
+          {
+            "type": "array",
+            "description": "An array of IDs, e.g., [1, 2, 3]",
+            "items": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Select results by numeric component IDs."
+      },
+      "componentUuids": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Single UUID"
+          },
+          {
+            "type": "array",
+            "description": "An array of UUIDs, e.g., ['uuid1', 'uuid2', 'uuid3']",
+            "items": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Select results by component UUIDs."
+      },
+      "studyResultIds": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "description": "Single ID"
+          },
+          {
+            "type": "string",
+            "description": "Single ID or range, e.g., '1-5'"
+          },
+          {
+            "type": "array",
+            "description": "An array of IDs, e.g., [1, 2, 3]",
+            "items": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Select results by numeric study result IDs."
+      },
+      "componentResultIds": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "description": "Single ID"
+          },
+          {
+            "type": "string",
+            "description": "Single ID or range, e.g., '1-5'"
+          },
+          {
+            "type": "array",
+            "description": "An array of IDs, e.g., [1, 2, 3]",
+            "items": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Select results by numeric component result IDs."
+      },
+      "batchIds": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "description": "Single ID"
+          },
+          {
+            "type": "string",
+            "description": "Single numeric ID or range, e.g., '1-5'"
+          },
+          {
+            "type": "array",
+            "description": "An array of IDs, e.g., [1, 2, 3]",
+            "items": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Select results by numeric batch IDs."
+      },
+      "groupIds": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "description": "Single ID"
+          },
+          {
+            "type": "string",
+            "description": "Single ID or range, e.g., '1-5'"
+          },
+          {
+            "type": "array",
+            "description": "An array of IDs, e.g., [1, 2, 3]",
+            "items": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Select results by numeric group IDs."
+      }
+    },
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "description": "True if the download instruction generation succeeded."
+              },
+              "message": {
+                "type": "string",
+                "description": "A message that describes the result of the operation."
+              },
+              "curlCommand": {
+                "type": "string",
+                "description": "A fully-formed curl command to download the results ZIP file. Copy and paste into a terminal."
+              },
+              "fileName": {
+                "type": "string",
+                "description": "Suggested file name for the exported ZIP."
+              },
+              "downloadUrl": {
+                "type": "string",
+                "description": "The direct URL to the archive on the JATOS server."
+              }
+            },
+            "required": [
+              "success",
+              "curlCommand",
+              "fileName",
+              "downloadUrl"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "description": "True if the operation completed successfully."
+              },
+              "message": {
+                "type": "string",
+                "description": "A message that describes the result of the operation."
+              },
+              "resultData": {
+                "type": "string",
+                "description": "Inline result data as plain text, each result data in a new line."
+              }
+            },
+            "required": [
+              "success",
+              "resultData"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "getResultsData"
+    }
+  }
+}

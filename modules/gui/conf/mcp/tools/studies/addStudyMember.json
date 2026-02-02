@@ -1,0 +1,59 @@
+{
+  "name": "addStudyMember",
+  "description": "Add a user as a member to a specific study. Only accessible for admin users.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "The numeric ID or UUID of the study the user will be added to."
+      },
+      "username": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid",
+      "username"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "addStudyMember"
+    }
+  }
+}

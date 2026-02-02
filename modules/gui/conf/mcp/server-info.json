@@ -1,0 +1,10 @@
+{
+  "serverInfo": {
+    "name": "jatos-mcp",
+    "version": "0.1.0"
+  },
+  "capabilities": {
+    "tools": {},
+    "resources": {}
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "name": "getTokenInfo",
+  "description": "Get details of the token currently used for authentication",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "tokenInfo": {
+            "type": "object",
+            "description": "Metadata of the token.",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the token."
+              },
+              "creationDate": {
+                "type": "integer",
+                "description": "The creation date of the token. Unix epoch timestamp in milliseconds (UTC)."
+              },
+              "expirationDate": {
+                "type": "integer",
+                "description": "The expiration date of the token. Unix epoch timestamp in milliseconds (UTC)."
+              },
+              "isExpired": {
+                "type": "boolean",
+                "description": "True if the token is expired."
+              },
+              "isAdminToken": {
+                "type": "boolean",
+                "description": "True if the token is an admin token."
+              },
+              "active": {
+                "type": "boolean",
+                "description": "True if the token is active."
+              }
+            },
+            "required": [
+              "name",
+              "creationDate",
+              "expirationDate",
+              "isExpired",
+              "isAdminToken",
+              "active"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "success",
+          "tokenInfo"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "getTokenInfo"
+    }
+  }
+}

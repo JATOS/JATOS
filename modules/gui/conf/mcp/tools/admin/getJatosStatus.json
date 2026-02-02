@@ -1,0 +1,175 @@
+{
+  "name": "getJatosStatus",
+  "description": "Get the status of your JATOS. Only accessible for admin users.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "studyCount": {
+                "type": "integer",
+                "description": "The current number of studies in JATOS."
+              },
+              "studyCountTotal": {
+                "type": "integer",
+                "description": "The total number of studies in JATOS (including deleted studies)."
+              },
+              "studyResultCount": {
+                "type": "integer",
+                "description": "The current number of study results in JATOS."
+              },
+              "studyResultCountTotal": {
+                "type": "integer",
+                "description": "The total number of study results in JATOS (including deleted study results)."
+              },
+              "workerCount": {
+                "type": "integer",
+                "description": "The current number of workers in JATOS."
+              },
+              "workerCountTotal": {
+                "type": "integer",
+                "description": "The total number of workers in JATOS (including deleted workers)."
+              },
+              "userCount": {
+                "type": "integer",
+                "description": "The current number of users in JATOS."
+              },
+              "serverTime": {
+                "type": "integer",
+                "description": "The current server time (Unix epoch in milliseconds, UTC)."
+              },
+              "latestUsers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string",
+                      "description": "The username of the user."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the user."
+                    },
+                    "authMethod": {
+                      "type": "string",
+                      "description": "The authentication method of the user."
+                    },
+                    "time": {
+                      "type": "string",
+                      "description": "The last seen time of the user in ISO 8601 format."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "username",
+                    "name",
+                    "time"
+                  ]
+                }
+              },
+              "latestStudyRuns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "studyTitle": {
+                      "type": "string",
+                      "description": "The title of the study."
+                    },
+                    "time": {
+                      "type": "string",
+                      "description": "The last seen time of the study run in ISO 8601 format."
+                    },
+                    "members": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string",
+                            "description": "The username of the user."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The name of the user."
+                          },
+                          "authMethod": {
+                            "type": "string",
+                            "description": "The authentication method of the user."
+                          }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                          "username",
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "studyTitle",
+                    "time",
+                    "members"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "studyCount",
+              "studyCountTotal",
+              "studyResultCount",
+              "studyResultCountTotal",
+              "workerCount",
+              "workerCountTotal",
+              "userCount",
+              "serverTime",
+              "latestUsers",
+              "latestStudyRuns"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "getJatosStatus"
+    }
+  }
+}

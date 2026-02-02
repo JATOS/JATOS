@@ -1,0 +1,101 @@
+{
+  "name": "listUsers",
+  "description": "Get a list of all currently registered users and the studies (specified by their IDs) that they are member of. Only accessible by admin users.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "description": "The username of the user."
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The name of the user."
+                },
+                "email": {
+                  "type": "string"
+                },
+                "authMethod": {
+                  "type": "string",
+                  "enum": [
+                    "DB", "LDAP", "OAUTH_GOOGLE", "OIDC", "ORCID", "SRAM", "CONEXT"
+                  ],
+                  "description": "The authentication method used for the user."
+                },
+                "lastLogin": {
+                  "type": ["integer", "null"],
+                  "description": "The time of the last successful sign-in. Unix epoch timestamp in milliseconds (UTC), or null if never logged in."
+                },
+                "lastSeen": {
+                  "type": ["integer", "null"],
+                  "description": "The time of the last activity. Unix epoch timestamp in milliseconds (UTC), or null if never had any activity."
+                },
+                "active": {
+                  "type": "boolean",
+                  "description": "True if the user is active, false otherwise."
+                },
+                "studyIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "description": "The numeric IDs of the studies that the user is member of."
+                }
+              },
+              "required": [
+                "username",
+                "name",
+                "authMethod",
+                "active",
+                "studyIds"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "success",
+          "users"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "listUsers"
+    }
+  }
+}

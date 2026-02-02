@@ -1,0 +1,86 @@
+{
+  "name": "createComponent",
+  "description": "Create a new component under the specified study.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "The numeric ID or UUID of the study where the component will be added."
+      },
+      "title": {
+        "type": "string",
+        "description": "Title of the component"
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of the component"
+      },
+      "htmlFilePath": {
+        "type": "string",
+        "description": "Local path to component's HTML file in the study assets folder"
+      },
+      "reloadable": {
+        "type": "boolean",
+        "description": "Is the component reloadable"
+      },
+      "comments": {
+        "type": "string",
+        "description": "Some comments"
+      },
+      "jsonData": {
+        "type": "string",
+        "description": "Component input in JSON format"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid",
+      "title"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "uuid": {
+            "type": "string",
+            "description": "The UUID identifier of the component."
+          },
+          "id": {
+            "type": "integer",
+            "description": "The numeric ID of the component."
+          }
+        },
+        "required": ["success", "uuid", "id"],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "createComponent"
+    }
+  }
+}

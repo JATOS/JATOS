@@ -1,0 +1,65 @@
+{
+  "name": "setComponentActive",
+  "description": "Activate or deactivate a component within a study.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      },
+      "componentIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric component ID or a component UUID"
+      },
+      "active": {
+        "type": "boolean",
+        "description": "Whether the component should be active or not"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "active",
+      "componentIdOrUuid",
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "setComponentActive"
+    }
+  }
+}

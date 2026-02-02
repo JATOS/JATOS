@@ -1,0 +1,135 @@
+{
+  "name": "importStudy",
+  "description": "Describe how to import a JATOS study by uploading a study archive (.jzip) via the JATOS HTTP API. This tool does not perform the upload itself. Instead, it explains how to construct a multipart/form-data POST request to the JATOS endpoint that accepts a study archive file and imports it, optionally controlling how existing studies and assets are handled.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "filePath": {
+        "type": "string",
+        "description": "Local path to the JATOS study archive file (.jzip) that should be uploaded."
+      },
+      "keepProperties": {
+        "type": "boolean",
+        "default": false,
+        "description": "If a study with the same UUID already exists, keep its current properties instead of overwriting them."
+      },
+      "keepAssets": {
+        "type": "boolean",
+        "default": false,
+        "description": "If a study with the same UUID already exists, keep its current assets directory instead of overwriting it."
+      },
+      "keepCurrentAssetsName": {
+        "type": "boolean",
+        "default": true,
+        "description": "When assets are overwritten, keep the existing assets directory name instead of using the uploaded one."
+      },
+      "renameAssets": {
+        "type": "boolean",
+        "default": true,
+        "description": "If the uploaded assets directory name conflicts with another study, allow JATOS to rename it by appending a numeric suffix."
+      }
+    },
+    "required": ["filePath"],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the upload instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "A fully-formed curl command to upload the study archive file (.jzip) and import it in JATOS. Copy and paste into a terminal."
+          },
+          "importUrl": {
+            "type": "string",
+            "description": "The URL to import the study archive to the JATOS server."
+          },
+          "result": {
+            "type": "object",
+            "description": "Metadata returned by JATOS after importing the study via the API.",
+            "properties": {
+              "uuid": {
+                "type": "string",
+                "description": "The UUID identifier of the imported study."
+              },
+              "id": {
+                "type": "integer",
+                "description": "The numeric study ID."
+              },
+              "studyExists": {
+                "type": "boolean",
+                "description": "Whether a study with the same UUID already existed before the import."
+              },
+              "currentStudyTitle": {
+                "type": "string",
+                "description": "The previous study title, if it was overwritten."
+              },
+              "currentDirName": {
+                "type": "string",
+                "description": "The previous assets directory name, if it was overwritten."
+              },
+              "uploadedStudyTitle": {
+                "type": "string",
+                "description": "The title of the uploaded study."
+              },
+              "uploadedDirName": {
+                "type": "string",
+                "description": "The assets directory name contained in the uploaded archive."
+              },
+              "uploadedDirExists": {
+                "type": "boolean",
+                "description": "Whether the uploaded assets directory already existed before the import."
+              },
+              "newDirName": {
+                "type": "string",
+                "description": "The final assets directory name used if renaming was required."
+              }
+            },
+            "required": [
+              "uuid",
+              "id",
+              "studyExists",
+              "uploadedStudyTitle",
+              "uploadedDirName",
+              "uploadedDirExists"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "success",
+          "curlCommand",
+          "importUrl"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "importStudy"
+    }
+  }
+}

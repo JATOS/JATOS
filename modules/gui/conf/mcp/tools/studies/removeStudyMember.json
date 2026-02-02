@@ -1,0 +1,59 @@
+{
+  "name": "removeStudyMember",
+  "description": "Remove a user from the members of a specific study. Only accessible by admin users.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      },
+      "username": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid",
+      "username"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "removeStudyMember"
+    }
+  }
+}

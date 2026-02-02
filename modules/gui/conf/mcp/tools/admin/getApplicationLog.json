@@ -1,0 +1,71 @@
+{
+  "name": "getApplicationLog",
+  "description": "Describe how to retrieve an application log file from JATOS via the HTTP API. This tool does not perform the download itself. It provides instructions and a curl command template for downloading the log file. The download needs a user with admin privileges. ",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "filename": {
+        "type": "string",
+        "description": "The name of the log file to retrieve (e.g., application.log, loader.log, update.log)."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "filename"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the download instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "downloadUrl": {
+            "type": "string",
+            "description": "The URL to download the log file directly from the JATOS server."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "Example curl command to fetch the log file."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "The suggested filename for the downloaded log file."
+          }
+        },
+        "required": [
+          "success",
+          "downloadUrl",
+          "curlCommand",
+          "fileName"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "getApplicationLog"
+    }
+  }
+}

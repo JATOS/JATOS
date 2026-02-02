@@ -1,0 +1,71 @@
+{
+  "name": "exportStudy",
+  "description": "Describe how to export a study as a ZIP archive (.jzip) from JATOS via the HTTP API. This tool does not perform the export itself. It provides instructions and a curl command template for downloading the study archive.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "The numeric ID or UUID of the study to export."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the download instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "A fully-formed curl command to download the study .jzip file. Copy and paste into a terminal."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Suggested file name for the exported .jzip."
+          },
+          "downloadUrl": {
+            "type": "string",
+            "description": "The direct URL to the study archive on the JATOS server."
+          }
+        },
+        "required": [
+          "success",
+          "curlCommand",
+          "fileName",
+          "downloadUrl"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "exportStudy"
+    }
+  }
+}

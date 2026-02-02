@@ -1,0 +1,71 @@
+{
+  "name": "getStudyLog",
+  "description": "Describe how to get the study log from JATOS via the HTTP API. This tool does not perform the download itself. It provides instructions and a curl command template for downloading the file.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the download instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "A fully-formed curl command to download the study log file. Copy and paste into a terminal."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Suggested file name for the study log file."
+          },
+          "downloadUrl": {
+            "type": "string",
+            "description": "The direct URL to the study log file on the JATOS server."
+          }
+        },
+        "required": [
+          "success",
+          "curlCommand",
+          "fileName",
+          "downloadUrl"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "getStudyLog"
+    }
+  }
+}

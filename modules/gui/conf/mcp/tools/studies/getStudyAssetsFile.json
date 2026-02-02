@@ -1,0 +1,76 @@
+{
+  "name": "getStudyAssetsFile",
+  "description": "Describe how to download a file from the study assets from JATOS via the HTTP API. This tool does not perform the download itself. It provides instructions and a curl command template for downloading the file.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      },
+      "filepath": {
+        "type": "string",
+        "description": "Filepath to the file. Directories cannot be downloaded."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "filepath",
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the download instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "A fully-formed curl command to download the result file. Copy and paste into a terminal."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Suggested file name for the result file."
+          },
+          "downloadUrl": {
+            "type": "string",
+            "description": "The direct URL to the result file on the JATOS server."
+          }
+        },
+        "required": [
+          "success",
+          "curlCommand",
+          "fileName",
+          "downloadUrl"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "getStudyAssetsFile"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "name": "uploadStudyAssetsFile",
+  "description": "Describe how to upload a file to the assets of a study via the JATOS HTTP API. This tool does not perform the upload itself. Instead, it explains how to construct a multipart/form-data POST request to the JATOS endpoint that accepts a file and uploads it.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      },
+      "filepath": {
+        "type": "string",
+        "description": "Filepath to the file. Subdirectories are allowed and it can additionally rename the file. Non-existing subdirectories will be created. Existing files will be overwritten."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "filepath",
+      "studyIdOrUuid"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the upload instruction generation succeeded."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "curlCommand": {
+            "type": "string",
+            "description": "A fully-formed curl command to upload the file to the study assets in JATOS. Copy and paste into a terminal."
+          },
+          "importUrl": {
+            "type": "string",
+            "description": "The URL to upload the file to the study assets on the JATOS server."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "success",
+          "curlCommand",
+          "importUrl"
+        ]
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "mode": "INSTRUCTIONS_ONLY",
+    "openapi": {
+      "operationId": "uploadStudyAssetsFile"
+    }
+  }
+}

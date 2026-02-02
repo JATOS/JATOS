@@ -1,0 +1,79 @@
+{
+  "name": "createUser",
+  "description": "Create a new user. Only accessible for admin users.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "username": {
+        "type": "string",
+        "description": "Username of the new user"
+      },
+      "name": {
+        "type": "string",
+        "description": "Name of the new user"
+      },
+      "email": {
+        "type": "string",
+        "description": "Email address of the new user"
+      },
+      "password": {
+        "type": "string",
+        "description": "Password of the new user. Only if authMethod is DB."
+      },
+      "authMethod": {
+        "type": "string",
+        "enum": [
+          "DB",
+          "LDAP"
+        ],
+        "description": "Authentication method. Only DB and LDAP are accepted by this endpoint."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "authMethod",
+      "name",
+      "username"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "username": {
+            "type": "string",
+            "description": "The normalized username as it is stored in the database. Use this username to authenticate and identify the user in other parts of JATOS."
+          }
+        },
+        "required": ["success", "username"],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "ADMIN",
+    "openapi": {
+      "operationId": "createUser"
+    }
+  }
+}

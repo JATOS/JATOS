@@ -1,0 +1,81 @@
+{
+  "name": "getStudyCodes",
+  "description": "Get one or multiple study codes that can be used to generate study links",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "studyIdOrUuid": {
+        "type": "string",
+        "description": "Either a numeric study ID or a study UUID"
+      },
+      "type": {
+        "type": "string",
+        "description": "Type - one of `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle` (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)"
+      },
+      "batchId": {
+        "type": "integer",
+        "description": "numeric ID of the batch to which the study codes should belong to. If not set the default batch is used."
+      },
+      "comment": {
+        "type": "string",
+        "description": "Some identifying description or name (only for type `PersonalSingle` or `PersonalMultiple`). Can be left empty."
+      },
+      "amount": {
+        "type": "integer",
+        "default": 1,
+        "description": "Number of study codes to be created (only for type `PersonalSingle` or `PersonalMultiple`)."
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "studyIdOrUuid",
+      "type"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "studyCodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A study code. The URL path of a study link has the format '/publix/{studyCode}'. Add the protocol, the domain or IP, and possibly a base URL path to get the full URL."
+            }
+          }
+        },
+        "required": [
+          "success",
+          "studyCodes"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "getStudyCodes"
+    }
+  }
+}

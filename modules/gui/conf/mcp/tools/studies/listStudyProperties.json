@@ -1,0 +1,242 @@
+{
+  "name": "listStudyProperties",
+  "description": "Get all study properties that are accessible to the user. The properties of the study's components can be included by setting the flag `withComponentProperties` (default: false). The batch properties can be included by setting the flag `withBatchProperties` (default: false).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "withComponentProperties": {
+        "type": "boolean",
+        "default": false,
+        "description": "Flag, if set to `true` the data will additionally contain the properties of the study's component. If the flag is false, the corresponding list will be omitted."
+      },
+      "withBatchProperties": {
+        "type": "boolean",
+        "default": false,
+        "description": "Flag, if set to `true` the data will additionally contain the properties of the batches that belong to this study. “If the flag is false, the corresponding list will be omitted.”"
+      }
+    },
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the operation completed successfully."
+          },
+          "message": {
+            "type": "string",
+            "description": "A message that describes the result of the operation."
+          },
+          "studyList": {
+            "type": "array",
+            "description": "List of studies accessible to the user. Each entry represents one study and may optionally include componentList and batchList depending on the input flags.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The UUID identifier for the study."
+                },
+                "id": {
+                  "type": "integer",
+                  "description": "The ID of the study."
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Title of the study"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Description of the study"
+                },
+                "comments": {
+                  "type": "string",
+                  "description": "User comments, reminders, something to share with others. They have no further meaning."
+                },
+                "jsonData": {
+                  "type": "string",
+                  "description": "Study input in JSON format"
+                },
+                "endRedirectUrl": {
+                  "type": "string",
+                  "description": "URL the study redirects to after it is finished"
+                },
+                "active": {
+                  "type": "boolean",
+                  "description": "Is the study active?"
+                },
+                "groupStudy": {
+                  "type": "boolean",
+                  "description": "Is the study a group study"
+                },
+                "linearStudy": {
+                  "type": "boolean",
+                  "description": "Is the study a linear study"
+                },
+                "allowPreview": {
+                  "type": "boolean",
+                  "description": "Are previews allowed"
+                },
+                "dirName": {
+                  "type": "string",
+                  "description": "Name of the study assets directory"
+                },
+                "componentList": {
+                  "type": "array",
+                  "description": "Properties of a component belonging to this study.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "uuid": {
+                        "type": "string",
+                        "description": "The UUID identifier for the study."
+                      },
+                      "id": {
+                        "type": "integer",
+                        "description": "The ID of the study."
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "Title of the study"
+                      },
+                      "htmlFilePath": {
+                        "type": "string",
+                        "description": "Local path to component's HTML file within the study assets' dir."
+                      },
+                      "reloadable": {
+                        "type": "boolean",
+                        "description": "Is the component reloadable?"
+                      },
+                      "active": {
+                        "type": "boolean",
+                        "description": "Is the component active?"
+                      },
+                      "comments": {
+                        "type": "string",
+                        "description": "User comments, reminders, something to share with others. They have no further meaning."
+                      },
+                      "jsonData": {
+                        "type": "string",
+                        "description": "Component input in JSON format"
+                      }
+                    },
+                    "required": [
+                      "uuid",
+                      "id",
+                      "title",
+                      "reloadable",
+                      "active"
+                    ]
+                  }
+                },
+                "batchList": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "description": "Properties of a batch belonging to this study.",
+                    "properties": {
+                      "uuid": {
+                        "type": "string",
+                        "description": "The UUID identifier for the study."
+                      },
+                      "id": {
+                        "type": "integer",
+                        "description": "The ID of the study."
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "Title of the batch"
+                      },
+                      "active": {
+                        "type": "boolean",
+                        "description": "Is the batch active?"
+                      },
+                      "maxActiveMembers": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "Maximum number of workers/members in one group of this batch that are active at the same time. If there is no limit in active members, the value is null."
+                      },
+                      "maxTotalMembers": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "Maximum number of workers/members in one group of this batch in total. If there is no limit in active members, the value is null."
+                      },
+                      "maxTotalWorkers": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "Maximum number of workers in this batch in total independent of its groups. If there is no limit in active members, the value is null. Workers of type Jatos do not count here."
+                      },
+                      "allowedWorkerTypes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Set of worker types that are allowed to run in this batch. If the worker type is not in this list, it has no permission to run this study."
+                      },
+                      "comments": {
+                        "type": "string",
+                        "description": "User comments, reminders, something to share with others. They have no further meaning."
+                      },
+                      "jsonData": {
+                        "type": "string",
+                        "description": "Batch input in JSON format."
+                      }
+                    },
+                    "required": [
+                      "uuid",
+                      "id",
+                      "title",
+                      "active",
+                      "allowedWorkerTypes"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "uuid",
+                "id",
+                "title",
+                "active",
+                "groupStudy",
+                "linearStudy",
+                "allowPreview",
+                "dirName"
+              ]
+            }
+          }
+        },
+        "required": [
+          "success",
+          "studyList"
+        ],
+        "additionalProperties": false
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "metadata": {
+    "requiredUserRole": "USER",
+    "openapi": {
+      "operationId": "listStudyProperties"
+    }
+  }
+}

@@ -59,13 +59,13 @@ public class Batch {
 
     /**
      * Maximum number of workers/members in one group of this batch that are active at the same time. If there is no
-     * limit in active members the value is null. This property is only used if this batch belongs to a group study.
+     * limit in active members, the value is null. This property is only used if this batch belongs to a group study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxActiveMembers = null;
 
     /**
-     * Maximum number of workers/members in one group of this batch in total. If there is no limit in active members the
+     * Maximum number of workers/members in one group of this batch in total. If there is no limit in active members, the
      * value is null. This property is only used if this batch belongs to a group study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
@@ -73,8 +73,8 @@ public class Batch {
 
     /**
      * Maximum number of workers in this batch in total independent of its groups. If there is no limit in active
-     * members the value is null. JatosWorker does not count here. The workers who belong to this batch are stored in
-     * the workerList (except JatosWorkers).
+     * members, the value is null. Workers of type Jatos do not count here. The workers who belong to this batch are
+     * stored in the workerList (except JatosWorkers).
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private Integer maxTotalWorkers = null;

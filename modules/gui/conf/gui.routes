@@ -4,9 +4,10 @@
 # ~~~~
 
 # MCP (Model Context Protocol) endpoint
-#POST     /mcp                                                               @controllers.gui.Mcp.handle(request: Request)
-GET      /mcp                                                               @controllers.gui.McpController.handleGet(request: Request)
-POST     /mcp                                                               @controllers.gui.McpController.handle(request: Request)
+GET      /mcp/events                                                        @mcp.gui.Mcp.events()
+GET      /mcp                                                               @mcp.gui.Mcp.probe()
+OPTIONS  /mcp                                                               @mcp.gui.Mcp.options()
+POST     /mcp                                                               @mcp.gui.Mcp.handle(request: Request)
 
 
 # API admin
@@ -17,9 +18,6 @@ POST     /jatos/api/v1/user                                                 @con
 GET      /jatos/api/v1/users                                                @controllers.gui.Api.allUsers()
 POST     /jatos/api/v1/users/delete                                         @controllers.gui.Api.deleteUser(request: Request)
 POST     /jatos/api/v1/users/active                                         @controllers.gui.Api.toggleUserActive(request: Request, active: Boolean)
-GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.allMembersOfStudy(id)
-PUT      /jatos/api/v1/studies/:id/members/add                              @controllers.gui.Api.addMemberToStudy(request: Request, id)
-POST     /jatos/api/v1/studies/:id/members/remove                           @controllers.gui.Api.removeMemberFromStudy(request: Request, id)
 
 # API study
 GET      /jatos/api/v1/studies/properties                                   @controllers.gui.Api.getAllStudyPropertiesByUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
@@ -40,6 +38,9 @@ GET      /jatos/api/v1/studies/:id/assets/*filepath                         @con
 POST     /jatos/api/v1/studies/:id/assets/                                  @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath = null)
 POST     /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath)
 DELETE   /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.deleteStudyAssetsFile(id, filepath)
+GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.allMembersOfStudy(id)
+PUT      /jatos/api/v1/studies/:id/members/add                              @controllers.gui.Api.addMemberToStudy(request: Request, id)
+POST     /jatos/api/v1/studies/:id/members/remove                           @controllers.gui.Api.removeMemberFromStudy(request: Request, id)
 
 # API results
 GET      /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, isApiCall: Boolean ?= true)

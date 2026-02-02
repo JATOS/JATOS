@@ -34,6 +34,7 @@ public class Common {
 
     private static String jatosVersion;
     private static final String jatosApiVersion = "1.0.1";
+    private static final String jatosMcpVersion = "0.1.0";
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
@@ -124,6 +125,8 @@ public class Common {
     private static boolean groupsCleaningAllowed;
     private static int groupsCleaningInterval;
     private static int groupsCleaningMemberIdleAfter;
+    private static boolean mcpEnabled;
+    private static List<String> mcpToolPaths;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -246,6 +249,8 @@ public class Common {
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
         groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
         groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
+        mcpEnabled = config.getBoolean("jatos.mcp.enabled");
+        mcpToolPaths = config.getStringList("jatos.mcp.tools");
     }
 
     /**
@@ -314,10 +319,17 @@ public class Common {
     }
 
     /**
-     * JATOS API version (different from JATOS version)
+     * JATOS API version (different from JATOS' version)
      */
     public static String getJatosApiVersion() {
         return jatosApiVersion;
+    }
+
+    /**
+     * JATOS MCP server version (different from JATOS server and API version)
+     */
+    public static String getJatosMcpVersion() {
+        return jatosMcpVersion;
     }
 
     /**
@@ -1009,5 +1021,13 @@ public class Common {
      */
     public static int getGroupsCleaningMemberIdleAfter() {
         return groupsCleaningMemberIdleAfter;
+    }
+
+    public static boolean isMcpEnabled() {
+        return mcpEnabled;
+    }
+
+    public static List<String> getMcpToolPaths() {
+        return mcpToolPaths;
     }
 }
