@@ -384,20 +384,13 @@ public class StudyService {
         studyLogger.retire(study);
     }
 
-    public Study getStudyFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Study getStudyFromIdOrUuid(String idOrUuid) {
         Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser();
-        Study study;
         if (studyId.isPresent()) {
-            study = studyDao.findById(studyId.get());
-            if (study == null) throw new NotFoundException("Couldn't find study with ID " + idOrUuid);
-            checker.checkStandardForStudy(study, studyId.get(), signedinUser);
+            return studyDao.findById(studyId.get());
         } else {
-            study = studyDao.findByUuid(idOrUuid)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + idOrUuid));
-            checker.checkStandardForStudy(study, study.getId(), signedinUser);
+            return studyDao.findByUuid(idOrUuid).orElse(null);
         }
-        return study;
     }
 
 }

@@ -10,20 +10,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
-import daos.common.ComponentResultDao;
-import daos.common.StudyDao;
-import daos.common.UserDao;
+import daos.common.*;
 import exceptions.gui.*;
 import general.common.Common;
 import general.common.RequestScope;
 import general.common.StudyLogger;
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.Study;
-import models.common.User;
+import models.common.*;
 import models.gui.ComponentProperties;
 import models.gui.NewUserModel;
 import models.gui.StudyProperties;
+import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.data.validation.ValidationError;
@@ -70,8 +66,11 @@ public class Api extends Controller {
     private final AuthService authService;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final StudyDao studyDao;
+    private final ComponentDao componentDao;
     private final ComponentResultDao componentResultDao;
     private final UserDao userDao;
+    private final BatchDao batchDao;
+    private final ApiTokenDao apiTokenDao;
     private final StudyService studyService;
     private final ComponentService componentService;
     private final StudyLinkService studyLinkService;
@@ -83,22 +82,26 @@ public class Api extends Controller {
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
     private final UserService userService;
+    private final ApiTokenService apiTokenService;
 
     @Inject
     Api(Admin admin, AdminService adminService, AuthService authService,
         ComponentResultIdsExtractor componentResultIdsExtractor,
-        StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, StudyService studyService,
-        ComponentService componentService, StudyLinkService studyLinkService,
+        StudyDao studyDao, ComponentDao componentDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
+        BatchDao batchDao, StudyService studyService, ComponentService componentService, StudyLinkService studyLinkService,
         ImportExport importExport, ResultRemover resultRemover,
         ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
-        StudyLogger studyLogger, IOUtils ioUtils, UserService userService) {
+        StudyLogger studyLogger, IOUtils ioUtils, UserService userService, ApiTokenService apiTokenService) {
         this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.studyDao = studyDao;
+        this.componentDao = componentDao;
         this.componentResultDao = componentResultDao;
         this.userDao = userDao;
+        this.batchDao = batchDao;
+        this.apiTokenDao = apiTokenDao;
         this.studyService = studyService;
         this.componentService = componentService;
         this.studyLinkService = studyLinkService;
@@ -110,18 +113,19 @@ public class Api extends Controller {
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
         this.userService = userService;
+        this.apiTokenService = apiTokenService;
     }
 
     /**
-     * Returns information about the API token used in the request in JSON.
+     * Returns metadata of the API token used in this request
      */
     @Auth
-    public Result testToken() {
+    public Result currentApiTokenMetadata() {
         return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(RequestScope.get(AuthApiToken.API_TOKEN))));
     }
 
     /**
-     * Returns admin status information in JSON
+     * Returns admin status information in JSON. Only with admin tokens.
      */
     @Transactional
     @Auth(ADMIN)
@@ -130,7 +134,7 @@ public class Api extends Controller {
     }
 
     /**
-     * Returns a JATOS application log file.
+     * Returns a JATOS application log file. Only with admin tokens.
      *
      * @param filename Log's filename
      * @return Returns the log file
@@ -139,6 +143,169 @@ public class Api extends Controller {
     @Auth(ADMIN)
     public Result logs(String filename) {
         return admin.logs(filename, -1, false);
+    }
+
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result createUser(Http.Request request) throws ForbiddenException {
+        NewUserModel newUserModel;
+        try {
+            newUserModel = Json.fromJson(request.body().asJson(), NewUserModel.class);
+        } catch (Exception e) {
+            return badRequest("Invalid request body");
+        }
+        String normalizedUsername = User.normalizeUsername(newUserModel.getUsername());
+        newUserModel.setUsername(normalizedUsername);
+
+        if (!Arrays.asList(User.AuthMethod.DB, User.AuthMethod.LDAP).contains(newUserModel.getAuthMethod())) {
+            throw new ForbiddenException("Invalid authentication method for new user");
+        }
+
+        try {
+            userService.registerUser(newUserModel);
+        } catch (AuthException | ValidationException e) {
+            throw new ForbiddenException(e.getMessage());
+        }
+        return ok(JsonUtils.wrapForApi(ImmutableMap.of("username", normalizedUsername)));
+    }
+
+    /**
+     * Get information about all users. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result allUsers() {
+        List<Map<String, Object>> allUserData = userService.fetchAllWithStudyIds();
+        return ok(JsonUtils.wrapForApi(allUserData));
+    }
+
+    /**
+     * Delete a user specified by their username. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result deleteUser(Http.Request request) throws ForbiddenException, NotFoundException, IOException {
+        JsonNode json = request.body().asJson();
+        String username = json.get("username").asText();
+        String normalizedUsername = User.normalizeUsername(username);
+        userService.removeUser(normalizedUsername);
+        return ok();
+    }
+
+    /**
+     * Activate or deactivate a user. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result toggleUserActive(Http.Request request, Boolean active) throws ForbiddenException, NotFoundException {
+        JsonNode json = request.body().asJson();
+        if (json == null || json.get("username") == null) return badRequest("Missing username");
+        String normalizedUsername = User.normalizeUsername(json.get("username").asText());
+        userService.toggleActive(normalizedUsername, active);
+        return ok();
+    }
+
+    /**
+     * Generate a token for the user specified by their username in the body. It returns the token and the token info.
+     * Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result generateApiToken(Http.Request request) {
+        if (!Common.isJatosApiTokensApiGenerationAllowed()) return forbidden("API token generation is not allowed");
+
+        JsonNode json = request.body().asJson();
+        if (json == null) return badRequest("Missing JSON");
+
+        if (json.get("username") == null) return badRequest("Missing username");
+        String normalizedUsername = User.normalizeUsername(json.get("username").asText());
+        User user = userDao.findByUsername(normalizedUsername);
+        if (user == null) return notFound("User not found");
+        if (user.isAdmin()) return forbidden("Forbidden to generate admin tokens");
+
+        if (json.get("name") == null) return badRequest("Missing name");
+        String name = json.get("name").asText();
+
+        int expires = (int) Common.getJatosApiTokensApiGenerationExpiresAfter().getSeconds();
+
+        Pair<ApiToken, String> apiTokenPair = apiTokenService.create(user, name, expires);
+        ApiToken apiToken = apiTokenPair.getLeft();
+        String apiTokenStr = apiTokenPair.getRight();
+
+        ObjectNode responseJson = JsonUtils.asObjectNode(apiToken);
+        responseJson.put("token", apiTokenStr);
+        return ok(JsonUtils.wrapForApi(responseJson));
+    }
+
+    /**
+     * Get the metadata of an API token specified by its ID. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result apiTokenMetadata(Long id) {
+        ApiToken apiToken = apiTokenDao.find(id);
+        return ok(JsonUtils.wrapForApi(JsonUtils.asJsonNode(apiToken)));
+    }
+
+    /**
+     * List the metadata of all tokens that belong to the user that is specified by their username in the body. Only
+     * with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    @BodyParser.Of(BodyParser.Json.class)
+    public Result allApiTokenMetadataByUser(Http.Request request) {
+        JsonNode json = request.body().asJson();
+        if (json == null || json.get("username") == null) return badRequest("Missing username");
+        String normalizedUsername = User.normalizeUsername(json.get("username").asText());
+        User user = userDao.findByUsername(normalizedUsername);
+        if (user == null) return notFound("User not found");
+
+        ArrayNode tokens = Json.newArray();
+        apiTokenDao.findByUser(user).forEach(token -> tokens.add(JsonUtils.asJsonNode(token)));
+        return ok(JsonUtils.wrapForApi(tokens));
+    }
+
+    /**
+     * Activate or deactivate a token specified by its ID. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result toggleApiTokenActive(Long id, boolean active) {
+        ApiToken token = apiTokenDao.find(id);
+        if (token == null) return notFound("Token doesn't exist");
+        if (token.isAdminToken()) return forbidden("Forbidden to toggle admin tokens");
+
+        token.setActive(active);
+        apiTokenDao.update(token);
+
+        ObjectNode responseJson = Json.mapper().createObjectNode();
+        responseJson.put("active", token.isActive());
+        responseJson.put("id", token.getId());
+        responseJson.put("username", token.getUser().getUsername());
+        return ok(JsonUtils.wrapForApi(responseJson));
+    }
+
+    /**
+     * Delete a token specified by its ID. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result deleteApiToken(Long id) {
+        ApiToken token = apiTokenDao.find(id);
+        if (token == null) return notFound("Token doesn't exist");
+        if (token.isAdminToken()) return forbidden("Forbidden to delete admin tokens");
+
+        apiTokenDao.remove(token);
+
+        ObjectNode responseJson = Json.mapper().createObjectNode();
+        responseJson.put("message", "Token deleted successfully");
+        responseJson.put("id", id);
+        return ok(JsonUtils.wrapForApi(responseJson));
     }
 
     /**
@@ -154,6 +321,8 @@ public class Api extends Controller {
     @Auth
     public Result studyLog(String id, int entryLimit, boolean download) throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
+
         if (download) {
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
             if (Files.notExists(studyLogPath)) return notFound();
@@ -202,6 +371,7 @@ public class Api extends Controller {
     public Result getStudyProperties(String id, Boolean withComponentProperties, Boolean withBatchProperties)
             throws ForbiddenException, NotFoundException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
         JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(JsonUtils.wrapForApi(studiesNode));
     }
@@ -220,6 +390,8 @@ public class Api extends Controller {
     public Result getStudyAssetsStructure(String id, boolean flatten)
             throws ForbiddenException, NotFoundException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
+
         File base;
         try {
             base = ioUtils.getStudyAssetsDir(study.getDirName());
@@ -243,6 +415,8 @@ public class Api extends Controller {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
+
         File file;
         try {
             file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
@@ -261,13 +435,15 @@ public class Api extends Controller {
      *                 it will be ignored and the uploaded file saved in the top-level of the assets under the uploaded
      *                 file's name. If it is a directory, the filename is taken from the uploaded file. If it ends with
      *                 a filename the uploaded file will be renamed to this name. All non-existing subdirectories will
-     *                 be created. Existing files will be overwritten. The path can be URL encoded but doesn't have to be.
+     *                 be created. Existing files will be overwritten. The path can be URL encoded but doesn't have to
+     *                 be.
      */
     @Transactional
     @Auth
     public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath)
             throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
         checker.checkStudyLocked(study);
 
         if (request.body().asMultipartFormData() == null) return badRequest("File missing");
@@ -298,7 +474,9 @@ public class Api extends Controller {
     public Result deleteStudyAssetsFile(String id, String filepath) throws ForbiddenException, NotFoundException {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
+
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
         checker.checkStudyLocked(study);
 
         try {
@@ -320,8 +498,8 @@ public class Api extends Controller {
      * @param id      Study's ID or UUID
      * @param batchId Optional specify the batch ID to which the study codes should belong to. If it is not specified
      *                the default batch of this study will be used.
-     * @param type    Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle`
-     *                (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
+     * @param type    Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle` (or `gs`),
+     *                `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
      * @param comment Some comment that will be associated with the worker.
      * @param amount  Number of study codes that have to be generated. If empty 1 is assumed.
      */
@@ -377,11 +555,50 @@ public class Api extends Controller {
     @Auth
     public Result deleteStudy(String id) throws ForbiddenException, NotFoundException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
-        User signedinUser = authService.getSignedinUser();
+        checker.checkStandardForStudy(study);
         checker.checkStudyLocked(study);
 
+        User signedinUser = authService.getSignedinUser();
         studyService.removeStudyInclAssets(study, signedinUser);
         return ok();
+    }
+
+    /**
+     * Activates or deactivates a study. Only with admin tokens.
+     *
+     * @param id     Study's ID or UUID
+     * @param active True to activate, false to deactivate
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result toggleStudyActive(String id, Boolean active) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) return notFound("Study doesn't exist");
+
+        study.setActive(active);
+        studyDao.update(study);
+        return ok();
+    }
+
+    /**
+     * Checks if a study exists in the system by its ID or UUID. Only with admin tokens.
+     */
+    @Transactional
+    @Auth(ADMIN)
+    public Result checkStudyExists(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+
+        if (study == null) {
+            ObjectNode responseJson = Json.mapper().createObjectNode();
+            responseJson.put("message", "Study doesn't exist");
+            return notFound(JsonUtils.wrapForApi(responseJson));
+        } else {
+            ObjectNode responseJson = Json.mapper().createObjectNode();
+            responseJson.put("message", "Study exists");
+            responseJson.put("id", study.getId());
+            responseJson.put("uuid", study.getUuid());
+            return ok(JsonUtils.wrapForApi(responseJson));
+        }
     }
 
     /**
@@ -396,9 +613,10 @@ public class Api extends Controller {
      * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
      *                              if the study assets directory name is taken form the current or the uploaded one. In
      *                              the common case that both names are the same this has no effect. But if the current
-     *                              asset directory name is different from the uploaded one a `keepCurrentAssetsName=true`
-     *                              indicates that the name of the currently installed assets directory should be kept.
-     *                              A `false` indicates that the name should be taken from the uploaded one. Default is `true`.
+     *                              asset directory name is different from the uploaded one a
+     *                              `keepCurrentAssetsName=true` indicates that the name of the currently installed
+     *                              assets directory should be kept. A `false` indicates that the name should be taken
+     *                              from the uploaded one. Default is `true`.
      * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
      *                              study it cannot be overwritten. In this case you can set `renameAssets=true` to let
      *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
@@ -421,6 +639,7 @@ public class Api extends Controller {
     @Auth
     public Result createComponent(Http.Request request, String id) throws ForbiddenException, NotFoundException, JsonProcessingException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
         checker.checkStudyLocked(study);
 
         JsonNode node = request.body().asJson();
@@ -438,6 +657,24 @@ public class Api extends Controller {
     }
 
     /**
+     * Activates or deactivates a component.
+     *
+     * @param studyId     Study's ID or UUID
+     * @param componentId Component's ID or UUID
+     * @param active      True to activate, false to deactivate
+     */
+    @Transactional
+    @Auth
+    public Result toggleComponentActive(String studyId, String componentId, Boolean active)
+            throws ForbiddenException, NotFoundException {
+        Component component = componentService.getComponentFromIdOrUuid(componentId);
+        checker.checkStudyLocked(component.getStudy());
+        checker.checkComponentBelongsToStudy(component, studyId);
+        componentDao.changeActive(component, active);
+        return ok();
+    }
+
+    /**
      * Deletes a component
      *
      * @param studyId     Study's ID or UUID
@@ -452,6 +689,28 @@ public class Api extends Controller {
         checker.checkComponentBelongsToStudy(component, studyId);
 
         componentService.remove(component, signedinUser);
+        return ok();
+    }
+
+    /**
+     * Activates or deactivates a batch.
+     *
+     * @param studyId Study's ID or UUID
+     * @param batchId Batch's ID
+     * @param active  True to activate, false to deactivate
+     */
+    @Transactional
+    @Auth
+    public Result toggleBatchActive(String studyId, Long batchId, Boolean active)
+            throws ForbiddenException, NotFoundException {
+        Study study = studyService.getStudyFromIdOrUuid(studyId);
+        checker.checkStandardForStudy(study);
+        checker.checkStudyLocked(study);
+
+        Batch batch = batchDao.findById(batchId);
+        checker.checkStandardForBatch(batch, study, batchId);
+        batch.setActive(active);
+        batchDao.update(batch);
         return ok();
     }
 
@@ -476,7 +735,8 @@ public class Api extends Controller {
 
     /**
      * Returns results (including metadata, data, and files) in a zip file. The results are specified by IDs (can be
-     * nearly any kind) in the request's body or as query parameters. Streaming is used to reduce memory and disk usage.
+     * nearly any kind) in the request's body or as query parameters. Streaming is used to reduce memory and disk
+     * usage.
      *
      * @param isApiCall If true the response JSON gets an additional 'apiVersion' field
      */
@@ -496,7 +756,8 @@ public class Api extends Controller {
 
     /**
      * Returns all result's metadata (but not result files and not metadata) in a zip file. The results are specified by
-     * IDs (can be any kind) in the request's body or query parameters. Streaming is used to reduce memory and disk usage.
+     * IDs (can be any kind) in the request's body or query parameters. Streaming is used to reduce memory and disk
+     * usage.
      *
      * @param isApiCall If true the response JSON gets an additional 'apiVersion' field
      */
@@ -520,9 +781,9 @@ public class Api extends Controller {
 
     /**
      * Returns result data only (not the result files, not the metadata). Data is stored in ComponentResults. Returns
-     * the result data as plain text (each result data in a new line) or in a zip file (each
-     * result data in its own file). The results are specified by IDs (can be any kind) in the request's body or as
-     * query parameters. Both options use streaming to reduce memory and disk usage.
+     * the result data as plain text (each result data in a new line) or in a zip file (each result data in its own
+     * file). The results are specified by IDs (can be any kind) in the request's body or as query parameters. Both
+     * options use streaming to reduce memory and disk usage.
      *
      * @param asPlainText If true the results will be returned in one single text file, each result in a new line.
      * @param isApiCall   If true the response JSON gets an additional 'apiVersion' field
@@ -591,76 +852,61 @@ public class Api extends Controller {
         return ok(file);
     }
 
+    /**
+     * Get usernames of all members of a study.
+     */
     @Transactional
-    @Auth(ADMIN)
-    @BodyParser.Of(BodyParser.Json.class)
-    public Result createUser(Http.Request request) throws ForbiddenException {
-        NewUserModel newUserModel;
-        try {
-            newUserModel = Json.fromJson(request.body().asJson(), NewUserModel.class);
-        } catch (Exception e) {
-            return badRequest("Invalid request body");
-        }
-        String normalizedUsername = User.normalizeUsername(newUserModel.getUsername());
-        newUserModel.setUsername(normalizedUsername);
-
-        if (!Arrays.asList(User.AuthMethod.DB, User.AuthMethod.LDAP).contains(newUserModel.getAuthMethod())) {
-            throw new ForbiddenException("Invalid authentication method for new user");
-        }
-
-        try {
-            userService.registerUser(newUserModel);
-        } catch (AuthException | ValidationException e) {
-            throw new ForbiddenException(e.getMessage());
-        }
-        return ok(JsonUtils.wrapForApi(ImmutableMap.of("username", normalizedUsername)));
-    }
-
-    @Transactional
-    @Auth(ADMIN)
-    @BodyParser.Of(BodyParser.Json.class)
-    public Result deleteUser(Http.Request request) throws ForbiddenException, NotFoundException, IOException {
-        JsonNode json = request.body().asJson();
-        String username = json.get("username").asText();
-        String normalizedUsername = User.normalizeUsername(username);
-        userService.removeUser(normalizedUsername);
-        return ok();
-    }
-
-    @Transactional
-    @Auth(ADMIN)
-    public Result allUsers() {
-        List<Map<String, Object>> allUserData = userService.fetchAllWithStudyIds();
-        return ok(JsonUtils.wrapForApi(allUserData));
-    }
-
-    @Transactional
-    @Auth(ADMIN)
-    public Result allMembersOfStudy(String id) throws ForbiddenException, NotFoundException {
+    @Auth
+    public Result allMembersOfStudy(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        try {
+            checker.checkStandardForStudy(study);
+        } catch (NotFoundException e) {
+            ObjectNode responseJson = Json.mapper().createObjectNode()
+                    .put("message", e.getMessage());
+            return notFound(JsonUtils.wrapForApi(responseJson));
+        } catch (ForbiddenException e) {
+            ObjectNode responseJson = Json.mapper().createObjectNode()
+                    .put("message", e.getMessage());
+            return forbidden(JsonUtils.wrapForApi(responseJson));
+        }
+
         List<String> usernames = studyDao.findAllMembersByStudyId(study.getId());
         return ok(JsonUtils.wrapForApi(usernames));
     }
 
+    /**
+     * Add a member to a study.
+     */
     @Transactional
-    @Auth(ADMIN)
+    @Auth
     @BodyParser.Of(BodyParser.Json.class)
-    public Result addMemberToStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
+    public Result addMemberToStudy(Http.Request request, String id){
         return changeMemberOfStudy(request, id, true);
     }
 
+    /**
+     * Remove a member from a study.
+     */
     @Transactional
-    @Auth(ADMIN)
+    @Auth
     @BodyParser.Of(BodyParser.Json.class)
-    public Result removeMemberFromStudy(Http.Request request, String id) throws ForbiddenException, NotFoundException {
+    public Result removeMemberFromStudy(Http.Request request, String id) {
         return changeMemberOfStudy(request, id, false);
     }
 
-    public Result changeMemberOfStudy(Http.Request request, String id, boolean isMember)
-            throws ForbiddenException, NotFoundException {
+    public Result changeMemberOfStudy(Http.Request request, String id, boolean isMember) {
         Study study = studyService.getStudyFromIdOrUuid(id);
-        if (study == null) {
-            return notFound("Study not found");
+        try {
+            checker.checkStandardForStudy(study);
+        } catch (NotFoundException e) {
+            ObjectNode responseJson = Json.mapper().createObjectNode()
+                    .put("message", e.getMessage());
+            return notFound(JsonUtils.wrapForApi(responseJson));
+        } catch (ForbiddenException e) {
+            ObjectNode responseJson = Json.mapper().createObjectNode()
+                    .put("message", e.getMessage());
+            return forbidden(JsonUtils.wrapForApi(responseJson));
         }
 
         JsonNode json = request.body().asJson();
@@ -668,10 +914,18 @@ public class Api extends Controller {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
         if (user == null) {
-            return notFound("User not found");
+            ObjectNode responseJson = Json.mapper().createObjectNode()
+                    .put("message", "User not found");
+            return notFound(JsonUtils.wrapForApi(responseJson));
         }
 
-        studyService.changeUserMember(study, user, isMember);
+        try {
+            studyService.changeUserMember(study, user, isMember);
+        } catch (ForbiddenException e) {
+            ObjectNode responseJson = Json.mapper().createObjectNode()
+                    .put("message", e.getMessage());
+            return forbidden(JsonUtils.wrapForApi(responseJson));
+        }
         return ok();
     }
 

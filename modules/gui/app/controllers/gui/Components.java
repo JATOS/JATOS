@@ -163,23 +163,6 @@ public class Components extends Controller {
     }
 
     /**
-     * POST Request to change the property 'active' of a component.
-     */
-    @Transactional
-    @Auth
-    public Result toggleActive(Http.Request request, Long studyId, Long componentId, Boolean active) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
-        Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
-
-        if (active != null) {
-            componentDao.changeActive(component, active);
-        }
-        return ok(JsonUtils.asJsonNode(component.isActive()));
-    }
-
-    /**
      * GET request to clone a component.
      */
     @Transactional

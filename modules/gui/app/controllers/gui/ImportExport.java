@@ -21,6 +21,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
+import services.gui.Checker;
 import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
@@ -48,14 +49,16 @@ public class ImportExport extends Controller {
     private final AuthService authService;
     private final ImportExportService importExportService;
     private final StudyService studyService;
+    private final Checker checker;
 
     @Inject
     ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthService authService,
-            ImportExportService importExportService, StudyService studyService) {
+            ImportExportService importExportService, StudyService studyService, Checker checker) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.authService = authService;
         this.importExportService = importExportService;
         this.studyService = studyService;
+        this.checker = checker;
     }
 
     /**
@@ -206,6 +209,8 @@ public class ImportExport extends Controller {
     @Auth
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
+
         File zipFile;
         try {
             zipFile = importExportService.createStudyExportZipFile(study);

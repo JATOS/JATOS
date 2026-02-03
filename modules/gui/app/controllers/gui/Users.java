@@ -95,28 +95,14 @@ public class Users extends Controller {
     }
 
     /**
-     * POST request to activate or deactivate a user.
-     */
-    @Transactional
-    @Auth(Role.ADMIN)
-    public Result toggleActive(String usernameOfUserToChange, Boolean active) {
-        try {
-            String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-            userService.toggleActive(normalizedUsernameOfUserToChange, active);
-        } catch (NotFoundException e) {
-            return badRequest(e.getMessage());
-        } catch (ForbiddenException e) {
-            return forbidden(e.getMessage());
-        }
-        return ok();
-    }
-
-    /**
      * POST request to add or remove a role from a user.
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result toggleRole(String usernameOfUserToChange, String role, boolean value) {
+    public Result toggleRole(Http.Request request, String role, boolean value) {
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
+        String usernameOfUserToChange = requestData.get("username");
+        if (usernameOfUserToChange == null) return badRequest("Missing username");
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
         try {
             switch (Role.valueOf(role)) {
@@ -172,10 +158,14 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth
-    public Result edit(String username) throws JatosGuiException {
+    public Result edit(Http.Request request) throws JatosGuiException {
         User signedinUser = authService.getSignedinUser();
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
+        String username = requestData.get("username");
+        if (username == null) return badRequest("Missing username");
         String normalizedUsernameOfUserToChange = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
+        if (user == null) return badRequest("User doesn't exist");
 
         if (user.isOauthGoogle()) {
             return forbidden("Google authenticated users can't have their profile changed.");
@@ -201,7 +191,7 @@ public class Users extends Controller {
             checkUsernameIsOfSignedinUser(normalizedUsernameOfUserToChange, signedinUser);
         }
 
-        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest();
+        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         // Update user in database: so far it's only the user's name
@@ -299,15 +289,17 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth
-    public Result remove(String usernameOfUserToRemove) throws ForbiddenException, NotFoundException, IOException {
+    public Result remove(Http.Request request) throws ForbiddenException, NotFoundException, IOException {
         User signedinUser = authService.getSignedinUser();
         String normalizedSignedinUsername = signedinUser.getUsername();
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
+        String usernameOfUserToRemove = requestData.get("username");
+        if (usernameOfUserToRemove == null) return badRequest("Missing username");
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
         if (!signedinUser.isAdmin() && !normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
             return forbidden("You are not allowed to delete this user.");
         }
 
-        DynamicForm requestData = formFactory.form().bindFromRequest();
         switch (signedinUser.getAuthMethod()) {
             case DB:
             case LDAP:
@@ -327,8 +319,8 @@ public class Users extends Controller {
             case CONEXT:
             case OAUTH_GOOGLE:
                 // Google OAuth, OIDC, ORCID, SRAM and CONEXT users confirm with their username
-                String username = requestData.get("username");
-                if (!username.equals(signedinUser.getUsername())) {
+                String confirmUsername = requestData.get("confirmUsername");
+                if (confirmUsername == null || !confirmUsername.equals(signedinUser.getUsername())) {
                     return forbidden("Wrong username");
                 }
                 break;

@@ -62,7 +62,7 @@ public class ApiTokens extends Controller {
         if (!Jsoup.isValid(name, Safelist.none())) return badRequest("No HTML allowed");
         if (expires == null || expires < 0) return badRequest("Expiration must be >= 0");
         expires = expires == 0 ? null : expires; // 0 => null and means the token never expires
-        String apiTokenStr = apiTokenService.create(signedinUser, name, expires);
+        String apiTokenStr = apiTokenService.create(signedinUser, name, expires).getRight();
         return ok(apiTokenStr);
     }
 

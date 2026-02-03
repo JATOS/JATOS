@@ -170,7 +170,7 @@
         const tr = $(this).closest('tr');
         const batch = batchTable.row(tr).data();
         $.ajax({
-            url: window.routes.StudyLinks.toggleBatchActive(window.study.id, batch.id, isActive),
+            url: window.routes.Api.toggleBatchActive(window.study.id, batch.id, isActive),
             type: "POST",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(active) {

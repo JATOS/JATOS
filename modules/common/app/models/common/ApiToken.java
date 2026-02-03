@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
@@ -35,10 +36,16 @@ public class ApiToken {
     /**
      * Owning User.
      */
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_username")
+    @NotNull
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_username", nullable = false)
     @JsonIgnore
     private User user;
+
+    @JsonProperty("username")
+    public String getUsername() {
+        return user != null ? user.getUsername() : null;
+    }
 
     /**
      * Timestamp of the creation date
@@ -48,6 +55,7 @@ public class ApiToken {
     /**
      * Time in seconds that this token will expire after creation date. Null means no expiration.
      */
+    @JsonProperty("expiresAfter")
     private Integer expires;
 
     @JsonProperty("expirationDate")

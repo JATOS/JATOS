@@ -635,6 +635,14 @@ public class JsonUtils {
         return Json.mapper().valueToTree(obj);
     }
 
+    public static ObjectNode asObjectNode(Object obj) {
+        JsonNode node = Json.mapper().valueToTree(obj);
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("Expected JSON object, got: " + node.getNodeType());
+        }
+        return (ObjectNode) node;
+    }
+
     /**
      * Marshals the given study into JSON, adds the current study serial
      * version, and saves it into the given File. It uses the view JsonForIO.

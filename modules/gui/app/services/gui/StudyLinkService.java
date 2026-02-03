@@ -51,6 +51,7 @@ public class StudyLinkService {
     public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
             Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyService.getStudyFromIdOrUuid(id);
+        checker.checkStandardForStudy(study);
 
         Batch batch;
         if (batchId.nonEmpty()) {

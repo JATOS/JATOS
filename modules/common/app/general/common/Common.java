@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -113,6 +114,8 @@ public class Common {
     private static boolean showResultFileSizeInStudyManager;
     private static boolean userRoleAllowSuperuser;
     private static boolean jatosApiAllowed;
+    private static boolean jatosApiTokensApiGenerationAllowed;
+    private static Duration jatosApiTokensApiGenerationExpiresAfter;
     private static String logsPath;
     private static String logsFilename;
     private static String logsAppender;
@@ -231,6 +234,8 @@ public class Common {
         showResultFileSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
+        jatosApiTokensApiGenerationAllowed = config.getBoolean("jatos.api.tokens.apiGeneration.allowed");
+        jatosApiTokensApiGenerationExpiresAfter = getDurationWithDefaultUnit(config, "jatos.api.tokens.apiGeneration.expiresAfter");
         logsPath = obtainPath(config, "jatos.logs.path");
         LOGGER.info("Path to logs directory is " + logsPath);
         logsFilename = config.getString("jatos.logs.filename");
@@ -303,6 +308,17 @@ public class Common {
             return Http.Cookie.SameSite.NONE;
         } else {
             return null;
+        }
+    }
+
+    public Duration getDurationWithDefaultUnit(Config config, String path) {
+        if (config.getValue(path).valueType() == ConfigValueType.NUMBER) {
+            // Treat raw numbers as seconds
+            long seconds = config.getLong(path);
+            return Duration.ofSeconds(seconds);
+        } else {
+            // Otherwise, use the standard HOCON duration parsing (e.g., "5m", "10s")
+            return config.getDuration(path);
         }
     }
 
@@ -924,6 +940,21 @@ public class Common {
      */
     public static boolean isJatosApiAllowed() {
         return jatosApiAllowed;
+    }
+
+    /**
+     * Is it allowed to generate new tokens via the API?
+     */
+    public static boolean isJatosApiTokensApiGenerationAllowed() {
+        return jatosApiTokensApiGenerationAllowed;
+    }
+
+    /**
+     * The duration for which a token generated via the API remains valid after its creation. This setting does not
+     * apply to tokens created via the GUI.
+     */
+    public static Duration getJatosApiTokensApiGenerationExpiresAfter() {
+        return jatosApiTokensApiGenerationExpiresAfter;
     }
 
     /**

@@ -132,6 +132,7 @@
                 </div>
                 <div class="modal-body">
                     <form class="form-admin" id="userSettingsForm">
+                        <input type="hidden" id="userSettingsUsername" name="username">
                         <div class="row mb-3">
                             <label for="userSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
                             <div class="col-sm-9">
@@ -190,12 +191,13 @@
                 </div>
                 <div class="modal-body">
                     <form class="form-danger" id="deleteUserForm">
+                        <input type="hidden" id="deleteUserTargetUsername" name="username">
                         <div id="deleteUserConfirmationText"></div>
                         @if(signedinUser.isDb() || signedinUser.isLdap()){
                         <input type="password" class="form-control" id="deleteUserAdminPassword" name="password" placeholder="Your password" autocomplete="off" required>
                         <div class="form-text">Confirm with your (@signedinUser.getUsername()) password.</div>
                         } else {
-                        <input type="text" class="form-control" id="deleteUserAdminUsername"  name="username" placeholder="Your username" autocomplete="off" required>
+                        <input type="text" class="form-control" id="deleteUserAdminUsername" name="confirmUsername" placeholder="Your username" autocomplete="off" required>
                         <div class="form-text">Confirm by typing your username (@signedinUser.getUsername()).</div>
                         }
                     </form>
@@ -600,8 +602,10 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Users.toggleActive(user.username, isActive),
+            url: window.routes.Api.toggleUserActive(isActive),
             type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ username: user.username }),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {
                 $(checkbox).prop('checked', isActive);
@@ -618,8 +622,9 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Users.toggleRole(user.username, "SUPERUSER", isSuperuser),
+            url: window.routes.Users.toggleRole("SUPERUSER", isSuperuser),
             type: "POST",
+            data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: (isSuperuser) => {
                 $(checkbox).prop('checked', isSuperuser);
@@ -640,8 +645,9 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Users.toggleRole(user.username, "ADMIN", isAdmin),
+            url: window.routes.Users.toggleRole("ADMIN", isAdmin),
             type: "POST",
+            data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: (isAdmin) => {
                 $(checkbox).prop('checked', isAdmin);
@@ -696,12 +702,13 @@
         Helpers.generateModalSubtitles("#userSettingsModal", {"Username": user.username});
         $('#userSettingsName').val(user.name);
         $('#userSettingsEmail').val(user.email);
+        $('#userSettingsUsername').val(user.username);
         $("#userSettingsModal").modal('show');
 
         $("#userSettingsConfirm").off("click").on("click", function(event) {
             $.ajax({
                 type: 'POST',
-                url: window.routes.Users.edit(user.username),
+                url: window.routes.Users.edit(),
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 data: $('#userSettingsForm').serialize(),
                 success: function() {
@@ -711,10 +718,10 @@
                     user.email = $('#userSettingsEmail').val();
                     dataTable.row(tr).data(user);
                 },
-                error: function(response) {
+                error: function(err) {
                     alerts.warning(`${user.username}'s settings were not changed.`, 5000);
-                    if (Helpers.isJson(response.responseText)) {
-                        FormValidation.show("#userSettingsForm", response.responseJSON);
+                    if (Helpers.isJson(err.responseText)) {
+                        FormValidation.show("#userSettingsForm", err.responseJSON);
                     } else if (err.responseText) {
                         alerts.error(err.responseText);
                     } else {
@@ -747,10 +754,10 @@
                     $('#changePasswordModal').modal('hide');
                     Alerts.success(`${user.username}'s password was changed successfully.`);
                 },
-                error: function(response) {
+                error: function(err) {
                     alerts.warning(`${user.username}'s password was not changed.`, 5000);
-                    if (Helpers.isJson(response.responseText)) {
-                        FormValidation.show("#changePasswordForm", response.responseJSON);
+                    if (Helpers.isJson(err.responseText)) {
+                        FormValidation.show("#changePasswordForm", err.responseJSON);
                     } else if (err.responseText) {
                         alerts.error(err.responseText);
                     } else {
@@ -769,12 +776,13 @@
         FormValidation.clear("#deleteUserForm");
         Helpers.generateModalSubtitles("#deleteUserModal", {"Username": user.username});
         $('#deleteUserConfirmationText').html(generateDeleteUserConfirmationHtml(user));
+        $('#deleteUserTargetUsername').val(user.username);
         $("#deleteUserModal").modal('show');
 
         $("#deleteUserConfirm").one("click", function(event) {
             $.ajax({
                 type: 'POST',
-                url: window.routes.Users.remove(user.username),
+                url: window.routes.Users.remove(),
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 data: $('#deleteUserForm').serialize(),
                 success: function(response) {
@@ -782,10 +790,10 @@
                     $('#deleteUserModal').modal('hide');
                     Alerts.success(`User "${user.username}" was deleted successfully.`);
                 },
-                error: function(response) {
+                error: function(err) {
                     alerts.warning(`User ${user.username} was not deleted.`, 5000);
-                    if (Helpers.isJson(response.responseText)) {
-                        FormValidation.show("#deleteUserForm", response.responseJSON);
+                    if (Helpers.isJson(err.responseText)) {
+                        FormValidation.show("#deleteUserForm", err.responseJSON);
                     } else if (err.responseText) {
                         alerts.error(err.responseText);
                     } else {

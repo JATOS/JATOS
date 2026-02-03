@@ -53,6 +53,9 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Inject
     private BatchDao batchDao;
 
+    @Inject
+    private Checker checker;
+
     /**
      * StudyService.clone(): clones a study but does not persist. This includes
      * the Components, Batches and asset directory.
@@ -557,7 +560,8 @@ public class StudyServiceIntegrationTest extends JatosTest {
 
         jpaApi.withTransaction(em -> {
             try {
-                studyService.getStudyFromIdOrUuid("999999");
+                Study study = studyService.getStudyFromIdOrUuid("999999");
+                checker.checkStandardForStudy(study);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected
@@ -568,7 +572,8 @@ public class StudyServiceIntegrationTest extends JatosTest {
 
         jpaApi.withTransaction(em -> {
             try {
-                studyService.getStudyFromIdOrUuid(randomUuid);
+                Study study = studyService.getStudyFromIdOrUuid(randomUuid);
+                checker.checkStandardForStudy(study);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected

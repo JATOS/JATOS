@@ -101,7 +101,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void getStudyFromIdOrUuid_numericId_branch_checksPermission_andReturns() throws Exception {
+    public void getStudyFromIdOrUuid_numericId_branch() throws Exception {
         User signedIn = new User("alice", "Alice", "alice@example.org");
         when(authService.getSignedinUser()).thenReturn(signedIn);
 
@@ -112,11 +112,10 @@ public class StudyServiceTest {
         Study result = studyService.getStudyFromIdOrUuid("42");
 
         assertThat(result).isEqualTo(s);
-        verify(checker).checkStandardForStudy(s, 42L, signedIn);
     }
 
     @Test
-    public void getStudyFromIdOrUuid_uuid_branch_checksPermission_andReturns() throws Exception {
+    public void getStudyFromIdOrUuid_uuid_branch() throws Exception {
         User signedIn = new User("bob", "Bob", "bob@example.org");
         when(authService.getSignedinUser()).thenReturn(signedIn);
 
@@ -127,21 +126,22 @@ public class StudyServiceTest {
 
         Study result = studyService.getStudyFromIdOrUuid(uuid);
         assertThat(result).isEqualTo(s);
-        verify(checker).checkStandardForStudy(s, 5L, signedIn);
     }
 
     @Test(expected = NotFoundException.class)
     public void getStudyFromIdOrUuid_numeric_notFound_throws() throws Exception {
         when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@example.org"));
         when(studyDao.findById(99L)).thenReturn(null);
-        studyService.getStudyFromIdOrUuid("99");
+        Study study = studyService.getStudyFromIdOrUuid("99");
+        checker.checkStandardForStudy(study);
     }
 
     @Test(expected = NotFoundException.class)
     public void getStudyFromIdOrUuid_uuid_notFound_throws() throws Exception {
         when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@example.org"));
         when(studyDao.findByUuid("nope")).thenReturn(Optional.empty());
-        studyService.getStudyFromIdOrUuid("nope");
+        Study study = studyService.getStudyFromIdOrUuid("nope");
+        checker.checkStandardForStudy(study);
     }
 
     @Test

@@ -146,7 +146,7 @@
         const tr = $(this).closest('tr');
         const studyInfo = dataTable.row(tr).data();
         $.ajax({
-            url : window.routes.Studies.toggleActive(studyInfo.id, isActive),
+            url : window.routes.Api.toggleStudyActive(studyInfo.id, isActive),
             type : "POST",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {

@@ -1,5 +1,6 @@
 package services.gui;
 
+import auth.gui.AuthService;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
@@ -8,6 +9,7 @@ import models.common.*;
 import models.common.workers.Worker;
 import utils.common.Helpers;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +22,13 @@ import java.util.stream.Collectors;
  */
 @Singleton
 public class Checker {
+
+    private final AuthService authService;
+
+    @Inject
+    public Checker(AuthService authService) {
+        this.authService = authService;
+    }
 
     /**
      * Checks the component of this study and throws an Exception in case of a problem.
@@ -152,6 +161,18 @@ public class Checker {
         if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
             String errorMsg = "No access to study with ID " + studyId;
             throw new ForbiddenException(errorMsg);
+        }
+    }
+
+    public void checkStandardForStudy(Study study) throws ForbiddenException, NotFoundException {
+        if (study == null) {
+            throw new NotFoundException("Study doesn't exist");
+        }
+
+        User user = authService.getSignedinUser();
+        // Check that the user is a member of the study or a superuser
+        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
+            throw new ForbiddenException("No access to study");
         }
     }
 

@@ -212,8 +212,7 @@ public class UserService {
 
     /**
      * Removes the User belonging to the given username from the database. It also removes all studies where this user
-     * is
-     * the last member (which subsequently removes all components, results and the study assets too).
+     * is the last member (which subsequently removes all components, results and the study assets too).
      */
     public void removeUser(String normalizedUsername) throws NotFoundException, ForbiddenException, IOException {
         User user = retrieveUser(normalizedUsername);
