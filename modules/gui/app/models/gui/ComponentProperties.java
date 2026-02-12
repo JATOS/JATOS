@@ -1,10 +1,13 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
@@ -13,12 +16,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.*;
+
 /**
  * Model of component properties for UI (not persisted in DB). Only used together with an HTML form that creates a new
  * Component or updates one. The corresponding database entity is {@link models.common.Component}.
  */
 @Constraints.Validate
-public class ComponentProperties implements Constraints.Validatable<List<ValidationError>> {
+public class ComponentProperties implements Validatable<List<ValidationError>> {
 
     /**
      * Version of this model used for serialisation (e.g. JSON marshaling)
@@ -29,14 +34,13 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String HTML_FILE_PATH = "htmlFilePath";
-    public static final String HTML_FILE_RENAME = "htmlFileRename";
-    public static final String HTML_FILE_EXISTS = "htmlFileExists";
     public static final String JSON_DATA = "jsonData";
     public static final String RELOADABLE = "reloadable";
     public static final String ACTIVE = "active";
     public static final String COMMENTS = "comments";
     public static final String COMPONENT = "component";
 
+    @JsonProperty(access = READ_ONLY)
     private Long id;
 
     /**
@@ -44,8 +48,10 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
      * only one component with the same UUID, although it is allowed to have other studies that have this component with
      * this UUID.
      */
+    @JsonProperty(access = READ_ONLY)
     private String uuid;
 
+    @JsonProperty(access = READ_ONLY)
     private Long studyId;
 
     private String title;
@@ -53,6 +59,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     /**
      * Timestamp of the creation or the last update of this component
      */
+    @JsonProperty(access = READ_ONLY)
     private Timestamp date;
 
     /**
@@ -63,11 +70,13 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     /**
      * Should the actual HTML file on the disk be renamed - or just the value in the DB?
      */
-    private boolean htmlFileRename;
+    @JsonProperty(access = WRITE_ONLY)
+    private boolean htmlFileRename = false;
 
     /**
      * Does the html file exists in the file system?
      */
+    @JsonIgnore
     private boolean htmlFileExists = false;
 
     /**

@@ -258,14 +258,13 @@ public class ImportExportServiceTest {
         when(ioUtils.findDirectories(temp.dir)).thenReturn(new File[]{ temp.assetsSubdir });
 
         // Act
-        Long returnedId = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
+        Study returnedStudy = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
                 /*keepCurrentAssetsName*/true, /*renameAssets*/true);
 
         // Assert
-        assertThat(returnedId).isEqualTo(10L);
+        assertThat(returnedStudy.getId()).isEqualTo(10L);
         // permissions checked
-        verify(checker).checkStandardForStudy(eq(current), eq(current.getId()), eq(user));
-        verify(checker).checkStudyLocked(eq(current));
+        verify(checker).canUserAccessStudy(eq(current), eq(user), true);
         // assets handling: remove old and move new with current dir name
         verify(ioUtils).removeStudyAssetsDir("currentDir");
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("currentDir"));
@@ -299,11 +298,11 @@ public class ImportExportServiceTest {
         when(studyService.createAndPersistStudy(eq(user), any(Study.class))).thenReturn(persisted);
 
         // Act
-        Long newId = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
+        Study newStudy = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
                 /*keepCurrentAssetsName*/false, /*renameAssets*/true);
 
         // Assert
-        assertThat(newId).isEqualTo(42L);
+        assertThat(newStudy.getId()).isEqualTo(42L);
         // assets moved to renamed dir
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("uploadedDir_2"));
         // study persisted with possibly renamed dir name
@@ -312,7 +311,7 @@ public class ImportExportServiceTest {
         assertThat(studyCaptor.getValue().getDirName()).isEqualTo("uploadedDir_2");
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IOException.class)
     public void importStudyConfirmed_throwsIfNoTempDirInSession() throws Exception {
         // no session set
         importExportService.importStudyConfirmed(user, false, false, false, true);
@@ -328,7 +327,7 @@ public class ImportExportServiceTest {
         when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
         when(studyDeserializer.deserialize(temp.jasFile)).thenReturn(uploaded);
         when(studyDao.findByUuid("uuid-3")).thenReturn(Optional.of(current));
-        doThrow(new ForbiddenException("no")).when(checker).checkStandardForStudy(eq(current), eq(77L), eq(user));
+        doThrow(new ForbiddenException("no")).when(checker).canUserAccessStudy(eq(current), eq(user), eq(true));
 
         // Act
         importExportService.importStudyConfirmed(user, false, false, true, true);

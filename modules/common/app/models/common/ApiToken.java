@@ -47,6 +47,11 @@ public class ApiToken {
         return user != null ? user.getUsername() : null;
     }
 
+    @JsonProperty("userId")
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
+
     /**
      * Timestamp of the creation date
      */

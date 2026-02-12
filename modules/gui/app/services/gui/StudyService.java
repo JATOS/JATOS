@@ -9,7 +9,6 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.common.StudyLogger;
 import models.common.Batch;
@@ -51,12 +50,11 @@ public class StudyService {
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
     private final AuthService authService;
-    private final Checker checker;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
             BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthService authService, Checker checker) {
+            StudyLogger studyLogger, AuthService authService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -66,7 +64,6 @@ public class StudyService {
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
         this.authService = authService;
-        this.checker = checker;
     }
 
     /**
@@ -311,6 +308,8 @@ public class StudyService {
         study.setStudyEntryMsg(studyProperties.getStudyEntryMsg());
         study.setEndRedirectUrl(studyProperties.getEndRedirectUrl());
         study.setJsonData(studyProperties.getJsonData());
+        study.setLocked(studyProperties.isLocked());
+        study.setActive(studyProperties.isActive());
         study.setGroupStudy(studyProperties.isGroupStudy());
         study.setLinearStudy(studyProperties.isLinearStudy());
         study.setAllowPreview(studyProperties.isAllowPreview());

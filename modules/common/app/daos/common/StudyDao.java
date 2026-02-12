@@ -86,11 +86,11 @@ public class StudyDao extends AbstractDao {
     }
 
     /**
-     * Returns a list of usernames of all users that are members of the study with the given ID.
+     * Returns a list of user IDs of all users that are members of the study with the given ID.
      */
-    public List<String> findAllMembersByStudyId(Long studyId) {
-        String queryStr = "SELECT u.username FROM Study s JOIN s.userList u WHERE s.id = :studyId";
-        return jpa.em().createQuery(queryStr, String.class)
+    public List<Long> findAllMembersByStudyId(Long studyId) {
+        String queryStr = "SELECT u.id FROM Study s JOIN s.userList u WHERE s.id = :studyId";
+        return jpa.em().createQuery(queryStr, Long.class)
                 .setParameter("studyId", studyId)
                 .getResultList();
     }

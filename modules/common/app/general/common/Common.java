@@ -34,7 +34,7 @@ public class Common {
     private static final ALogger LOGGER = Logger.of(Common.class);
 
     private static String jatosVersion;
-    private static final String jatosApiVersion = "1.0.1";
+    private static final String jatosApiVersion = "1.1.0";
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;

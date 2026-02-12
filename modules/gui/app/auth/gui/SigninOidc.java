@@ -25,9 +25,10 @@ import exceptions.gui.AuthException;
 import exceptions.gui.ValidationException;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
-import models.gui.NewUserModel;
+import models.gui.NewUserProperties;
 import play.Logger;
 import play.Logger.ALogger;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -323,12 +324,16 @@ public abstract class SigninOidc extends Controller {
         } else if (user != null) {
             return user;
         } else {
-            NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedUsername);
-            newUserModel.setName(getName(userInfo));
-            newUserModel.setEmail(userInfo.getEmailAddress());
-            newUserModel.setAuthMethod(oidcConfig.authMethod);
-            return userService.registerUser(newUserModel);
+            NewUserProperties newUserProperties = new NewUserProperties();
+            newUserProperties.setUsername(normalizedUsername);
+            newUserProperties.setName(getName(userInfo));
+            newUserProperties.setEmail(userInfo.getEmailAddress());
+            newUserProperties.setAuthMethod(oidcConfig.authMethod);
+            List<ValidationError> errors = newUserProperties.validate();
+            if (errors != null && !errors.isEmpty()) {
+                throw new ValidationException(errors.get(0).message());
+            }
+            return userService.registerUser(newUserProperties);
         }
     }
 

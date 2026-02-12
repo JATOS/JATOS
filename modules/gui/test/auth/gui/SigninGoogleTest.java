@@ -3,7 +3,7 @@ package auth.gui;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import daos.common.UserDao;
 import models.common.User;
-import models.gui.NewUserModel;
+import models.gui.NewUserProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -126,7 +126,7 @@ public class SigninGoogleTest {
 
         User persisted = new User("dave@example.org", "Dave", "dave@example.org");
         persisted.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
-        when(userService.registerUser(any(NewUserModel.class))).thenReturn(persisted);
+        when(userService.registerUser(any(NewUserProperties.class))).thenReturn(persisted);
         when(authService.getRedirectPageAfterSignin(persisted)).thenReturn("/welcome");
 
         Result res = signinGoogleSpy.signin(requestWithCredential());
@@ -136,9 +136,9 @@ public class SigninGoogleTest {
         verify(userService).setLastSignin("dave@example.org");
 
         // Verify that NewUserModel was populated
-        ArgumentCaptor<NewUserModel> cap = ArgumentCaptor.forClass(NewUserModel.class);
+        ArgumentCaptor<NewUserProperties> cap = ArgumentCaptor.forClass(NewUserProperties.class);
         verify(userService).registerUser(cap.capture());
-        NewUserModel num = cap.getValue();
+        NewUserProperties num = cap.getValue();
         assertThat(num.getUsername()).isEqualTo("dave@example.org");
         assertThat(num.getName()).isEqualTo("Dave");
         assertThat(num.getEmail()).isEqualTo("dave@example.org");

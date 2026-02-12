@@ -2,15 +2,15 @@ package controllers.gui;
 
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
-import auth.gui.UserFormValidation;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.*;
 import models.common.User;
 import models.common.User.Role;
-import models.gui.ChangePasswordModel;
-import models.gui.ChangeUserProfileModel;
-import models.gui.NewUserModel;
+import models.gui.ChangePasswordProperties;
+import models.gui.NewUserProperties;
+import models.gui.UserProperties;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -30,11 +30,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.naming.NamingException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.gui.ChangePasswordProperties.*;
+import static services.gui.UserService.ADMIN_USERNAME;
 
 /**
  * Controller with actions concerning users (incl. user manager)
@@ -85,13 +86,14 @@ public class Users extends Controller {
      */
     @Transactional
     @Auth(Role.ADMIN)
-    public Result allUserData() {
-        List<Map<String, Object>> allUserData = new ArrayList<>();
-        for (User user : userDao.findAll()) {
-            Map<String, Object> userData = jsonUtils.getSingleUserData(user);
-            allUserData.add(userData);
-        }
-        return ok(JsonUtils.asJsonNode(allUserData));
+    public Result allUserData() throws IOException {
+        List<User> userList = userDao.findAll();
+
+        ArrayNode allUserData = userList.stream()
+                .map(jsonUtils::getSingleUserData)
+                .collect(Json.mapper()::createArrayNode, ArrayNode::add, ArrayNode::addAll);
+
+        return ok(allUserData);
     }
 
     /**
@@ -129,7 +131,7 @@ public class Users extends Controller {
     @Auth
     public Result signedinUserData() {
         User signedinUser = authService.getSignedinUser();
-        return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(signedinUser)));
+        return ok(jsonUtils.getSingleUserData(signedinUser));
     }
 
     /**
@@ -139,17 +141,16 @@ public class Users extends Controller {
     @Transactional
     @Auth(Role.ADMIN)
     public Result create(Http.Request request) throws ForbiddenException {
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
+        Form<NewUserProperties> form = formFactory.form(NewUserProperties.class).bindFromRequest(request);
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         User newUser;
         try {
             newUser = userService.registerUser(form.get());
         } catch (AuthException e) {
             throw new ForbiddenException(e.getMessage());
-        } catch (ValidationException e) {
-            return badRequest(e.getForm().errorsAsJson());
         }
-        return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(newUser)));
+        return ok(jsonUtils.getSingleUserData(newUser));
     }
 
     /**
@@ -191,10 +192,9 @@ public class Users extends Controller {
             checkUsernameIsOfSignedinUser(normalizedUsernameOfUserToChange, signedinUser);
         }
 
-        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest(request);
+        Form<UserProperties> form = formFactory.form(UserProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Update user in database: so far it's only the user's name
         user.setName(form.get().getName());
         user.setEmail(form.get().getEmail());
         userDao.update(user);
@@ -202,81 +202,76 @@ public class Users extends Controller {
     }
 
     /**
-     * Handles POST request from change password form in user manager initiated by an admin
+     * Handles POST request to change a password originated in the user manager and initiated by an admin
      */
     @Transactional
-    @Auth
+    @Auth(Role.ADMIN)
     public Result changePasswordByAdmin(Http.Request request) throws NamingException {
-        User signedinUser = authService.getSignedinUser();
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
-        String normalizedUsernameOfUserToChange = form.get().getUsername();
+        DynamicForm dynForm = formFactory.form().bindFromRequest(request);
+        ChangePasswordProperties props = new ChangePasswordProperties();
+        props.setUsername(dynForm.get(USERNAME));
+        props.setNewPassword(dynForm.get(NEW_PASSWORD));
+        props.setNewPasswordRepeat(dynForm.get(NEW_PASSWORD)); // Admins do not have to repeat the password
+        props.setOldPassword(dynForm.get(OLD_PASSWORD));
 
-        if (!signedinUser.isAdmin()) {
-            return forbidden("Only admin users are allowed to change passwords of other users.");
-        }
-
-        User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
+        User user = userDao.findByUsername(props.getUsername());
         if (user == null) {
-            return badRequest("An user with username \"" + normalizedUsernameOfUserToChange + "\" doesn't exist.");
+            return badRequest("User doesn't exist.");
         }
         if (!user.isDb()) {
-            return forbidden("It's not possible to change the password of non-local authenticated users.");
+            return forbidden("It's not possible to change the password of a user that is not authenticated locally.");
         }
 
-        // Only the user 'admin' is allowed to change his own password
-        if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
-                !signedinUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
-            form = form.withError(new ValidationError(ChangePasswordModel.USERNAME,
-                    "It's not possible to change admin's password."));
-            return forbidden(form.errorsAsJson());
+        // Only the user 'admin' is allowed to change their own password
+        User signedinUser = authService.getSignedinUser();
+        if (props.getUsername().equals(ADMIN_USERNAME) && !signedinUser.getUsername().equals(ADMIN_USERNAME)) {
+            return forbidden("You are not allowed to change the password of user 'admin'.");
         }
 
-        // Admins do not have to repeat the password
-        form.get().setNewPasswordRepeat(form.get().getNewPassword());
-        // Validate
-        form = UserFormValidation.validateChangePassword(form);
-        if (form.hasErrors()) return forbidden(form.errorsAsJson());
+        Form<ChangePasswordProperties> form = formFactory.form(ChangePasswordProperties.class).fill(props);
+        List<ValidationError> errors = props.validate();
+        if (errors != null && !errors.isEmpty()) {
+            for (ValidationError e : errors) {
+                form = form.withError(e.key(), e.message());
+            }
+            return badRequest(form.errorsAsJson());
+        }
 
-        // Change password
-        String newPassword = form.get().getNewPassword();
-        userService.updatePassword(user, newPassword);
-
+        userService.updatePassword(user, props.getNewPassword());
         return ok();
     }
 
     /**
-     * Handles POST request from change password form by user themselves
+     * Handles POST request to change a password form initiated by a user themselves
      */
     @Transactional
     @Auth
     public Result changePasswordByUser(Http.Request request) throws NamingException {
-        User signedinUser = authService.getSignedinUser();
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
-        String normalizedUsernameOfUserToChange = form.get().getUsername();
+        DynamicForm dynForm = formFactory.form().bindFromRequest(request);
+        ChangePasswordProperties props = new ChangePasswordProperties();
+        props.setUsername(dynForm.get(USERNAME));
+        props.setNewPassword(dynForm.get(NEW_PASSWORD));
+        props.setNewPasswordRepeat(dynForm.get(NEW_PASSWORD_REPEAT)); // Admins do not have to repeat the password
+        props.setOldPassword(dynForm.get(OLD_PASSWORD));
 
-        if (!signedinUser.getUsername().equals(normalizedUsernameOfUserToChange)) {
+        User signedinUser = authService.getSignedinUser();
+        if (!signedinUser.getUsername().equals(props.getUsername())) {
             return forbidden("User can change only their own password");
         }
-
-        if (signedinUser.isLdap() || signedinUser.isOauthGoogle() || signedinUser.isOidc()) {
-            return forbidden("It's not possible to change the password of LDAP, Google sign-in or OIDC authenticated users.");
+        if (!signedinUser.isDb()) {
+            return forbidden("It's not possible to change the password of a user that is not authenticated locally.");
         }
 
         // Validate
-        form = UserFormValidation.validateChangePassword(form);
-        if (form.hasErrors()) return forbidden(form.errorsAsJson());
+        Form<ChangePasswordProperties> form = formFactory.form(ChangePasswordProperties.class).bind(dynForm.rawData());
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Check old password
-        String oldPassword = form.get().getOldPassword();
-        if (!authService.authenticate(signedinUser, oldPassword)) {
-            form = form.withError(new ValidationError(ChangePasswordModel.OLD_PASSWORD, "Wrong password"));
-            return forbidden(form.errorsAsJson());
+        // Check old password against current password in the database
+        if (!authService.authenticate(signedinUser, props.getOldPassword())) {
+            return forbidden(JsonUtils.asJsonNode(Collections.singletonMap(OLD_PASSWORD, Collections.singletonList("Wrong password"))));
         }
 
-        // Change password
-        String newPassword = form.get().getNewPassword();
-        userService.updatePassword(signedinUser, newPassword);
-
+        userService.updatePassword(signedinUser, props.getNewPassword());
         return ok();
     }
 

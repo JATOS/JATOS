@@ -148,7 +148,7 @@ public class ImportExportService {
      *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
      *                              Default is `true`.
      */
-    public Long importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
+    public Study importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
@@ -164,7 +164,7 @@ public class ImportExportService {
         if (currentStudy.isPresent()) {
             overwriteExistingStudy(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, tempUnzippedStudyDir, uploadedStudy, currentStudy.get());
-            return currentStudy.get().getId();
+            return currentStudy.get();
         }
 
         // 4) !study exists -  udir exists
@@ -178,8 +178,7 @@ public class ImportExportService {
                 String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
                 uploadedStudy.setDirName(newDirName);
             }
-            Study newStudy = importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
-            return newStudy.getId();
+            return importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
         }
 
         else {
@@ -198,8 +197,7 @@ public class ImportExportService {
     private void overwriteExistingStudy(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
             throws IOException, ForbiddenException, NotFoundException {
-        checker.checkStandardForStudy(currentStudy, currentStudy.getId(), signedinUser);
-        checker.checkStudyLocked(currentStudy);
+        checker.canUserAccessStudy(currentStudy, signedinUser, true);
 
         if (!keepAssets) {
             String dirName = keepCurrentAssetsName ? currentStudy.getDirName() : uploadedStudy.getDirName();

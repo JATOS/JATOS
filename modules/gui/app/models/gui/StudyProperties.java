@@ -1,10 +1,12 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -14,13 +16,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+
 /**
  * Model of study properties for UI (not persisted in DB). Only used together
  * with an HTML form that creates a new Study or updates one. The corresponding
  * database entity is {@link models.common.Study}.
  */
 @Constraints.Validate
-public class StudyProperties implements Constraints.Validatable<List<ValidationError>> {
+public class StudyProperties implements Validatable<List<ValidationError>> {
 
     public static final String STUDY_ID = "studyId";
     public static final String UUID = "uuid";
@@ -39,6 +43,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
             "public", "assets", "study_assets_root", "study_assets"};
 
+    @JsonProperty(access = READ_ONLY)
     private Long studyId;
 
     /**
@@ -46,6 +51,7 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
      * different JATOS instances. On one JATOS instance it is only allowed to
      * have one study with the same UUID.
      */
+    @JsonProperty(access = READ_ONLY)
     private String uuid;
 
     private String title;
@@ -55,12 +61,19 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     /**
      * Timestamp of the creation or the last update of this study
      */
+    @JsonProperty(access = READ_ONLY)
     private Timestamp date;
 
     /**
      * If a study is locked, it can't be changed.
      */
+    @JsonProperty(access = READ_ONLY)
     private boolean locked = false;
+
+    /**
+     * A deactivated study cannot be run by a worker. A study can be deactivated by any admin or by a member user.
+     */
+    private boolean active = true;
 
     /**
      * Is this study a group study, e.g. worker scripts can send messages
@@ -170,6 +183,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         return this.locked;
     }
 
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
     public boolean isGroupStudy() {
         return groupStudy;
     }
@@ -247,6 +268,9 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
             if (Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
                 errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
             }
+        }
+        if (description != null && !Jsoup.isValid(description, Safelist.none())) {
+            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));

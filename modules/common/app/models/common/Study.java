@@ -56,7 +56,7 @@ public class Study {
     private String title;
 
     @Lob
-    @JsonView({JsonForPublix.class, JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String description;
 
     /**
@@ -72,9 +72,8 @@ public class Study {
     private boolean locked = false;
 
     /**
-     * A deactivated study cannot be run by worker. A study can be deactivated by an admin, but not by the member users
-     * of the study (unless they are admin). It's meant to give admins the possibility to turn off studies that use to
-     * many resources. By default, it's activated (true).
+     * A deactivated study cannot be run by a worker. A study can be deactivated by any admin or by a member user.
+     * By default, it's activated (true).
      */
     @JsonView({JsonForApi.class})
     private boolean active = true;
@@ -147,7 +146,7 @@ public class Study {
     /**
      * Ordered list of component of this study. The relationship is bidirectional.
      */
-    @JsonView({JsonForIO.class, JsonForApi.class})
+    @JsonView({JsonForIO.class})
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderColumn(name = "componentList_order")
     @JoinColumn(name = "study_id")
@@ -158,7 +157,7 @@ public class Study {
     /**
      * Ordered list of batches of this study. The relationship is bidirectional.
      */
-    @JsonView({JsonForIO.class, JsonForApi.class})
+    @JsonView({JsonForIO.class})
     @OneToMany(fetch = FetchType.LAZY)
     @OrderColumn(name = "batchList_order")
     @JoinColumn(name = "study_id")

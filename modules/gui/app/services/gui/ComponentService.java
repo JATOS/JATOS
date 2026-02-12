@@ -1,9 +1,7 @@
 package services.gui;
 
-import auth.gui.AuthService;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
@@ -40,18 +38,13 @@ public class ComponentService {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
-    private final AuthService authService;
-    private final Checker checker;
 
     @Inject
-    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils,
-                     AuthService authService, Checker checker) {
+    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils) {
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.ioUtils = ioUtils;
-        this.authService = authService;
-        this.checker = checker;
     }
 
     /**
@@ -104,6 +97,7 @@ public class ComponentService {
     public void updateComponentAfterEdit(Component component, ComponentProperties updatedProps) {
         component.setTitle(updatedProps.getTitle());
         component.setReloadable(updatedProps.isReloadable());
+        component.setActive(updatedProps.isActive());
         component.setComments(updatedProps.getComments());
         component.setJsonData(updatedProps.getJsonData());
         componentDao.update(component);
@@ -244,20 +238,13 @@ public class ComponentService {
         componentDao.remove(component);
     }
 
-    public Component getComponentFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Component getComponentFromIdOrUuid(String idOrUuid) throws NotFoundException {
         Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser();
-        Component component;
         if (componentId.isPresent()) {
-            component = componentDao.findById(componentId.get());
-            if (component == null) throw new NotFoundException("Couldn't find component with ID " + idOrUuid);
-            checker.checkStandardForComponent(componentId.get(), component, signedinUser);
+            return componentDao.findById(componentId.get());
         } else {
-            component = componentDao.findByUuid(idOrUuid)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find component with UUID " + idOrUuid));
-            checker.checkStandardForComponent(component.getId(), component, signedinUser);
+            return componentDao.findByUuid(idOrUuid).orElse(null);
         }
-        return component;
     }
 
 }

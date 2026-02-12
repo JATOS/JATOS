@@ -140,7 +140,7 @@ public class Studies extends Controller {
     public Result properties(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         StudyProperties studyProperties = studyService.bindToProperties(study);
         return ok(JsonUtils.asJsonNode(studyProperties));
@@ -154,8 +154,7 @@ public class Studies extends Controller {
     public Result submitEdited(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
+        checker.canUserAccessStudy(study, signedinUser, true);
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -179,8 +178,7 @@ public class Studies extends Controller {
     public Result submitDescription(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
+        checker.canUserAccessStudy(study, signedinUser, true);
 
         String description = request.body().asText();
 
@@ -201,7 +199,7 @@ public class Studies extends Controller {
     public Result toggleLock(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         study.setLocked(!study.isLocked());
         studyDao.update(study);
@@ -221,7 +219,7 @@ public class Studies extends Controller {
     public Result cloneStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         Study clone = studyService.clone(study);
         studyService.createAndPersistStudy(signedinUser, clone);
@@ -236,7 +234,7 @@ public class Studies extends Controller {
     public Result memberUsers(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         List<User> userList = userDao.findAll();
         return ok(jsonUtils.memberUserArrayOfStudy(userList, study));
@@ -251,7 +249,7 @@ public class Studies extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         String normalizedUsername = User.normalizeUsername(username);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
         User userToChange = userService.retrieveUser(normalizedUsername);
         studyService.changeUserMember(study, userToChange, isMember);
 
@@ -266,7 +264,7 @@ public class Studies extends Controller {
     public Result addAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         if (!Common.isStudyMembersAllowedToAddAllUsers()) {
             return forbidden("It's not allowed to add all users at once in this JATOS.");
@@ -284,7 +282,7 @@ public class Studies extends Controller {
     public Result removeAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         studyService.removeAllUserMembers(study);
         return ok();
@@ -300,9 +298,8 @@ public class Studies extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
-        checker.checkStandardForComponent(studyId, componentId, component);
+        checker.canUserAccessStudy(study, signedinUser, true);
+        checker.canUserAccessComponent(component, signedinUser);
         studyService.changeComponentPosition(newPosition, study, component);
 
         return ok();
@@ -315,12 +312,12 @@ public class Studies extends Controller {
     @Transactional
     @Auth
     public Result runStudy(Http.Request request, Long studyId, Long batchId, Long frames, Long hSplit, Long vSplit)
-            throws JatosGuiException, NotFoundException, ForbiddenException {
+            throws NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStandardForBatch(batch, study, batchId);
+        checker.canUserAccessStudy(study, signedinUser);
+        checker.canUserAccessBatch(batch, signedinUser);
 
         // Get StudyLink and redirect to jatos-publix to start the study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
@@ -338,7 +335,7 @@ public class Studies extends Controller {
     public Result tableDataByStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         List<Component> componentList = study.getComponentList();
         List<Integer> resultCountList = new ArrayList<>();
@@ -349,7 +346,7 @@ public class Studies extends Controller {
 
     private void checkStandardForStudy(Http.Request request, Long studyId, Study study, User signedinUser) throws JatosGuiException {
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
+            checker.canUserAccessStudy(study, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }

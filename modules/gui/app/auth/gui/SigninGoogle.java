@@ -12,9 +12,10 @@ import exceptions.gui.ValidationException;
 import general.common.Common;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
-import models.gui.NewUserModel;
+import models.gui.NewUserProperties;
 import play.Logger;
 import play.Logger.ALogger;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -26,6 +27,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Class that handles the sign-in of users via Google OIDC sign-in button.
@@ -114,12 +116,16 @@ public class SigninGoogle extends Controller {
             return user;
         } else {
             String name = (String) idTokenPayload.get("name");
-            NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedUsername);
-            newUserModel.setName(name);
-            newUserModel.setEmail(idTokenPayload.getEmail());
-            newUserModel.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
-            return userService.registerUser(newUserModel);
+            NewUserProperties newUserProperties = new NewUserProperties();
+            newUserProperties.setUsername(normalizedUsername);
+            newUserProperties.setName(name);
+            newUserProperties.setEmail(idTokenPayload.getEmail());
+            newUserProperties.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
+            List<ValidationError> errors = newUserProperties.validate();
+            if (errors != null && !errors.isEmpty()) {
+                throw new ValidationException(errors.get(0).message());
+            }
+            return userService.registerUser(newUserProperties);
         }
     }
 

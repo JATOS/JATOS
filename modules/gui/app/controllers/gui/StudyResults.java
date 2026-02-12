@@ -85,7 +85,7 @@ public class StudyResults extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
+            checker.canUserAccessStudy(study, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -106,8 +106,8 @@ public class StudyResults extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForBatch(batch, study, batchId);
+            checker.canUserAccessStudy(study, signedinUser);
+            checker.canUserAccessBatch(batch, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -130,8 +130,8 @@ public class StudyResults extends Controller {
         GroupResult groupResult = groupResultDao.findById(groupId);
         User signedinUser = authService.getSignedinUser();
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForGroup(groupResult, study, groupId);
+            checker.canUserAccessStudy(study, signedinUser);
+            checker.canUserAccessGroupResult(groupResult, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -153,9 +153,8 @@ public class StudyResults extends Controller {
         User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
         try {
-            checker.checkWorker(worker, workerId);
-            checker.isUserAllowedToAccessWorker(signedinUser, worker);
-        } catch (BadRequestException | ForbiddenException e) {
+            checker.canUserAccessWorker(signedinUser, worker);
+        } catch (NotFoundException | ForbiddenException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }
 
@@ -189,7 +188,7 @@ public class StudyResults extends Controller {
     public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        checker.canUserAccessStudy(study, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByStudy(study);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -204,8 +203,8 @@ public class StudyResults extends Controller {
     public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForBatch(batch, batch.getId(), signedinUser);
-        workerType = workerType != null ? workerService.extractWorkerType(workerType) : null;
+        checker.canUserAccessBatch(batch, signedinUser);
+        workerType = workerType != null ? WorkerService.extractWorkerType(workerType) : null;
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -219,7 +218,7 @@ public class StudyResults extends Controller {
     public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStandardForGroup(groupResult, groupResultId, signedinUser);
+        checker.canUserAccessGroupResult(groupResult, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByGroup(groupResult);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -230,10 +229,12 @@ public class StudyResults extends Controller {
      */
     @Transactional
     @Auth
-    public Result tableDataByWorker(Long workerId) throws BadRequestException {
+    public Result tableDataByWorker(Long workerId) throws NotFoundException {
         User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
-        checker.checkWorker(worker, workerId);
+        if (worker == null) {
+            throw new NotFoundException("Worker doesn't exist");
+        }
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByWorker(signedinUser, worker);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -247,7 +248,7 @@ public class StudyResults extends Controller {
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkStudyResult(studyResult, signedinUser, false);
+        checker.canUserAccessStudyResult(studyResult, signedinUser, false);
 
         return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
     }

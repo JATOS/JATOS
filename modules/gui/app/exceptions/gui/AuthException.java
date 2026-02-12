@@ -1,9 +1,11 @@
 package exceptions.gui;
 
-public class AuthException extends Exception {
+import models.gui.ApiEnvelope.ErrorCode;
+
+public class AuthException extends JatosException {
 
 	public AuthException(String message) {
-		super(message);
+		super(message, ErrorCode.AUTH_ERROR);
 	}
 
 }

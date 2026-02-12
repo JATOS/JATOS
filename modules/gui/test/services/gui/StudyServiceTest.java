@@ -48,7 +48,7 @@ public class StudyServiceTest {
         checker = mock(Checker.class);
 
         studyService = new StudyService(batchService, componentService, studyDao, batchDao, userDao, workerDao,
-                null, studyLogger, authService, checker);
+                null, studyLogger, authService);
     }
 
     private Study newStudyWithComponents(String title, String dirName, int numberOfComponents) {
@@ -101,7 +101,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void getStudyFromIdOrUuid_numericId_branch() throws Exception {
+    public void getStudyFromIdOrUuid_numericId_branch() {
         User signedIn = new User("alice", "Alice", "alice@example.org");
         when(authService.getSignedinUser()).thenReturn(signedIn);
 
@@ -115,7 +115,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void getStudyFromIdOrUuid_uuid_branch() throws Exception {
+    public void getStudyFromIdOrUuid_uuid_branch() {
         User signedIn = new User("bob", "Bob", "bob@example.org");
         when(authService.getSignedinUser()).thenReturn(signedIn);
 
@@ -130,18 +130,20 @@ public class StudyServiceTest {
 
     @Test(expected = NotFoundException.class)
     public void getStudyFromIdOrUuid_numeric_notFound_throws() throws Exception {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@example.org"));
+        User signedIn = new User("alice", "Alice", "alice@example.org");
+        when(authService.getSignedinUser()).thenReturn(signedIn);
         when(studyDao.findById(99L)).thenReturn(null);
         Study study = studyService.getStudyFromIdOrUuid("99");
-        checker.checkStandardForStudy(study);
+        checker.canUserAccessStudy(study, signedIn);
     }
 
     @Test(expected = NotFoundException.class)
     public void getStudyFromIdOrUuid_uuid_notFound_throws() throws Exception {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@example.org"));
+        User signedIn = new User("alice", "Alice", "alice@example.org");
+        when(authService.getSignedinUser()).thenReturn(signedIn);
         when(studyDao.findByUuid("nope")).thenReturn(Optional.empty());
         Study study = studyService.getStudyFromIdOrUuid("nope");
-        checker.checkStandardForStudy(study);
+        checker.canUserAccessStudy(study, signedIn);
     }
 
     @Test

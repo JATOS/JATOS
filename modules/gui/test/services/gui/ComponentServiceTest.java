@@ -68,7 +68,7 @@ public class ComponentServiceTest {
         authService = Mockito.mock(AuthService.class);
         checker = Mockito.mock(Checker.class);
 
-        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils, authService, checker);
+        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils);
     }
 
     private Component exampleComponent(Study study) {
@@ -327,7 +327,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(res).isEqualTo(c);
-        verify(checker).checkStandardForComponent(123L, c, signed);
+        verify(checker).canUserAccessComponent(c, signed);
     }
 
     @Test
@@ -344,18 +344,18 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(res).isEqualTo(c);
-        verify(checker).checkStandardForComponent(55L, c, signed);
+        verify(checker).canUserAccessComponent(c, signed);
     }
 
     @Test(expected = NotFoundException.class)
-    public void getComponentFromIdOrUuid_withUnknownId_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
+    public void getComponentFromIdOrUuid_withUnknownId_shouldThrowNotFound() throws NotFoundException {
         when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
         when(componentDao.findById(999L)).thenReturn(null);
         componentService.getComponentFromIdOrUuid("999");
     }
 
     @Test(expected = NotFoundException.class)
-    public void getComponentFromIdOrUuid_withUnknownUuid_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
+    public void getComponentFromIdOrUuid_withUnknownUuid_shouldThrowNotFound() throws NotFoundException {
         when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
         when(componentDao.findByUuid("nope")).thenReturn(Optional.empty());
         componentService.getComponentFromIdOrUuid("nope");

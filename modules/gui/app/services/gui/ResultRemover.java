@@ -64,7 +64,7 @@ public class ResultRemover {
     public void removeComponentResults(List<Long> componentResultIdList, User user, boolean removeEmptyStudyResults)
             throws NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
-        checker.checkComponentResults(componentResultList, user, true);
+        checker.canUserAccessComponentResults(componentResultList, user, true);
         for (ComponentResult componentResult : componentResultList) {
             removeComponentResult(componentResult.getId());
             if (removeEmptyStudyResults && componentResult.getStudyResult().getComponentResultList().isEmpty()) {
@@ -90,7 +90,7 @@ public class ResultRemover {
             throws NotFoundException, ForbiddenException {
         List<StudyResult> studyResultList = studyResultDao.findByIds(studyResultIdList);
         Set<Study> studies = new HashSet<>();
-        checker.checkStudyResults(studyResultList, user, true);
+        checker.canUserAccessStudyResults(studyResultList, user, true);
         for (StudyResult studyResult : studyResultList) {
             removeStudyResult(studyResult.getId());
         }

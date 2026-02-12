@@ -19,10 +19,12 @@ import models.gui.BatchProperties;
 import models.gui.BatchSession;
 import play.Logger;
 import play.data.validation.ValidationError;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -326,6 +328,15 @@ public class BatchService {
             LOGGER.warn(".validate: " + batchProperties.validate().stream().map(ValidationError::message)
                     .collect(Collectors.joining(", ")));
             throw new ValidationException("Batch is invalid");
+        }
+    }
+
+    public Batch getBatchFromIdOrUuid(String idOrUuid) {
+        Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
+        if (studyId.isPresent()) {
+            return batchDao.findById(studyId.get());
+        } else {
+            return batchDao.findByUuid(idOrUuid).orElse(null);
         }
     }
 

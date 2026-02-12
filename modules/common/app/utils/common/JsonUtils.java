@@ -83,7 +83,7 @@ public class JsonUtils {
     }
 
     public JsonNode asJsonForApi(Object obj) throws IOException {
-        // Unnecessary conversion into a temporary string - better solution?
+        // Unnecessary conversion into a temporary string - better solution with ObjectWriter.writeValueAsTree when available in Jackson
         String tmpStr = Json.mapper()
                 .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                 .writerWithView(JsonForApi.class)
@@ -425,26 +425,19 @@ public class JsonUtils {
         return userNode;
     }
 
-    public Map<String, Object> getSingleUserData(User user) {
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("active", user.isActive());
-        userData.put("name", user.getName());
-        userData.put("username", user.getUsername());
-        userData.put("email", user.getEmail());
-        userData.put("roleList", user.getRoleList());
-        userData.put("authMethod", user.getAuthMethod().name());
-        userData.put("studyCount", user.getStudyList().size());
-        userData.put("lastSignin", user.getLastLogin());
-        List<Map<String, Object>> allStudiesData = new ArrayList<>();
+    public ObjectNode getSingleUserData(User user) {
+        ObjectNode userNode = Json.mapper().valueToTree(user);
+        userNode.put("studyCount", user.getStudyList().size());
+        ArrayNode studyArray = Json.mapper().createArrayNode();
         for (Study study : user.getStudyList()) {
-            Map<String, Object> studyData = new HashMap<>();
-            studyData.put("id", study.getId());
-            studyData.put("title", study.getTitle());
-            studyData.put("userSize", study.getUserList().size());
-            allStudiesData.add(studyData);
+            ObjectNode studyNode = Json.newObject()
+                    .put("id", study.getId())
+                    .put("title", study.getTitle())
+                    .put("userSize", study.getUserList().size());
+            studyArray.add(studyNode);
         }
-        userData.put("studyList", allStudiesData);
-        return userData;
+        userNode.set("studyList", studyArray);
+        return userNode;
     }
 
     /**
@@ -573,6 +566,20 @@ public class JsonUtils {
         return componentsNode;
     }
 
+    public JsonNode getStudyLinkData(StudyLink studyLink) {
+        ObjectNode node = Json.mapper().createObjectNode();
+        node.put("studyCode", studyLink.getStudyCode());
+        node.put("batchId", studyLink.getBatch().getId());
+        node.put("type", studyLink.getWorkerType());
+        node.put("comment", studyLink.getWorker().getComment());
+        node.put("active", studyLink.isActive());
+        String studyLinkPath = Common.getJatosUrlBasePath() + "publix/" + studyLink.getStudyCode();
+        node.put("studyLinkPath", studyLinkPath);
+        String studyEntryPath = Common.getJatosUrlBasePath() + "publix/run?code=" + studyLink.getStudyCode();
+        node.put("studyEntryPath", studyEntryPath);
+        return node;
+    }
+
     public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,
             Integer personalSingleLinkCount, Integer personalMultipleLinkCount) {
         ObjectNode studyLinkSetupData = Json.mapper().createObjectNode();
@@ -691,32 +698,11 @@ public class JsonUtils {
         ArrayNode members = studyNode.putArray("members");
         for (User u : study.getUserList()) {
             members.addObject()
+                    .put("id", u.getId())
                     .put("username", u.getUsername());
         }
 
         return studyNode;
-    }
-
-    /**
-     * Every API JSON response is wrapped in a data envelope
-     */
-    public static JsonNode wrapForApi(Object obj) {
-        return wrapForApi(Json.mapper().valueToTree(obj));
-    }
-
-    /**
-     * Every API JSON response is wrapped in a data envelope
-     */
-    public static JsonNode wrapForApi(JsonNode jsonNode) {
-        return wrapForApi(jsonNode, new HashMap<>());
-    }
-
-    /**
-     * Every API JSON response is wrapped in a data envelope
-     */
-    public static JsonNode wrapForApi(JsonNode jsonNode, Map<String, Object> fields) {
-        fields.put("apiVersion", Common.getJatosApiVersion());
-        return wrapAsDataEnvelope(jsonNode, fields);
     }
 
     /**

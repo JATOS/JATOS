@@ -1,7 +1,6 @@
 package services.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
@@ -9,11 +8,8 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import models.common.Batch;
-import models.common.Study;
 import models.common.StudyLink;
 import models.common.workers.*;
-import scala.Option;
-import utils.common.Helpers;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -34,34 +30,18 @@ public class StudyLinkService {
     private final WorkerDao workerDao;
     private final StudyLinkDao studyLinkDao;
     private final WorkerService workerService;
-    private final StudyService studyService;
-    private final Checker checker;
 
     @Inject
     StudyLinkService(BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao,
-            WorkerService workerService, StudyService studyService, Checker checker) {
+            WorkerService workerService) {
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
         this.workerService = workerService;
-        this.studyService = studyService;
-        this.checker = checker;
     }
 
-    public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
-            Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
-        checker.checkStandardForStudy(study);
-
-        Batch batch;
-        if (batchId.nonEmpty()) {
-            batch = batchDao.findById(batchId.get());
-            checker.checkStandardForBatch(batch, batch.getStudy(), batchId.get());
-        } else {
-            batch = study.getDefaultBatch();
-        }
-
-        workerType = workerService.extractWorkerType(workerType);
+    public JsonNode getStudyCodes(Batch batch, String workerType, String comment, Integer amount)
+            throws ForbiddenException, NotFoundException, BadRequestException {
         switch (workerType) {
             case PersonalSingleWorker.WORKER_TYPE:
             case PersonalMultipleWorker.WORKER_TYPE:
@@ -71,20 +51,16 @@ public class StudyLinkService {
             case MTWorker.WORKER_TYPE:
                 return getGeneralRun(batch, workerType);
             default:
-                throw new BadRequestException("Unknown worker type");
+                throw new BadRequestException("Unknown type");
         }
     }
 
     /**
      * Creates either Personal Single or Personal Multiple study codes and their corresponding workers.
      */
-    private JsonNode getPersonalRun(Batch batch, String workerType, String comment, Integer amount)
+    private JsonNode getPersonalRun(Batch batch, String workerType, String comment, int amount)
             throws BadRequestException {
-        comment = Strings.isNullOrEmpty(comment) ? "" : Helpers.urlDecode(comment);
-        amount = amount == null ? 1 : amount;
-        List<String> studyCodeList;
-        studyCodeList = createAndPersistStudyLinks(comment, amount, batch, workerType);
-
+        List<String> studyCodeList = createAndPersistStudyLinks(comment, amount, batch, workerType);
         return JsonUtils.asJsonNode(studyCodeList);
     }
 

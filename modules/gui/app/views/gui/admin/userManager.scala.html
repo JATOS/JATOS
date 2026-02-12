@@ -9,6 +9,7 @@
             <tr>
                 <th class="no-info-icon" data-bs-tooltip="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="A deactivated user cannot sign in anymore but their studies can still be run by participants (aka workers). To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="id">ID<span class="ordering-icon"></span></th>
                 <th class="username">Username<span class="ordering-icon"></span></th>
                 <th>Name<span class="ordering-icon"></span></th>
                 <th>Email<span class="ordering-icon"></span></th>
@@ -86,9 +87,7 @@
                             </legend>
                             <div class="col-sm-9">
                                 <div class="form-check">
-                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authByLdap" id="userCreatorAuthByLdap" value="true" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
-                                    @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
-                                    <input type="hidden" name="authByLdap" value="false" />
+                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authMethod" id="userCreatorAuthByLdap" value="LDAP" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
                                     <label class="form-check-label" for="userCreatorAuthByLdap">
                                         Authenticate this user by your central LDAP service?
                                     </label>
@@ -285,6 +284,10 @@
                             </label>
                         `;
                     }
+                },
+                {
+                    "data": "id",
+                    "width": "1%"
                 },
                 {
                     "data": "username",
@@ -602,10 +605,10 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Api.toggleUserActive(isActive),
-            type: "POST",
+            url: window.routes.Api.updateUser(user.id),
+            type: "PATCH",
             contentType: "application/json",
-            data: JSON.stringify({ username: user.username }),
+            data: JSON.stringify({ "active": isActive }),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {
                 $(checkbox).prop('checked', isActive);
@@ -744,7 +747,7 @@
                 + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
         $("#changePasswordModal").modal('show');
 
-        $("#changePasswordConfirm").one("click", function(event) {
+        $("#changePasswordConfirm").off("click").on("click", function(event) {
             $.ajax({
                 type: 'POST',
                 url: window.routes.Users.changePasswordByAdmin,

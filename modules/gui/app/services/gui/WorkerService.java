@@ -4,6 +4,7 @@ import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.workers.*;
+import models.gui.ApiEnvelope.ErrorCode;
 import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
@@ -53,7 +54,7 @@ public class WorkerService {
         return resultsPerWorker;
     }
 
-    public String extractWorkerType(String workerType) throws BadRequestException {
+    public static String extractWorkerType(String workerType) throws BadRequestException {
         if (workerType == null) return null;
         switch (workerType.toLowerCase()) {
             case "jatos":
@@ -78,7 +79,7 @@ public class WorkerService {
             case "mts":
                 return MTSandboxWorker.WORKER_TYPE;
             default:
-                throw new BadRequestException("Unknown worker type");
+                throw new BadRequestException("Unknown type", ErrorCode.VALIDATION_ERROR);
         }
     }
 

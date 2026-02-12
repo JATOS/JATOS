@@ -129,8 +129,9 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, exampleStudyArchive())));
 
         // Confirm import: for a new study keepProperties=false, keepAssets=false, keepCurrentAssetsName=false, renameAssets=false
-        Long newStudyId = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+        Study study = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
                 importExportService.importStudyConfirmed(admin, false, false, false, false)));
+        Long newStudyId = study.getId();
         assertThat(newStudyId).isPositive();
 
         // Study should be persisted
@@ -164,8 +165,9 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         assertThat(response.get("uploadedDirExists").asBoolean()).isFalse();
 
         // Import part 2: call importStudyConfirmed()
-        Long studyId = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+        Study study = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
                 importExportService.importStudyConfirmed(admin, false, false, false, false)));
+        Long studyId = study.getId();
 
         // Check properties and assets of imported study
         checkExampleStudyPropertiesAndAssets(studyId);

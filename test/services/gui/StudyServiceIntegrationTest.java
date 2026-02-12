@@ -561,7 +561,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {
             try {
                 Study study = studyService.getStudyFromIdOrUuid("999999");
-                checker.checkStandardForStudy(study);
+                checker.canUserAccessStudy(study, admin);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected
@@ -573,7 +573,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {
             try {
                 Study study = studyService.getStudyFromIdOrUuid(randomUuid);
-                checker.checkStandardForStudy(study);
+                checker.canUserAccessStudy(study, admin);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected

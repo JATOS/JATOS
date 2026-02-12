@@ -3,15 +3,13 @@ package controllers.gui;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
+import exceptions.gui.*;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
+import models.gui.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import play.Logger;
 import play.Logger.ALogger;
@@ -82,41 +80,40 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Auth
-    public Result importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws ForbiddenException, NotFoundException, IOException {
+    public Study importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
+            boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException {
         User signedinUser = authService.getSignedinUser();
 
         // Get file from request
         if (request.body().asMultipartFormData() == null) {
-            return badRequest(MessagesStrings.FILE_MISSING);
+            throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
         }
         FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
         if (filePart == null) {
-            return badRequest(MessagesStrings.FILE_MISSING);
+            throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
         }
         if (!Study.STUDY.equals(filePart.getKey())) {
             // If wrong key the upload comes from the wrong form
-            return badRequest(MessagesStrings.NO_STUDY_UPLOAD);
+            throw new BadRequestException(MessagesStrings.NO_STUDY_UPLOAD);
         }
 
-        ObjectNode responseJson;
         try {
             File file = (File) filePart.getFile();
-            responseJson = importExportService.importStudy(signedinUser, file);
+            importExportService.importStudy(signedinUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
-            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
+            throw new InternalServerErrorException("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
         }
 
         try {
-            Long newStudyId = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            return importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
-            responseJson.put("id", newStudyId);
+        } catch (IOException e) {
+            throw new InternalServerErrorException(e.getMessage(), ErrorCode.FILE_ERROR);
         } finally {
             importExportService.cleanupAfterStudyImport();
         }
-        return ok(responseJson);
     }
 
     /**
@@ -189,8 +186,9 @@ public class ImportExport extends Controller {
 
         long importedStudyId = 0L;
         try {
-            importedStudyId = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            Study study = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
+            importedStudyId = study.getId();
         } catch (ForbiddenException e) {
             return forbidden(e.getMessage());
         } catch (Exception e) {
@@ -209,7 +207,8 @@ public class ImportExport extends Controller {
     @Auth
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
-        checker.checkStandardForStudy(study);
+        User signedinUser = authService.getSignedinUser();
+        checker.canUserAccessStudy(study, signedinUser);
 
         File zipFile;
         try {

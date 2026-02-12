@@ -4,7 +4,6 @@ import auth.gui.AuthService;
 import com.pivovarit.function.ThrowingConsumer;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.RequestScope;
 import models.common.Component;
@@ -12,8 +11,8 @@ import models.common.Study;
 import models.gui.ComponentProperties;
 import org.fest.assertions.Fail;
 import org.junit.Test;
-import testutils.JatosTest;
 import testutils.ContextMocker;
+import testutils.JatosTest;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -103,8 +102,8 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             updated.setComments("Some comment");
             updated.setJsonData("{\"a\":1}");
             updated.setReloadable(!component.isReloadable());
+            updated.setActive(!component.isActive());
             updated.setHtmlFilePath("shouldNotChange.html"); // will be ignored
-            updated.setActive(!component.isActive()); // will be ignored
 
             componentService.updateComponentAfterEdit(component, updated);
 
@@ -113,9 +112,9 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             assertThat(reloaded.getComments()).isEqualTo(updated.getComments());
             assertThat(reloaded.getJsonData()).isEqualTo(updated.getJsonData());
             assertThat(reloaded.isReloadable()).isEqualTo(updated.isReloadable());
+            assertThat(reloaded.isActive()).isEqualTo(updated.isActive());
             // unchanged
             assertThat(reloaded.getHtmlFilePath()).isEqualTo(originalHtml);
-            assertThat(reloaded.isActive()).isEqualTo(originalActive);
         }));
     }
 
@@ -325,7 +324,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
                 // by UUID
                 Component byUuid = componentService.getComponentFromIdOrUuid(comp.getUuid());
                 assertThat(byUuid.getUuid()).isEqualTo(comp.getUuid());
-            } catch (NotFoundException | ForbiddenException e) {
+            } catch (NotFoundException e) {
                 Fail.fail();
             }
         }));

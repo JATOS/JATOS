@@ -46,7 +46,7 @@ public class ApiTokens extends Controller {
     public Result allTokenDataByUser() {
         User signedinUser = authService.getSignedinUser();
         List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
-        ArrayNode tokenData = Json.newArray();
+        ArrayNode tokenData = Json.mapper().createArrayNode();
         for (ApiToken token : tokenList) {
             tokenData.add(Json.mapper().valueToTree(token));
         }

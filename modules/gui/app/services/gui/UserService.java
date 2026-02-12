@@ -1,7 +1,6 @@
 package services.gui;
 
 import auth.gui.AuthService;
-import auth.gui.UserFormValidation;
 import com.google.common.collect.Lists;
 import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
@@ -10,7 +9,6 @@ import daos.common.worker.WorkerDao;
 import exceptions.gui.AuthException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
-import exceptions.gui.ValidationException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
@@ -18,9 +16,9 @@ import models.common.User;
 import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
-import models.gui.NewUserModel;
-import play.data.Form;
-import play.data.FormFactory;
+import models.gui.NewUserProperties;
+import models.gui.UserProperties;
+import org.hibernate.Hibernate;
 import play.db.jpa.JPAApi;
 import utils.common.HashUtils;
 
@@ -28,8 +26,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
 
 /**
  * Service class mostly for Users controller. Handles everything around User.
@@ -61,19 +58,17 @@ public class UserService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final ApiTokenDao apiTokenDao;
-    private final FormFactory formFactory;
     private final JPAApi jpa;
 
     @Inject
     UserService(StudyService studyService, AuthService authService, UserDao userDao, StudyDao studyDao,
-                WorkerDao workerDao, ApiTokenDao apiTokenDao, FormFactory formFactory, JPAApi jpa) {
+                WorkerDao workerDao, ApiTokenDao apiTokenDao, JPAApi jpa) {
         this.studyService = studyService;
         this.authService = authService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.apiTokenDao = apiTokenDao;
-        this.formFactory = formFactory;
         this.jpa = jpa;
     }
 
@@ -88,36 +83,36 @@ public class UserService {
         return user;
     }
 
-    public User registerUser(NewUserModel newUserModel) throws AuthException, ValidationException {
-        String normalizedUsername = User.normalizeUsername(newUserModel.getUsername());
-        newUserModel.setUsername(normalizedUsername);
-
-        User user = userDao.findByUsername(normalizedUsername);
+    public User registerUser(NewUserProperties newUserProperties) throws AuthException {
+        User user = userDao.findByUsername(newUserProperties.getUsername());
         if (user != null) {
             throw new AuthException("User exists already");
         }
-
-        Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-        newUserForm = UserFormValidation.validateNewUser(newUserForm);
-        if (newUserForm.hasErrors()) {
-            throw new ValidationException("User validation failed - " + newUserForm.errors().get(0).message(), newUserForm);
-        }
-
-        return bindToUserAndPersist(newUserModel);
+        return bindToUserAndPersist(newUserProperties);
     }
 
     /**
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
-    public User bindToUserAndPersist(NewUserModel newUserModel) {
+    public User bindToUserAndPersist(NewUserProperties newUserProperties) {
         //noinspection deprecation
         return jpa.withTransaction(() -> {
-            User user = new User(newUserModel.getUsername(), newUserModel.getName(), newUserModel.getEmail());
-            String password = newUserModel.getPassword();
-            AuthMethod authMethod = newUserModel.getAuthMethod();
+            User user = new User(newUserProperties.getUsername(), newUserProperties.getName(), newUserProperties.getEmail());
+            String password = newUserProperties.getPassword();
+            AuthMethod authMethod = newUserProperties.getAuthMethod();
             createAndPersistUser(user, password, false, authMethod);
             return user;
         });
+    }
+
+    public UserProperties bindToProperties(User user) {
+        UserProperties model = new UserProperties();
+        model.setId(user.getId());
+        model.setUsername(user.getUsername());
+        model.setName(user.getName());
+        model.setEmail(user.getEmail());
+        model.setActive(user.isActive());
+        return model;
     }
 
     /**
@@ -144,6 +139,22 @@ public class UserService {
 
         workerDao.create(worker);
         userDao.create(user);
+
+        // We have to flush and refresh the user to get the ID
+        userDao.flush();
+        userDao.refresh(user);
+        Hibernate.initialize(user.getStudyList());
+    }
+
+    public void updateUser(User user, UserProperties props) {
+        user.setName(props.getName());
+        user.setEmail(props.getEmail());
+        user.setActive(props.isActive());
+        if (props.getPassword() != null) {
+            String newPasswordHash = HashUtils.getHashMD5(props.getPassword());
+            user.setPasswordHash(newPasswordHash);
+        }
+        userDao.update(user);
     }
 
     /**
@@ -157,6 +168,10 @@ public class UserService {
 
     public void toggleActive(String normalizedUsername, boolean active) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
+        toggleActive(user, active);
+    }
+
+    public void toggleActive(User user, boolean active) throws ForbiddenException {
         User signedinUser = authService.getSignedinUser();
         if (user.equals(signedinUser)) {
             throw new ForbiddenException("A user is not allowed to deactivate themselves.");
@@ -210,16 +225,19 @@ public class UserService {
         });
     }
 
-    /**
-     * Removes the User belonging to the given username from the database. It also removes all studies where this user
-     * is the last member (which subsequently removes all components, results and the study assets too).
-     */
     public void removeUser(String normalizedUsername) throws NotFoundException, ForbiddenException, IOException {
         User user = retrieveUser(normalizedUsername);
         if (user.getUsername().equals(ADMIN_USERNAME)) {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_DELETE_ADMIN);
         }
+        removeUser(user);
+    }
 
+    /**
+     * Removes the User belonging to the given username from the database. It also removes all studies where this user
+     * is the last member (which subsequently removes all components, results and the study assets too).
+     */
+    public void removeUser(User user) throws IOException {
         // Remove Study (including batches, components, study results, component
         // results, group results)
         for (Study study : Lists.newArrayList(user.getStudyList())) {
@@ -247,28 +265,6 @@ public class UserService {
         user.setLastSeen(new Timestamp(new Date().getTime()));
         userDao.update(user);
 
-    }
-
-    /**
-     * Returns a list of maps containing data for all users. Study IDs are fetched via a separate query to avoid loading
-     * full Study entities.
-     */
-    public List<Map<String, Object>> fetchAllWithStudyIds() {
-        List<User> userList = userDao.findAll();
-        Map<String, List<Long>> studyIdsByUsername = userDao.findAllUsersAndTheirStudyIds();
-
-        return userList.stream().map(user -> {
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("username", user.getUsername());
-            userData.put("name", user.getName());
-            userData.put("email", user.getEmail());
-            userData.put("authMethod", user.getAuthMethod().name());
-            userData.put("lastLogin", user.getLastLogin());
-            userData.put("lastSeen", user.getLastSeen());
-            userData.put("active", user.isActive());
-            userData.put("studyIds", studyIdsByUsername.getOrDefault(user.getUsername(), new ArrayList<>()));
-            return userData;
-        }).collect(Collectors.toList());
     }
 
 }

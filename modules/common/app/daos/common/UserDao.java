@@ -40,6 +40,10 @@ public class UserDao extends AbstractDao {
         super.remove(user);
     }
 
+    public void refresh(User user) {
+        super.refresh(user);
+    }
+
     public boolean authenticate(String normalizedUsername, String passwordHash) {
         boolean doesNotExist = jpa.em().createQuery(
                     "SELECT u FROM User u WHERE u.username=:username and u.passwordHash=:passwordHash", User.class)
@@ -51,6 +55,15 @@ public class UserDao extends AbstractDao {
 
     public User findByUsername(String normalizedUsername) {
         return jpa.em().find(User.class, normalizedUsername);
+    }
+
+    public User findById(Long id) {
+        List<User> result = jpa.em().createQuery(
+                        "SELECT u FROM User u WHERE u.id = :id", User.class)
+                .setParameter("id", id)
+                .setMaxResults(1)
+                .getResultList();
+        return result.isEmpty() ? null : result.get(0);
     }
 
     public List<User> findAll() {

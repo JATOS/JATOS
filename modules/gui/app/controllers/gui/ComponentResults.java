@@ -76,8 +76,8 @@ public class ComponentResults extends Controller {
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForComponent(studyId, componentId, component);
+            checker.canUserAccessStudy(study, signedinUser);
+            checker.canUserAccessComponent(component, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }
@@ -112,7 +112,7 @@ public class ComponentResults extends Controller {
     public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForComponent(componentId, component, signedinUser);
+        checker.canUserAccessComponent(component, signedinUser);
 
         Source<ByteString, ?> dataSource = resultStreamer.streamComponentResults(component);
         return ok().chunked(dataSource).as("application/json");
@@ -126,7 +126,7 @@ public class ComponentResults extends Controller {
     public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkComponentResult(componentResult, signedinUser, false);
+        checker.canUserAccessComponentResult(componentResult, signedinUser, false);
         return ok(componentResultDao.getData(componentResultId));
     }
 

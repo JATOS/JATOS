@@ -116,34 +116,4 @@ public class JsonUtilsTest {
         assertEquals("innerValue", dataNode.get("innerKey").asText());
     }
 
-    @Test
-    public void testWrapForApi() {
-        // Create a simple JsonNode
-        ObjectNode innerNode = Json.newObject();
-        innerNode.put("innerKey", "innerValue");
-
-        // Wrap for API
-        JsonNode wrappedNode = JsonUtils.wrapForApi(innerNode);
-
-        // Verify the structure
-        assertTrue(wrappedNode.isObject());
-        assertTrue(wrappedNode.has("apiVersion"));
-        assertTrue(wrappedNode.has("data"));
-
-        // Verify the inner node is preserved
-        JsonNode dataNode = wrappedNode.get("data");
-        assertEquals("innerValue", dataNode.get("innerKey").asText());
-
-        // Test with additional fields
-        Map<String, Object> fields = new HashMap<>();
-        fields.put("field1", "value1");
-
-        wrappedNode = JsonUtils.wrapForApi(innerNode, fields);
-
-        // Verify the structure with additional fields
-        assertTrue(wrappedNode.isObject());
-        assertTrue(wrappedNode.has("apiVersion"));
-        assertEquals("value1", wrappedNode.get("field1").asText());
-        assertTrue(wrappedNode.has("data"));
-    }
 }

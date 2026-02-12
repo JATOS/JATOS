@@ -5,6 +5,7 @@ import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
@@ -24,7 +25,7 @@ import java.util.Set;
  * maxTotalMembers are properties for groups.
  */
 @Constraints.Validate
-public class BatchProperties implements Constraints.Validatable<List<ValidationError>> {
+public class BatchProperties implements Validatable<List<ValidationError>> {
 
 	public static final String ID = "id";
 	public static final String UUID = "uuid";
