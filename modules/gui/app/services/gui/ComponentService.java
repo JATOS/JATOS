@@ -2,7 +2,6 @@ package services.gui;
 
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -238,7 +237,7 @@ public class ComponentService {
         componentDao.remove(component);
     }
 
-    public Component getComponentFromIdOrUuid(String idOrUuid) throws NotFoundException {
+    public Component getComponentFromIdOrUuid(String idOrUuid) {
         Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
         if (componentId.isPresent()) {
             return componentDao.findById(componentId.get());

@@ -54,7 +54,7 @@ public class WorkerService {
         return resultsPerWorker;
     }
 
-    public static String extractWorkerType(String workerType) throws BadRequestException {
+    public String extractWorkerType(String workerType) throws BadRequestException {
         if (workerType == null) return null;
         switch (workerType.toLowerCase()) {
             case "jatos":

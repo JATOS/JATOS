@@ -45,7 +45,6 @@ import static auth.gui.AuthAction.Auth;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static models.common.User.Role.ADMIN;
-import static services.gui.UserService.ADMIN_USERNAME;
 
 /**
  * JATOS API Controller
@@ -82,6 +81,7 @@ public class Api extends Controller {
     private final IOUtils ioUtils;
     private final UserService userService;
     private final ApiTokenService apiTokenService;
+    private final WorkerService workerService;
     private final StrictJsonMapper strictJsonMapper;
 
     @Inject
@@ -92,7 +92,7 @@ public class Api extends Controller {
         StudyLinkService studyLinkService, BatchService batchService, ImportExport importExport, ResultRemover resultRemover,
         ResultStreamer resultStreamer, AuthorizationService authorizationService, JsonUtils jsonUtils,
         StudyLogger studyLogger, IOUtils ioUtils, UserService userService, ApiTokenService apiTokenService,
-        StrictJsonMapper strictJsonMapper) {
+        WorkerService workerService, StrictJsonMapper strictJsonMapper) {
         this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
@@ -116,6 +116,7 @@ public class Api extends Controller {
         this.ioUtils = ioUtils;
         this.userService = userService;
         this.apiTokenService = apiTokenService;
+        this.workerService = workerService;
         this.strictJsonMapper = strictJsonMapper;
     }
 
@@ -431,7 +432,7 @@ public class Api extends Controller {
     public Result importOrCreateStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets)
         throws HttpException, IOException {
-        boolean acceptsMissing = !request.getHeaders().get(Http.HeaderNames.ACCEPT).isPresent();
+        boolean acceptsMissing = request.getHeaders().get(Http.HeaderNames.ACCEPT).isEmpty();
         if (request.accepts("application/zip") || acceptsMissing) {
             return importStudy(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
         }
@@ -897,7 +898,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessBatch(batch, user);
 
         StudyCodeProperties props = new StudyCodeProperties();
-        props.setType(WorkerService.extractWorkerType(type));
+        props.setType(workerService.extractWorkerType(type));
         props.setComment(comment);
         props.setAmount(amount != null ? amount : 1);
         ApiService.validateProps(props);

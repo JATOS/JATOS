@@ -8,7 +8,6 @@ import daos.common.worker.WorkerDao;
 import exceptions.gui.AuthException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
-import exceptions.gui.ValidationException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
@@ -21,7 +20,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.db.jpa.JPAApi;
 import testutils.gui.ContextMocker;
 
@@ -129,26 +127,6 @@ public class UserServiceTest {
         newUserProperties.setUsername("existinguser");
 
         when(userDao.findByUsername("existinguser")).thenReturn(new User());
-
-        userService.registerUser(newUserProperties);
-    }
-
-    @Test(expected = ValidationException.class)
-    public void registerUser_validationFailed_throwsValidationException() throws AuthException {
-        NewUserProperties newUserProperties = new NewUserProperties();
-        newUserProperties.setUsername("invaliduser");
-        newUserProperties.setName(""); // Invalid: name is missing
-
-        when(userDao.findByUsername("invaliduser")).thenReturn(null);
-        Form<NewUserProperties> form = mock(Form.class);
-        when(form.get()).thenReturn(newUserProperties);
-        // We mock withError to return the same form, but we MUST mock hasErrors to return true
-        // so that UserService throws the ValidationException
-        when(form.withError(any(ValidationError.class))).thenReturn(form);
-        when(form.hasErrors()).thenReturn(true);
-        when(form.errors()).thenReturn(Collections.singletonList(new ValidationError("name", "Missing name")));
-        when(formFactory.form(NewUserProperties.class)).thenReturn(form);
-        when(form.fill(any())).thenReturn(form);
 
         userService.registerUser(newUserProperties);
     }

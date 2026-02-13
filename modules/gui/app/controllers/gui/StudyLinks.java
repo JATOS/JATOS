@@ -201,7 +201,6 @@ public class StudyLinks extends Controller {
     @Transactional
     @Auth
     public Result groupSessionData(Long studyId, Long groupResultId) throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = authService.getSignedinUser();
         authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
@@ -241,7 +240,6 @@ public class StudyLinks extends Controller {
     @Auth
     public Result submitEditedGroupSessionData(Http.Request request, Long studyId, Long groupResultId)
             throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         authorizationService.canUserAccessGroupResult(groupResult, signedinUser, true);
@@ -328,7 +326,7 @@ public class StudyLinks extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser, true);
         authorizationService.canUserAccessBatch(batch, signedinUser);
 
-        workerType = WorkerService.extractWorkerType(workerType);
+        workerType = workerService.extractWorkerType(workerType);
         if (allow == null)  return badRequest();
 
         if (allow) {

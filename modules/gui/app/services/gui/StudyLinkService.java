@@ -67,8 +67,6 @@ public class StudyLinkService {
 
     private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, String workerType)
             throws BadRequestException {
-        amount = Math.max(amount, 1);
-
         List<String> studyCodeList = new ArrayList<>();
         while (amount > 0) {
             Worker worker;

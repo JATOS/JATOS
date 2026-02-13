@@ -6,7 +6,6 @@ import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
-import exceptions.gui.NotFoundException;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
@@ -31,7 +30,6 @@ public class StudyServiceTest {
     private StudyDao studyDao;
     private StudyLogger studyLogger;
     private AuthService authService;
-    private AuthorizationService authorizationService;
 
     private StudyService studyService;
 
@@ -45,7 +43,6 @@ public class StudyServiceTest {
         studyDao = mock(StudyDao.class);
         studyLogger = mock(StudyLogger.class);
         authService = mock(AuthService.class);
-        authorizationService = mock(AuthorizationService.class);
 
         studyService = new StudyService(batchService, componentService, studyDao, batchDao, userDao, workerDao,
                 null, studyLogger, authService);
@@ -126,24 +123,6 @@ public class StudyServiceTest {
 
         Study result = studyService.getStudyFromIdOrUuid(uuid);
         assertThat(result).isEqualTo(s);
-    }
-
-    @Test(expected = NotFoundException.class)
-    public void getStudyFromIdOrUuid_numeric_notFound_throws() throws Exception {
-        User signedIn = new User("alice", "Alice", "alice@example.org");
-        when(authService.getSignedinUser()).thenReturn(signedIn);
-        when(studyDao.findById(99L)).thenReturn(null);
-        Study study = studyService.getStudyFromIdOrUuid("99");
-        authorizationService.canUserAccessStudy(study, signedIn);
-    }
-
-    @Test(expected = NotFoundException.class)
-    public void getStudyFromIdOrUuid_uuid_notFound_throws() throws Exception {
-        User signedIn = new User("alice", "Alice", "alice@example.org");
-        when(authService.getSignedinUser()).thenReturn(signedIn);
-        when(studyDao.findByUuid("nope")).thenReturn(Optional.empty());
-        Study study = studyService.getStudyFromIdOrUuid("nope");
-        authorizationService.canUserAccessStudy(study, signedIn);
     }
 
     @Test

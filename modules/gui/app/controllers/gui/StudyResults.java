@@ -204,7 +204,7 @@ public class StudyResults extends Controller {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, signedinUser);
-        workerType = workerType != null ? WorkerService.extractWorkerType(workerType) : null;
+        workerType = workerType != null ? workerService.extractWorkerType(workerType) : null;
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
         return ok().chunked(source).as("text/plain; charset=utf-8");

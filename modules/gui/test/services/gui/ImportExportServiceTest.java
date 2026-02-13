@@ -241,6 +241,7 @@ public class ImportExportServiceTest {
 
     @Test
     public void importStudyConfirmed_overwriteExistingStudy_moveAssets_andUpdateWithoutDirName_whenKeepCurrentAssetsName() throws Exception {
+        ContextMocker.mock();
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
         // put temp dir name into session
@@ -264,7 +265,7 @@ public class ImportExportServiceTest {
         // Assert
         assertThat(returnedStudy.getId()).isEqualTo(10L);
         // permissions checked
-        verify(authorizationService).canUserAccessStudy(eq(current), eq(user), true);
+        verify(authorizationService).canUserAccessStudy(eq(current), eq(user), eq(true));
         // assets handling: remove old and move new with current dir name
         verify(ioUtils).removeStudyAssetsDir("currentDir");
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("currentDir"));
@@ -313,6 +314,7 @@ public class ImportExportServiceTest {
 
     @Test(expected = IOException.class)
     public void importStudyConfirmed_throwsIfNoTempDirInSession() throws Exception {
+        ContextMocker.mock();
         // no session set
         importExportService.importStudyConfirmed(user, false, false, false, true);
     }
