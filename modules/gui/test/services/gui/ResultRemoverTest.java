@@ -46,7 +46,7 @@ public class ResultRemoverTest {
         if (commonStatic != null) commonStatic.close();
     }
 
-    private Checker checker;
+    private AuthorizationService authorizationService;
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
     private WorkerDao workerDao;
@@ -64,7 +64,7 @@ public class ResultRemoverTest {
     @Before
     public void setup() {
         ContextMocker.mock();
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         GroupResultDao groupResultDao = mock(GroupResultDao.class);
@@ -72,7 +72,7 @@ public class ResultRemoverTest {
         studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
 
-        resultRemover = new ResultRemover(checker, componentResultDao, studyResultDao, groupResultDao, workerDao, studyLogger, ioUtils);
+        resultRemover = new ResultRemover(authorizationService, componentResultDao, studyResultDao, groupResultDao, workerDao, studyLogger, ioUtils);
 
         // Minimal model graph used by several tests
         user = newUser();
@@ -181,7 +181,7 @@ public class ResultRemoverTest {
         verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
 
         // permission check invoked
-        verify(checker).canUserAccessComponentResults(anyList(), eq(user), eq(true));
+        verify(authorizationService).canUserAccessComponentResults(anyList(), eq(user), eq(true));
     }
 
     @Test
@@ -208,7 +208,7 @@ public class ResultRemoverTest {
         StudyResult sr = newStudyResult(102L);
         ComponentResult cr1 = newComponentResult(220L, sr);
         when(componentResultDao.findByIds(Collections.singletonList(220L))).thenReturn(Collections.singletonList(cr1));
-        doThrow(new ForbiddenException("no")).when(checker).canUserAccessComponentResults(anyList(), any(User.class), anyBoolean());
+        doThrow(new ForbiddenException("no")).when(authorizationService).canUserAccessComponentResults(anyList(), any(User.class), anyBoolean());
 
         resultRemover.removeComponentResults(Collections.singletonList(220L), user, true);
     }
@@ -240,7 +240,7 @@ public class ResultRemoverTest {
         verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
 
         // permissions checked
-        verify(checker).canUserAccessStudyResults(anyList(), eq(user), eq(true));
+        verify(authorizationService).canUserAccessStudyResults(anyList(), eq(user), eq(true));
     }
 
     @Test

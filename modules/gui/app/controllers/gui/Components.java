@@ -20,8 +20,8 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.AuthorizationService;
 import services.gui.BatchService;
-import services.gui.Checker;
 import services.gui.ComponentService;
 import services.gui.JatosGuiExceptionThrower;
 import utils.common.JsonUtils;
@@ -44,7 +44,7 @@ public class Components extends Controller {
     public static final String EDIT_SAVE = "save";
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final ComponentService componentService;
     private final AuthService authService;
     private final BatchService batchService;
@@ -54,11 +54,11 @@ public class Components extends Controller {
     private final FormFactory formFactory;
 
     @Inject
-    Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, ComponentService componentService,
-            AuthService authService, BatchService batchService, StudyDao studyDao,
-            StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
+    Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthorizationService authorizationService, ComponentService componentService,
+               AuthService authService, BatchService batchService, StudyDao studyDao,
+               StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.componentService = componentService;
         this.authService = authService;
         this.batchService = batchService;
@@ -81,13 +81,13 @@ public class Components extends Controller {
         Batch batch = batchService.fetchBatch(batchId, study);
         Component component = componentDao.findById(componentId);
         try {
-            checker.canUserAccessStudy(study, signedinUser);
-            checker.canUserAccessBatch(batch, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessBatch(batch, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }
         try {
-            checker.canUserAccessComponent(component, signedinUser);
+            authorizationService.canUserAccessComponent(component, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -114,7 +114,7 @@ public class Components extends Controller {
     public Result submitCreated(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -134,8 +134,8 @@ public class Components extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.canUserAccessStudy(study, signedinUser);
-        checker.canUserAccessComponent(component, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         ComponentProperties p = componentService.bindToProperties(component);
         return ok(JsonUtils.asJsonNode(p));
@@ -151,8 +151,8 @@ public class Components extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.canUserAccessStudy(study, signedinUser, true);
-        checker.canUserAccessComponent(component, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -177,8 +177,8 @@ public class Components extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.canUserAccessStudy(study, signedinUser, true);
-        checker.canUserAccessComponent(component, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         Component clone = componentService.cloneWholeComponent(component);
         componentService.createAndPersistComponent(study, clone);
@@ -195,8 +195,8 @@ public class Components extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.canUserAccessStudy(study, signedinUser, true);
-        checker.canUserAccessComponent(component, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         componentService.remove(component, signedinUser);
         RequestScopeMessaging.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);

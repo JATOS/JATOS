@@ -31,7 +31,7 @@ public class StudyServiceTest {
     private StudyDao studyDao;
     private StudyLogger studyLogger;
     private AuthService authService;
-    private Checker checker;
+    private AuthorizationService authorizationService;
 
     private StudyService studyService;
 
@@ -45,7 +45,7 @@ public class StudyServiceTest {
         studyDao = mock(StudyDao.class);
         studyLogger = mock(StudyLogger.class);
         authService = mock(AuthService.class);
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
 
         studyService = new StudyService(batchService, componentService, studyDao, batchDao, userDao, workerDao,
                 null, studyLogger, authService);
@@ -134,7 +134,7 @@ public class StudyServiceTest {
         when(authService.getSignedinUser()).thenReturn(signedIn);
         when(studyDao.findById(99L)).thenReturn(null);
         Study study = studyService.getStudyFromIdOrUuid("99");
-        checker.canUserAccessStudy(study, signedIn);
+        authorizationService.canUserAccessStudy(study, signedIn);
     }
 
     @Test(expected = NotFoundException.class)
@@ -143,7 +143,7 @@ public class StudyServiceTest {
         when(authService.getSignedinUser()).thenReturn(signedIn);
         when(studyDao.findByUuid("nope")).thenReturn(Optional.empty());
         Study study = studyService.getStudyFromIdOrUuid("nope");
-        checker.canUserAccessStudy(study, signedIn);
+        authorizationService.canUserAccessStudy(study, signedIn);
     }
 
     @Test

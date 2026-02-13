@@ -52,6 +52,10 @@ public class StrictJsonMapper extends JsonDeserializer<String> {
                 .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail);
     }
 
+    public ObjectMapper getMapper() {
+        return mapper;
+    }
+
     @Override
     public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         JsonToken t = p.currentToken();
@@ -66,27 +70,11 @@ public class StrictJsonMapper extends JsonDeserializer<String> {
         return null; // unreachable
     }
 
-    public <T extends Validatable<List<ValidationError>>> T fromJson(JsonNode json, Class<T> clazz)
-            throws IOException, BadRequestException {
-        T props =  mapper.treeToValue(json, clazz);
-        List<ValidationError> errors = props.validate();
-        if (errors != null && !errors.isEmpty()) {
-            String msg = "Error in field '" + errors.get(0).key() + "' - " + errors.get(0).message();
-            throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-        }
-        return props;
-    }
-
     public void updateFromJson(Validatable<List<ValidationError>> obj, JsonNode json) throws BadRequestException, IOException {
         try {
             mapper.readerForUpdating(obj).readValue(json);
         } catch (JsonMappingException e) {
             String msg = "Error in field '" + firstFieldName(e).orElse("unknown") + "'";
-            throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-        }
-        List<ValidationError> errors = obj.validate();
-        if (errors != null) {
-            String msg = "Error in field '" + errors.get(0).key() + "' - " + errors.get(0).message();
             throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
         }
     }

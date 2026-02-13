@@ -24,7 +24,7 @@ PATCH    /jatos/api/v1/tokens/:id                                           @con
 DELETE   /jatos/api/v1/tokens/:id                                           @controllers.gui.Api.deleteApiToken(id: Long)
 
 # API study
-GET      /jatos/api/v1/studies/properties                                   @controllers.gui.Api.getAllStudyPropertiesOfSigninUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
+GET      /jatos/api/v1/studies/properties                                   @controllers.gui.Api.getAllStudyPropertiesOfSignedinUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
 # Deprecated: use "POST /jatos/api/v1/studies" instead
 POST     /jatos/api/v1/studies/create                                       @controllers.gui.Api.createStudy(request: Request)
 # Deprecated: use "POST /jatos/api/v1/studies" instead

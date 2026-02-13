@@ -36,7 +36,7 @@ public class StudyLinkServiceTest {
     private WorkerDao workerDao;
     private StudyLinkDao studyLinkDao;
     private StudyService studyService;
-    private Checker checker;
+    private AuthorizationService authorizationService;
 
     private StudyLinkService studyLinkService;
 
@@ -47,7 +47,7 @@ public class StudyLinkServiceTest {
         studyLinkDao = mock(StudyLinkDao.class);
         WorkerService workerService = mock(WorkerService.class);
         studyService = mock(StudyService.class);
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
 
         studyLinkService = new StudyLinkService(batchDao, workerDao, studyLinkDao, workerService);
     }
@@ -82,7 +82,7 @@ public class StudyLinkServiceTest {
 
         verify(studyLinkDao, times(1)).create(any(StudyLink.class));
         verify(batchDao, times(1)).update(eq(batch));
-        verifyNoMoreInteractions(checker); // no batchId -> no checker call
+        verifyNoMoreInteractions(authorizationService); // no batchId -> no checker call
     }
 
     @Test

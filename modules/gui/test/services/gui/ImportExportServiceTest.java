@@ -68,7 +68,7 @@ public class ImportExportServiceTest {
         if (commonStatic != null) commonStatic.close();
     }
 
-    private Checker checker;
+    private AuthorizationService authorizationService;
     private StudyService studyService;
     private ComponentService componentService;
     private JsonUtils jsonUtils;
@@ -83,7 +83,7 @@ public class ImportExportServiceTest {
 
     @Before
     public void setup() {
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
         studyService = mock(StudyService.class);
         BatchService batchService = mock(BatchService.class);
         componentService = mock(ComponentService.class);
@@ -93,7 +93,7 @@ public class ImportExportServiceTest {
         componentDao = mock(ComponentDao.class);
         studyDeserializer = mock(StudyDeserializer.class);
 
-        importExportService = new ImportExportService(checker, studyService, batchService, componentService,
+        importExportService = new ImportExportService(authorizationService, studyService, batchService, componentService,
                 jsonUtils, ioUtils, studyDao, componentDao, studyDeserializer);
 
         user = new User();
@@ -264,7 +264,7 @@ public class ImportExportServiceTest {
         // Assert
         assertThat(returnedStudy.getId()).isEqualTo(10L);
         // permissions checked
-        verify(checker).canUserAccessStudy(eq(current), eq(user), true);
+        verify(authorizationService).canUserAccessStudy(eq(current), eq(user), true);
         // assets handling: remove old and move new with current dir name
         verify(ioUtils).removeStudyAssetsDir("currentDir");
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("currentDir"));
@@ -327,7 +327,7 @@ public class ImportExportServiceTest {
         when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
         when(studyDeserializer.deserialize(temp.jasFile)).thenReturn(uploaded);
         when(studyDao.findByUuid("uuid-3")).thenReturn(Optional.of(current));
-        doThrow(new ForbiddenException("no")).when(checker).canUserAccessStudy(eq(current), eq(user), eq(true));
+        doThrow(new ForbiddenException("no")).when(authorizationService).canUserAccessStudy(eq(current), eq(user), eq(true));
 
         // Act
         importExportService.importStudyConfirmed(user, false, false, true, true);

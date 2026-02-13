@@ -44,7 +44,7 @@ public class ImportExportService {
 
     public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
 
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final StudyService studyService;
     private final BatchService batchService;
     private final ComponentService componentService;
@@ -55,11 +55,11 @@ public class ImportExportService {
     private final StudyDeserializer studyDeserializer;
 
     @Inject
-    ImportExportService(Checker checker,
-            StudyService studyService, BatchService batchService, ComponentService componentService,
-            JsonUtils jsonUtils, IOUtils ioUtils, StudyDao studyDao, ComponentDao componentDao,
-            StudyDeserializer studyDeserializer) {
-        this.checker = checker;
+    ImportExportService(AuthorizationService authorizationService,
+                        StudyService studyService, BatchService batchService, ComponentService componentService,
+                        JsonUtils jsonUtils, IOUtils ioUtils, StudyDao studyDao, ComponentDao componentDao,
+                        StudyDeserializer studyDeserializer) {
+        this.authorizationService = authorizationService;
         this.studyService = studyService;
         this.batchService = batchService;
         this.componentService = componentService;
@@ -197,7 +197,7 @@ public class ImportExportService {
     private void overwriteExistingStudy(User signedinUser, boolean keepProperties, boolean keepAssets,
             boolean keepCurrentAssetsName, File tempUnzippedStudyDir, Study uploadedStudy, Study currentStudy)
             throws IOException, ForbiddenException, NotFoundException {
-        checker.canUserAccessStudy(currentStudy, signedinUser, true);
+        authorizationService.canUserAccessStudy(currentStudy, signedinUser, true);
 
         if (!keepAssets) {
             String dirName = keepCurrentAssetsName ? currentStudy.getDirName() : uploadedStudy.getDirName();

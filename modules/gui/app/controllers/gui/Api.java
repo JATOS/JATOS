@@ -8,7 +8,6 @@ import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import daos.common.*;
 import exceptions.gui.*;
 import general.common.Common;
@@ -19,8 +18,6 @@ import models.common.*;
 import models.gui.*;
 import models.gui.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
@@ -47,8 +44,6 @@ import java.util.*;
 import static auth.gui.AuthAction.Auth;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static models.common.User.AuthMethod.DB;
-import static models.common.User.AuthMethod.LDAP;
 import static models.common.User.Role.ADMIN;
 import static services.gui.UserService.ADMIN_USERNAME;
 
@@ -81,7 +76,7 @@ public class Api extends Controller {
     private final ImportExport importExport;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final JsonUtils jsonUtils;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
@@ -95,7 +90,7 @@ public class Api extends Controller {
         StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
         BatchDao batchDao, StudyLinkDao studyLinkDao, StudyService studyService, ComponentService componentService,
         StudyLinkService studyLinkService, BatchService batchService, ImportExport importExport, ResultRemover resultRemover,
-        ResultStreamer resultStreamer, Checker checker, JsonUtils jsonUtils,
+        ResultStreamer resultStreamer, AuthorizationService authorizationService, JsonUtils jsonUtils,
         StudyLogger studyLogger, IOUtils ioUtils, UserService userService, ApiTokenService apiTokenService,
         StrictJsonMapper strictJsonMapper) {
         this.admin = admin;
@@ -115,7 +110,7 @@ public class Api extends Controller {
         this.importExport = importExport;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.jsonUtils = jsonUtils;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
@@ -192,10 +187,8 @@ public class Api extends Controller {
     @Auth
     public Result getUser(Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
-        if (user == null) throw new NotFoundException("User not found");
-
         User signedinUser = authService.getSignedinUser();
-        checker.checkAdminOrSelf(signedinUser, user);
+        authorizationService.checkAdminOrSelf(signedinUser, user);
 
         JsonNode userNode = jsonUtils.asJsonForApi(user);
         return ok(ApiEnvelope.wrap(userNode).asJsonNode());
@@ -205,12 +198,10 @@ public class Api extends Controller {
     @Auth(ADMIN)
     @BodyParser.Of(BodyParser.Json.class)
     public Result createUser(Http.Request request) throws HttpException, IOException, AuthException {
-        JsonNode node = request.body().asJson();
-        NewUserProperties props = strictJsonMapper.fromJson(node, NewUserProperties.class);
-
-        if (!Arrays.asList(DB, LDAP).contains(props.getAuthMethod())) {
-            throw new ForbiddenException("Invalid authentication method for new user", ErrorCode.INVALID_AUTH_METHOD);
-        }
+        JsonNode json = request.body().asJson();
+        NewUserProperties props = strictJsonMapper.getMapper().treeToValue(json, NewUserProperties.class);
+        ApiService.validateProps(props);
+        authorizationService.checkAuthMethodIsDbOrLdap(props);
 
         User user = userService.registerUser(props);
         JsonNode userJson = jsonUtils.asJsonForApi(user);
@@ -222,39 +213,16 @@ public class Api extends Controller {
     @BodyParser.Of(BodyParser.Json.class)
     public Result updateUser(Http.Request request, Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
-        if (user == null) throw new NotFoundException("User not found");
-
-        if (!user.isDb() && !user.isLdap()) {
-            throw new ForbiddenException("Only DB and LDAP users can be updated");
-        }
-
         User signedinUser = authService.getSignedinUser();
-        checker.checkAdminOrSelf(signedinUser, user);
+        authorizationService.checkAuthMethodIsDbOrLdap(user);
+        authorizationService.checkAdminOrSelf(signedinUser, user);
 
         UserProperties props = userService.bindToProperties(user);
         JsonNode json = request.body().asJson();
         strictJsonMapper.updateFromJson(props, json);
+        ApiService.validateProps(props);
 
-        final boolean isPropsAdminUser = ADMIN_USERNAME.equals(props.getUsername());
-        final boolean isSignedinAdminUser = ADMIN_USERNAME.equals(signedinUser.getUsername());
-        final boolean passwordChangeRequested = props.getPassword() != null;
-
-        // Only user 'admin' is allowed to change their password
-        if (passwordChangeRequested && isPropsAdminUser && !isSignedinAdminUser) {
-            throw new ForbiddenException("Only user 'admin' can change their own password");
-        }
-        // User 'admin' cannot be deactivated
-        if (!props.isActive() && isPropsAdminUser) {
-            throw new ForbiddenException("User 'admin' cannot be deactivated");
-        }
-        // A user cannot deactivate themselves
-        if (!props.isActive() && signedinUser.equals(user)) {
-            throw new ForbiddenException("A user cannot deactivate themselves");
-        }
-        // LDAP users cannot change their password
-        if (passwordChangeRequested && user.isLdap()) {
-            throw new ForbiddenException("LDAP user's password cannot be changed");
-        }
+        authorizationService.checkSignedinUserAllowedToChangeUser(props, signedinUser, user);
 
         userService.updateUser(user, props);
 
@@ -266,21 +234,17 @@ public class Api extends Controller {
     @Auth
     public Result deleteUser(Long id) throws IOException, HttpException {
         User user = userDao.findById(id);
-        if (user == null) throw new NotFoundException("User not found");
-
         User signedinUser = authService.getSignedinUser();
-        checker.checkAdminOrSelf(signedinUser, user);
-
-        if (user.getUsername().equals(ADMIN_USERNAME)) {
-            throw new ForbiddenException("User 'admin' cannot be deleted");
-        }
+        authorizationService.checkAdminOrSelf(signedinUser, user);
+        authorizationService.checkNotUserAdmin(user);
 
         userService.removeUser(user);
 
         ObjectNode response = Json.mapper().createObjectNode()
-                .put("message", "User deleted successfully");
+            .put("message", "User deleted successfully");
         return ok(ApiEnvelope.wrap(response).asJsonNode());
     }
+
 
     /**
      * Generate API tokens. It returns the token and the token metadata.
@@ -292,22 +256,13 @@ public class Api extends Controller {
         if (!Common.isJatosApiTokensApiGenerationAllowed()) {
             throw new ForbiddenException("API token generation is not allowed", ErrorCode.CONFIG_ERROR);
         }
+
         User user = userDao.findById(userId);
-        if (user == null) throw new NotFoundException("User not found");
-
         User signedinUser = authService.getSignedinUser();
-
-        // Admins can generate tokens for normal users.
-        // Users (including admins) can generate tokens for themselves.
-        boolean isUser = signedinUser.equals(user);
-        boolean isAdminGeneratingNonAdminToken = signedinUser.isAdmin() && !user.isAdmin();
-        if (!(isUser || isAdminGeneratingNonAdminToken)) {
-            throw new ForbiddenException("You are not allowed to generate tokens for this user");
-        }
+        authorizationService.checkSignedinUserAllowedToAccessUser(user, signedinUser);
 
         JsonNode json = request.body().asJson();
-        if (json.get("name") == null) throw new BadRequestException("Missing name", ErrorCode.VALIDATION_ERROR);
-        String name = json.get("name").asText();
+        String name = ApiService.getFieldFromJson(json, "name", String.class);
 
         int expires = (int) Common.getJatosApiTokensApiGenerationExpiresAfter().getSeconds();
 
@@ -327,10 +282,8 @@ public class Api extends Controller {
     @Auth
     public Result allApiTokenMetadataByUser(Long userId) throws HttpException {
         User user = userDao.findById(userId);
-        if (user == null) throw new NotFoundException("User not found");
-
         User signedinUser = authService.getSignedinUser();
-        checker.checkAdminOrSelf(signedinUser, user);
+        authorizationService.checkAdminOrSelf(signedinUser, user);
 
         ArrayNode tokens = Json.mapper().createArrayNode();
         apiTokenDao.findByUser(user).forEach(token -> tokens.add(JsonUtils.asJsonNode(token)));
@@ -344,38 +297,26 @@ public class Api extends Controller {
     @Auth
     public Result apiTokenMetadata(Long id) throws HttpException {
         ApiToken apiToken = apiTokenDao.find(id);
-        if (apiToken == null) throw new NotFoundException("Token doesn't exist");
-
         User signedinUser = authService.getSignedinUser();
-        checker.checkAdminOrSelf(signedinUser, apiToken.getUser());
+        authorizationService.checkAdminOrSelf(signedinUser, apiToken.getUser());
 
         return ok(ApiEnvelope.wrap(apiToken).asJsonNode());
     }
 
     /**
-     * Activate or deactivate a token specified by its ID.
+     * Activate or deactivate a token specified by its ID. Admins can update tokens of non-admin users. Users (including
+     * admins) can update their own tokens.
      */
     @Transactional
     @Auth
     @BodyParser.Of(BodyParser.Json.class)
     public Result toggleApiTokenActive(Http.Request request, Long id) throws HttpException {
         ApiToken token = apiTokenDao.find(id);
-        if (token == null) throw new NotFoundException("Token doesn't exist");
+        User signedinUser = authService.getSignedinUser();
+        authorizationService.checkUserAllowedToAccessApiToken(token, signedinUser);
 
         JsonNode json = request.body().asJson();
-        if (json.get("active") == null) throw new BadRequestException("Missing active flag", ErrorCode.INVALID_REQUEST);
-        boolean active = json.get("active").asBoolean();
-
-        User signedinUser = authService.getSignedinUser();
-
-        // Admins can toggle all normal tokens
-        // Users (including admins) can toggle their own tokens
-        boolean isOwner = signedinUser.equals(token.getUser());
-        boolean isAdminTogglingNonAdminToken = signedinUser.isAdmin() && !token.isAdminToken();
-        if (!(isOwner || isAdminTogglingNonAdminToken)) {
-            return forbidden("You are not allowed to activate/deactivate this token");
-        }
-
+        boolean active = ApiService.getActiveFlagFromJson(json);
         token.setActive(active);
         apiTokenDao.update(token);
 
@@ -386,21 +327,15 @@ public class Api extends Controller {
         return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
     }
 
+    /**
+     * Admins can delete tokens of non-admin users. Users (including admins) can delete their own tokens.
+     */
     @Transactional
     @Auth
-    public Result deleteApiToken(Long id) throws NotFoundException {
+    public Result deleteApiToken(Long id) throws NotFoundException, ForbiddenException {
         ApiToken token = apiTokenDao.find(id);
-        if (token == null) throw new NotFoundException("Token doesn't exist");
-
         User signedinUser = authService.getSignedinUser();
-
-        // Admins can delete tokens of normal users.
-        // Users (including admins) can delete their own tokens.
-        boolean isUser = signedinUser.equals(token.getUser());
-        boolean isAdminDeletingNonAdminToken = signedinUser.isAdmin() && !token.isAdminToken();
-        if (!(isUser || isAdminDeletingNonAdminToken)) {
-            return forbidden("You are not allowed to delete this tokens");
-        }
+        authorizationService.checkUserAllowedToAccessApiToken(token, signedinUser);
 
         apiTokenDao.remove(token);
 
@@ -429,8 +364,8 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result getAllStudyPropertiesOfSigninUser(Boolean withComponentProperties, Boolean withBatchProperties)
-            throws IOException {
+    public Result getAllStudyPropertiesOfSignedinUser(Boolean withComponentProperties, Boolean withBatchProperties)
+        throws IOException {
         User signedinUser = authService.getSignedinUser();
         List<Study> studies = studyDao.findAllByUser(signedinUser);
 
@@ -447,8 +382,9 @@ public class Api extends Controller {
     public Result createStudy(Http.Request request) throws IOException, BadRequestException {
         User signedinUser = authService.getSignedinUser();
 
-        JsonNode node = request.body().asJson();
-        StudyProperties props = strictJsonMapper.fromJson(node, StudyProperties.class);
+        JsonNode json = request.body().asJson();
+        StudyProperties props = strictJsonMapper.getMapper().treeToValue(json, StudyProperties.class);
+        ApiService.validateProps(props);
 
         Study study = studyService.createAndPersistStudy(signedinUser, props);
         ioUtils.createStudyAssetsDir(study.getUuid());
@@ -494,7 +430,7 @@ public class Api extends Controller {
     @Auth
     public Result importOrCreateStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets)
-            throws HttpException, IOException {
+        throws HttpException, IOException {
         boolean acceptsMissing = !request.getHeaders().get(Http.HeaderNames.ACCEPT).isPresent();
         if (request.accepts("application/zip") || acceptsMissing) {
             return importStudy(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
@@ -525,37 +461,36 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result getStudyProperties(String id, Boolean withComponentProperties, Boolean withBatchProperties)
-            throws IOException, HttpException {
+        throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(ApiEnvelope.wrap(studiesNode).asJsonNode());
     }
 
+    /**
+     * Update study properties. A user can update its own studies. A superuser can update all studies. An admin can
+     * activate/deactivate any study.
+     */
     @Transactional
     @Auth
     @BodyParser.Of(BodyParser.Json.class)
     public Result updateStudyProperties(Http.Request request, String id) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
         Study study = studyService.getStudyFromIdOrUuid(id);
-        if (study == null) throw new NotFoundException("Study doesn't exist");
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         boolean isMemberOrSuperuser = study.hasUser(signedinUser) || Helpers.isAllowedSuperuser(signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
-        if (!isMemberOrSuperuser && !isAdminNonMember) return forbidden("You are not allowed to update this study");
 
         JsonNode json = request.body().asJson();
 
         // Admins who are not members: only allow toggling "active"
         if (isAdminNonMember) {
-            JsonNode activeNode = json.get("active");
-            if (activeNode == null) throw new BadRequestException("Missing active flag", ErrorCode.INVALID_REQUEST);
-            if (!activeNode.isBoolean())
-                throw new BadRequestException("Active flag must be boolean", ErrorCode.INVALID_REQUEST);
-
-            study.setActive(activeNode.asBoolean());
+            boolean active = ApiService.getActiveFlagFromJson(json);
+            study.setActive(active);
             studyDao.update(study);
 
             ObjectNode responseJson = Json.mapper().createObjectNode();
@@ -565,10 +500,11 @@ public class Api extends Controller {
             return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
         }
 
-        checker.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         StudyProperties props = studyService.bindToProperties(study);
         strictJsonMapper.updateFromJson(props, json);
+        ApiService.validateProps(props);
 
         studyService.renameStudyAssetsDir(study, props.getDirName());
         studyService.updateStudy(study, props, signedinUser);
@@ -582,7 +518,7 @@ public class Api extends Controller {
     public Result deleteStudy(String id) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user, true);
+        authorizationService.canUserAccessStudy(study, user, true);
 
         studyService.removeStudyInclAssets(study, user);
         return ok(ApiEnvelope.wrap("Study deleted successfully").asJsonNode());
@@ -602,7 +538,7 @@ public class Api extends Controller {
     public Result getStudyAssetsStructure(String id, boolean flatten) throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user);
+        authorizationService.canUserAccessStudy(study, user);
 
         File base;
         try {
@@ -629,7 +565,7 @@ public class Api extends Controller {
 
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user);
+        authorizationService.canUserAccessStudy(study, user);
 
         File file;
         try {
@@ -657,10 +593,11 @@ public class Api extends Controller {
     public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user, true);
+        authorizationService.canUserAccessStudy(study, user, true);
 
-        if (request.body().asMultipartFormData() == null)
+        if (request.body().asMultipartFormData() == null) {
             throw new BadRequestException("File missing", ErrorCode.NOT_FOUND);
+        }
         Http.MultipartFormData.FilePart<Object> filePart = request.body().asMultipartFormData().getFile("studyAssetsFile");
         if (filePart == null) throw new BadRequestException("File missing", ErrorCode.NOT_FOUND);
         File uploadedFile = (File) filePart.getFile();
@@ -691,7 +628,7 @@ public class Api extends Controller {
 
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user, true);
+        authorizationService.canUserAccessStudy(study, user, true);
 
         try {
             File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
@@ -714,7 +651,7 @@ public class Api extends Controller {
     public Result allMembersOfStudy(String id) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         List<Long> userIds = studyDao.findAllMembersByStudyId(study.getId());
 
@@ -740,10 +677,10 @@ public class Api extends Controller {
     public Result changeMemberOfStudy(String id, Long userId, boolean isMember) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         User user = userDao.findById(userId);
-        if (user == null) throw new NotFoundException("User doesn't exist");
+        authorizationService.checkUserExists(user);
 
         studyService.changeUserMember(study, user, isMember);
 
@@ -768,7 +705,7 @@ public class Api extends Controller {
     public Result studyLog(String id, int entryLimit, boolean download) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         if (download) {
             Path studyLogPath = Paths.get(studyLogger.getPath(study));
@@ -778,8 +715,8 @@ public class Api extends Controller {
             Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_studylog_" + studyLogger.getFilename(study));
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/jsonline");
         }
@@ -794,10 +731,11 @@ public class Api extends Controller {
     public Result createComponent(Http.Request request, String studyId) throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user, true);
+        authorizationService.canUserAccessStudy(study, user, true);
 
-        JsonNode node = request.body().asJson();
-        ComponentProperties props = strictJsonMapper.fromJson(node, ComponentProperties.class);
+        JsonNode json = request.body().asJson();
+        ComponentProperties props = strictJsonMapper.getMapper().treeToValue(json, ComponentProperties.class);
+        ApiService.validateProps(props);
 
         Component component = componentService.createAndPersistComponent(study, props);
 
@@ -807,10 +745,10 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    public Result getComponentsByStudy(String studyId) throws HttpException, IOException {
-        Study study = studyService.getStudyFromIdOrUuid(studyId);
+    public Result getComponentsByStudy(String studyIdOrUuid) throws HttpException, IOException {
+        Study study = studyService.getStudyFromIdOrUuid(studyIdOrUuid);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user);
+        authorizationService.canUserAccessStudy(study, user);
 
         List<Component> components = study.getComponentList();
 
@@ -823,7 +761,7 @@ public class Api extends Controller {
     public Result getComponent(String id) throws HttpException, IOException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessComponent(component, user);
+        authorizationService.canUserAccessComponent(component, user);
 
         JsonNode componentNode = jsonUtils.asJsonForApi(component);
         return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
@@ -835,11 +773,12 @@ public class Api extends Controller {
     public Result updateComponent(Http.Request request, String id) throws HttpException, IOException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessComponent(component, user, true);
+        authorizationService.canUserAccessComponent(component, user, true);
 
         ComponentProperties props = componentService.bindToProperties(component);
         JsonNode json = request.body().asJson();
         strictJsonMapper.updateFromJson(props, json);
+        ApiService.validateProps(props);
 
         componentService.renameHtmlFilePath(component, props.getHtmlFilePath(), props.isHtmlFileRename());
         componentService.updateComponentAfterEdit(component, props);
@@ -853,7 +792,7 @@ public class Api extends Controller {
     public Result deleteComponent(String id) throws HttpException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessComponent(component, user, true);
+        authorizationService.canUserAccessComponent(component, user, true);
 
         componentService.remove(component, user);
         return ok(ApiEnvelope.wrap("Component deleted successfully").asJsonNode());
@@ -864,7 +803,7 @@ public class Api extends Controller {
     public Result getBatchesByStudy(String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user);
+        authorizationService.canUserAccessStudy(study, user);
 
         List<Batch> batches = study.getBatchList();
 
@@ -877,7 +816,7 @@ public class Api extends Controller {
     public Result getBatch(String id) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessBatch(batch, user);
+        authorizationService.canUserAccessBatch(batch, user);
 
         JsonNode batchNode = jsonUtils.asJsonForApi(batch);
         return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
@@ -889,10 +828,11 @@ public class Api extends Controller {
     public Result createBatch(Http.Request request, String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user, true);
+        authorizationService.canUserAccessStudy(study, user, true);
 
-        JsonNode node = request.body().asJson();
-        BatchProperties props = strictJsonMapper.fromJson(node, BatchProperties.class);
+        JsonNode json = request.body().asJson();
+        BatchProperties props = strictJsonMapper.getMapper().treeToValue(json, BatchProperties.class);
+        ApiService.validateProps(props);
 
         Batch batch = batchService.bindToBatch(props);
         batchService.createAndPersistBatch(batch, study, user);
@@ -907,11 +847,12 @@ public class Api extends Controller {
     public Result updateBatch(Http.Request request, String id) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessBatch(batch, user, true);
+        authorizationService.canUserAccessBatch(batch, user, true);
 
         BatchProperties props = batchService.bindToProperties(batch);
         JsonNode json = request.body().asJson();
         strictJsonMapper.updateFromJson(props, json);
+        ApiService.validateProps(props);
 
         batchDao.update(batch);
 
@@ -924,12 +865,12 @@ public class Api extends Controller {
     public Result deleteBatch(String id) throws HttpException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
-        checker.canUserAccessBatch(batch, user, true);
+        authorizationService.canUserAccessBatch(batch, user, true);
 
         batchService.remove(batch, user);
 
         ObjectNode response = Json.mapper().createObjectNode()
-                .put("message", "Batch deleted successfully");
+            .put("message", "Batch deleted successfully");
         return ok(ApiEnvelope.wrap(response).asJsonNode());
     }
 
@@ -947,34 +888,21 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result getOrGenerateStudyCodes(String studyId, Option<Long> batchId, String type, String comment, Integer amount)
-            throws HttpException {
+        throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, user);
+        authorizationService.canUserAccessStudy(study, user);
 
-        Batch batch;
-        if (batchId.nonEmpty()) {
-            batch = batchDao.findById(batchId.get());
-            checker.canUserAccessBatch(batch, user);
-        } else {
-            batch = study.getDefaultBatch();
-        }
+        Batch batch = batchService.getBatchOrDefaultBatch(batchId, study);
+        authorizationService.canUserAccessBatch(batch, user);
 
-        String workerType = WorkerService.extractWorkerType(type);
-        if (workerType == null) {
-            throw new BadRequestException("Invalid type", ErrorCode.VALIDATION_ERROR);
-        }
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(WorkerService.extractWorkerType(type));
+        props.setComment(comment);
+        props.setAmount(amount != null ? amount : 1);
+        ApiService.validateProps(props);
 
-        comment = Strings.isNullOrEmpty(comment) ? "" : Helpers.urlDecode(comment);
-        if (comment.length() > 255) throw new BadRequestException("Comment too long", ErrorCode.VALIDATION_ERROR);
-        if (!Jsoup.isValid(comment, Safelist.none())) {
-            throw new BadRequestException("No HTML allowed", ErrorCode.VALIDATION_ERROR);
-        }
-
-        if (amount == null || amount <= 0) amount = 1;
-        if (amount > 1000) throw new BadRequestException("Amount must be <= 1000", ErrorCode.VALIDATION_ERROR);
-
-        JsonNode studyCodesNode = studyLinkService.getStudyCodes(batch, workerType, comment, amount);
+        JsonNode studyCodesNode = studyLinkService.getStudyCodes(batch, props);
         return ok(ApiEnvelope.wrap(studyCodesNode).asJsonNode());
     }
 
@@ -985,12 +913,12 @@ public class Api extends Controller {
     @Auth
     public Result getOrGenerateStudyCodesFromJsonBody(Http.Request request, String studyId) throws HttpException {
         JsonNode json = request.body().asJson();
-        String comment = json.get("comment") != null ? json.get("comment").asText() : null;
-        int amount = json.get("amount") != null ? json.get("amount").asInt() : 1;
-        String type = json.get("type") != null ? json.get("type").asText() : null;
-        Option<Long> batchId = json.get("batchId") != null ? Option.apply(json.get("batchId").asLong()) : Option.empty();
-
-        return getOrGenerateStudyCodes(studyId, batchId, type, comment, amount);
+        String comment = ApiService.getFieldFromJson(json, "comment", String.class, null);
+        int amount = ApiService.getFieldFromJson(json, "amount", Integer.class, 1);
+        String type = ApiService.getFieldFromJson(json, "type", String.class, null);
+        Long batchId = ApiService.getFieldFromJson(json, "batchId", Long.class, null);
+        Option<Long> batchIdOption = batchId != null ? Option.apply(batchId) : Option.empty();
+        return getOrGenerateStudyCodes(studyId, batchIdOption, type, comment, amount);
     }
 
     @Transactional
@@ -998,7 +926,7 @@ public class Api extends Controller {
     public Result getStudyCode(String code) throws HttpException {
         StudyLink studyLink = studyLinkDao.findByStudyCode(code);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudyLink(studyLink, user);
+        authorizationService.canUserAccessStudyLink(studyLink, user);
 
         JsonNode linkNode = jsonUtils.getStudyLinkData(studyLink);
         return ok(ApiEnvelope.wrap(linkNode).asJsonNode());
@@ -1010,12 +938,10 @@ public class Api extends Controller {
     public Result toggleStudyCodeActive(Http.Request request, String code) throws HttpException {
         StudyLink studyLink = studyLinkDao.findByStudyCode(code);
         User user = authService.getSignedinUser();
-        checker.canUserAccessStudyLink(studyLink, user);
+        authorizationService.canUserAccessStudyLink(studyLink, user);
 
         JsonNode json = request.body().asJson();
-        if (json.get("active") == null) throw new BadRequestException("Missing active flag", ErrorCode.INVALID_REQUEST);
-        boolean active = json.get("active").asBoolean();
-
+        boolean active = ApiService.getActiveFlagFromJson(json);
         studyLink.setActive(active);
         studyLinkDao.update(studyLink);
 
@@ -1034,17 +960,17 @@ public class Api extends Controller {
     @Auth
     public Result exportResults(Http.Request request, Boolean isApiCall) throws BadRequestException {
         Map<String, Object> wrapperObject = isApiCall
-                ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
-                : Collections.emptyMap();
+            ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
+            : Collections.emptyMap();
 
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.COMBINED,
-                wrapperObject);
+            wrapperObject);
 
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + "." + Common.getResultsArchiveSuffix());
+            + Helpers.getDateTimeYyyyMMddHHmmss() + "." + Common.getResultsArchiveSuffix());
         return ok().chunked(dataSource).as("application/zip")
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+            .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
     /**
@@ -1058,20 +984,20 @@ public class Api extends Controller {
     @Auth
     public Result exportResultMetadata(Http.Request request, Boolean isApiCall) throws HttpException, IOException {
         Map<String, Object> wrapperObject = isApiCall
-                ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
-                : Collections.emptyMap();
+            ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
+            : Collections.emptyMap();
 
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         File file = resultStreamer.writeResultMetadata(request, wrapperObject);
 
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
+            + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
         //noinspection ResultOfMethodCallIgnored
         return ok().streamed(
-                        Helpers.okFileStreamed(file, file::delete),
-                        Optional.of(file.length()),
-                        Optional.of("application/json"))
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                Helpers.okFileStreamed(file, file::delete),
+                Optional.of(file.length()),
+                Optional.of("application/json"))
+            .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
     /**
@@ -1090,19 +1016,19 @@ public class Api extends Controller {
         if (asPlainText) {
             Source<ByteString, ?> dataSource = resultStreamer.streamComponentResultData(request);
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
-                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
             return ok().chunked(dataSource).as("application/octet-stream")
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         } else {
             Map<String, Object> wrapperObject = isApiCall
-                    ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
-                    : Collections.emptyMap();
+                ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
+                : Collections.emptyMap();
             Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.DATA_ONLY,
-                    wrapperObject);
+                wrapperObject);
             String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
-                    + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
             return ok().chunked(dataSource).as("application/zip")
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         }
     }
 
@@ -1117,9 +1043,9 @@ public class Api extends Controller {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
+            + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
         return ok().chunked(dataSource).as("application/zip")
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+            .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
     }
 
     /**
@@ -1133,7 +1059,7 @@ public class Api extends Controller {
     public Result exportSingleResultFile(Long componentResultId, String filename) throws HttpException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessComponentResult(componentResult, signedinUser, false);
+        authorizationService.canUserAccessComponentResult(componentResult, signedinUser, false);
 
         File file;
         try {

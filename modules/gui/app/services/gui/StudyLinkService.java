@@ -10,6 +10,7 @@ import exceptions.gui.NotFoundException;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.*;
+import models.gui.StudyCodeProperties;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -40,16 +41,16 @@ public class StudyLinkService {
         this.workerService = workerService;
     }
 
-    public JsonNode getStudyCodes(Batch batch, String workerType, String comment, Integer amount)
+    public JsonNode getStudyCodes(Batch batch, StudyCodeProperties props)
             throws ForbiddenException, NotFoundException, BadRequestException {
-        switch (workerType) {
+        switch (props.getType()) {
             case PersonalSingleWorker.WORKER_TYPE:
             case PersonalMultipleWorker.WORKER_TYPE:
-                return getPersonalRun(batch, workerType, comment, amount);
+                return getPersonalRun(batch, props.getType(), props.getComment(), props.getAmount());
             case GeneralSingleWorker.WORKER_TYPE:
             case GeneralMultipleWorker.WORKER_TYPE:
             case MTWorker.WORKER_TYPE:
-                return getGeneralRun(batch, workerType);
+                return getGeneralRun(batch, props.getType());
             default:
                 throw new BadRequestException("Unknown type");
         }

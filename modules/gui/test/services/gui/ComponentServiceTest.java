@@ -55,7 +55,7 @@ public class ComponentServiceTest {
     private ComponentDao componentDao;
     private IOUtils ioUtils;
     private AuthService authService;
-    private Checker checker;
+    private AuthorizationService authorizationService;
 
     private ComponentService componentService;
 
@@ -66,7 +66,7 @@ public class ComponentServiceTest {
         componentDao = Mockito.mock(ComponentDao.class);
         ioUtils = Mockito.mock(IOUtils.class);
         authService = Mockito.mock(AuthService.class);
-        checker = Mockito.mock(Checker.class);
+        authorizationService = Mockito.mock(AuthorizationService.class);
 
         componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils);
     }
@@ -327,7 +327,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(res).isEqualTo(c);
-        verify(checker).canUserAccessComponent(c, signed);
+        verify(authorizationService).canUserAccessComponent(c, signed);
     }
 
     @Test
@@ -344,7 +344,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(res).isEqualTo(c);
-        verify(checker).canUserAccessComponent(c, signed);
+        verify(authorizationService).canUserAccessComponent(c, signed);
     }
 
     @Test(expected = NotFoundException.class)

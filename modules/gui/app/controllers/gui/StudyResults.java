@@ -42,7 +42,7 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
 public class StudyResults extends Controller {
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
@@ -56,12 +56,12 @@ public class StudyResults extends Controller {
     private final JsonUtils jsonUtils;
 
     @Inject
-    StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, AuthService authService,
-            BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
-            ResultStreamer resultStreamer, WorkerService workerService, StudyDao studyDao, BatchDao batchDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao, WorkerDao workerDao, JsonUtils jsonUtils) {
+    StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthorizationService authorizationService, AuthService authService,
+                 BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
+                 ResultStreamer resultStreamer, WorkerService workerService, StudyDao studyDao, BatchDao batchDao,
+                 StudyResultDao studyResultDao, GroupResultDao groupResultDao, WorkerDao workerDao, JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
@@ -85,7 +85,7 @@ public class StudyResults extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         try {
-            checker.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -106,8 +106,8 @@ public class StudyResults extends Controller {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         try {
-            checker.canUserAccessStudy(study, signedinUser);
-            checker.canUserAccessBatch(batch, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessBatch(batch, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -130,8 +130,8 @@ public class StudyResults extends Controller {
         GroupResult groupResult = groupResultDao.findById(groupId);
         User signedinUser = authService.getSignedinUser();
         try {
-            checker.canUserAccessStudy(study, signedinUser);
-            checker.canUserAccessGroupResult(groupResult, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -153,7 +153,7 @@ public class StudyResults extends Controller {
         User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
         try {
-            checker.canUserAccessWorker(signedinUser, worker);
+            authorizationService.canUserAccessWorker(signedinUser, worker);
         } catch (NotFoundException | ForbiddenException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }
@@ -188,7 +188,7 @@ public class StudyResults extends Controller {
     public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByStudy(study);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -203,7 +203,7 @@ public class StudyResults extends Controller {
     public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessBatch(batch, signedinUser);
+        authorizationService.canUserAccessBatch(batch, signedinUser);
         workerType = workerType != null ? WorkerService.extractWorkerType(workerType) : null;
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
@@ -218,7 +218,7 @@ public class StudyResults extends Controller {
     public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessGroupResult(groupResult, signedinUser);
+        authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByGroup(groupResult);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -248,7 +248,7 @@ public class StudyResults extends Controller {
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.canUserAccessStudyResult(studyResult, signedinUser, false);
+        authorizationService.canUserAccessStudyResult(studyResult, signedinUser, false);
 
         return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
     }

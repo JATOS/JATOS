@@ -54,7 +54,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     private BatchDao batchDao;
 
     @Inject
-    private Checker checker;
+    private AuthorizationService authorizationService;
 
     /**
      * StudyService.clone(): clones a study but does not persist. This includes
@@ -561,7 +561,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {
             try {
                 Study study = studyService.getStudyFromIdOrUuid("999999");
-                checker.canUserAccessStudy(study, admin);
+                authorizationService.canUserAccessStudy(study, admin);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected
@@ -573,7 +573,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {
             try {
                 Study study = studyService.getStudyFromIdOrUuid(randomUuid);
-                checker.canUserAccessStudy(study, admin);
+                authorizationService.canUserAccessStudy(study, admin);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected
