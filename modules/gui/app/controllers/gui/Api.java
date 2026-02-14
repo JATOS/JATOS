@@ -39,7 +39,10 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static auth.gui.AuthAction.Auth;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
@@ -876,7 +879,8 @@ public class Api extends Controller {
     }
 
     /**
-     * Get or generate study codes for the given study, batch and worker type
+     * Get or generate study codes for the given study, batch, and worker type. Either get the properties from the
+     * query parameters or the JSON body.
      *
      * @param studyId Study's ID or UUID
      * @param batchId Optional specify the batch ID to which the study codes should belong to. If it is not specified,
@@ -888,8 +892,23 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result getOrGenerateStudyCodes(String studyId, Option<Long> batchId, String type, String comment, Integer amount)
-        throws HttpException {
+    public Result getOrGenerateStudyCodes(Http.Request request, String studyId, Option<Long> batchIdOption, String type,
+                                          String comment, Option<Integer> amountOption) throws HttpException {
+        // Get props either from query parameters or JSON body
+        JsonNode json = request.body().asJson();
+        Long batchId = batchIdOption.nonEmpty()
+                ? batchIdOption.get()
+                : ApiService.getFieldFromJson(json, "batchId", Long.class, null);
+        type = type != null
+                ? type
+                : ApiService.getFieldFromJson(json, "type", String.class, null);
+        comment = comment != null
+                ? comment
+                : ApiService.getFieldFromJson(json, "comment", String.class, null);
+        int amount = amountOption.nonEmpty()
+                ? amountOption.get()
+                : ApiService.getFieldFromJson(json, "amount", Integer.class, 1);
+
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
@@ -900,26 +919,11 @@ public class Api extends Controller {
         StudyCodeProperties props = new StudyCodeProperties();
         props.setType(workerService.extractWorkerType(type));
         props.setComment(comment);
-        props.setAmount(amount != null ? amount : 1);
+        props.setAmount(amount);
         ApiService.validateProps(props);
 
         JsonNode studyCodesNode = studyLinkService.getStudyCodes(batch, props);
         return ok(ApiEnvelope.wrap(studyCodesNode).asJsonNode());
-    }
-
-    /**
-     * Same as getOrGenerateStudyCodes but expects the parameter in a JSON body
-     */
-    @Transactional
-    @Auth
-    public Result getOrGenerateStudyCodesFromJsonBody(Http.Request request, String studyId) throws HttpException {
-        JsonNode json = request.body().asJson();
-        String comment = ApiService.getFieldFromJson(json, "comment", String.class, null);
-        int amount = ApiService.getFieldFromJson(json, "amount", Integer.class, 1);
-        String type = ApiService.getFieldFromJson(json, "type", String.class, null);
-        Long batchId = ApiService.getFieldFromJson(json, "batchId", Long.class, null);
-        Option<Long> batchIdOption = batchId != null ? Option.apply(batchId) : Option.empty();
-        return getOrGenerateStudyCodes(studyId, batchIdOption, type, comment, amount);
     }
 
     @Transactional

@@ -57,8 +57,8 @@ GET      /jatos/api/v1/batches/:id                                          @con
 PATCH    /jatos/api/v1/batches/:id                                          @controllers.gui.Api.updateBatch(request: Request, id)
 DELETE   /jatos/api/v1/batches/:id                                          @controllers.gui.Api.deleteBatch(id)
 # Deprecated: use "POST /jatos/api/v1/studies/:id/studyCodes" instead
-GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodes(id, batchId: Option[java.lang.Long], type, comment ?= null, amount: Integer ?= 1)
-POST     /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodesFromJsonBody(request: Request, id)
+GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])
+POST     /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])
 GET      /jatos/api/v1/studyCodes/:code                                     @controllers.gui.Api.getStudyCode(code)
 PATCH    /jatos/api/v1/studyCodes/:code                                     @controllers.gui.Api.toggleStudyCodeActive(request: Request, code)
 

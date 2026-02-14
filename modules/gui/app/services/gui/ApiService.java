@@ -20,12 +20,12 @@ public class ApiService {
     }
 
     public static <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType) throws BadRequestException {
-        JsonNode fieldNode = json.get(fieldName);
-        if (fieldNode == null) {
+        if (json == null || json.get(fieldName) == null) {
             throw new BadRequestException("Missing " + fieldName + " field", ApiEnvelope.ErrorCode.INVALID_REQUEST);
         }
 
         try {
+            JsonNode fieldNode = json.get(fieldName);
             return Json.mapper().treeToValue(fieldNode, fieldType);
         } catch (Exception e) {
             String msg = "'" + fieldName + "' field must be of type " + fieldType.getSimpleName();
@@ -34,8 +34,7 @@ public class ApiService {
     }
 
     public static <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType, T defaultValue) throws BadRequestException {
-        JsonNode fieldNode = json.get(fieldName);
-        if (fieldNode == null) {
+        if (json == null || json.get(fieldName) == null) {
             return defaultValue;
         }
         return getFieldFromJson(json, fieldName, fieldType);

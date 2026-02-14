@@ -19,7 +19,6 @@ import models.gui.BatchProperties;
 import models.gui.BatchSession;
 import play.Logger;
 import play.data.validation.ValidationError;
-import scala.Option;
 import utils.common.Helpers;
 
 import javax.inject.Inject;
@@ -341,9 +340,9 @@ public class BatchService {
         }
     }
 
-    public Batch getBatchOrDefaultBatch(Option<Long> batchId, Study study) {
-        if (batchId.nonEmpty()) {
-            return batchDao.findById(batchId.get());
+    public Batch getBatchOrDefaultBatch(Long batchId, Study study) {
+        if (batchId != null) {
+            return batchDao.findById(batchId);
         } else {
             return study.getDefaultBatch();
         }
