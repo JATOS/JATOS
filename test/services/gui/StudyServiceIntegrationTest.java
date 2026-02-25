@@ -450,8 +450,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
             assertThat(study.getBatchList()).hasSize(1);
             Batch defaultBatch = study.getBatchList().get(0);
             assertThat(defaultBatch.getId()).isNotNull();
-            // admin's worker is added to the batch
-            assertThat(defaultBatch.getWorkerList()).isNotEmpty();
+            assertThat(defaultBatch.getWorkerList()).isEmpty();
             assertThat(study.getUserList()).contains(admin);
         }));
     }

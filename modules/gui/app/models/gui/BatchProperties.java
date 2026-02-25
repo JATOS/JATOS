@@ -7,6 +7,7 @@ import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
+import services.gui.WorkerService;
 import utils.common.JsonUtils;
 
 import java.util.ArrayList;
@@ -15,280 +16,215 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Model of batch properties for UI (not persisted in DB). Only used together
- * with an HTML form that creates a new Batch or updates one. Default values,
- * where necessary, are at the fields or in the constructor. The corresponding
- * database entity is {@link models.common.Batch}.
- * 
- * An active member is a member who joined a group and is still member of this
- * group. maxActiveMemberLimited, maxActiveMembers, maxTotalMemberLimited and
+ * Model of batch properties for UI (not persisted in DB). Only used together with an HTML form that creates a new Batch
+ * or updates one. Default values, where necessary, are at the fields or in the constructor. The corresponding database
+ * entity is {@link models.common.Batch}.
+ *
+ * An active member is a member who joined a group and is still a member of this group. maxActiveMembers and
  * maxTotalMembers are properties for groups.
  */
 @Constraints.Validate
 public class BatchProperties implements Validatable<List<ValidationError>> {
 
-	public static final String ID = "id";
-	public static final String UUID = "uuid";
-	public static final String TITLE = "title";
-	public static final String DEFAULT_TITLE = "Default";
-	public static final String ACTIVE = "active";
-	public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
-	public static final String MAX_ACTIVE_MEMBER_LIMITED = "maxActiveMemberLimited";
-	public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
-	public static final String MAX_TOTAL_MEMBER_LIMITED = "maxTotalMemberLimited";
-	public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
-	public static final String MAX_TOTAL_WORKER_LIMITED = "maxTotalWorkerLimited";
-	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
-	public static final String WORKERS = "workers";
-	public static final String COMMENTS = "comments";
-	public static final String JSON_DATA = "jsonData";
+    public static final String ID = "id";
+    public static final String UUID = "uuid";
+    public static final String TITLE = "title";
+    public static final String DEFAULT_TITLE = "Default";
+    public static final String ACTIVE = "active";
+    public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
+    public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
+    public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
+    public static final String ALLOWED_TYPES = "allowedTypes";
+    public static final String COMMENTS = "comments";
+    public static final String JSON_DATA = "jsonData";
 
-	private Long id;
+    private Long id;
 
-	/**
-	 * Universally (world-wide) unique ID. Used for import/export between
-	 * different JATOS instances. On one JATOS instance it is only allowed to
-	 * have one batch with the same UUID.
-	 */
-	private String uuid;
+    /**
+     * Universally (world-wide) unique ID. Used for import/export between different JATOS instances. On one JATOS
+     * instance it is only allowed to have one batch with the same UUID.
+     */
+    private String uuid;
 
-	/**
-	 * Title of the batch
-	 */
-	private String title;
+    /**
+     * Title of the batch
+     */
+    private String title;
 
-	/**
-	 * True if batch can be used.
-	 */
-	private boolean active = true;
+    /**
+     * True if batch can be used.
+     */
+    private boolean active = true;
 
-	/**
-	 * Set to true if the maxActiveMembers are limited (= groups have an limited
-	 * number of active members). False otherwise.
-	 */
-	private boolean maxActiveMemberLimited = false;
+    /**
+     * Maximum number of workers/members in one group of these batches that are active at the same time.
+     */
+    private Integer maxActiveMembers = null;
 
-	/**
-	 * Maximum number of workers/members in one group of this batch that are
-	 * active at the same time.
-	 */
-	private Integer maxActiveMembers = null;
+    /**
+     * Maximum number of workers/members active or inactive in one group of these batches in total.
+     */
+    private Integer maxTotalMembers = null;
 
-	/**
-	 * Set to true if the maxTotalMembers are limited (= groups have a limited
-	 * number of members). False otherwise.
-	 */
-	private boolean maxTotalMemberLimited = false;
+    /**
+     * Maximum number of workers in this batch in total independent of its groups.
+     */
+    private Integer maxTotalWorkers = null;
 
-	/**
-	 * Maximum number of workers/members active or inactive in one group of this
-	 * batch in total.
-	 */
-	private Integer maxTotalMembers = null;
+    /**
+     * Set of worker types that are allowed to run in this batch. If the worker type is not in this list, it has no
+     * permission to run this study.
+     */
+    private Set<String> allowedTypes = new HashSet<>();
 
-	/**
-	 * Set to true if the maxTotalWorkers are limited (= the whole batch has a
-	 * limited number of workers). False otherwise.
-	 */
-	private boolean maxTotalWorkerLimited = false;
+    /**
+     * User comments, reminders, something to share with others. They have no further meaning.
+     */
+    private String comments;
 
-	/**
-	 * Maximum number of workers in this batch in total independent of its
-	 * groups.
-	 */
-	private Integer maxTotalWorkers = null;
+    /**
+     * Data in JSON format: every study run of this Batch gets access to them. They can be changed in the GUI but not
+     * via jatos.js. Can be used for initial data and configuration.
+     */
+    private String jsonData;
 
-	/**
-	 * Set of worker types that are allowed to run in this batch. If the worker
-	 * type is not in this list, it has no permission to run this study.
-	 */
-	private Set<String> allowedWorkerTypes = new HashSet<>();
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	/**
-	 * User comments, reminders, something to share with others. They have no
-	 * further meaning.
-	 */
-	private String comments;
+    public Long getId() {
+        return this.id;
+    }
 
-	/**
-	 * Data in JSON format: every study run of this Batch gets access to them.
-	 * They can be changed in the GUI but not via jatos.js. Can be used for
-	 * initial data and configuration.
-	 */
-	private String jsonData;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public String getUuid() {
+        return this.uuid;
+    }
 
-	public Long getId() {
-		return this.id;
-	}
+    public String getTitle() {
+        return title;
+    }
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-	public String getUuid() {
-		return this.uuid;
-	}
+    public boolean isActive() {
+        return active;
+    }
 
-	public String getTitle() {
-		return title;
-	}
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+    public Integer getMaxActiveMembers() {
+        return maxActiveMembers;
+    }
 
-	public boolean isActive() {
-		return active;
-	}
+    public void setMaxActiveMembers(Integer maxActiveMembers) {
+        this.maxActiveMembers = maxActiveMembers;
+    }
 
-	public void setActive(boolean active) {
-		this.active = active;
-	}
+    public Integer getMaxTotalMembers() {
+        return maxTotalMembers;
+    }
 
-	public boolean isMaxActiveMemberLimited() {
-		return maxActiveMemberLimited;
-	}
+    public void setMaxTotalMembers(Integer maxTotalMembers) {
+        this.maxTotalMembers = maxTotalMembers;
+    }
 
-	public void setMaxActiveMemberLimited(boolean maxActiveMemberLimited) {
-		this.maxActiveMemberLimited = maxActiveMemberLimited;
-	}
+    public Integer getMaxTotalWorkers() {
+        return maxTotalWorkers;
+    }
 
-	public Integer getMaxActiveMembers() {
-		return maxActiveMembers;
-	}
+    public void setMaxTotalWorkers(Integer maxTotalWorkers) {
+        this.maxTotalWorkers = maxTotalWorkers;
+    }
 
-	public void setMaxActiveMembers(Integer maxActiveMembers) {
-		this.maxActiveMembers = maxActiveMembers;
-	}
+    public void setAllowedTypes(Set<String> allowedTypes) {
+        this.allowedTypes = allowedTypes;
+    }
 
-	public boolean isMaxTotalMemberLimited() {
-		return maxTotalMemberLimited;
-	}
+    public Set<String> getAllowedTypes() {
+        return this.allowedTypes;
+    }
 
-	public void setMaxTotalMemberLimited(boolean maxTotalMemberLimited) {
-		this.maxTotalMemberLimited = maxTotalMemberLimited;
-	}
+    public void addAllowedType(String type) {
+        allowedTypes.add(type);
+    }
 
-	public Integer getMaxTotalMembers() {
-		return maxTotalMembers;
-	}
+    public void removeAllowedType(String type) {
+        allowedTypes.remove(type);
+    }
 
-	public void setMaxTotalMembers(Integer maxTotalMembers) {
-		this.maxTotalMembers = maxTotalMembers;
-	}
+    public boolean hasAllowedType(String type) {
+        return allowedTypes.contains(type);
+    }
 
-	public boolean isMaxTotalWorkerLimited() {
-		return maxTotalWorkerLimited;
-	}
+    public String getComments() {
+        return comments;
+    }
 
-	public void setMaxTotalWorkerLimited(boolean maxTotalWorkerLimited) {
-		this.maxTotalWorkerLimited = maxTotalWorkerLimited;
-	}
+    public void setComments(String comments) {
+        this.comments = comments;
+    }
 
-	public Integer getMaxTotalWorkers() {
-		return maxTotalWorkers;
-	}
+    public String getJsonData() {
+        return jsonData;
+    }
 
-	public void setMaxTotalWorkers(Integer maxTotalWorkers) {
-		this.maxTotalWorkers = maxTotalWorkers;
-	}
+    public void setJsonData(String jsonData) {
+        this.jsonData = jsonData;
+    }
 
-	public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
-		this.allowedWorkerTypes = allowedWorkerTypes;
-	}
+    @Override
+    public String toString() {
+        return id + " " + title;
+    }
 
-	public Set<String> getAllowedWorkerTypes() {
-		return this.allowedWorkerTypes;
-	}
+    @Override
+    public List<ValidationError> validate() {
+        List<ValidationError> errorList = new ArrayList<>();
 
-	public void addAllowedWorkerType(String workerType) {
-		allowedWorkerTypes.add(workerType);
-	}
-
-	public void removeAllowedWorkerType(String workerType) {
-		allowedWorkerTypes.remove(workerType);
-	}
-
-	public boolean hasAllowedWorkerType(String workerType) {
-		return allowedWorkerTypes.contains(workerType);
-	}
-
-	public String getComments() {
-		return comments;
-	}
-
-	public void setComments(String comments) {
-		this.comments = comments;
-	}
-
-	public String getJsonData() {
-		return jsonData;
-	}
-
-	public void setJsonData(String jsonData) {
-		this.jsonData = jsonData;
-	}
-
-	@Override
-	public String toString() {
-		return id + " " + title;
-	}
-
-	@Override
-	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<>();
-
-		if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
-			errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (title == null || title.trim().isEmpty()) {
-			errorList.add(
-					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
-		}
-		if (title != null && title.length() > 255) {
-			errorList.add(
-					new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
-		}
-		if (title != null && !Jsoup.isValid(title, Safelist.none())) {
-			errorList.add(new ValidationError(TITLE,
-					MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (maxActiveMemberLimited && maxActiveMembers == null) {
-			errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS,
-					MessagesStrings.BATCH_MAX_ACTIVE_MEMBERS_SET));
-		}
-		if (maxTotalMemberLimited && maxTotalMembers == null) {
-			errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
-					MessagesStrings.BATCH_MAX_TOTAL_MEMBERS_SET));
-		}
-		if (maxTotalMemberLimited && maxTotalMembers != null
-				&& maxActiveMembers != null
-				&& maxTotalMembers < maxActiveMembers) {
-			errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
-					MessagesStrings.BATCH_MAX_TOTAL_MEMBERS));
-		}
-		if (maxTotalWorkers != null && maxTotalWorkers < 1) {
-			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
-					MessagesStrings.BATCH_MAX_TOTAL_WORKERS));
-		}
-		if (maxTotalWorkerLimited && maxTotalWorkers == null) {
-			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
-					MessagesStrings.BATCH_MAX_TOTAL_WORKER_SET));
-		}
-		if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
-			errorList.add(new ValidationError(COMMENTS,
-					MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-			errorList.add(new ValidationError(JSON_DATA,
-					MessagesStrings.INVALID_JSON_FORMAT));
-		}
-
-		return errorList.isEmpty() ? null : errorList;
-	}
+        if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
+            errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+        }
+        if (title == null || title.trim().isEmpty()) {
+            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+        }
+        if (title != null && title.length() > 255) {
+            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+        }
+        if (title != null && !Jsoup.isValid(title, Safelist.none())) {
+            errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
+        }
+        if (maxActiveMembers != null && maxActiveMembers < 1) {
+            errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS, "Batch's max active member size must be at least 1."));
+        }
+        if (maxTotalMembers != null && maxTotalMembers < 1) {
+            errorList.add(new ValidationError(MAX_TOTAL_MEMBERS, "Batch's max total member size must be at least 1."));
+        }
+        if (maxTotalWorkers != null && maxTotalWorkers < 1) {
+            errorList.add(new ValidationError(MAX_TOTAL_WORKERS, "Batch's max total worker size must be at least 1."));
+        }
+        if (maxTotalMembers != null && maxActiveMembers != null && maxTotalMembers < maxActiveMembers) {
+            errorList.add(new ValidationError(MAX_TOTAL_MEMBERS, "Maximum total members must be greater than or equal to maximum active members."));
+        }
+        if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
+            errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
+        }
+        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
+            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        }
+        for (String type : allowedTypes) {
+            if (!WorkerService.isValidWorkerType(type)) {
+                errorList.add(new ValidationError(ALLOWED_TYPES, "Invalid worker type: " + type));
+            }
+        }
+        return errorList.isEmpty() ? null : errorList;
+    }
 
 }

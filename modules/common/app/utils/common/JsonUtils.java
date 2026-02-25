@@ -114,17 +114,17 @@ public class JsonUtils {
     }
 
     /**
-     * Checks whether the given string is a valid JSON string. An empty string is accepted as valid.
+     * Checks whether the given string is a valid JSON string. An empty string, "hello", 123, true, null are all
+     * accepted as valid JSON.
      */
-    public static boolean isValid(final String json) {
-        boolean valid = false;
+    public static boolean isValid(String json) {
+        if (json == null) return false;
         try {
             Json.mapper().readTree(json);
-            valid = true;
-        } catch (IOException | IllegalArgumentException | NullPointerException e) {
-            LOGGER.info(".isValid: error probably due to invalid JSON");
+            return true;
+        } catch (IOException e) {
+            return false;
         }
-        return valid;
     }
 
     /**
@@ -177,9 +177,8 @@ public class JsonUtils {
     /**
      * Returns all GroupResults as a JSON string intended for GUI.
      */
-    public JsonNode allGroupResultsForUI(List<GroupResult> groupResultList) {
-        ObjectNode allGroupResultsNode = Json.newObject();
-        ArrayNode arrayNode = allGroupResultsNode.arrayNode();
+    public JsonNode allGroupResults(List<GroupResult> groupResultList) {
+        ArrayNode arrayNode = Json.mapper().createArrayNode();
         for (GroupResult groupResult : groupResultList) {
             ObjectNode groupResultNode = Json.mapper().valueToTree(groupResult);
 
@@ -199,8 +198,7 @@ public class JsonUtils {
 
             arrayNode.add(groupResultNode);
         }
-        allGroupResultsNode.set(DATA, arrayNode);
-        return allGroupResultsNode;
+        return arrayNode;
     }
 
     public ObjectNode studyResultMetadata(StudyResult sr) throws IOException {

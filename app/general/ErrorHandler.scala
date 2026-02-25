@@ -1,5 +1,7 @@
 package general
 
+import com.fasterxml.jackson.core.{JsonLocation, JsonParseException}
+import com.fasterxml.jackson.databind.JsonMappingException
 import exceptions.gui.{AuthException, HttpException, JatosException, JatosGuiException}
 import exceptions.publix.{InternalServerErrorPublixException, PublixException}
 import models.gui.ApiEnvelope
@@ -15,6 +17,7 @@ import java.io.IOException
 import javax.inject.{Inject, Singleton}
 import javax.naming.NamingException
 import scala.concurrent._
+import scala.jdk.CollectionConverters._
 
 @Singleton
 class ErrorHandler @Inject()() extends HttpErrorHandler {
@@ -29,13 +32,19 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
       statusCode match {
         case Http.Status.BAD_REQUEST =>
           logger.info(s"Bad request: $message")
-          if (api) BadRequest(ApiEnvelope.wrap(message, ErrorCode.CLIENT_ERROR).asJsValue())
-          else BadRequest("Bad request: $message")
+          if (looksLikeInvalidJson(request, message)) {
+            if (api) BadRequest(ApiEnvelope.wrap("Invalid JSON. Please check the syntax (quotes, commas, braces).", ErrorCode.INVALID_JSON).asJsValue())
+            else BadRequest("Invalid JSON")
+          } else {
+            if (api) BadRequest(ApiEnvelope.wrap(message, ErrorCode.CLIENT_ERROR).asJsValue())
+            else BadRequest("Bad request: " + message)
+          }
 
         case Http.Status.NOT_FOUND =>
-          logger.info(s"Not found: Requested page  ${request.uri} couldn't be found.")
-          if (api) NotFound(ApiEnvelope.wrap(s"Requested page ${request.uri} couldn't be found.", ErrorCode.NOT_FOUND).asJsValue())
-          else NotFound(s"Requested page ${request.uri} couldn't be found.")
+          val msg = s"Requested page ${request.method} ${request.uri} couldn't be found."
+          logger.info(s"Not found: $msg")
+          if (api) NotFound(ApiEnvelope.wrap(msg, ErrorCode.NOT_FOUND).asJsValue())
+          else NotFound(msg)
 
         case Http.Status.FORBIDDEN =>
           logger.info(s"Forbidden: $message")
@@ -60,45 +69,75 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
 
     val result: Result = throwable match {
       case e: JatosGuiException =>
-        logger.info(s"JatosGuiException during call ${request.uri}: ${e.getMessage}")
+        logger.info(s"JatosGuiException during call ${request.method} ${request.uri}: ${e.getMessage}")
         e.getSimpleResult.asScala()
 
       case e: InternalServerErrorPublixException =>
-        logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e.getMessage}")
+        logger.error(s"InternalServerErrorPublixException during call ${request.method} ${request.uri}: ${e.getMessage}")
         getErrorResult(e.getHttpStatus, e.getMessage, request)
 
       case e: PublixException =>
-        logger.info(s"PublixException during call ${request.uri}: ${e.getMessage}")
+        logger.info(s"PublixException during call ${request.method} ${request.uri}: ${e.getMessage}")
         getErrorResult(e.getHttpStatus, e.getMessage, request)
 
       case e: AuthException =>
-        logger.info(e.getMessage)
+        logger.info(s"AuthException during call ${request.method} ${request.uri}: ${e.getMessage}")
         if (api) Forbidden(e.asApiJsValue())
         else Forbidden(e.getMessage)
 
       case e: HttpException =>
-        logger.info(s"Exception during call ${request.uri}: ${e.getMessage}")
+        logger.info(s"HttpException during call ${request.method} ${request.uri}: ${e.getMessage}")
         if (api) Status(e.getStatus)(e.asApiJsValue())
         else Status(e.getStatus)(e.getMessage)
 
       case e: JatosException =>
-        logger.info(s"Exception during call ${request.uri}: ${e.getMessage}")
+        logger.info(s"JatosException during call ${request.method} ${request.uri}: ${e.getMessage}")
         if (api) InternalServerError(e.asApiJsValue())
         else InternalServerError(e.getMessage)
 
       case e: NamingException =>
-        logger.error("LDAP error", throwable)
+        logger.info(s"LDAP error during call ${request.method} ${request.uri}", throwable)
         if (api) InternalServerError(ApiEnvelope.wrap("LDAP error", ErrorCode.LDAP_ERROR).asJsValue())
         else InternalServerError(s"LDAP error: ${e.getCause}")
 
+      case e: JsonMappingException =>
+        val path: String = Option(e.getPath)
+            .map(_.asScala.toSeq)
+            .getOrElse(Seq.empty)
+            .flatMap { ref =>
+              Option(ref.getFieldName)
+                .orElse {
+                  val idx = ref.getIndex
+                  if (idx >= 0) Some(s"[$idx]") else None
+                }
+            }
+            .mkString(".")
+        val where = if (path.nonEmpty) s" in field '$path': " else ": "
+        val msg = s"Invalid JSON$where${Option(e.getOriginalMessage).getOrElse("JSON mapping error")}"
+        logger.info(s"${request.method} ${request.uri} - $msg")
+        if (api) BadRequest(ApiEnvelope.wrap(msg, ErrorCode.INVALID_JSON).asJsValue())
+        else BadRequest(msg)
+
+      case e: JsonParseException =>
+        val loc: JsonLocation = e.getLocation
+        val where =
+          if (loc != null && loc.getLineNr > 0 && loc.getColumnNr > 0)
+            s" at line ${loc.getLineNr}, column ${loc.getColumnNr}"
+          else
+            ""
+        val msg = s"Invalid JSON$where: ${e.getOriginalMessage}"
+        logger.info(s"${request.method} ${request.uri} - $msg")
+        if (api) BadRequest(ApiEnvelope.wrap(msg, ErrorCode.INVALID_JSON).asJsValue())
+        else BadRequest(msg)
+
       case e: IOException =>
-        logger.info(e.getMessage)
-        if (api) InternalServerError(ApiEnvelope.wrap("IO error", ErrorCode.UNEXPECTED_ERROR).asJsValue())
+        logger.info(s"${request.method} ${request.uri} - ${e.getMessage}")
+        if (api) InternalServerError(ApiEnvelope.wrap("IO error: " + e.getMessage, ErrorCode.UNEXPECTED_ERROR).asJsValue())
         else InternalServerError(e.getMessage)
 
       case _ =>
         logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
-        val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
+        val msg = s"Internal JATOS error during ${request.method} ${request.uri}. Check logs to get more information."
         if (Helpers.isHtmlRequest(request)) InternalServerError(views.html.error.render(msg))
         else if (api) InternalServerError(ApiEnvelope.wrap("Unexpected error", ErrorCode.UNEXPECTED_ERROR).asJsValue())
         else InternalServerError(msg)
@@ -108,6 +147,22 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
   }
 
   private def isApi(request: RequestHeader): Boolean = request.path.contains("/jatos/api/")
+
+  private def looksLikeInvalidJson(request: RequestHeader, message: String): Boolean = {
+    val isJsonRequest =
+      request.contentType.exists(_.equalsIgnoreCase("application/json")) ||
+        request.headers.get("Content-Type").exists(_.toLowerCase.startsWith("application/json"))
+    isJsonRequest && {
+      val m = Option(message).getOrElse("").toLowerCase
+      m.contains("invalid json") ||
+        m.contains("malformed json") ||
+        m.contains("json parse") ||
+        m.contains("unexpected character") ||
+        m.contains("unexpected end-of-input") ||
+        m.contains("error decoding json body") ||
+        m.contains("jsonparseexception")
+    }
+  }
 
   private def getErrorResult(status: Int, msg: String, request: RequestHeader): Result = {
     if (Helpers.isHtmlRequest(request)) Status(status)(views.html.publix.error.render(msg))

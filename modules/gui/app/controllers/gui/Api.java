@@ -8,6 +8,7 @@ import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import daos.common.*;
 import exceptions.gui.*;
 import general.common.Common;
@@ -71,10 +72,12 @@ public class Api extends Controller {
     private final BatchDao batchDao;
     private final ApiTokenDao apiTokenDao;
     private final StudyLinkDao studyLinkDao;
+    private final GroupResultDao groupResultDao;
     private final StudyService studyService;
     private final ComponentService componentService;
     private final StudyLinkService studyLinkService;
     private final BatchService batchService;
+    private final GroupService groupService;
     private final ImportExport importExport;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
@@ -84,18 +87,18 @@ public class Api extends Controller {
     private final IOUtils ioUtils;
     private final UserService userService;
     private final ApiTokenService apiTokenService;
-    private final WorkerService workerService;
     private final StrictJsonMapper strictJsonMapper;
 
     @Inject
     Api(Admin admin, AdminService adminService, AuthService authService,
         ComponentResultIdsExtractor componentResultIdsExtractor,
         StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
-        BatchDao batchDao, StudyLinkDao studyLinkDao, StudyService studyService, ComponentService componentService,
-        StudyLinkService studyLinkService, BatchService batchService, ImportExport importExport, ResultRemover resultRemover,
+        BatchDao batchDao, StudyLinkDao studyLinkDao, GroupResultDao groupResultDao, StudyService studyService,
+        ComponentService componentService, StudyLinkService studyLinkService, BatchService batchService,
+        GroupService groupService, ImportExport importExport, ResultRemover resultRemover,
         ResultStreamer resultStreamer, AuthorizationService authorizationService, JsonUtils jsonUtils,
         StudyLogger studyLogger, IOUtils ioUtils, UserService userService, ApiTokenService apiTokenService,
-        WorkerService workerService, StrictJsonMapper strictJsonMapper) {
+        StrictJsonMapper strictJsonMapper) {
         this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
@@ -106,10 +109,12 @@ public class Api extends Controller {
         this.batchDao = batchDao;
         this.apiTokenDao = apiTokenDao;
         this.studyLinkDao = studyLinkDao;
+        this.groupResultDao = groupResultDao;
         this.studyService = studyService;
         this.componentService = componentService;
         this.studyLinkService = studyLinkService;
         this.batchService = batchService;
+        this.groupService = groupService;
         this.importExport = importExport;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
@@ -119,7 +124,6 @@ public class Api extends Controller {
         this.ioUtils = ioUtils;
         this.userService = userService;
         this.apiTokenService = apiTokenService;
-        this.workerService = workerService;
         this.strictJsonMapper = strictJsonMapper;
     }
 
@@ -200,9 +204,10 @@ public class Api extends Controller {
 
     @Transactional
     @Auth(ADMIN)
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result createUser(Http.Request request) throws HttpException, IOException, AuthException {
-        JsonNode json = request.body().asJson();
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
         NewUserProperties props = strictJsonMapper.getMapper().treeToValue(json, NewUserProperties.class);
         ApiService.validateProps(props);
         authorizationService.checkAuthMethodIsDbOrLdap(props);
@@ -214,7 +219,7 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result updateUser(Http.Request request, Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
         User signedinUser = authService.getSignedinUser();
@@ -222,10 +227,10 @@ public class Api extends Controller {
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
         UserProperties props = userService.bindToProperties(user);
-        JsonNode json = request.body().asJson();
-        strictJsonMapper.updateFromJson(props, json);
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
+        props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
-
         authorizationService.checkSignedinUserAllowedToChangeUser(props, signedinUser, user);
 
         userService.updateUser(user, props);
@@ -274,9 +279,9 @@ public class Api extends Controller {
         ApiToken apiToken = apiTokenPair.getLeft();
         String apiTokenStr = apiTokenPair.getRight();
 
-        ObjectNode responseJson = JsonUtils.asObjectNode(apiToken);
-        responseJson.put("token", apiTokenStr);
-        return created(ApiEnvelope.wrap(responseJson).asJsonNode());
+        ObjectNode tokenJson = JsonUtils.asObjectNode(apiToken);
+        tokenJson.put("token", apiTokenStr);
+        return created(ApiEnvelope.wrap(tokenJson).asJsonNode());
     }
 
     /**
@@ -345,7 +350,6 @@ public class Api extends Controller {
 
         ObjectNode responseJson = Json.mapper().createObjectNode();
         responseJson.put("message", "Token deleted successfully");
-        responseJson.put("id", id);
         return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
     }
 
@@ -382,11 +386,12 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result createStudy(Http.Request request) throws IOException, BadRequestException {
         User signedinUser = authService.getSignedinUser();
 
-        JsonNode json = request.body().asJson();
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
         StudyProperties props = strictJsonMapper.getMapper().treeToValue(json, StudyProperties.class);
         ApiService.validateProps(props);
 
@@ -475,12 +480,12 @@ public class Api extends Controller {
     }
 
     /**
-     * Update study properties. A user can update its own studies. A superuser can update all studies. An admin can
-     * activate/deactivate any study.
+     * Updates the study properties. Regular users may update only studies they own. Admins may update only the
+     * activation status of any study.
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result updateStudyProperties(Http.Request request, String id) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
         Study study = studyService.getStudyFromIdOrUuid(id);
@@ -489,7 +494,8 @@ public class Api extends Controller {
         boolean isMemberOrSuperuser = study.hasUser(signedinUser) || Helpers.isAllowedSuperuser(signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
 
-        JsonNode json = request.body().asJson();
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
 
         // Admins who are not members: only allow toggling "active"
         if (isAdminNonMember) {
@@ -507,7 +513,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         StudyProperties props = studyService.bindToProperties(study);
-        strictJsonMapper.updateFromJson(props, json);
+        props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
 
         studyService.renameStudyAssetsDir(study, props.getDirName());
@@ -660,8 +666,8 @@ public class Api extends Controller {
         List<Long> userIds = studyDao.findAllMembersByStudyId(study.getId());
 
         ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put("studyId", study.getId());
-        responseJson.put("studyUuid", study.getUuid());
+        responseJson.put("id", study.getId());
+        responseJson.put("uuid", study.getUuid());
         responseJson.putPOJO("members", userIds);
         return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
     }
@@ -690,7 +696,8 @@ public class Api extends Controller {
 
         List<Long> userIds = studyDao.findAllMembersByStudyId(study.getId());
         ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put("studyId", study.getId());
+        responseJson.put("id", study.getId());
+        responseJson.put("uuid", study.getUuid());
         responseJson.putPOJO("members", userIds);
         return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
     }
@@ -731,33 +738,32 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result createComponent(Http.Request request, String studyId) throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        JsonNode json = request.body().asJson();
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
         ComponentProperties props = strictJsonMapper.getMapper().treeToValue(json, ComponentProperties.class);
         ApiService.validateProps(props);
 
         Component component = componentService.createAndPersistComponent(study, props);
 
-        JsonNode componentNode = jsonUtils.asJsonForApi(component);
-        return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
+        return created(ApiEnvelope.wrap(component).asJsonNode());
     }
 
     @Transactional
     @Auth
-    public Result getComponentsByStudy(String studyIdOrUuid) throws HttpException, IOException {
+    public Result getComponentsByStudy(String studyIdOrUuid) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyIdOrUuid);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
         List<Component> components = study.getComponentList();
 
-        JsonNode componentsNode = jsonUtils.asJsonForApi(components);
-        return ok(ApiEnvelope.wrap(componentsNode).asJsonNode());
+        return ok(ApiEnvelope.wrap(components).asJsonNode());
     }
 
     @Transactional
@@ -767,28 +773,27 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user);
 
-        JsonNode componentNode = jsonUtils.asJsonForApi(component);
-        return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
+        return ok(ApiEnvelope.wrap(component).asJsonNode());
     }
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result updateComponent(Http.Request request, String id) throws HttpException, IOException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user, true);
 
         ComponentProperties props = componentService.bindToProperties(component);
-        JsonNode json = request.body().asJson();
-        strictJsonMapper.updateFromJson(props, json);
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
+        props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
 
         componentService.renameHtmlFilePath(component, props.getHtmlFilePath(), props.isHtmlFileRename());
         componentService.updateComponentAfterEdit(component, props);
 
-        JsonNode componentNode = jsonUtils.asJsonForApi(component);
-        return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
+        return ok(ApiEnvelope.wrap(component).asJsonNode());
     }
 
     @Transactional
@@ -799,20 +804,22 @@ public class Api extends Controller {
         authorizationService.canUserAccessComponent(component, user, true);
 
         componentService.remove(component, user);
-        return ok(ApiEnvelope.wrap("Component deleted successfully").asJsonNode());
+
+        ObjectNode responseJson = Json.mapper().createObjectNode();
+        responseJson.put("message", "Component deleted successfully");
+        return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
     }
 
     @Transactional
     @Auth
-    public Result getBatchesByStudy(String studyId) throws HttpException, IOException {
+    public Result getBatchesByStudy(String studyId) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
         List<Batch> batches = study.getBatchList();
 
-        JsonNode batchesNode = jsonUtils.asJsonForApi(batches);
-        return ok(ApiEnvelope.wrap(batchesNode).asJsonNode());
+        return ok(ApiEnvelope.wrap(batches).asJsonNode());
     }
 
     @Transactional
@@ -821,47 +828,46 @@ public class Api extends Controller {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user);
-
-        JsonNode batchNode = jsonUtils.asJsonForApi(batch);
-        return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
+        return ok(ApiEnvelope.wrap(batch).asJsonNode());
     }
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result createBatch(Http.Request request, String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        JsonNode json = request.body().asJson();
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
         BatchProperties props = strictJsonMapper.getMapper().treeToValue(json, BatchProperties.class);
         ApiService.validateProps(props);
 
         Batch batch = batchService.bindToBatch(props);
-        batchService.createAndPersistBatch(batch, study, user);
+        batchService.initAndPersistBatch(batch, study, user);
 
-        JsonNode batchNode = jsonUtils.asJsonForApi(batch);
-        return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
+        return created(ApiEnvelope.wrap(batch).asJsonNode());
     }
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
+    @BodyParser.Of(BodyParser.TolerantText.class)
     public Result updateBatch(Http.Request request, String id) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user, true);
 
         BatchProperties props = batchService.bindToProperties(batch);
-        JsonNode json = request.body().asJson();
-        strictJsonMapper.updateFromJson(props, json);
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
+        props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
 
+        batchService.updateBatch(batch, props);
         batchDao.update(batch);
 
-        JsonNode batchNode = jsonUtils.asJsonForApi(batch);
-        return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
+        return ok(ApiEnvelope.wrap(batch).asJsonNode());
     }
 
     @Transactional
@@ -878,17 +884,108 @@ public class Api extends Controller {
         return ok(ApiEnvelope.wrap(response).asJsonNode());
     }
 
+    @Transactional
+    @Auth
+    public Result getBatchSession(String id) throws HttpException {
+        Batch batch = batchService.getBatchFromIdOrUuid(id);
+        User user = authService.getSignedinUser();
+        authorizationService.canUserAccessBatch(batch, user, true);
+
+        BatchOrGroupSession session = batchService.bindToBatchSession(batch);
+        return ok(ApiEnvelope.wrap(session).asJsonNode());
+    }
+
     /**
-     * Get or generate study codes for the given study, batch, and worker type. Either get the properties from the
-     * query parameters or the JSON body.
+     * Updates the batch session. Uses `BodyParser.TolerantText` to handle JSON payloads with potential
+     * malformed content gracefully and give detailed error messages to the user.
+     */
+    @Transactional
+    @Auth
+    @BodyParser.Of(BodyParser.TolerantText.class)
+    public Result updateBatchSession(Http.Request request, String id, Option<Long> version) throws HttpException, IOException {
+        Batch batch = batchService.getBatchFromIdOrUuid(id);
+        User user = authService.getSignedinUser();
+        authorizationService.canUserAccessBatch(batch, user);
+
+        String body = request.body().asText();
+        if (Strings.isNullOrEmpty(body)) body = "{}";
+        JsonNode jsonNode = Json.mapper().readTree(body);
+        String sessionData = Json.mapper().writeValueAsString(jsonNode); // This validates the JSON
+        if (Strings.isNullOrEmpty(sessionData)) sessionData = "{}";
+
+        Long currentVersion = version.getOrElse(batch::getBatchSessionVersion);
+        Long newVersion = batchDao.updateBatchSession(batch.getId(), currentVersion, sessionData);
+        if (newVersion == null) {
+            throw new ForbiddenException("Batch session version conflict");
+        }
+
+        ObjectNode data = Json.newObject().put("version", newVersion);
+        return ok(ApiEnvelope.wrap("Batch session updated successfully", data).asJsonNode());
+    }
+
+    @Transactional
+    @Auth
+    public Result getGroupsOfBatch(String id) throws HttpException {
+        Batch batch = batchService.getBatchFromIdOrUuid(id);
+        User user = authService.getSignedinUser();
+        authorizationService.canUserAccessBatch(batch, user);
+
+        List<GroupResult> groups = groupResultDao.findAllByBatch(batch);
+
+        JsonNode groupArray = jsonUtils.allGroupResults(groups);
+        return ok(ApiEnvelope.wrap(groupArray).asJsonNode());
+    }
+
+    @Transactional
+    @Auth
+    public Result getGroupSession(Long id) throws HttpException {
+        GroupResult groupResult = groupResultDao.findById(id);
+        User user = authService.getSignedinUser();
+        authorizationService.canUserAccessGroupResult(groupResult, user);
+
+        BatchOrGroupSession session = groupService.bindToGroupSession(groupResult);
+        return ok(ApiEnvelope.wrap(session).asJsonNode());
+    }
+
+    /**
+     * Updates the group session. Uses `BodyParser.TolerantText` to handle JSON payloads with potential
+     * malformed content gracefully and give detailed error messages to the user.
+     */
+    @Transactional
+    @Auth
+    @BodyParser.Of(BodyParser.TolerantText.class)
+    public Result updateGroupSession(Http.Request request, Long id, Option<Long> version) throws HttpException, IOException {
+        GroupResult groupResult = groupResultDao.findById(id);
+        User user = authService.getSignedinUser();
+        authorizationService.canUserAccessGroupResult(groupResult, user);
+
+        String body = request.body().asText();
+        if (Strings.isNullOrEmpty(body)) body = "{}";
+        JsonNode jsonNode = Json.mapper().readTree(body);
+        String sessionData = Json.mapper().writeValueAsString(jsonNode); // This validates the JSON
+        if (Strings.isNullOrEmpty(sessionData)) sessionData = "{}";
+
+        Long currentVersion = version.getOrElse(groupResult::getGroupSessionVersion);
+        Long newVersion = groupResultDao.updateGroupSession(groupResult.getId(), currentVersion, sessionData);
+        if (newVersion == null) {
+            throw new ForbiddenException("Group session version conflict");
+        }
+
+        ObjectNode data = Json.newObject().put("version", newVersion);
+        return ok(ApiEnvelope.wrap("Group session updated successfully", data).asJsonNode());
+    }
+
+    /**
+     * Get or generate study codes for the given study, batch, and worker type. Either get the properties from the query
+     * parameters or the JSON body.
      *
-     * @param studyId Study's ID or UUID
-     * @param batchId Optional specify the batch ID to which the study codes should belong to. If it is not specified,
-     *                the default batch of this study will be used.
-     * @param type    Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle` (or `gs`),
-     *                `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
-     * @param comment Some comment that will be associated with the worker.
-     * @param amount  Number of study codes that have to be generated. If empty, 1 is assumed.
+     * @param studyId       Study's ID or UUID
+     * @param batchIdOption Optional specify the batch ID to which the study codes should belong to. If it is not
+     *                      specified, the default batch of this study will be used.
+     * @param type          Worker type: `PersonalSingle` (or `ps`), `PersonalMultiple` (or `pm`), `GeneralSingle` (or
+     *                      `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
+     * @param comment       Some comment that will be associated with the worker.
+     * @param amountOption  Number of study codes that have to be generated. If empty, 1 is assumed.
      */
     @Transactional
     @Auth
@@ -917,13 +1014,13 @@ public class Api extends Controller {
         authorizationService.canUserAccessBatch(batch, user);
 
         StudyCodeProperties props = new StudyCodeProperties();
-        props.setType(workerService.extractWorkerType(type));
+        props.setType(WorkerService.validateAndExtractWorkerType(type));
         props.setComment(comment);
         props.setAmount(amount);
         ApiService.validateProps(props);
 
-        JsonNode studyCodesNode = studyLinkService.getStudyCodes(batch, props);
-        return ok(ApiEnvelope.wrap(studyCodesNode).asJsonNode());
+        List<String> studyCodeList = studyLinkService.getStudyCodes(batch, props);
+        return ok(ApiEnvelope.wrap(studyCodeList).asJsonNode());
     }
 
     @Transactional
@@ -984,25 +1081,29 @@ public class Api extends Controller {
      * usage.
      *
      * @param isApiCall If true, the response JSON gets an additional 'apiVersion' field
+     * @param download  If true, the response JSON is in a file, otherwise in the response body
      */
     @Transactional
     @Auth
-    public Result exportResultMetadata(Http.Request request, Boolean isApiCall) throws HttpException, IOException {
+    public Result exportResultMetadata(Http.Request request, Boolean isApiCall, boolean download) throws HttpException, IOException {
         Map<String, Object> wrapperObject = isApiCall
-            ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
-            : Collections.emptyMap();
+                    ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
+                    : Collections.emptyMap();
 
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         File file = resultStreamer.writeResultMetadata(request, wrapperObject);
-
         String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
             + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
+
         //noinspection ResultOfMethodCallIgnored
-        return ok().streamed(
+        Result result = ok().streamed(
                 Helpers.okFileStreamed(file, file::delete),
                 Optional.of(file.length()),
-                Optional.of("application/json"))
-            .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                Optional.of("application/json"));
+        if (download) {
+            result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+        }
+        return result;
     }
 
     /**
@@ -1088,18 +1189,19 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.Json.class)
-    public Result removeResults(Http.Request request) throws HttpException {
-        User signedinUser = authService.getSignedinUser();
-        List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
+    @BodyParser.Of(BodyParser.TolerantText.class)
+    public Result removeResults(Http.Request request) throws HttpException, IOException {
+        String body = request.body().asText();
+        JsonNode json = Json.mapper().readTree(body);
+        List<Long> crids = componentResultIdsExtractor.extract(json);
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
 
         // The check, that the user is a member of the study or a superuser, and that the study is not locked, is done
         // in the ResultRemover`
+        User signedinUser = authService.getSignedinUser();
         resultRemover.removeComponentResults(crids, signedinUser, true);
 
-        JsonNode responseJson = JsonUtils.asObjectNode(crids);
-        return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
+        return ok(ApiEnvelope.wrap(crids).asJsonNode());
     }
 
 }

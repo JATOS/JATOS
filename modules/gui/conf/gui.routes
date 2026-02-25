@@ -4,8 +4,8 @@
 # ~~~~
 
 # API admin
-GET      /jatos/api/v1/admin/token                                          @controllers.gui.Api.currentApiTokenMetadata()
 GET      /jatos/api/v1/admin/status                                         @controllers.gui.Api.status()
+GET      /jatos/api/v1/admin/token                                          @controllers.gui.Api.currentApiTokenMetadata()
 GET      /jatos/api/v1/admin/logs/:filename                                 @controllers.gui.Api.logs(filename)
 
 # API users
@@ -32,12 +32,12 @@ POST     /jatos/api/v1/study                                                @con
 POST     /jatos/api/v1/studies                                              @controllers.gui.Api.importOrCreateStudy(request: Request, keepProperties: Boolean ?= false, keepAssets: Boolean ?= false, keepCurrentAssetsName: Boolean ?= true, renameAssets: Boolean ?= true)
 HEAD     /jatos/api/v1/studies/:id                                          @controllers.gui.Api.checkStudyExists(id)
 GET      /jatos/api/v1/studies/:id                                          @controllers.gui.Api.exportStudy(id)
+DELETE   /jatos/api/v1/studies/:id                                          @controllers.gui.Api.deleteStudy(id)
 GET      /jatos/api/v1/studies/:id/properties                               @controllers.gui.Api.getStudyProperties(id, withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
 PATCH    /jatos/api/v1/studies/:id/properties                               @controllers.gui.Api.updateStudyProperties(request: Request, id)
-DELETE   /jatos/api/v1/studies/:id                                          @controllers.gui.Api.deleteStudy(id)
 GET      /jatos/api/v1/studies/:id/assets/structure                         @controllers.gui.Api.getStudyAssetsStructure(id, flatten: Boolean ?= false)
+POST     /jatos/api/v1/studies/:id/assets                                   @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath = null)
 GET      /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.downloadStudyAssetsFile(id, filepath)
-POST     /jatos/api/v1/studies/:id/assets/                                  @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath = null)
 POST     /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.uploadStudyAssetsFile(request: Request, id, filepath)
 DELETE   /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.Api.deleteStudyAssetsFile(id, filepath)
 GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.Api.allMembersOfStudy(id)
@@ -50,12 +50,17 @@ GET      /jatos/api/v1/components/:id                                       @con
 PATCH    /jatos/api/v1/components/:id                                       @controllers.gui.Api.updateComponent(request: Request, id)
 DELETE   /jatos/api/v1/components/:id                                       @controllers.gui.Api.deleteComponent(id)
 
-# API study links
+# API study runs
 POST     /jatos/api/v1/studies/:id/batches                                  @controllers.gui.Api.createBatch(request: Request, id)
 GET      /jatos/api/v1/studies/:id/batches                                  @controllers.gui.Api.getBatchesByStudy(id)
 GET      /jatos/api/v1/batches/:id                                          @controllers.gui.Api.getBatch(id)
 PATCH    /jatos/api/v1/batches/:id                                          @controllers.gui.Api.updateBatch(request: Request, id)
 DELETE   /jatos/api/v1/batches/:id                                          @controllers.gui.Api.deleteBatch(id)
+GET      /jatos/api/v1/batches/:id/session                                  @controllers.gui.Api.getBatchSession(id)
+PATCH    /jatos/api/v1/batches/:id/session                                  @controllers.gui.Api.updateBatchSession(request: Request, id, version: Option[java.lang.Long])
+GET      /jatos/api/v1/batches/:id/groups                                   @controllers.gui.Api.getGroupsOfBatch(id)
+GET      /jatos/api/v1/groups/:id/session                                   @controllers.gui.Api.getGroupSession(id: Long)
+PATCH    /jatos/api/v1/groups/:id/session                                   @controllers.gui.Api.updateGroupSession(request: Request, id: Long, version: Option[java.lang.Long])
 # Deprecated: use "POST /jatos/api/v1/studies/:id/studyCodes" instead
 GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])
 POST     /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])
@@ -65,8 +70,8 @@ PATCH    /jatos/api/v1/studyCodes/:code                                     @con
 # API results
 GET      /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, isApiCall: Boolean ?= true)
 POST     /jatos/api/v1/results                                              @controllers.gui.Api.exportResults(request: Request, isApiCall: Boolean ?= true)
-GET      /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, isApiCall: Boolean ?= true)
-POST     /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, isApiCall: Boolean ?= true)
+GET      /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, download: Boolean ?= true, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results/metadata                                     @controllers.gui.Api.exportResultMetadata(request: Request, download: Boolean ?= true, isApiCall: Boolean ?= true)
 GET      /jatos/api/v1/results/data                                         @controllers.gui.Api.exportResultData(request: Request, asPlainText: Boolean ?= false, isApiCall: Boolean ?= true)
 POST     /jatos/api/v1/results/data                                         @controllers.gui.Api.exportResultData(request: Request, asPlainText: Boolean ?= false, isApiCall: Boolean ?= true)
 GET      /jatos/api/v1/results/files                                        @controllers.gui.Api.exportResultFiles(request: Request)
@@ -179,18 +184,13 @@ POST     /jatos/:studyId/batch                                              @con
 POST     /jatos/:studyId/batch/:batchId/properties/workerType/:workerType   @controllers.gui.StudyLinks.toggleAllowedWorkerType(studyId: Long, batchId: Long, workerType, allow: Boolean)
 GET      /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.StudyLinks.batchProperties(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.StudyLinks.submitEditedBatchProperties(request: Request, studyId: Long, batchId: Long)
-GET      /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.batchSessionData(studyId: Long, batchId: Long)
-POST     /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.StudyLinks.submitEditedBatchSessionData(request: Request, studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/studyLinksSetupData                 @controllers.gui.StudyLinks.studyLinksSetupData(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/studyLinksData                      @controllers.gui.StudyLinks.studyLinksData(studyId: Long, batchId: Long, workerType)
 POST     /jatos/:studyId/batch/:batchId/studyLink/:studyCode                @controllers.gui.StudyLinks.toggleStudyLinkActive(studyId: Long, batchId: Long, studyCode, active: Boolean)
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.StudyLinks.removeBatch(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId                                     @controllers.gui.StudyLinks.batchById(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batches                                            @controllers.gui.StudyLinks.batchesByStudy(studyId: Long)
-GET      /jatos/:studyId/batch/:batchId/groups                              @controllers.gui.StudyLinks.groupsByBatch(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/group/:groupId/fixed                               @controllers.gui.StudyLinks.toggleGroupFixed(studyId: Long, groupId: Long, fixed: Boolean)
-GET      /jatos/:studyId/group/:groupId/groupSessionData                    @controllers.gui.StudyLinks.groupSessionData(studyId: Long, groupId: Long)
-POST     /jatos/:studyId/group/:groupId/groupSessionData                    @controllers.gui.StudyLinks.submitEditedGroupSessionData(request: Request, studyId: Long, groupId: Long)
 POST     /jatos/worker/:workerId/comment                                    @controllers.gui.StudyLinks.editWorkerComment(request: Request, workerId: Long)
 
 # Components controller

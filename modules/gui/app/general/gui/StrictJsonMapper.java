@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.cfg.CoercionAction;
 import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.fasterxml.jackson.databind.type.LogicalType;
 import exceptions.gui.BadRequestException;
-import models.gui.ApiEnvelope;
 import models.gui.ApiEnvelope.ErrorCode;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
@@ -18,6 +17,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A custom JSON deserializer with strict validation settings to enforce rigid mapping rules.
+ */
 @Singleton
 public class StrictJsonMapper extends JsonDeserializer<String> {
 
@@ -38,6 +40,13 @@ public class StrictJsonMapper extends JsonDeserializer<String> {
         // Reject float -> int coercion (e.g. 1.2 into Long/Integer)
         this.mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
 
+        this.mapper.coercionConfigFor(LogicalType.Integer)
+                .setCoercion(CoercionInputShape.String, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Object, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Array, CoercionAction.Fail);
+
         this.mapper.coercionConfigFor(LogicalType.Boolean)
                 .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
@@ -56,6 +65,11 @@ public class StrictJsonMapper extends JsonDeserializer<String> {
         return mapper;
     }
 
+    /**
+     * Can be used as `@JsonDeserialize(using = StrictJsonMapper.class)` on fields.
+     * Handles deserialization of JSON strings, returning the text content directly. Throws an error
+     * for inputs that are not valid JSON strings.
+     */
     @Override
     public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         JsonToken t = p.currentToken();
@@ -70,9 +84,9 @@ public class StrictJsonMapper extends JsonDeserializer<String> {
         return null; // unreachable
     }
 
-    public void updateFromJson(Validatable<List<ValidationError>> obj, JsonNode json) throws BadRequestException, IOException {
+    public <T extends Validatable<List<ValidationError>>> T updateFromJson(T obj, JsonNode json) throws BadRequestException, IOException {
         try {
-            mapper.readerForUpdating(obj).readValue(json);
+            return mapper.readerForUpdating(obj).readValue(json);
         } catch (JsonMappingException e) {
             String msg = "Error in field '" + firstFieldName(e).orElse("unknown") + "'";
             throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);

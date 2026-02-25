@@ -4,7 +4,6 @@ import auth.gui.AuthService;
 import com.pivovarit.function.ThrowingConsumer;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.NotFoundException;
 import general.common.RequestScope;
 import models.common.Component;
 import models.common.Study;
@@ -317,16 +316,12 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Component comp = study.getFirstComponent().get();
 
-            try {
-                // by ID
-                Component byId = componentService.getComponentFromIdOrUuid(String.valueOf(comp.getId()));
-                assertThat(byId.getId()).isEqualTo(comp.getId());
-                // by UUID
-                Component byUuid = componentService.getComponentFromIdOrUuid(comp.getUuid());
-                assertThat(byUuid.getUuid()).isEqualTo(comp.getUuid());
-            } catch (NotFoundException e) {
-                Fail.fail();
-            }
+            // by ID
+            Component byId = componentService.getComponentFromIdOrUuid(String.valueOf(comp.getId()));
+            assertThat(byId.getId()).isEqualTo(comp.getId());
+            // by UUID
+            Component byUuid = componentService.getComponentFromIdOrUuid(comp.getUuid());
+            assertThat(byUuid.getUuid()).isEqualTo(comp.getUuid());
         }));
     }
 

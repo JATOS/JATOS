@@ -56,7 +56,7 @@
 
     let groupsTable;
     function generateGroupsTable(batch) {
-        const dataUrl = window.routes.StudyLinks.groupsByBatch(window.study.id, batch.id);
+        const dataUrl = window.routes.Api.getGroupsOfBatch(batch.id);
         if (groupsTable) {
             groupsTable.ajax.url(dataUrl).load();
             return;

@@ -17,8 +17,7 @@ import javax.inject.Provider;
 import java.time.Instant;
 import java.util.function.Function;
 
-import static play.mvc.Results.forbidden;
-import static play.mvc.Results.redirect;
+import static play.mvc.Results.*;
 
 /**
  * This class defines authentication via session cookies (which is the default authentication in the Play Framework).
@@ -71,7 +70,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         // since we need it later anyway. Storing it in the RequestScope now saves us some database requests later.
         User signedinUser = authService.getSignedinUserBySessionCookie(request.session());
         if (signedinUser == null) {
-            return callForbiddenDueToAuthentication(request.remoteAddress(), request.path());
+            return callUnauthorizedDueToAuthentication(request.remoteAddress(), request.path());
         }
         RequestScope.put(AuthService.SIGNEDIN_USER, signedinUser);
 
@@ -92,7 +91,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
 
         // Check authorization
         if (!signedinUser.hasRole(role)) {
-            return callForbiddenDueToAuthorization(request, signedinUser.getUsername(), request.path());
+            return callUnauthorizedDueToAuthorization(request, signedinUser.getUsername(), request.path());
         }
 
         userService.setLastSeen(signedinUser);
@@ -101,11 +100,11 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         return AuthResult.authenticated(postHook);
     }
 
-    private AuthResult callForbiddenDueToAuthentication(String remoteAddress, String urlPath) {
+    private AuthResult callUnauthorizedDueToAuthentication(String remoteAddress, String urlPath) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " tried to access page " + urlPath);
         String msg = "You are not allowed to access this page. Please sign in.";
         if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+            return AuthResult.denied(unauthorized(msg));
         }
         if (!urlPath.isEmpty() && !urlPath.matches("(/|/jatos|/jatos/)")) {
             FlashScopeMessaging.error(msg);
@@ -146,15 +145,15 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         }
     }
 
-    private AuthResult callForbiddenDueToAuthorization(Http.Request request, String normalizedUsername, String urlPath) {
+    private AuthResult callUnauthorizedDueToAuthorization(Http.Request request, String normalizedUsername, String urlPath) {
         String msg = "User " + normalizedUsername + " isn't allowed to access page " + urlPath + ".";
         LOGGER.warn(msg);
         // Do not clear the session cookie - do not sign out
         if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
+            return AuthResult.denied(unauthorized(msg));
         } else {
             RequestScopeMessaging.error(msg);
-            return AuthResult.denied(homeProvider.get().home(request, Http.Status.FORBIDDEN));
+            return AuthResult.denied(homeProvider.get().home(request, Http.Status.UNAUTHORIZED));
         }
     }
 

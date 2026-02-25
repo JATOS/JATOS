@@ -84,4 +84,27 @@ public class GroupResultDao extends AbstractDao {
         return query.getResultList();
     }
 
+    /**
+     * Atomically updates groupSessionData and increments groupSessionVersion, but only if the current version matches
+     * the expectedVersion (compare-and-set).
+     *
+     * @return The new groupSessionVersion if the update succeeded (exactly one row updated), null if the version mismatched
+     */
+    public Long updateGroupSession(Long groupResultId, Long expectedVersion, String sessionData) {
+        String query =
+                "UPDATE GroupResult gr " +
+                        "SET gr.groupSessionData = :sessionData, " +
+                        "    gr.groupSessionVersion = gr.groupSessionVersion + 1 " +
+                        "WHERE gr.id = :id " +
+                        "  AND gr.groupSessionVersion = :expectedVersion";
+
+        int updated = jpa.em().createQuery(query)
+                .setParameter("sessionData", sessionData)
+                .setParameter("id", groupResultId)
+                .setParameter("expectedVersion", expectedVersion)
+                .executeUpdate();
+
+        return updated == 1 ? expectedVersion + 1 : null;
+    }
+
 }

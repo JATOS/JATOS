@@ -149,7 +149,7 @@ public class AuthSessionCookieTest {
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
         verify(homeProvider, times(1)).get();
-        verify(home, times(1)).home(any(Http.Request.class), eq(Http.Status.FORBIDDEN));
+        verify(home, times(1)).home(any(Http.Request.class), eq(Http.Status.UNAUTHORIZED));
         verify(userService, never()).setLastSeen(any());
     }
 

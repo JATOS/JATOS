@@ -1,6 +1,5 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
@@ -12,7 +11,6 @@ import models.common.Study;
 import models.common.StudyLink;
 import models.common.workers.GeneralMultipleWorker;
 import models.common.workers.GeneralSingleWorker;
-import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.StudyCodeProperties;
 import org.junit.Before;
@@ -21,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -40,7 +39,6 @@ public class StudyLinkServiceTest {
     private WorkerDao workerDao;
     private StudyLinkDao studyLinkDao;
     private StudyService studyService;
-    private WorkerService workerService;
     private AuthorizationService authorizationService;
 
     private StudyLinkService studyLinkService;
@@ -50,7 +48,7 @@ public class StudyLinkServiceTest {
         batchDao = mock(BatchDao.class);
         workerDao = mock(WorkerDao.class);
         studyLinkDao = mock(StudyLinkDao.class);
-        workerService = mock(WorkerService.class);
+        WorkerService workerService = mock(WorkerService.class);
         studyService = mock(StudyService.class);
         authorizationService = mock(AuthorizationService.class);
 
@@ -68,7 +66,7 @@ public class StudyLinkServiceTest {
         batch.setStudy(study);
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-y")).thenReturn(study);
-        when(workerService.extractWorkerType("PersonalSingle")).thenReturn(PersonalSingleWorker.WORKER_TYPE);
+//        when(workerService.extractWorkerType("PersonalSingle")).thenReturn(PersonalSingleWorker.WORKER_TYPE);
 
         // Capture created worker to assert a decoded comment
         ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
@@ -77,11 +75,10 @@ public class StudyLinkServiceTest {
         props.setType("PersonalSingle");
         props.setComment("Hello World");
         props.setAmount(2);
-        JsonNode node = studyLinkService.getStudyCodes(batch, props);
+        List<String> codes = studyLinkService.getStudyCodes(batch, props);
 
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(2);
-        assertThat(node.get(0).asText().length()).isEqualTo(11);
+        assertThat(codes.size()).isEqualTo(2);
+        assertThat(codes.get(0).length()).isEqualTo(11);
 
         // Worker creation happened with a decoded comment
         verify(workerDao, times(2)).create(workerCaptor.capture());
@@ -102,7 +99,6 @@ public class StudyLinkServiceTest {
         study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-z")).thenReturn(study);
-        when(workerService.extractWorkerType("GeneralMultiple")).thenReturn(GeneralMultipleWorker.WORKER_TYPE);
 
         StudyLink existing = new StudyLink(batch, GeneralMultipleWorker.WORKER_TYPE);
         when(studyLinkDao.findFirstByBatchAndWorkerType(batch, GeneralMultipleWorker.WORKER_TYPE))
@@ -113,10 +109,9 @@ public class StudyLinkServiceTest {
         props.setComment(null);
         props.setAmount(1);
 
-        JsonNode node = studyLinkService.getStudyCodes(batch, props);
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(1);
-        assertThat(node.get(0).asText()).isEqualTo(existing.getStudyCode());
+        List<String> codes = studyLinkService.getStudyCodes(batch, props);
+        assertThat(codes.size()).isEqualTo(1);
+        assertThat(codes.get(0)).isEqualTo(existing.getStudyCode());
 
         verify(studyLinkDao, never()).create(any(StudyLink.class));
     }
@@ -130,7 +125,6 @@ public class StudyLinkServiceTest {
         study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-a")).thenReturn(study);
-        when(workerService.extractWorkerType("GeneralSingle")).thenReturn(GeneralSingleWorker.WORKER_TYPE);
 
         when(studyLinkDao.findFirstByBatchAndWorkerType(batch, GeneralSingleWorker.WORKER_TYPE))
                 .thenReturn(Optional.empty());
@@ -143,10 +137,9 @@ public class StudyLinkServiceTest {
         props.setComment(null);
         props.setAmount(1);
 
-        JsonNode node = studyLinkService.getStudyCodes(batch, props);
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(1);
-        assertThat(node.get(0).asText()).isNotEmpty();
+        List<String> codes = studyLinkService.getStudyCodes(batch, props);
+        assertThat(codes.size()).isEqualTo(1);
+        assertThat(codes.get(0)).isNotEmpty();
 
         verify(studyLinkDao, times(1)).create(any(StudyLink.class));
     }

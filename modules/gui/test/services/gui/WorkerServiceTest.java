@@ -83,36 +83,41 @@ public class WorkerServiceTest {
     }
 
     @Test
-    public void extractWorkerType_mappings_allAliases() throws Exception {
-        assertThat(workerService.extractWorkerType("jatos")).isEqualTo(JatosWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("ja")).isEqualTo(JatosWorker.WORKER_TYPE);
+    public void validateAndExtractWorkerType_mappings_allAliases() throws Exception {
+        assertThat(WorkerService.extractWorkerType("jatos")).isEqualTo(JatosWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("ja")).isEqualTo(JatosWorker.WORKER_TYPE);
 
-        assertThat(workerService.extractWorkerType("personalsingle")).isEqualTo(PersonalSingleWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("ps")).isEqualTo(PersonalSingleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("personalsingle")).isEqualTo(PersonalSingleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("ps")).isEqualTo(PersonalSingleWorker.WORKER_TYPE);
 
-        assertThat(workerService.extractWorkerType("personalmultiple")).isEqualTo(PersonalMultipleWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("pm")).isEqualTo(PersonalMultipleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("personalmultiple")).isEqualTo(PersonalMultipleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("pm")).isEqualTo(PersonalMultipleWorker.WORKER_TYPE);
 
-        assertThat(workerService.extractWorkerType("generalsingle")).isEqualTo(GeneralSingleWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("gs")).isEqualTo(GeneralSingleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("generalsingle")).isEqualTo(GeneralSingleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("gs")).isEqualTo(GeneralSingleWorker.WORKER_TYPE);
 
-        assertThat(workerService.extractWorkerType("generalmultiple")).isEqualTo(GeneralMultipleWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("gm")).isEqualTo(GeneralMultipleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("generalmultiple")).isEqualTo(GeneralMultipleWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("gm")).isEqualTo(GeneralMultipleWorker.WORKER_TYPE);
 
-        assertThat(workerService.extractWorkerType("mturk")).isEqualTo(MTWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("mt")).isEqualTo(MTWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("mturk")).isEqualTo(MTWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("mt")).isEqualTo(MTWorker.WORKER_TYPE);
 
-        assertThat(workerService.extractWorkerType("mturksandbox")).isEqualTo(MTSandboxWorker.WORKER_TYPE);
-        assertThat(workerService.extractWorkerType("mts")).isEqualTo(MTSandboxWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("mturksandbox")).isEqualTo(MTSandboxWorker.WORKER_TYPE);
+        assertThat(WorkerService.extractWorkerType("mts")).isEqualTo(MTSandboxWorker.WORKER_TYPE);
     }
 
     @Test
-    public void extractWorkerType_null_returnsNull() throws Exception {
-        assertThat(workerService.extractWorkerType(null)).isNull();
+    public void validateAndExtractWorkerType_null_returnsNull() {
+        assertThat(WorkerService.extractWorkerType(null)).isNull();
+    }
+
+    @Test
+    public void validateAndExtractWorkerType_unknown() {
+        assertThat(WorkerService.extractWorkerType("unknown")).isNull();
     }
 
     @Test(expected = BadRequestException.class)
-    public void extractWorkerType_unknown_throws() throws Exception {
-        workerService.extractWorkerType("unknown");
+    public void validateAndExtractWorkerType_unknown_throws() throws Exception {
+        WorkerService.validateAndExtractWorkerType("unknown");
     }
 }

@@ -16,39 +16,40 @@ paths:
   /jatos/api/v1/admin/status:
     get:
       summary: Get the status of your JATOS (for admin tokens only)
-      tags:
-        - admin
+      tags: [ admin ]
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ApiEnvelopeAdminStatus'
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/admin/token:
     get:
       summary: Get details of the token used in this request
-      tags:
-        - admin
+      tags: [ admin ]
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ApiEnvelopeApiTokenMetadata'
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/admin/logs/{filename}:
     get:
       summary: Get a log file (application logs - not study logs)
       description: Works only with admin tokens
-      tags:
-        - admin
+      tags: [ admin ]
       parameters:
         - in: path
           name: filename
@@ -67,194 +68,300 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
-  /jatos/api/v1/user:
+  /jatos/api/v1/users:
+    get:
+      summary: Get all users (admin tokens only)
+      tags: [ admin ]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeUserList'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
     post:
       summary: Create a new user
-      description: (since v3.9.9) Create a new user (for admin tokens only).
-      tags:
-        - admin
+      description: Create a new user (admin tokens only)
+      tags: [ admin ]
       requestBody:
         description: A JSON object containing the new user's properties
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  description: Username of the new user
-                name:
-                  type: string
-                  description: Name of the new user
-                email:
-                  type: string
-                  description: Email address of the new user
-                password:
-                  type: string
-                  description: Password of the new user (only for authMethod DB)
-                authMethod:
-                  type: string
-                  enum: [DB, LDAP]
-                  description: Authentication method
-              required:
-                - username
-                - name
-                - authMethod
+              $ref: '#/components/schemas/CreateUser'
       responses:
-        '200':
+        '201':
           description: User created successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  username:
-                    type: string
-        '400':
-          description: Invalid request body
+                $ref: '#/components/schemas/ApiEnvelopeUser'
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+
+  /jatos/api/v1/users/{id}:
+    head:
+      summary: Check whether a user exists (admin tokens only)
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: User exists
+        '404':
+          description: User not found
         '401':
           description: Unauthorized
         '403':
-          description: Forbidden - Invalid authentication method or validation failed
-
-  /jatos/api/v1/users:
+          description: Forbidden
     get:
-      summary: Get all users
-      description: (since v3.9.9) Get a list of all users and their study IDs (for admin tokens only).
-      tags:
-        - admin
+      summary: Get a user (admin or self)
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ApiEnvelopeUser'
         '401':
           description: Unauthorized
-
-  /jatos/api/v1/users/delete:
-    post:
-      summary: Delete a user
-      description: (since v3.9.9) Delete a user by their username (for admin tokens only).
-      tags:
-        - admin
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+    patch:
+      summary: Update a user (admin or self)
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
       requestBody:
-        description: A JSON object containing the username of the user to be deleted
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-              required:
-                - username
+              $ref: '#/components/schemas/UpdateUser'
       responses:
         '200':
-          description: User deleted successfully
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeUser'
         '401':
           description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+    delete:
+      summary: Delete a user (admin or self; cannot delete admins)
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
         '404':
           description: User not found
 
-  /jatos/api/v1/studies/{id}/members:
-    get:
-      summary: Get all members of a study
-      description: (since v3.9.9) Get a list of all usernames of members of a specific study (for admin tokens only).
-      tags:
-        - admin
+  /jatos/api/v1/users/{id}/tokens:
+    post:
+      summary: Generate an API token for a user (admin or self; if enabled)
+      tags: [ admin ]
       parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+              required: [ name ]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeGeneratedApiToken'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+    get:
+      summary: List API token metadata for a user (admin or self)
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                $ref: '#/components/schemas/ApiEnvelopeApiTokenMetadataList'
         '401':
-          description: Unauthorized
-        '404':
-          description: Study not found
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
-  /jatos/api/v1/studies/{id}/members/add:
-    put:
-      summary: Add a member to a study
-      description: (since v3.9.9) Add a user as a member to a specific study (for admin tokens only).
-      tags:
-        - admin
+  /jatos/api/v1/tokens/{id}:
+    get:
+      summary: Get API token metadata by token id (admin or self)
+      tags: [ admin ]
       parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeApiTokenMetadata'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Activate/deactivate an API token (admin or self)
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
       requestBody:
-        description: A JSON object containing the username of the user to be added
         required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                username:
-                  type: string
-              required:
-                - username
+                active: { type: boolean }
+              required: [ active ]
       responses:
         '200':
-          description: Member added successfully
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeTokenActiveToggled'
         '401':
-          description: Unauthorized
-        '404':
-          description: Study or user not found
-
-  /jatos/api/v1/studies/{id}/members/remove:
-    post:
-      summary: Remove a member from a study
-      description: (since v3.9.9) Remove a user from the members of a specific study (for admin tokens only).
-      tags:
-        - admin
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      summary: Delete an API token (admin or self)
+      tags: [ admin ]
       parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-      requestBody:
-        description: A JSON object containing the username of the user to be removed
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-              required:
-                - username
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
       responses:
         '200':
-          description: Member removed successfully
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
         '401':
-          description: Unauthorized
-        '404':
-          description: Study or user not found
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /jatos/api/v1/study:
     post:
-      summary: Import a study
+      deprecated: true
+      summary: Deprecated - use "POST /jatos/api/v1/studies" instead
+      tags: [ study ]
+      responses:
+        '201':
+          description: Study created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudy'
+
+  /jatos/api/v1/studies/create:
+    post:
+      deprecated: true
+      summary: Deprecated - use "POST /jatos/api/v1/studies" instead
+      tags: [ study ]
+      responses:
+        '201':
+          description: Study created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudy'
+
+  /jatos/api/v1/studies:
+    post:
+      summary: Import or create a study
       description: >-
-        Import a study in the JATOS study archive file format.
-        You can set several flags in the query parameters to specify how eventual
-        existing studies with the same UUID should be handled (e.g keep or
-        overwrite their properties and/or assets).
-      tags:
-        - study
+        Imports a study in JATOS study archive format **or** creates a new study.
+        When importing, query parameters control how to handle an existing study with the
+        same UUID, for example whether to keep or overwrite its properties and assets.
+        When creating a new study, provide the study properties in the JSON request body.
+      tags: [ study ]
       parameters:
         - in: query
           name: keepProperties
+          required: false
           schema:
             type: boolean
             default: false
@@ -265,6 +372,7 @@ paths:
             already exist this parameter has no effect.
         - in: query
           name: keepAssets
+          required: false
           schema:
             type: boolean
             default: false
@@ -275,6 +383,7 @@ paths:
             effect.
         - in: query
           name: keepCurrentAssetsName
+          required: false
           schema:
             type: boolean
             default: true
@@ -289,6 +398,7 @@ paths:
             from the uploaded one. Default is `true`.
         - in: query
           name: renameAssets
+          required: false
           schema:
             type: boolean
             default: true
@@ -298,7 +408,14 @@ paths:
             `renameAssets=true` to let JATOS add a suffix to the assets
             directory name (original name + "_" + a number). Default is `true`.
       requestBody:
+        description: >-
+          Either a JSON object containing study properties (create) or
+          a JATOS study archive upload (.jzip).
+        required: false
         content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStudy'
           multipart/form-data:
             schema:
               type: object
@@ -306,117 +423,51 @@ paths:
                 study:
                   type: string
                   format: binary
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  uuid:
-                    type: string
-                    description: The UUID identifier for the study.
-                  id:
-                    type: integer
-                    description: The ID of the study.
-                  studyExists:
-                    type: boolean
-                    description: Indicates if the study already existed before (determined by the same UUID).
-                  currentStudyTitle:
-                    type: string
-                    description: The old title of the study (overwritten), if applicable.
-                  currentDirName:
-                    type: string
-                    description: The old study assets directory name (overwritten), if applicable.
-                  uploadedStudyTitle:
-                    type: string
-                    description: The new title of the study.
-                  uploadedDirName:
-                    type: string
-                    description: The new study assets directory name.
-                  uploadedDirExists:
-                    type: boolean
-                    description: Indicates if the study assets directory already existed before the upload.
-                  newDirName:
-                    type: string
-                    description: The name assigned to the study's assets directory when a new study is created, but a directory with its default name already exists.
-                required:
-                  - uuid
-                  - id
-                  - studyExists
-                  - uploadedStudyTitle
-                  - uploadedDirName
-                  - uploadedDirExists
-
-        '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/create:
-    post:
-      summary: Create a new study
-      description: (since v3.9.7) Create a new study within JATOS.
-      tags:
-        - study
-      requestBody:
-        description: A JSON object containing the study properties
-        required: true
-        content:
-          application/json:
+              required: [ study ]
+            encoding:
+              study:
+                contentType: application/zip
+          application/zip:
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  description: Title of the study
-                description:
-                  type: string
-                  description: Description of the study
-                comments:
-                  type: string
-                  description: Some comments
-                jsonData:
-                  type: string
-                  description: Study input in JSON format
-                endRedirectUrl:
-                  type: string
-                  description: URL the study redirects to after it is finished
-                groupStudy:
-                  type: boolean
-                  description: Is the study a group study
-                linearStudy:
-                  type: boolean
-                  description: Is the study a linear study
-                allowPreview:
-                  type: boolean
-                  description: Are previews allowed
-              required:
-                - title
+              type: string
+              format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
-        '200':
+        '201':
           description: Study created successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  uuid:
-                    type: string
-                    description: The UUID identifier for the study.
-                  id:
-                    type: integer
-                    description: The ID of the study.
+                $ref: '#/components/schemas/ApiEnvelopeStudy'
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/studies/{id}:
+    head:
+      summary: Check whether a study exists (admin tokens only)
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      responses:
+        '204':
+          description: Study exists
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
     get:
       summary: Export a study
       description: >-
         Export a study by specifying its ID or UUID. The exported study will be in the
         JATOS study archive file format, packed as ZIP.
-      tags:
-        - study
+      tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       responses:
@@ -428,29 +479,456 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Unauthorized
-
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
     delete:
       summary: Delete a study
       description: >-
         Delete a study (including its components, batches, study links,
         study assets and all result data and files).
-      tags:
-        - study
+      tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       responses:
         '200':
           description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/properties:
+    get:
+      summary: Get study properties
+      description: >-
+        Get the study properties by specifying a study ID or UUID. The
+        properties of the study's components can be included by setting the flag
+        `withComponentProperties`. The batch properties can be included by
+        setting the flag `withBatchProperties`.
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: query
+          name: withComponentProperties
+          allowEmptyValue: true
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            Flag, if set to `true` the data will additionally contain the
+            properties of the study's component.
+        - in: query
+          name: withBatchProperties
+          allowEmptyValue: true
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            Flag, if set to `true` the data will additionally contain the
+            properties of the batches that belong to this study.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudy'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Update study properties
+      description: >-
+        Regular users may update only studies they own.
+        Admins may update only the active flag of any study.
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/UpdateStudyProperties'
+                - $ref: '#/components/schemas/UpdateStudyActiveOnly'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ApiEnvelopeStudy'
+                  - $ref: '#/components/schemas/ApiEnvelopeStudyActiveToggled'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/properties:
+    get:
+      summary: Get all study properties that are accessible to the user
+      description: >-
+        The properties of the study's components can be included by setting the
+        flag `withComponentProperties`. The batch properties can be included by
+        setting the flag `withBatchProperties`.
+      tags: [ study ]
+      parameters:
+        - in: query
+          name: withComponentProperties
+          allowEmptyValue: true
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            Flag, if set to `true` the data will additionally contain the
+            properties of the study's component.
+        - in: query
+          name: withBatchProperties
+          allowEmptyValue: true
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            Flag, if set to `true` the data will additionally contain the
+            properties of the batches that belong to this study.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyList'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+
+  /jatos/api/v1/studies/{id}/assets/structure:
+    get:
+      summary: Get the directory structure of a study assets directory in JSON
+      description: >-
+        Every element has `name` (filename), `path` (location
+        in the study assets), `type` (_file_ or _directory_), `creation`
+        (creation timestamp), `lastModified` (last modification timestamp),
+        `size` (file size), `checksum` (checksum of the file calculated with
+        Adler32)
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: query
+          name: flatten
+          allowEmptyValue: true
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            Flag, if set to `true` the returned JSON will be a flat list of
+            files (no tree, no directories). If `false`, the returned JSON
+            will have tree-like structure and include directories. Default
+            is `false`.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyAssetsStructure'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/assets/{filepath}:
+    get:
+      summary: Download a file from the study assets
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: filepath
+          required: true
+          allowReserved: true
+          schema:
+            type: string
+          description: >-
+            Path to the file in the study assets directory. This endpoint
+            supports nested paths (subdirectories). Because OpenAPI path
+            parameters are typically treated as a single path segment by
+            tooling, clients should URL-encode slashes in `filepath`
+            (encode `/` as `%2F`) when calling this endpoint. Directories
+            cannot be downloaded.
+          examples:
+            top-level:
+              value: logo.png
+              summary: Get a file
+              description: Get a top-level file
+            nested-url-encoded:
+              value: images%2Flogo.png
+              summary: Get a file from a subdirectory (URL-encoded)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    post:
+      summary: Upload a file to the study assets
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: filepath
+          required: true
+          allowReserved: true
+          schema:
+            type: string
+          description: >-
+            Target path in the study assets directory. This endpoint supports
+            nested paths (subdirectories). Clients should URL-encode slashes
+            in `filepath` (encode `/` as `%2F`) when calling this endpoint
+            via OpenAPI-generated clients. If `filepath` is just '.', the file
+            will be saved at the top-level of the study assets directory.
+            Non-existing subdirectories will be created. Existing files will
+            be overwritten.
+          examples:
+            top-level:
+              value: .
+              summary: Save in the top-level of the study assets directory
+            nested-dir-url-encoded:
+              value: images%2F
+              summary: Save in a subdirectory (URL-encoded)
+            nested-rename-url-encoded:
+              value: images%2FnewFilename.png
+              summary: Save in a subdirectory and rename (URL-encoded)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                studyAssetsFile:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      summary: Delete a file from the study assets
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: filepath
+          required: true
+          allowReserved: true
+          schema:
+            type: string
+          description: >-
+            Path to the file in the study assets directory to delete. This
+            endpoint supports nested paths (subdirectories). Clients should
+            URL-encode slashes in `filepath` (encode `/` as `%2F`) when
+            calling this endpoint via OpenAPI-generated clients. Directories
+            won't be deleted.
+          examples:
+            top-level:
+              value: logo.png
+              summary: Delete a top-level file
+            nested-url-encoded:
+              value: images%2Flogo.png
+              summary: Delete a file in a subdirectory (URL-encoded)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/assets:
+    post:
+      summary: Upload a file to the study assets
+      description: >-
+        The file will be saved at the top-level of the study assets directory.
+        Existing files will be overwritten.
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                studyAssetsFile:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/members:
+    get:
+      summary: Get member user IDs of a study
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyMembers'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/members/{userId}:
+    put:
+      summary: Add a member to a study
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyMembers'
         '401':
           description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Study or user not found
+    delete:
+      summary: Remove a member from a study
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyMembers'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
-  /jatos/api/v1/studies/{id}/components/create:
+  /jatos/api/v1/studies/{id}/log:
+    get:
+      summary: Get the study log of a study
+      description: >-
+        If download=true (default), returns the full log as a downloadable stream (application/octet-stream).
+        If download=false, returns chunked log lines (application/jsonline) and can be limited by entryLimit.
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+        - in: query
+          name: entryLimit
+          required: false
+          schema:
+            type: integer
+            default: -1
+          description: Maximum number of log lines (only used when download=false).
+        - in: query
+          name: download
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: If true download the full log; if false stream a limited JSON-lines response.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            application/jsonline:
+              schema:
+                type: string
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+
+  /jatos/api/v1/studies/{id}/components:
     post:
-      summary: Create a new component within a study
-      description: (since v3.9.7) Create a new component under the specified study.
-      tags:
-        - study
+      summary: Create a component within a study
+      tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       requestBody:
@@ -482,335 +960,423 @@ paths:
               required:
                 - title
       responses:
-        '200':
-          description: Component created successfully
+        '201':
+          description: Created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  uuid:
-                    type: string
-                    description: The UUID identifier of the component.
-                  id:
-                    type: integer
-                    description: The ID of the component.
+                $ref: '#/components/schemas/ApiEnvelopeComponent'
         '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/{id}/components/{cid}:
-    delete:
-      summary: Delete a component from a study
-      description: >-
-        (since v3.9.7) Delete a specific component including its 
-        component results from a study.
-      tags:
-        - study
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    get:
+      summary: List components of a study
+      tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeComponentList'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/components/{id}:
+    get:
+      summary: Get a component
+      tags: [ study ]
+      parameters:
         - $ref: '#/components/parameters/ComponentIdOrUuidParameter'
       responses:
         '200':
           description: Success
-        '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/{id}/properties:
-    get:
-      summary: Get study properties
-      description: >-
-        Get the study properties by specifying a study ID or UUID. The
-        properties of the study's components can be included by setting the flag
-        `withComponentProperties`. The batch properties can be included by
-        setting the flag `withBatchProperties`. If no study ID or UUID is
-        specified the study properties of **all** studies that you can access
-        will be returned.
-      tags:
-        - study
-      parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-        - in: query
-          name: withComponentProperties
-          allowEmptyValue: true
-          schema:
-            type: boolean
-            default: false
-          description: >-
-            Flag, if set to `true` the data will additionally contain the
-            properties of the study's component.
-        - in: query
-          name: withBatchProperties
-          allowEmptyValue: true
-          schema:
-            type: boolean
-            default: false
-          description: >-
-            Flag, if set to `true` the data will additionally contain the
-            properties of the batches that belong to this study.
-      responses:
-        '200':
-          description: Success
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ApiEnvelopeComponent'
         '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/properties:
-    get:
-      summary: Get all study properties that are accessible to the user
-      description: >-
-        The properties of the study's components can be included by setting the
-        flag `withComponentProperties`. The batch properties can be included by
-        setting the flag `withBatchProperties`.
-      tags:
-        - study
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Update a component
+      tags: [ study ]
       parameters:
-        - in: query
-          name: withComponentProperties
-          allowEmptyValue: true
-          schema:
-            type: boolean
-            default: false
-          description: >-
-            Flag, if set to `true` the data will additionally contain the
-            properties of the study's component.
-        - in: query
-          name: withBatchProperties
-          allowEmptyValue: true
-          schema:
-            type: boolean
-            default: false
-          description: >-
-            Flag, if set to `true` the data will additionally contain the
-            properties of the batches that belong to this study.
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/{id}/assets/structure:
-    get:
-      summary: Get the directory structure of a study assets directory in JSON
-      description: >-
-        (since v3.8.2) Every element has `name` (filename), `path` (location
-        in the study assets), `type` (_file_ or _directory_), `creation`
-        (creation timestamp), `lastModified` (last modification timestamp),
-        `size` (file size), `checksum` (checksum of the file calculated with
-        Adler32)
-      tags:
-        - study
-      parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-        - in: query
-          name: flatten
-          allowEmptyValue: true
-          schema:
-            type: boolean
-            default: false
-          description: >-
-            Flag, if set to `true` the returned JSON will be a flat list of
-            files (no tree, no directories). If `false`, the returned JSON
-            will have tree-like structure and include directories. Default
-            is `false`.
-      responses:
-        '200':
-          description: Success
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/{id}/assets/{filepath}:
-    get:
-      summary: Download a file from the study assets
-      tags:
-        - study
-      parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-        - in: path
-          name: filepath
-          required: true
-          schema:
-            type: string
-          description: >-
-            Filepath to the file. Directories cannot be downloaded. The path can
-            be URL encoded but doesn't have to be.
-          examples:
-            top-level:
-              value: logo.png
-              summary: Get a file
-              description: >-
-                Downloads the file *logo.png* from the top-level of the study
-                assets directory.
-            subdirectory:
-              value: images/logo.png
-              summary: Get a file from a subdirectory
-              description: >-
-                Downloads the file *logo.png* from the *images* subdirectory of
-                the study assets directory.
-      responses:
-        '200':
-          description: Success
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '401':
-          description: Unauthorized
-
-    post:
-      summary: Upload a file to the study assets
-      tags:
-        - study
-      parameters:
-        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-        - in: path
-          name: filepath
-          required: true
-          schema:
-            type: string
-          description: >-
-            Filepath to the file. Subdirectories are allowed and it can
-            additionally rename the file (see examples). If it is just '.' the
-            file will be saved at the top-level of the study assets directory.
-            The path can be URL encoded but doesn't have to be. Non-existing
-            subdirectories will be created. Existing files will be overwritten.
-          examples:
-            top-level:
-              value: .
-              summary: Save in the top-level of the study assets directory
-              description: >-
-                The filepath will be ignored and the uploaded file be saved in
-                the top-level of the study assets directory.
-            subdirectory:
-              value: images/
-              summary: Save in a subdirectory
-              description: >-
-                Saves the file in the subdirectory *images* of the study assets
-                directory. If the subdirectory does not exist it will be
-                created.
-            changeFilename:
-              value: images/newFilename.png
-              summary: Additionally rename file
-              description: >-
-                Additionally to saving the file in the subdirectory *images* it
-                will be renamed to *newFilename.png*.
+        - $ref: '#/components/parameters/ComponentIdOrUuidParameter'
       requestBody:
+        required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              properties:
-                studyAssetsFile:
-                  type: string
-                  format: binary
+              $ref: '#/components/schemas/UpdateComponentRequest'
       responses:
         '200':
           description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeComponent'
         '401':
-          description: Unauthorized
-
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
     delete:
-      summary: Delete a file from the study assets
-      tags:
-        - study
+      summary: Delete a component
+      tags: [ study ]
+      parameters:
+        - $ref: '#/components/parameters/ComponentIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/batches:
+    post:
+      summary: Create a batch within a study
+      tags: [ study-runs ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-        - in: path
-          name: filepath
-          required: true
-          schema:
-            type: string
-          description: >-
-            Path to the file in the study assets directory that is supposed to
-            be deleted. The path can be URL encoded but doesn't have to be.
-            Directories won't be deleted.
-          examples:
-            top-level:
-              value: logo.png
-              summary: Deletes a file
-              description: >-
-                Deletes the file *logo.png* in the top-level of the study assets
-                directory.
-            subdirectory:
-              value: images/logo.png
-              summary: Deletes a file in a subdirectory
-              description: >-
-                Deletes the file *logo.png* in the subdirectory *images* in the
-                study assets directory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBatch'
       responses:
-        '200':
+        '201':
           description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeBatch'
         '401':
-          description: Unauthorized
-
-  /jatos/api/v1/studies/{id}/log:
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
     get:
-      summary: Get the study log of a study
-      tags:
-        - study
+      summary: List batches of a study
+      tags: [ study-runs ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       responses:
         '200':
           description: Success
           content:
-            application/zip:
+            application/json:
               schema:
-                type: string
-                format: binary
+                $ref: '#/components/schemas/ApiEnvelopeBatchList'
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/batches/{id}:
+    get:
+      summary: Get a batch by id/uuid
+      tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeBatch'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Update a batch by id/uuid
+      tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBatch'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeBatch'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      summary: Delete a batch
+      tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/batches/{id}/session:
+    get:
+      summary: Get the batch session data
+      tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeBatchOrGroupSession'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Update the batch session data
+      description: >-
+        Updates the batch session data with optimistic concurrency control via `version`.
+        If the provided `version` is not the latest one, the request is rejected.
+      tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+        - in: query
+          name: version
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: >-
+            Session version for optimistic locking. If omitted, the server uses the current version.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              description: Arbitrary JSON object stored as the batch session.
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success (returns the new version)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSessionVersion'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/batches/{id}/groups:
+    get:
+      summary: List the groups that belong to a batch
+      tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeGroupList'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/groups/{id}/session:
+    get:
+      summary: Get the group session data
+      tags: [ study-runs ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+          description: Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeBatchOrGroupSession'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Update the group session data
+      description: >-
+        Updates the group session data with optimistic concurrency control via `version`.
+        If the provided `version` is not the latest one, the request is rejected.
+      tags: [ study-runs ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+          description: Group ID
+        - in: query
+          name: version
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: >-
+            Session version for optimistic locking. If omitted, the server uses the current version.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              description: Arbitrary JSON object stored as the group session.
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success (returns the new version)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSessionVersion'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /jatos/api/v1/studies/{id}/studyCodes:
     get:
+      deprecated: true
+      summary: Deprecated - use POST /studyCodes instead
+      tags: [ study-runs ]
+      responses:
+        '200':
+          description: Success
+    post:
       summary: Get one or multiple study codes
-      tags:
-        - study
+      description: >-
+        Parameters can be provided either via query parameters
+        or via a JSON request body. At least `type` must be provided (in query or body).
+      tags: [ study-runs ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         - in: query
           name: type
-          required: true
+          required: false
           schema:
             type: string
           description: >-
-            Type - one of `PersonalSingle` (or `ps`), `PersonalMultiple` (or
-            `pm`), `GeneralSingle` (or `gs`), `GeneralMultiple` (or `gm`),
-            `MTurk` (or `mt`)
+            Type. Provide either here or in JSON body. One of `PersonalSingle` (or `ps`), `PersonalMultiple` (or
+            `pm`), `GeneralSingle` (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
         - in: query
           name: batchId
+          required: false
           schema:
             type: integer
             minimum: 1
           description: >-
-            ID of the batch to which the study codes should belong to. If not
+            Batch ID. Optional. ID of the batch to which the study codes should belong to. If not
             set the default batch is used.
         - in: query
           name: comment
+          required: false
           schema:
             type: string
           description: >-
-            Some identifying description or name (only for type `PersonalSingle`
-            or `PersonalMultiple`). Can be left empty.
+            Optional comment associated with the worker/study code. Only for type `PersonalSingle`
+            or `PersonalMultiple`).
         - in: query
           name: amount
+          required: false
           schema:
             type: integer
           description: >-
-            Number of study codes to be created (only for type `PersonalSingle`
+            Number of study codes to be generated. Only for type `PersonalSingle`
             or `PersonalMultiple`). Default is 1.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                batchId:
+                  type: integer
+                  minimum: 1
+                  description: >-
+                    Batch ID. Optional. ID of the batch to which the study codes should belong to. If not
+                    set the default batch is used.
+                type:
+                  type: string
+                  description: >-
+                    Type. Provide either here or in JSON body. One of `PersonalSingle` (or `ps`), `PersonalMultiple` (or
+                    `pm`), `GeneralSingle` (or `gs`), `GeneralMultiple` (or `gm`), `MTurk` (or `mt`)
+                comment:
+                  type: string
+                  description: >-
+                    Optional comment associated with the worker/study code. Only for type `PersonalSingle`
+                    or `PersonalMultiple`).
+                amount:
+                  type: integer
+                  minimum: 1
+                  description: >-
+                    Number of study codes to be generated. Only for type `PersonalSingle`
+                    or `PersonalMultiple`). Default is 1.
       responses:
         '200':
           description: Success
@@ -818,8 +1384,81 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - apiVersion
+                  - data
+                properties:
+                  apiVersion:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: string
+                additionalProperties: false
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studyCodes/{code}:
+    get:
+      summary: Get study code data by code
+      tags: [ study-runs ]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+          description: Study code
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyCode'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      summary: Activate/deactivate a study code
+      tags: [ study-runs ]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+          description: Study code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                active:
+                  type: boolean
+              required: [ active ]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyCode'
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /jatos/api/v1/results:
     post:
@@ -833,8 +1472,7 @@ paths:
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
         raised. The results will be packed in an ZIP archive.
-      tags:
-        - results
+      tags: [ results ]
       parameters:
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
@@ -853,13 +1491,16 @@ paths:
             application/zip:
               schema:
                 type: string
+                description: ZIP archive containing the results (metadata, data, and files)
                 format: binary
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/results/metadata:
     post:
-      summary: Get result metadata in JSON
+      summary: Get result metadata as JSON
       description: >-
         Select results by specifying one or multiple of: study IDs/UUIDs,
         component IDs/UUIDs, batch IDs, group IDs, study result IDs, and
@@ -868,10 +1509,16 @@ paths:
         to use single IDs, list of IDs, ranges, or a combination of all three.
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
-        raised. The metadata will be returned in JSON format.
-      tags:
-        - results
+        raised.
+      tags: [ results ]
       parameters:
+        - in: query
+          name: download
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: If true the JSON is downloaded as a file; if false it's returned as JSON in the response body.
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
         - $ref: '#/components/parameters/ComponentIdParameter'
@@ -884,14 +1531,25 @@ paths:
         $ref: '#/components/requestBodies/ResultIdsJsonBody'
       responses:
         '200':
-          description: Success
+          description: >-
+            Returns JSON. If `download=true`, the same JSON is returned but with
+            `Content-Disposition: attachment` so clients can download it as a file.
+          headers:
+            Content-Disposition:
+              description: |
+                Present when `download=true`. Suggests a filename and download.
+              required: false
+              schema:
+                type: string
+                example: attachment; filename="jatos_results_metadata_[datatime].json"
           content:
             application/json:
               schema:
-                type: string
-                format: binary
+                $ref: "#/components/schemas/ApiEnvelopeResultsMetadata"
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/results/data:
     post:
@@ -904,10 +1562,18 @@ paths:
         to use single IDs, list of IDs, ranges, or a combination of all three.
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
-        raised. The result data will be in an text file.
-      tags:
-        - results
+        raised. If `asPlainText=true`, returns a single plain text stream
+        (one line per result). Otherwise returns a ZIP archive containing one
+        file per result.
+      tags: [ results ]
       parameters:
+        - in: query
+          name: asPlainText
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: If true return a single plain text stream; if false return ZIP.
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
         - $ref: '#/components/parameters/ComponentIdParameter'
@@ -921,6 +1587,14 @@ paths:
       responses:
         '200':
           description: Success
+          headers:
+            Content-Disposition:
+              description: |
+                Suggests a filename and download. Filesuffix can be .zip or .txt.
+              required: true
+              schema:
+                type: string
+                example: attachment; filename="jatos_results_data_[datatime].txt"
           content:
             application/octet-stream:
               schema:
@@ -930,7 +1604,9 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/results/files:
     post:
@@ -943,9 +1619,8 @@ paths:
         to use single IDs, list of IDs, ranges, or a combination of all three.
         If one of the specified results does not exist or you have no permission
         to access it this result will simply be left out and no error will be
-        raised. The results will be packed in an ZIP archive.
-      tags:
-        - results
+        raised. The results will be packed in a ZIP archive.
+      tags: [ results ]
       parameters:
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
@@ -966,13 +1641,14 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
   /jatos/api/v1/results/files/{filename}:
     get:
       summary: Get a single result file
-      tags:
-        - results
+      tags: [ results ]
       parameters:
         - in: query
           name: componentResultId
@@ -996,7 +1672,11 @@ paths:
                 type: string
                 format: binary
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /jatos/api/v1/results/delete:
     put:
@@ -1012,8 +1692,8 @@ paths:
         simply be left out and no error will be raised. Empty study results will
         be deleted too. **Only results will be deleted, studies, components,
         batches, and groups remain untouched**. **This cannot be undone**.
-      tags:
-        - results
+        Response contains the deleted component result IDs in an envelope.
+      tags: [ results ]
       parameters:
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
@@ -1027,12 +1707,18 @@ paths:
         $ref: '#/components/requestBodies/ResultIdsJsonBody'
       responses:
         '200':
-          description: Success
+          description: Deleted component result IDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelopeDeletedComponentResultIds"
         '401':
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
 
 security:
-  - BearerAuth: []
+  - BearerAuth: [ ]
 components:
   securitySchemes:
     BearerAuth:
@@ -1064,7 +1750,7 @@ components:
         multiple times.
     ComponentIdOrUuidParameter:
       in: path
-      name: cid
+      name: id
       required: true
       schema:
         type: string
@@ -1101,6 +1787,13 @@ components:
       description: >-
         Specify results with a component result ID. This query parameter can be
         used multiple times.
+    BatchIdOrUuidParameter:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+      description: Either a batch ID or batch UUID
     BatchIdParameter:
       in: query
       name: batchId
@@ -1120,7 +1813,7 @@ components:
   requestBodies:
     ResultIdsJsonBody:
       content:
-        text/plain: {}
+        text/plain: { }
         application/json:
           schema:
             type: object
@@ -1259,3 +1952,1199 @@ components:
                 studyResultIds: null
                 batchIds: null
                 groupIds: null
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiEnvelopeError"
+
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiEnvelopeError"
+
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiEnvelopeError"
+
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiEnvelopeError"
+  schemas:
+
+    ApiEnvelopeSuccess:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+        message:
+          type: string
+      required: [ apiVersion ]
+      additionalProperties: false
+
+    ApiEnvelopeSuccessWithMessage:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope returned after successful API operations.
+          properties:
+            message:
+              type: string
+              description: Human-readable result message.
+          required: [ message ]
+          additionalProperties: false
+
+    ApiEnvelopeError:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_ERROR
+                - INVALID_REQUEST
+                - INVALID_AUTH_METHOD
+                - NOT_FOUND
+                - AUTH_ERROR
+                - NO_ACCESS
+                - LDAP_ERROR
+                - FORBIDDEN
+                - CONFIG_ERROR
+                - NOT_ACCEPTABLE
+                - MISSING_FILE
+                - FILE_ERROR
+                - STUDY_LOCKED
+                - TOO_LARGE
+                - CLIENT_ERROR
+                - UNSPECIFIED
+                - UNEXPECTED_ERROR
+            message:
+              type: string
+          required: [ code ]
+          additionalProperties: false
+      required: [ apiVersion, error ]
+      additionalProperties: false
+
+    ApiTokenMetadata:
+      type: object
+      description: API token metadata (token value is never returned).
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        userId:
+          type: integer
+          format: int64
+          nullable: true
+        creationDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Token creation timestamp.
+        expiresAfter:
+          type: integer
+          nullable: true
+          description: Expiration time in seconds after creation. Null or <= 0 means no expiration.
+        expirationDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Calculated expiration timestamp.
+        isExpired:
+          type: boolean
+        isAdminToken:
+          type: boolean
+        active:
+          type: boolean
+      required: [ id, isExpired, isAdminToken, active ]
+
+    ApiTokenWithValue:
+      description: Generated token (token value is returned only on creation).
+      allOf:
+        - $ref: '#/components/schemas/ApiTokenMetadata'
+        - type: object
+          properties:
+            token:
+              type: string
+              description: The generated token value. Returned only once at creation time.
+          required: [ token ]
+
+    ApiEnvelopeGeneratedApiToken:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ApiTokenWithValue'
+          required: [ data ]
+
+    ApiEnvelopeApiTokenMetadata:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ApiTokenMetadata'
+          required: [ data ]
+
+    ApiEnvelopeApiTokenMetadataList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiTokenMetadata'
+          required: [ data ]
+
+    ApiEnvelopeTokenActiveToggled:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                id: { type: integer, format: int64 }
+                username: { type: string }
+                active: { type: boolean }
+              required: [ id, username, active ]
+              additionalProperties: false
+          required: [ data ]
+          additionalProperties: false
+
+    CreateUser:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Username of the new user
+        name:
+          type: string
+          description: Name of the new user
+        email:
+          type: string
+          description: Email address of the new user
+        password:
+          type: string
+          description: Password of the new user (only for authMethod DB)
+        authMethod:
+          type: string
+          enum: [ DB, LDAP ]
+          description: Authentication method
+      required:
+        - username
+        - name
+        - authMethod
+
+    UpdateUser:
+      type: object
+      description: >-
+        Partial update of a user. Provide only the fields you want to change.
+      properties:
+        name:
+          type: string
+          description: Name of the user
+        email:
+          type: string
+          nullable: true
+          description: Email address of the user
+        password:
+          type: string
+          description: New password (only applicable for authMethod DB)
+        active:
+          type: boolean
+          description: Whether the user is active
+      additionalProperties: false
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          nullable: true
+        roleList:
+          type: array
+          items:
+            type: string
+            enum: [ USER, ADMIN, SUPERUSER ]
+        authMethod:
+          type: string
+          enum: [ DB, LDAP, OAUTH_GOOGLE, OIDC, ORCID, SRAM, CONEXT ]
+        lastSignin:
+          type: string
+          format: date-time
+          nullable: true
+        lastSeen:
+          type: string
+          format: date-time
+          nullable: true
+        active:
+          type: boolean
+      required: [ id, username, name, roleList, authMethod, active ]
+
+    UserWithStudyIds:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            studyIds:
+              type: array
+              items:
+                type: integer
+                format: int64
+          required: [ studyIds ]
+
+    ApiEnvelopeUserList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserWithStudyIds'
+          required: [ data ]
+
+    ApiEnvelopeUser:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/User'
+          required: [ data ]
+
+    AdminStatus:
+      type: object
+      description: Admin status information.
+      properties:
+        studyCount:
+          type: integer
+        studyCountTotal:
+          type: integer
+        studyResultCount:
+          type: integer
+        studyResultCountTotal:
+          type: integer
+        workerCount:
+          type: integer
+        workerCountTotal:
+          type: integer
+        userCount:
+          type: integer
+        serverTime:
+          type: integer
+          format: int64
+          description: Server time in milliseconds since epoch.
+        latestUsers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminStatusLatestUser'
+        latestStudyRuns:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminStatusLatestStudyRun'
+      required:
+        - studyCount
+        - studyCountTotal
+        - studyResultCount
+        - studyResultCountTotal
+        - workerCount
+        - workerCountTotal
+        - userCount
+        - serverTime
+        - latestUsers
+        - latestStudyRuns
+
+    AdminStatusLatestUser:
+      type: object
+      properties:
+        username:
+          type: string
+        name:
+          type: string
+        authMethod:
+          type: string
+        time:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp string.
+      required: [ username, name, authMethod, time ]
+
+    AdminStatusLatestStudyRunMember:
+      type: object
+      properties:
+        username:
+          type: string
+        name:
+          type: string
+        authMethod:
+          type: string
+      required: [ username, name, authMethod ]
+
+    AdminStatusLatestStudyRun:
+      type: object
+      properties:
+        studyTitle:
+          type: string
+        time:
+          description: Timestamp as returned by the server (may be a JSON datetime or numeric timestamp).
+          oneOf:
+            - type: string
+              format: date-time
+            - type: integer
+              format: int64
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminStatusLatestStudyRunMember'
+      required: [ studyTitle, time, members ]
+
+    ApiEnvelopeAdminStatus:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminStatus'
+      required: [ data ]
+
+    CreateStudy:
+      allOf:
+        - $ref: '#/components/schemas/UpdateStudyProperties'
+        - type: object
+          required: [ title ]
+
+    UpdateStudyProperties:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the study
+        description:
+          type: string
+          nullable: true
+          description: Description of the study
+        active:
+          type: boolean
+          description: A deactivated study cannot be run by a worker.
+          default: true
+        groupStudy:
+          type: boolean
+          default: false
+          description: Is the study a group study
+        linearStudy:
+          type: boolean
+          default: false
+          description: Is the study a linear study
+        allowPreview:
+          type: boolean
+          default: false
+          description: Are previews allowed
+        dirName:
+          type: string
+          description: Study assets directory name.
+        comments:
+          type: string
+          nullable: true
+          description: Some comments
+        jsonData:
+          type: string
+          nullable: true
+          description: Study input in JSON format
+        endRedirectUrl:
+          type: string
+          nullable: true
+          description: URL the study redirects to after it is finished
+        studyEntryMsg:
+          type: string
+          nullable: true
+          description: Message shown to the user when starting the study via the study entry page
+      additionalProperties: false
+
+    UpdateStudyActiveOnly:
+      type: object
+      properties:
+        active:
+          type: boolean
+          description: A deactivated study cannot be run by a worker.
+          default: true
+      additionalProperties: false
+
+    Study:
+      type: object
+      description: Study properties. Includes components, batches, and members.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: The ID of the study.
+        uuid:
+          type: string
+          description: The UUID identifier for the study.
+        title:
+          type: string
+          description: Title of the study
+        description:
+          type: string
+          nullable: true
+          description: Description of the study
+        locked:
+          type: boolean
+          description: Is the study locked
+        active:
+          type: boolean
+          description: Is the study activated
+        groupStudy:
+          type: boolean
+          description: Is the study a group study
+        linearStudy:
+          type: boolean
+          description: Is the study a linear study
+        allowPreview:
+          type: boolean
+          description: Are previews allowed
+        components:
+          type: array
+          description: >-
+            Study components. Depending on the endpoint/flags this can be a minimal reference
+            object (id/uuid) or full component objects.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/ComponentRef'
+              - $ref: '#/components/schemas/Component'
+        batches:
+          type: array
+          description: >-
+            Study batches. Depending on the endpoint/flags this can be a minimal reference
+            object (id/uuid) or full batch objects.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/BatchRef'
+              - type: object
+        dirName:
+          type: string
+          description: Directory name of the study assets
+        comments:
+          type: string
+          nullable: true
+          description: Some comments
+        jsonData:
+          type: string
+          nullable: true
+          description: Study input in JSON format
+        endRedirectUrl:
+          type: string
+          nullable: true
+          description: URL the study redirects to after it is finished
+        studyEntryMsg:
+          type: string
+          nullable: true
+          description: Message shown to the user when starting the study via the study entry page
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudyMemberRef'
+      required: [ id, uuid, title, locked, active, groupStudy, linearStudy, allowPreview, dirName, members, components, batches ]
+      additionalProperties: true
+
+    ComponentRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+      required: [ id, uuid ]
+      additionalProperties: false
+
+    BatchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+      required: [ id, uuid ]
+      additionalProperties: false
+
+    StudyMemberRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+      required: [ id, username ]
+      additionalProperties: false
+
+    StudyActiveToggled:
+      type: object
+      description: Minimal response payload when only the study's active flag is toggled.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Study ID.
+        uuid:
+          type: string
+          description: Study UUID.
+        active:
+          type: boolean
+          description: Current activation status.
+      required: [ id, uuid, active ]
+      additionalProperties: false
+
+    ApiEnvelopeStudy:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Study'
+          required: [ data ]
+
+    ApiEnvelopeStudyList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Study'
+          required: [ data ]
+
+    ApiEnvelopeStudyActiveToggled:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope returned when an admin toggles only the study's active flag.
+          properties:
+            data:
+              $ref: "#/components/schemas/StudyActiveToggled"
+          required: [ data ]
+          additionalProperties: false
+
+    Component:
+      type: object
+      description: Component properties.
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+        title:
+          type: string
+        htmlFilePath:
+          type: string
+          nullable: true
+          description: Local path to component's HTML file in the study assets folder.
+        reloadable:
+          type: boolean
+        active:
+          type: boolean
+        comments:
+          type: string
+          nullable: true
+        jsonData:
+          type: string
+          nullable: true
+      required: [ id, uuid, title, reloadable, active ]
+      additionalProperties: true
+
+    ApiEnvelopeComponent:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Component'
+          required: [ data ]
+
+    ApiEnvelopeComponentList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Component'
+          required: [ data ]
+
+    UpdateComponentRequest:
+      type: object
+      description: Component properties update payload.
+      properties:
+        title:
+          type: string
+          description: Component title.
+        htmlFilePath:
+          type: string
+          nullable: true
+          description: Local path to component's HTML file in the study assets folder.
+        htmlFileRename:
+          type: boolean
+          description: Whether the actual HTML file on disk should be renamed.
+          default: false
+        reloadable:
+          type: boolean
+          description: Is the component reloadable.
+          default: false
+        active:
+          type: boolean
+          description: Whether the component is active.
+          default: true
+        comments:
+          type: string
+          nullable: true
+          description: User comments.
+        jsonData:
+          type: string
+          nullable: true
+          description: Component input in JSON format.
+      required:
+        - title
+      additionalProperties: false
+
+    DirectoryEntry:
+      type: object
+      description: >-
+        A single node in the study assets directory listing.
+        When `flatten=false`, the response is a tree and directories may have `content`.
+        When `flatten=true`, the response is a flat array of leaf nodes.
+      properties:
+        name:
+          type: string
+          description: File or directory name (last path segment).
+        path:
+          type: string
+          description: Path relative to the study assets base directory.
+          example: images/logo.png
+        type:
+          type: string
+          description: Node type as detected from the filesystem.
+          enum: [ directory, file, other ]
+        creation:
+          type: integer
+          format: int64
+          description: Creation timestamp in milliseconds since epoch.
+        lastModified:
+          type: integer
+          format: int64
+          description: Last modification timestamp in milliseconds since epoch.
+        size:
+          type: integer
+          format: int64
+          description: Size in bytes (for directories this can be filesystem-dependent).
+        checksum:
+          type: integer
+          format: int64
+          nullable: true
+          description: Adler32 checksum; present only for regular files.
+        content:
+          type: array
+          nullable: true
+          description: Directory contents (present only when this node is a directory and `flatten=false`).
+          items:
+            $ref: '#/components/schemas/DirectoryEntry'
+      required: [ name, path, type, creation, lastModified, size ]
+      additionalProperties: false
+
+    ApiEnvelopeStudyAssetsStructure:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: >-
+            Envelope containing the study assets directory structure.
+            The `data` payload is either a tree (when `flatten=false`) or a flat array (when `flatten=true`).
+          properties:
+            data:
+              oneOf:
+                - $ref: '#/components/schemas/DirectoryEntry'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/DirectoryEntry'
+          required: [ data ]
+          additionalProperties: false
+
+    StudyMembers:
+      type: object
+      description: Study identifier plus the list of member user IDs.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Study ID.
+        uuid:
+          type: string
+          description: Study UUID.
+        members:
+          type: array
+          description: List of user IDs that are members of this study.
+          items:
+            type: integer
+            format: int64
+      required: [ id, uuid, members ]
+      additionalProperties: false
+
+    ApiEnvelopeStudyMembers:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing the study members response.
+          properties:
+            data:
+              $ref: '#/components/schemas/StudyMembers'
+          required: [ data ]
+          additionalProperties: false
+
+    Batch:
+      type: object
+      description: Batch properties.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Batch ID.
+        uuid:
+          type: string
+          description: Batch UUID.
+        title:
+          type: string
+          nullable: true
+          description: Title of the batch.
+        active:
+          type: boolean
+          description: Whether this batch is active.
+          default: true
+        maxActiveMembers:
+          type: integer
+          nullable: true
+          description: Max active members per group (only relevant for group studies). 'null' means no limit.
+        maxTotalMembers:
+          type: integer
+          nullable: true
+          description: Max total members per group (only relevant for group studies). 'null' means no limit.
+        maxTotalWorkers:
+          type: integer
+          nullable: true
+          description: Max total workers in the batch (independent of groups). 'null' means no limit.
+        allowedWorkerTypes:
+          type: array
+          description: Worker types allowed to run in this batch.
+          items:
+            type: string
+        comments:
+          type: string
+          nullable: true
+          description: User comments.
+        jsonData:
+          type: string
+          nullable: true
+          description: Batch input data in JSON format.
+      required: [ id, uuid, active, allowedWorkerTypes ]
+      additionalProperties: true
+
+    ApiEnvelopeBatch:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing a batch.
+          properties:
+            data:
+              $ref: '#/components/schemas/Batch'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeBatchList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Batch'
+          required: [ data ]
+
+    CreateBatch:
+      allOf:
+        - $ref: '#/components/schemas/UpdateBatch'
+        - type: object
+          required: [ title ]
+
+    UpdateBatch:
+      type: object
+      description: >-
+        Batch properties payload used to create or update a batch.
+      properties:
+        title:
+          type: string
+          description: Title of the batch.
+        active:
+          type: boolean
+          default: true
+          description: True if batch can be used.
+        maxActiveMembers:
+          type: integer
+          nullable: true
+          description: Maximum number of active members in one group. 'null' means no limit.
+        maxTotalMembers:
+          type: integer
+          nullable: true
+          description: Maximum number of members (active or inactive) in one group. 'null' means no limit.
+        maxTotalWorkers:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Maximum number of workers in this batch (independent of groups). 'null' means no limit.
+        allowedTypes:
+          type: array
+          description: Set of types that are allowed to run in this batch.
+          items:
+            type: string
+          default: [ ]
+        comments:
+          type: string
+          nullable: true
+          description: User comments.
+        jsonData:
+          type: string
+          nullable: true
+          description: Batch input data in JSON format (string containing JSON).
+      additionalProperties: false
+
+    BatchOrGroupSession:
+      type: object
+      description: >-
+        Temporary, global data storage for a batch or group (JSON stored as string) plus a version for
+        optimistic concurrency control.
+      properties:
+        version:
+          type: integer
+          format: int64
+        data:
+          type: string
+          description: Batch/group session data (string containing JSON).
+      required: [ version, data ]
+      additionalProperties: false
+
+    ApiEnvelopeSessionVersion:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                version:
+                  type: integer
+                  format: int64
+              required: [ version ]
+              additionalProperties: false
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeBatchOrGroupSession:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing a batch or group session.
+          properties:
+            data:
+              $ref: '#/components/schemas/BatchOrGroupSession'
+          required: [ data ]
+          additionalProperties: false
+
+    Group:
+      type: object
+      description: Group information
+      properties:
+        id:
+          type: integer
+          format: int64
+        groupState:
+          type: string
+          enum: [ STARTED, FINISHED, FIXED ]
+        activeMemberList:
+          type: array
+          description: List of active member studyResult IDs.
+          items:
+            type: integer
+            format: int64
+        historyMemberList:
+          type: array
+          description: List of past member studyResult IDs.
+          items:
+            type: integer
+            format: int64
+        activeMemberCount:
+          type: integer
+          nullable: true
+        historyMemberCount:
+          type: integer
+          nullable: true
+        resultCount:
+          type: integer
+          description: activeMemberCount + historyMemberCount
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+      required: [ id, activeMemberList, historyMemberList, resultCount ]
+      additionalProperties: true
+
+    ApiEnvelopeGroupList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing a list of groups.
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Group'
+          required: [ data ]
+          additionalProperties: false
+
+    StudyCodeInfo:
+      type: object
+      description: Information about a study code.
+      properties:
+        studyCode:
+          type: string
+        batchId:
+          type: integer
+          format: int64
+        type:
+          type: string
+        comment:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+        studyLinkPath:
+          type: string
+        studyEntryPath:
+          type: string
+      required: [ studyCode, batchId, type, active, studyLinkPath, studyEntryPath ]
+      additionalProperties: false
+
+    ApiEnvelopeStudyCode:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing study code information.
+          properties:
+            data:
+              $ref: '#/components/schemas/StudyCodeInfo'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeResultsMetadata:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing result metadata as JSON
+          properties:
+            apiVersion:
+              type: string
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/ResultsMetadataStudyList"
+          required: [ apiVersion, data ]
+          additionalProperties: false
+
+    ResultsMetadataStudyList:
+      type: object
+      properties:
+        studyId:
+          type: integer
+          format: int64
+        studyUuid:
+          type: string
+        studyTitle:
+          type: string
+        studyResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResultsMetadataStudyResultList"
+      required: [ studyId, studyUuid, studyTitle, studyResults ]
+      additionalProperties: false
+
+    ResultsMetadataStudyResultList:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+        studyCode:
+          type: string
+        comment:
+          type: string
+          nullable: true
+          description: Only present if worker comment is non-empty.
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+          description: Human-readable duration (derived from start/end).
+        lastSeenDate:
+          type: string
+          format: date-time
+          nullable: true
+        studyState:
+          type: string
+          enum: [ PRE, STARTED, DATA_RETRIEVED, FINISHED, ABORTED, FAIL ]
+        message:
+          type: string
+          nullable: true
+        urlQueryParameters:
+          type: object
+          additionalProperties:
+            type: string
+          nullable: true
+        workerId:
+          type: integer
+          format: int64
+        workerType:
+          type: string
+        batchId:
+          type: integer
+          format: int64
+        batchUuid:
+          type: string
+        batchTitle:
+          type: string
+          nullable: true
+        groupId:
+          type: integer
+          format: int64
+          nullable: true
+        confirmationCode:
+          type: string
+          nullable: true
+          description: Present only MTurk type
+        isQuotaReached:
+          type: boolean
+        componentResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResultsMetadataComponentResultList"
+      required: [ id, uuid, studyCode, studyState, workerId, workerType, batchId, batchUuid, isQuotaReached, componentResults ]
+      additionalProperties: false
+
+    ResultsMetadataComponentResultList:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        componentId:
+          type: integer
+          format: int64
+        componentUuid:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+          description: Human-readable duration (derived from start/end).
+        componentState:
+          type: string
+          enum: [ STARTED, DATA_RETRIEVED, RESULTDATA_POSTED, FINISHED, RELOADED, ABORTED, FAIL ]
+        path:
+          type: string
+          description: Path to the result files if applicable.
+        data:
+          properties:
+            size:
+              type: integer
+              format: int64
+            sizeHumanReadable:
+              type: string
+            filename:
+              type: string
+              description: Filename of the data file if applicable.
+          required: [ size, sizeHumanReadable ]
+          additionalProperties: false
+        files:
+          type: array
+          description: Paths to the result files
+          items:
+            type: object
+            additionalProperties: true
+        isQuotaReached:
+          type: boolean
+      required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
+      additionalProperties: true
+
+    ApiEnvelopeDeletedComponentResultIds:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing the deleted component result IDs.
+          properties:
+            apiVersion:
+              type: string
+            data:
+              type: array
+              items:
+                type: integer
+                format: int64
+          required: [ apiVersion, data ]
+          additionalProperties: false

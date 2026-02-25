@@ -211,7 +211,9 @@ public class Batch {
         if (allowedWorkerTypes == null) {
             allowedWorkerTypes = new HashSet<>();
         }
-        allowedWorkerTypes.add(workerType);
+        if (workerType != null) {
+            allowedWorkerTypes.add(workerType);
+        }
     }
 
     public void removeAllowedWorkerType(String workerType) {

@@ -29,6 +29,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -81,24 +83,12 @@ public class ImportExport extends Controller {
     @Transactional
     @Auth
     public Study importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException {
+            boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException, IOException {
         User signedinUser = authService.getSignedinUser();
 
-        // Get file from request
-        if (request.body().asMultipartFormData() == null) {
-            throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-        }
-        FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
-        if (filePart == null) {
-            throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-        }
-        if (!Study.STUDY.equals(filePart.getKey())) {
-            // If wrong key the upload comes from the wrong form
-            throw new BadRequestException(MessagesStrings.NO_STUDY_UPLOAD);
-        }
+        File file = extractStudyArchiveFile(request);
 
         try {
-            File file = (File) filePart.getFile();
             importExportService.importStudy(signedinUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
@@ -109,11 +99,57 @@ public class ImportExport extends Controller {
         try {
             return importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
-        } catch (IOException e) {
-            throw new InternalServerErrorException(e.getMessage(), ErrorCode.FILE_ERROR);
         } finally {
             importExportService.cleanupAfterStudyImport();
         }
+    }
+
+    /**
+     * Extracts the study archive file from the body. Supports:
+     * - multipart/form-data with the field "study"
+     * - application/zip with raw body
+     * - application/octet-stream with raw body
+     */
+    private File extractStudyArchiveFile(Http.Request request) throws BadRequestException, IOException {
+        String contentType = request.contentType().orElse("").toLowerCase();
+
+        if (contentType.startsWith("multipart/form-data")) {
+            if (request.body().asMultipartFormData() == null) {
+                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+            }
+            FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
+            if (filePart == null) {
+                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+            }
+            if (!Study.STUDY.equals(filePart.getKey())) {
+                throw new BadRequestException(MessagesStrings.NO_STUDY_UPLOAD);
+            }
+            return (File) filePart.getFile();
+        }
+
+        // Raw body: application/zip or application/octet-stream (or anything else you decide to allow)
+        // We intentionally accept both because many clients default to octet-stream.
+        if ("application/zip".equals(contentType) || "application/octet-stream".equals(contentType) || contentType.isEmpty()) {
+            Http.RawBuffer raw = request.body().asRaw();
+            if (raw == null) {
+                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+            }
+            // Prefer a temp file if Play stored it on disk (common for larger uploads)
+            File rawFile = raw.asFile();
+            if (rawFile != null && rawFile.exists() && rawFile.length() > 0) {
+                return rawFile;
+            }
+            // Fallback: raw bytes (small uploads); write to a temp file
+            if (raw.asBytes() == null || raw.asBytes().isEmpty()) {
+                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+            }
+            Path tmp = Files.createTempFile("jatos-study-upload-", ".jzip");
+            Files.write(tmp, raw.asBytes().toArray());
+            return tmp.toFile();
+        }
+        throw new BadRequestException(
+                "Unsupported Content-Type '" + contentType + "'. Use multipart/form-data, application/zip, or application/octet-stream."
+        );
     }
 
     /**

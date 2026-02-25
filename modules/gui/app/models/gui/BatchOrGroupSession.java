@@ -13,14 +13,14 @@ import java.util.List;
  * @author Kristian Lange (2017)
  */
 @Constraints.Validate
-public class GroupSession implements Constraints.Validatable<List<ValidationError>> {
+public class BatchOrGroupSession implements Constraints.Validatable<List<ValidationError>> {
 
     public static final String VERSION = "version";
-    public static final String DATA = "data";
+    public static final String SESSION_DATA = "sessionData";
 
     private Long version;
 
-    private String data;
+    private String sessionData;
 
     public Long getVersion() {
         return version;
@@ -30,19 +30,19 @@ public class GroupSession implements Constraints.Validatable<List<ValidationErro
         this.version = version;
     }
 
-    public String getData() {
-        return data;
+    public String getSessionData() {
+        return sessionData;
     }
 
-    public void setData(String data) {
-        this.data = data;
+    public void setSessionData(String sessionData) {
+        this.sessionData = sessionData;
     }
 
     @Override
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
-        if (!Strings.isNullOrEmpty(data) && !JsonUtils.isValid(data)) {
-            errorList.add(new ValidationError(DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(sessionData) && !JsonUtils.isValid(sessionData)) {
+            errorList.add(new ValidationError(SESSION_DATA, MessagesStrings.INVALID_JSON_FORMAT));
         }
         return errorList.isEmpty() ? null : errorList;
     }

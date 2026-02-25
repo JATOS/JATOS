@@ -130,7 +130,6 @@ public class StudyV2 {
 
     public StudyV2() {
         // Add default allowed workers
-        addAllowedWorker(JatosWorker.WORKER_TYPE);
         addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
         addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
     }

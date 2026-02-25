@@ -18,8 +18,6 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
-import models.gui.BatchSession;
-import models.gui.GroupSession;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
@@ -144,22 +142,6 @@ public class StudyLinks extends Controller {
     }
 
     /**
-     * GET request that returns data of all groups that belong to the given batch as JSON
-     */
-    @Transactional
-    @Auth
-    public Result groupsByBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
-        Batch batch = batchDao.findById(batchId);
-        authorizationService.canUserAccessStudy(study, signedinUser);
-        authorizationService.canUserAccessBatch(batch, signedinUser);
-
-        JsonNode dataAsJson = jsonUtils.allGroupResultsForUI(groupResultDao.findAllByBatch(batch));
-        return ok(dataAsJson);
-    }
-
-    /**
      * POST request to submit a newly created Batch
      */
     @Transactional
@@ -175,85 +157,9 @@ public class StudyLinks extends Controller {
         BatchProperties batchProperties = form.get();
         Batch batch = batchService.bindToBatch(batchProperties);
 
-        batchService.createAndPersistBatch(batch, study, signedinUser);
+        batchService.addDefaultAllowedWorkerTypes(batch);
+        batchService.initAndPersistBatch(batch, study, signedinUser);
         return ok(batch.getId().toString());
-    }
-
-    /**
-     * GET request that returns the batch session data as String
-     */
-    @Transactional
-    @Auth
-    public Result batchSessionData(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
-        Batch batch = batchDao.findById(batchId);
-        User signedinUser = authService.getSignedinUser();
-        authorizationService.canUserAccessStudy(study, signedinUser);
-        authorizationService.canUserAccessBatch(batch, signedinUser);
-
-        BatchSession batchSession = batchService.bindToBatchSession(batch);
-        return ok(JsonUtils.asJsonNode(batchSession));
-    }
-
-    /**
-     * GET request that returns the group session data as String
-     */
-    @Transactional
-    @Auth
-    public Result groupSessionData(Long studyId, Long groupResultId) throws ForbiddenException, NotFoundException {
-        GroupResult groupResult = groupResultDao.findById(groupResultId);
-        User signedinUser = authService.getSignedinUser();
-        authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
-
-        GroupSession groupSession = groupService.bindToGroupSession(groupResult);
-        return ok(JsonUtils.asJsonNode(groupSession));
-    }
-
-    /**
-     * POST request to submit changed batch session data
-     */
-    @Transactional
-    @Auth
-    public Result submitEditedBatchSessionData(Http.Request request, Long studyId, Long batchId)
-            throws ForbiddenException, NotFoundException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
-        Batch batch = batchDao.findById(batchId);
-        authorizationService.canUserAccessStudy(study, signedinUser, true);
-
-        Form<BatchSession> form = formFactory.form(BatchSession.class).bindFromRequest(request);
-        if (form.hasErrors()) return badRequest(form.errorsAsJson());
-
-        BatchSession batchSession = form.get();
-        boolean success = batchService.updateBatchSession(batch.getId(), batchSession);
-        if (!success) {
-            return forbidden("The Batch Session has been updated since you " +
-                    "loaded this page. Reload before trying to save again.");
-        }
-        return ok();
-    }
-
-    /**
-     * POST request to submit changed group session data
-     */
-    @Transactional
-    @Auth
-    public Result submitEditedGroupSessionData(Http.Request request, Long studyId, Long groupResultId)
-            throws ForbiddenException, NotFoundException {
-        User signedinUser = authService.getSignedinUser();
-        GroupResult groupResult = groupResultDao.findById(groupResultId);
-        authorizationService.canUserAccessGroupResult(groupResult, signedinUser, true);
-
-        Form<GroupSession> form = formFactory.form(GroupSession.class).bindFromRequest(request);
-        if (form.hasErrors()) return badRequest(form.errorsAsJson());
-
-        GroupSession groupSession = form.get();
-        boolean success = groupService.updateGroupSession(groupResult.getId(), groupSession);
-        if (!success) {
-            return forbidden("The Group Session has been updated since you " +
-                    "loaded this page. Reload before trying to save again.");
-        }
-        return ok();
     }
 
     /**
@@ -304,9 +210,9 @@ public class StudyLinks extends Controller {
 
         BatchProperties batchProperties = form.get();
         // Have to bind ALLOWED_WORKER_TYPES from checkboxes by hand
-        String[] allowedWorkerArray = request.body().asFormUrlEncoded().get(BatchProperties.ALLOWED_WORKER_TYPES);
+        String[] allowedWorkerArray = request.body().asFormUrlEncoded().get(BatchProperties.ALLOWED_TYPES);
         if (allowedWorkerArray != null) {
-            Arrays.stream(allowedWorkerArray).forEach(batchProperties::addAllowedWorkerType);
+            Arrays.stream(allowedWorkerArray).forEach(batchProperties::addAllowedType);
         }
 
         batchService.updateBatch(currentBatch, batchProperties);
@@ -325,10 +231,9 @@ public class StudyLinks extends Controller {
         Batch batch = batchDao.findById(batchId);
         authorizationService.canUserAccessStudy(study, signedinUser, true);
         authorizationService.canUserAccessBatch(batch, signedinUser);
-
-        workerType = workerService.extractWorkerType(workerType);
         if (allow == null)  return badRequest();
 
+        workerType = WorkerService.validateAndExtractWorkerType(workerType);
         if (allow) {
             batch.addAllowedWorkerType(workerType);
         } else {

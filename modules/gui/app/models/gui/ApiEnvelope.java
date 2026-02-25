@@ -27,6 +27,7 @@ public class ApiEnvelope {
     public enum ErrorCode {
         VALIDATION_ERROR,
         INVALID_REQUEST,
+        INVALID_JSON,
         INVALID_AUTH_METHOD,
         NOT_FOUND,
         AUTH_ERROR,

@@ -1,8 +1,10 @@
 package models.gui;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Strings;
 import general.common.Common;
 import general.common.MessagesStrings;
+import general.gui.StrictJsonMapper;
 import models.common.User;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
@@ -33,6 +35,12 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
 
     private String email;
 
+    /**
+     * Deserialize this field strictly as a JSON string:
+     * - accept only JSON string or null
+     * - reject numeric/boolean/object/array values (no implicit coercion like 123 -> "123")
+     */
+    @JsonDeserialize(using = StrictJsonMapper.class)
     private String password;
 
     private User.AuthMethod authMethod = User.AuthMethod.DB;

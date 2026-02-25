@@ -149,7 +149,7 @@ public class AuthAction extends Action<Auth> {
             RequestScopeMessaging.error("Failed authentication");
             return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin()));
         } else {
-            return CompletableFuture.completedFuture(forbidden("Failed authentication"));
+            return CompletableFuture.completedFuture(unauthorized("Failed authentication"));
         }
     }
 

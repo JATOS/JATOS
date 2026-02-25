@@ -1,5 +1,6 @@
 package utils.common;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import play.libs.Json;
@@ -15,6 +16,9 @@ public class JsonObjectMapper {
 
 	public JsonObjectMapper() {
 		ObjectMapper mapper = Json.newDefaultMapper();
+
+		// Never include source JSON content in exception locations (prevents leaking payload snippets)
+		mapper.getFactory().disable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
 
 		// Add the module jackson-datatype-hibernate
 		// https://github.com/FasterXML/jackson-datatype-hibernate

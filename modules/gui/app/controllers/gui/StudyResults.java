@@ -47,7 +47,6 @@ public class StudyResults extends Controller {
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
-    private final WorkerService workerService;
     private final StudyDao studyDao;
     private final BatchDao batchDao;
     private final StudyResultDao studyResultDao;
@@ -58,7 +57,7 @@ public class StudyResults extends Controller {
     @Inject
     StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthorizationService authorizationService, AuthService authService,
                  BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
-                 ResultStreamer resultStreamer, WorkerService workerService, StudyDao studyDao, BatchDao batchDao,
+                 ResultStreamer resultStreamer, StudyDao studyDao, BatchDao batchDao,
                  StudyResultDao studyResultDao, GroupResultDao groupResultDao, WorkerDao workerDao, JsonUtils jsonUtils) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.authorizationService = authorizationService;
@@ -66,7 +65,6 @@ public class StudyResults extends Controller {
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
-        this.workerService = workerService;
         this.studyDao = studyDao;
         this.batchDao = batchDao;
         this.studyResultDao = studyResultDao;
@@ -204,7 +202,7 @@ public class StudyResults extends Controller {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, signedinUser);
-        workerType = workerType != null ? workerService.extractWorkerType(workerType) : null;
+        workerType = WorkerService.validateAndExtractWorkerType(workerType);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(workerType, batch);
         return ok().chunked(source).as("text/plain; charset=utf-8");

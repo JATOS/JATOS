@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
@@ -15,7 +14,6 @@ import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
@@ -46,21 +44,19 @@ public class StudyService {
     private final StudyDao studyDao;
     private final BatchDao batchDao;
     private final UserDao userDao;
-    private final WorkerDao workerDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
     private final AuthService authService;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
+            BatchDao batchDao, UserDao userDao, IOUtils ioUtils,
             StudyLogger studyLogger, AuthService authService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
         this.batchDao = batchDao;
         this.userDao = userDao;
-        this.workerDao = workerDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
         this.authService = authService;
@@ -207,12 +203,13 @@ public class StudyService {
         studyDao.create(study);
 
         if (study.getBatchList().isEmpty()) {
-            // Create default batch if we have no batch
-            Batch defaultBatch = batchService.createDefaultBatch(study);
+            // Create a default batch if we have no batch
+            Batch defaultBatch = batchService.createDefaultBatch();
+            batchService.initBatch(defaultBatch, study);
             study.addBatch(defaultBatch);
             batchDao.create(defaultBatch);
         } else {
-            study.getBatchList().forEach(b -> batchService.createBatch(b, study));
+            study.getBatchList().forEach(b -> batchService.initBatch(b, study));
             study.getBatchList().forEach(batchDao::create);
         }
 
@@ -233,14 +230,6 @@ public class StudyService {
         user.addStudy(study);
         studyDao.update(study);
         userDao.update(user);
-
-        // For each of the study's batches add the user's JatosWorker
-        JatosWorker jatosWorker = user.getWorker();
-        for (Batch batch : study.getBatchList()) {
-            batch.addWorker(jatosWorker);
-            batchDao.update(batch);
-        }
-        workerDao.update(jatosWorker);
     }
 
     /**

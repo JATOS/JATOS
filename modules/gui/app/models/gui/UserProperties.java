@@ -36,6 +36,11 @@ public class UserProperties implements Validatable<List<ValidationError>> {
     @JsonProperty(access = READ_ONLY)
     private String username;
 
+    /**
+     * Deserialize this field strictly as a JSON string:
+     * - accept only JSON string or null
+     * - reject numeric/boolean/object/array values (no implicit coercion like 123 -> "123")
+     */
     @JsonDeserialize(using = StrictJsonMapper.class)
     @JsonProperty(access = WRITE_ONLY)
     private String password;
