@@ -143,13 +143,7 @@ public class Users extends Controller {
     public Result create(Http.Request request) throws ForbiddenException {
         Form<NewUserProperties> form = formFactory.form(NewUserProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
-
-        User newUser;
-        try {
-            newUser = userService.registerUser(form.get());
-        } catch (AuthException e) {
-            throw new ForbiddenException(e.getMessage());
-        }
+        User newUser = userService.registerUser(form.get());
         return ok(jsonUtils.getSingleUserData(newUser));
     }
 

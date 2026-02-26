@@ -22,6 +22,7 @@ import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
+import exceptions.gui.ForbiddenException;
 import exceptions.gui.ValidationException;
 import general.gui.FlashScopeMessaging;
 import models.common.User;
@@ -210,7 +211,7 @@ public abstract class SigninOidc extends Controller {
                 FlashScopeMessaging.success(oidcConfig.successMsg);
             }
             return redirect(authService.getRedirectPageAfterSignin(user));
-        } catch (AuthException | ValidationException e) {
+        } catch (AuthException | ValidationException | ForbiddenException e) {
             LOGGER.warn(".callback: " + e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
             return redirect(auth.gui.routes.Signin.signin());
@@ -244,7 +245,7 @@ public abstract class SigninOidc extends Controller {
 
         // Check state, submitted with sign-in request, is still the same
         Optional<String> state = request.session().getOptional("oidcState");
-        if (!state.isPresent() || !response.getState().getValue().equals(state.get())) {
+        if (state.isEmpty() || !response.getState().getValue().equals(state.get())) {
             throw new AuthException("OIDC error - Unexpected authentication response");
         }
 
@@ -316,7 +317,7 @@ public abstract class SigninOidc extends Controller {
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
-    private User getOrRegisterUser(UserInfo userInfo) throws AuthException, ValidationException {
+    private User getOrRegisterUser(UserInfo userInfo) throws AuthException, ValidationException, ForbiddenException {
         String normalizedUsername = getNormalizedUsername(userInfo);
         User user = userDao.findByUsername(normalizedUsername);
         if (user != null && user.getAuthMethod() != oidcConfig.authMethod) {

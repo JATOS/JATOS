@@ -8,6 +8,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import daos.common.UserDao;
 import exceptions.gui.AuthException;
+import exceptions.gui.ForbiddenException;
 import exceptions.gui.ValidationException;
 import general.common.Common;
 import general.gui.FlashScopeMessaging;
@@ -80,7 +81,7 @@ public class SigninGoogle extends Controller {
         User user;
         try {
             user = getOrRegisterUser(idTokenPayload);
-        } catch (AuthException | ValidationException e) {
+        } catch (AuthException | ValidationException | ForbiddenException e) {
             LOGGER.warn(e.getMessage());
             FlashScopeMessaging.error(e.getMessage());
             return redirect(auth.gui.routes.Signin.signin());
@@ -107,7 +108,8 @@ public class SigninGoogle extends Controller {
         return verifier.verify(idTokenString);
     }
 
-    private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload) throws AuthException, ValidationException {
+    private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload)
+            throws AuthException, ValidationException, ForbiddenException {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
         User user = userDao.findByUsername(normalizedUsername);
         if (user != null && !user.isOauthGoogle()) {

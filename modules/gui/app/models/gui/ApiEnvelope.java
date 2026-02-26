@@ -35,7 +35,7 @@ public class ApiEnvelope {
         LDAP_ERROR,
         FORBIDDEN,
         CONFIG_ERROR,
-        NOT_ACCEPTABLE,
+        WRONG_CONTENT_TYPE,
         MISSING_FILE,
         FILE_ERROR,
         STUDY_LOCKED,

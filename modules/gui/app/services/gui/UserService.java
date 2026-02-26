@@ -6,7 +6,6 @@ import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.AuthException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
@@ -83,10 +82,10 @@ public class UserService {
         return user;
     }
 
-    public User registerUser(NewUserProperties newUserProperties) throws AuthException {
+    public User registerUser(NewUserProperties newUserProperties) throws ForbiddenException {
         User user = userDao.findByUsername(newUserProperties.getUsername());
         if (user != null) {
-            throw new AuthException("User exists already");
+            throw new ForbiddenException("User exists already");
         }
         return bindToUserAndPersist(newUserProperties);
     }

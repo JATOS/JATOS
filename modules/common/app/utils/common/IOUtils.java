@@ -18,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 /**
  * Utility class that handles access to the system's file system.
  *
@@ -504,6 +506,16 @@ public class IOUtils {
         Path dir = Paths.get(getResultUploadsDir(studyResultId, componentResultId));
         if (Files.isDirectory(dir)) {
             FileUtils.deleteDirectory(dir.toFile());
+        }
+    }
+
+    public static boolean moveAndDetectOverwrite(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target);
+            return false;
+        } catch (java.nio.file.FileAlreadyExistsException e) {
+            Files.move(source, target, REPLACE_EXISTING);
+            return true;
         }
     }
 }

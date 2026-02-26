@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import controllers.gui.ImportExport.ImportStudyResult;
 import daos.common.*;
 import exceptions.gui.*;
 import general.common.Common;
@@ -249,9 +250,7 @@ public class Api extends Controller {
 
         userService.removeUser(user);
 
-        ObjectNode response = Json.mapper().createObjectNode()
-            .put("message", "User deleted successfully");
-        return ok(ApiEnvelope.wrap(response).asJsonNode());
+        return ok(ApiEnvelope.wrap("User deleted successfully").asJsonNode());
     }
 
 
@@ -348,9 +347,7 @@ public class Api extends Controller {
 
         apiTokenDao.remove(token);
 
-        ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put("message", "Token deleted successfully");
-        return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
+        return ok(ApiEnvelope.wrap("Token deleted successfully").asJsonNode());
     }
 
     /**
@@ -427,27 +424,34 @@ public class Api extends Controller {
     @Auth
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
                               boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException, IOException {
-        Study study = importExport.importStudyApi(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
-        JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
-        return created(ApiEnvelope.wrap(studyNode).asJsonNode());
+        ImportStudyResult result = importExport.importStudyApi(request,
+                keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+
+        JsonNode studyNode = jsonUtils.studyAsJsonForApi(result.study, false, false);
+        JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();
+        return result.wasOverwritten() ? ok(envelope) : created(envelope);
     }
 
     /**
-     * This method calls either importStudy or createStudy according to the 'Accept' header
+     * This method calls either importStudy or createStudy according to the 'Content-Type' header
      */
     @Transactional
     @Auth
     public Result importOrCreateStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets)
         throws HttpException, IOException {
-        boolean acceptsMissing = request.getHeaders().get(Http.HeaderNames.ACCEPT).isEmpty();
-        if (request.accepts("application/zip") || acceptsMissing) {
+        String contentType = request.getHeaders().get(Http.HeaderNames.CONTENT_TYPE).orElse("");
+        if (contentType.equals("application/zip")
+                || contentType.equals("multipart/form-data")
+                || contentType.equals("application/jzip")
+                || contentType.equals("application/octet-stream")
+                || contentType.isEmpty()) {
             return importStudy(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
         }
-        if (request.accepts("application/json")) {
+        if (contentType.equals("application/json")) {
             return createStudy(request);
         }
-        return status(406, ApiEnvelope.wrap("Wrong 'Access' header", ErrorCode.NOT_ACCEPTABLE).asJsonNode());
+        return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' header", ErrorCode.WRONG_CONTENT_TYPE).asJsonNode());
     }
 
     /**
@@ -614,9 +618,17 @@ public class Api extends Controller {
 
         try {
             Path assetsFilePath = ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
-            if (Files.notExists(assetsFilePath)) Files.createDirectories(assetsFilePath);
-            Files.move(uploadedFile.toPath(), assetsFilePath, REPLACE_EXISTING);
-            return created(ApiEnvelope.wrap("File uploaded successfully").asJsonNode());
+            Path parent = assetsFilePath.getParent();
+            if (parent != null) {
+                // Make sure the directory that will contain the uploaded file exists.
+                Files.createDirectories(parent);
+            }
+
+            boolean overwritten = IOUtils.moveAndDetectOverwrite(uploadedFile.toPath(), assetsFilePath);
+
+            String msg = overwritten ? "File overwritten successfully" : "File uploaded successfully";
+            JsonNode envelope = ApiEnvelope.wrap(msg).asJsonNode();
+            return overwritten ? ok(envelope) : created(envelope);
         } catch (IOException e) {
             LOGGER.info(".uploadStudyAssetsFile: " + e.getLocalizedMessage());
             throw new InternalServerErrorException("Error writing file");
@@ -802,12 +814,8 @@ public class Api extends Controller {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user, true);
-
         componentService.remove(component, user);
-
-        ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put("message", "Component deleted successfully");
-        return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
+        return ok(ApiEnvelope.wrap("Component deleted successfully").asJsonNode());
     }
 
     @Transactional
@@ -816,9 +824,7 @@ public class Api extends Controller {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
-
         List<Batch> batches = study.getBatchList();
-
         return ok(ApiEnvelope.wrap(batches).asJsonNode());
     }
 
@@ -876,12 +882,8 @@ public class Api extends Controller {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user, true);
-
         batchService.remove(batch, user);
-
-        ObjectNode response = Json.mapper().createObjectNode()
-            .put("message", "Batch deleted successfully");
-        return ok(ApiEnvelope.wrap(response).asJsonNode());
+        return ok(ApiEnvelope.wrap("Batch deleted successfully").asJsonNode());
     }
 
     @Transactional

@@ -24,6 +24,7 @@ import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import utils.common.Helpers;
+import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -31,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -82,14 +84,15 @@ public class ImportExport extends Controller {
      */
     @Transactional
     @Auth
-    public Study importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException, IOException {
+    public ImportStudyResult importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
+                                                                    boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException, IOException {
         User signedinUser = authService.getSignedinUser();
 
         File file = extractStudyArchiveFile(request);
 
+        Map<String, Object> importInfo;
         try {
-            importExportService.importStudy(signedinUser, file);
+             importInfo = importExportService.importStudy(signedinUser, file);
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
@@ -97,10 +100,25 @@ public class ImportExport extends Controller {
         }
 
         try {
-            return importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
+            Study study = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
+            return new ImportStudyResult(importInfo, study);
         } finally {
             importExportService.cleanupAfterStudyImport();
+        }
+    }
+
+    public static final class ImportStudyResult {
+        public final Map<String, Object> importInfo;
+        public final Study study;
+
+        public ImportStudyResult(Map<String, Object> importInfo, Study study) {
+            this.importInfo = importInfo;
+            this.study = study;
+        }
+
+        public boolean wasOverwritten() {
+            return Boolean.TRUE.equals(importInfo.get("studyExists"));
         }
     }
 
@@ -129,7 +147,10 @@ public class ImportExport extends Controller {
 
         // Raw body: application/zip or application/octet-stream (or anything else you decide to allow)
         // We intentionally accept both because many clients default to octet-stream.
-        if ("application/zip".equals(contentType) || "application/octet-stream".equals(contentType) || contentType.isEmpty()) {
+        if ("application/zip".equals(contentType)
+                || "application/jzip".equals(contentType)
+                || "application/octet-stream".equals(contentType)
+                || contentType.isEmpty()) {
             Http.RawBuffer raw = request.body().asRaw();
             if (raw == null) {
                 throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
@@ -161,7 +182,6 @@ public class ImportExport extends Controller {
     public Result importStudy(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
 
-        // Get file from request
         FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
 
         if (filePart == null) {
@@ -172,16 +192,15 @@ public class ImportExport extends Controller {
             return badRequest(MessagesStrings.NO_STUDY_UPLOAD);
         }
 
-        JsonNode responseJson;
         try {
             File file = (File) filePart.getFile();
-            responseJson = importExportService.importStudy(signedinUser, file);
+            Map<String, Object> resultInfo = importExportService.importStudy(signedinUser, file);
+            return ok(JsonUtils.asJsonNode(resultInfo));
         } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
             LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
             return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
         }
-        return ok(responseJson);
     }
 
     /**

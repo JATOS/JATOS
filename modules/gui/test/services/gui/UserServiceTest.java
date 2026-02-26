@@ -5,7 +5,6 @@ import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.AuthException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.Common;
@@ -95,7 +94,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void registerUser_success() throws AuthException {
+    public void registerUser_success() throws ForbiddenException {
         NewUserProperties newUserProperties = new NewUserProperties();
         newUserProperties.setUsername("newuser");
         newUserProperties.setName("New User");
@@ -121,8 +120,8 @@ public class UserServiceTest {
         verify(workerDao).create(any(JatosWorker.class));
     }
 
-    @Test(expected = AuthException.class)
-    public void registerUser_userExists_throwsAuthException() throws AuthException {
+    @Test(expected = ForbiddenException.class)
+    public void registerUser_userExists_throwsAuthException() throws ForbiddenException {
         NewUserProperties newUserProperties = new NewUserProperties();
         newUserProperties.setUsername("existinguser");
 

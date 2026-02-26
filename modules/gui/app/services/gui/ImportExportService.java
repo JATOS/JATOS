@@ -1,6 +1,5 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
@@ -13,7 +12,6 @@ import models.common.Study;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
-import play.libs.Json;
 import play.mvc.Controller;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -26,10 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -81,7 +76,7 @@ public class ImportExportService {
      * 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
      * 5) !study exists - !udir exists : new study - write both
      */
-    public ObjectNode importStudy(User signedinUser, File file) throws IOException, ForbiddenException {
+    public Map<String, Object> importStudy(User signedinUser, File file) throws IOException, ForbiddenException {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
         Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, false);
 
@@ -96,24 +91,23 @@ public class ImportExportService {
             throw new ForbiddenException(MessagesStrings.studyImportNotUser());
         }
 
-        // Create JSON response
-        ObjectNode responseJson = Json.mapper().createObjectNode();
-        responseJson.put("studyExists", currentStudy.isPresent());
+        Map<String, Object> importInfo = new HashMap<>();
+        importInfo.put("studyExists", currentStudy.isPresent());
         if (currentStudy.isPresent()) {
-            responseJson.put("uuid", currentStudy.get().getUuid());
-            responseJson.put("currentStudyTitle", currentStudy.get().getTitle());
-            responseJson.put("currentDirName", currentStudy.get().getDirName());
+            importInfo.put("uuid", currentStudy.get().getUuid());
+            importInfo.put("currentStudyTitle", currentStudy.get().getTitle());
+            importInfo.put("currentDirName", currentStudy.get().getDirName());
         } else {
-            responseJson.put("uuid", uploadedStudy.getUuid());
+            importInfo.put("uuid", uploadedStudy.getUuid());
         }
-        responseJson.put("uploadedStudyTitle", uploadedStudy.getTitle());
-        responseJson.put("uploadedDirName", uploadedStudy.getDirName());
-        responseJson.put("uploadedDirExists", uploadedDirExists);
-        if (!currentStudy.isPresent() && uploadedDirExists) {
+        importInfo.put("uploadedStudyTitle", uploadedStudy.getTitle());
+        importInfo.put("uploadedDirName", uploadedStudy.getDirName());
+        importInfo.put("uploadedDirExists", uploadedDirExists);
+        if (currentStudy.isEmpty() && uploadedDirExists) {
             String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
-            responseJson.put("newDirName", newDirName);
+            importInfo.put("newDirName", newDirName);
         }
-        return responseJson;
+        return importInfo;
     }
 
     /**
