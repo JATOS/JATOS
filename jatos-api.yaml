@@ -12,6 +12,7 @@ externalDocs:
 servers:
   - url: http://localhost:9000
   - url: https://cortex.jatos.org
+
 paths:
   /jatos/api/v1/admin/status:
     get:
@@ -47,8 +48,7 @@ paths:
 
   /jatos/api/v1/admin/logs/{filename}:
     get:
-      summary: Get a log file (application logs - not study logs)
-      description: Works only with admin tokens
+      summary: Get a log file (application logs - not study logs; admin tokens only)
       tags: [ admin ]
       parameters:
         - in: path
@@ -88,8 +88,7 @@ paths:
         '403':
           $ref: "#/components/responses/ForbiddenError"
     post:
-      summary: Create a new user
-      description: Create a new user (admin tokens only)
+      summary: Create a new user (admin tokens only)
       tags: [ admin ]
       requestBody:
         description: A JSON object containing the new user's properties
@@ -119,6 +118,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The user's ID to check
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -137,6 +137,7 @@ paths:
         - in: path
           name: id
           required: true
+          description: The user's ID to get
           schema: { type: integer, format: int64 }
       responses:
         '200':
@@ -157,6 +158,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The user's ID to update
           required: true
           schema: { type: integer, format: int64 }
       requestBody:
@@ -184,6 +186,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The user's ID to delete
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -202,11 +205,12 @@ paths:
 
   /jatos/api/v1/users/{id}/tokens:
     post:
-      summary: Generate an API token for a user (admin or self; if enabled)
+      summary: Generate an API token for a user (admin or self)
       tags: [ admin ]
       parameters:
         - in: path
           name: id
+          description: The user's ID for which the token should be generated
           required: true
           schema: { type: integer, format: int64 }
       requestBody:
@@ -235,6 +239,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The user ID for which the tokens should be listed
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -256,6 +261,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The token ID for which the metadata should be retrieved
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -277,6 +283,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The token ID for which the active flag should be toggled
           required: true
           schema: { type: integer, format: int64 }
       requestBody:
@@ -307,6 +314,7 @@ paths:
       parameters:
         - in: path
           name: id
+          description: The token ID for which the token should be deleted
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -436,6 +444,12 @@ paths:
               type: string
               format: binary
       responses:
+        '200':
+          description: Study overwritten successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudy'
         '201':
           description: Study created successfully
           content:
@@ -446,6 +460,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         '403':
           $ref: "#/components/responses/ForbiddenError"
+        '415':
+          description: Wrong 'Content-Type' header
 
   /jatos/api/v1/studies/{id}:
     head:
@@ -737,8 +753,14 @@ paths:
                   type: string
                   format: binary
       responses:
+        '200':
+          description: File overwritten successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
         '201':
-          description: Created
+          description: File uploaded successfully
           content:
             application/json:
               schema:
@@ -807,8 +829,14 @@ paths:
                   type: string
                   format: binary
       responses:
+        '200':
+          description: File overwritten successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
         '201':
-          description: Created
+          description: File uploaded successfully
           content:
             application/json:
               schema:
@@ -822,7 +850,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/members:
     get:
-      summary: Get member user IDs of a study
+      summary: Get members of a study
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -848,6 +876,7 @@ paths:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         - in: path
           name: userId
+          description: ID of the user to add
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -870,6 +899,7 @@ paths:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         - in: path
           name: userId
+          description: ID of the user to remove
           required: true
           schema: { type: integer, format: int64 }
       responses:
@@ -1097,7 +1127,7 @@ paths:
 
   /jatos/api/v1/batches/{id}:
     get:
-      summary: Get a batch by id/uuid
+      summary: Get batch properties
       tags: [ study-runs ]
       parameters:
         - $ref: '#/components/parameters/BatchIdOrUuidParameter'
@@ -1115,7 +1145,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundError"
     patch:
-      summary: Update a batch by id/uuid
+      summary: Update batch properties
       tags: [ study-runs ]
       parameters:
         - $ref: '#/components/parameters/BatchIdOrUuidParameter'
@@ -1241,9 +1271,9 @@ paths:
       parameters:
         - in: path
           name: id
+          description: ID of the group to get the session data for
           required: true
           schema: { type: integer, format: int64 }
-          description: Group ID
       responses:
         '200':
           description: Success
@@ -1266,9 +1296,9 @@ paths:
       parameters:
         - in: path
           name: id
+          description: ID of the group to update the session data for
           required: true
           schema: { type: integer, format: int64 }
-          description: Group ID
         - in: query
           name: version
           required: false
@@ -1719,11 +1749,13 @@ paths:
 
 security:
   - BearerAuth: [ ]
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
+
   parameters:
     StudyIdOrUuidParameter:
       in: path
@@ -1810,6 +1842,7 @@ components:
       description: >-
         Specify results with a group ID. This query parameter can be used
         multiple times.
+
   requestBodies:
     ResultIdsJsonBody:
       content:
@@ -1880,15 +1913,15 @@ components:
             studyUuids:
               summary: Study UUID
               value:
-                studyIds: 11111111-1111-1111-1111-111111111111
+                studyUuids: 11111111-1111-1111-1111-111111111111
             componentIds:
               summary: Component ID
               value:
-                studyIds: 1
+                componentIds: 1
             componentUuids:
               summary: Component UUID
               value:
-                studyIds: 11111111-1111-1111-1111-111111111111
+                componentUuids: 11111111-1111-1111-1111-111111111111
             listOfComponentIds:
               summary: Multiple component IDs
               value:
@@ -1952,6 +1985,7 @@ components:
                 studyResultIds: null
                 batchIds: null
                 groupIds: null
+
   responses:
     UnauthorizedError:
       description: Unauthorized
@@ -1980,8 +2014,8 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiEnvelopeError"
-  schemas:
 
+  schemas:
     ApiEnvelopeSuccess:
       type: object
       properties:
@@ -1991,18 +2025,6 @@ components:
           type: string
       required: [ apiVersion ]
       additionalProperties: false
-
-    ApiEnvelopeSuccessWithMessage:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope returned after successful API operations.
-          properties:
-            message:
-              type: string
-              description: Human-readable result message.
-          required: [ message ]
-          additionalProperties: false
 
     ApiEnvelopeError:
       type: object
@@ -2037,6 +2059,98 @@ components:
           required: [ code ]
           additionalProperties: false
       required: [ apiVersion, error ]
+      additionalProperties: false
+
+    ComponentRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+      required: [ id, uuid ]
+      additionalProperties: false
+
+    BatchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+      required: [ id, uuid ]
+      additionalProperties: false
+
+    StudyMemberRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+      required: [ id, username ]
+      additionalProperties: false
+
+    DirectoryEntry:
+      type: object
+      description: >-
+        A single node in the study assets directory listing.
+        When `flatten=false`, the response is a tree and directories may have `content`.
+        When `flatten=true`, the response is a flat array of leaf nodes.
+      properties:
+        name:
+          type: string
+          description: File or directory name (last path segment).
+        path:
+          type: string
+          description: Path relative to the study assets base directory.
+          example: images/logo.png
+        type:
+          type: string
+          description: Node type as detected from the filesystem.
+          enum: [ directory, file, other ]
+        creation:
+          type: integer
+          format: int64
+          description: Creation timestamp in milliseconds since epoch.
+        lastModified:
+          type: integer
+          format: int64
+          description: Last modification timestamp in milliseconds since epoch.
+        size:
+          type: integer
+          format: int64
+          description: Size in bytes (for directories this can be filesystem-dependent).
+        checksum:
+          type: integer
+          format: int64
+          nullable: true
+          description: Adler32 checksum; present only for regular files.
+        content:
+          type: array
+          nullable: true
+          description: Directory contents (present only when this node is a directory and `flatten=false`).
+          items:
+            $ref: '#/components/schemas/DirectoryEntry'
+      required: [ name, path, type, creation, lastModified, size ]
+      additionalProperties: false
+
+    BatchOrGroupSession:
+      type: object
+      description: >-
+        Temporary, global data storage for a batch or group (JSON stored as string) plus a version for
+        optimistic concurrency control.
+      properties:
+        version:
+          type: integer
+          format: int64
+        data:
+          type: string
+          description: Batch/group session data (string containing JSON).
+      required: [ version, data ]
       additionalProperties: false
 
     ApiTokenMetadata:
@@ -2089,94 +2203,91 @@ components:
               description: The generated token value. Returned only once at creation time.
           required: [ token ]
 
-    ApiEnvelopeGeneratedApiToken:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/ApiTokenWithValue'
-          required: [ data ]
-
-    ApiEnvelopeApiTokenMetadata:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/ApiTokenMetadata'
-          required: [ data ]
-
-    ApiEnvelopeApiTokenMetadataList:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/ApiTokenMetadata'
-          required: [ data ]
-
-    ApiEnvelopeTokenActiveToggled:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                id: { type: integer, format: int64 }
-                username: { type: string }
-                active: { type: boolean }
-              required: [ id, username, active ]
-              additionalProperties: false
-          required: [ data ]
-          additionalProperties: false
-
-    CreateUser:
+    AdminStatusLatestUser:
       type: object
       properties:
         username:
           type: string
-          description: Username of the new user
         name:
           type: string
-          description: Name of the new user
-        email:
-          type: string
-          description: Email address of the new user
-        password:
-          type: string
-          description: Password of the new user (only for authMethod DB)
         authMethod:
           type: string
-          enum: [ DB, LDAP ]
-          description: Authentication method
-      required:
-        - username
-        - name
-        - authMethod
+        time:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp string.
+      required: [ username, name, authMethod, time ]
 
-    UpdateUser:
+    AdminStatusLatestStudyRunMember:
       type: object
-      description: >-
-        Partial update of a user. Provide only the fields you want to change.
       properties:
+        username:
+          type: string
         name:
           type: string
-          description: Name of the user
-        email:
+        authMethod:
           type: string
-          nullable: true
-          description: Email address of the user
-        password:
+      required: [ username, name, authMethod ]
+
+    AdminStatusLatestStudyRun:
+      type: object
+      properties:
+        studyTitle:
           type: string
-          description: New password (only applicable for authMethod DB)
-        active:
-          type: boolean
-          description: Whether the user is active
-      additionalProperties: false
+        time:
+          description: Timestamp as returned by the server (may be a JSON datetime or numeric timestamp).
+          oneOf:
+            - type: string
+              format: date-time
+            - type: integer
+              format: int64
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminStatusLatestStudyRunMember'
+      required: [ studyTitle, time, members ]
+
+    AdminStatus:
+      type: object
+      description: Admin status information.
+      properties:
+        studyCount:
+          type: integer
+        studyCountTotal:
+          type: integer
+        studyResultCount:
+          type: integer
+        studyResultCountTotal:
+          type: integer
+        workerCount:
+          type: integer
+        workerCountTotal:
+          type: integer
+        userCount:
+          type: integer
+        serverTime:
+          type: integer
+          format: int64
+          description: Server time in milliseconds since epoch.
+        latestUsers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminStatusLatestUser'
+        latestStudyRuns:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminStatusLatestStudyRun'
+      required:
+        - studyCount
+        - studyCountTotal
+        - studyResultCount
+        - studyResultCountTotal
+        - workerCount
+        - workerCountTotal
+        - userCount
+        - serverTime
+        - latestUsers
+        - latestStudyRuns
 
     User:
       type: object
@@ -2223,179 +2334,21 @@ components:
                 format: int64
           required: [ studyIds ]
 
-    ApiEnvelopeUserList:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/UserWithStudyIds'
-          required: [ data ]
-
-    ApiEnvelopeUser:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/User'
-          required: [ data ]
-
-    AdminStatus:
+    StudyActiveToggled:
       type: object
-      description: Admin status information.
+      description: Minimal response payload when only the study's active flag is toggled.
       properties:
-        studyCount:
-          type: integer
-        studyCountTotal:
-          type: integer
-        studyResultCount:
-          type: integer
-        studyResultCountTotal:
-          type: integer
-        workerCount:
-          type: integer
-        workerCountTotal:
-          type: integer
-        userCount:
-          type: integer
-        serverTime:
+        id:
           type: integer
           format: int64
-          description: Server time in milliseconds since epoch.
-        latestUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminStatusLatestUser'
-        latestStudyRuns:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminStatusLatestStudyRun'
-      required:
-        - studyCount
-        - studyCountTotal
-        - studyResultCount
-        - studyResultCountTotal
-        - workerCount
-        - workerCountTotal
-        - userCount
-        - serverTime
-        - latestUsers
-        - latestStudyRuns
-
-    AdminStatusLatestUser:
-      type: object
-      properties:
-        username:
+          description: Study ID.
+        uuid:
           type: string
-        name:
-          type: string
-        authMethod:
-          type: string
-        time:
-          type: string
-          format: date-time
-          description: ISO-8601 timestamp string.
-      required: [ username, name, authMethod, time ]
-
-    AdminStatusLatestStudyRunMember:
-      type: object
-      properties:
-        username:
-          type: string
-        name:
-          type: string
-        authMethod:
-          type: string
-      required: [ username, name, authMethod ]
-
-    AdminStatusLatestStudyRun:
-      type: object
-      properties:
-        studyTitle:
-          type: string
-        time:
-          description: Timestamp as returned by the server (may be a JSON datetime or numeric timestamp).
-          oneOf:
-            - type: string
-              format: date-time
-            - type: integer
-              format: int64
-        members:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminStatusLatestStudyRunMember'
-      required: [ studyTitle, time, members ]
-
-    ApiEnvelopeAdminStatus:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/AdminStatus'
-      required: [ data ]
-
-    CreateStudy:
-      allOf:
-        - $ref: '#/components/schemas/UpdateStudyProperties'
-        - type: object
-          required: [ title ]
-
-    UpdateStudyProperties:
-      type: object
-      properties:
-        title:
-          type: string
-          description: Title of the study
-        description:
-          type: string
-          nullable: true
-          description: Description of the study
+          description: Study UUID.
         active:
           type: boolean
-          description: A deactivated study cannot be run by a worker.
-          default: true
-        groupStudy:
-          type: boolean
-          default: false
-          description: Is the study a group study
-        linearStudy:
-          type: boolean
-          default: false
-          description: Is the study a linear study
-        allowPreview:
-          type: boolean
-          default: false
-          description: Are previews allowed
-        dirName:
-          type: string
-          description: Study assets directory name.
-        comments:
-          type: string
-          nullable: true
-          description: Some comments
-        jsonData:
-          type: string
-          nullable: true
-          description: Study input in JSON format
-        endRedirectUrl:
-          type: string
-          nullable: true
-          description: URL the study redirects to after it is finished
-        studyEntryMsg:
-          type: string
-          nullable: true
-          description: Message shown to the user when starting the study via the study entry page
-      additionalProperties: false
-
-    UpdateStudyActiveOnly:
-      type: object
-      properties:
-        active:
-          type: boolean
-          description: A deactivated study cannot be run by a worker.
-          default: true
+          description: Current activation status.
+      required: [ id, uuid, active ]
       additionalProperties: false
 
     Study:
@@ -2475,87 +2428,6 @@ components:
       required: [ id, uuid, title, locked, active, groupStudy, linearStudy, allowPreview, dirName, members, components, batches ]
       additionalProperties: true
 
-    ComponentRef:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
-      required: [ id, uuid ]
-      additionalProperties: false
-
-    BatchRef:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
-      required: [ id, uuid ]
-      additionalProperties: false
-
-    StudyMemberRef:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        username:
-          type: string
-      required: [ id, username ]
-      additionalProperties: false
-
-    StudyActiveToggled:
-      type: object
-      description: Minimal response payload when only the study's active flag is toggled.
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Study ID.
-        uuid:
-          type: string
-          description: Study UUID.
-        active:
-          type: boolean
-          description: Current activation status.
-      required: [ id, uuid, active ]
-      additionalProperties: false
-
-    ApiEnvelopeStudy:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/Study'
-          required: [ data ]
-
-    ApiEnvelopeStudyList:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Study'
-          required: [ data ]
-
-    ApiEnvelopeStudyActiveToggled:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope returned when an admin toggles only the study's active flag.
-          properties:
-            data:
-              $ref: "#/components/schemas/StudyActiveToggled"
-          required: [ data ]
-          additionalProperties: false
-
     Component:
       type: object
       description: Component properties.
@@ -2583,153 +2455,6 @@ components:
           nullable: true
       required: [ id, uuid, title, reloadable, active ]
       additionalProperties: true
-
-    ApiEnvelopeComponent:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/Component'
-          required: [ data ]
-
-    ApiEnvelopeComponentList:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Component'
-          required: [ data ]
-
-    UpdateComponentRequest:
-      type: object
-      description: Component properties update payload.
-      properties:
-        title:
-          type: string
-          description: Component title.
-        htmlFilePath:
-          type: string
-          nullable: true
-          description: Local path to component's HTML file in the study assets folder.
-        htmlFileRename:
-          type: boolean
-          description: Whether the actual HTML file on disk should be renamed.
-          default: false
-        reloadable:
-          type: boolean
-          description: Is the component reloadable.
-          default: false
-        active:
-          type: boolean
-          description: Whether the component is active.
-          default: true
-        comments:
-          type: string
-          nullable: true
-          description: User comments.
-        jsonData:
-          type: string
-          nullable: true
-          description: Component input in JSON format.
-      required:
-        - title
-      additionalProperties: false
-
-    DirectoryEntry:
-      type: object
-      description: >-
-        A single node in the study assets directory listing.
-        When `flatten=false`, the response is a tree and directories may have `content`.
-        When `flatten=true`, the response is a flat array of leaf nodes.
-      properties:
-        name:
-          type: string
-          description: File or directory name (last path segment).
-        path:
-          type: string
-          description: Path relative to the study assets base directory.
-          example: images/logo.png
-        type:
-          type: string
-          description: Node type as detected from the filesystem.
-          enum: [ directory, file, other ]
-        creation:
-          type: integer
-          format: int64
-          description: Creation timestamp in milliseconds since epoch.
-        lastModified:
-          type: integer
-          format: int64
-          description: Last modification timestamp in milliseconds since epoch.
-        size:
-          type: integer
-          format: int64
-          description: Size in bytes (for directories this can be filesystem-dependent).
-        checksum:
-          type: integer
-          format: int64
-          nullable: true
-          description: Adler32 checksum; present only for regular files.
-        content:
-          type: array
-          nullable: true
-          description: Directory contents (present only when this node is a directory and `flatten=false`).
-          items:
-            $ref: '#/components/schemas/DirectoryEntry'
-      required: [ name, path, type, creation, lastModified, size ]
-      additionalProperties: false
-
-    ApiEnvelopeStudyAssetsStructure:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: >-
-            Envelope containing the study assets directory structure.
-            The `data` payload is either a tree (when `flatten=false`) or a flat array (when `flatten=true`).
-          properties:
-            data:
-              oneOf:
-                - $ref: '#/components/schemas/DirectoryEntry'
-                - type: array
-                  items:
-                    $ref: '#/components/schemas/DirectoryEntry'
-          required: [ data ]
-          additionalProperties: false
-
-    StudyMembers:
-      type: object
-      description: Study identifier plus the list of member user IDs.
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Study ID.
-        uuid:
-          type: string
-          description: Study UUID.
-        members:
-          type: array
-          description: List of user IDs that are members of this study.
-          items:
-            type: integer
-            format: int64
-      required: [ id, uuid, members ]
-      additionalProperties: false
-
-    ApiEnvelopeStudyMembers:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope containing the study members response.
-          properties:
-            data:
-              $ref: '#/components/schemas/StudyMembers'
-          required: [ data ]
-          additionalProperties: false
 
     Batch:
       type: object
@@ -2778,117 +2503,6 @@ components:
       required: [ id, uuid, active, allowedWorkerTypes ]
       additionalProperties: true
 
-    ApiEnvelopeBatch:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope containing a batch.
-          properties:
-            data:
-              $ref: '#/components/schemas/Batch'
-          required: [ data ]
-          additionalProperties: false
-
-    ApiEnvelopeBatchList:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Batch'
-          required: [ data ]
-
-    CreateBatch:
-      allOf:
-        - $ref: '#/components/schemas/UpdateBatch'
-        - type: object
-          required: [ title ]
-
-    UpdateBatch:
-      type: object
-      description: >-
-        Batch properties payload used to create or update a batch.
-      properties:
-        title:
-          type: string
-          description: Title of the batch.
-        active:
-          type: boolean
-          default: true
-          description: True if batch can be used.
-        maxActiveMembers:
-          type: integer
-          nullable: true
-          description: Maximum number of active members in one group. 'null' means no limit.
-        maxTotalMembers:
-          type: integer
-          nullable: true
-          description: Maximum number of members (active or inactive) in one group. 'null' means no limit.
-        maxTotalWorkers:
-          type: integer
-          nullable: true
-          minimum: 1
-          description: Maximum number of workers in this batch (independent of groups). 'null' means no limit.
-        allowedTypes:
-          type: array
-          description: Set of types that are allowed to run in this batch.
-          items:
-            type: string
-          default: [ ]
-        comments:
-          type: string
-          nullable: true
-          description: User comments.
-        jsonData:
-          type: string
-          nullable: true
-          description: Batch input data in JSON format (string containing JSON).
-      additionalProperties: false
-
-    BatchOrGroupSession:
-      type: object
-      description: >-
-        Temporary, global data storage for a batch or group (JSON stored as string) plus a version for
-        optimistic concurrency control.
-      properties:
-        version:
-          type: integer
-          format: int64
-        data:
-          type: string
-          description: Batch/group session data (string containing JSON).
-      required: [ version, data ]
-      additionalProperties: false
-
-    ApiEnvelopeSessionVersion:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                version:
-                  type: integer
-                  format: int64
-              required: [ version ]
-              additionalProperties: false
-          required: [ data ]
-          additionalProperties: false
-
-    ApiEnvelopeBatchOrGroupSession:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope containing a batch or group session.
-          properties:
-            data:
-              $ref: '#/components/schemas/BatchOrGroupSession'
-          required: [ data ]
-          additionalProperties: false
-
     Group:
       type: object
       description: Group information
@@ -2931,18 +2545,25 @@ components:
       required: [ id, activeMemberList, historyMemberList, resultCount ]
       additionalProperties: true
 
-    ApiEnvelopeGroupList:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope containing a list of groups.
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Group'
-          required: [ data ]
-          additionalProperties: false
+    StudyMembers:
+      type: object
+      description: Study identifier plus the list of member user IDs.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Study ID.
+        uuid:
+          type: string
+          description: Study UUID.
+        members:
+          type: array
+          description: List of user IDs that are members of this study.
+          items:
+            type: integer
+            format: int64
+      required: [ id, uuid, members ]
+      additionalProperties: false
 
     StudyCodeInfo:
       type: object
@@ -2967,6 +2588,432 @@ components:
       required: [ studyCode, batchId, type, active, studyLinkPath, studyEntryPath ]
       additionalProperties: false
 
+    CreateUser:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Username of the new user
+        name:
+          type: string
+          description: Name of the new user
+        email:
+          type: string
+          description: Email address of the new user
+        password:
+          type: string
+          description: Password of the new user (only for authMethod DB)
+        authMethod:
+          type: string
+          enum: [ DB, LDAP ]
+          description: Authentication method
+      required:
+        - username
+        - name
+        - authMethod
+
+    UpdateUser:
+      type: object
+      description: >-
+        Partial update of a user. Provide only the fields you want to change.
+      properties:
+        name:
+          type: string
+          description: Name of the user
+        email:
+          type: string
+          nullable: true
+          description: Email address of the user
+        password:
+          type: string
+          description: New password (only applicable for authMethod DB)
+        active:
+          type: boolean
+          description: Whether the user is active
+      additionalProperties: false
+
+    UpdateStudyProperties:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the study
+        description:
+          type: string
+          nullable: true
+          description: Description of the study
+        active:
+          type: boolean
+          description: A deactivated study cannot be run by a worker.
+          default: true
+        groupStudy:
+          type: boolean
+          default: false
+          description: Is the study a group study
+        linearStudy:
+          type: boolean
+          default: false
+          description: Is the study a linear study
+        allowPreview:
+          type: boolean
+          default: false
+          description: Are previews allowed
+        dirName:
+          type: string
+          description: Study assets directory name.
+        comments:
+          type: string
+          nullable: true
+          description: Some comments
+        jsonData:
+          type: string
+          nullable: true
+          description: Study input in JSON format
+        endRedirectUrl:
+          type: string
+          nullable: true
+          description: URL the study redirects to after it is finished
+        studyEntryMsg:
+          type: string
+          nullable: true
+          description: Message shown to the user when starting the study via the study entry page
+      additionalProperties: false
+
+    UpdateStudyActiveOnly:
+      type: object
+      properties:
+        active:
+          type: boolean
+          description: A deactivated study cannot be run by a worker.
+          default: true
+      additionalProperties: false
+
+    CreateStudy:
+      allOf:
+        - $ref: '#/components/schemas/UpdateStudyProperties'
+        - type: object
+          required: [ title ]
+
+    UpdateComponentRequest:
+      type: object
+      description: Component properties update payload.
+      properties:
+        title:
+          type: string
+          description: Component title.
+        htmlFilePath:
+          type: string
+          nullable: true
+          description: Local path to component's HTML file in the study assets folder.
+        htmlFileRename:
+          type: boolean
+          description: Whether the actual HTML file on disk should be renamed.
+          default: false
+        reloadable:
+          type: boolean
+          description: Is the component reloadable.
+          default: false
+        active:
+          type: boolean
+          description: Whether the component is active.
+          default: true
+        comments:
+          type: string
+          nullable: true
+          description: User comments.
+        jsonData:
+          type: string
+          nullable: true
+          description: Component input in JSON format.
+      required:
+        - title
+      additionalProperties: false
+
+    UpdateBatch:
+      type: object
+      description: >-
+        Batch properties payload used to create or update a batch.
+      properties:
+        title:
+          type: string
+          description: Title of the batch.
+        active:
+          type: boolean
+          default: true
+          description: True if batch can be used.
+        maxActiveMembers:
+          type: integer
+          nullable: true
+          description: Maximum number of active members in one group. 'null' means no limit.
+        maxTotalMembers:
+          type: integer
+          nullable: true
+          description: Maximum number of members (active or inactive) in one group. 'null' means no limit.
+        maxTotalWorkers:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Maximum number of workers in this batch (independent of groups). 'null' means no limit.
+        allowedTypes:
+          type: array
+          description: Set of types that are allowed to run in this batch.
+          items:
+            type: string
+          default: [ ]
+        comments:
+          type: string
+          nullable: true
+          description: User comments.
+        jsonData:
+          type: string
+          nullable: true
+          description: Batch input data in JSON format (string containing JSON).
+      additionalProperties: false
+
+    CreateBatch:
+      allOf:
+        - $ref: '#/components/schemas/UpdateBatch'
+        - type: object
+          required: [ title ]
+
+    ApiEnvelopeSuccessWithMessage:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope returned after successful API operations.
+          properties:
+            message:
+              type: string
+              description: Human-readable result message.
+          required: [ message ]
+          additionalProperties: false
+
+    ApiEnvelopeGeneratedApiToken:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ApiTokenWithValue'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeApiTokenMetadata:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ApiTokenMetadata'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeApiTokenMetadataList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiTokenMetadata'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeTokenActiveToggled:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                id: { type: integer, format: int64 }
+                username: { type: string }
+                active: { type: boolean }
+              required: [ id, username, active ]
+              additionalProperties: false
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeUser:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/User'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeUserList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserWithStudyIds'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeAdminStatus:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AdminStatus'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeStudy:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Study'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeStudyList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Study'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeStudyActiveToggled:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope returned when an admin toggles only the study's active flag.
+          properties:
+            data:
+              $ref: "#/components/schemas/StudyActiveToggled"
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeComponent:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Component'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeComponentList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Component'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeBatch:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing a batch.
+          properties:
+            data:
+              $ref: '#/components/schemas/Batch'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeBatchList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Batch'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeGroupList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing a list of groups.
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Group'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeStudyMembers:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing the study members response.
+          properties:
+            data:
+              $ref: '#/components/schemas/StudyMembers'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeStudyAssetsStructure:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: >-
+            Envelope containing the study assets directory structure.
+            The `data` payload is either a tree (when `flatten=false`) or a flat array (when `flatten=true`).
+          properties:
+            data:
+              oneOf:
+                - $ref: '#/components/schemas/DirectoryEntry'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/DirectoryEntry'
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeSessionVersion:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                version:
+                  type: integer
+                  format: int64
+              required: [ version ]
+              additionalProperties: false
+          required: [ data ]
+          additionalProperties: false
+
+    ApiEnvelopeBatchOrGroupSession:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing a batch or group session.
+          properties:
+            data:
+              $ref: '#/components/schemas/BatchOrGroupSession'
+          required: [ data ]
+          additionalProperties: false
+
     ApiEnvelopeStudyCode:
       allOf:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
@@ -2978,37 +3025,57 @@ components:
           required: [ data ]
           additionalProperties: false
 
-    ApiEnvelopeResultsMetadata:
-      allOf:
-        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
-        - type: object
-          description: Envelope containing result metadata as JSON
-          properties:
-            apiVersion:
-              type: string
-            data:
-              type: array
-              items:
-                $ref: "#/components/schemas/ResultsMetadataStudyList"
-          required: [ apiVersion, data ]
-          additionalProperties: false
-
-    ResultsMetadataStudyList:
+    ResultsMetadataComponentResultList:
       type: object
       properties:
-        studyId:
+        id:
           type: integer
           format: int64
-        studyUuid:
+        componentId:
+          type: integer
+          format: int64
+        componentUuid:
           type: string
-        studyTitle:
+        startDate:
           type: string
-        studyResults:
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+          description: Human-readable duration (derived from start/end).
+        componentState:
+          type: string
+          enum: [ STARTED, DATA_RETRIEVED, RESULTDATA_POSTED, FINISHED, RELOADED, ABORTED, FAIL ]
+        path:
+          type: string
+          description: Path to the result files if applicable.
+        data:
+          properties:
+            size:
+              type: integer
+              format: int64
+            sizeHumanReadable:
+              type: string
+            filename:
+              type: string
+              description: Filename of the data file if applicable.
+          required: [ size, sizeHumanReadable ]
+          additionalProperties: false
+        files:
           type: array
+          description: Paths to the result files
           items:
-            $ref: "#/components/schemas/ResultsMetadataStudyResultList"
-      required: [ studyId, studyUuid, studyTitle, studyResults ]
-      additionalProperties: false
+            type: object
+            additionalProperties: true
+        isQuotaReached:
+          type: boolean
+      required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
+      additionalProperties: true
 
     ResultsMetadataStudyResultList:
       type: object
@@ -3081,57 +3148,35 @@ components:
       required: [ id, uuid, studyCode, studyState, workerId, workerType, batchId, batchUuid, isQuotaReached, componentResults ]
       additionalProperties: false
 
-    ResultsMetadataComponentResultList:
+    ResultsMetadataStudyList:
       type: object
       properties:
-        id:
+        studyId:
           type: integer
           format: int64
-        componentId:
-          type: integer
-          format: int64
-        componentUuid:
+        studyUuid:
           type: string
-        startDate:
+        studyTitle:
           type: string
-          format: date-time
-          nullable: true
-        endDate:
-          type: string
-          format: date-time
-          nullable: true
-        duration:
-          type: string
-          nullable: true
-          description: Human-readable duration (derived from start/end).
-        componentState:
-          type: string
-          enum: [ STARTED, DATA_RETRIEVED, RESULTDATA_POSTED, FINISHED, RELOADED, ABORTED, FAIL ]
-        path:
-          type: string
-          description: Path to the result files if applicable.
-        data:
-          properties:
-            size:
-              type: integer
-              format: int64
-            sizeHumanReadable:
-              type: string
-            filename:
-              type: string
-              description: Filename of the data file if applicable.
-          required: [ size, sizeHumanReadable ]
-          additionalProperties: false
-        files:
+        studyResults:
           type: array
-          description: Paths to the result files
           items:
-            type: object
-            additionalProperties: true
-        isQuotaReached:
-          type: boolean
-      required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
-      additionalProperties: true
+            $ref: "#/components/schemas/ResultsMetadataStudyResultList"
+      required: [ studyId, studyUuid, studyTitle, studyResults ]
+      additionalProperties: false
+
+    ApiEnvelopeResultsMetadata:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: Envelope containing result metadata as JSON
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/ResultsMetadataStudyList"
+          required: [ data ]
+          additionalProperties: false
 
     ApiEnvelopeDeletedComponentResultIds:
       allOf:
@@ -3139,12 +3184,10 @@ components:
         - type: object
           description: Envelope containing the deleted component result IDs.
           properties:
-            apiVersion:
-              type: string
             data:
               type: array
               items:
                 type: integer
                 format: int64
-          required: [ apiVersion, data ]
+          required: [ data ]
           additionalProperties: false
