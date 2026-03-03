@@ -394,7 +394,7 @@ paths:
           required: false
           schema:
             type: boolean
-            default: true
+            default: false
           description: >-
             If the assets are going to be overwritten (`keepAssets=false`), this
             flag indicates if the assets directory name is taken form the
@@ -403,7 +403,7 @@ paths:
             is different from the uploaded one a `keepCurrentAssetsName=true`
             indicates that the name of the currently installed assets directory
             should be kept. A `false` indicates that the name should be taken
-            from the uploaded one. Default is `true`.
+            from the uploaded one. Default is `false`.
         - in: query
           name: renameAssets
           required: false
@@ -411,10 +411,13 @@ paths:
             type: boolean
             default: true
           description: >-
-            If the study assets directory already exists in JATOS but belongs to
-            a different study it cannot be overwritten. In this case you can set
-            `renameAssets=true` to let JATOS add a suffix to the assets
-            directory name (original name + "_" + a number). Default is `true`.
+            If the specified study assets directory already exists in JATOS and
+            is associated with a different study, it cannot be overwritten. To
+            handle this case, you can set `renameAssets=true`. JATOS will then
+            automatically rename the assets directory by appending a numeric
+            suffix to the original name (for example, `assets_1`, `assets_2`,
+            etc.). If `renameAssets=false`, the import will fail and the API
+            will return HTTP 403 (Forbidden). Default is `true`.
       requestBody:
         description: >-
           Either a JSON object containing study properties (create) or
@@ -578,7 +581,7 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/UpdateStudyProperties'
+                - $ref: '#/components/schemas/StudyProperties'
                 - $ref: '#/components/schemas/UpdateStudyActiveOnly'
       responses:
         '200':
@@ -2632,7 +2635,7 @@ components:
           description: Whether the user is active
       additionalProperties: false
 
-    UpdateStudyProperties:
+    StudyProperties:
       type: object
       properties:
         title:
@@ -2660,7 +2663,9 @@ components:
           description: Are previews allowed
         dirName:
           type: string
-          description: Study assets directory name.
+          description: >-
+            Optional study assets directory name. If omitted, the server uses the study UUID.
+            Recommended: omit this field unless you have a specific reason to control the directory name.
         comments:
           type: string
           nullable: true
@@ -2690,7 +2695,7 @@ components:
 
     CreateStudy:
       allOf:
-        - $ref: '#/components/schemas/UpdateStudyProperties'
+        - $ref: '#/components/schemas/StudyProperties'
         - type: object
           required: [ title ]
 

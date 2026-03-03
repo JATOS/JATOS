@@ -138,12 +138,6 @@ public class MessagesStrings {
         return "Unknown position " + position + ". Couldn't reorder " + "components in study with ID " + studyId + ".";
     }
 
-    public static String studyImportNotUser() {
-        return "The study you're trying to import already exists but you aren't a member of it. "
-                + "You can always import this study in another JATOS instance, "
-                + "clone it there, export it, and import it here again.";
-    }
-
     public static String studyAssetsOverwritten(String studyAssetsName, Long studyId, String studyTitle) {
         return "Assets \"" + studyAssetsName + "\" of study \"" + studyTitle + "\" (ID " + studyId
                 + ") were overwritten. " + goToThisStudyLink(studyId);

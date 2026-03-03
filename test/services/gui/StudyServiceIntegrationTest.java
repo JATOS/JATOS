@@ -334,13 +334,14 @@ public class StudyServiceIntegrationTest extends JatosTest {
      * properties of updatedStudy (excluding study's dir name).
      */
     @Test
-    public void checkBindToStudyWithoutDirName() {
+    public void checkBindToStudy() {
         Long studyId = importExampleStudy();
         Study study = getStudy(studyId);
 
         StudyProperties updatedProps = new StudyProperties();
         updatedProps.setTitle("Changed Title");
         updatedProps.setDescription("Changed description");
+        updatedProps.setDirName("Changed dir name");
         updatedProps.setComments("Changed comments");
         updatedProps.setStudyEntryMsg("Changed study entry msg");
         updatedProps.setEndRedirectUrl("Changed end redirect url");
@@ -349,13 +350,13 @@ public class StudyServiceIntegrationTest extends JatosTest {
         updatedProps.setLinearStudy(false);
         updatedProps.setGroupStudy(false);
         updatedProps.setUuid("UUID cannot be changed");
-        updatedProps.setDirName("Dir name cannot be changed");
 
-        studyService.bindToStudyWithoutDirName(study, updatedProps);
+        studyService.bindToStudy(study, updatedProps);
 
         // Check changed properties of the study
         assertThat(study.getTitle()).isEqualTo(updatedProps.getTitle());
         assertThat(study.getDescription()).isEqualTo(updatedProps.getDescription());
+        assertThat(study.getDirName()).isEqualTo(updatedProps.getDirName());
         assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
         assertThat(study.getStudyEntryMsg()).isEqualTo(updatedProps.getStudyEntryMsg());
         assertThat(study.getEndRedirectUrl()).isEqualTo(updatedProps.getEndRedirectUrl());
@@ -367,7 +368,6 @@ public class StudyServiceIntegrationTest extends JatosTest {
         // ID, UUID, and dirName shouldn't be changed
         assertThat(study.getId()).isEqualTo(studyId);
         assertThat(study.getUuid()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
-        assertThat(study.getDirName()).isEqualTo("potatoCompass");
     }
 
     /**
@@ -427,7 +427,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void checkCreateAndPersistStudyFromProperties() {
+    public void checkCreateAndPersistStudyAndAssetsDirFromProperties() {
         StudyProperties props = new StudyProperties();
         props.setTitle("My Study");
         props.setDescription("Desc");
@@ -439,11 +439,11 @@ public class StudyServiceIntegrationTest extends JatosTest {
         props.setGroupStudy(false);
         props.setLinearStudy(true);
 
-        Long studyId = jpaApi.withTransaction((em) -> {
-            return studyService.createAndPersistStudy(admin, props).getId();
-        });
+        Long studyId = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+                studyService.createAndPersistStudyAndAssetsDir(admin, props).getId()
+        ));
 
-        // Persisted study has a default batch and contains the admin as member
+        // Persisted study has a default batch and contains the admin as a member
         jpaApi.withTransaction(unchecked(em -> {
             Study study = studyDao.findById(studyId);
             assertThat(study.getId()).isNotNull();
@@ -452,6 +452,8 @@ public class StudyServiceIntegrationTest extends JatosTest {
             assertThat(defaultBatch.getId()).isNotNull();
             assertThat(defaultBatch.getWorkerList()).isEmpty();
             assertThat(study.getUserList()).contains(admin);
+
+            assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName())).isTrue();
         }));
     }
 
@@ -480,7 +482,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void checkUpdateStudy() {
+    public void checkUpdateStudyAndRenameAssets() {
         Study study = jpaApi.withTransaction((em) -> {
             Study s = new Study();
             s.setTitle("A");
@@ -509,7 +511,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         updated.setUuid("UUID cannot be changed");
         updated.setDirName("changed_dirname");
         jpaApi.withTransaction((em) -> {
-            studyService.updateStudy(study, updated, admin);
+            studyService.updateStudyAndRenameAssets(study, updated, admin);
         });
 
 

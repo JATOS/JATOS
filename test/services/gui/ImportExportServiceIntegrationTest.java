@@ -1,7 +1,5 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pivovarit.function.ThrowingConsumer;
 import com.pivovarit.function.ThrowingFunction;
 import daos.common.BatchDao;
@@ -9,6 +7,7 @@ import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import exceptions.gui.ValidationException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -16,8 +15,8 @@ import models.common.User;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 import play.mvc.Controller;
-import testutils.JatosTest;
 import testutils.ContextMocker;
+import testutils.JatosTest;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -25,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.pivovarit.function.ThrowingConsumer.unchecked;
@@ -67,18 +67,18 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         ContextMocker.mock();
         File file = exampleStudyArchive();
 
-        ObjectNode response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
 
-        assertThat(response.get("studyExists").asBoolean()).isFalse();
-        assertThat(response.get("uuid").asText()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
-        assertThat(response.get("uploadedStudyTitle").asText()).isEqualTo("Potato Compass");
-        assertThat(response.get("uploadedDirName").asText()).isEqualTo("potatoCompass");
-        assertThat(response.get("uploadedDirExists").asBoolean()).isFalse();
+        assertThat((Boolean) response.get("studyExists")).isFalse();
+        assertThat(response.get("uuid").toString()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
+        assertThat(response.get("uploadedStudyTitle").toString()).isEqualTo("Potato Compass");
+        assertThat(response.get("uploadedDirName").toString()).isEqualTo("potatoCompass");
+        assertThat((Boolean) response.get("uploadedDirExists")).isFalse();
 
-        // Session should contain temp dir name and that dir should exist in tmp
+        // Session should contain a temp dir name and that dir should exist in tmp
         String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
         assertThat(tempDirName).isNotEmpty();
-        File tmpDir = new File(IOUtils.TMP_DIR, tempDirName);
+        File tmpDir = new File(IOUtils.tmpDir(), tempDirName);
         assertThat(tmpDir.exists()).isTrue();
 
         // Cleanup temp dir and session
@@ -116,7 +116,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
             Fail.fail();
         } catch (IOException e) {
             // expected
-        } catch (ForbiddenException | NotFoundException e) {
+        } catch (ForbiddenException | NotFoundException | ValidationException e) {
             Fail.fail();
         }
     }
@@ -153,16 +153,16 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         File file = exampleStudyArchive();
-        ObjectNode response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
 
         // Check returned JSON object
-        assertThat(response.get("studyExists").asBoolean()).isFalse();
-        assertThat(response.get("uuid").asText()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
+        assertThat((Boolean) response.get("studyExists")).isFalse();
+        assertThat(response.get("uuid").toString()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
         assertThat(response.get("currentStudyTitle")).isNull();
         assertThat(response.get("currentDirName")).isNull();
-        assertThat(response.get("uploadedStudyTitle").asText()).isEqualTo("Potato Compass");
-        assertThat(response.get("uploadedDirName").asText()).isEqualTo("potatoCompass");
-        assertThat(response.get("uploadedDirExists").asBoolean()).isFalse();
+        assertThat(response.get("uploadedStudyTitle").toString()).isEqualTo("Potato Compass");
+        assertThat(response.get("uploadedDirName").toString()).isEqualTo("potatoCompass");
+        assertThat((Boolean) response.get("uploadedDirExists")).isFalse();
 
         // Import part 2: call importStudyConfirmed()
         Study study = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
@@ -191,17 +191,17 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         File file = exampleStudyArchive();
-        ObjectNode response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
 
         // Check returned JSON object
-        assertThat(response.get("studyExists").asBoolean()).isTrue();
-        assertThat(response.get("uuid").asText()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
-        assertThat(response.get("currentStudyTitle").asText()).isEqualTo("Another Title");
-        assertThat(response.get("currentDirName").asText()).isEqualTo("another_example_dirname");
+        assertThat((Boolean) response.get("studyExists")).isTrue();
+        assertThat(response.get("uuid").toString()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
+        assertThat(response.get("currentStudyTitle").toString()).isEqualTo("Another Title");
+        assertThat(response.get("currentDirName")).isNull();
 
-        assertThat(response.get("uploadedStudyTitle").asText()).isEqualTo("Potato Compass");
-        assertThat(response.get("uploadedDirName").asText()).isEqualTo("potatoCompass");
-        assertThat(response.get("uploadedDirExists").asBoolean()).isFalse();
+        assertThat(response.get("uploadedStudyTitle").toString()).isEqualTo("Potato Compass");
+        assertThat(response.get("uploadedDirName").toString()).isEqualTo("potatoCompass");
+        assertThat((Boolean) response.get("uploadedDirExists")).isFalse();
 
         // Import part 2: call importStudyConfirmed(): Allow properties and assets to be overwritten
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
@@ -312,14 +312,14 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         File file = exampleStudyArchive();
-        JsonNode response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
 
         // Check returned JSON object
-        assertThat(response.get("studyExists").asBoolean()).isFalse();
-        assertThat(response.get("uuid").asText()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
-        assertThat(response.get("uploadedStudyTitle").asText()).isEqualTo("Potato Compass");
-        assertThat(response.get("uploadedDirName").asText()).isEqualTo("potatoCompass");
-        assertThat(response.get("uploadedDirExists").asBoolean()).isTrue();
+        assertThat((Boolean) response.get("studyExists")).isFalse();
+        assertThat(response.get("uuid").toString()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
+        assertThat(response.get("uploadedStudyTitle").toString()).isEqualTo("Potato Compass");
+        assertThat(response.get("uploadedDirName").toString()).isEqualTo("potatoCompass");
+        assertThat((Boolean) response.get("uploadedDirExists")).isTrue();
 
         // Import part 2: call importStudyConfirmed(): allow renaming of uploaded assets dir
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
@@ -339,7 +339,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         ContextMocker.mock();
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, exampleStudyArchive())));
         String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
-        File tmpDir = new File(IOUtils.TMP_DIR, tempDirName);
+        File tmpDir = new File(IOUtils.tmpDir(), tempDirName);
         assertThat(tmpDir.exists()).isTrue();
 
         importExportService.cleanupAfterStudyImport();

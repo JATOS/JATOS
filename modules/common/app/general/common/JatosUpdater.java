@@ -246,7 +246,7 @@ public class JatosUpdater {
     /**
      * Determine the path and name of the directory where the update files will be stored.
      */
-    private final Supplier<File> tmpJatosDir = () -> new File(IOUtils.TMP_DIR,
+    private final Supplier<File> tmpJatosDir = () -> new File(IOUtils.tmpDir(),
             "jatos-" + currentReleaseInfo.versionFull);
 
     private final WSClient ws;
@@ -403,7 +403,7 @@ public class JatosUpdater {
     }
 
     private CompletionStage<File> downloadAsync(String url, String filename) throws IOException {
-        File file = new File(IOUtils.TMP_DIR, filename);
+        File file = new File(IOUtils.tmpDir(), filename);
         OutputStream outputStream = Files.newOutputStream(file.toPath());
         LOGGER.info("Download " + url);
         CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")

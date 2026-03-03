@@ -262,7 +262,7 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
             if (dirName.length() > 255) {
                 errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
             }
-            if (!IOUtils.checkFilename(dirName)) {
+            if (!IOUtils.checkAssetsDirName(dirName)) {
                 errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
             }
             if (Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {

@@ -9,8 +9,6 @@ import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
-import models.gui.ApiEnvelope.ErrorCode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import play.Logger;
 import play.Logger.ALogger;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -30,8 +28,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
@@ -64,122 +60,13 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * POST request that imports a JATOS study archive to JATOS. It's only used by the API. The difference
-     * to the methods used by the GUI (importStudy and importStudyConfirmed) is that here all is done in one request
-     * and all confirmation (e.g. keepProperties, keepAssets) has to be specified beforehand.
-     *
-     * @param keepProperties        If true and the study exists already in JATOS the current properties are kept.
-     *                              Default is `false` (properties are overwritten by default). If the study doesn't
-     *                              already exist, this parameter has no effect.
-     * @param keepAssets            If true and the study exists already in JATOS the current study assets directory is
-     *                              kept. Default is `false` (assets are overwritten by default). If the study doesn't
-     *                              already exist, this parameter has no effect.
-     * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
-     *                              if the name of the currently installed assets directory should be kept. A `false`
-     *                              indicates that the name should be taken from the uploaded one. Default is `true`.
-     * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
-     *                              study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
-     *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
-     *                              Default is `true`.
-     */
-    @Transactional
-    @Auth
-    public ImportStudyResult importStudyApi(Http.Request request, boolean keepProperties, boolean keepAssets,
-                                                                    boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException, IOException {
-        User signedinUser = authService.getSignedinUser();
-
-        File file = extractStudyArchiveFile(request);
-
-        Map<String, Object> importInfo;
-        try {
-             importInfo = importExportService.importStudy(signedinUser, file);
-        } catch (Exception e) {
-            importExportService.cleanupAfterStudyImport();
-            LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
-            throw new InternalServerErrorException("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
-        }
-
-        try {
-            Study study = importExportService.importStudyConfirmed(signedinUser, keepProperties, keepAssets,
-                    keepCurrentAssetsName, renameAssets);
-            return new ImportStudyResult(importInfo, study);
-        } finally {
-            importExportService.cleanupAfterStudyImport();
-        }
-    }
-
-    public static final class ImportStudyResult {
-        public final Map<String, Object> importInfo;
-        public final Study study;
-
-        public ImportStudyResult(Map<String, Object> importInfo, Study study) {
-            this.importInfo = importInfo;
-            this.study = study;
-        }
-
-        public boolean wasOverwritten() {
-            return Boolean.TRUE.equals(importInfo.get("studyExists"));
-        }
-    }
-
-    /**
-     * Extracts the study archive file from the body. Supports:
-     * - multipart/form-data with the field "study"
-     * - application/zip with raw body
-     * - application/octet-stream with raw body
-     */
-    private File extractStudyArchiveFile(Http.Request request) throws BadRequestException, IOException {
-        String contentType = request.contentType().orElse("").toLowerCase();
-
-        if (contentType.startsWith("multipart/form-data")) {
-            if (request.body().asMultipartFormData() == null) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-            }
-            FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
-            if (filePart == null) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-            }
-            if (!Study.STUDY.equals(filePart.getKey())) {
-                throw new BadRequestException(MessagesStrings.NO_STUDY_UPLOAD);
-            }
-            return (File) filePart.getFile();
-        }
-
-        // Raw body: application/zip or application/octet-stream (or anything else you decide to allow)
-        // We intentionally accept both because many clients default to octet-stream.
-        if ("application/zip".equals(contentType)
-                || "application/jzip".equals(contentType)
-                || "application/octet-stream".equals(contentType)
-                || contentType.isEmpty()) {
-            Http.RawBuffer raw = request.body().asRaw();
-            if (raw == null) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-            }
-            // Prefer a temp file if Play stored it on disk (common for larger uploads)
-            File rawFile = raw.asFile();
-            if (rawFile != null && rawFile.exists() && rawFile.length() > 0) {
-                return rawFile;
-            }
-            // Fallback: raw bytes (small uploads); write to a temp file
-            if (raw.asBytes() == null || raw.asBytes().isEmpty()) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-            }
-            Path tmp = Files.createTempFile("jatos-study-upload-", ".jzip");
-            Files.write(tmp, raw.asBytes().toArray());
-            return tmp.toFile();
-        }
-        throw new BadRequestException(
-                "Unsupported Content-Type '" + contentType + "'. Use multipart/form-data, application/zip, or application/octet-stream."
-        );
-    }
-
-    /**
      * POST request that checks whether this is a legitimate import of a JATOS study archive, e.g. if the
      * study or its directory already exists. The actual import happens in method importStudyConfirmed().
      */
     @Transactional
     @Auth
-    public Result importStudy(Http.Request request) {
+    public Result importStudy(Http.Request request)
+            throws ForbiddenException, ValidationException, ImportExportException, IOException {
         User signedinUser = authService.getSignedinUser();
 
         FilePart<Object> filePart = request.body().asMultipartFormData().getFile(Study.STUDY);
@@ -196,10 +83,8 @@ public class ImportExport extends Controller {
             File file = (File) filePart.getFile();
             Map<String, Object> resultInfo = importExportService.importStudy(signedinUser, file);
             return ok(JsonUtils.asJsonNode(resultInfo));
-        } catch (Exception e) {
+        } finally {
             importExportService.cleanupAfterStudyImport();
-            LOGGER.info(".importStudy: Import of study failed - " + ExceptionUtils.getRootCause(e).getMessage());
-            return badRequest("Import of study failed: " + ExceptionUtils.getRootCause(e).getMessage());
         }
     }
 

@@ -8,8 +8,6 @@ import auth.gui.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
-import controllers.gui.ImportExport.ImportStudyResult;
 import daos.common.*;
 import exceptions.gui.*;
 import general.common.Common;
@@ -41,14 +39,10 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static auth.gui.AuthAction.Auth;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static models.common.User.Role.ADMIN;
 
 /**
@@ -80,6 +74,7 @@ public class Api extends Controller {
     private final BatchService batchService;
     private final GroupService groupService;
     private final ImportExport importExport;
+    private final ImportExportService importExportService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
     private final AuthorizationService authorizationService;
@@ -96,9 +91,10 @@ public class Api extends Controller {
         StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
         BatchDao batchDao, StudyLinkDao studyLinkDao, GroupResultDao groupResultDao, StudyService studyService,
         ComponentService componentService, StudyLinkService studyLinkService, BatchService batchService,
-        GroupService groupService, ImportExport importExport, ResultRemover resultRemover,
-        ResultStreamer resultStreamer, AuthorizationService authorizationService, JsonUtils jsonUtils,
-        StudyLogger studyLogger, IOUtils ioUtils, UserService userService, ApiTokenService apiTokenService,
+        GroupService groupService, ImportExport importExport, ImportExportService importExportService,
+        ResultRemover resultRemover, ResultStreamer resultStreamer, AuthorizationService authorizationService,
+        JsonUtils jsonUtils, StudyLogger studyLogger, IOUtils ioUtils, UserService userService,
+        ApiTokenService apiTokenService,
         StrictJsonMapper strictJsonMapper) {
         this.admin = admin;
         this.adminService = adminService;
@@ -117,6 +113,7 @@ public class Api extends Controller {
         this.batchService = batchService;
         this.groupService = groupService;
         this.importExport = importExport;
+        this.importExportService = importExportService;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
         this.authorizationService = authorizationService;
@@ -205,10 +202,9 @@ public class Api extends Controller {
 
     @Transactional
     @Auth(ADMIN)
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result createUser(Http.Request request) throws HttpException, IOException, AuthException {
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         NewUserProperties props = strictJsonMapper.getMapper().treeToValue(json, NewUserProperties.class);
         ApiService.validateProps(props);
         authorizationService.checkAuthMethodIsDbOrLdap(props);
@@ -220,7 +216,7 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result updateUser(Http.Request request, Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
         User signedinUser = authService.getSignedinUser();
@@ -228,8 +224,7 @@ public class Api extends Controller {
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
         UserProperties props = userService.bindToProperties(user);
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
         authorizationService.checkSignedinUserAllowedToChangeUser(props, signedinUser, user);
@@ -381,19 +376,59 @@ public class Api extends Controller {
         return ok(ApiEnvelope.wrap(studiesArray).asJsonNode());
     }
 
+    /**
+     * Handels deprecated endpoint to create a new study
+     */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result createStudy(Http.Request request) throws IOException, BadRequestException {
         User signedinUser = authService.getSignedinUser();
+        JsonNode json = ApiService.getJsonFromBody(request);
+        return createStudyFromJson(signedinUser, json);
+    }
 
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+    /**
+     * Dispatches the request based on the {@code Content-Type} header: 1) ZIP / multipart upload → import a study
+     * archive 2) JSON → create a new study from the request body.
+     *
+     * This endpoint supports multiple, mutually exclusive body formats, so it cannot be handled by a single fixed
+     * {@link play.mvc.BodyParser} annotation. Body parsing is therefore performed explicitly in the respective
+     * branches.
+     */
+    @Transactional
+    @Auth
+    public Result importOrCreateStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
+                                      boolean keepCurrentAssetsName, boolean renameAssets)
+            throws HttpException, IOException, ValidationException, ImportExportException {
+        String contentType = request.getHeaders().get(Http.HeaderNames.CONTENT_TYPE).orElse("");
+
+        if (contentType.startsWith("multipart/form-data")
+                || contentType.startsWith("application/zip")
+                || contentType.startsWith("application/jzip")
+                || contentType.startsWith("application/octet-stream")
+                || contentType.isEmpty()) {
+            return importStudy(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+        }
+
+        if (contentType.startsWith("application/json")) {
+            User signedinUser = authService.getSignedinUser();
+            JsonNode json = request.body().asJson();
+            if (json == null) {
+                throw new BadRequestException("Request body is empty or not valid JSON", ErrorCode.INVALID_JSON);
+            }
+            return createStudyFromJson(signedinUser, json);
+        }
+
+        return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' " + contentType,
+                ErrorCode.WRONG_CONTENT_TYPE).asJsonNode());
+    }
+
+    private Result createStudyFromJson(User signedinUser, JsonNode json) throws IOException, BadRequestException {
         StudyProperties props = strictJsonMapper.getMapper().treeToValue(json, StudyProperties.class);
         ApiService.validateProps(props);
 
-        Study study = studyService.createAndPersistStudy(signedinUser, props);
-        ioUtils.createStudyAssetsDir(study.getUuid());
+        Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, props);
 
         JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
         return created(ApiEnvelope.wrap(studyNode).asJsonNode());
@@ -423,35 +458,28 @@ public class Api extends Controller {
     @Transactional
     @Auth
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
-                              boolean keepCurrentAssetsName, boolean renameAssets) throws HttpException, IOException {
-        ImportStudyResult result = importExport.importStudyApi(request,
-                keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+                              boolean keepCurrentAssetsName, boolean renameAssets)
+            throws HttpException, IOException, ValidationException, ImportExportException {
+        User signedinUser = authService.getSignedinUser();
 
-        JsonNode studyNode = jsonUtils.studyAsJsonForApi(result.study, false, false);
-        JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();
-        return result.wasOverwritten() ? ok(envelope) : created(envelope);
-    }
+        List<String> allowedContentTypes = Arrays.asList("application/zip", "application/jzip", "application/octet-stream");
+        File file = ApiService.extractFile(request, Study.STUDY, allowedContentTypes);
 
-    /**
-     * This method calls either importStudy or createStudy according to the 'Content-Type' header
-     */
-    @Transactional
-    @Auth
-    public Result importOrCreateStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
-                                      boolean keepCurrentAssetsName, boolean renameAssets)
-        throws HttpException, IOException {
-        String contentType = request.getHeaders().get(Http.HeaderNames.CONTENT_TYPE).orElse("");
-        if (contentType.equals("application/zip")
-                || contentType.equals("multipart/form-data")
-                || contentType.equals("application/jzip")
-                || contentType.equals("application/octet-stream")
-                || contentType.isEmpty()) {
-            return importStudy(request, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+        try {
+            Map<String, Object> importInfo = importExportService.importStudy(signedinUser, file);
+
+            Study study = importExportService.importStudyConfirmed(
+                    signedinUser, keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+
+            JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
+            JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();
+
+            boolean wasOverwritten = Boolean.TRUE.equals(importInfo.get("studyExists"));
+            return wasOverwritten ? ok(envelope) : created(envelope);
+
+        } finally {
+            importExportService.cleanupAfterStudyImport();
         }
-        if (contentType.equals("application/json")) {
-            return createStudy(request);
-        }
-        return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' header", ErrorCode.WRONG_CONTENT_TYPE).asJsonNode());
     }
 
     /**
@@ -489,7 +517,7 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result updateStudyProperties(Http.Request request, String id) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
         Study study = studyService.getStudyFromIdOrUuid(id);
@@ -498,8 +526,7 @@ public class Api extends Controller {
         boolean isMemberOrSuperuser = study.hasUser(signedinUser) || Helpers.isAllowedSuperuser(signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
 
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
 
         // Admins who are not members: only allow toggling "active"
         if (isAdminNonMember) {
@@ -520,8 +547,7 @@ public class Api extends Controller {
         props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
 
-        studyService.renameStudyAssetsDir(study, props.getDirName());
-        studyService.updateStudy(study, props, signedinUser);
+        studyService.updateStudyAndRenameAssets(study, props, signedinUser);
 
         JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
         return ok(ApiEnvelope.wrap(studyNode).asJsonNode());
@@ -588,7 +614,9 @@ public class Api extends Controller {
         } catch (IOException e) {
             throw new NotFoundException("File '" + filepath + "' couldn't be found.");
         }
-        return ok().sendFile(file);
+        return ok()
+                .sendFile(file)
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"");
     }
 
     /**
@@ -604,20 +632,16 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) throws HttpException {
+    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        if (request.body().asMultipartFormData() == null) {
-            throw new BadRequestException("File missing", ErrorCode.NOT_FOUND);
-        }
-        Http.MultipartFormData.FilePart<Object> filePart = request.body().asMultipartFormData().getFile("studyAssetsFile");
-        if (filePart == null) throw new BadRequestException("File missing", ErrorCode.NOT_FOUND);
-        File uploadedFile = (File) filePart.getFile();
+        List<String> allowedContentTypes = Collections.singletonList("application/octet-stream");
+        File uploadedFile = ApiService.extractFile(request, "studyAssetsFile", allowedContentTypes);
 
         try {
-            Path assetsFilePath = ioUtils.getAssetsFilePath(filepath, filePart.getFilename(), study);
+            Path assetsFilePath = ioUtils.getAssetsFilePath(filepath, uploadedFile.getName(), study);
             Path parent = assetsFilePath.getParent();
             if (parent != null) {
                 // Make sure the directory that will contain the uploaded file exists.
@@ -750,14 +774,13 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result createComponent(Http.Request request, String studyId) throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         ComponentProperties props = strictJsonMapper.getMapper().treeToValue(json, ComponentProperties.class);
         ApiService.validateProps(props);
 
@@ -790,15 +813,14 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result updateComponent(Http.Request request, String id) throws HttpException, IOException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user, true);
 
         ComponentProperties props = componentService.bindToProperties(component);
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
 
@@ -839,14 +861,13 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result createBatch(Http.Request request, String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         BatchProperties props = strictJsonMapper.getMapper().treeToValue(json, BatchProperties.class);
         ApiService.validateProps(props);
 
@@ -858,15 +879,14 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result updateBatch(Http.Request request, String id) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user, true);
 
         BatchProperties props = batchService.bindToProperties(batch);
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         props = strictJsonMapper.updateFromJson(props, json);
         ApiService.validateProps(props);
 
@@ -898,22 +918,18 @@ public class Api extends Controller {
     }
 
     /**
-     * Updates the batch session. Uses `BodyParser.TolerantText` to handle JSON payloads with potential
+     * Updates the batch session. Uses `BodyParser.Raw` to handle JSON payloads with potential
      * malformed content gracefully and give detailed error messages to the user.
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result updateBatchSession(Http.Request request, String id, Option<Long> version) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user);
 
-        String body = request.body().asText();
-        if (Strings.isNullOrEmpty(body)) body = "{}";
-        JsonNode jsonNode = Json.mapper().readTree(body);
-        String sessionData = Json.mapper().writeValueAsString(jsonNode); // This validates the JSON
-        if (Strings.isNullOrEmpty(sessionData)) sessionData = "{}";
+        String sessionData = ApiService.getSessionDataFromBody(request);
 
         Long currentVersion = version.getOrElse(batch::getBatchSessionVersion);
         Long newVersion = batchDao.updateBatchSession(batch.getId(), currentVersion, sessionData);
@@ -950,22 +966,18 @@ public class Api extends Controller {
     }
 
     /**
-     * Updates the group session. Uses `BodyParser.TolerantText` to handle JSON payloads with potential
+     * Updates the group session. Uses `BodyParser.Raw` to handle JSON payloads with potential
      * malformed content gracefully and give detailed error messages to the user.
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result updateGroupSession(Http.Request request, Long id, Option<Long> version) throws HttpException, IOException {
         GroupResult groupResult = groupResultDao.findById(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessGroupResult(groupResult, user);
 
-        String body = request.body().asText();
-        if (Strings.isNullOrEmpty(body)) body = "{}";
-        JsonNode jsonNode = Json.mapper().readTree(body);
-        String sessionData = Json.mapper().writeValueAsString(jsonNode); // This validates the JSON
-        if (Strings.isNullOrEmpty(sessionData)) sessionData = "{}";
+        String sessionData = ApiService.getSessionDataFromBody(request);
 
         Long currentVersion = version.getOrElse(groupResult::getGroupSessionVersion);
         Long newVersion = groupResultDao.updateGroupSession(groupResult.getId(), currentVersion, sessionData);
@@ -1191,10 +1203,9 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    @BodyParser.Of(BodyParser.TolerantText.class)
+    @BodyParser.Of(BodyParser.Raw.class)
     public Result removeResults(Http.Request request) throws HttpException, IOException {
-        String body = request.body().asText();
-        JsonNode json = Json.mapper().readTree(body);
+        JsonNode json = ApiService.getJsonFromBody(request);
         List<Long> crids = componentResultIdsExtractor.extract(json);
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
 

@@ -23,7 +23,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -58,7 +57,6 @@ public class Studies extends Controller {
     private final ComponentResultDao componentResultDao;
     private final StudyLinkDao studyLinkDao;
     private final JsonUtils jsonUtils;
-    private final IOUtils ioUtils;
     private final FormFactory formFactory;
     private final StudyLogger studyLogger;
 
@@ -68,7 +66,7 @@ public class Studies extends Controller {
             BreadcrumbsService breadcrumbsService, BatchService batchService, StudyDao studyDao,
             ComponentDao componentDao, StudyResultDao studyResultDao, UserDao userDao,
             ComponentResultDao componentResultDao, StudyLinkDao studyLinkDao, JsonUtils jsonUtils,
-            IOUtils ioUtils, FormFactory formFactory, StudyLogger studyLogger) {
+            FormFactory formFactory, StudyLogger studyLogger) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
         this.authorizationService = authorizationService;
         this.studyService = studyService;
@@ -83,7 +81,6 @@ public class Studies extends Controller {
         this.componentResultDao = componentResultDao;
         this.studyLinkDao = studyLinkDao;
         this.jsonUtils = jsonUtils;
-        this.ioUtils = ioUtils;
         this.formFactory = formFactory;
         this.studyLogger = studyLogger;
     }
@@ -116,19 +113,14 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result submitCreated() {
+    public Result submitCreated() throws IOException {
         User signedinUser = authService.getSignedinUser();
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
-        Study study = studyService.createAndPersistStudy(signedinUser, studyProperties);
-        try {
-            ioUtils.createStudyAssetsDir(study.getDirName());
-        } catch (IOException e) {
-            return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
-        }
+        Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, studyProperties);
         return ok(study.getId().toString());
     }
 
@@ -161,12 +153,11 @@ public class Studies extends Controller {
 
         StudyProperties studyProperties = form.get();
         try {
-            studyService.renameStudyAssetsDir(study, studyProperties.getDirName());
+            studyService.updateStudyAndRenameAssets(study, studyProperties, signedinUser);
         } catch (IOException e) {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
 
-        studyService.updateStudy(study, studyProperties, signedinUser);
         return ok();
     }
 

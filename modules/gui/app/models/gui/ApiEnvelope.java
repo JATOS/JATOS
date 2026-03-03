@@ -30,6 +30,7 @@ public class ApiEnvelope {
         INVALID_JSON,
         INVALID_AUTH_METHOD,
         NOT_FOUND,
+        IMPORT_EXPORT_ERROR,
         AUTH_ERROR,
         NO_ACCESS,
         LDAP_ERROR,

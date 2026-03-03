@@ -1,6 +1,5 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
@@ -24,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -176,15 +176,15 @@ public class ImportExportServiceTest {
         when(studyDao.findByUuid("u-123")).thenReturn(Optional.empty());
         when(ioUtils.checkStudyAssetsDirExists("assetsA")).thenReturn(false);
 
-        ObjectNode json = importExportService.importStudy(user, fakeZip);
+        Map<String, Object> result = importExportService.importStudy(user, fakeZip);
 
-        assertThat(json.get("studyExists").asBoolean()).isFalse();
-        assertThat(json.get("uuid").asText()).isEqualTo("u-123");
-        assertThat(json.get("uploadedStudyTitle").asText()).isEqualTo("My Study");
-        assertThat(json.get("uploadedDirName").asText()).isEqualTo("assetsA");
-        assertThat(json.get("uploadedDirExists").asBoolean()).isFalse();
+        assertThat((Boolean) result.get("studyExists")).isFalse();
+        assertThat(result.get("uuid").toString()).isEqualTo("u-123");
+        assertThat(result.get("uploadedStudyTitle").toString()).isEqualTo("My Study");
+        assertThat(result.get("uploadedDirName").toString()).isEqualTo("assetsA");
+        assertThat((Boolean) result.get("uploadedDirExists")).isFalse();
 
-        // Session contains generated temp dir name
+        // Session contains a generated temp dir name
         String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
         assertThat(tempDirName).isNotEmpty();
 
