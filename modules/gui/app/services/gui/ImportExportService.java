@@ -3,7 +3,9 @@ package services.gui;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
+import exceptions.gui.ImportExportException;
 import exceptions.gui.NotFoundException;
+import exceptions.gui.ValidationException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
@@ -19,7 +21,6 @@ import utils.common.ZipUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.validation.ValidationException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -76,7 +77,8 @@ public class ImportExportService {
      * 4) !study exists -  udir exists : ask to rename dir (generate new dir name)
      * 5) !study exists - !udir exists : new study - write both
      */
-    public Map<String, Object> importStudy(User signedinUser, File file) throws IOException, ForbiddenException {
+    public Map<String, Object> importStudy(User signedinUser, File file)
+            throws IOException, ForbiddenException, ValidationException, ImportExportException {
         File tempUnzippedStudyDir = unzipUploadedFile(file);
         Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, false);
 
@@ -88,7 +90,9 @@ public class ImportExportService {
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
         if (currentStudy.isPresent() && !currentStudy.get().hasUser(signedinUser)) {
-            throw new ForbiddenException(MessagesStrings.studyImportNotUser());
+            throw new ForbiddenException("Import failed: the study already exists, but you are not a member and " +
+                    "therefore cannot overwrite it. You may import the study into another JATOS instance, clone it " +
+                    "there, then export and re-import it here.");
         }
 
         Map<String, Object> importInfo = new HashMap<>();
@@ -143,7 +147,8 @@ public class ImportExportService {
      *                              Default is `true`.
      */
     public Study importStudyConfirmed(User signedinUser, boolean keepProperties, boolean keepAssets,
-            boolean keepCurrentAssetsName, boolean renameAssets) throws IOException, ForbiddenException, NotFoundException {
+            boolean keepCurrentAssetsName, boolean renameAssets)
+            throws IOException, ForbiddenException, NotFoundException, ValidationException {
         File tempUnzippedStudyDir = getUnzippedStudyDir();
         if (tempUnzippedStudyDir == null) {
             LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
@@ -163,21 +168,16 @@ public class ImportExportService {
 
         // 4) !study exists -  udir exists
         // 5) !study exists - !udir exists
-        else if (!keepProperties && !keepAssets) {
-            boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
-            if (uploadedDirExists && !renameAssets) {
-                throw new ForbiddenException("Study assets directory already exists but doesn't belong to the study and 'renameAssets' is set to false.");
-            }
+        boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
+        if (uploadedDirExists) {
             if (renameAssets) {
                 String newDirName = ioUtils.findNonExistingStudyAssetsDirName(uploadedStudy.getDirName());
                 uploadedStudy.setDirName(newDirName);
+            } else {
+                throw new ForbiddenException("Cannot import study: a study assets directory with the same name exists already, but 'renameAssets' is set to false.");
             }
-            return importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
         }
-
-        else {
-            throw new IOException("Impossible to import study: no new study and the existing study is not allowed to be overwritten");
-        }
+        return importNewStudy(signedinUser, tempUnzippedStudyDir, uploadedStudy);
     }
 
     public void cleanupAfterStudyImport() {
@@ -204,7 +204,7 @@ public class ImportExportService {
             if (keepCurrentAssetsName || keepAssets) {
                 studyService.updateStudyWithoutDirName(currentStudy, uploadedStudy, signedinUser);
             } else {
-                studyService.updateStudy(currentStudy, uploadedStudy, signedinUser);
+                studyService.updateStudyAndRenameAssets(currentStudy, uploadedStudy, signedinUser);
             }
             updateStudysComponents(currentStudy, uploadedStudy);
             RequestScopeMessaging.success(MessagesStrings
@@ -315,36 +315,32 @@ public class ImportExportService {
         if (unzippedStudyDirName == null || unzippedStudyDirName.trim().isEmpty()) {
             return null;
         }
-        return new File(IOUtils.TMP_DIR, unzippedStudyDirName);
+        return new File(IOUtils.tmpDir(), unzippedStudyDirName);
     }
 
-    private File unzipUploadedFile(File file) throws IOException {
+    private File unzipUploadedFile(File file) throws ImportExportException {
         File destDir;
         try {
-            destDir = new File(IOUtils.TMP_DIR, "JatosImport_" + UUID.randomUUID());
+            destDir = new File(IOUtils.tmpDir(), "JatosImport_" + UUID.randomUUID());
             ZipUtil.unzip(file, destDir);
         } catch (IOException e) {
             LOGGER.warn(".unzipUploadedFile: unzipping failed");
-            throw new IOException("Unpacking ZIP archive failed");
+            throw new ImportExportException("Unpacking ZIP archive failed");
         }
         return destDir;
     }
 
-    private Study deserializeStudy(File tempDir, boolean deleteAfterwards) throws IOException {
+    private Study deserializeStudy(File tempDir, boolean deleteAfterwards) throws IOException, ValidationException {
         File[] studyFileList = ioUtils.findFiles(tempDir, "", "jas");
         if (studyFileList.length != 1) {
-            throw new IOException("Study is invalid");
+            throw new ValidationException("File is not a valid JATOS study");
         }
         File studyFile = studyFileList[0];
         Study study = studyDeserializer.deserialize(studyFile);
 
-        try {
-            studyService.validate(study);
-            study.getComponentList().forEach(componentService::validate);
-            study.getBatchList().forEach(batchService::validate);
-        } catch (ValidationException e) {
-            throw new IOException(e);
-        }
+        studyService.validate(study);
+        study.getComponentList().forEach(componentService::validate);
+        study.getBatchList().forEach(batchService::validate);
 
         if (deleteAfterwards) {
             studyFile.delete();
