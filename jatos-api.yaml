@@ -363,17 +363,22 @@ paths:
       description: >-
         Imports a JATOS study archive or creates a new study from scratch.
         The endpoint's behavior is determined by the **Content-Type** header.
+        
         ---
 
         ### 1. Import Study Archive
+        
         Upload a `.jzip` file.
+        
         * **Supported Content-Types:** `multipart/form-data`, `application/zip`, or `application/octet-stream`.
         * **UUID Conflicts:** If a study with the same UUID already exists,
         behavior is controlled by query parameters (e.g., whether to overwrite
         or keep existing properties and assets).
   
         ### 2. Create Study
+        
         Initialize a new study using JSON containing the study properties.
+        
         * **Supported Content-Type:** `application/json`.
         * **Request Body:** Must contain a JSON object defining the study's properties.
       tags: [ study ]
