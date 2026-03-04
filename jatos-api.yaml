@@ -361,10 +361,21 @@ paths:
     post:
       summary: Import or create a study
       description: >-
-        Imports a study in JATOS study archive format **or** creates a new study.
-        When importing, query parameters control how to handle an existing study with the
-        same UUID, for example whether to keep or overwrite its properties and assets.
-        When creating a new study, provide the study properties in the JSON request body.
+        Imports a JATOS study archive or creates a new study from scratch.
+        The endpoint's behavior is determined by the **Content-Type** header.
+        ---
+
+        ### 1. Import Study Archive
+        Upload a `.jzip` file.
+        * **Supported Content-Types:** `multipart/form-data`, `application/zip`, or `application/octet-stream`.
+        * **UUID Conflicts:** If a study with the same UUID already exists,
+        behavior is controlled by query parameters (e.g., whether to overwrite
+        or keep existing properties and assets).
+  
+        ### 2. Create Study
+        Initialize a new study using JSON containing the study properties.
+        * **Supported Content-Type:** `application/json`.
+        * **Request Body:** Must contain a JSON object defining the study's properties.
       tags: [ study ]
       parameters:
         - in: query
