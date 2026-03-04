@@ -360,7 +360,7 @@ paths:
   /jatos/api/v1/studies:
     post:
       summary: Import or create a study
-      description: >-
+      description: |
         Imports a JATOS study archive or creates a new study from scratch.
         The endpoint's behavior is determined by the **Content-Type** header.
         
