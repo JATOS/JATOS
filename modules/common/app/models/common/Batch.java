@@ -1,6 +1,7 @@
 package models.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import models.common.workers.Worker;
 import utils.common.JsonUtils;
@@ -97,6 +98,7 @@ public class Batch {
      * permission to run this study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
+    @JsonProperty("allowedTypes")
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> allowedWorkerTypes = new HashSet<>();
 

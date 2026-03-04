@@ -96,7 +96,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUser'
+              $ref: '#/components/schemas/UserCreate'
       responses:
         '201':
           description: User created successfully
@@ -166,7 +166,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUser'
+              $ref: '#/components/schemas/UserUpdate'
       responses:
         '200':
           description: Success
@@ -426,7 +426,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateStudy'
+              $ref: '#/components/schemas/StudyCreate'
           multipart/form-data:
             schema:
               type: object
@@ -538,7 +538,6 @@ paths:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         - in: query
           name: withComponentProperties
-          allowEmptyValue: true
           schema:
             type: boolean
             default: false
@@ -547,7 +546,6 @@ paths:
             properties of the study's component.
         - in: query
           name: withBatchProperties
-          allowEmptyValue: true
           schema:
             type: boolean
             default: false
@@ -581,8 +579,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/StudyProperties'
-                - $ref: '#/components/schemas/UpdateStudyActiveOnly'
+                - $ref: '#/components/schemas/StudyPropertiesUpdate'
+                - $ref: '#/components/schemas/StudyPropertiesUpdateActiveOnly'
       responses:
         '200':
           description: Success
@@ -610,7 +608,6 @@ paths:
       parameters:
         - in: query
           name: withComponentProperties
-          allowEmptyValue: true
           schema:
             type: boolean
             default: false
@@ -619,7 +616,6 @@ paths:
             properties of the study's component.
         - in: query
           name: withBatchProperties
-          allowEmptyValue: true
           schema:
             type: boolean
             default: false
@@ -652,7 +648,6 @@ paths:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
         - in: query
           name: flatten
-          allowEmptyValue: true
           schema:
             type: boolean
             default: false
@@ -755,6 +750,7 @@ paths:
                 studyAssetsFile:
                   type: string
                   format: binary
+              required: [ studyAssetsFile ]
       responses:
         '200':
           description: File overwritten successfully
@@ -831,6 +827,7 @@ paths:
                 studyAssetsFile:
                   type: string
                   format: binary
+              required: [ studyAssetsFile ]
       responses:
         '200':
           description: File overwritten successfully
@@ -924,7 +921,7 @@ paths:
       summary: Get the study log of a study
       description: >-
         If download=true (default), returns the full log as a downloadable stream (application/octet-stream).
-        If download=false, returns chunked log lines (application/jsonline) and can be limited by entryLimit.
+        If download=false, returns chunked log lines (application/x-ndjson) and can be limited by entryLimit.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -950,7 +947,7 @@ paths:
               schema:
                 type: string
                 format: binary
-            application/jsonline:
+            application/x-ndjson:
               schema:
                 type: string
         '401':
@@ -970,28 +967,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  description: Title of the component
-                description:
-                  type: string
-                  description: Description of the component
-                htmlFilePath:
-                  type: string
-                  description: Local path to component's HTML file in the study assets folder
-                reloadable:
-                  type: boolean
-                  description: Is the component reloadable
-                comments:
-                  type: string
-                  description: Some comments
-                jsonData:
-                  type: string
-                  description: Component input in JSON format
-              required:
-                - title
+              $ref: '#/components/schemas/ComponentCreate'
       responses:
         '201':
           description: Created
@@ -1053,7 +1029,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateComponentRequest'
+              $ref: '#/components/schemas/ComponentUpdate'
       responses:
         '200':
           description: Success
@@ -1629,9 +1605,10 @@ paths:
                 type: string
                 example: attachment; filename="jatos_results_data_[datatime].txt"
           content:
-            application/octet-stream:
+            text/plain:
               schema:
                 type: string
+                description: Plain text stream (one line per result) when asPlainText=true.
             application/zip:
               schema:
                 type: string
@@ -1846,10 +1823,10 @@ components:
         Specify results with a group ID. This query parameter can be used
         multiple times.
 
+
   requestBodies:
     ResultIdsJsonBody:
       content:
-        text/plain: { }
         application/json:
           schema:
             type: object
@@ -1946,7 +1923,7 @@ components:
             groupIds:
               summary: Group ID
               value:
-                batchIds: 1
+                groupIds: 1
             listOfComponentResultIds:
               summary: Multiple component result IDs
               value:
@@ -2414,7 +2391,6 @@ components:
           description: Some comments
         jsonData:
           type: string
-          nullable: true
           description: Study input in JSON format
         endRedirectUrl:
           type: string
@@ -2455,7 +2431,7 @@ components:
           nullable: true
         jsonData:
           type: string
-          nullable: true
+          description: Component input in JSON format
       required: [ id, uuid, title, reloadable, active ]
       additionalProperties: true
 
@@ -2490,9 +2466,9 @@ components:
           type: integer
           nullable: true
           description: Max total workers in the batch (independent of groups). 'null' means no limit.
-        allowedWorkerTypes:
+        allowedTypes:
           type: array
-          description: Worker types allowed to run in this batch.
+          description: Types allowed to run in this batch.
           items:
             type: string
         comments:
@@ -2501,9 +2477,8 @@ components:
           description: User comments.
         jsonData:
           type: string
-          nullable: true
           description: Batch input data in JSON format.
-      required: [ id, uuid, active, allowedWorkerTypes ]
+      required: [ id, uuid, active, allowedTypes ]
       additionalProperties: true
 
     Group:
@@ -2591,7 +2566,7 @@ components:
       required: [ studyCode, batchId, type, active, studyLinkPath, studyEntryPath ]
       additionalProperties: false
 
-    CreateUser:
+    UserCreate:
       type: object
       properties:
         username:
@@ -2615,7 +2590,7 @@ components:
         - name
         - authMethod
 
-    UpdateUser:
+    UserUpdate:
       type: object
       description: >-
         Partial update of a user. Provide only the fields you want to change.
@@ -2635,7 +2610,13 @@ components:
           description: Whether the user is active
       additionalProperties: false
 
-    StudyProperties:
+    StudyCreate:
+      allOf:
+        - $ref: '#/components/schemas/StudyPropertiesUpdate'
+        - type: object
+          required: [ title ]
+
+    StudyPropertiesUpdate:
       type: object
       properties:
         title:
@@ -2671,9 +2652,12 @@ components:
           nullable: true
           description: Some comments
         jsonData:
-          type: string
           nullable: true
-          description: Study input in JSON format
+          description: Study input in JSON format, either as a JSON string or as a JSON object.
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
         endRedirectUrl:
           type: string
           nullable: true
@@ -2684,7 +2668,7 @@ components:
           description: Message shown to the user when starting the study via the study entry page
       additionalProperties: false
 
-    UpdateStudyActiveOnly:
+    StudyPropertiesUpdateActiveOnly:
       type: object
       properties:
         active:
@@ -2693,15 +2677,8 @@ components:
           default: true
       additionalProperties: false
 
-    CreateStudy:
-      allOf:
-        - $ref: '#/components/schemas/StudyProperties'
-        - type: object
-          required: [ title ]
-
-    UpdateComponentRequest:
+    ComponentUpsert:
       type: object
-      description: Component properties update payload.
       properties:
         title:
           type: string
@@ -2710,29 +2687,51 @@ components:
           type: string
           nullable: true
           description: Local path to component's HTML file in the study assets folder.
-        htmlFileRename:
-          type: boolean
-          description: Whether the actual HTML file on disk should be renamed.
-          default: false
         reloadable:
           type: boolean
-          description: Is the component reloadable.
           default: false
+          description: Is the component reloadable.
         active:
           type: boolean
-          description: Whether the component is active.
           default: true
+          description: Whether the component is active.
         comments:
           type: string
           nullable: true
           description: User comments.
         jsonData:
-          type: string
+          description: Component input in JSON format (either JSON string or JSON object).
           nullable: true
-          description: Component input in JSON format.
-      required:
-        - title
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+
+    ComponentCreate:
+      allOf:
+        - $ref: "#/components/schemas/ComponentUpsert"
+        - type: object
+          required:
+            - title
       additionalProperties: false
+
+    ComponentUpdate:
+      description: Component properties update payload.
+      allOf:
+        - $ref: "#/components/schemas/ComponentUpsert"
+        - type: object
+          properties:
+            htmlFileRename:
+              type: boolean
+              description: Whether the actual HTML file on disk should be renamed.
+              default: false
+      additionalProperties: false
+
+    CreateBatch:
+      allOf:
+        - $ref: '#/components/schemas/UpdateBatch'
+        - type: object
+          required: [ title ]
 
     UpdateBatch:
       type: object
@@ -2770,16 +2769,136 @@ components:
           nullable: true
           description: User comments.
         jsonData:
-          type: string
           nullable: true
-          description: Batch input data in JSON format (string containing JSON).
+          description: Batch input in JSON format, either as a JSON string or as a JSON object.
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
       additionalProperties: false
 
-    CreateBatch:
-      allOf:
-        - $ref: '#/components/schemas/UpdateBatch'
-        - type: object
-          required: [ title ]
+    ResultsMetadataComponentResultList:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        componentId:
+          type: integer
+          format: int64
+        componentUuid:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+          description: Human-readable duration (derived from start/end).
+        componentState:
+          type: string
+          enum: [ STARTED, DATA_RETRIEVED, RESULTDATA_POSTED, FINISHED, RELOADED, ABORTED, FAIL ]
+        path:
+          type: string
+          description: Path to the result files if applicable.
+        data:
+          properties:
+            size:
+              type: integer
+              format: int64
+            sizeHumanReadable:
+              type: string
+            filename:
+              type: string
+              description: Filename of the data file if applicable.
+          required: [ size, sizeHumanReadable ]
+          additionalProperties: false
+        files:
+          type: array
+          description: Paths to the result files
+          items:
+            type: object
+            additionalProperties: true
+        isQuotaReached:
+          type: boolean
+      required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
+      additionalProperties: true
+
+    ResultsMetadataStudyResultList:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        uuid:
+          type: string
+        studyCode:
+          type: string
+        comment:
+          type: string
+          nullable: true
+          description: Only present if worker comment is non-empty.
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+          description: Human-readable duration (derived from start/end).
+        lastSeenDate:
+          type: string
+          format: date-time
+          nullable: true
+        studyState:
+          type: string
+          enum: [ PRE, STARTED, DATA_RETRIEVED, FINISHED, ABORTED, FAIL ]
+        message:
+          type: string
+          nullable: true
+        urlQueryParameters:
+          type: object
+          additionalProperties:
+            type: string
+          nullable: true
+        workerId:
+          type: integer
+          format: int64
+        workerType:
+          type: string
+        batchId:
+          type: integer
+          format: int64
+        batchUuid:
+          type: string
+        batchTitle:
+          type: string
+          nullable: true
+        groupId:
+          type: integer
+          format: int64
+          nullable: true
+        confirmationCode:
+          type: string
+          nullable: true
+          description: Present only MTurk type
+        isQuotaReached:
+          type: boolean
+        componentResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResultsMetadataComponentResultList"
+      required: [ id, uuid, studyCode, studyState, workerId, workerType, batchId, batchUuid, isQuotaReached, componentResults ]
+      additionalProperties: false
 
     ApiEnvelopeSuccessWithMessage:
       allOf:
@@ -3029,129 +3148,6 @@ components:
               $ref: '#/components/schemas/StudyCodeInfo'
           required: [ data ]
           additionalProperties: false
-
-    ResultsMetadataComponentResultList:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        componentId:
-          type: integer
-          format: int64
-        componentUuid:
-          type: string
-        startDate:
-          type: string
-          format: date-time
-          nullable: true
-        endDate:
-          type: string
-          format: date-time
-          nullable: true
-        duration:
-          type: string
-          nullable: true
-          description: Human-readable duration (derived from start/end).
-        componentState:
-          type: string
-          enum: [ STARTED, DATA_RETRIEVED, RESULTDATA_POSTED, FINISHED, RELOADED, ABORTED, FAIL ]
-        path:
-          type: string
-          description: Path to the result files if applicable.
-        data:
-          properties:
-            size:
-              type: integer
-              format: int64
-            sizeHumanReadable:
-              type: string
-            filename:
-              type: string
-              description: Filename of the data file if applicable.
-          required: [ size, sizeHumanReadable ]
-          additionalProperties: false
-        files:
-          type: array
-          description: Paths to the result files
-          items:
-            type: object
-            additionalProperties: true
-        isQuotaReached:
-          type: boolean
-      required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
-      additionalProperties: true
-
-    ResultsMetadataStudyResultList:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
-        studyCode:
-          type: string
-        comment:
-          type: string
-          nullable: true
-          description: Only present if worker comment is non-empty.
-        startDate:
-          type: string
-          format: date-time
-          nullable: true
-        endDate:
-          type: string
-          format: date-time
-          nullable: true
-        duration:
-          type: string
-          nullable: true
-          description: Human-readable duration (derived from start/end).
-        lastSeenDate:
-          type: string
-          format: date-time
-          nullable: true
-        studyState:
-          type: string
-          enum: [ PRE, STARTED, DATA_RETRIEVED, FINISHED, ABORTED, FAIL ]
-        message:
-          type: string
-          nullable: true
-        urlQueryParameters:
-          type: object
-          additionalProperties:
-            type: string
-          nullable: true
-        workerId:
-          type: integer
-          format: int64
-        workerType:
-          type: string
-        batchId:
-          type: integer
-          format: int64
-        batchUuid:
-          type: string
-        batchTitle:
-          type: string
-          nullable: true
-        groupId:
-          type: integer
-          format: int64
-          nullable: true
-        confirmationCode:
-          type: string
-          nullable: true
-          description: Present only MTurk type
-        isQuotaReached:
-          type: boolean
-        componentResults:
-          type: array
-          items:
-            $ref: "#/components/schemas/ResultsMetadataComponentResultList"
-      required: [ id, uuid, studyCode, studyState, workerId, workerType, batchId, batchUuid, isQuotaReached, componentResults ]
-      additionalProperties: false
 
     ResultsMetadataStudyList:
       type: object

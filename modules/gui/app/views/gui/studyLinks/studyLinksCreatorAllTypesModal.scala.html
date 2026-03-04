@@ -47,7 +47,7 @@
 
         const batchList = $("#batchTable").DataTable().data();
         $.each(batchList, function(index, batch) {
-            const allowedTypes = batch.allowedWorkerTypes.filter(t => t !== "Jatos" && t !== "MTSandbox");
+            const allowedTypes = batch.allowedTypes.filter(t => t !== "Jatos" && t !== "MTSandbox");
             const option = $(`<option value="${batch.id}">${batch.title}</option>`)
                 .data("allowed-types", allowedTypes)
                 .data("batch", batch);

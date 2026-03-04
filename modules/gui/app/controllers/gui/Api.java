@@ -425,10 +425,16 @@ public class Api extends Controller {
     }
 
     private Result createStudyFromJson(User signedinUser, JsonNode json) throws IOException, BadRequestException {
-        StudyProperties props = strictJsonMapper.getMapper().treeToValue(json, StudyProperties.class);
+        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        StudyProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, StudyProperties.class);
         ApiService.validateProps(props);
 
-        Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, props);
+        Study study;
+        try {
+            study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, props);
+        } catch (IOException e) {
+                throw new BadRequestException(e.getMessage(), ErrorCode.FILE_ERROR);
+        }
 
         JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
         return created(ApiEnvelope.wrap(studyNode).asJsonNode());
@@ -527,10 +533,11 @@ public class Api extends Controller {
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
 
         JsonNode json = ApiService.getJsonFromBody(request);
+        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
 
         // Admins who are not members: only allow toggling "active"
         if (isAdminNonMember) {
-            boolean active = ApiService.getActiveFlagFromJson(json);
+            boolean active = ApiService.getActiveFlagFromJson(jsonObj);
             study.setActive(active);
             studyDao.update(study);
 
@@ -544,7 +551,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         StudyProperties props = studyService.bindToProperties(study);
-        props = strictJsonMapper.updateFromJson(props, json);
+        props = strictJsonMapper.updateFromJson(props, jsonObj);
         ApiService.validateProps(props);
 
         studyService.updateStudyAndRenameAssets(study, props, signedinUser);
@@ -781,7 +788,8 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         JsonNode json = ApiService.getJsonFromBody(request);
-        ComponentProperties props = strictJsonMapper.getMapper().treeToValue(json, ComponentProperties.class);
+        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ComponentProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, ComponentProperties.class);
         ApiService.validateProps(props);
 
         Component component = componentService.createAndPersistComponent(study, props);
@@ -819,9 +827,10 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user, true);
 
-        ComponentProperties props = componentService.bindToProperties(component);
         JsonNode json = ApiService.getJsonFromBody(request);
-        props = strictJsonMapper.updateFromJson(props, json);
+        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ComponentProperties props = componentService.bindToProperties(component);
+        props = strictJsonMapper.updateFromJson(props, jsonObj);
         ApiService.validateProps(props);
 
         componentService.renameHtmlFilePath(component, props.getHtmlFilePath(), props.isHtmlFileRename());
@@ -868,7 +877,8 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         JsonNode json = ApiService.getJsonFromBody(request);
-        BatchProperties props = strictJsonMapper.getMapper().treeToValue(json, BatchProperties.class);
+        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        BatchProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, BatchProperties.class);
         ApiService.validateProps(props);
 
         Batch batch = batchService.bindToBatch(props);
@@ -887,7 +897,8 @@ public class Api extends Controller {
 
         BatchProperties props = batchService.bindToProperties(batch);
         JsonNode json = ApiService.getJsonFromBody(request);
-        props = strictJsonMapper.updateFromJson(props, json);
+        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        props = strictJsonMapper.updateFromJson(props, jsonObj);
         ApiService.validateProps(props);
 
         batchService.updateBatch(batch, props);

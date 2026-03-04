@@ -2,6 +2,8 @@ package services.gui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import exceptions.gui.BadRequestException;
 import general.common.MessagesStrings;
@@ -86,6 +88,25 @@ public class ApiService {
         String sessionData = Json.mapper().writeValueAsString(json); // This validates the JSON
         if (Strings.isNullOrEmpty(sessionData)) sessionData = "{}";
         return sessionData;
+    }
+
+    /**
+     * Normalizes the "jsonData" field within a JSON object by converting it to a serialized JSON string
+     * if the field is an object or an array. If the "jsonData" field is missing or already a string, no changes are made.
+     */
+    public static ObjectNode normalizeJsonDataField(JsonNode json) throws BadRequestException, JsonProcessingException {
+        if (!json.isObject()) {
+            throw new BadRequestException("Request body is not a JSON object", ApiEnvelope.ErrorCode.INVALID_JSON);
+        }
+        ObjectNode jsonObj = (ObjectNode) json;
+
+        if (!jsonObj.has("jsonData")) return jsonObj;
+
+        JsonNodeType jsonDataType = jsonObj.get("jsonData").getNodeType();
+        if (jsonDataType == JsonNodeType.OBJECT || jsonDataType == JsonNodeType.ARRAY) {
+            jsonObj.put("jsonData", Json.mapper().writeValueAsString(jsonObj.get("jsonData")));
+        }
+        return jsonObj;
     }
 
     /**

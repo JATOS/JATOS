@@ -153,7 +153,7 @@
     });
 
     function fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv) {
-        setAllowedTypes(studyLinksSetupDiv, studyLinksSetupData.allowedWorkerTypes);
+        setAllowedTypes(studyLinksSetupDiv, studyLinksSetupData.allowedTypes);
 
         renderStudyLinksManagerButton("PersonalSingle", studyLinksSetupData.personalSingleLinkCount, studyLinksSetupDiv);
         renderStudyLinksManagerButton("PersonalMultiple", studyLinksSetupData.personalMultipleLinkCount, studyLinksSetupDiv);
@@ -203,9 +203,9 @@
             url: window.routes.StudyLinks.toggleAllowedWorkerType(window.study.id, batch.id, workerType, allow),
             type : "POST",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: function(allowedWorkerTypes) {
-                batch.allowedWorkerTypes = allowedWorkerTypes;
-                setAllowedTypes(studyLinksSetupDiv, allowedWorkerTypes);
+            success: function(allowedTypes) {
+                batch.allowedTypes = allowedTypes;
+                setAllowedTypes(studyLinksSetupDiv, allowedTypes);
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't change type activation.")
         });
@@ -248,7 +248,7 @@
         if (!batch.active) {
             alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
         }
-        if (!batch.allowedWorkerTypes.includes(type)) {
+        if (!batch.allowedTypes.includes(type)) {
             alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
         }
     }
