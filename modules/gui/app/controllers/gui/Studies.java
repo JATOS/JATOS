@@ -113,14 +113,14 @@ public class Studies extends Controller {
      */
     @Transactional
     @Auth
-    public Result submitCreated() throws IOException {
+    public Result submitCreated() throws IOException, ForbiddenException {
         User signedinUser = authService.getSignedinUser();
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
-        Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, studyProperties);
+        Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, studyProperties, false);
         return ok(study.getId().toString());
     }
 

@@ -382,10 +382,10 @@ public class Api extends Controller {
     @Transactional
     @Auth
     @BodyParser.Of(BodyParser.Raw.class)
-    public Result createStudy(Http.Request request) throws IOException, BadRequestException {
+    public Result createStudy(Http.Request request) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
         JsonNode json = ApiService.getJsonFromBody(request);
-        return createStudyFromJson(signedinUser, json);
+        return createStudyFromJson(signedinUser, json, false);
     }
 
     /**
@@ -417,24 +417,20 @@ public class Api extends Controller {
             if (json == null) {
                 throw new BadRequestException("Request body is empty or not valid JSON", ErrorCode.INVALID_JSON);
             }
-            return createStudyFromJson(signedinUser, json);
+            return createStudyFromJson(signedinUser, json, renameAssets);
         }
 
         return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' " + contentType,
                 ErrorCode.WRONG_CONTENT_TYPE).asJsonNode());
     }
 
-    private Result createStudyFromJson(User signedinUser, JsonNode json) throws IOException, BadRequestException {
+    private Result createStudyFromJson(User signedinUser, JsonNode json, boolean renameAssets)
+            throws IOException, HttpException {
         ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
         StudyProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, StudyProperties.class);
         ApiService.validateProps(props);
 
-        Study study;
-        try {
-            study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, props);
-        } catch (IOException e) {
-                throw new BadRequestException(e.getMessage(), ErrorCode.FILE_ERROR);
-        }
+        Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, props, renameAssets);
 
         JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
         return created(ApiEnvelope.wrap(studyNode).asJsonNode());

@@ -188,12 +188,24 @@ public class StudyService {
         }
     }
 
-    public Study createAndPersistStudyAndAssetsDir(User signedinUser, StudyProperties props) throws IOException {
+    public Study createAndPersistStudyAndAssetsDir(User signedinUser, StudyProperties props, boolean renameAssets)
+            throws IOException, ForbiddenException {
         Study study = new Study();
         bindToStudy(study, props);
         if (Strings.isNullOrEmpty(study.getDirName())) {
             study.setDirName(study.getUuid());
         }
+
+        boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(study.getDirName());
+        if (uploadedDirExists) {
+            if (renameAssets) {
+                String newDirName = ioUtils.findNonExistingStudyAssetsDirName(study.getDirName());
+                study.setDirName(newDirName);
+            } else {
+                throw new ForbiddenException("Cannot create study: a study assets directory with the same name exists already, but 'renameAssets' is set to false.");
+            }
+        }
+
         ioUtils.createStudyAssetsDir(study.getDirName());
         createAndPersistStudy(signedinUser, study);
         return study;
