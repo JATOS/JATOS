@@ -283,7 +283,7 @@ paths:
       parameters:
         - in: path
           name: id
-          description: The token ID for which the active flag should be toggled
+          description: The token ID for which the `active` flag should be toggled
           required: true
           schema: { type: integer, format: int64 }
       requestBody:
@@ -581,7 +581,7 @@ paths:
       summary: Update study properties
       description: >-
         Regular users may update only studies they are a member of.
-        Admins may update only the active flag of any study.
+        Admins may update only the `active` flag of any study.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -2042,16 +2042,18 @@ components:
               enum:
                 - VALIDATION_ERROR
                 - INVALID_REQUEST
+                - INVALID_JSON
                 - INVALID_AUTH_METHOD
                 - NOT_FOUND
+                - IMPORT_EXPORT_ERROR
                 - AUTH_ERROR
                 - NO_ACCESS
                 - LDAP_ERROR
                 - FORBIDDEN
                 - CONFIG_ERROR
-                - NOT_ACCEPTABLE
+                - WRONG_CONTENT_TYPE
                 - MISSING_FILE
-                - FILE_ERROR
+                - IO_ERROR
                 - STUDY_LOCKED
                 - TOO_LARGE
                 - CLIENT_ERROR
@@ -2339,7 +2341,7 @@ components:
 
     StudyActiveToggled:
       type: object
-      description: Minimal response payload when only the study's active flag is toggled.
+      description: Minimal response payload when only the study's 'active' flag is toggled.
       properties:
         id:
           type: integer
@@ -3042,7 +3044,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
-          description: Envelope returned when an admin toggles only the study's active flag.
+          description: Envelope returned when an admin toggles only the study's `active` flag.
           properties:
             data:
               $ref: "#/components/schemas/StudyActiveToggled"
