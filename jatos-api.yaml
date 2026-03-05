@@ -893,7 +893,7 @@ paths:
 
   /jatos/api/v1/studies/{id}/members/{userId}:
     put:
-      summary: Add a member to a study
+      summary: Add a member to a study. If the user is already a member do nothing.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -904,7 +904,7 @@ paths:
           schema: { type: integer, format: int64 }
       responses:
         '200':
-          description: Success
+          description: The user was added successfully, or they were already a member.
           content:
             application/json:
               schema:
@@ -916,7 +916,7 @@ paths:
         '404':
           description: Study or user not found
     delete:
-      summary: Remove a member from a study
+      summary: Remove a member from a study. If the user isn't a member do nothing.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -927,7 +927,7 @@ paths:
           schema: { type: integer, format: int64 }
       responses:
         '200':
-          description: Success
+          description: The user was removed successfully, or they were never a member.
           content:
             application/json:
               schema:
@@ -942,19 +942,12 @@ paths:
   /jatos/api/v1/studies/{id}/log:
     get:
       summary: Get the study log of a study
-      description: >-
-        If download=true (default), returns the full log as a downloadable stream (application/octet-stream).
-        If download=false, returns chunked log lines (application/x-ndjson) and can be limited by entryLimit.
+      description: |
+        If `download=true` (default), returns the full log as a downloadable stream (`application/octet-stream`).
+        If `download=false`, returns chunked log lines (`application/x-ndjson`) and can be limited by `entryLimit`.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
-        - in: query
-          name: entryLimit
-          required: false
-          schema:
-            type: integer
-            default: -1
-          description: Maximum number of log lines (only used when download=false).
         - in: query
           name: download
           required: false
@@ -962,6 +955,13 @@ paths:
             type: boolean
             default: true
           description: If true download the full log; if false stream a limited JSON-lines response.
+        - in: query
+          name: entryLimit
+          required: false
+          schema:
+            type: integer
+            default: -1
+          description: Maximum number of log lines (only used when `download=false`).
       responses:
         '200':
           description: Success
@@ -2667,9 +2667,10 @@ components:
           description: Are previews allowed
         dirName:
           type: string
+          deprecated: true
           description: >-
-            Optional study assets directory name. If omitted, the server uses the study UUID.
-            Recommended: omit this field unless you have a specific reason to control the directory name.
+            **Optional** study assets directory name. If omitted, the server uses the study **UUID**.
+            **Recommended: omit this field unless you have a specific reason to control the directory name.**
         comments:
           type: string
           nullable: true
