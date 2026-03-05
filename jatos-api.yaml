@@ -539,11 +539,12 @@ paths:
   /jatos/api/v1/studies/{id}/properties:
     get:
       summary: Get study properties
-      description: >-
-        Get the study properties by specifying a study ID or UUID. The
-        properties of the study's components can be included by setting the flag
-        `withComponentProperties`. The batch properties can be included by
-        setting the flag `withBatchProperties`.
+      description: |
+        Returns the properties of a study identified by its ID or UUID.
+  
+        Set `withComponentProperties=true` to include component properties. Otherwise, only the ID and UUID of each component are returned.
+  
+        Set `withBatchProperties=true` to include batch properties. Otherwise, only the ID and UUID of each batch are returned.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -579,7 +580,7 @@ paths:
     patch:
       summary: Update study properties
       description: >-
-        Regular users may update only studies they own.
+        Regular users may update only studies they are a member of.
         Admins may update only the active flag of any study.
       tags: [ study ]
       parameters:
@@ -647,13 +648,16 @@ paths:
 
   /jatos/api/v1/studies/{id}/assets/structure:
     get:
-      summary: Get the directory structure of a study assets directory in JSON
-      description: >-
-        Every element has `name` (filename), `path` (location
-        in the study assets), `type` (_file_ or _directory_), `creation`
-        (creation timestamp), `lastModified` (last modification timestamp),
-        `size` (file size), `checksum` (checksum of the file calculated with
-        Adler32)
+      summary: Returns the directory structure of a study assets directory in JSON.
+      description: |
+        Each entry represents a file or directory with the following fields:
+        * `name` – name of the file or directory
+        * `path` – path relative to the study assets directory
+        * `type` – `file` or `directory`
+        * `creation` – creation timestamp
+        * `lastModified` – last modification timestamp
+        * `size` – file size in bytes
+        * `checksum` – Adler-32 checksum (files only)
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -839,6 +843,10 @@ paths:
                   type: string
                   format: binary
               required: [ studyAssetsFile ]
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
           description: File overwritten successfully
