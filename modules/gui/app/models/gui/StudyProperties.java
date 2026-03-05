@@ -263,10 +263,12 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
                 errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
             }
             if (!IOUtils.checkAssetsDirName(dirName)) {
-                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+                errorList.add(new ValidationError(DIR_NAME,
+                        "Invalid study assets directory name. Only alphanumeric characters, underscores, and hyphens are allowed."));
             }
             if (Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
-                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+                errorList.add(new ValidationError(DIR_NAME,
+                        "Invalid study assets directory name. It can't be one of the following: " + Arrays.toString(INVALID_DIR_NAMES) + "."));
             }
         }
         if (description != null && !Jsoup.isValid(description, Safelist.none())) {
