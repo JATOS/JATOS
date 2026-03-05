@@ -172,6 +172,7 @@ public class ComponentService {
         Component component = new Component();
         component.setTitle(props.getTitle());
         component.setHtmlFilePath(props.getHtmlFilePath());
+        component.setActive(props.isActive());
         component.setReloadable(props.isReloadable());
         component.setComments(props.getComments());
         component.setJsonData(props.getJsonData());
