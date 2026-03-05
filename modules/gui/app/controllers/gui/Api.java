@@ -768,7 +768,7 @@ public class Api extends Controller {
                 new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         } else {
-            return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/jsonline");
+            return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/x-ndjson");
         }
     }
 
