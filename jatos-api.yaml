@@ -758,6 +758,10 @@ paths:
       requestBody:
         required: true
         content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
           multipart/form-data:
             schema:
               type: object
@@ -835,6 +839,10 @@ paths:
       requestBody:
         required: true
         content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
           multipart/form-data:
             schema:
               type: object
@@ -843,10 +851,6 @@ paths:
                   type: string
                   format: binary
               required: [ studyAssetsFile ]
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
       responses:
         '200':
           description: File overwritten successfully
