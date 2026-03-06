@@ -142,7 +142,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
 
       case e: IOException =>
         logger.info(s"${request.method} ${request.uri} - ${e.getMessage}")
-        if (api) InternalServerError(ApiEnvelope.wrap("IO error: " + e.getMessage, ErrorCode.UNEXPECTED_ERROR).asJsValue())
+        if (api) InternalServerError(ApiEnvelope.wrap("IO error: " + e.getMessage, ErrorCode.IO_ERROR).asJsValue())
         else InternalServerError(e.getMessage)
 
       case _ =>

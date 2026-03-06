@@ -38,7 +38,7 @@ public class ApiEnvelope {
         CONFIG_ERROR,
         WRONG_CONTENT_TYPE,
         MISSING_FILE,
-        FILE_ERROR,
+        IO_ERROR,
         STUDY_LOCKED,
         TOO_LARGE,
         CLIENT_ERROR,
