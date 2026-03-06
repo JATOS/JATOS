@@ -73,7 +73,7 @@ public class StudyDeserializer {
         study.setDirName(studyV2.getDirName());
         study.setComments(studyV2.getComments());
         study.setJsonData(studyV2.getJsonData());
-        study.setComponentList(studyV2.getComponentList());
+        studyV2.getComponentList().forEach(study::addComponent);
         return study;
     }
 

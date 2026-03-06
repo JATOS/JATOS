@@ -150,10 +150,6 @@ public abstract class Worker {
         return batchList;
     }
 
-    public void setBatchList(Set<Batch> batchList) {
-        this.batchList = batchList;
-    }
-
     public boolean hasBatch(Batch batch) {
         return batchList.contains(batch);
     }

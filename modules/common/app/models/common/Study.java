@@ -11,6 +11,7 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static javax.persistence.CascadeType.*;
 import static utils.common.JsonUtils.JsonForIO;
 import static utils.common.JsonUtils.asStringForDB;
 
@@ -147,7 +148,7 @@ public class Study {
      * Ordered list of component of this study. The relationship is bidirectional.
      */
     @JsonView({JsonForIO.class})
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, cascade = ALL, orphanRemoval = true)
     @OrderColumn(name = "componentList_order")
     @JoinColumn(name = "study_id")
     // Not using mappedBy because of
@@ -158,7 +159,7 @@ public class Study {
      * Ordered list of batches of this study. The relationship is bidirectional.
      */
     @JsonView({JsonForIO.class})
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = {PERSIST, MERGE, REMOVE})
     @OrderColumn(name = "batchList_order")
     @JoinColumn(name = "study_id")
     // Not using mappedBy because of
@@ -295,28 +296,43 @@ public class Study {
         this.studyEntryMsg = studyEntryMsg;
     }
 
-    public void setUserList(Set<User> userList) {
-        this.userList = userList;
-    }
-
     public Set<User> getUserList() {
         return userList;
     }
 
+    /**
+     * Adds a user to this study and the study to the user. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void addUser(User user) {
-        userList.add(user);
+        if (user == null) return;
+        if (userList.add(user)) {
+            user.addStudy(this);
+        }
     }
 
-    public void removeUser(User user) {
-        userList.remove(user);
+    public void addAllUsers(List<User> userList) {
+        userList.forEach(this::addUser);
     }
+
+    /**
+     * Removes a user from this study and the study from the user. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
+    public void removeUser(User user) {
+        if (user == null) return;
+        if (userList.remove(user)) {
+            user.removeStudy(this);
+        }
+    }
+
+    public void removeAllUsers(List<User> userList) {
+        userList.forEach(this::removeUser);
+    }
+
 
     public boolean hasUser(User user) {
         return userList.contains(user);
-    }
-
-    public void setComponentList(List<Component> componentList) {
-        this.componentList = componentList;
     }
 
     public List<Component> getComponentList() {
@@ -340,11 +356,20 @@ public class Study {
     }
 
     public void addComponent(Component component) {
-        componentList.add(component);
+        if (component == null) return;
+        if (!componentList.contains(component)) {
+            componentList.add(component);
+        }
+        if (component.getStudy() != this) {
+            component.setStudy(this);
+        }
     }
 
     public void removeComponent(Component component) {
-        componentList.remove(component);
+        if (component == null) return;
+        if (componentList.remove(component) && component.getStudy() == this) {
+            component.setStudy(null);
+        }
     }
 
     public boolean hasComponent(Component component) {
@@ -379,24 +404,33 @@ public class Study {
         }
     }
 
-    public void setBatchList(List<Batch> batchList) {
-        this.batchList = batchList;
-    }
-
     public List<Batch> getBatchList() {
         return this.batchList;
     }
 
-    public boolean hasBatch(Batch batch) {
-        return batchList.contains(batch);
-    }
-
+    /**
+     * Adds a batch to this study and the study to the batch. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void addBatch(Batch batch) {
-        batchList.add(batch);
+        if (batch == null) return;
+        if (!batchList.contains(batch)) {
+            batchList.add(batch);
+        }
+        if (batch.getStudy() != this) {
+            batch.setStudy(this);
+        }
     }
 
+    /**
+     * Removes a batch from this study and the study from the batch. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void removeBatch(Batch batch) {
-        batchList.remove(batch);
+        if (batch == null) return;
+        if (batchList.remove(batch) && batch.getStudy() == this) {
+            batch.setStudy(null);
+        }
     }
 
     @JsonIgnore

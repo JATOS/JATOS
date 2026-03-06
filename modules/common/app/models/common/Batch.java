@@ -201,10 +201,6 @@ public class Batch {
         this.maxTotalWorkers = maxTotalWorkers;
     }
 
-    public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
-        this.allowedWorkerTypes = allowedWorkerTypes;
-    }
-
     public Set<String> getAllowedWorkerTypes() {
         return this.allowedWorkerTypes;
     }
@@ -226,28 +222,38 @@ public class Batch {
         return allowedWorkerTypes.contains(workerType);
     }
 
-    public void setWorkerList(Set<Worker> workerList) {
-        this.workerList = workerList;
-    }
-
     public Set<Worker> getWorkerList() {
         return this.workerList;
     }
 
+    /**
+     * Adds a worker to this batch and the batch to the worker. Because Batch is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void addWorker(Worker worker) {
-        workerList.add(worker);
+        if (worker == null) return;
+        if (workerList.add(worker)) {          // true only if newly added
+            worker.addBatch(this);
+        }
     }
 
     public void addAllWorkers(List<Worker> workerList) {
-        this.workerList.addAll(workerList);
+        workerList.forEach(this::addWorker);
     }
 
+    /**
+     * Removes a worker from this batch and the batch from the worker. Because Batch is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void removeWorker(Worker worker) {
-        workerList.remove(worker);
+        if (worker == null) return;
+        if (workerList.remove(worker)) {       // true only if actually removed
+            worker.removeBatch(this);
+        }
     }
 
     public void removeAllWorkers(List<Worker> workerList) {
-        workerList.forEach(this.workerList::remove);
+        workerList.forEach(this::removeWorker);
     }
 
     public String getComments() {

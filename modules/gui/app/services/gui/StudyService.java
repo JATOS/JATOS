@@ -3,7 +3,6 @@ package services.gui;
 import auth.gui.AuthService;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
@@ -42,7 +41,6 @@ public class StudyService {
     private final BatchService batchService;
     private final ComponentService componentService;
     private final StudyDao studyDao;
-    private final BatchDao batchDao;
     private final UserDao userDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
@@ -50,12 +48,11 @@ public class StudyService {
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            BatchDao batchDao, UserDao userDao, IOUtils ioUtils,
+            UserDao userDao, IOUtils ioUtils,
             StudyLogger studyLogger, AuthService authService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
-        this.batchDao = batchDao;
         this.userDao = userDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
@@ -129,7 +126,8 @@ public class StudyService {
                 throw new ForbiddenException(MessagesStrings.STUDY_AT_LEAST_ONE_USER);
             }
             study.removeUser(userToChange);
-            study.getBatchList().forEach(b -> b.removeWorker(userToChange.getWorker()));
+            Worker workerToRemove = userToChange.getWorker();
+            study.getBatchList().forEach(b -> b.removeWorker(workerToRemove));
         }
         studyDao.update(study);
         userDao.update(userToChange);
@@ -160,8 +158,7 @@ public class StudyService {
         List<Worker> usersWorkerList = usersToRemove.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
 
-        usersToRemove.forEach(u -> u.removeStudy(study));
-        study.getUserList().removeAll(usersToRemove);
+        study.removeAllUsers(usersToRemove);
 
         studyDao.update(study);
         usersToRemove.forEach(userDao::update);
@@ -216,38 +213,25 @@ public class StudyService {
      * them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(User signedinUser, Study study) {
-        study.getComponentList().forEach(c -> c.setStudy(study));
-
-        studyDao.create(study);
+        study.addUser(signedinUser);
 
         if (study.getBatchList().isEmpty()) {
             // Create a default batch if we have no batch
             Batch defaultBatch = batchService.createDefaultBatch();
             batchService.initBatch(defaultBatch, study);
             study.addBatch(defaultBatch);
-            batchDao.create(defaultBatch);
         } else {
             study.getBatchList().forEach(b -> batchService.initBatch(b, study));
-            study.getBatchList().forEach(batchDao::create);
         }
 
-        // Add user
-        addUserToStudy(study, signedinUser);
+        studyDao.create(study);
 
-        studyDao.update(study);
         studyLogger.create(study);
         studyLogger.log(study, signedinUser, "Created study");
         if (!Strings.isNullOrEmpty(study.getDescription())) {
             studyLogger.logStudyDescriptionHash(study, signedinUser);
         }
         return study;
-    }
-
-    private void addUserToStudy(Study study, User user) {
-        study.addUser(user);
-        user.addStudy(study);
-        studyDao.update(study);
-        userDao.update(user);
     }
 
     /**
@@ -384,12 +368,6 @@ public class StudyService {
         // Remove all study's batches and their StudyResults and GroupResults
         for (Batch batch : Lists.newArrayList(study.getBatchList())) {
             batchService.remove(batch, signedinUser);
-        }
-
-        // Remove this study from all member users
-        for (User user : study.getUserList()) {
-            user.removeStudy(study);
-            userDao.update(user);
         }
 
         // Remove study. This also removes all study's components and their ComponentResults via cascading.

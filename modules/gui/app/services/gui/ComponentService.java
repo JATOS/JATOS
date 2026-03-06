@@ -147,10 +147,7 @@ public class ComponentService {
      * Initialise and persist the given Component. Updates its study.
      */
     public Component createAndPersistComponent(Study study, Component component) {
-        component.setStudy(study);
-        if (!study.hasComponent(component)) {
-            study.addComponent(component);
-        }
+        study.addComponent(component);
         componentDao.create(component);
         studyDao.update(study);
         return component;
@@ -230,11 +227,14 @@ public class ComponentService {
      */
     public void remove(Component component, User signedinUser) {
         Study study = component.getStudy();
+
+        // Remove component's ComponentResults
+        resultRemover.removeAllComponentResults(component, signedinUser);
+
         // Remove component from study
         study.removeComponent(component);
         studyDao.update(study);
-        // Remove component's ComponentResults
-        resultRemover.removeAllComponentResults(component, signedinUser);
+
         componentDao.remove(component);
     }
 

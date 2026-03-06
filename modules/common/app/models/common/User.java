@@ -188,10 +188,6 @@ public class User {
         return roleList;
     }
 
-    public void setRoleList(Set<Role> roleList) {
-        this.roleList = roleList;
-    }
-
     public void addRole(Role role) {
         this.roleList.add(role);
     }
@@ -269,10 +265,6 @@ public class User {
 
     public JatosWorker getWorker() {
         return this.worker;
-    }
-
-    public void setStudyList(Set<Study> studyList) {
-        this.studyList = studyList;
     }
 
     public Set<Study> getStudyList() {

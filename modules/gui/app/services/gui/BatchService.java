@@ -93,7 +93,6 @@ public class BatchService {
         }
         study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
         batch.setBatchSessionData("{}");
-        batch.setStudy(study);
     }
 
     public void initAndPersistBatch(Batch batch, Study study, User signedinUser) {
@@ -102,7 +101,6 @@ public class BatchService {
         }
         study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
         batch.setBatchSessionData("{}");
-        batch.setStudy(study);
         study.addBatch(batch);
 
         batchDao.create(batch);
@@ -196,11 +194,6 @@ public class BatchService {
      * to the database.
      */
     public void remove(Batch batch, User signedinUser) {
-        // Remove this Batch from its study
-        Study study = batch.getStudy();
-        study.removeBatch(batch);
-        studyDao.update(study);
-
         // Delete all StudyResults and all ComponentResults
         resultRemover.removeAllStudyResults(batch, signedinUser);
 
@@ -216,13 +209,18 @@ public class BatchService {
             removeOrUpdateNonJatosWorkers(batch, worker);
         }
 
+        // Remove this Batch from its study
+        Study study = batch.getStudy();
+        study.removeBatch(batch);
+        studyDao.update(study);
+
         batchDao.remove(batch);
         studyLogger.log(study, signedinUser, "Removed batch", batch);
     }
 
     /**
-     * Remove or update JatosWorker from batch. This isn't necessary anymore because we don't add the JatosWorker to
-     * a batch anymore. We keep it to clean up old batches that still have a JatosWorker.
+     * Remove or update JatosWorker from batch. This isn't necessary anymore because we don't add the JatosWorker to a
+     * batch anymore. We keep it to clean up old batches that still have a JatosWorker.
      */
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {
         // We can't check type with 'instanceof JatosWorker' because sometimes
@@ -231,15 +229,13 @@ public class BatchService {
             return;
         }
 
-        // If worker is part of other batches just remove this batch
+        // If worker is part of other batches do nothing
         if (worker.getBatchList().size() != 1) {
-            worker.removeBatch(batch);
-            workerDao.update(worker);
             return;
         }
 
         // This is a Hibernate issue: If this worker was a JatosWorker
-        // before but its user was already deleted it's not instance of
+        // before but its user was already deleted, it's not instance of
         // JatosWorker anymore. But anyway, since the worker is only in this
         // batch, now it can be removed.
         if (!(worker instanceof JatosWorker)) {
@@ -250,10 +246,10 @@ public class BatchService {
         // Worker is only in this batch
         JatosWorker jatosWorker = (JatosWorker) worker;
         if (jatosWorker.getUser() == null) {
-            // Last one in batch list and User gone -> remove worker
+            // Last one in a batch list and User gone -> remove worker
             workerDao.remove(worker);
         } else {
-            // If the JatosWorker's User still exist don't remove
+            // If the JatosWorker's User still exists don't remove
             worker.removeBatch(batch);
             workerDao.update(worker);
         }
