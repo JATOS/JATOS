@@ -89,7 +89,7 @@
         if (!batch.active) {
             alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
         }
-        if (!batch.allowedTypes.includes(type)) {
+        if (!batch.allowedWorkerTypes.includes(type)) {
             alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
         }
         fillStudyLinksTable(batch, type);

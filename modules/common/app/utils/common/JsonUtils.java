@@ -532,7 +532,7 @@ public class JsonUtils {
     public ObjectNode getBatchByStudyForUI(Batch batch, Integer resultCount, Integer groupCount) {
         ObjectNode batchNode = Json.mapper().valueToTree(batch);
         // Set allowed worker types
-        batchNode.set("allowedTypes", asJsonNode(batch.getAllowedWorkerTypes()));
+        batchNode.set("allowedWorkerTypes", asJsonNode(batch.getAllowedWorkerTypes()));
         // Add count of batch's study results
         batchNode.put("resultCount", resultCount);
         // Add count of batch's workers (without JatosWorker)
@@ -584,7 +584,7 @@ public class JsonUtils {
         studyLinkSetupData.set("studyResultCountsPerWorker", asJsonNode(studyResultCountsPerWorker));
         studyLinkSetupData.put("personalSingleLinkCount", personalSingleLinkCount);
         studyLinkSetupData.put("personalMultipleLinkCount", personalMultipleLinkCount);
-        studyLinkSetupData.set("allowedTypes", asJsonNode(batch.getAllowedWorkerTypes()));
+        studyLinkSetupData.set("allowedWorkerTypes", asJsonNode(batch.getAllowedWorkerTypes()));
         return studyLinkSetupData;
     }
 

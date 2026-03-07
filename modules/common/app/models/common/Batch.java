@@ -98,7 +98,7 @@ public class Batch {
      * permission to run this study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    @JsonProperty("allowedTypes")
+    @JsonProperty("allowedWorkerTypes")
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> allowedWorkerTypes = new HashSet<>();
 

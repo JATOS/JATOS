@@ -153,7 +153,7 @@
     });
 
     function fillStudyLinksSetup(studyLinksSetupData, studyLinksSetupDiv) {
-        setAllowedTypes(studyLinksSetupDiv, studyLinksSetupData.allowedTypes);
+        setAllowedWorkerTypes(studyLinksSetupDiv, studyLinksSetupData.allowedWorkerTypes);
 
         renderStudyLinksManagerButton("PersonalSingle", studyLinksSetupData.personalSingleLinkCount, studyLinksSetupDiv);
         renderStudyLinksManagerButton("PersonalMultiple", studyLinksSetupData.personalMultipleLinkCount, studyLinksSetupDiv);
@@ -181,13 +181,13 @@
         $(studyLinksSetupDiv).find(`.study-links-setup[data-type="${type}"] .worker-results-button`).attr("data-bs-tooltip", tooltip);
     }
 
-    function setAllowedTypes(studyLinksSetupDiv, allowedTypes) {
+    function setAllowedWorkerTypes(studyLinksSetupDiv, allowedWorkerTypes) {
         // First clear all allowed types
         $(studyLinksSetupDiv).find(".active-type").each(function(index) {
             $(this).prop('checked', false);
         });
         // Now set the allowed ones
-        $.each(allowedTypes, function(index, type) {
+        $.each(allowedWorkerTypes, function(index, type) {
             $(studyLinksSetupDiv).find(`.study-links-setup[data-type="${type}"] .active-type`).prop('checked', true);
         });
     }
@@ -203,9 +203,9 @@
             url: window.routes.StudyLinks.toggleAllowedWorkerType(window.study.id, batch.id, workerType, allow),
             type : "POST",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: function(allowedTypes) {
-                batch.allowedTypes = allowedTypes;
-                setAllowedTypes(studyLinksSetupDiv, allowedTypes);
+            success: function(allowedWorkerTypes) {
+                batch.allowedWorkerTypes = allowedWorkerTypes;
+                setAllowedWorkerTypes(studyLinksSetupDiv, allowedWorkerTypes);
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't change type activation.")
         });
@@ -248,7 +248,7 @@
         if (!batch.active) {
             alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
         }
-        if (!batch.allowedTypes.includes(type)) {
+        if (!batch.allowedWorkerTypes.includes(type)) {
             alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
         }
     }

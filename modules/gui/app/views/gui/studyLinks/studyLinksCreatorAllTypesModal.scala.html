@@ -47,9 +47,9 @@
 
         const batchList = $("#batchTable").DataTable().data();
         $.each(batchList, function(index, batch) {
-            const allowedTypes = batch.allowedTypes.filter(t => t !== "Jatos" && t !== "MTSandbox");
+            const allowedWorkerTypes = batch.allowedWorkerTypes.filter(t => t !== "Jatos" && t !== "MTSandbox");
             const option = $(`<option value="${batch.id}">${batch.title}</option>`)
-                .data("allowed-types", allowedTypes)
+                .data("allowed-types", allowedWorkerTypes)
                 .data("batch", batch);
             $("#studyLinksCreatorAllTypesBatchSelect").append(option);
         });
@@ -66,14 +66,14 @@
     $("#studyLinksCreatorAllTypesBatchSelect").change(function() {
         const $selectedOption = $(this).find(":selected");
         const batch = $selectedOption.data("batch");
-        const allowedTypes = $selectedOption.data("allowed-types")
+        const allowedWorkerTypes = $selectedOption.data("allowed-types")
                 .map(t => `<b>${Helpers.getWorkerTypeUIName(t)}</b>`)
                 .join(", ");
         const batchDeactivated = `<i class="bi-exclamation-triangle text-warning pe-1"></i>
                 <span class="text-warning">Batch "${batch.title}" is currently <b>deactivated</b>.</span>`
         const html = `
                 ${!batch.active ? batchDeactivated : ""}
-                In batch "${batch.title}" the currently allowed types are: ${allowedTypes ? allowedTypes : "none"}`;
+                In batch "${batch.title}" the currently allowed types are: ${allowedWorkerTypes ? allowedWorkerTypes : "none"}`;
         $("#studyLinksCreatorAllTypesAllowedInBatch").html(html);
     });
 

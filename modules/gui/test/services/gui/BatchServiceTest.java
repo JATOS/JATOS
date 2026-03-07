@@ -135,7 +135,7 @@ public class BatchServiceTest {
         props.setMaxActiveMembers(7);
         props.setMaxTotalMembers(15);
         props.setMaxTotalWorkers(30);
-        props.addAllowedType(PersonalSingleWorker.WORKER_TYPE);
+        props.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
         props.setComments("c");
         props.setJsonData("{x:1}");
 
@@ -169,7 +169,7 @@ public class BatchServiceTest {
         batch.setJsonData("{y:2}");
 
         BatchProperties props = batchService.bindToProperties(batch);
-        assertThat(props.getAllowedTypes()).contains(JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
+        assertThat(props.getAllowedWorkerTypes()).contains(JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
 
         Batch fromProps = batchService.bindToBatch(props);
         assertThat(fromProps.getMaxActiveMembers()).isEqualTo(1);

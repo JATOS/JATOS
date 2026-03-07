@@ -60,7 +60,7 @@
         if (!batch.active) {
             alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
         }
-        if (!batch.allowedTypes.includes("MT")) {
+        if (!batch.allowedWorkerTypes.includes("MT")) {
             alerts.warning(`Type MTurk is currently not allowed in this batch and study links belonging to this type will not run. Activate type "MTurk" to allow study runs.`);
         }
     }

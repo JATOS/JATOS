@@ -123,7 +123,7 @@ public class BatchService {
         batch.setMaxTotalMembers(updatedBatchProps.getMaxTotalMembers());
         batch.setMaxTotalWorkers(updatedBatchProps.getMaxTotalWorkers());
         batch.getAllowedWorkerTypes().clear();
-        updatedBatchProps.getAllowedTypes().forEach(type -> {
+        updatedBatchProps.getAllowedWorkerTypes().forEach(type -> {
             String normalizedWorkerType = WorkerService.extractWorkerType(type);
             batch.addAllowedWorkerType(normalizedWorkerType);
         });
@@ -142,7 +142,7 @@ public class BatchService {
         props.setMaxTotalMembers(batch.getMaxTotalMembers());
         props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
         if (batch.getAllowedWorkerTypes() != null) {
-            batch.getAllowedWorkerTypes().forEach(props::addAllowedType);
+            batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
         }
         props.setComments(batch.getComments());
         props.setJsonData(batch.getJsonData());
@@ -156,7 +156,7 @@ public class BatchService {
         batch.setMaxActiveMembers(props.getMaxActiveMembers());
         batch.setMaxTotalMembers(props.getMaxTotalMembers());
         batch.setMaxTotalWorkers(props.getMaxTotalWorkers());
-        props.getAllowedTypes().forEach(type -> {
+        props.getAllowedWorkerTypes().forEach(type -> {
             String normalizedWorkerType = WorkerService.extractWorkerType(type);
             batch.addAllowedWorkerType(normalizedWorkerType);
         });

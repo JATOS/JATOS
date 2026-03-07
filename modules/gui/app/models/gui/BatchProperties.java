@@ -34,7 +34,7 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
     public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
     public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
     public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
-    public static final String ALLOWED_TYPES = "allowedTypes";
+    public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
     public static final String COMMENTS = "comments";
     public static final String JSON_DATA = "jsonData";
 
@@ -75,7 +75,7 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
      * Set of worker types that are allowed to run in this batch. If the worker type is not in this list, it has no
      * permission to run this study.
      */
-    private Set<String> allowedTypes = new HashSet<>();
+    private Set<String> allowedWorkerTypes = new HashSet<>();
 
     /**
      * User comments, reminders, something to share with others. They have no further meaning.
@@ -144,24 +144,24 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         this.maxTotalWorkers = maxTotalWorkers;
     }
 
-    public void setAllowedTypes(Set<String> allowedTypes) {
-        this.allowedTypes = allowedTypes;
+    public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
+        this.allowedWorkerTypes = allowedWorkerTypes;
     }
 
-    public Set<String> getAllowedTypes() {
-        return this.allowedTypes;
+    public Set<String> getAllowedWorkerTypes() {
+        return this.allowedWorkerTypes;
     }
 
-    public void addAllowedType(String type) {
-        allowedTypes.add(type);
+    public void addAllowedWorkerType(String type) {
+        allowedWorkerTypes.add(type);
     }
 
-    public void removeAllowedType(String type) {
-        allowedTypes.remove(type);
+    public void removeAllowedWorkerType(String type) {
+        allowedWorkerTypes.remove(type);
     }
 
-    public boolean hasAllowedType(String type) {
-        return allowedTypes.contains(type);
+    public boolean hasAllowedWorkerType(String type) {
+        return allowedWorkerTypes.contains(type);
     }
 
     public String getComments() {
@@ -219,9 +219,9 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
             errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
         }
-        for (String type : allowedTypes) {
+        for (String type : allowedWorkerTypes) {
             if (!WorkerService.isValidWorkerType(type)) {
-                errorList.add(new ValidationError(ALLOWED_TYPES, "Invalid worker type: " + type));
+                errorList.add(new ValidationError(ALLOWED_WORKER_TYPES, "Invalid worker type: " + type));
             }
         }
         return errorList.isEmpty() ? null : errorList;
