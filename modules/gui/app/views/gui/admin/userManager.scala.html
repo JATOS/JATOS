@@ -782,7 +782,7 @@
         $('#deleteUserTargetUsername').val(user.username);
         $("#deleteUserModal").modal('show');
 
-        $("#deleteUserConfirm").one("click", function(event) {
+        $("#deleteUserConfirm").off("click").on("click", function(event) {
             $.ajax({
                 type: 'POST',
                 url: window.routes.Users.remove(),
@@ -794,6 +794,7 @@
                     Alerts.success(`User "${user.username}" was deleted successfully.`);
                 },
                 error: function(err) {
+                    FormValidation.clear("#deleteUserForm");
                     alerts.warning(`User ${user.username} was not deleted.`, 5000);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#deleteUserForm", err.responseJSON);
