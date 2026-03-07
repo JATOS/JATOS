@@ -83,8 +83,9 @@ public class ImportExport extends Controller {
             File file = (File) filePart.getFile();
             Map<String, Object> resultInfo = importExportService.importStudy(signedinUser, file);
             return ok(JsonUtils.asJsonNode(resultInfo));
-        } finally {
+        } catch (Exception e) {
             importExportService.cleanupAfterStudyImport();
+            throw e;
         }
     }
 
