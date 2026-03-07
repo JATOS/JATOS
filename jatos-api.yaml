@@ -954,7 +954,7 @@ paths:
           schema:
             type: boolean
             default: true
-          description: If true download the full log; if false stream a limited JSON-lines response.
+          description: If `true` download the full log; if `false` stream a limited JSON-lines response.
         - in: query
           name: entryLimit
           required: false
@@ -1550,7 +1550,7 @@ paths:
           schema:
             type: boolean
             default: true
-          description: If true the JSON is downloaded as a file; if false it's returned as JSON in the response body.
+          description: If `true` the JSON is downloaded as a file; if `false` it's returned as JSON in the response body.
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
         - $ref: '#/components/parameters/ComponentIdParameter'
@@ -1605,7 +1605,7 @@ paths:
           schema:
             type: boolean
             default: false
-          description: If true return a single plain text stream; if false return ZIP.
+          description: If `true` return a single plain text stream; if `false` return ZIP.
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
         - $ref: '#/components/parameters/ComponentIdParameter'
@@ -1631,7 +1631,7 @@ paths:
             text/plain:
               schema:
                 type: string
-                description: Plain text stream (one line per result) when asPlainText=true.
+                description: Plain text stream (one line per result) when `asPlainText=true`.
             application/zip:
               schema:
                 type: string
@@ -2770,7 +2770,7 @@ components:
         active:
           type: boolean
           default: true
-          description: True if batch can be used.
+          description: `true` if batch can be used.
         maxActiveMembers:
           type: integer
           nullable: true
