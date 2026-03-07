@@ -2491,7 +2491,7 @@ components:
           type: integer
           nullable: true
           description: Max total workers in the batch (independent of groups). 'null' means no limit.
-        allowedTypes:
+        allowedWorkerTypes:
           type: array
           description: Types allowed to run in this batch.
           items:
@@ -2503,7 +2503,7 @@ components:
         jsonData:
           type: string
           description: Batch input data in JSON format.
-      required: [ id, uuid, active, allowedTypes ]
+      required: [ id, uuid, active, allowedWorkerTypes ]
       additionalProperties: true
 
     Group:
@@ -2784,7 +2784,7 @@ components:
           nullable: true
           minimum: 1
           description: Maximum number of workers in this batch (independent of groups). 'null' means no limit.
-        allowedTypes:
+        allowedWorkerTypes:
           type: array
           description: Set of types that are allowed to run in this batch.
           items:
