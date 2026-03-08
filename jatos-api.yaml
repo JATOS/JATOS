@@ -371,7 +371,7 @@ paths:
         * **UUID Conflicts:** If a study with the same UUID already exists,
         behavior is controlled by query parameters (e.g., whether to overwrite
         or keep existing properties and assets).
-  
+        
         ### 2. Create Study
         Initialize a new study using JSON containing the study properties.
         * **Supported Content-Type:** `application/json`.
@@ -541,9 +541,9 @@ paths:
       summary: Get study properties
       description: |
         Returns the properties of a study identified by its ID or UUID.
-  
+        
         Set `withComponentProperties=true` to include component properties. Otherwise, only the ID and UUID of each component are returned.
-  
+        
         Set `withBatchProperties=true` to include batch properties. Otherwise, only the ID and UUID of each batch are returned.
       tags: [ study ]
       parameters:
