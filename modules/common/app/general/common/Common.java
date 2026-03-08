@@ -127,6 +127,7 @@ public class Common {
     private static boolean groupsCleaningAllowed;
     private static int groupsCleaningInterval;
     private static int groupsCleaningMemberIdleAfter;
+    private static Duration lastSeenDateUpdateThreshold;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions
@@ -251,6 +252,7 @@ public class Common {
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
         groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
         groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
+        lastSeenDateUpdateThreshold = getDurationWithDefaultUnit(config, "jatos.studyResult.lastSeenDate.updateThreshold");
     }
 
     /**
@@ -1040,5 +1042,12 @@ public class Common {
      */
     public static int getGroupsCleaningMemberIdleAfter() {
         return groupsCleaningMemberIdleAfter;
+    }
+
+    /**
+     * StudyResult's lastSeenDate is updated only if its current value is older than this threshold (in seconds).
+     */
+    public static Duration getLastSeenDateUpdateThreshold() {
+        return lastSeenDateUpdateThreshold;
     }
 }

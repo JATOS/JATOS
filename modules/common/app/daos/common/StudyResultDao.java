@@ -9,10 +9,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -385,6 +384,19 @@ public class StudyResultDao extends AbstractDao {
     public void setQuotaReached(Long studyResultId) {
         jpa.em().createQuery("UPDATE StudyResult sr SET sr.quotaReached = true WHERE sr.id = :id")
                 .setParameter("id", studyResultId)
+                .executeUpdate();
+    }
+
+    public void updateLastSeenDateIfOlderThan(Long id, Duration duration) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Timestamp threshold = new Timestamp(now.getTime() - duration.toMillis());
+        jpa.em().createQuery("UPDATE StudyResult sr "
+                        + "SET sr.lastSeenDate = :now "
+                        + "WHERE sr.id = :id "
+                        + "AND (sr.lastSeenDate IS NULL OR sr.lastSeenDate < :threshold)")
+                .setParameter("id", id)
+                .setParameter("now", now)
+                .setParameter("threshold", threshold)
                 .executeUpdate();
     }
 

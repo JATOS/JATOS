@@ -179,6 +179,8 @@ public abstract class Publix extends Controller implements IPublix {
             componentResultDao.replaceData(componentResult.get().getId(), postedResultData);
         }
 
+        studyResultDao.updateLastSeenDateIfOlderThan(studyResult.getId(), Common.getLastSeenDateUpdateThreshold());
+
         studyLogger.logResultDataStoring(componentResult.get(), postedResultData, append);
         return ok();
     }
@@ -233,6 +235,9 @@ public abstract class Publix extends Controller implements IPublix {
             Path destFile = ioUtils.getResultUploadFileSecurely(
                     studyResult.getId(), componentResult.get().getId(), filename).toPath();
             tmpFile.moveFileTo(destFile, true);
+
+            studyResultDao.updateLastSeenDateIfOlderThan(studyResult.getId(), Common.getLastSeenDateUpdateThreshold());
+
             studyLogger.logResultUploading(destFile, componentResult.get());
         } catch (IOException e) {
             LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File upload failed"));
