@@ -1864,11 +1864,7 @@ components:
       name: id
       required: true
       schema:
-        type: array
-        items:
-          type: string
-      style: form
-      explode: true
+        type: string
       description: Either a study ID or a study UUID
     StudyIdParameter:
       in: query
@@ -1899,11 +1895,7 @@ components:
       name: id
       required: true
       schema:
-        type: array
-        items:
-          type: string
-      style: form
-      explode: true
+        type: string
       description: Either a component ID or a component UUID
     ComponentIdParameter:
       in: query
@@ -2119,14 +2111,14 @@ components:
             combinationOfAll:
               summary: All
               value:
-                studyIds: null
-                studyUuids: null
-                componentIds: null
-                componentUuids: null
-                componentResultIds: null
-                studyResultIds: null
-                batchIds: null
-                groupIds: null
+                studyIds: 1
+                studyUuids: 11111111-1111-1111-1111-111111111111
+                componentIds: 1
+                componentUuids: 11111111-1111-1111-1111-111111111111
+                componentResultIds: 1
+                studyResultIds: 1
+                batchIds: 1
+                groupIds: 1
 
   responses:
     UnauthorizedError:
