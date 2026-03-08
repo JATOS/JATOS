@@ -1,4 +1,4 @@
-openapi: 3.0.4
+openapi: 3.0.3
 info:
   title: JATOS API
   description: This is the JATOS API specification using OpenAPI.
@@ -12,6 +12,15 @@ externalDocs:
 servers:
   - url: http://localhost:9000
   - url: https://cortex.jatos.org
+tags:
+  - name: admin
+    description: Status, user and token management
+  - name: study
+    description: Study management endpoints
+  - name: study-runs
+    description: Batches, groups, sessions, and study code operations
+  - name: results
+    description: Result export, retrieval, and deletion
 
 paths:
   /jatos/api/v1/admin/status:
@@ -67,6 +76,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -124,12 +135,12 @@ paths:
       responses:
         '204':
           description: User exists
-        '404':
-          description: User not found
         '401':
           description: Unauthorized
         '403':
           description: Forbidden
+        '404':
+          description: User not found
     get:
       summary: Get a user (admin or self)
       tags: [ admin ]
@@ -146,6 +157,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeUser'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           description: Unauthorized
         '403':
@@ -229,6 +242,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeGeneratedApiToken'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -249,6 +264,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeApiTokenMetadataList'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -271,6 +288,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeApiTokenMetadata'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -302,6 +321,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeTokenActiveToggled'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -324,6 +345,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -408,7 +431,7 @@ paths:
             default: false
           description: >-
             If the assets are going to be overwritten (`keepAssets=false`), this
-            flag indicates if the assets directory name is taken form the
+            flag indicates if the assets directory name is taken from the
             current or the uploaded one. In the common case that both names are
             the same this has no effect. But if the current asset directory name
             is different from the uploaded one a `keepCurrentAssetsName=true`
@@ -470,6 +493,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudy'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -508,6 +533,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -529,6 +556,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -571,6 +600,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudy'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -590,7 +621,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
+              anyOf:
                 - $ref: '#/components/schemas/StudyPropertiesUpdate'
                 - $ref: '#/components/schemas/StudyPropertiesUpdateActiveOnly'
       responses:
@@ -602,6 +633,8 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ApiEnvelopeStudy'
                   - $ref: '#/components/schemas/ApiEnvelopeStudyActiveToggled'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -678,6 +711,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudyAssetsStructure'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -720,6 +755,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -783,6 +820,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -820,6 +859,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -864,6 +905,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -884,6 +927,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudyMembers'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -909,6 +954,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudyMembers'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           description: Unauthorized
         '403':
@@ -932,6 +979,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudyMembers'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -973,6 +1022,8 @@ paths:
             application/x-ndjson:
               schema:
                 type: string
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -998,6 +1049,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeComponent'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1016,6 +1069,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeComponentList'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1036,6 +1091,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeComponent'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1060,6 +1117,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeComponent'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1078,6 +1137,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1104,6 +1165,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeBatch'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1120,6 +1183,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeBatchList'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1140,6 +1205,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeBatch'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1164,6 +1231,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeBatch'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1182,6 +1251,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSuccessWithMessage'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1202,6 +1273,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeBatchOrGroupSession'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1239,6 +1312,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSessionVersion'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1259,6 +1334,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeGroupList'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1283,6 +1360,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeBatchOrGroupSession'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1324,6 +1403,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeSessionVersion'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1427,6 +1508,8 @@ paths:
                     items:
                       type: string
                 additionalProperties: false
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1452,6 +1535,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudyCode'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1485,6 +1570,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeStudyCode'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1525,6 +1612,8 @@ paths:
                 type: string
                 description: ZIP archive containing the results (metadata, data, and files)
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1573,11 +1662,13 @@ paths:
               required: false
               schema:
                 type: string
-                example: attachment; filename="jatos_results_metadata_[datatime].json"
+                example: attachment; filename="jatos_results_metadata_[datetime].json"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiEnvelopeResultsMetadata"
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1626,7 +1717,7 @@ paths:
               required: true
               schema:
                 type: string
-                example: attachment; filename="jatos_results_data_[datatime].txt"
+                example: attachment; filename="jatos_results_data_[datetime].txt"
           content:
             text/plain:
               schema:
@@ -1636,6 +1727,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1673,6 +1766,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1704,6 +1799,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1745,6 +1842,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiEnvelopeDeletedComponentResultIds"
+        '400':
+          $ref: "#/components/responses/BadRequestError"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '403':
@@ -1765,13 +1864,21 @@ components:
       name: id
       required: true
       schema:
-        type: string
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
       description: Either a study ID or a study UUID
     StudyIdParameter:
       in: query
       name: studyId
       schema:
-        type: integer
+        type: array
+        items:
+          type: integer
+      style: form
+      explode: true
       description: >-
         Specify results with a study ID. This query parameter can be used
         multiple times.
@@ -1779,7 +1886,11 @@ components:
       in: query
       name: studyUuid
       schema:
-        type: string
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
       description: >-
         Specify results with a study UUID. This query parameter can be used
         multiple times.
@@ -1788,13 +1899,21 @@ components:
       name: id
       required: true
       schema:
-        type: string
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
       description: Either a component ID or a component UUID
     ComponentIdParameter:
       in: query
       name: componentId
       schema:
-        type: integer
+        type: array
+        items:
+          type: integer
+      style: form
+      explode: true
       description: >-
         Specify results with a component ID. This query parameter can be used
         multiple times.
@@ -1802,7 +1921,11 @@ components:
       in: query
       name: componentUuid
       schema:
-        type: string
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
       description: >-
         Specify results with a component UUID. This query parameter can be used
         multiple times.
@@ -1810,7 +1933,11 @@ components:
       in: query
       name: studyResultId
       schema:
-        type: integer
+        type: array
+        items:
+          type: integer
+      style: form
+      explode: true
       description: >-
         Specify results with a study result ID. This query parameter can be used
         multiple times.
@@ -1818,7 +1945,11 @@ components:
       in: query
       name: componentResultId
       schema:
-        type: integer
+        type: array
+        items:
+          type: integer
+      style: form
+      explode: true
       description: >-
         Specify results with a component result ID. This query parameter can be
         used multiple times.
@@ -1833,7 +1964,11 @@ components:
       in: query
       name: batchId
       schema:
-        type: integer
+        type: array
+        items:
+          type: integer
+      style: form
+      explode: true
       description: >-
         Specify results with a batch ID. This query parameter can be used
         multiple times.
@@ -1841,7 +1976,11 @@ components:
       in: query
       name: groupId
       schema:
-        type: integer
+        type: array
+        items:
+          type: integer
+      style: form
+      explode: true
       description: >-
         Specify results with a group ID. This query parameter can be used
         multiple times.
@@ -2406,7 +2545,7 @@ components:
           items:
             oneOf:
               - $ref: '#/components/schemas/BatchRef'
-              - type: object
+              - $ref: '#/components/schemas/Batch'
         dirName:
           type: string
           description: Directory name of the study assets
@@ -2430,7 +2569,7 @@ components:
           items:
             $ref: '#/components/schemas/StudyMemberRef'
       required: [ id, uuid, title, locked, active, groupStudy, linearStudy, allowPreview, dirName, members, components, batches ]
-      additionalProperties: true
+      additionalProperties: false
 
     Component:
       type: object
@@ -2458,7 +2597,7 @@ components:
           type: string
           description: Component input in JSON format
       required: [ id, uuid, title, reloadable, active ]
-      additionalProperties: true
+      additionalProperties: false
 
     Batch:
       type: object
@@ -2504,7 +2643,7 @@ components:
           type: string
           description: Batch input data in JSON format.
       required: [ id, uuid, active, allowedWorkerTypes ]
-      additionalProperties: true
+      additionalProperties: false
 
     Group:
       type: object
@@ -2546,7 +2685,7 @@ components:
           format: date-time
           nullable: true
       required: [ id, activeMemberList, historyMemberList, resultCount ]
-      additionalProperties: true
+      additionalProperties: false
 
     StudyMembers:
       type: object
@@ -2702,6 +2841,7 @@ components:
           description: A deactivated study cannot be run by a worker.
           default: true
       additionalProperties: false
+      required: [ active ]
 
     ComponentUpsert:
       type: object
@@ -2853,7 +2993,7 @@ components:
         isQuotaReached:
           type: boolean
       required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
-      additionalProperties: true
+      additionalProperties: false
 
     ResultsMetadataStudyResultList:
       type: object
@@ -2979,9 +3119,8 @@ components:
               type: object
               properties:
                 id: { type: integer, format: int64 }
-                username: { type: string }
                 active: { type: boolean }
-              required: [ id, username, active ]
+              required: [ id, active ]
               additionalProperties: false
           required: [ data ]
           additionalProperties: false
