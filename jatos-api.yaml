@@ -2039,86 +2039,86 @@ components:
                       type: integer
                   - type: integer
                   - type: string
-        examples:
-          studyIds:
-            summary: Study ID
-            value:
-              studyIds: 1
-          studyUuids:
-            summary: Study UUID
-            value:
-              studyUuids: 11111111-1111-1111-1111-111111111111
-          componentIds:
-            summary: Component ID
-            value:
-              componentIds: 1
-          componentUuids:
-            summary: Component UUID
-            value:
-              componentUuids: 11111111-1111-1111-1111-111111111111
-          listOfComponentIds:
-            summary: Multiple component IDs
-            value:
-              componentIds:
-                - 1
-                - 2
-                - 3
-          listOfComponentUuids:
-            summary: Multiple component UUIDs
-            value:
-              componentUuids:
-                - 11111111-1111-1111-1111-111111111111
-                - 22222222-2222-2222-2222-222222222222
-                - 33333333-3333-3333-3333-333333333333
-          batchIds:
-            summary: Batch ID
-            value:
-              batchIds: 1
-          groupIds:
-            summary: Group ID
-            value:
-              groupIds: 1
-          listOfComponentResultIds:
-            summary: Multiple component result IDs
-            value:
-              componentResultIds:
-                - 1
-                - 2
-                - 3
-          rangeOfComponentResultIds:
-            summary: Range of component result IDs
-            value:
-              componentResultIds: 1-10
-          mixOfComponentResultIds:
-            summary: Mix of ranges and single component result IDs
-            value:
-              componentResultIds: 1-10, 12, 15, 20-30
-          listOfStudyResultIds:
-            summary: Multiple study result IDs
-            value:
-              studyResultIds:
-                - 1
-                - 2
-                - 3
-          rangeOfStudyResultIds:
-            summary: Range of Study result IDs
-            value:
-              studyResultIds: 1-10
-          mixOfStudyResultIds:
-            summary: Mix of ranges and single study result IDs
-            value:
-              studyResultIds: 1-10, 12, 15, 20-30
-          combinationOfAll:
-            summary: All
-            value:
-              studyIds: 1
-              studyUuids: 11111111-1111-1111-1111-111111111111
-              componentIds: 1
-              componentUuids: 11111111-1111-1111-1111-111111111111
-              componentResultIds: 1
-              studyResultIds: 1
-              batchIds: 1
-              groupIds: 1
+          examples:
+            studyIds:
+              summary: Study ID
+              value:
+                studyIds: 1
+            studyUuids:
+              summary: Study UUID
+              value:
+                studyUuids: 11111111-1111-1111-1111-111111111111
+            componentIds:
+              summary: Component ID
+              value:
+                componentIds: 1
+            componentUuids:
+              summary: Component UUID
+              value:
+                componentUuids: 11111111-1111-1111-1111-111111111111
+            listOfComponentIds:
+              summary: Multiple component IDs
+              value:
+                componentIds:
+                  - 1
+                  - 2
+                  - 3
+            listOfComponentUuids:
+              summary: Multiple component UUIDs
+              value:
+                componentUuids:
+                  - 11111111-1111-1111-1111-111111111111
+                  - 22222222-2222-2222-2222-222222222222
+                  - 33333333-3333-3333-3333-333333333333
+            batchIds:
+              summary: Batch ID
+              value:
+                batchIds: 1
+            groupIds:
+              summary: Group ID
+              value:
+                groupIds: 1
+            listOfComponentResultIds:
+              summary: Multiple component result IDs
+              value:
+                componentResultIds:
+                  - 1
+                  - 2
+                  - 3
+            rangeOfComponentResultIds:
+              summary: Range of component result IDs
+              value:
+                componentResultIds: 1-10
+            mixOfComponentResultIds:
+              summary: Mix of ranges and single component result IDs
+              value:
+                componentResultIds: 1-10, 12, 15, 20-30
+            listOfStudyResultIds:
+              summary: Multiple study result IDs
+              value:
+                studyResultIds:
+                  - 1
+                  - 2
+                  - 3
+            rangeOfStudyResultIds:
+              summary: Range of Study result IDs
+              value:
+                studyResultIds: 1-10
+            mixOfStudyResultIds:
+              summary: Mix of ranges and single study result IDs
+              value:
+                studyResultIds: 1-10, 12, 15, 20-30
+            combinationOfAll:
+              summary: All
+              value:
+                studyIds: 1
+                studyUuids: 11111111-1111-1111-1111-111111111111
+                componentIds: 1
+                componentUuids: 11111111-1111-1111-1111-111111111111
+                componentResultIds: 1
+                studyResultIds: 1
+                batchIds: 1
+                groupIds: 1
 
   responses:
     UnauthorizedError:
