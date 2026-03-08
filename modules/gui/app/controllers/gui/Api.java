@@ -325,7 +325,6 @@ public class Api extends Controller {
 
         ObjectNode responseJson = Json.mapper().createObjectNode();
         responseJson.put("id", token.getId());
-        responseJson.put("username", token.getUser().getUsername());
         responseJson.put("active", token.isActive());
         return ok(ApiEnvelope.wrap(responseJson).asJsonNode());
     }
@@ -1106,7 +1105,7 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth
-    public Result exportResultMetadata(Http.Request request, Boolean isApiCall, boolean download) throws HttpException, IOException {
+    public Result exportResultMetadata(Http.Request request, boolean download, Boolean isApiCall) throws HttpException, IOException {
         Map<String, Object> wrapperObject = isApiCall
                     ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
                     : Collections.emptyMap();
