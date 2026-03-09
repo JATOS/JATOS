@@ -21,8 +21,8 @@
 
 /* global jsonpatch, jsonpointer */
 
-const jatos = {};
-window.jatos = jatos; // Put jatos into window.jatos for backward compatibility
+var jatos = {};
+window.jatos = jatos; // Make jatos available in the window object for backward compatibility
 
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
@@ -3091,4 +3091,3 @@ window.jatos = jatos; // Put jatos into window.jatos for backward compatibility
     }
 
 })();
-window.jatos = jatos; // Make jatos available in the window object for backward compatibility
