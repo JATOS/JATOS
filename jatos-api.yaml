@@ -2770,7 +2770,8 @@ components:
       allOf:
         - $ref: '#/components/schemas/StudyPropertiesUpdate'
         - type: object
-          required: [ title ]
+          required:
+            - title
 
     StudyPropertiesUpdate:
       type: object
@@ -2889,7 +2890,8 @@ components:
       allOf:
         - $ref: '#/components/schemas/UpdateBatch'
         - type: object
-          required: [ title ]
+          required:
+            - title
 
     UpdateBatch:
       type: object
