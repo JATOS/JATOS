@@ -91,8 +91,8 @@ public class ApiService {
     }
 
     /**
-     * Normalizes the "jsonData" field within a JSON object by converting it to a serialized JSON string
-     * if the field is an object or an array. If the "jsonData" field is missing or already a string, no changes are made.
+     * Normalizes the "jsonData" field within a JSON object by converting it to a serialized JSON string if the field is
+     * an object or an array. If the "jsonData" field is missing or already a string, no changes are made.
      */
     public static ObjectNode normalizeJsonDataField(JsonNode json) throws BadRequestException, JsonProcessingException {
         if (!json.isObject()) {
@@ -148,6 +148,19 @@ public class ApiService {
         }
         throw new BadRequestException(
                 "Unsupported Content-Type '" + contentType + "'. Use multipart/form-data, " + allowedRawTypes);
+    }
+
+    public static ObjectNode getSessionNode(String sessionData, Long version, boolean asText) throws JsonProcessingException {
+        String sessionDataNormalized = sessionData != null ? sessionData : "{}";
+        ObjectNode sessionNode = Json.newObject()
+                .put("version", version);
+        if (asText) {
+            sessionNode.put("sessionData", sessionDataNormalized);
+        } else {
+            JsonNode sessionDataNode = Json.mapper().readTree(sessionDataNormalized);
+            sessionNode.set("sessionData", sessionDataNode);
+        }
+        return sessionNode;
     }
 
 

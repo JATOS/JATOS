@@ -181,17 +181,6 @@ public class BatchServiceTest {
     }
 
     @Test
-    public void bindToBatchSession_mapsFields() {
-        Batch batch = new Batch();
-        batch.setBatchSessionVersion(9L);
-        batch.setBatchSessionData("{data}");
-
-        BatchOrGroupSession session = batchService.bindToBatchSession(batch);
-        assertThat(session.getVersion()).isEqualTo(9L);
-        assertThat(session.getSessionData()).isEqualTo("{data}");
-    }
-
-    @Test
     public void fetchBatch_minusOne_returnsDefault_andMissingThrows() throws Exception {
         // Default
         Study study = studyWithOneUserAndDefaultBatch();

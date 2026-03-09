@@ -3,7 +3,6 @@ package services.gui;
 import daos.common.GroupResultDao;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
-import models.gui.BatchOrGroupSession;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -21,13 +20,6 @@ public class GroupService {
     @Inject
     GroupService(GroupResultDao groupResultDao) {
         this.groupResultDao = groupResultDao;
-    }
-
-    public BatchOrGroupSession bindToGroupSession(GroupResult groupResult) {
-        BatchOrGroupSession groupSession = new BatchOrGroupSession();
-        groupSession.setVersion(groupResult.getGroupSessionVersion());
-        groupSession.setSessionData(groupResult.getGroupSessionData());
-        return groupSession;
     }
 
     public GroupState toggleGroupFixed(GroupResult groupResult, boolean fixed) {

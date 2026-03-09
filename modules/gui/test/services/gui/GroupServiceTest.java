@@ -34,16 +34,6 @@ public class GroupServiceTest {
     }
 
     @Test
-    public void bindToGroupSession_copiesVersionAndData() {
-        GroupResult gr = newGroupResult(1L, 5L, "{\"a\":1}", GroupState.STARTED);
-
-        BatchOrGroupSession session = groupService.bindToGroupSession(gr);
-
-        assertThat(session.getVersion()).isEqualTo(5L);
-        assertThat(session.getSessionData()).isEqualTo("{\"a\":1}");
-    }
-
-    @Test
     public void toggleGroupFixed_setsFixedWhenStarted_andFixedTrue() {
         GroupResult gr = newGroupResult(1L, 1L, "{}", GroupState.STARTED);
 

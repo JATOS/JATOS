@@ -56,10 +56,10 @@ GET      /jatos/api/v1/studies/:id/batches                                  @con
 GET      /jatos/api/v1/batches/:id                                          @controllers.gui.Api.getBatch(id)
 PATCH    /jatos/api/v1/batches/:id                                          @controllers.gui.Api.updateBatch(request: Request, id)
 DELETE   /jatos/api/v1/batches/:id                                          @controllers.gui.Api.deleteBatch(id)
-GET      /jatos/api/v1/batches/:id/session                                  @controllers.gui.Api.getBatchSession(id)
+GET      /jatos/api/v1/batches/:id/session                                  @controllers.gui.Api.getBatchSession(id, asText: Boolean ?= false)
 PATCH    /jatos/api/v1/batches/:id/session                                  @controllers.gui.Api.updateBatchSession(request: Request, id, version: Option[java.lang.Long])
 GET      /jatos/api/v1/batches/:id/groups                                   @controllers.gui.Api.getGroupsOfBatch(id)
-GET      /jatos/api/v1/groups/:id/session                                   @controllers.gui.Api.getGroupSession(id: Long)
+GET      /jatos/api/v1/groups/:id/session                                   @controllers.gui.Api.getGroupSession(id: Long, asText: Boolean ?= false)
 PATCH    /jatos/api/v1/groups/:id/session                                   @controllers.gui.Api.updateGroupSession(request: Request, id: Long, version: Option[java.lang.Long])
 # Deprecated: use "POST /jatos/api/v1/studies/:id/studyCodes" instead
 GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.Api.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])

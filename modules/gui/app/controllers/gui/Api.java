@@ -72,7 +72,6 @@ public class Api extends Controller {
     private final ComponentService componentService;
     private final StudyLinkService studyLinkService;
     private final BatchService batchService;
-    private final GroupService groupService;
     private final ImportExport importExport;
     private final ImportExportService importExportService;
     private final ResultRemover resultRemover;
@@ -91,7 +90,7 @@ public class Api extends Controller {
         StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
         BatchDao batchDao, StudyLinkDao studyLinkDao, GroupResultDao groupResultDao, StudyService studyService,
         ComponentService componentService, StudyLinkService studyLinkService, BatchService batchService,
-        GroupService groupService, ImportExport importExport, ImportExportService importExportService,
+        ImportExport importExport, ImportExportService importExportService,
         ResultRemover resultRemover, ResultStreamer resultStreamer, AuthorizationService authorizationService,
         JsonUtils jsonUtils, StudyLogger studyLogger, IOUtils ioUtils, UserService userService,
         ApiTokenService apiTokenService,
@@ -111,7 +110,6 @@ public class Api extends Controller {
         this.componentService = componentService;
         this.studyLinkService = studyLinkService;
         this.batchService = batchService;
-        this.groupService = groupService;
         this.importExport = importExport;
         this.importExportService = importExportService;
         this.resultRemover = resultRemover;
@@ -914,12 +912,12 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    public Result getBatchSession(String id) throws HttpException {
+    public Result getBatchSession(String id, boolean asText) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user, true);
 
-        BatchOrGroupSession session = batchService.bindToBatchSession(batch);
+        ObjectNode session = ApiService.getSessionNode(batch.getBatchSessionData(), batch.getBatchSessionVersion(), asText);
         return ok(ApiEnvelope.wrap(session).asJsonNode());
     }
 
@@ -962,12 +960,12 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    public Result getGroupSession(Long id) throws HttpException {
+    public Result getGroupSession(Long id, boolean asText) throws HttpException, IOException {
         GroupResult groupResult = groupResultDao.findById(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessGroupResult(groupResult, user);
 
-        BatchOrGroupSession session = groupService.bindToGroupSession(groupResult);
+        ObjectNode session = ApiService.getSessionNode(groupResult.getGroupSessionData(), groupResult.getGroupSessionVersion(), asText);
         return ok(ApiEnvelope.wrap(session).asJsonNode());
     }
 

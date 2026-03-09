@@ -14,7 +14,6 @@ import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
-import models.gui.BatchOrGroupSession;
 import models.gui.BatchProperties;
 import play.Logger;
 import play.data.validation.ValidationError;
@@ -163,13 +162,6 @@ public class BatchService {
         batch.setComments(props.getComments());
         batch.setJsonData(props.getJsonData());
         return batch;
-    }
-
-    public BatchOrGroupSession bindToBatchSession(Batch batch) {
-        BatchOrGroupSession batchSession = new BatchOrGroupSession();
-        batchSession.setVersion(batch.getBatchSessionVersion());
-        batchSession.setSessionData(batch.getBatchSessionData());
-        return batchSession;
     }
 
     /**
