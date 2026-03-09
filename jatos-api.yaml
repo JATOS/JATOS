@@ -1266,6 +1266,16 @@ paths:
       tags: [ study-runs ]
       parameters:
         - $ref: '#/components/parameters/BatchIdOrUuidParameter'
+        - in: query
+          name: asText
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            If `false` or not set, the session data is returned as JSON object.
+            If `true`, the JSON is returned as string.
+            Default is `false`.
       responses:
         '200':
           description: Success
@@ -1353,6 +1363,16 @@ paths:
           description: ID of the group to get the session data for
           required: true
           schema: { type: integer, format: int64 }
+        - in: query
+          name: asText
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            If `false` or not set, the session data is returned as JSON object.
+            If `true`, the JSON is returned as string.
+            Default is `false`.
       responses:
         '200':
           description: Success
@@ -2284,8 +2304,10 @@ components:
           type: integer
           format: int64
         data:
-          type: string
-          description: Batch/group session data (string containing JSON).
+          oneOf:
+            - type: string
+            - type: object
+          description: Session data (either JSON string or JSON object depending on `asText` parameter).
       required: [ version, data ]
       additionalProperties: false
 
