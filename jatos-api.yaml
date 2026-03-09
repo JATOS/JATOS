@@ -2902,7 +2902,7 @@ components:
         active:
           type: boolean
           default: true
-          description: 'true' if batch can be used.
+          description: true if batch can be used.
         maxActiveMembers:
           type: integer
           nullable: true
