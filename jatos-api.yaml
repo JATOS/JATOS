@@ -2567,9 +2567,13 @@ components:
           type: string
           nullable: true
           description: Some comments
-        jsonData:
+        studyInput:
           type: string
           description: Study input in JSON format
+        jsonData:
+          type: string
+          deprecated: true
+          description: Study input in JSON format. Deprecated, use `studyInput` instead.
         endRedirectUrl:
           type: string
           nullable: true
@@ -2607,7 +2611,7 @@ components:
         comments:
           type: string
           nullable: true
-        jsonData:
+        componentInput:
           type: string
           description: Component input in JSON format
       required: [ id, uuid, title, reloadable, active ]
@@ -2653,7 +2657,7 @@ components:
           type: string
           nullable: true
           description: User comments.
-        jsonData:
+        batchInput:
           type: string
           description: Batch input data in JSON format.
       required: [ id, uuid, active, allowedWorkerTypes ]
@@ -2831,7 +2835,7 @@ components:
           type: string
           nullable: true
           description: Some comments
-        jsonData:
+        studyInput:
           nullable: true
           description: Study input in JSON format, either as a JSON string or as a JSON object.
           oneOf:
@@ -2880,7 +2884,7 @@ components:
           type: string
           nullable: true
           description: User comments.
-        jsonData:
+        componentInput:
           description: Component input in JSON format (either JSON string or JSON object).
           nullable: true
           oneOf:
@@ -2950,7 +2954,7 @@ components:
           type: string
           nullable: true
           description: User comments.
-        jsonData:
+        batchInput:
           nullable: true
           description: Batch input in JSON format, either as a JSON string or as a JSON object.
           oneOf:
