@@ -1,5 +1,6 @@
 package models.common;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Strings;
@@ -115,11 +116,13 @@ public class Study {
 
     /**
      * Study input data in JSON format: every study run of this Study gets access to them. Can be used for initial data
-     * and configuration. It's called study input in the GUI and can be accessed via jatos.studyInput in jatos.js.
+     * and configuration. It's called study input in the GUI and can be accessed via 'jatos.studyInput' in jatos.js.
      */
     @Lob
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    private String jsonData;
+    @JsonAlias({"studyInput", "jsonData"})
+    @Column(name = "jsonData")
+    private String studyInput;
 
     /**
      * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
@@ -272,12 +275,12 @@ public class Study {
         this.allowPreview = allowPreview;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getStudyInput() {
+        return studyInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = asStringForDB(jsonData);
+    public void setStudyInput(String studyInput) {
+        this.studyInput = asStringForDB(studyInput);
     }
 
     public String getEndRedirectUrl() {

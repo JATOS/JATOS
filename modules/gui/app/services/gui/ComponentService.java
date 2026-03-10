@@ -59,7 +59,7 @@ public class ComponentService {
         clone.setHtmlFilePath(componentToBeCloned.getHtmlFilePath());
         clone.setReloadable(componentToBeCloned.isReloadable());
         clone.setActive(componentToBeCloned.isActive());
-        clone.setJsonData(componentToBeCloned.getJsonData());
+        clone.setComponentInput(componentToBeCloned.getComponentInput());
         clone.setComments(componentToBeCloned.getComments());
         return clone;
     }
@@ -85,7 +85,7 @@ public class ComponentService {
         component.setReloadable(updatedComponent.isReloadable());
         component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
         component.setComments(updatedComponent.getComments());
-        component.setJsonData(updatedComponent.getJsonData());
+        component.setComponentInput(updatedComponent.getComponentInput());
         component.setActive(updatedComponent.isActive());
         componentDao.update(component);
     }
@@ -98,7 +98,7 @@ public class ComponentService {
         component.setReloadable(updatedProps.isReloadable());
         component.setActive(updatedProps.isActive());
         component.setComments(updatedProps.getComments());
-        component.setJsonData(updatedProps.getJsonData());
+        component.setComponentInput(updatedProps.getComponentInput());
         componentDao.update(component);
     }
 
@@ -135,7 +135,7 @@ public class ComponentService {
                     component.getHtmlFilePath()));
         }
         props.setId(component.getId());
-        props.setJsonData(component.getJsonData());
+        props.setComponentInput(component.getComponentInput());
         props.setReloadable(component.isReloadable());
         if (component.getStudy() != null) {
             props.setStudyId(component.getStudy().getId());
@@ -172,7 +172,7 @@ public class ComponentService {
         component.setActive(props.isActive());
         component.setReloadable(props.isReloadable());
         component.setComments(props.getComments());
-        component.setJsonData(props.getJsonData());
+        component.setComponentInput(props.getComponentInput());
         return component;
     }
 

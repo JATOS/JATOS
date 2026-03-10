@@ -40,7 +40,7 @@ public class ComponentResult {
      */
     public enum ComponentState {
         STARTED, // Component was started
-        DATA_RETRIEVED, // Component's jsonData were retrieved
+        DATA_RETRIEVED, // Component properties were retrieved
         RESULTDATA_POSTED, // Not used anymore but kept to ensure proper JPA enum mapping
         FINISHED, // Component was finished
         RELOADED, // Component was reloaded

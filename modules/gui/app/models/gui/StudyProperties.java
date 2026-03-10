@@ -1,5 +1,6 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
@@ -29,7 +30,7 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
     public static final String STUDY_ID = "studyId";
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
-    public static final String JSON_DATA = "jsonData";
+    public static final String STUDY_INPUT = "studyInput";
     public static final String DESCRIPTION = "description";
     public static final String DIR_NAME = "dirName";
     public static final String COMMENTS = "comments";
@@ -104,9 +105,10 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
     private String comments;
 
     /**
-     * Data in JSON format that are responded after public APIs 'getData' call.
+     * Data in JSON format that is injected into jatos.js as 'jatos.studyInput'
      */
-    private String jsonData;
+    @JsonAlias({"studyInput", "jsonData"})
+    private String studyInput;
 
     /**
      * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
@@ -215,12 +217,12 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
         this.allowPreview = allowPreview;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getStudyInput() {
+        return studyInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setStudyInput(String studyInput) {
+        this.studyInput = studyInput;
     }
 
     public String getEndRedirectUrl() {
@@ -276,8 +278,8 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(studyInput) && !JsonUtils.isValid(studyInput)) {
+            errorList.add(new ValidationError(STUDY_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
         }
         if (description != null && !Jsoup.isValid(description, Safelist.none())) {
             errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));

@@ -49,14 +49,14 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormJsonData" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormStudyInput" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
                             Study input<br>
                             <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#studyPropertiesJsonEditor" data-bs-tooltip="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="studyPropertiesJsonEditor"></div>
                             @* We use a hidden textarea here to transfer the JSON data into the form POST *@
-                            <textarea id="studyPropertiesFormJsonData" name="jsonData" hidden></textarea>
+                            <textarea id="studyPropertiesFormStudyInput" name="studyInput" hidden></textarea>
                         </div>
                     </div>
                     <div class="row">
@@ -139,7 +139,7 @@
         $('#studyPropertiesFormComments').val(properties.comments ? properties.comments: "");
         $('#studyPropertiesFormEndRedirectUrl').val(properties.endRedirectUrl ? properties.endRedirectUrl: "");
         $('#studyEntryMsg').val(properties.studyEntryMsg ? properties.studyEntryMsg: "");
-        Editor.setup("json", properties.jsonData, "#studyPropertiesJsonEditor");
+        Editor.setup("json", properties.studyInput, "#studyPropertiesJsonEditor");
         $('#studyPropertiesFormGroupStudy').prop('checked', properties.groupStudy);
         $('#studyPropertiesFormLinearStudy').prop('checked', properties.linearStudy);
         $('#studyPropertiesFormAllowPreview').prop('checked', properties.allowPreview);
@@ -155,8 +155,8 @@
         const studyId = $('#studyPropertiesModal').data().studyId;
 
         // Put JSON from editor into textarea to let it be picked up by form.serialize
-        const jsonData = Editor.getValue('#studyPropertiesJsonEditor');
-        $("#studyPropertiesFormJsonData").val(jsonData);
+        const studyInput = Editor.getValue('#studyPropertiesJsonEditor');
+        $("#studyPropertiesFormStudyInput").val(studyInput);
 
         $.ajax({
             type : 'POST',

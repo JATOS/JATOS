@@ -91,20 +91,23 @@ public class ApiService {
     }
 
     /**
-     * Normalizes the "jsonData" field within a JSON object by converting it to a serialized JSON string if the field is
-     * an object or an array. If the "jsonData" field is missing or already a string, no changes are made.
+     * Normalizes the field with the name 'fieldName' within a JSON object by converting it to a serialized JSON string
+     * if the field is an object or an array. If the JSON object has a field 'jsonData' (deprecated name), this is used
+     * instead. If the field is missing or already a string, no changes are made.
      */
-    public static ObjectNode normalizeJsonDataField(JsonNode json) throws BadRequestException, JsonProcessingException {
+    public static ObjectNode normalizeJsonInputField(JsonNode json, String fieldName)
+            throws BadRequestException, JsonProcessingException {
         if (!json.isObject()) {
             throw new BadRequestException("Request body is not a JSON object", ApiEnvelope.ErrorCode.INVALID_JSON);
         }
         ObjectNode jsonObj = (ObjectNode) json;
+        if (jsonObj.has("jsonData")) fieldName = "jsonData";
 
-        if (!jsonObj.has("jsonData")) return jsonObj;
+        if (!jsonObj.has(fieldName)) return jsonObj;
 
-        JsonNodeType jsonDataType = jsonObj.get("jsonData").getNodeType();
-        if (jsonDataType == JsonNodeType.OBJECT || jsonDataType == JsonNodeType.ARRAY) {
-            jsonObj.put("jsonData", Json.mapper().writeValueAsString(jsonObj.get("jsonData")));
+        JsonNodeType jsonInputType = jsonObj.get(fieldName).getNodeType();
+        if (jsonInputType == JsonNodeType.OBJECT || jsonInputType == JsonNodeType.ARRAY) {
+            jsonObj.put(fieldName, Json.mapper().writeValueAsString(jsonObj.get(fieldName)));
         }
         return jsonObj;
     }

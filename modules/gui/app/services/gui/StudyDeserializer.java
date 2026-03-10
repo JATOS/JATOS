@@ -35,7 +35,7 @@ public class StudyDeserializer {
     public Study deserialize(File file) throws IOException {
         String jsonStr = ioUtils.readFile(file);
 
-        JsonNode node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.VERSION);
+        JsonNode node = Json.mapper().readTree(jsonStr).findValue("version");
         int version = node.asInt();
         if (version > Study.SERIAL_VERSION) {
             throw new IOException(MessagesStrings.TOO_NEW_STUDY_VERSION);
@@ -45,13 +45,13 @@ public class StudyDeserializer {
             case 0:
             case 2:
                 // Version 2
-                node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.DATA);
+                node = Json.mapper().readTree(jsonStr).findValue("data");
                 StudyV2 studyV2 = Json.mapper().treeToValue(node, StudyV2.class);
                 study = bindV2(studyV2);
                 break;
             case 3:
                 // Current version
-                node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.DATA);
+                node = Json.mapper().readTree(jsonStr).findValue("data");
                 study = Json.mapper().treeToValue(node, Study.class);
                 break;
             default:
@@ -72,7 +72,7 @@ public class StudyDeserializer {
         study.setLocked(studyV2.isLocked());
         study.setDirName(studyV2.getDirName());
         study.setComments(studyV2.getComments());
-        study.setJsonData(studyV2.getJsonData());
+        study.setStudyInput(studyV2.getJsonData());
         studyV2.getComponentList().forEach(study::addComponent);
         return study;
     }

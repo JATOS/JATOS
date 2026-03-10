@@ -1,5 +1,6 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
@@ -36,7 +37,7 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
     public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
     public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
     public static final String COMMENTS = "comments";
-    public static final String JSON_DATA = "jsonData";
+    public static final String BATCH_INPUT = "batchInput";
 
     private Long id;
 
@@ -83,10 +84,10 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
     private String comments;
 
     /**
-     * Data in JSON format: every study run of this Batch gets access to them. They can be changed in the GUI but not
-     * via jatos.js. Can be used for initial data and configuration.
+     * Data in JSON format that is injected into jatos.js as 'jatos.batchInput'
      */
-    private String jsonData;
+    @JsonAlias({"batchInput", "jsonData"})
+    private String batchInput;
 
     public void setId(Long id) {
         this.id = id;
@@ -172,12 +173,12 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         this.comments = comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getBatchInput() {
+        return batchInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setBatchInput(String batchInput) {
+        this.batchInput = batchInput;
     }
 
     @Override
@@ -216,8 +217,8 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(batchInput) && !JsonUtils.isValid(batchInput)) {
+            errorList.add(new ValidationError(BATCH_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
         }
         for (String type : allowedWorkerTypes) {
             if (!WorkerService.isValidWorkerType(type)) {

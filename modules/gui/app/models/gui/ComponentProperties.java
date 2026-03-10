@@ -1,5 +1,6 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
@@ -34,7 +35,7 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String HTML_FILE_PATH = "htmlFilePath";
-    public static final String JSON_DATA = "jsonData";
+    public static final String COMPONENT_INPUT = "componentInput";
     public static final String RELOADABLE = "reloadable";
     public static final String ACTIVE = "active";
     public static final String COMMENTS = "comments";
@@ -95,7 +96,11 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
      */
     private String comments;
 
-    private String jsonData;
+    /**
+     * Data in JSON format that is injected into jatos.js as 'jatos.componentInput'
+     */
+    @JsonAlias({"componentInput", "jsonData"})
+    private String componentInput;
 
     public ComponentProperties() {}
 
@@ -175,12 +180,12 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
         return this.comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getComponentInput() {
+        return componentInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setComponentInput(String componentInput) {
+        this.componentInput = componentInput;
     }
 
     public boolean isReloadable() {
@@ -229,8 +234,8 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(componentInput) && !JsonUtils.isValid(componentInput)) {
+            errorList.add(new ValidationError(COMPONENT_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
         }
         return errorList.isEmpty() ? null : errorList;
     }

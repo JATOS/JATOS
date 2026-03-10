@@ -1,5 +1,6 @@
 package models.common;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import utils.common.JsonUtils;
@@ -83,11 +84,13 @@ public class Component {
     /**
      * Component input data in JSON format: every component run of this Component gets access to them. Can be used for
      * initial data and configuration. It's called component input in the GUI and can be accessed via
-     * jatos.componentInput in jatos.js.
+     * 'jatos.componentInput' in jatos.js.
      */
-    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @Lob
-    private String jsonData;
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
+    @JsonAlias({"componentInput", "jsonData"})
+    @Column(name = "jsonData")
+    private String componentInput;
 
     public Component() {
         this.uuid = UUID.randomUUID().toString();
@@ -153,12 +156,12 @@ public class Component {
         return this.comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getComponentInput() {
+        return componentInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = JsonUtils.asStringForDB(jsonData);
+    public void setComponentInput(String componentInput) {
+        this.componentInput = JsonUtils.asStringForDB(componentInput);
     }
 
     public boolean isReloadable() {

@@ -423,7 +423,7 @@ public class Api extends Controller {
 
     private Result createStudyFromJson(User signedinUser, JsonNode json, boolean renameAssets)
             throws IOException, HttpException {
-        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "studyInput");
         StudyProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, StudyProperties.class);
         ApiService.validateProps(props);
 
@@ -472,10 +472,8 @@ public class Api extends Controller {
 
             JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
             JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();
-
             boolean wasOverwritten = Boolean.TRUE.equals(importInfo.get("studyExists"));
             return wasOverwritten ? ok(envelope) : created(envelope);
-
         } finally {
             importExportService.cleanupAfterStudyImport();
         }
@@ -526,7 +524,7 @@ public class Api extends Controller {
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
 
         JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "studyInput");
 
         // Admins who are not members: only allow toggling "active"
         if (isAdminNonMember) {
@@ -781,7 +779,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "componentInput");
         ComponentProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, ComponentProperties.class);
         ApiService.validateProps(props);
 
@@ -821,7 +819,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessComponent(component, user, true);
 
         JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "componentInput");
         ComponentProperties props = componentService.bindToProperties(component);
         props = strictJsonMapper.updateFromJson(props, jsonObj);
         ApiService.validateProps(props);
@@ -870,7 +868,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "batchInput");
         BatchProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, BatchProperties.class);
         ApiService.validateProps(props);
 
@@ -890,7 +888,7 @@ public class Api extends Controller {
 
         BatchProperties props = batchService.bindToProperties(batch);
         JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonDataField(json);
+        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "batchInput");
         props = strictJsonMapper.updateFromJson(props, jsonObj);
         ApiService.validateProps(props);
 

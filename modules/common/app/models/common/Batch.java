@@ -1,5 +1,6 @@
 package models.common;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -111,11 +112,13 @@ public class Batch {
 
     /**
      * Batch input data in JSON format: every study run of this Batch gets access to them. Can be used for initial data
-     * and configuration. It's called study input in the GUI and can be accessed via jatos.studyInput in jatos.js.
+     * and configuration. It's called study input in the GUI and can be accessed via 'jatos.studyInput' in jatos.js.
      */
     @Lob
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    private String jsonData;
+    @JsonAlias({"batchInput", "jsonData"})
+    @Column(name = "jsonData")
+    private String batchInput;
 
     /**
      * Temporary, global data storage that can be accessed via jatos.js to exchange data between all study runs of this
@@ -264,12 +267,12 @@ public class Batch {
         this.comments = comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getBatchInput() {
+        return batchInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = JsonUtils.asStringForDB(jsonData);
+    public void setBatchInput(String batchInput) {
+        this.batchInput = JsonUtils.asStringForDB(batchInput);
     }
 
     public String getBatchSessionData() {

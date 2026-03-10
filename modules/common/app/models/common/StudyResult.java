@@ -60,7 +60,7 @@ public class StudyResult {
     public enum StudyState {
         PRE, // Preview of study (exists only in PersonalSingleWorker and GeneralSingleWorker)
         STARTED, // Study was started
-        DATA_RETRIEVED, // Study's jsonData were retrieved
+        DATA_RETRIEVED, // Study properties were retrieved
         FINISHED, // Study successfully finished
         ABORTED, // Study aborted by worker
         FAIL; // Something went wrong

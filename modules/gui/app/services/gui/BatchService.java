@@ -71,7 +71,7 @@ public class BatchService {
         clone.setMaxTotalWorkers(batch.getMaxTotalWorkers());
         batch.getWorkerList().forEach(clone::addWorker);
         batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
-        clone.setJsonData(batch.getJsonData());
+        clone.setBatchInput(batch.getBatchInput());
         return clone;
     }
 
@@ -127,7 +127,7 @@ public class BatchService {
             batch.addAllowedWorkerType(normalizedWorkerType);
         });
         batch.setComments(updatedBatchProps.getComments());
-        batch.setJsonData(updatedBatchProps.getJsonData());
+        batch.setBatchInput(updatedBatchProps.getBatchInput());
         batchDao.update(batch);
     }
 
@@ -144,7 +144,7 @@ public class BatchService {
             batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
         }
         props.setComments(batch.getComments());
-        props.setJsonData(batch.getJsonData());
+        props.setBatchInput(batch.getBatchInput());
         return props;
     }
 
@@ -160,7 +160,7 @@ public class BatchService {
             batch.addAllowedWorkerType(normalizedWorkerType);
         });
         batch.setComments(props.getComments());
-        batch.setJsonData(props.getJsonData());
+        batch.setBatchInput(props.getBatchInput());
         return batch;
     }
 
