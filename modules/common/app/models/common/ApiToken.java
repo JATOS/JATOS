@@ -159,23 +159,15 @@ public class ApiToken {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getTokenHash() == null) ? 0 : getTokenHash().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof ApiToken)) return false;
-
         ApiToken other = (ApiToken) obj;
-        if (getTokenHash() == null) return other.getTokenHash() == null;
-        return getTokenHash().equals(other.getTokenHash());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

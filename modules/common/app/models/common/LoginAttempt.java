@@ -84,16 +84,16 @@ public class LoginAttempt {
 
     @Override
     public int hashCode() {
-        return Objects.hash(username, remoteAddress, date);
+        return Objects.hash(getUsername(), getRemoteAddress(), getDate());
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof LoginAttempt)) return false;
         LoginAttempt that = (LoginAttempt) o;
-        return getUsername().equals(that.getUsername())
-                && getRemoteAddress().equals(that.getRemoteAddress())
-                && getDate().equals(that.getDate());
+        return Objects.equals(getUsername(), that.getUsername())
+                && Objects.equals(getRemoteAddress(), that.getRemoteAddress())
+                && Objects.equals(getDate(), that.getDate());
     }
 }

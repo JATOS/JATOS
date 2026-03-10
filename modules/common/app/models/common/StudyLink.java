@@ -98,18 +98,16 @@ public class StudyLink {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        StudyLink studyLink = (StudyLink) o;
-
-        return Objects.equals(studyCode, studyLink.studyCode);
+    public int hashCode() {
+        return Objects.hash(getStudyCode());
     }
 
     @Override
-    public int hashCode() {
-        return studyCode != null ? studyCode.hashCode() : 0;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof StudyLink)) return false;
+        StudyLink other = (StudyLink) o;
+        return Objects.equals(getStudyCode(), other.getStudyCode());
     }
 
 }

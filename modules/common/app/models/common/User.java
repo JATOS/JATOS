@@ -9,6 +9,7 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.text.Normalizer;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static utils.common.JsonUtils.JsonForApi;
@@ -271,12 +272,18 @@ public class User {
         return this.studyList;
     }
 
+    // Adding the study is already done in Study.addUser()
     public void addStudy(Study study) {
-        this.studyList.add(study);
+        if (!studyList.contains(study)) {
+            this.studyList.add(study);
+        }
     }
 
+    // Removing the study is already done in Study.removeUser()
     public void removeStudy(Study study) {
-        this.studyList.remove(study);
+        if (studyList.contains(study)) {
+            this.studyList.remove(study);
+        }
     }
 
     public boolean hasStudy(Study study) {
@@ -326,32 +333,15 @@ public class User {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        if (this.id != null) {
-            result = prime * result + this.id.hashCode();
-        } else {
-            result = prime * result + ((this.getUsername() == null) ? 0 : this.getUsername().hashCode());
-        }
-        return result;
+        return java.util.Objects.hashCode(getUsername());
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof User)) return false;
-
         User other = (User) obj;
-
-        if (this.id != null && other.id != null) {
-            return this.id.equals(other.id);
-        }
-
-        if (getUsername() == null) return other.getUsername() == null;
-        return getUsername().equals(other.getUsername());
+        return Objects.equals(getUsername(), other.getUsername());
     }
 
 }

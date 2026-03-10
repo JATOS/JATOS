@@ -448,23 +448,15 @@ public class Study {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof Study)) return false;
-
         Study other = (Study) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }
