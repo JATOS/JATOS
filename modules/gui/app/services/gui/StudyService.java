@@ -82,7 +82,6 @@ public class StudyService {
         // Clone each component
         for (Component component : study.getComponentList()) {
             Component componentClone = componentService.clone(component);
-            componentClone.setStudy(clone);
             clone.addComponent(componentClone);
         }
 
@@ -138,7 +137,7 @@ public class StudyService {
      */
     public void addAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
-        study.getUserList().addAll(userList);
+        study.addAllUsers(userList);
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.addAllWorkers(usersWorkerList));
 
@@ -213,6 +212,7 @@ public class StudyService {
      * them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(User signedinUser, Study study) {
+        signedinUser = userDao.findByUsername(signedinUser.getUsername()); // We need the user to be in the current Hibernate session
         study.addUser(signedinUser);
 
         if (study.getBatchList().isEmpty()) {
@@ -368,6 +368,11 @@ public class StudyService {
         // Remove all study's batches and their StudyResults and GroupResults
         for (Batch batch : Lists.newArrayList(study.getBatchList())) {
             batchService.remove(batch, signedinUser);
+        }
+
+        // Remove this study from all member users
+        for (User user : new ArrayList<>(study.getUserList())) {
+            study.removeUser(user);
         }
 
         // Remove study. This also removes all study's components and their ComponentResults via cascading.
