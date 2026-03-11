@@ -785,19 +785,22 @@ public class Api extends Controller {
 
         Component component = componentService.createAndPersistComponent(study, props);
 
-        return created(ApiEnvelope.wrap(component).asJsonNode());
+        JsonNode componentNode = jsonUtils.componentAsJsonForApi(component);
+        return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
     }
 
     @Transactional
     @Auth
-    public Result getComponentsByStudy(String studyIdOrUuid) throws HttpException {
+    public Result getComponentsByStudy(String studyIdOrUuid) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyIdOrUuid);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
-        List<Component> components = study.getComponentList();
-
-        return ok(ApiEnvelope.wrap(components).asJsonNode());
+        ArrayNode componentArray = Json.mapper().createArrayNode();
+        for (Component c : study.getComponentList()) {
+            componentArray.add(jsonUtils.componentAsJsonForApi(c));
+        }
+        return ok(ApiEnvelope.wrap(componentArray).asJsonNode());
     }
 
     @Transactional
@@ -807,7 +810,8 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user);
 
-        return ok(ApiEnvelope.wrap(component).asJsonNode());
+        JsonNode componentNode = jsonUtils.componentAsJsonForApi(component);
+        return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
     }
 
     @Transactional
@@ -827,7 +831,8 @@ public class Api extends Controller {
         componentService.renameHtmlFilePath(component, props.getHtmlFilePath(), props.isHtmlFileRename());
         componentService.updateComponentAfterEdit(component, props);
 
-        return ok(ApiEnvelope.wrap(component).asJsonNode());
+        JsonNode componentNode = jsonUtils.componentAsJsonForApi(component);
+        return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
     }
 
     @Transactional
@@ -842,12 +847,16 @@ public class Api extends Controller {
 
     @Transactional
     @Auth
-    public Result getBatchesByStudy(String studyId) throws HttpException {
+    public Result getBatchesByStudy(String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
-        List<Batch> batches = study.getBatchList();
-        return ok(ApiEnvelope.wrap(batches).asJsonNode());
+
+        ArrayNode batchArray = Json.mapper().createArrayNode();
+        for (Batch b : study.getBatchList()) {
+            batchArray.add(jsonUtils.batchAsJsonForApi(b));
+        }
+        return ok(ApiEnvelope.wrap(batchArray).asJsonNode());
     }
 
     @Transactional
@@ -856,7 +865,9 @@ public class Api extends Controller {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user);
-        return ok(ApiEnvelope.wrap(batch).asJsonNode());
+
+        JsonNode batchNode = jsonUtils.batchAsJsonForApi(batch);
+        return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
     }
 
     @Transactional
@@ -875,7 +886,8 @@ public class Api extends Controller {
         Batch batch = batchService.bindToBatch(props);
         batchService.initAndPersistBatch(batch, study, user);
 
-        return created(ApiEnvelope.wrap(batch).asJsonNode());
+        JsonNode batchNode = jsonUtils.batchAsJsonForApi(batch);
+        return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
     }
 
     @Transactional
@@ -895,7 +907,8 @@ public class Api extends Controller {
         batchService.updateBatch(batch, props);
         batchDao.update(batch);
 
-        return ok(ApiEnvelope.wrap(batch).asJsonNode());
+        JsonNode batchNode = jsonUtils.batchAsJsonForApi(batch);
+        return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
     }
 
     @Transactional

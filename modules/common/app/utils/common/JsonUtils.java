@@ -677,8 +677,16 @@ public class JsonUtils {
             throws IOException {
         ObjectNode studyNode = (ObjectNode) asJsonForApi(study);
 
+        if (study.getStudyInput() != null) {
+            JsonNode studyInputNode = Json.mapper().readTree(study.getStudyInput());
+            studyNode.set("studyInput", studyInputNode);
+        }
+
         if (withComponentProperties) {
-            ArrayNode componentArray = (ArrayNode) asJsonForApi(study.getComponentList());
+            ArrayNode componentArray = Json.mapper().createArrayNode();
+            for (Component c : study.getComponentList()) {
+                componentArray.add(componentAsJsonForApi(c));
+            }
             studyNode.putArray("components").addAll(componentArray);
         } else {
             ArrayNode components = studyNode.putArray("components");
@@ -686,7 +694,10 @@ public class JsonUtils {
         }
 
         if (withBatchProperties) {
-            ArrayNode batchArray = (ArrayNode) asJsonForApi(study.getBatchList());
+            ArrayNode batchArray = Json.mapper().createArrayNode();
+            for (Batch b : study.getBatchList()) {
+                batchArray.add(batchAsJsonForApi(b));
+            }
             studyNode.putArray("batches").addAll(batchArray);
         } else {
             ArrayNode batches = studyNode.putArray("batches");
@@ -701,6 +712,30 @@ public class JsonUtils {
         }
 
         return studyNode;
+    }
+
+    /**
+     * Returns JSON of a component intended for the JATOS API
+     */
+    public JsonNode componentAsJsonForApi(Component component) throws IOException {
+        ObjectNode componentNode = (ObjectNode) asJsonForApi(component);
+        if (component.getComponentInput() != null) {
+            JsonNode studyInputNode = Json.mapper().readTree(component.getComponentInput());
+            componentNode.set("componentInput", studyInputNode);
+        }
+        return componentNode;
+    }
+
+    /**
+     * Returns JSON of a batch intended for the JATOS API
+     */
+    public JsonNode batchAsJsonForApi(Batch batch) throws IOException {
+        ObjectNode batchNode = (ObjectNode) asJsonForApi(batch);
+        if (batch.getBatchInput() != null) {
+            JsonNode studyInputNode = Json.mapper().readTree(batch.getBatchInput());
+            batchNode.set("batchInput", studyInputNode);
+        }
+        return batchNode;
     }
 
     /**
