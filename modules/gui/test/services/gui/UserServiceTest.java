@@ -26,7 +26,6 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.function.Supplier;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -281,8 +280,8 @@ public class UserServiceTest {
 
         Study s = new Study();
         // Simulate that user is member and sole member of the study
-        s.setUserList(new HashSet<>(Collections.singletonList(u)));
-        u.setStudyList(new HashSet<>(Collections.singletonList(s)));
+        s.addUser(u);
+        u.addStudy(s);
 
         // Make apiTokenDao return two tokens to be removed (we only care about calls)
         when(apiTokenDao.findByUser(u)).thenReturn(Collections.emptyList());
@@ -304,8 +303,8 @@ public class UserServiceTest {
 
         Study s = new Study();
         User other = new User("other@ex.org", "Other", "other@ex.org");
-        s.setUserList(new HashSet<>(Arrays.asList(u, other)));
-        u.setStudyList(new HashSet<>(Collections.singletonList(s)));
+        s.addAllUsers(Arrays.asList(u, other));
+        u.addStudy(s);
 
         when(apiTokenDao.findByUser(u)).thenReturn(Collections.emptyList());
 

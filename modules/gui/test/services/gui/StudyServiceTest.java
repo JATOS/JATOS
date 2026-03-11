@@ -1,7 +1,6 @@
 package services.gui;
 
 import auth.gui.AuthService;
-import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
@@ -32,7 +31,6 @@ public class StudyServiceTest {
 
     private BatchService batchService;
     private ComponentService componentService;
-    private BatchDao batchDao;
     private UserDao userDao;
     private StudyDao studyDao;
     private IOUtils ioUtils;
@@ -45,14 +43,13 @@ public class StudyServiceTest {
     public void setUp() {
         batchService = mock(BatchService.class);
         componentService = mock(ComponentService.class);
-        batchDao = mock(BatchDao.class);
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
         ioUtils = mock(IOUtils.class);
         studyLogger = mock(StudyLogger.class);
         authService = mock(AuthService.class);
 
-        studyService = new StudyService(batchService, componentService, studyDao, batchDao, userDao,
+        studyService = new StudyService(batchService, componentService, studyDao, userDao,
                 ioUtils, studyLogger, authService);
     }
 
@@ -66,14 +63,12 @@ public class StudyServiceTest {
             Component c = new Component();
             c.setId((long) (i + 1));
             c.setTitle("C" + (i + 1));
-            c.setStudy(s);
             s.addComponent(c);
         }
         // add default batch for membership logic if needed by tests
         Batch b = new Batch();
         b.setId(1L);
         b.setUuid(UUID.randomUUID().toString());
-        b.setStudy(s);
         s.addBatch(b);
         return s;
     }
@@ -188,7 +183,7 @@ public class StudyServiceTest {
         original.setComments("comments");
         original.setEndRedirectUrl("https://example.org/end");
         original.setStudyEntryMsg("hello");
-        original.setJsonData("{\"k\":1}");
+        original.setStudyInput("{\"k\":1}");
         original.setLocked(true);
         original.setGroupStudy(true);
         original.setLinearStudy(true);
@@ -218,7 +213,7 @@ public class StudyServiceTest {
         assertThat(clone.getComments()).isEqualTo("comments");
         assertThat(clone.getEndRedirectUrl()).isEqualTo("https://example.org/end");
         assertThat(clone.getStudyEntryMsg()).isEqualTo("hello");
-        assertThat(clone.getJsonData()).isEqualTo("{\"k\":1}");
+        assertThat(clone.getStudyInput()).isEqualTo("{\"k\":1}");
 
         // clone is always unlocked
         assertThat(clone.isLocked()).isFalse();
@@ -258,7 +253,7 @@ public class StudyServiceTest {
     public void changeUserMember_addsMember_andAddsWorkerToBatches_andPersists() throws Exception {
         Study study = new Study();
         Batch b = mock(Batch.class);
-        study.getBatchList().add(b);
+        study.addBatch(b);
 
         User user = mock(User.class);
         JatosWorker worker = mock(JatosWorker.class);
@@ -300,7 +295,7 @@ public class StudyServiceTest {
         study.addUser(toRemove);
 
         Batch b = mock(Batch.class);
-        study.getBatchList().add(b);
+        study.addBatch(b);
 
         studyService.changeUserMember(study, toRemove, false);
 
@@ -324,7 +319,7 @@ public class StudyServiceTest {
         Study study = new Study();
 
         Batch b = mock(Batch.class);
-        study.getBatchList().add(b);
+        study.addBatch(b);
 
         User u1 = mock(User.class);
         User u2 = mock(User.class);
@@ -349,7 +344,7 @@ public class StudyServiceTest {
         Study study = new Study();
 
         Batch b = mock(Batch.class);
-        study.getBatchList().add(b);
+        study.addBatch(b);
 
         User signedIn = mock(User.class);
         User other = mock(User.class);
@@ -390,7 +385,7 @@ public class StudyServiceTest {
         // We don't care about the internals of createAndPersistStudy in this test
         doAnswer(inv -> inv.getArgument(1)).when(spy).createAndPersistStudy(any(), any(Study.class));
 
-        Study created = spy.createAndPersistStudyAndAssetsDir(user, props);
+        Study created = spy.createAndPersistStudyAndAssetsDir(user, props, true);
 
         assertThat(created.getDirName()).isNotEmpty();
         verify(ioUtils).createStudyAssetsDir(created.getDirName());
@@ -405,7 +400,8 @@ public class StudyServiceTest {
         study.setDescription("desc");
         study.setDirName("dir");
 
-        User user = mock(User.class);
+        User user = new User("alice", "Alice", "alice@example.org");
+        when(userDao.findByUsername("alice")).thenReturn(user);
 
         Batch defaultBatch = mock(Batch.class);
         when(batchService.createDefaultBatch()).thenReturn(defaultBatch);
@@ -417,11 +413,6 @@ public class StudyServiceTest {
         verify(studyDao).create(study);
         verify(batchService).createDefaultBatch();
         verify(batchService).initBatch(defaultBatch, study);
-        verify(batchDao).create(defaultBatch);
-
-        // addUserToStudy persists both sides
-        verify(studyDao, atLeastOnce()).update(study);
-        verify(userDao).update(user);
 
         verify(studyLogger).create(study);
         verify(studyLogger).log(study, user, "Created study");
@@ -438,21 +429,23 @@ public class StudyServiceTest {
 
         Batch b1 = mock(Batch.class);
         Batch b2 = mock(Batch.class);
-        study.getBatchList().add(b1);
-        study.getBatchList().add(b2);
+        study.addBatch(b1);
+        study.addBatch(b2);
 
-        User user = mock(User.class);
+        User user = new User("alice", "Alice", "alice@example.org");
+        when(userDao.findByUsername("alice")).thenReturn(user);
 
         studyService.createAndPersistStudy(user, study);
 
         verify(studyDao).create(study);
         verify(batchService).initBatch(b1, study);
         verify(batchService).initBatch(b2, study);
-        verify(batchDao).create(b1);
-        verify(batchDao).create(b2);
 
+        verify(studyLogger).create(study);
         verify(studyLogger).log(study, user, "Created study");
+
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
+        verifyNoMoreInteractions(studyLogger);
     }
 
     @Test
@@ -503,7 +496,7 @@ public class StudyServiceTest {
         props.setDirName("dir");
         props.setStudyEntryMsg("msg");
         props.setEndRedirectUrl("url");
-        props.setJsonData("{}");
+        props.setStudyInput("{}");
         props.setLocked(true);
         props.setActive(true);
         props.setGroupStudy(true);
@@ -518,7 +511,7 @@ public class StudyServiceTest {
         assertThat(study.getDirName()).isEqualTo("dir");
         assertThat(study.getStudyEntryMsg()).isEqualTo("msg");
         assertThat(study.getEndRedirectUrl()).isEqualTo("url");
-        assertThat(study.getJsonData()).isEqualTo("{}");
+        assertThat(study.getStudyInput()).isEqualTo("{}");
         assertThat(study.isLocked()).isTrue();
         assertThat(study.isActive()).isTrue();
         assertThat(study.isGroupStudy()).isTrue();
@@ -553,7 +546,7 @@ public class StudyServiceTest {
         study.setComments("c");
         study.setEndRedirectUrl("url");
         study.setStudyEntryMsg("msg");
-        study.setJsonData("{}");
+        study.setStudyInput("{}");
 
         StudyProperties props = studyService.bindToProperties(study);
 
@@ -569,7 +562,7 @@ public class StudyServiceTest {
         assertThat(props.getComments()).isEqualTo("c");
         assertThat(props.getEndRedirectUrl()).isEqualTo("url");
         assertThat(props.getStudyEntryMsg()).isEqualTo("msg");
-        assertThat(props.getJsonData()).isEqualTo("{}");
+        assertThat(props.getStudyInput()).isEqualTo("{}");
     }
 
     @Test
@@ -597,13 +590,13 @@ public class StudyServiceTest {
 
         Batch b1 = mock(Batch.class);
         Batch b2 = mock(Batch.class);
-        study.getBatchList().add(b1);
-        study.getBatchList().add(b2);
+        study.addBatch(b1);
+        study.addBatch(b2);
 
         User u1 = mock(User.class);
         User u2 = mock(User.class);
-        study.getUserList().add(u1);
-        study.getUserList().add(u2);
+        study.addUser(u1);
+        study.addUser(u2);
 
         User signedIn = mock(User.class);
 
@@ -611,11 +604,6 @@ public class StudyServiceTest {
 
         verify(batchService).remove(b1, signedIn);
         verify(batchService).remove(b2, signedIn);
-
-        verify(u1).removeStudy(study);
-        verify(u2).removeStudy(study);
-        verify(userDao).update(u1);
-        verify(userDao).update(u2);
 
         verify(studyDao).remove(study);
         verify(ioUtils).removeStudyAssetsDir("dir");
@@ -630,7 +618,7 @@ public class StudyServiceTest {
         study.setDirName(null);
 
         User u1 = mock(User.class);
-        study.getUserList().add(u1);
+        study.addUser(u1);
 
         User signedIn = mock(User.class);
 

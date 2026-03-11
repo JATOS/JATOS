@@ -111,7 +111,7 @@ public class ImportExportServiceTest {
         c.setUuid("c-1");
         c.setTitle("Comp1");
         c.setStudy(s);
-        s.getComponentList().add(c);
+        s.addComponent(c);
         return s;
     }
 

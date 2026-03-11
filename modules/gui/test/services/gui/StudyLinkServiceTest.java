@@ -17,8 +17,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -62,8 +60,7 @@ public class StudyLinkServiceTest {
         batch.setId(101L);
         Study study = new Study();
         study.setId(201L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
-        batch.setStudy(study);
+        study.addBatch(batch);
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-y")).thenReturn(study);
 //        when(workerService.extractWorkerType("PersonalSingle")).thenReturn(PersonalSingleWorker.WORKER_TYPE);
@@ -96,7 +93,7 @@ public class StudyLinkServiceTest {
         batch.setId(300L);
         Study study = new Study();
         study.setId(400L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
+        study.addBatch(batch);
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-z")).thenReturn(study);
 
@@ -122,7 +119,7 @@ public class StudyLinkServiceTest {
         batch.setId(301L);
         Study study = new Study();
         study.setId(401L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
+        study.addBatch(batch);
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-a")).thenReturn(study);
 

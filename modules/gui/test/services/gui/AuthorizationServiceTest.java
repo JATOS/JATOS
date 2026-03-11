@@ -49,7 +49,6 @@ public class AuthorizationServiceTest {
         Batch batch = new Batch();
         batch.setUuid(UUID.randomUUID().toString());
         batch.setId(batchIdCounter++); // ensure non-null unique ID for equals()
-        batch.setStudy(study);
         study.addBatch(batch);
         return batch;
     }
@@ -203,7 +202,7 @@ public class AuthorizationServiceTest {
         Study study = newStudy(1L);
         Batch batch = newBatch(study);
         Worker worker = newWorker(1L);
-        batch.getWorkerList().add(worker);
+        batch.addWorker(worker);
         user.addStudy(study);
 
         authorizationService.canUserAccessWorker(user, worker);

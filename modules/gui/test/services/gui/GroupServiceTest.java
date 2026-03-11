@@ -3,7 +3,6 @@ package services.gui;
 import daos.common.GroupResultDao;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
-import models.gui.BatchOrGroupSession;
 import org.junit.Before;
 import org.junit.Test;
 

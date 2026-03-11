@@ -90,8 +90,7 @@ public class PublixUtilsTest {
         s.setId(1L);
         s.setLinearStudy(linear);
         for (Component c : components) {
-            c.setStudy(s);
-            s.getComponentList().add(c);
+            s.addComponent(c);
         }
         return s;
     }
