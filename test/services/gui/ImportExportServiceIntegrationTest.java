@@ -191,13 +191,14 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         File file = exampleStudyArchive();
-        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+                importExportService.importStudy(admin, file)));
 
         // Check returned JSON object
         assertThat((Boolean) response.get("studyExists")).isTrue();
         assertThat(response.get("uuid").toString()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
         assertThat(response.get("currentStudyTitle").toString()).isEqualTo("Another Title");
-        assertThat(response.get("currentDirName")).isNull();
+        assertThat(response.get("currentDirName").toString()).isEqualTo("another_example_dirname");
 
         assertThat(response.get("uploadedStudyTitle").toString()).isEqualTo("Potato Compass");
         assertThat(response.get("uploadedDirName").toString()).isEqualTo("potatoCompass");
@@ -375,7 +376,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
             assertThat(updatedStudy.getUuid()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
             assertThat(updatedStudy.getTitle()).isEqualTo("Potato Compass");
             assertThat(updatedStudy.getDescription()).isEqualTo("This is the example used in the tutorial YouTube video");
-            assertThat(updatedStudy.getJsonData()).isNull(); // This example doesn't have JSON data
+            assertThat(updatedStudy.getStudyInput()).isNull(); // This example doesn't have JSON data
             assertThat(updatedStudy.getComponentList().size()).isEqualTo(3);
             assertThat(updatedStudy.getComponent(1).getTitle()).isEqualTo("Demographics ");
             assertThat(updatedStudy.getLastComponent().get().getTitle()).isEqualTo("Drag and Drop Potatoes (results in JSON)");
@@ -396,7 +397,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
             study.setTitle("Another Title");
             study.setDescription("Another description");
-            study.setJsonData("{\"a\": 123}");
+            study.setStudyInput("{\"a\": 123}");
             study.setStudyEntryMsg("Another study entry msg");
             study.setActive(false);
             study.setGroupStudy(true);

@@ -58,7 +58,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             assertThat(clone.getHtmlFilePath()).isEqualTo(original.getHtmlFilePath());
             assertThat(clone.isReloadable()).isEqualTo(original.isReloadable());
             assertThat(clone.isActive()).isEqualTo(original.isActive());
-            assertThat(clone.getJsonData()).isEqualTo(original.getJsonData());
+            assertThat(clone.getComponentInput()).isEqualTo(original.getComponentInput());
             assertThat(clone.getComments()).isEqualTo(original.getComments());
 
             // Differences
@@ -99,7 +99,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             ComponentProperties updated = new ComponentProperties();
             updated.setTitle(component.getTitle() + " updated");
             updated.setComments("Some comment");
-            updated.setJsonData("{\"a\":1}");
+            updated.setComponentInput("{\"a\":1}");
             updated.setReloadable(!component.isReloadable());
             updated.setActive(!component.isActive());
             updated.setHtmlFilePath("shouldNotChange.html"); // will be ignored
@@ -109,7 +109,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Component reloaded = componentDao.findById(component.getId());
             assertThat(reloaded.getTitle()).isEqualTo(updated.getTitle());
             assertThat(reloaded.getComments()).isEqualTo(updated.getComments());
-            assertThat(reloaded.getJsonData()).isEqualTo(updated.getJsonData());
+            assertThat(reloaded.getComponentInput()).isEqualTo(updated.getComponentInput());
             assertThat(reloaded.isReloadable()).isEqualTo(updated.isReloadable());
             assertThat(reloaded.isActive()).isEqualTo(updated.isActive());
             // unchanged
@@ -129,7 +129,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             props.setHtmlFilePath("newComp.html");
             props.setReloadable(true);
             props.setComments("Hello");
-            props.setJsonData("{\"x\":2}");
+            props.setComponentInput("{\"x\":2}");
 
             Component created = componentService.createAndPersistComponent(study, props);
 

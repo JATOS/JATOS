@@ -69,8 +69,8 @@ public class BatchService {
         clone.setMaxActiveMembers(batch.getMaxActiveMembers());
         clone.setMaxTotalMembers(batch.getMaxTotalMembers());
         clone.setMaxTotalWorkers(batch.getMaxTotalWorkers());
-        batch.getWorkerList().forEach(clone::addWorker);
-        batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
+        clone.addAllWorkers(batch.getWorkerList());
+        clone.addAllAllowedWorkerTypes(batch.getAllowedWorkerTypes());
         clone.setBatchInput(batch.getBatchInput());
         return clone;
     }
@@ -140,9 +140,7 @@ public class BatchService {
         props.setMaxActiveMembers(batch.getMaxActiveMembers());
         props.setMaxTotalMembers(batch.getMaxTotalMembers());
         props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
-        if (batch.getAllowedWorkerTypes() != null) {
-            batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
-        }
+        props.addAllAllowedWorkerTypes(batch.getAllowedWorkerTypes());
         props.setComments(batch.getComments());
         props.setBatchInput(batch.getBatchInput());
         return props;

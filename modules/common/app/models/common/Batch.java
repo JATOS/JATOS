@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
-import models.common.legacy.StudyV2;
 import models.common.workers.Worker;
 import utils.common.JsonUtils;
 import utils.common.JsonUtils.JsonForApi;
@@ -12,6 +11,7 @@ import utils.common.JsonUtils.JsonForIO;
 import utils.common.JsonUtils.JsonForPublix;
 
 import javax.persistence.*;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -218,6 +218,12 @@ public class Batch {
         }
     }
 
+    public void addAllAllowedWorkerTypes(Collection<String> workerTypes) {
+        if (workerTypes != null) {
+            workerTypes.forEach(this::addAllowedWorkerType);
+        }
+    }
+
     public void removeAllowedWorkerType(String workerType) {
         allowedWorkerTypes.remove(workerType);
     }
@@ -241,7 +247,7 @@ public class Batch {
         }
     }
 
-    public void addAllWorkers(List<Worker> workerList) {
+    public void addAllWorkers(Collection<Worker> workerList) {
         workerList.forEach(this::addWorker);
     }
 

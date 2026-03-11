@@ -11,10 +11,7 @@ import play.data.validation.ValidationError;
 import services.gui.WorkerService;
 import utils.common.JsonUtils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Model of batch properties for UI (not persisted in DB). Only used together with an HTML form that creates a new Batch
@@ -154,7 +151,18 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
     }
 
     public void addAllowedWorkerType(String type) {
-        allowedWorkerTypes.add(type);
+        if (allowedWorkerTypes == null) {
+            allowedWorkerTypes = new HashSet<>();
+        }
+        if (type != null) {
+            allowedWorkerTypes.add(type);
+        }
+    }
+
+    public void addAllAllowedWorkerTypes(Collection<String> types) {
+        if (types != null) {
+            types.forEach(this::addAllowedWorkerType);
+        }
     }
 
     public void removeAllowedWorkerType(String type) {

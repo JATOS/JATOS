@@ -212,7 +212,7 @@ public class StudyLinks extends Controller {
         // Have to bind ALLOWED_WORKER_TYPES from checkboxes by hand
         String[] allowedWorkerArray = request.body().asFormUrlEncoded().get(BatchProperties.ALLOWED_WORKER_TYPES);
         if (allowedWorkerArray != null) {
-            Arrays.stream(allowedWorkerArray).forEach(batchProperties::addAllowedWorkerType);
+            batchProperties.addAllAllowedWorkerTypes(Arrays.asList(allowedWorkerArray));
         }
 
         batchService.updateBatch(currentBatch, batchProperties);
