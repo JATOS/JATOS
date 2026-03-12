@@ -1121,8 +1121,6 @@ public class Api extends Controller {
 
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         File file = resultStreamer.writeResultMetadata(request, wrapperObject);
-        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
-            + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
 
         //noinspection ResultOfMethodCallIgnored
         Result result = ok().streamed(
@@ -1130,6 +1128,8 @@ public class Api extends Controller {
                 Optional.of(file.length()),
                 Optional.of("application/json"));
         if (download) {
+            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
+                + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
             result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
         }
         return result;
@@ -1146,14 +1146,17 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth({VIEWER, USER})
-    public Result exportResultData(Http.Request request, boolean asPlainText, boolean isApiCall) throws HttpException {
+    public Result exportResultData(Http.Request request, boolean asPlainText, boolean download, boolean isApiCall) throws HttpException {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         if (asPlainText) {
             Source<ByteString, ?> dataSource = resultStreamer.streamComponentResultData(request);
-            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
-                + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
-            return ok().chunked(dataSource).as("application/octet-stream")
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+            Result result = ok().chunked(dataSource).as("text/plain; charset=UTF-8");
+            if (download) {
+                String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
+                        + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
+                result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+            }
+            return result;
         } else {
             Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
