@@ -1716,7 +1716,20 @@ paths:
           schema:
             type: boolean
             default: false
-          description: If `true` return a single plain text stream; if `false` return ZIP.
+          description: >-
+            If `true` return the data as plain text, depending on the
+            `download` parameter inline or a downloadable file.
+            If `false` return a ZIP archive.
+        - in: query
+          name: download
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: >-
+            If `true` return the plain text data as a downloadable file.
+            If `false` return a inline plain text stream.
+            If `asPlainText=false` it has no effect.
         - $ref: '#/components/parameters/StudyIdParameter'
         - $ref: '#/components/parameters/StudyUuidParameter'
         - $ref: '#/components/parameters/ComponentIdParameter'
@@ -1733,8 +1746,8 @@ paths:
           headers:
             Content-Disposition:
               description: |
-                Suggests a filename and download. Filesuffix can be .zip or .txt.
-              required: true
+                Suggests a filename and download. Filesuffix can be `.zip` or `.txt`.
+              required: false
               schema:
                 type: string
                 example: attachment; filename="jatos_results_data_[datetime].txt"
@@ -1742,11 +1755,12 @@ paths:
             text/plain:
               schema:
                 type: string
-                description: Plain text stream (one line per result) when `asPlainText=true`.
+                description: Plain text stream (one line per result) if `asPlainText=true`.
             application/zip:
               schema:
                 type: string
                 format: binary
+                description: ZIP archive if `asPlainText=false`.
         '400':
           $ref: "#/components/responses/BadRequestError"
         '401':
