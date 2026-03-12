@@ -189,8 +189,11 @@ public class UserService {
             throws NotFoundException, ForbiddenException {
         if (!Common.isUserRoleAllowSuperuser()) throw new ForbiddenException("Superuser role is not allowed");
         User user = retrieveUser(normalizedUsername);
-        if (superuser) user.addRole(Role.SUPERUSER);
-        else user.removeRole(Role.SUPERUSER);
+        if (superuser) {
+            user.addRole(Role.SUPERUSER);
+        } else {
+            user.removeRole(Role.SUPERUSER);
+        }
         userDao.update(user);
         return user.isSuperuser();
     }

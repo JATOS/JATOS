@@ -5,6 +5,7 @@ import general.common.RequestScope;
 import general.gui.FlashScopeMessaging;
 import general.gui.RequestScopeMessaging;
 import models.common.User;
+import models.common.User.Role;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http;
@@ -15,6 +16,7 @@ import utils.common.Helpers;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.function.Function;
 
 import static play.mvc.Results.*;
@@ -59,7 +61,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
     }
 
     @Override
-    public AuthResult authenticate(Http.Request request, User.Role role) {
+    public AuthResult authenticate(Http.Request request, EnumSet<Role> allowedRoles) {
 
         if (!Helpers.isSessionCookieRequest(request)) {
             return AuthResult.wrongMethod();
@@ -90,7 +92,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         }
 
         // Check authorization
-        if (!signedinUser.hasRole(role)) {
+        if (!signedinUser.hasRole(allowedRoles)) {
             return callUnauthorizedDueToAuthorization(request, signedinUser.getUsername(), request.path());
         }
 

@@ -43,7 +43,7 @@ import java.util.*;
 
 import static auth.gui.AuthAction.Auth;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
-import static models.common.User.Role.ADMIN;
+import static models.common.User.Role.*;
 
 /**
  * JATOS API Controller
@@ -126,7 +126,7 @@ public class Api extends Controller {
     /**
      * Returns metadata of the API token used in this request
      */
-    @Auth
+    @Auth({VIEWER, USER})
     public Result currentApiTokenMetadata() {
         Object token = RequestScope.get(AuthApiToken.API_TOKEN);
         return ok(ApiEnvelope.wrap(token).asJsonNode());
@@ -188,7 +188,7 @@ public class Api extends Controller {
      * Get info of a user.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER, ADMIN})
     public Result getUser(Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
         User signedinUser = authService.getSignedinUser();
@@ -213,7 +213,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateUser(Http.Request request, Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
@@ -234,7 +234,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     public Result deleteUser(Long id) throws IOException, HttpException {
         User user = userDao.findById(id);
         User signedinUser = authService.getSignedinUser();
@@ -251,7 +251,7 @@ public class Api extends Controller {
      * Generate API tokens. It returns the token and the token metadata.
      */
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     @BodyParser.Of(BodyParser.Json.class)
     public Result generateApiToken(Http.Request request, Long userId) throws HttpException {
         if (!Common.isJatosApiTokensApiGenerationAllowed()) {
@@ -280,7 +280,7 @@ public class Api extends Controller {
      * List the metadata of all tokens that belong to a user.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER, ADMIN})
     public Result allApiTokenMetadataByUser(Long userId) throws HttpException {
         User user = userDao.findById(userId);
         User signedinUser = authService.getSignedinUser();
@@ -295,7 +295,7 @@ public class Api extends Controller {
      * Get the metadata of an API token specified by its ID.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER, ADMIN})
     public Result apiTokenMetadata(Long id) throws HttpException {
         ApiToken apiToken = apiTokenDao.find(id);
         User signedinUser = authService.getSignedinUser();
@@ -309,7 +309,7 @@ public class Api extends Controller {
      * admins) can update their own tokens.
      */
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     @BodyParser.Of(BodyParser.Json.class)
     public Result toggleApiTokenActive(Http.Request request, Long id) throws HttpException {
         ApiToken token = apiTokenDao.find(id);
@@ -331,7 +331,7 @@ public class Api extends Controller {
      * Admins can delete tokens of non-admin users. Users (including admins) can delete their own tokens.
      */
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     public Result deleteApiToken(Long id) throws NotFoundException, ForbiddenException {
         ApiToken token = apiTokenDao.find(id);
         User signedinUser = authService.getSignedinUser();
@@ -360,7 +360,7 @@ public class Api extends Controller {
      * @return All study properties the user has access to (is member of) in JSON
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getAllStudyPropertiesOfSignedinUser(Boolean withComponentProperties, Boolean withBatchProperties)
         throws IOException {
         User signedinUser = authService.getSignedinUser();
@@ -377,7 +377,7 @@ public class Api extends Controller {
      * Handels deprecated endpoint to create a new study
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result createStudy(Http.Request request) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
@@ -394,7 +394,7 @@ public class Api extends Controller {
      * branches.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result importOrCreateStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets)
             throws HttpException, IOException, ValidationException, ImportExportException {
@@ -455,7 +455,7 @@ public class Api extends Controller {
      *                              Default is `true`.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result importStudy(Http.Request request, boolean keepProperties, boolean keepAssets,
                               boolean keepCurrentAssetsName, boolean renameAssets)
             throws HttpException, IOException, ValidationException, ImportExportException {
@@ -483,7 +483,7 @@ public class Api extends Controller {
      * Returns the study archive (.jzip) as a file
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result exportStudy(String id) throws HttpException {
         return importExport.exportStudy(id);
     }
@@ -497,7 +497,7 @@ public class Api extends Controller {
      * @return The study properties in JSON
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getStudyProperties(String id, Boolean withComponentProperties, Boolean withBatchProperties)
         throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
@@ -513,7 +513,7 @@ public class Api extends Controller {
      * activation status of any study.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateStudyProperties(Http.Request request, String id) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
@@ -552,7 +552,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result deleteStudy(String id) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -572,7 +572,7 @@ public class Api extends Controller {
      * @return JSON with study assets directory structure
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result getStudyAssetsStructure(String id, boolean flatten) throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -596,7 +596,7 @@ public class Api extends Controller {
      *                 URL encoded but doesn't have to be. Directories cannot be downloaded.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result downloadStudyAssetsFile(String id, String filepath) throws HttpException {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
@@ -629,7 +629,7 @@ public class Api extends Controller {
      *                 be.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -665,7 +665,7 @@ public class Api extends Controller {
      *                 URL encoded but doesn't have to be. Directories cannot be deleted.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result deleteStudyAssetsFile(String id, String filepath) throws HttpException {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
@@ -691,7 +691,7 @@ public class Api extends Controller {
      * Get user IDs of all members of a study.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result allMembersOfStudy(String id) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
@@ -707,13 +707,13 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result addMemberToStudy(String id, Long userId) throws HttpException {
         return changeMemberOfStudy(id, userId, true);
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result removeMemberFromStudy(String id, Long userId) throws HttpException {
         return changeMemberOfStudy(id, userId, false);
     }
@@ -746,7 +746,7 @@ public class Api extends Controller {
      * reverse order and 'Transfer-Encoding:chunked'
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result studyLog(String id, int entryLimit, boolean download) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
@@ -771,7 +771,7 @@ public class Api extends Controller {
      * Creates a component within the specified study
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result createComponent(Http.Request request, String studyId) throws IOException, HttpException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
@@ -790,7 +790,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getComponentsByStudy(String studyIdOrUuid) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyIdOrUuid);
         User user = authService.getSignedinUser();
@@ -804,7 +804,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getComponent(String id) throws HttpException, IOException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -815,7 +815,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateComponent(Http.Request request, String id) throws HttpException, IOException {
         Component component = componentService.getComponentFromIdOrUuid(id);
@@ -836,7 +836,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result deleteComponent(String id) throws HttpException {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -846,7 +846,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+@Auth({VIEWER, USER})
     public Result getBatchesByStudy(String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
@@ -860,7 +860,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getBatch(String id) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -871,7 +871,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result createBatch(Http.Request request, String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
@@ -891,7 +891,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateBatch(Http.Request request, String id) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
@@ -912,7 +912,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result deleteBatch(String id) throws HttpException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -922,7 +922,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getBatchSession(String id, boolean asText) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -937,7 +937,7 @@ public class Api extends Controller {
      * malformed content gracefully and give detailed error messages to the user.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateBatchSession(Http.Request request, String id, Option<Long> version) throws HttpException, IOException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
@@ -957,7 +957,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getGroupsOfBatch(String id) throws HttpException {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User user = authService.getSignedinUser();
@@ -970,7 +970,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getGroupSession(Long id, boolean asText) throws HttpException, IOException {
         GroupResult groupResult = groupResultDao.findById(id);
         User user = authService.getSignedinUser();
@@ -985,7 +985,7 @@ public class Api extends Controller {
      * malformed content gracefully and give detailed error messages to the user.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateGroupSession(Http.Request request, Long id, Option<Long> version) throws HttpException, IOException {
         GroupResult groupResult = groupResultDao.findById(id);
@@ -1017,7 +1017,7 @@ public class Api extends Controller {
      * @param amountOption  Number of study codes that have to be generated. If empty, 1 is assumed.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result getOrGenerateStudyCodes(Http.Request request, String studyId, Option<Long> batchIdOption, String type,
                                           String comment, Option<Integer> amountOption) throws HttpException {
         // Get props either from query parameters or JSON body
@@ -1053,7 +1053,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result getStudyCode(String code) throws HttpException {
         StudyLink studyLink = studyLinkDao.findByStudyCode(code);
         User user = authService.getSignedinUser();
@@ -1064,7 +1064,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Json.class)
     public Result toggleStudyCodeActive(Http.Request request, String code) throws HttpException {
         StudyLink studyLink = studyLinkDao.findByStudyCode(code);
@@ -1088,7 +1088,7 @@ public class Api extends Controller {
      * @param isApiCall If true, the response JSON gets an additional 'apiVersion' field
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result exportResults(Http.Request request, Boolean isApiCall) throws BadRequestException {
         Map<String, Object> wrapperObject = isApiCall
             ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
@@ -1113,7 +1113,7 @@ public class Api extends Controller {
      * @param download  If true, the response JSON is in a file, otherwise in the response body
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result exportResultMetadata(Http.Request request, boolean download, Boolean isApiCall) throws HttpException, IOException {
         Map<String, Object> wrapperObject = isApiCall
                     ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
@@ -1145,7 +1145,7 @@ public class Api extends Controller {
      * @param isApiCall   If true, the response JSON gets an additional 'apiVersion' field
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result exportResultData(Http.Request request, boolean asPlainText, boolean isApiCall) throws HttpException {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         if (asPlainText) {
@@ -1173,7 +1173,7 @@ public class Api extends Controller {
      * memory and disk usage.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result exportResultFiles(Http.Request request) throws BadRequestException {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
@@ -1190,7 +1190,7 @@ public class Api extends Controller {
      * @param filename          Filename of the file to be exported
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result exportSingleResultFile(Long componentResultId, String filename) throws HttpException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = authService.getSignedinUser();
@@ -1217,7 +1217,7 @@ public class Api extends Controller {
      * StudyResult becomes empty (no more ComponentResults), it will be deleted too.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     @BodyParser.Of(BodyParser.Raw.class)
     public Result removeResults(Http.Request request) throws HttpException, IOException {
         JsonNode json = ApiService.getJsonFromBody(request);
