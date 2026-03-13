@@ -17,6 +17,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -48,7 +50,7 @@ public class AuthAction extends Action<Auth> {
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Auth {
-        Role value() default Role.USER;
+        Role[] value() default {Role.USER};
     }
 
     /**
@@ -57,11 +59,11 @@ public class AuthAction extends Action<Auth> {
     interface AuthMethod {
 
         /**
-         * @param request       This action's {@link Http.Request} object
-         * @param necessaryRole Role the user must have to access the resource
+         * @param request        This action's {@link Http.Request} object
+         * @param allowedRoles   Roles that are allowed to access the resource
          * @return Returns an {@link AuthResult}.
          */
-        AuthResult authenticate(Http.Request request, User.Role necessaryRole);
+        AuthResult authenticate(Http.Request request, EnumSet<Role> allowedRoles);
 
         /**
          * Result of an authentication attempt.
@@ -124,12 +126,12 @@ public class AuthAction extends Action<Auth> {
     }
 
     public CompletionStage<Result> call(Http.Request request) {
-        User.Role necessaryRole = configuration.value();
+        EnumSet<Role> allowedRoles = EnumSet.copyOf(Arrays.asList(configuration.value()));
 
         // Try to authenticate with each registered method
         for (AuthMethod authMethod : authMethods) {
 
-            AuthResult authResult = authMethod.authenticate(request, necessaryRole);
+            AuthResult authResult = authMethod.authenticate(request, allowedRoles);
             switch (authResult.state) {
                 case AUTHENTICATED:
                     return delegate.call(request).thenApply(authResult.postHook); // Successful authentication

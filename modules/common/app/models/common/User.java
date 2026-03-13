@@ -8,6 +8,7 @@ import models.common.workers.JatosWorker;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.text.Normalizer;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -27,9 +28,10 @@ public class User {
      * Roles are used for authorization within JATOS GUI
      */
     public enum Role {
-        USER, // Normal JATOS user
+        USER, // Normal JATOS user. Can view studies and their results and change them.
+        VIEWER, // Can only view studies and their results but cannot change them
         ADMIN, // Allows creating/changing/deleting other users (don't confuse role ADMIN with user 'admin')
-        SUPERUSER // Makes this user a member of ALL studies with all rights of a normal member
+        SUPERUSER, // Makes this user a member of ALL studies with all rights of a normal member
     }
 
     /**
@@ -199,6 +201,10 @@ public class User {
 
     public boolean hasRole(Role role) {
         return roleList.contains(role);
+    }
+
+    public boolean hasRole(Set<Role> allowedRoles) {
+        return roleList.stream().anyMatch(allowedRoles::contains);
     }
 
     public boolean isAdmin() {
