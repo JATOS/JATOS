@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.*;
 import static models.gui.ChangePasswordProperties.*;
 import static services.gui.UserService.ADMIN_USERNAME;
 
@@ -73,7 +74,7 @@ public class Users extends Controller {
     }
 
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(ADMIN)
     @SaveLastVisitedPageUrl
     public Result userManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
@@ -85,7 +86,7 @@ public class Users extends Controller {
      * GET request: Returns a list of all users as JSON
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(ADMIN)
     public Result allUserData() throws IOException {
         List<User> userList = userDao.findAll();
 
@@ -100,7 +101,7 @@ public class Users extends Controller {
      * POST request to add or remove a role from a user.
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(ADMIN)
     public Result toggleRole(Http.Request request, String role, boolean value) {
         DynamicForm requestData = formFactory.form().bindFromRequest(request);
         String usernameOfUserToChange = requestData.get("username");
@@ -128,7 +129,7 @@ public class Users extends Controller {
      * GET request that returns user data of the signed-in user
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER, ADMIN})
     public Result signedinUserData() {
         User signedinUser = authService.getSignedinUser();
         return ok(jsonUtils.getSingleUserData(signedinUser));
@@ -139,7 +140,7 @@ public class Users extends Controller {
      * allowed to create new users.
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(ADMIN)
     public Result create(Http.Request request) throws ForbiddenException {
         Form<NewUserProperties> form = formFactory.form(NewUserProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -152,7 +153,7 @@ public class Users extends Controller {
      * This POST can come from the user themselves or from an admin user to edit another user.
      */
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     public Result edit(Http.Request request) throws JatosGuiException {
         User signedinUser = authService.getSignedinUser();
         DynamicForm requestData = formFactory.form().bindFromRequest(request);
@@ -199,7 +200,7 @@ public class Users extends Controller {
      * Handles POST request to change a password originated in the user manager and initiated by an admin
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(ADMIN)
     public Result changePasswordByAdmin(Http.Request request) throws NamingException {
         DynamicForm dynForm = formFactory.form().bindFromRequest(request);
         ChangePasswordProperties props = new ChangePasswordProperties();
@@ -239,7 +240,7 @@ public class Users extends Controller {
      * Handles POST request to change a password form initiated by a user themselves
      */
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     public Result changePasswordByUser(Http.Request request) throws NamingException {
         DynamicForm dynForm = formFactory.form().bindFromRequest(request);
         ChangePasswordProperties props = new ChangePasswordProperties();
@@ -277,7 +278,7 @@ public class Users extends Controller {
      * handle body data in a DELETE request.
      */
     @Transactional
-    @Auth
+    @Auth({USER, ADMIN})
     public Result remove(Http.Request request) throws ForbiddenException, NotFoundException, IOException {
         User signedinUser = authService.getSignedinUser();
         String normalizedSignedinUsername = signedinUser.getUsername();

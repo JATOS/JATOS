@@ -30,6 +30,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
+
 /**
  * Controller that deals with all requests regarding Components within the JATOS GUI.
  *
@@ -73,7 +76,7 @@ public class Components extends Controller {
      * Uses a JatosWorker and the given batch. Redirects to /publix/runx.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId, Long frames,
                                Long hSplit, Long vSplit) throws JatosGuiException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
@@ -110,7 +113,7 @@ public class Components extends Controller {
      * POST request: Handles the post request of the form to create a new Component.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitCreated(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -129,7 +132,7 @@ public class Components extends Controller {
      * GET requests for getting the properties of a Component.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result properties(Long studyId, Long componentId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -145,7 +148,7 @@ public class Components extends Controller {
      * POST request that handles update of component properties
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitEdited(Http.Request request, Long studyId, Long componentId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -171,7 +174,7 @@ public class Components extends Controller {
      * GET request to clone a component.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result cloneComponent(Http.Request request, Long studyId, Long componentId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -189,7 +192,7 @@ public class Components extends Controller {
      * DELETE request to remove a component.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result remove(Http.Request request, Long studyId, Long componentId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);

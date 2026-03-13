@@ -2478,7 +2478,7 @@ components:
           type: array
           items:
             type: string
-            enum: [ USER, ADMIN, SUPERUSER ]
+            enum: [ VIEWER, USER, ADMIN, SUPERUSER ]
         authMethod:
           type: string
           enum: [ DB, LDAP, OAUTH_GOOGLE, OIDC, ORCID, SRAM, CONEXT ]

@@ -26,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller that provides actions for the home page
@@ -57,7 +59,7 @@ public class Home extends Controller {
      * Shows home view
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request, int httpStatus) {
         User signedinUser = authService.getSignedinUser();
@@ -70,7 +72,7 @@ public class Home extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request) {
         return home(request, Http.Status.OK);
@@ -80,7 +82,7 @@ public class Home extends Controller {
      * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public CompletionStage<Result> branding() {
         User signedinUser = authService.getSignedinUser();
         if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
@@ -99,7 +101,7 @@ public class Home extends Controller {
      * signed-in user).
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result sidebarData() {
         User signedinUser = authService.getSignedinUser();
         List<Study> studyList = Helpers.isAllowedSuperuser(signedinUser)

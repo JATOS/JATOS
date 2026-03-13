@@ -116,7 +116,7 @@ public class AuthService {
     /**
      * Gets the signed-in user from the RequestScope. It was put into the
      * RequestScope by the AuthenticationAction. Therefore, this method works
-     * only if you use the @Authenticated annotation at your action.
+     * only if you use the @Auth annotation at your action.
      */
     public User getSignedinUser() {
         return (User) RequestScope.get(SIGNEDIN_USER);

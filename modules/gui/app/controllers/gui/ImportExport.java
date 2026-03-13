@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
+import static models.common.User.Role.USER;
+
 /**
  * Controller that cares for import/export of components and studies.
  *
@@ -64,7 +66,7 @@ public class ImportExport extends Controller {
      * study or its directory already exists. The actual import happens in method importStudyConfirmed().
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result importStudy(Http.Request request)
             throws ForbiddenException, ValidationException, ImportExportException, IOException {
         User signedinUser = authService.getSignedinUser();
@@ -109,7 +111,7 @@ public class ImportExport extends Controller {
      *                   Default is `true`.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result importStudyConfirmed(Http.Request request) throws JatosGuiException {
         User signedinUser = authService.getSignedinUser();
 
@@ -145,7 +147,7 @@ public class ImportExport extends Controller {
      * the study asset directory and the study properties as JSON saved in a .jas file.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();

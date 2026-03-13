@@ -199,8 +199,8 @@ public class UserService {
     }
 
     /**
-     * Adds or removes ADMIN role of the user with the given username and persists the change. If the parameter admin
-     * is true the ADMIN role will be set and if it's false it will be removed. Returns true if the user has the role in
+     * Adds or removes an ADMIN role of the user with the given username and persists the change. If the parameter admin
+     * is true, the ADMIN role will be set, and if it's false, it will be removed. Returns true if the user has the role in
      * the end - or false if he hasn't.
      */
     public boolean changeAdminRole(String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
@@ -213,8 +213,11 @@ public class UserService {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS);
         }
 
-        if (admin) user.addRole(Role.ADMIN);
-        else user.removeRole(Role.ADMIN);
+        if (admin) {
+            user.addRole(Role.ADMIN);
+        } else {
+            user.removeRole(Role.ADMIN);
+        }
         return user.isAdmin();
     }
 

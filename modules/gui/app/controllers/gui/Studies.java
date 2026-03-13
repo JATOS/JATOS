@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -89,7 +91,7 @@ public class Studies extends Controller {
      * Shows the study view with details of a study components and so on.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result study(Http.Request request, Long studyId, int httpStatus) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
@@ -102,7 +104,7 @@ public class Studies extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result study(Http.Request request, Long studyId) throws JatosGuiException {
         return study(request, studyId, Http.Status.OK);
@@ -112,7 +114,7 @@ public class Studies extends Controller {
      * POST request to create a new study.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitCreated() throws IOException, ForbiddenException {
         User signedinUser = authService.getSignedinUser();
 
@@ -128,7 +130,7 @@ public class Studies extends Controller {
      * GET request that returns the study properties as JSON.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result properties(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -142,7 +144,7 @@ public class Studies extends Controller {
      * POST request to update study properties
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitEdited(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -165,7 +167,7 @@ public class Studies extends Controller {
      * POST request to update study properties
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitDescription(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -186,7 +188,7 @@ public class Studies extends Controller {
      * POST request to swap the locked field of a study.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result toggleLock(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -206,7 +208,7 @@ public class Studies extends Controller {
      * GET request to clones a study.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result cloneStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException, IOException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -221,7 +223,7 @@ public class Studies extends Controller {
      * GET request that gets all users and whether they are admin of this study as a JSON array.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result memberUsers(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -235,7 +237,7 @@ public class Studies extends Controller {
      * POST request that adds or removes a member user from a study
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result toggleMemberUser(Long studyId, String username, boolean isMember) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -251,7 +253,7 @@ public class Studies extends Controller {
      * POST request that adds all users as members to a study
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result addAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -269,7 +271,7 @@ public class Studies extends Controller {
      * DELETE request that removes all member users from a study
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result removeAllMemberUsers(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -283,7 +285,7 @@ public class Studies extends Controller {
      * POST request to change the oder of components within a study.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result changeComponentOrder(Long studyId, Long componentId, String newPosition)
             throws JatosGuiException, ForbiddenException, NotFoundException, BadRequestException {
         Study study = studyDao.findById(studyId);
@@ -301,7 +303,7 @@ public class Studies extends Controller {
      * Redirects to /publix/runx.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result runStudy(Http.Request request, Long studyId, Long batchId, Long frames, Long hSplit, Long vSplit)
             throws NotFoundException, ForbiddenException {
         Study study = studyDao.findById(studyId);
@@ -322,7 +324,7 @@ public class Studies extends Controller {
      * GET request that returns all component data of the given study as JSON.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result tableDataByStudy(Long studyId) throws JatosGuiException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();

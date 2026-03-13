@@ -126,7 +126,7 @@ public class Api extends Controller {
     /**
      * Returns metadata of the API token used in this request
      */
-    @Auth({VIEWER, USER})
+    @Auth({VIEWER, USER, ADMIN})
     public Result currentApiTokenMetadata() {
         Object token = RequestScope.get(AuthApiToken.API_TOKEN);
         return ok(ApiEnvelope.wrap(token).asJsonNode());

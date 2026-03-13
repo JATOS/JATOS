@@ -28,6 +28,7 @@ public class User {
      * Roles are used for authorization within JATOS GUI
      */
     public enum Role {
+        NONE, // No role; used as default if no role is set
         USER, // Normal JATOS user. Can view studies and their results and change them.
         VIEWER, // Can only view studies and their results but cannot change them
         ADMIN, // Allows creating/changing/deleting other users (don't confuse role ADMIN with user 'admin')
@@ -203,16 +204,16 @@ public class User {
         return roleList.contains(role);
     }
 
-    public boolean hasRole(Set<Role> allowedRoles) {
-        return roleList.stream().anyMatch(allowedRoles::contains);
+    public boolean hasRole(Set<Role> roles) {
+        return roleList.stream().anyMatch(roles::contains);
     }
 
     public boolean isAdmin() {
-        return roleList.contains(Role.ADMIN);
+        return hasRole(Role.ADMIN);
     }
 
     public boolean isSuperuser() {
-        return roleList.contains(Role.SUPERUSER);
+        return hasRole(Role.SUPERUSER);
     }
 
     public void setPasswordHash(String passwordHash) {

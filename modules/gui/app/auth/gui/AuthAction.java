@@ -44,13 +44,13 @@ public class AuthAction extends Action<Auth> {
 
     /**
      * This @Auth annotation can be used on every controller action (GUI or API) where authentication
-     * and authorization are required. If no Role is added, then the default Role 'USER' is assumed.
+     * and authorization are required. If no Role is added, then the default Role 'NONE' is assumed.
      */
     @With(AuthAction.class)
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Auth {
-        Role[] value() default {Role.USER};
+        Role[] value() default {Role.NONE};
     }
 
     /**

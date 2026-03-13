@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller for all actions regarding study links, batches, and workers within the JATOS GUI.
@@ -89,7 +91,7 @@ public class StudyLinks extends Controller {
      * GET request to get the Study Links page
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result studyLinks(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
@@ -109,7 +111,7 @@ public class StudyLinks extends Controller {
      * StudyResults and GroupResults.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result batchById(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -127,7 +129,7 @@ public class StudyLinks extends Controller {
      * StudyResults, count of their GroupResults, and the count of their Workers.
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result batchesByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -145,7 +147,7 @@ public class StudyLinks extends Controller {
      * POST request to submit a newly created Batch
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitCreatedBatch(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -166,7 +168,7 @@ public class StudyLinks extends Controller {
      * GET request to toggle the group state FIXED / STARTED
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = authService.getSignedinUser();
@@ -180,7 +182,7 @@ public class StudyLinks extends Controller {
      * GET request that returns Batch properties as JSON
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result batchProperties(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -196,7 +198,7 @@ public class StudyLinks extends Controller {
      * POST request to submit changed Batch properties
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result submitEditedBatchProperties(Http.Request request, Long studyId, Long batchId)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -223,7 +225,7 @@ public class StudyLinks extends Controller {
      * POST request to allow or deny a worker type in a batch.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result toggleAllowedWorkerType(Long studyId, Long batchId,
             String workerType, Boolean allow) throws BadRequestException, ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -247,7 +249,7 @@ public class StudyLinks extends Controller {
      * DELETE request to remove a Batch
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result removeBatch(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -265,7 +267,7 @@ public class StudyLinks extends Controller {
      * StudyLink, Worker and Batch
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result studyLinksSetupData(Long studyId, Long batchId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -287,7 +289,7 @@ public class StudyLinks extends Controller {
      * Personal type workers
      */
     @Transactional
-    @Auth
+    @Auth({VIEWER, USER})
     public Result studyLinksData(Long studyId, Long batchId, String workerType) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -303,7 +305,7 @@ public class StudyLinks extends Controller {
      * POST request to change the property 'active' of a StudyLink.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active)
             throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
@@ -327,7 +329,7 @@ public class StudyLinks extends Controller {
      * StudyLink.
      */
     @Transactional
-    @Auth
+    @Auth(USER)
     public Result editWorkerComment(Http.Request request, Long workerId) throws BadRequestException {
         User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
