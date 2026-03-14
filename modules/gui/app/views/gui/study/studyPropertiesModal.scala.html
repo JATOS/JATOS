@@ -174,8 +174,8 @@
                 alerts.warning("Study properties were not saved", 5000);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#studyPropertiesForm", response.responseJSON);
-                } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                } else if (response.responseText) {
+                    alerts.error(response.responseText);
                 } else {
                     alerts.error("Couldn't change study properties");
                 }
