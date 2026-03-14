@@ -225,8 +225,9 @@ paths:
         `VIEWER`: Can only view studies and their results.
         `USER`: Has all `VIEWER` permissions plus can manage studies,
         batches, study codes, and related resources.
-        `NONE`: Has no permissions. The user with the username
-        `admin` cannot be changed.
+        `NONE`: Has no permissions. The other roles, `ADMIN` and
+        `SUPERUSER`, can only be changed via JATOS' GUI. The user
+        with the username `admin` cannot be changed.
       tags: [ admin ]
       parameters:
         - in: path
@@ -2829,7 +2830,8 @@ components:
             `VIEWER`: Can only view studies and their results.
             `USER`: Has all `VIEWER` permissions plus can manage studies,
             batches, study codes, and related resources.
-            `NONE`: Has no permissions.
+            `NONE`: Has no permissions. The other roles, `ADMIN` and
+            `SUPERUSER`, can only be added via JATOS' GUI.
       required:
         - username
         - name
