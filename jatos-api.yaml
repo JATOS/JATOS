@@ -216,6 +216,46 @@ paths:
         '404':
           description: User not found
 
+  /jatos/api/v1/users/{id}/roles:
+    patch:
+      summary: Change a user's role (admin only)
+      description: >-
+        Changes the role of a user. A user cannot change their
+        own role. Allowed roles are `NONE`, `VIEWER`, and `USER`.
+        `VIEWER`: Can only view studies and their results.
+        `USER`: Has all `VIEWER` permissions plus can manage studies,
+        batches, study codes, and related resources.
+        `NONE`: Has no permissions. The user with the username
+        `admin` cannot be changed.
+      tags: [ admin ]
+      parameters:
+        - in: path
+          name: id
+          description: The user's ID whose role should be changed
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleChange'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeUser'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
   /jatos/api/v1/users/{id}/tokens:
     post:
       summary: Generate an API token for a user (admin or self)
@@ -2776,15 +2816,23 @@ components:
           description: Email address of the new user
         password:
           type: string
-          description: Password of the new user (only for authMethod DB)
+          description: Password of the new user (only for `authMethod=DB`)
         authMethod:
           type: string
           enum: [ DB, LDAP ]
-          description: Authentication method
+          description: Authentication method. Default is `DB`.
+        role:
+          type: string
+          enum: [ NONE, VIEWER, USER ]
+          description: >-
+            Role of the user. Default is `USER`.
+            `VIEWER`: Can only view studies and their results.
+            `USER`: Has all `VIEWER` permissions plus can manage studies,
+            batches, study codes, and related resources.
+            `NONE`: Has no permissions.
       required:
         - username
         - name
-        - authMethod
 
     UserUpdate:
       type: object
@@ -2800,10 +2848,21 @@ components:
           description: Email address of the user
         password:
           type: string
-          description: New password (only applicable for authMethod DB)
+          description: New password (only applicable for `authMethod=DB`)
         active:
           type: boolean
           description: Whether the user is active
+      additionalProperties: false
+
+    UserRoleChange:
+      type: object
+      description: Request payload for changing a user's role.
+      properties:
+        role:
+          type: string
+          enum: [ NONE, VIEWER, USER ]
+          description: The role to assign to the user.
+      required: [ role ]
       additionalProperties: false
 
     StudyCreate:
