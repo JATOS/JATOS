@@ -6,6 +6,8 @@ import general.common.Common;
 import general.common.MessagesStrings;
 import general.gui.StrictJsonMapper;
 import models.common.User;
+import models.common.User.AuthMethod;
+import models.common.User.Role;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -14,7 +16,12 @@ import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static models.common.User.AuthMethod.DB;
+import static models.common.User.AuthMethod.LDAP;
+import static models.common.User.Role.*;
 
 /**
  * Properties of a new user + validation rules
@@ -28,6 +35,8 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
     public static final String PASSWORD = "password";
+    public static final String AUTH_METHOD = "authMethod";
+    public static final String ROLE = "role";
 
     private String username;
 
@@ -36,14 +45,15 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
     private String email;
 
     /**
-     * Deserialize this field strictly as a JSON string:
-     * - accept only JSON string or null
-     * - reject numeric/boolean/object/array values (no implicit coercion like 123 -> "123")
+     * Deserialize this field strictly as a JSON string: 1) accept only JSON string or null, 2) reject
+     * numeric/boolean/object/array values (no implicit coercion like 123 -> "123")
      */
     @JsonDeserialize(using = StrictJsonMapper.class)
     private String password;
 
-    private User.AuthMethod authMethod = User.AuthMethod.DB;
+    private AuthMethod authMethod = AuthMethod.DB;
+
+    private Role role = USER;
 
     public String getUsername() {
         return User.normalizeUsername(username);
@@ -77,16 +87,24 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
         this.password = password;
     }
 
-    public void setAuthMethod(User.AuthMethod authMethod) {
+    public void setAuthMethod(AuthMethod authMethod) {
         this.authMethod = authMethod;
     }
 
-    public User.AuthMethod getAuthMethod() {
+    public AuthMethod getAuthMethod() {
         return authMethod;
     }
 
     public boolean isAuthByDb() {
-        return authMethod == User.AuthMethod.DB;
+        return authMethod == AuthMethod.DB;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     @Override
@@ -128,6 +146,10 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
             errorList.add(new ValidationError(EMAIL, MessagesStrings.NO_HTML_ALLOWED));
         }
 
+        if (authMethod == null || !Arrays.asList(DB, LDAP).contains(authMethod)) {
+            errorList.add(new ValidationError(AUTH_METHOD, "Invalid authentication method"));
+        }
+
         // Check password only if authenticated by DB
         if (isAuthByDb()) {
             if (password == null || password.trim().isEmpty()) {
@@ -145,6 +167,10 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
                     errorList.add(new ValidationError(PASSWORD, regex.getLeft()));
                 }
             }
+        }
+
+        if (role == null || !Arrays.asList(NONE, VIEWER, USER).contains(role)) {
+            errorList.add(new ValidationError(ROLE, "Invalid role"));
         }
 
         return errorList.isEmpty() ? null : errorList;

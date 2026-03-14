@@ -177,12 +177,6 @@ public class AuthorizationService {
         }
     }
 
-    public void checkAuthMethodIsDbOrLdap(NewUserProperties props) throws ForbiddenException {
-        if (!Arrays.asList(DB, LDAP).contains(props.getAuthMethod())) {
-            throw new ForbiddenException("Invalid authentication method", ErrorCode.INVALID_AUTH_METHOD);
-        }
-    }
-
     public void checkAuthMethodIsDbOrLdap(User user) throws ForbiddenException, NotFoundException {
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -197,7 +191,16 @@ public class AuthorizationService {
             throw new NotFoundException("User not found");
         }
         if (user.getUsername().equals(ADMIN_USERNAME)) {
-            throw new ForbiddenException("User 'admin' cannot be deleted");
+            throw new ForbiddenException("The ADMIN role cannot be removed from user ‘admin’, and the user cannot be deleted.");
+        }
+    }
+
+    public void checkNotYourself(User signedinUser, User user) throws ForbiddenException, NotFoundException {
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        if (user.getId().equals(signedinUser.getId())) {
+            throw new ForbiddenException("You cannot change this property of your own user.");
         }
     }
 

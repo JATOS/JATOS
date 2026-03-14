@@ -15,6 +15,7 @@ HEAD     /jatos/api/v1/users/:id                                            @con
 GET      /jatos/api/v1/users/:id                                            @controllers.gui.Api.getUser(id: Long)
 PATCH    /jatos/api/v1/users/:id                                            @controllers.gui.Api.updateUser(request: Request, id: Long)
 DELETE   /jatos/api/v1/users/:id                                            @controllers.gui.Api.deleteUser(id: Long)
+PATCH    /jatos/api/v1/users/:id/roles                                      @controllers.gui.Api.changeUserRole(request: Request, id: Long)
 
 # API tokens
 POST     /jatos/api/v1/users/:id/tokens                                     @controllers.gui.Api.generateApiToken(request: Request, id: Long)

@@ -75,7 +75,7 @@ public class User {
     @JsonView({JsonForApi.class})
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    private Set<Role> roleList = new HashSet<>();
+    private Set<Role> roleList = EnumSet.of(Role.NONE);
 
     /**
      * Corresponding JatosWorker. This relationship is bidirectional.
@@ -193,11 +193,38 @@ public class User {
     }
 
     public void addRole(Role role) {
-        this.roleList.add(role);
+        if (role == null) return;
+        switch (role) {
+            case NONE:
+                roleList.clear();
+                roleList.add(Role.NONE);
+                return;
+            case VIEWER:
+                roleList.remove(Role.NONE);
+                roleList.remove(Role.USER);
+                roleList.add(Role.VIEWER);
+                return;
+            case USER:
+                roleList.remove(Role.NONE);
+                roleList.remove(Role.VIEWER);
+                roleList.add(Role.USER);
+                return;
+            case ADMIN:
+            case SUPERUSER:
+                roleList.remove(Role.NONE);
+                roleList.add(role);
+                return;
+            default:
+                throw new IllegalArgumentException("Unknown role: " + role);
+        }
     }
 
     public void removeRole(Role role) {
-        this.roleList.remove(role);
+        if (role == null) return;
+        roleList.remove(role);
+        if (roleList.isEmpty()) {
+            roleList.add(Role.NONE);
+        }
     }
 
     public boolean hasRole(Role role) {

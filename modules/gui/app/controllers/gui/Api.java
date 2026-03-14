@@ -15,6 +15,7 @@ import general.common.RequestScope;
 import general.common.StudyLogger;
 import general.gui.StrictJsonMapper;
 import models.common.*;
+import models.common.User.Role;
 import models.gui.*;
 import models.gui.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -205,7 +206,6 @@ public class Api extends Controller {
         JsonNode json = ApiService.getJsonFromBody(request);
         NewUserProperties props = strictJsonMapper.getMapper().treeToValue(json, NewUserProperties.class);
         ApiService.validateProps(props);
-        authorizationService.checkAuthMethodIsDbOrLdap(props);
 
         User user = userService.registerUser(props);
         JsonNode userJson = jsonUtils.asJsonForApi(user);
@@ -234,6 +234,27 @@ public class Api extends Controller {
     }
 
     @Transactional
+    @Auth(ADMIN)
+    public Result changeUserRole(Http.Request request, Long id) throws HttpException, IOException {
+        User user = userDao.findById(id);
+        User signedinUser = authService.getSignedinUser();
+        authorizationService.checkNotUserAdmin(user);
+        authorizationService.checkNotYourself(signedinUser, user);
+
+        JsonNode json = request.body().asJson();
+        Role role = ApiService.getFieldFromJson(json, "role", Role.class);
+        if (!Arrays.asList(NONE, VIEWER, USER).contains(role)) {
+            throw new BadRequestException("Invalid role: " + role);
+        }
+
+        user.addRole(role);
+        userDao.update(user);
+
+        JsonNode userNode = jsonUtils.asJsonForApi(user);
+        return ok(ApiEnvelope.wrap(userNode).asJsonNode());
+    }
+
+    @Transactional
     @Auth({USER, ADMIN})
     public Result deleteUser(Long id) throws IOException, HttpException {
         User user = userDao.findById(id);
@@ -245,7 +266,6 @@ public class Api extends Controller {
 
         return ok(ApiEnvelope.wrap("User deleted successfully").asJsonNode());
     }
-
 
     /**
      * Generate API tokens. It returns the token and the token metadata.
