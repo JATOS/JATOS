@@ -243,7 +243,7 @@ public class Api extends Controller {
 
         JsonNode json = request.body().asJson();
         Role role = ApiService.getFieldFromJson(json, "role", Role.class);
-        if (!Arrays.asList(NONE, VIEWER, USER).contains(role)) {
+        if (!Arrays.asList(VIEWER, USER).contains(role)) {
             throw new BadRequestException("Invalid role: " + role);
         }
 

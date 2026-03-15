@@ -221,13 +221,12 @@ paths:
       summary: Change a user's role (admin only)
       description: >-
         Changes the role of a user. A user cannot change their
-        own role. Allowed roles are `NONE`, `VIEWER`, and `USER`.
+        own role. Allowed roles are `VIEWER` and `USER`.
         `VIEWER`: Can only view studies and their results.
         `USER`: Has all `VIEWER` permissions plus can manage studies,
-        batches, study codes, and related resources.
-        `NONE`: Has no permissions. The other roles, `ADMIN` and
-        `SUPERUSER`, can only be changed via JATOS' GUI. The user
-        with the username `admin` cannot be changed.
+        batches, study codes, and related resources. The other roles,
+        `ADMIN` and `SUPERUSER`, can only be changed via JATOS' GUI.
+        The user with the username `admin` cannot be changed.
       tags: [ admin ]
       parameters:
         - in: path
@@ -2824,14 +2823,14 @@ components:
           description: Authentication method. Default is `DB`.
         role:
           type: string
-          enum: [ NONE, VIEWER, USER ]
+          enum: [ VIEWER, USER ]
           description: >-
             Role of the user. Default is `USER`.
             `VIEWER`: Can only view studies and their results.
             `USER`: Has all `VIEWER` permissions plus can manage studies,
             batches, study codes, and related resources.
-            `NONE`: Has no permissions. The other roles, `ADMIN` and
-            `SUPERUSER`, can only be added via JATOS' GUI.
+            The other roles, `ADMIN` and `SUPERUSER`, can only be added
+            via JATOS' GUI.
       required:
         - username
         - name
@@ -2862,7 +2861,7 @@ components:
       properties:
         role:
           type: string
-          enum: [ NONE, VIEWER, USER ]
+          enum: [ VIEWER, USER ]
           description: The role to assign to the user.
       required: [ role ]
       additionalProperties: false

@@ -169,7 +169,7 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
             }
         }
 
-        if (role == null || !Arrays.asList(NONE, VIEWER, USER).contains(role)) {
+        if (role == null || !Arrays.asList(VIEWER, USER).contains(role)) {
             errorList.add(new ValidationError(ROLE, "Invalid role"));
         }
 
