@@ -24,6 +24,7 @@
     window.routes.Api.updateComponent = (id) => `${basePath}jatos/api/v1/components/${id}`;
     window.routes.Api.updateBatch = (id) => `${basePath}jatos/api/v1/batches/${id}`;
     window.routes.Api.updateUser = (id) => `${basePath}jatos/api/v1/users/${id}`;
+    window.routes.Api.changeUserRole = (id) => `${basePath}jatos/api/v1/users/${id}/roles`;
     window.routes.Api.getBatchSession = (id) => `${basePath}jatos/api/v1/batches/${id}/session?asText=true`;
     window.routes.Api.updateBatchSession = (id, version) => `${basePath}jatos/api/v1/batches/${id}/session?version=${version}`;
     window.routes.Api.getGroupsOfBatch = (id) => `${basePath}jatos/api/v1/batches/${id}/groups`;

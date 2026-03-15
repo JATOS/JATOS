@@ -201,7 +201,8 @@ input:focus:checked + .slider-batch {
 }
 
 input.checkbox-admin:checked,
-input:checked + .slider-admin {
+input:checked + .slider-admin,
+.viewer-or-user input + .slider-admin, {
     background-color: $admin-color;
     border-color: $admin-color;
 }

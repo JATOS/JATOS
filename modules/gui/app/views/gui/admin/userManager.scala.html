@@ -15,6 +15,8 @@
                 <th>Email<span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID, SRAM or CONEXT">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Roles, e.g. VIEWER, USER, ADMIN, SUPERUSER, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Switch between role VIEWER and USER">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
@@ -325,6 +327,44 @@
                     "render": Helpers.getAuthMethodText
                 },
                 {
+                    "className": "role-list",
+                    "data": "roleList",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'export' || type === 'sort') return data;
+                        return data.join(", ");
+                    }
+                },
+                {
+                    "className": "viewer-or-user",
+                    "data": null,
+                    "defaultContent": '',
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        const isUser = $.inArray("USER", data.roleList) >= 0;
+                        let isDisabled = false;
+                        let tooltip = "";
+                        if (type === 'export' || type === 'sort') return isUser.toString();
+                        // Special treatment of admin users
+                        if (data.username === "admin") {
+                            isDisabled = true;
+                            tooltip = "User admin's roles cannot be changed.";
+                        } else if (data.username === window.signedinUser.username) {
+                            isDisabled = true;
+                            tooltip = "You cannot change your own roles. Only another user with admin rights can do it.";
+                        } else {
+                            tooltip = "Use this switch to switch between VIEWER and USER role for this user.";
+                        }
+                        const checked = isUser ? "checked" : "";
+                        const disabled = isDisabled ? "disabled" : "";
+                        return `
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip="${tooltip}">
+                                <input type="checkbox" ${checked} ${disabled}>
+                                <span class="slider slider-admin round" ${disabled}></span>
+                            </label>
+                        `;
+                    }
+                },
+                {
                     "className": "superuser",
                     "visible": window.common.isUserRoleAllowSuperuser,
                     "data": null,
@@ -346,7 +386,7 @@
                     "defaultContent": '',
                     "searchable": false,
                     "render": function (data, type, full, meta) {
-                        let isAdmin = $.inArray("ADMIN", data.roleList) >= 0;
+                        const isAdmin = $.inArray("ADMIN", data.roleList) >= 0;
                         let isDisabled = false;
                         let tooltip = "";
                         if (type === 'export' || type === 'sort') return isAdmin.toString();
@@ -439,7 +479,7 @@
                             },
                             "filename": () => { return "jatos_user_all_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
                             "exportOptions": {
-                                "columns": [':not(:last-child)'],
+                                "columns": ':not(:nth-last-child(-n+4))',
                                 "orthogonal": 'export',
                                 "format": {
                                     "header": function ( data, row, column, node ) {
@@ -618,6 +658,31 @@
         });
     });
 
+    $('#userManagerTable').on('click', '.viewer-or-user input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const role = $(checkbox).is(':checked') ? "USER" : "VIEWER";
+        const tr = $(this).closest('tr');
+        const user = dataTable.row(tr).data();
+        $.ajax({
+            url: window.routes.Api.changeUserRole(user.id),
+            type: "PATCH",
+            contentType: "application/json",
+            data: JSON.stringify({ "role": role }),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
+            success: (response) => {
+                user.roleList = response.data.roleList;
+                $(tr).find(".role-list").text(user.roleList.join(", "));
+                const isUser = user.roleList.includes("USER");
+                $(checkbox).prop('checked', isUser);
+            },
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't change user roles";
+                alerts.error(message);
+            }
+        });
+    });
+
     $('#userManagerTable').on('click', '.superuser input', function(e) {
         e.preventDefault();
         const checkbox = this;
@@ -629,13 +694,11 @@
             type: "POST",
             data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: (isSuperuser) => {
+            success: (roleList) => {
+                user.roleList = roleList;
+                $(tr).find(".role-list").text(roleList.join(", "));
+                const isSuperuser = roleList.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
-                if (isSuperuser) {
-                    user.roleList.push("SUPERUSER");
-                } else {
-                    user.roleList = user.roleList.filter(item => item !== "SUPERUSER");
-                }
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle superuser role")
         });
@@ -652,13 +715,11 @@
             type: "POST",
             data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: (isAdmin) => {
+            success: (roleList) => {
+                user.roleList = roleList;
+                $(tr).find(".role-list").text(roleList.join(", "));
+                const isAdmin = roleList.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
-                if (isAdmin) {
-                    user.roleList.push("ADMIN");
-                } else {
-                    user.roleList = user.roleList.filter(item => item !== "ADMIN");
-                }
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle admin rights")
         });

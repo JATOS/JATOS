@@ -26,6 +26,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Service class mostly for Users controller. Handles everything around User.
@@ -185,7 +186,7 @@ public class UserService {
     /**
      * Adds or removes SUPERUSER role of the user with the given username and persists the change.
      */
-    public boolean changeSuperuserRole(String normalizedUsername, boolean superuser)
+    public Set<Role> changeSuperuserRole(String normalizedUsername, boolean superuser)
             throws NotFoundException, ForbiddenException {
         if (!Common.isUserRoleAllowSuperuser()) throw new ForbiddenException("Superuser role is not allowed");
         User user = retrieveUser(normalizedUsername);
@@ -195,7 +196,7 @@ public class UserService {
             user.removeRole(Role.SUPERUSER);
         }
         userDao.update(user);
-        return user.isSuperuser();
+        return user.getRoleList();
     }
 
     /**
@@ -203,7 +204,7 @@ public class UserService {
      * is true, the ADMIN role will be set, and if it's false, it will be removed. Returns true if the user has the role in
      * the end - or false if he hasn't.
      */
-    public boolean changeAdminRole(String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
+    public Set<Role> changeAdminRole(String normalizedUsername, Boolean admin) throws NotFoundException, ForbiddenException {
         User user = retrieveUser(normalizedUsername);
         User signedinUser = authService.getSignedinUser();
         if (user.equals(signedinUser)) {
@@ -218,7 +219,7 @@ public class UserService {
         } else {
             user.removeRole(Role.ADMIN);
         }
-        return user.isAdmin();
+        return user.getRoleList();
     }
 
     public void setLastSignin(String normalizedUsername) {
