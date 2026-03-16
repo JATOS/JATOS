@@ -177,6 +177,12 @@ public class AuthorizationService {
         }
     }
 
+    public void checkAuthMethodIsDbOrLdap(NewUserProperties props) throws ForbiddenException {
+        if (!Arrays.asList(DB, LDAP).contains(props.getAuthMethod())) {
+            throw new ForbiddenException("Invalid authentication method", ErrorCode.INVALID_AUTH_METHOD);
+        }
+    }
+
     public void checkAuthMethodIsDbOrLdap(User user) throws ForbiddenException, NotFoundException {
         if (user == null) {
             throw new NotFoundException("User not found");

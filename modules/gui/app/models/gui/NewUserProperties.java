@@ -146,10 +146,6 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
             errorList.add(new ValidationError(EMAIL, MessagesStrings.NO_HTML_ALLOWED));
         }
 
-        if (authMethod == null || !Arrays.asList(DB, LDAP).contains(authMethod)) {
-            errorList.add(new ValidationError(AUTH_METHOD, "Invalid authentication method"));
-        }
-
         // Check password only if authenticated by DB
         if (isAuthByDb()) {
             if (password == null || password.trim().isEmpty()) {

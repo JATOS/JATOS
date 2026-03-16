@@ -208,6 +208,7 @@ public class Api extends Controller {
         JsonNode json = ApiService.getJsonFromBody(request);
         NewUserProperties props = strictJsonMapper.getMapper().treeToValue(json, NewUserProperties.class);
         ApiService.validateProps(props);
+        authorizationService.checkAuthMethodIsDbOrLdap(props);
 
         User user = userService.registerUser(props);
         JsonNode userJson = jsonUtils.asJsonForApi(user);
