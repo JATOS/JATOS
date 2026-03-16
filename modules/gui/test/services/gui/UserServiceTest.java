@@ -26,8 +26,11 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
 import java.util.function.Supplier;
 
+import static models.common.User.Role.ADMIN;
+import static models.common.User.Role.SUPERUSER;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -197,13 +200,13 @@ public class UserServiceTest {
         User u = new User("foo@ex.org", "Foo", "foo@ex.org");
         when(userDao.findByUsername("foo@ex.org")).thenReturn(u);
 
-        boolean afterAdd = userService.changeSuperuserRole("foo@ex.org", true);
-        assertThat(afterAdd).isTrue();
+        Set<Role> afterAdd = userService.changeSuperuserRole("foo@ex.org", true);
+        assertThat(afterAdd).contains(SUPERUSER);
         assertThat(u.isSuperuser()).isTrue();
         verify(userDao, times(1)).update(u);
 
-        boolean afterRemove = userService.changeSuperuserRole("foo@ex.org", false);
-        assertThat(afterRemove).isFalse();
+        Set<Role> afterRemove = userService.changeSuperuserRole("foo@ex.org", false);
+        assertThat(afterRemove).excludes(SUPERUSER);
         assertThat(u.isSuperuser()).isFalse();
         verify(userDao, times(2)).update(u);
     }
@@ -220,12 +223,12 @@ public class UserServiceTest {
         when(userDao.findByUsername("foo@ex.org")).thenReturn(u);
         when(authService.getSignedinUser()).thenReturn(new User("other@ex.org", "Other", "other@ex.org"));
 
-        boolean afterAdd = userService.changeAdminRole("foo@ex.org", true);
-        assertThat(afterAdd).isTrue();
+        Set<Role> afterAdd = userService.changeAdminRole("foo@ex.org", true);
+        assertThat(afterAdd).contains(ADMIN);
         assertThat(u.isAdmin()).isTrue();
 
-        boolean afterRemove = userService.changeAdminRole("foo@ex.org", false);
-        assertThat(afterRemove).isFalse();
+        Set<Role> afterRemove = userService.changeAdminRole("foo@ex.org", false);
+        assertThat(afterRemove).excludes(ADMIN);
         assertThat(u.isAdmin()).isFalse();
     }
 

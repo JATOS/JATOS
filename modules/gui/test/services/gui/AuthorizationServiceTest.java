@@ -5,7 +5,6 @@ import exceptions.gui.NotFoundException;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
-import models.gui.NewUserProperties;
 import models.gui.UserProperties;
 import org.junit.After;
 import org.junit.Test;
@@ -434,22 +433,6 @@ public class AuthorizationServiceTest {
         assertThat(threw).isTrue();
     }
 
-    @Test
-    public void checkAuthMethodIsDbOrLdap_newUserProps_ok_andInvalidForbidden() throws Exception {
-        NewUserProperties props = new NewUserProperties();
-        props.setAuthMethod(User.AuthMethod.DB);
-        authorizationService.checkAuthMethodIsDbOrLdap(props);
-
-        props.setAuthMethod(User.AuthMethod.OIDC);
-        boolean threw = false;
-        try {
-            authorizationService.checkAuthMethodIsDbOrLdap(props);
-        } catch (ForbiddenException e) {
-            threw = true;
-        }
-        assertThat(threw).isTrue();
-    }
-
     @Test(expected = NotFoundException.class)
     public void checkAuthMethodIsDbOrLdap_nullUser_throwsNotFound() throws Exception {
         authorizationService.checkAuthMethodIsDbOrLdap((User) null);
@@ -487,7 +470,7 @@ public class AuthorizationServiceTest {
     }
 
     @Test
-    public void checkSignedinUserAllowedToChangeUser_adminPasswordChange_forbidden() throws Exception {
+    public void checkSignedinUserAllowedToChangeUser_adminPasswordChange_forbidden() {
         UserProperties props = newUserProps("admin");
         props.setPassword("secret");
 
@@ -504,7 +487,7 @@ public class AuthorizationServiceTest {
     }
 
     @Test
-    public void checkSignedinUserAllowedToChangeUser_adminDeactivate_forbidden() throws Exception {
+    public void checkSignedinUserAllowedToChangeUser_adminDeactivate_forbidden() {
         UserProperties props = newUserProps("admin");
         props.setActive(false);
 
@@ -521,7 +504,7 @@ public class AuthorizationServiceTest {
     }
 
     @Test
-    public void checkSignedinUserAllowedToChangeUser_selfDeactivate_forbidden() throws Exception {
+    public void checkSignedinUserAllowedToChangeUser_selfDeactivate_forbidden() {
         UserProperties props = newUserProps("user");
         props.setActive(false);
 
@@ -538,7 +521,7 @@ public class AuthorizationServiceTest {
     }
 
     @Test
-    public void checkSignedinUserAllowedToChangeUser_ldapPasswordChange_forbidden() throws Exception {
+    public void checkSignedinUserAllowedToChangeUser_ldapPasswordChange_forbidden() {
         UserProperties props = newUserProps("user");
         props.setPassword("secret");
 
