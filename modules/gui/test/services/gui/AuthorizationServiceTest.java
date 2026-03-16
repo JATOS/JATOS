@@ -180,7 +180,7 @@ public class AuthorizationServiceTest {
     @Test
     public void checkAdminOrSelf_adminOrSelf_ok_otherForbidden() throws Exception {
         User admin = newUser("admin");
-        admin.addRole(User.Role.ADMIN);
+        admin.updateRoles(User.Role.ADMIN);
         User u1 = newUser("u1");
         User u2 = newUser("u2");
 
@@ -581,7 +581,7 @@ public class AuthorizationServiceTest {
     @Test
     public void checkSignedinUserAllowedToAccessUser_adminToNonAdmin_ok() throws Exception {
         User signedin = newUser("adminUser");
-        signedin.addRole(User.Role.ADMIN);
+        signedin.updateRoles(User.Role.ADMIN);
         User target = newUser("user");
 
         authorizationService.checkSignedinUserAllowedToAccessUser(target, signedin);
@@ -590,9 +590,9 @@ public class AuthorizationServiceTest {
     @Test(expected = ForbiddenException.class)
     public void checkSignedinUserAllowedToAccessUser_adminToAdmin_forbidden() throws Exception {
         User signedin = newUser("adminUser");
-        signedin.addRole(User.Role.ADMIN);
+        signedin.updateRoles(User.Role.ADMIN);
         User target = newUser("admin2");
-        target.addRole(User.Role.ADMIN);
+        target.updateRoles(User.Role.ADMIN);
 
         authorizationService.checkSignedinUserAllowedToAccessUser(target, signedin);
     }
@@ -613,7 +613,7 @@ public class AuthorizationServiceTest {
     @Test
     public void checkUserAllowedToAccessApiToken_adminToNonAdmin_ok() throws Exception {
         User signedin = newUser("adminUser");
-        signedin.addRole(User.Role.ADMIN);
+        signedin.updateRoles(User.Role.ADMIN);
         User tokenUser = newUser("user");
 
         ApiToken token = new ApiToken();

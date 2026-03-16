@@ -247,7 +247,7 @@ public class Api extends Controller {
             throw new BadRequestException("Invalid role: " + role);
         }
 
-        user.addRole(role);
+        user.updateRoles(role);
         userDao.update(user);
 
         JsonNode userNode = jsonUtils.asJsonForApi(user);

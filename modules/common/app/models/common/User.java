@@ -133,9 +133,14 @@ public class User {
     private String lastVisitedPageUrl;
 
     public User(String username, String name, String email) {
+        this(username, name, email, Role.USER);
+    }
+
+    public User(String username, String name, String email, Role role) {
         setUsername(username);
         this.name = name;
         this.email = email;
+        updateRoles(role);
     }
 
     public User() {
@@ -192,7 +197,7 @@ public class User {
         return roleList;
     }
 
-    public void addRole(Role role) {
+    public void updateRoles(Role role) {
         if (role == null) return;
         switch (role) {
             case NONE:

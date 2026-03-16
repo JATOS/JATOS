@@ -199,7 +199,7 @@ public class AuthApiTokenTest {
 
         User u = new User();
         u.setActive(true);
-        u.addRole(User.Role.USER);
+        u.updateRoles(User.Role.USER);
         ApiToken t = new ApiToken();
         t.setActive(true);
         t.setUser(u);
@@ -221,7 +221,7 @@ public class AuthApiTokenTest {
 
         User u = new User();
         u.setActive(true);
-        u.addRole(User.Role.USER);
+        u.updateRoles(User.Role.USER);
         ApiToken t = new ApiToken();
         t.setActive(true);
         t.setUser(u);

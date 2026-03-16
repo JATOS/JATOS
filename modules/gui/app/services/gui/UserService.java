@@ -94,12 +94,15 @@ public class UserService {
     /**
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
-    public User bindToUserAndPersist(NewUserProperties newUserProperties) {
+    public User bindToUserAndPersist(NewUserProperties props) {
         //noinspection deprecation
         return jpa.withTransaction(() -> {
-            User user = new User(newUserProperties.getUsername(), newUserProperties.getName(), newUserProperties.getEmail());
-            String password = newUserProperties.getPassword();
-            AuthMethod authMethod = newUserProperties.getAuthMethod();
+            User user = new User(props.getUsername(),
+                    props.getName(),
+                    props.getEmail(),
+                    props.getRole());
+            String password = props.getPassword();
+            AuthMethod authMethod = props.getAuthMethod();
             createAndPersistUser(user, password, false, authMethod);
             return user;
         });
@@ -132,9 +135,9 @@ public class UserService {
         user.setWorker(worker);
 
         // Every user has the Role USER
-        user.addRole(Role.USER);
+        user.updateRoles(Role.USER);
         if (adminRole) {
-            user.addRole(Role.ADMIN);
+            user.updateRoles(Role.ADMIN);
         }
 
         workerDao.create(worker);
@@ -191,7 +194,7 @@ public class UserService {
         if (!Common.isUserRoleAllowSuperuser()) throw new ForbiddenException("Superuser role is not allowed");
         User user = retrieveUser(normalizedUsername);
         if (superuser) {
-            user.addRole(Role.SUPERUSER);
+            user.updateRoles(Role.SUPERUSER);
         } else {
             user.removeRole(Role.SUPERUSER);
         }
@@ -215,7 +218,7 @@ public class UserService {
         }
 
         if (admin) {
-            user.addRole(Role.ADMIN);
+            user.updateRoles(Role.ADMIN);
         } else {
             user.removeRole(Role.ADMIN);
         }
