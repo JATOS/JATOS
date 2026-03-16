@@ -12,7 +12,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
-import play.api.mvc.RequestHeader;
 import play.mvc.Controller;
 import play.mvc.Http;
 
@@ -46,12 +45,13 @@ public class Helpers {
         return Controller.request().header("X-Requested-With").map(v -> v.equals("XMLHttpRequest")).orElse(false);
     }
 
-    public static boolean isHtmlRequest(Http.Request request) {
-        return request.accepts(Http.MimeTypes.HTML);
-    }
-
-    public static boolean isHtmlRequest(RequestHeader request) {
-        return request.asJava().getHeaders().get("Accept").map(s -> s.toLowerCase().contains("html")).orElse(false);
+    public static boolean isHtmlRequest(Http.RequestHeader request) {
+        return request.getHeaders().get("Accept")
+                .map(accept -> Arrays.stream(accept.split(","))
+                        .map(String::trim)
+                        .map(part -> part.split(";", 2)[0].trim().toLowerCase(Locale.ROOT))
+                        .anyMatch("text/html"::equals))
+                .orElse(false);
     }
 
     /**

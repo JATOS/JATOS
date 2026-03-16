@@ -71,7 +71,7 @@ public class ComponentResults extends Controller {
      * Shows a view with all component results of a component of a study.
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result componentResults(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
@@ -93,7 +93,7 @@ public class ComponentResults extends Controller {
      * a comma separated list of ComponentResult IDs as a String.
      */
     @Transactional
-    @Auth(USER)
+    @Auth(roles = USER)
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
@@ -110,7 +110,7 @@ public class ComponentResults extends Controller {
      * GET request that returns all ComponentResults as JSON for a given component. It streams the data as chunks (reduces memory usage)
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
@@ -124,7 +124,7 @@ public class ComponentResults extends Controller {
      * GET result data of one component result
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = authService.getSignedinUser();

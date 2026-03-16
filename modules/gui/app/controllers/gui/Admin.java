@@ -76,7 +76,7 @@ public class Admin extends Controller {
      * Returns admin page
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result administration(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
@@ -88,7 +88,7 @@ public class Admin extends Controller {
      * Returns the content (all regular file's names) of the logs directory as JSON
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result listLogs() throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(Common.getLogsPath()))) {
             List<String> content = paths
@@ -104,7 +104,7 @@ public class Admin extends Controller {
      * For backward compatibility. Uses logs.
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result log(Integer lineLimit) throws IOException {
         return logs("application.log", lineLimit, true);
     }
@@ -116,7 +116,7 @@ public class Admin extends Controller {
      * If 'reverse' is false it returns the file for download.
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result logs(String filename, Integer lineLimit, boolean reverse) {
         filename = Helpers.urlDecode(filename);
         if (!ioUtils.existsAndSecure(Common.getLogsPath(), filename)) return notFound();
@@ -139,7 +139,7 @@ public class Admin extends Controller {
      * Returns some status values
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result status() {
         return ok(adminService.getAdminStatus());
     }
@@ -148,7 +148,7 @@ public class Admin extends Controller {
      * Returns study manager page
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result studyManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
@@ -160,7 +160,7 @@ public class Admin extends Controller {
      * Returns table data for study manager page
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result allStudiesData() {
         List<Study> studyList = studyDao.findAll();
         boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
@@ -175,7 +175,7 @@ public class Admin extends Controller {
      * Returns admin data for all studies that belong to the given user
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
@@ -188,7 +188,7 @@ public class Admin extends Controller {
      * Returns the study assets folder size of one study
      */
     @Transactional
-    @Auth({VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result studyAssetsSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
@@ -201,7 +201,7 @@ public class Admin extends Controller {
      * Returns the result data size of one study
      */
     @Transactional
-    @Auth({VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultDataSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
@@ -215,7 +215,7 @@ public class Admin extends Controller {
      * Returns the size of all result files of one study
      */
     @Transactional
-    @Auth({VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultFileSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);

@@ -129,7 +129,7 @@ public class Signin extends Controller {
      * Removes user from session and shows sign-in view with a sign-out message.
      */
     @Transactional
-    @Auth({VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result signout(Http.Request request) {
         LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
         FlashScopeMessaging.success("You've been signed out.");

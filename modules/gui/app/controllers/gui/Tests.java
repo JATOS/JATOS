@@ -38,7 +38,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -49,7 +49,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result testFolderAccess() {
         Map<String, Boolean> folderAccessResults = new HashMap<>();
         folderAccessResults.put("studyAssetsRoot", testFolder(Common.getStudyAssetsRootPath()));
@@ -75,7 +75,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to a client

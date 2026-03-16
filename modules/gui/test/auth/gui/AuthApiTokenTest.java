@@ -172,7 +172,7 @@ public class AuthApiTokenTest {
     }
 
     @Test
-    public void authenticate_denied_whenUserLacksRole() {
+    public void authenticate_denied_whenUserLacksRoles() {
         String body = randomBody31();
         String token = makeTokenWithChecksum(body);
         String hash = HashUtils.getHash(token, HashUtils.SHA_256);

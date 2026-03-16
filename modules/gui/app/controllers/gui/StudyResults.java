@@ -79,7 +79,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a study.
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result studysStudyResults(Http.Request request, Long studyId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
@@ -99,7 +99,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a batch.
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result batchesStudyResults(Http.Request request, Long studyId, Long batchId, String workerType) throws JatosGuiException {
         Batch batch = batchDao.findById(batchId);
@@ -123,7 +123,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a group.
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result groupsStudyResults(Http.Request request, Long studyId, Long groupId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
@@ -147,7 +147,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a worker.
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result workersStudyResults(Http.Request request, Long workerId) throws JatosGuiException {
         User signedinUser = authService.getSignedinUser();
@@ -167,7 +167,7 @@ public class StudyResults extends Controller {
      * StudyResults IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Transactional
-    @Auth(USER)
+    @Auth(roles = USER)
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
@@ -184,7 +184,7 @@ public class StudyResults extends Controller {
      * GET request that returns StudyResults of a study in JSON format. It streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
@@ -199,7 +199,7 @@ public class StudyResults extends Controller {
      * be specified and the results will only be of this type. It streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = authService.getSignedinUser();
@@ -214,7 +214,7 @@ public class StudyResults extends Controller {
      * GET request that returns all StudyResults of a group in JSON format. It streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = authService.getSignedinUser();
@@ -228,7 +228,7 @@ public class StudyResults extends Controller {
      * GET request that returns all StudyResults belonging to a worker as JSON. Streams in chunks (reduces memory usage)
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByWorker(Long workerId) throws NotFoundException {
         User signedinUser = authService.getSignedinUser();
         Worker worker = workerDao.findById(workerId);
@@ -244,7 +244,7 @@ public class StudyResults extends Controller {
      * Returns for one study result the component result's data
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User signedinUser = authService.getSignedinUser();

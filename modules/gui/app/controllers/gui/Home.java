@@ -59,7 +59,7 @@ public class Home extends Controller {
      * Shows home view
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request, int httpStatus) {
         User signedinUser = authService.getSignedinUser();
@@ -72,7 +72,7 @@ public class Home extends Controller {
     }
 
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request) {
         return home(request, Http.Status.OK);
@@ -82,7 +82,7 @@ public class Home extends Controller {
      * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public CompletionStage<Result> branding() {
         User signedinUser = authService.getSignedinUser();
         if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
@@ -101,7 +101,7 @@ public class Home extends Controller {
      * signed-in user).
      */
     @Transactional
-    @Auth({VIEWER, USER})
+    @Auth(roles = {VIEWER, USER})
     public Result sidebarData() {
         User signedinUser = authService.getSignedinUser();
         List<Study> studyList = Helpers.isAllowedSuperuser(signedinUser)

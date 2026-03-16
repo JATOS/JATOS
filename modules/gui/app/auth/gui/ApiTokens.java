@@ -44,7 +44,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth({VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result allTokenDataByUser() {
         User signedinUser = authService.getSignedinUser();
         List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
@@ -57,7 +57,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth({USER, ADMIN})
+    @Auth(roles = {USER, ADMIN})
     public Result generate(String name, Integer expires) {
         User signedinUser = authService.getSignedinUser();
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
@@ -69,7 +69,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth({USER, ADMIN})
+    @Auth(roles = {USER, ADMIN})
     public Result remove(Long id) {
         User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);
@@ -79,7 +79,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth({USER, ADMIN})
+    @Auth(roles = {USER, ADMIN})
     public Result toggleActive(Long id, Boolean active) {
         User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);

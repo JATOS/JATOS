@@ -2,6 +2,7 @@ package auth.gui;
 
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthAction.AuthMethod.AuthResult;
+import auth.gui.AuthAction.AuthMethod.Type;
 import general.gui.RequestScopeMessaging;
 import models.common.User;
 import models.common.User.Role;
@@ -50,13 +51,20 @@ public class AuthAction extends Action<Auth> {
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Auth {
-        Role[] value() default {Role.NONE};
+        Role[] roles() default {Role.NONE};
+        Type[] types() default {Type.SESSION};
     }
 
     /**
      * Interface that every authentication method has to implement.
      */
-    interface AuthMethod {
+    public interface AuthMethod {
+
+        enum Type {
+            SESSION, TOKEN
+        }
+
+        Type type();
 
         /**
          * @param request        This action's {@link Http.Request} object
@@ -126,10 +134,13 @@ public class AuthAction extends Action<Auth> {
     }
 
     public CompletionStage<Result> call(Http.Request request) {
-        EnumSet<Role> allowedRoles = EnumSet.copyOf(Arrays.asList(configuration.value()));
+        EnumSet<Role> allowedRoles = EnumSet.copyOf(Arrays.asList(configuration.roles()));
+        EnumSet<Type> allowedTypes = EnumSet.copyOf(Arrays.asList(configuration.types()));
 
         // Try to authenticate with each registered method
         for (AuthMethod authMethod : authMethods) {
+
+            if (!allowedTypes.contains(authMethod.type())) continue;
 
             AuthResult authResult = authMethod.authenticate(request, allowedRoles);
             switch (authResult.state) {
@@ -147,7 +158,7 @@ public class AuthAction extends Action<Auth> {
     }
 
     static CompletionStage<Result> denied(Http.Request request) {
-        if (Helpers.isHtmlRequest(request) && !Helpers.isAjax()) {
+        if (Helpers.isHtmlRequest(request)) {
             RequestScopeMessaging.error("Failed authentication");
             return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin()));
         } else {

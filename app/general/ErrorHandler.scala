@@ -148,7 +148,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
       case _ =>
         logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
         val msg = s"Internal JATOS error during ${request.method} ${request.uri}. Check logs to get more information."
-        if (Helpers.isHtmlRequest(request)) InternalServerError(views.html.error.render(msg))
+        if (Helpers.isHtmlRequest(request.asJava)) InternalServerError(views.html.error.render(msg))
         else if (api) InternalServerError(ApiEnvelope.wrap("Unexpected error", ErrorCode.UNEXPECTED_ERROR).asJsValue())
         else InternalServerError(msg)
     }
@@ -175,7 +175,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
   }
 
   private def getErrorResult(status: Int, msg: String, request: RequestHeader): Result = {
-    if (Helpers.isHtmlRequest(request)) Status(status)(views.html.publix.error.render(msg))
+    if (Helpers.isHtmlRequest(request.asJava)) Status(status)(views.html.publix.error.render(msg))
     if (isApi(request)) Status(status)(ApiEnvelope.wrap("Unexpected error", ErrorCode.UNEXPECTED_ERROR).asJsValue())
     else Status(status)(msg)
   }

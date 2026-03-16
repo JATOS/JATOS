@@ -13,7 +13,6 @@ import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
 
@@ -40,6 +39,11 @@ public class AuthApiToken implements AuthAction.AuthMethod {
     AuthApiToken(ApiTokenDao apiTokenDao, JPAApi jpa) {
         this.apiTokenDao = apiTokenDao;
         this.jpa = jpa;
+    }
+
+    @Override
+    public Type type() {
+        return Type.TOKEN;
     }
 
     @Override

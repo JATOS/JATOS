@@ -139,7 +139,7 @@ public class AuthSessionCookieTest {
     }
 
     @Test
-    public void authenticate_denied_whenInsufficientRole() {
+    public void authenticate_denied_whenInsufficientRoles() {
         User u = makeUser(true, false);
         when(authService.getSignedinUserBySessionCookie(any())).thenReturn(u);
         when(authService.isSessionKeepSignedin(any())).thenReturn(true); // skip timeouts

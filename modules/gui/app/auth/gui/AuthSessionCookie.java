@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.EnumSet;
 import java.util.function.Function;
 
+import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static play.mvc.Results.*;
 
 /**
@@ -58,6 +59,11 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         this.homeProvider = homeProvider;
         this.authService = authService;
         this.userService = userService;
+    }
+
+    @Override
+    public Type type() {
+        return SESSION;
     }
 
     @Override

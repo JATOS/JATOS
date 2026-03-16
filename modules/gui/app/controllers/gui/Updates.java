@@ -43,7 +43,7 @@ public class Updates extends Controller {
      * @param allowPreReleases If true, allows requesting of pre-releases too
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public CompletionStage<Result> getReleaseInfo(String version, Boolean allowPreReleases) {
         return jatosUpdater.getReleaseInfo(version, allowPreReleases).handle((releaseInfo, error) -> {
             if (error != null) {
@@ -56,7 +56,7 @@ public class Updates extends Controller {
     }
 
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result cancelUpdate() {
         jatosUpdater.cancelUpdate();
         return ok();
@@ -68,7 +68,7 @@ public class Updates extends Controller {
      * @param dry Allows testing the endpoint without actually downloading anything
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public CompletionStage<Result> downloadJatos(Boolean dry) {
         return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
             if (error != null) {
@@ -87,7 +87,7 @@ public class Updates extends Controller {
      *                  If false, only the conf directory and the loader scripts.
      */
     @Transactional
-    @Auth(ADMIN)
+    @Auth(roles = ADMIN)
     public Result updateAndRestart(Boolean backupAll) {
         try {
             jatosUpdater.updateAndRestart(backupAll);

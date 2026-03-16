@@ -66,7 +66,7 @@ public class ImportExport extends Controller {
      * study or its directory already exists. The actual import happens in method importStudyConfirmed().
      */
     @Transactional
-    @Auth(USER)
+    @Auth(roles = USER)
     public Result importStudy(Http.Request request)
             throws ForbiddenException, ValidationException, ImportExportException, IOException {
         User signedinUser = authService.getSignedinUser();
@@ -111,7 +111,7 @@ public class ImportExport extends Controller {
      *                   Default is `true`.
      */
     @Transactional
-    @Auth(USER)
+    @Auth(roles = USER)
     public Result importStudyConfirmed(Http.Request request) throws JatosGuiException {
         User signedinUser = authService.getSignedinUser();
 
@@ -147,7 +147,7 @@ public class ImportExport extends Controller {
      * the study asset directory and the study properties as JSON saved in a .jas file.
      */
     @Transactional
-    @Auth(USER)
+    @Auth(roles = USER)
     public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
