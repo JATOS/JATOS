@@ -209,7 +209,7 @@ POST     /jatos/import/studyConfirmed                                       @con
 
 ### Static resources ###
 
-GET      /openapi.yaml                                                      controllers.gui.OpenApiController.openapi(request: Request)
+GET      /openapi.yaml                                                      controllers.gui.OpenApiController.openapi()
 
 # General assets
 GET      /assets/*file                                                      controllers.Assets.versioned(path="/public/lib/gui", file: Asset)

@@ -1,20 +1,23 @@
 package controllers.gui;
 
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 
 import javax.inject.Singleton;
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @Singleton
 public class OpenApiController extends Controller {
 
-    public Result openapi(Http.Request request) {
-        File file = Paths.get( "jatos-api.yaml").toFile();
-        if (file.exists()) {
-            return ok(file).as("application/yaml");
+    public Result openapi() {
+        var path = Paths.get("jatos-api.yaml");
+        if (Files.exists(path)) {
+            try {
+                return ok(Files.readString(path)).as("text/yaml");
+            } catch (Exception e) {
+                return internalServerError("Could not read OpenAPI file");
+            }
         }
         return notFound("OpenAPI file not found");
     }
